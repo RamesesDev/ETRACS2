@@ -1,0 +1,87 @@
+import com.rameses.scripting.annotations.*;
+import com.rameses.tracs.rpt.service.RPTUtilService;
+import java.rmi.server.UID;
+import com.rameses.tracs.rpt.domain.*;
+import java.text.SimpleDateFormat;
+
+public class TransmittalMachService
+{
+	@Resource("defaultPU")
+	def em;
+	
+	@ProxyMethod
+	public def buildItem( td , item) {
+		item.faas.rpu.rpuType = "rpumach:mach";
+		buildMachUses( td, item );
+		return item;
+	}
+	
+	private void buildMachUses( td, item ) {
+		def uses = [];
+		td.rpu.machineUses.each {
+			uses.add([	
+				objid           : it.objid,
+				marketValue     : it.marketValue,
+				adjMarketValue  : it.adjMarketValue,
+				assessLevel     : it.assessLevel,
+				assessedValue   : it.assessedValue,
+				machAssessLevelId : it.machAssessLevelId, 
+				actualUseId     : it.actualUseId,
+				actualUseCode   : it.actualUseCode,
+				actualUseTitle  : it.actualUseTitle,
+				specialLevel    : it.specialLevel,
+				machineDetails  : buildMachineDetails( it.machineLists ),
+			]);
+		}
+		item.faas.rpu.info.machineUses = uses;
+	}
+	
+	private def buildMachineDetails( machineList ) {
+		def machList = [];
+		machineList.each {
+			machList.add( [	
+				objid             : it.objid,
+				operationYear     : it.operationYear,
+				replacementCost   : it.replacementCost,
+				depreciation      : it.depreciation,
+				depreciationValue : it.depreciationValue,
+				marketValue       : it.marketValue,
+				adjMarketValue    : it.adjMarketValue,
+				assessLevel       : it.assessLevel,
+				assessedValue     : it.assessedValue,
+				brand             : it.brand,
+				capacity          : it.capacity,
+				model             : it.model,
+				serialNo          : it.serialNo,
+				status            : it.status,
+				yearAcquired      : it.yearAcquired,
+				estimatedLife     : it.estimatedLife,
+				remainingLife     : it.remainingLife,
+				yearInstalled     : it.yearInstalled,
+				yearsUsed         : it.yearsUsed,
+				originalCost      : it.originalCost,
+				freightCost       : it.freightCost,
+				insuranceCost     : it.insuranceCost,
+				installationCost  : it.installationCost,
+				brokerageCost     : it.brokerageCost,
+				arrastreCost      : it.arrastreCost,
+				otherCost         : it.otherCost,
+				acquisitionCost   : it.acquisitionCost,
+				ferac             : it.ferac,
+				forex             : it.forex,
+				machineId         : it.machineId,
+				machineCode       : it.machineCode,
+				machineTitle      : it.machineTitle,
+				useSwornAmount    : it.useSwornAmount,
+				swornAmount       : it.swornAmount,
+				imported          : it.imported,
+				residualRate      : it.residualRate,
+				localIndex        : it.localIndex,
+				newlyInstalled    : it.newlyInstalled,
+				autoDepreciate    : it.autoDepreciate,
+			] );
+		}
+		return machList;
+	}
+}	
+

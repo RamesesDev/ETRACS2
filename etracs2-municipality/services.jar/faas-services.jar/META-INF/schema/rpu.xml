@@ -1,0 +1,32 @@
+<schema>
+	<element name="rpu">
+		<field name="objid" primary="true" />
+		<field name="schemaName" required="true"/>
+		<field name="schemaVersion" required="true"/>
+		<field name="state" required="true"  />
+		<field name="rpuType" required="true" />
+		<!-- links to outside rpu schema for land, bldg, mach, tree and misc -->
+		<complex name="info" ref="${rpuType}" serializer="default"/>
+	</element>
+	
+	<element name="rpuInfo">
+		<field name="txnType" required="true"  />
+		<field name="ry" required="true" type="integer" />
+		<field name="type" required="true"  />
+		<field name="pin"  />
+		<field name="suffix" required="true" type="integer" />
+		<field name="subSuffix"  />
+		<field name="special" required="true"  />
+		<field name="taxable" required="true" type="boolean" />
+		<field name="totalMV" required="true" type="decimal" />
+		<field name="totalAMV" required="true" type="decimal" />
+		<field name="totalAV" required="true" type="decimal" />
+		<field name="areaSqm" required="true" type="decimal" />
+		<field name="areaHec" required="true" type="decimal" />
+		<field name="useSwornAmount"  />
+		
+		<link ref="common:classification" />
+		<link ref="common:exemption" />
+		<link ref="common:cancelInfo"/>
+	</element>
+</schema>

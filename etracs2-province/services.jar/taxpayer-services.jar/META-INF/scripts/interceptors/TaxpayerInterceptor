@@ -1,0 +1,17 @@
+import com.rameses.annotations.*;
+
+class TaxpayerInterceptor 
+{
+	@Service("LogService")
+	def logService;
+		
+	@After(pattern="TaxpayerService.create.*") 
+	public void interceptCreate( evt ) {
+		logService.log("CREATE", "ProvinceTaxpayer", evt.result.objid);
+	}
+	
+	@After(pattern="TaxpayerService.update.*") 
+	public void interceptUpdate( evt ) {
+		logService.logB("UPDATE", "ProvinceTaxpayer", evt.result.objid, null, evt.args[1]?.diff);
+	}
+}

@@ -1,0 +1,34 @@
+import com.rameses.soapws.XMLSOAP2;
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+public class USAddressService {
+
+	@PersistenceContext("main")
+	def em;
+	
+	@ProxyMethod
+	public def findByZipcode(def z) {
+		def o = em.sqlContext.createNamedQuery("us_address:by-zip").setParameters(z).singleResult;
+		if(o==null)throw new Exception("zip code " + z.zipcode + " not found");
+		return o;
+	}
+	
+	@ProxyMethod
+	public def findByState(def z) {
+		return em.sqlContext.createNamedQuery("us_address:by-state").setParameters(z).resultList;       
+	}
+
+	@ProxyMethod
+	public def findByCity(def z) {
+		return em.sqlContext.createNamedQuery("us_address:by-city").setParameters(z).resultList;       
+	}
+	
+	@ProxyMethod
+	public def verify(def z) {
+		return em.sqlContext.createNamedQuery("us_address:by-zip").setParameters(z).singleResult;
+	}
+}
+
+
+

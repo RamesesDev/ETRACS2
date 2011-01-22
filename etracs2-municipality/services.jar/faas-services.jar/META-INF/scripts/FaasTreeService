@@ -1,0 +1,54 @@
+import com.rameses.scripting.annotations.*;
+import com.rameses.tracs.rpt.service.RPTUtilService;
+import java.rmi.server.UID;
+import com.rameses.tracs.rpt.domain.*;
+import java.text.SimpleDateFormat;
+
+public class TransmittalTreeService
+{
+	@Resource("defaultPU")
+	def em;
+	
+	@ProxyMethod
+	public def buildItem( td , item) {
+		item.faas.rpu.rpuType = "rpumisc:misc";
+		
+		def rpu = td.rpu;
+		def rpuInfo = item.faas.rpu.info;
+		
+		rpuInfo.totalBearing     = rpu.totalBearing;
+		rpuInfo.totalNonBearing  = rpu.totalNonBearing;
+		rpuInfo.landPlantDetails = buildDetails( rpu.landPlantDetails );
+		return item;
+	}
+	
+	private def buildDetails( landPlantDetails ) {
+		def items = [];
+		landPlantDetails.each {
+			items.add([	
+				objid          : it.objid,
+				bearing        : it.bearing,
+				nonBearing     : it.nonBearing,
+				nonBearingAge  : it.nonBearingAge,
+				baseValue      : it.baseValue,
+				unitValue      : it.unitValue,
+				marketValue    : it.marketValue,
+				adjMarketValue : it.adjMarketValue,
+				assessLevel    : it.assessLevel,
+				assessedValue  : it.assessedValue,
+				treeUnitValueId    : it.treeUnitValueId,
+				treeUnitValueCode  : it.treeUnitValueCode,
+				treeUnitValueTitle : it.treeUnitValueTitle,
+				treeUnitId     : it.treeUnitId,
+				treeId         : it.treeId,
+				treeCode       : it.treeCode,
+				treeTitle      : it.treeTitle,
+				treeAssessLevelId    : it.treeAssessLevelId,
+				treeAssessLevelCode  : it.treeAssessLevelCode,
+				treeAssessLevelTitle : it.treeAssessLevelTitle, 
+			]);
+		}
+		return items;
+	}
+}	
+

@@ -1,0 +1,148 @@
+import com.rameses.annotations.*;
+
+class FAASService
+{
+	@PersistenceContext("etracs")
+	def em;
+	
+	@Env
+	def env;
+	
+	def PROVAPPROVAL_STATE = "PROVAPPROVAL";
+	def FORAPPROVAL_STATE = "FORAPPROVAL";
+	def CURRENT_STATE = "CURRENT";
+	def DISAPPROVED_STATE = "DISAPPROVED";
+	
+	@ProxyMethod
+	public def getList( search, params ) {
+		def result = null;
+		def state = search.state;
+		def textSearch = search.textSearch;
+		def findSql = "faas:find$state"; 
+		if( ! textSearch ) return getListByName("$findSql-ByState", [state:state], params);
+		if( (result = getListByName("$findSql-ByTdNo", [state:state, tdno:textSearch], params)) ) return result;
+		if( (result = getListByName("$findSql-ByTaxpayerName", [state:state, taxpayername:textSearch], params)) ) return result;
+		if( (result = getListByName("$findSql-ByPin", [state:state, pin:textSearch], params)) ) return result;
+		if( (result = getListByName("$findSql-ByBarangay", [state:state, barangay:textSearch], params)) ) return result;
+		if( (result = getListByName("$findSql-ByCadastralLotNo", [state:state, cadastrallotno:textSearch], params)) ) return result;
+		if( (result = getListByName("$findSql-BySurveyNo", [state:state, surveyno:textSearch], params)) ) return result;
+		if( (result = getListByName("$findSql-ByBlockNo", [state:state, blockno:textSearch], params)) ) return result;
+		return result;
+	}
+	
+	@ProxyMethod
+	public def create( @Param(schema="faas:faas") faas ) {
+		faas.sys_dtCreated = new Date();
+		em.create("faas:faas",  faas);
+		def list = em.indexer.getIndexFor("faas:faas");
+		em.indexer.fire( list, faas );
+		return faas;
+	}
+	
+	@ProxyMethod
+	public def open( faasId ) {
+		def faas = em.read("faas:faas", [objid:faasId]);
+		if( !faas ) throw new Exception("FAAS not found.");
+		return faas;
+	}
+	
+	@ProxyMethod
+	public def submit( faasId ) {
+		def faas = open( faasId );
+		if( faas.state != PROVAPPROVAL_STATE ) throw new Exception("FAAS is already $faas.state.");
+		
+		def currDate = new Date();
+		faas.state  = FORAPPROVAL_STATE;
+		faas.info.reviewedBy  = [name:env.USER, title:env.TITLE, dtSigned:currDate];
+		em.update( "faas:faas", faas );
+		
+		def faasData = em.read("faas:faas-provapproval", [ objid:faasId ]);
+		if( !faasData ) throw new Exception("FAAS not found.");
+		faasData.state = FORAPPROVAL_STATE;
+		faasData.reviewedBy = env.USER;
+		faasData.reviewedByPosition = env.TITLE;
+		em.create("faas:faas-approval", faasData);
+		em.delete("faas:faas-provapproval", faasData);
+		return faas;
+	}
+	
+	@ProxyMethod
+	public def approve( faasId ) {
+		def faas = open( faasId );
+		if( faas.state != FORAPPROVAL_STATE) throw new Exception("FAAS is already $faas.state.");
+		
+		def currDate = new Date();
+		faas.state  = CURRENT_STATE;
+		faas.info.approvedBy.dtSigned = currDate;
+		faas.sys_dtApproved = currDate;
+		em.update( "faas:faas", faas );
+		
+		def faasData = em.read("faas:faas-approval", [ objid:faasId ]);
+		if( !faasData ) throw new Exception("FAAS not found.");
+		faasData.state = CURRENT_STATE;
+		em.create("faas:faas-current", faasData);
+		em.delete("faas:faas-approval", faasData);
+		return faas;
+	}
+	
+	@ProxyMethod
+	public def disapprove( faasId, remarks )  {
+		def faas = open( faasId );
+		if( faas.state == CURRENT_STATE ) throw new Exception("FAAS is already $faas.state.");
+		
+		faas.state = DISAPPROVED_STATE;
+		faas.remarks = remarks;
+		em.create("faas:disapproved-faas", faas);
+		em.delete("faas:faas", faas);
+		em.sqlContext.createNamedExecutor("faas:deleteForApproval").setParameters([objid:faasId]).execute();
+		return faas;
+	}
+	
+	@ProxyMethod
+	public void createRemoteFaas( faas ) {
+	try {
+		def data = em.sqlContext.createNamedQuery("faas:getState").setParameter("objid", faas.objid).singleResult;
+		if( data && data.state != 'PROVAPPROVAL' ) throw new Exception("FAAS is already $data.state.");
+		deleteFaasData( faas.objid );
+		create( faas );
+	}
+	catch(e) {
+		e.printStackTrace();
+		throw e;
+	}
+	}
+	
+	private void deleteFaasData( objid ) {
+		em.sqlContext.createNamedExecutor("filetransfer:deleteDetailByRefId").setParameter("refId",objid).execute();
+		em.sqlContext.createNamedExecutor("filetransfer:deleteHeaderByRefId").setParameter("refId",objid).execute();
+		em.sqlContext.createNamedExecutor("faas:deleteProvApproval").setParameter("objid",objid).execute();
+		em.sqlContext.createNamedExecutor("faas:deleteFaas").setParameter("objid",objid).execute();
+	}
+	
+	@ProxyMethod
+	public void createAttachmentHeader( header ) {
+		em.validate("filetransfer:header", header);
+		em.create("filetransfer:header", header);
+	}
+	
+	@ProxyMethod
+	public void createAttachmentDetail( detail ) {
+		em.validate("filetransfer:detail", detail);
+		em.create("filetransfer:detail", detail );
+	}
+	
+	@ProxyMethod
+	public def getAttachments( objid ) {
+		def params = [refId:objid, refName:'FAAS']
+		return em.sqlContext.createNamedQuery("filetransfer:getHeaderByRefIdName").setParameters(params).resultList;
+	}
+	
+	
+	private def getListByName( namedQuery, criteria, params ) {
+		return em.sqlContext.createNamedQuery( namedQuery )
+						.setParameters( criteria )
+						.setFirstResult( params._start )
+						.setMaxResults( params._limit )
+						.resultList;
+	}
+}

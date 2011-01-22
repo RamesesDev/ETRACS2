@@ -1,0 +1,111 @@
+<workunit>
+    <invokers>
+        <invoker type="faas_municipality:open" caption="FAAS Information" />
+        <invoker type="formActions" caption="Close" mnemonic="c" action="_close" />
+        <invoker type="formActions" caption="Add Attachment" mnemonic="a" action="addAttachment" visibleWhen="#{state == PROVAPPROVAL_STATE}"  />
+        <invoker type="formActions" caption="Transmit to Province" mnemonic="t" action="transmit" visibleWhen="#{state == PROVAPPROVAL_STATE}"  />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+public class FaasController 
+{
+    def PROVAPPROVAL_STATE = 'PROVAPPROVAL'
+    def TRANSMITTED_STATE = 'TRANSMITTED'
+    
+    @Binding
+    def binding;
+
+    @FormTitle
+    def title = "FAAS Information";    
+
+    @Service("FaasService")
+    def svc;
+
+    @Service("FaasHtmlService")
+    def htmlSvc;
+
+    def state = PROVAPPROVAL_STATE;
+    def faas;
+    def listRefreshHandler;
+    def html;
+    def message;
+    def transmitting = false;
+
+    void transmit() {
+        if( ! MsgBox.confirm("Transmit to Province?") ) return;
+        def task = [
+            accept  : { return true; },
+            isEnded : { return true; },
+            execute : { executeTransmit() },
+        ] as Task;
+        OsirisContext.clientContext.taskManager.addTask( task );
+        message = "Transmitting FAAS to province. Please wait.";
+        transmitting = true;
+    }
+    
+    void executeTransmit() {
+        svc.transmit( faas.objid );
+        state = TRANSMITTED_STATE;
+        message = null;
+        transmitting = false;
+        html = null;
+        binding.refresh("formActions");
+        binding.refresh("message");
+        binding.refresh("html");
+    }
+
+    def addAttachment() {
+        def info = [
+                objid : faas.objid,
+                name  : "FAAS",
+        ]
+        return InvokerUtil.lookupOpener("file:upload",[info:info, refreshHandler: refreshHandler]);
+    }
+    
+    void removeAttachment( attachmentId ) {
+        if( MsgBox.confirm("Remove attachment?") ) {
+            svc.removeAttachment( attachmentId );
+            refreshHandler();
+        }
+    }
+
+    def refreshHandler = {
+        html = htmlSvc.getHtml( faas.objid, true );
+        binding.refresh("html");
+    }
+
+    public def getHtml() {
+        if( ! html ) {
+                def allowEdit = (state == PROVAPPROVAL_STATE);
+                html = htmlSvc.getHtml( faas.objid, allowEdit );
+        }
+        return html;
+    }
+    
+    def showAttachment( params ) {
+        def data = params.split("~~");
+        def opener = InvokerUtil.lookupOpener("file:download", [objid:data[0]] );
+        opener.caption = "Attachment: " + data[1];
+        return opener;
+    }
+
+	
+}
+        
+        
+        
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.municipality.faas.FaasPage"/>
+        <page name="wait" template="etracs2.municipality.WaitPage"/>
+    </pages>
+</workunit>

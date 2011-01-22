@@ -1,0 +1,74 @@
+<workunit>
+    <invokers>
+        <invoker type="file:download" target="window" action="doDownload"  />
+    </invokers>
+    
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.io.*;
+        import java.io.*;
+        
+        public class FileDownloadController 
+        {
+            @FormTitle
+            def title;
+            
+            @Service('DownloadService')
+            def svc;
+            
+            @Binding
+            def binding;
+        
+            def objid;
+            def buffer = new ByteArrayOutputStream();
+            def image;
+            def message;
+            
+            void doDownload() {
+                OsirisContext.clientContext.taskManager.addTask(new DownloadTask(
+                    onExecute: { counter ->
+                        def data = svc.download( objid, counter );
+                        if ( data ) {
+                            buffer.write( data );
+                            message = "Downloading file (" + buffer.size() + " kb)";
+                            binding.refresh("message");
+                            return true;
+                        }
+                        image = buffer.toByteArray();
+                        binding.fireNavigation('viewer');
+                        return false;
+                    }
+                ));
+            }
+                    
+        }
+        
+        class DownloadTask extends Task {
+        
+            def onExecute;
+            def onComplete;
+            def counter = 0;
+        
+            public boolean accept() { return true; }
+            
+            public void execute() {
+                ended = !onExecute( counter );
+                counter++;
+            }
+            
+        }
+        
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.municipality.FileDownloadPage"/> 
+        <page name="viewer" template="etracs2.municipality.FileImageViewerPage"/>
+    </pages>
+</workunit>

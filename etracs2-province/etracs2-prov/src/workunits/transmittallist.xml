@@ -1,0 +1,122 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/file" caption="Transmittal (Submitted)" action="initSubmitted" />
+        <invoker folderid="/menu/file" caption="Transmittal (Received)" action="initReceived" />
+        <invoker folderid="/menu/file" caption="Transmittal (Reviewed)" action="initReviewed" />
+        <invoker folderid="/menu/file" caption="Transmittal (Closed)" action="initClosed" />
+        <invoker type="formActions" caption="Open" mnemonic="o" action="open" visibleWhen="#{selectedItem.item != null}" />
+        <invoker type="formActions" caption="Delete" mnemonic="d" action="delete" visibleWhen="showDelete" />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        
+        public class TransmittalListController 
+        {
+            @Service("TransmittalService")
+            def svc;
+            
+            @Service("TransmittalHtmlService")
+            def htmlService;
+            
+            @Binding
+            def binding;
+        
+            def state = "SUBMITTED";
+            def title = "List of Transmittal";
+            
+            def selectedItem;
+            def search = [:];
+            
+            public def open() {
+                doOpen( selectedItem.item );
+            }
+            
+            public void doSearch() {
+                listHandler.load();
+            }
+            
+            public void delete() {
+                if( MsgBox.confirm("Delete selected transmittal?") ) {
+                    svc.deleteTransmittal( selectedItem.item.objid );
+                    binding.refresh();
+                }
+            }
+            
+            def listHandler = [
+                getColumns : {
+                    return [
+                        new Column( name:"item.docNo", caption:"Transmittal No.", width:110),
+                        new Column( name:"item.lgu", caption:"LGU", width:90),
+                        new Column( name:"item.transmittedBy", caption:"Transmitted By", width:110),
+                        new Column( name:"item.dtTransmitted", caption:"Date Transmitted", width:110),
+                    ]
+                },
+                fetchList  : { 
+                    search.state = state;
+                    return svc.getList( search, it); 
+                },
+                onOpenItem : { item, colname -> doOpen( item ) },
+            ] as PageListModel;
+        
+            public def getHtml() {
+                if( selectedItem?.item ) {
+                    if( ! selectedItem.item.html ) {
+                        selectedItem.item.html = htmlService.getHtml( selectedItem.item.objid );
+                    }
+                    return selectedItem.item.html;
+                }
+                return "No record or item selected...";
+            }
+            
+            def refreshHandler = {
+                listHandler.load();
+                selectedItem = listHandler.selectedItem;
+                binding.refresh();
+            }
+            
+            public void initSubmitted() {
+                doInit( "SUBMITTED", "List of Submitted Transmittals" );
+            }
+            
+            public void initReceived() {
+                doInit( "RECEIVED", "List of Received Transmittals" );
+            }
+            
+            public void initReviewed() {
+                doInit( "REVIEWED", "List of Reviewed Transmittals" );
+            }
+            
+            public void initClosed() {
+                doInit( "CLOSED", "List of Closed Transmittals" );
+            }
+            
+            public def getShowDelete() {
+                return selectedItem.item == null || state == 'SUBMITTED';
+            }
+            
+            private void doInit( state, title ) {
+                this.state = state;
+                this.title = title;
+            }
+            
+            private def doOpen( item ) {
+                return new WindowOpener( name:"transmittal", caption:"Transmittal ($item.docNo)", params:[transmittal:item, state:item.state, listRefreshHandler:refreshHandler] );
+            }
+            
+            
+            
+            
+        }
+        
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.ListPage"/>
+    </pages>
+</workunit>

@@ -1,0 +1,58 @@
+
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class DateService {
+
+   @SqlContext("java:system")
+   def db;	
+
+	@ProxyMethod(local=true)
+	public def getServerDate() {
+		def val = db.createQuery( "select now() as dt" ).singleResult;
+		return val.dt; 
+	}
+
+	@ProxyMethod(local=true)
+	public def getLocaleTime( String timeZone ) {
+		return getFormattedTime( serverDate, timeZone ); 
+	}
+
+
+	@ProxyMethod(local=true)
+	public String getFormattedTime(Date d, String timezone) {
+		return DateUtil.getFormattedTime(d, timezone);
+	}
+ 
+ 	@ProxyMethod(local=true)
+	public String format(String pattern, Date d ) {
+		return (new java.text.SimpleDateFormat( pattern )).format(d);
+	}
+  
+	@ProxyMethod(local=true)
+	public def parseDate(Date d, String timezone) {
+		def cal = Calendar.getInstance();
+		cal.setTime( d );
+		def map = [:];
+		map.month = cal.get( Calendar.MONTH ) + 1;
+		map.day = cal.get( Calendar.DATE );
+		map.year = cal.get( Calendar.YEAR );
+		map.hour = cal.get( Calendar.HOUR );
+		map.minute = cal.get( Calendar.MINUTE );
+		map.second = cal.get( Calendar.SECOND );
+		map.millisecond = cal.get(Calendar.MILLISECOND);
+		return map;
+	}
+	
+	@ProxyMethod(local=true)
+	public def add(Date d, String interval) {
+		if(d==null) d = getServerDate();
+		return DateUtil.add( d, interval );	
+	}	
+	
+	@ProxyMethod(local=true)
+	public def findNextDate(String timeInterval) {
+		return DateUtil.add( serverDate, timeInterval );	
+	}	
+
+}

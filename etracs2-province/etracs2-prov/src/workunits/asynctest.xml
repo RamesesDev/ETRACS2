@@ -1,0 +1,39 @@
+<workunit>
+    <invokers>
+        <invoker type="formActions" action="click"  />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.common.*
+        
+        public class AsyncController
+        {
+            @Service("RemoteTaxpayerService")
+            def svc;
+            
+            def handler = { o ->
+                MsgBox.alert( o.value );
+            } as AsyncHandler;
+            
+            void click() {
+                def params = [
+                    targetLgu  : "LOON",
+                    name       : "BOHOL",
+                ];
+                svc.post( params, handler );
+            }
+        }
+                
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.AsyncTestPage" />
+    </pages>
+</workunit>

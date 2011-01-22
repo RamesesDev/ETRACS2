@@ -1,0 +1,107 @@
+<workunit>
+    <invokers>
+        <invoker type="file:upload" target="window" caption="File Upload"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.io.*;
+        
+        public class FileUploadController 
+        {
+            @Binding
+            def binding;
+            
+            @Service('UploadService')
+            def svc;
+            
+            def info = [:];
+            def message;
+            def file;
+            def uploading = false;
+            def status = "ok";
+            def refreshHandler;
+            
+            def callback = { stat, msg ->
+                message = msg;
+                status = stat;
+                if (status == "error") {
+                    uploading = false;
+                }
+                else if( status == "done") {
+                    if( refreshHandler) refreshHandler();
+                }
+                binding.refresh("message");
+                binding.refresh("doClose");
+            }
+            
+            void doUpload() {
+                OsirisContext.clientContext.taskManager.addTask(new UploadTask(file:file, svc:svc, info:info, callback:callback));
+                uploading = true;
+            }
+            
+            def doClose() {
+                return "_close";
+            }
+                    
+        }
+        
+        class UploadTask extends Task {
+            def BYTE_SIZE = 1024 * 32;    
+            
+            def file;
+            def svc;
+            def counter = 0;
+            def info;
+            def callback;
+            def size = 0;
+            
+            public boolean accept() { 
+                return true; 
+            }
+            
+            public void execute() {
+                def ftis = null;
+                try {
+                    ftis = new FileTransferInputStream( file );
+                    ftis.byteSize = BYTE_SIZE;
+                    def bytes = ftis.readNext();
+                    def ftInfo = ftis.fileTransferInfo;
+                    ftInfo.save();
+                    
+                    info.ftInfo = ftInfo;
+                    svc.upload( info, bytes, counter);
+                    
+                    counter++;
+                    size += bytes.length;
+                    callback("ok", "Uploading file ( $size bytes) ");
+                    ended = ftInfo.eof;
+                    if( ended ) {
+                        ftInfo.delete();
+                        callback("done", "File has been successfully uploaded.");
+                    }
+                }
+                catch(e) {
+                    e.printStackTrace();
+                    cancelled = true;
+                    callback("error", e.message);
+                }
+                finally {
+                    ftis.close();
+                }
+            }
+            
+        }
+        
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.municipality.FileUploadPage"/>
+    </pages>
+</workunit>

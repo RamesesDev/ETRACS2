@@ -1,0 +1,59 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/file" caption="Province"/>
+        <invoker type="formActions" caption="Close" action="_close" mnemonic="c" />
+        <invoker type="formActions" caption="Edit" action="edit"/>
+        <invoker type="formActions" caption="Save" action="save"/>
+    </invokers>
+    
+    <code>
+        
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+
+class ProvinceController 
+{
+    def title = "Province Information";
+    def province = [ municipalities:[] ];
+    
+    void edit() {
+    }
+    
+    void save() {
+    
+    }
+
+    def listHandler = [
+        getColumns  : {
+            return [
+                    new Column( name:"item.indexNo", caption:"Index No.", width:100, editable:true, required:true ),
+                    new Column( name:"item.name", caption:"Municipality", width:150, editable:true, required:true ),
+                    new Column( name:"item.formalName", caption:"Formal Name", editable:true, required:true ),
+            ];
+        },
+        fetchList  : { return province.municipalities; },
+        createItem : { return [:]; },
+        onAddItem  : { item -> province.municipalities.add(item); },
+        validate   : { listItem -> doValidate(listItem); }
+    ] as SubListModel;
+
+    void doValidate( listItem ) {
+        def item = listItem.item;
+        checkDuplicate( province.municipalities, item, "indexNo", "Index No." ) ;
+        checkDuplicate( province.municipalities, item, "name", "Municipality" ) ;
+        checkDuplicate( province.municipalities, item, "formalName", "Formal Name" ) ;
+    }
+
+    void checkDuplicate( list, item, key, caption ) {
+        if( list.find { f -> f."$key" == item."$key" } )
+            throw new Exception("Duplicate $caption not allowed.");
+    }
+    
+}
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.ProvincePage"/>
+    </pages>
+</workunit>

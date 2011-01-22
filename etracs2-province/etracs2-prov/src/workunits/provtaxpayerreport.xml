@@ -1,0 +1,49 @@
+<workunit>
+    <invokers>
+        <invoker type="provtaxpayer.report" caption="List of Province Taxpayers" action="init" />
+        <invoker folderid="/report/taxpayer" caption="List of Provincial Taxpayers" action="init" />
+        <invoker type="formActions" caption="Close" action="_close" />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.osiris2.reports.*;
+        
+        public class TaxpayerReportController
+        {
+            @Service("TaxpayerService")
+            def svc;
+            
+            def data = [];
+            def REPORT_PATH = "etracs2/prov/taxpayer/report";
+            
+            void init() {
+                data = svc.generateProvinceTaxpayerReport();
+                report.viewReport();
+            }
+            
+            def report = [
+                getReportName : { return "etracs2/prov/taxpayer/report/ProvinceTaxpayerListing.jasper"; },
+                getReportData : { return data; },
+                getParameters : { getStandardReportParams(); },
+            ] as ReportModel;
+            
+            def getStandardReportParams() {
+                return [
+                    PRINTEDBY : OsirisContext.getEnv().get("USER"),
+                    PRINTDATE : new Date(),
+                ]; 
+            }
+        }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.PreviewPage"/>
+    </pages>
+</workunit>

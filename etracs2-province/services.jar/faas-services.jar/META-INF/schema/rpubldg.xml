@@ -1,0 +1,91 @@
+<schema>
+	<element name="bldg">
+		<link ref="rpu:rpuInfo"/>
+		<field name="psic"  />
+		<field name="permitNo"  />
+		<field name="permitDate"  />
+		<field name="permitIssuedBy"  />
+		<field name="title"  />
+		<field name="dtBldgCompleted"  />
+		<field name="dtBldgOccupied"  />
+		<field name="constructionCost" required="true" type="decimal" />
+		<field name="totalArea" required="true" type="decimal" />
+		<field name="depreciation" required="true" type="decimal" />
+		<field name="totalAdjustment" required="true" type="decimal" />
+		<field name="swornStatement" required="true"  />
+		<field name="swornAmount" required="true" type="decimal" />
+		<field name="additionalInfo"  />
+		<field name="predominant" required="true"  />
+		<field name="firstFloorBaseValue" required="true" type="decimal" />
+		<field name="bldgAge" required="true" type="integer" />
+		<field name="bldgTypeId" required="true"  />
+		<field name="bldgTypeCode" required="true"  />
+		<field name="bldgTypeTitle" required="true"  />
+		<field name="bldgTypeClassificationId" required="true"  />
+		<field name="bldgKindId" required="true"  />
+		<field name="baseValue" type="decimal" />
+		<field name="bldgKindCode" required="true"  />
+		<field name="bldgKindTitle" required="true"  />
+		<field name="bldgBaseValueType" required="true"  />
+		<field name="bldgAssessLevelId" required="true"  />
+		<field name="assessLevel" required="true" type="decimal" />
+		<field name="specialLevel" required="true"  />
+		<field name="condominium"  />
+		<field name="bldgRpuId"  />
+		<field name="autoComputeBldgDepreciation"  />
+		<field name="bldgClass"  />
+		
+		<complex name="bldgUses" ref="bldgUse" required="true" type="list" min="1" serializer="default"/>
+		<complex name="bldgStructures" ref="bldgStructure" required="false" type="list" serializer="default"/>
+	</element>
+	
+	<element name="bldgUse">
+		<field name="objid" required="true"  />
+		<field name="area" required="true" type="decimal" />
+		<field name="baseValue" required="true" type="decimal" />
+		<field name="adjustment" required="true" type="decimal" />
+		<field name="marketValue" required="true" type="decimal" />
+		<field name="adjMarketValue" required="true" type="decimal" />
+		<field name="assessLevel" required="true" type="decimal" />
+		<field name="assessedValue" required="true" type="decimal" />
+		<field name="bldgAssessLevelId" required="true"  />
+		<field name="specialLevel" required="true"  />
+		<link ref="common:actualUse" />
+		<complex name="bldgFloors" ref="bldgFloor" type="list" required="true" min="1" serializer="default"/> 
+	</element>
+	
+	<element name="bldgFloor">
+		<field name="objid" required="true"  />
+		<field name="floorNo" required="true" type="integer" />
+		<field name="adjustment" required="true" type="decimal" />
+		<field name="area" required="true" type="decimal" />
+		<field name="storeyRate" required="true" type="decimal" />
+		<field name="baseValue" required="true" type="decimal" />
+		<field name="unitValue" required="true" type="decimal" />
+		<field name="marketValue" required="true" type="decimal" />
+		<field name="adjMarketValue" required="true" type="decimal" />
+		<field name="assessedValue" required="true" type="decimal" />
+		<field name="assessLevel" required="true" type="decimal" />
+		<field name="depreciateCoreAndItemsSeparately"  />
+		<complex name="adjustments" ref="floorAdjustment" type="list" serializer="default" required="false" />
+	</element>
+	
+	<element name="floorAdjustment">
+		<field name="objid" required="true"  />
+		<field name="unit"  />
+		<field name="amount" required="true" type="decimal" />
+		<field name="bldgAdditionalItemId" required="true"  />
+		<field name="bldgAdditionalItemCode" required="true"  />
+		<field name="bldgAdditionalItemTitle" required="true"  />
+		<field name="bldgAdditionalItemExpression"  />
+		<complex name="params" ref="common:param" type="list" required="false" serializer="default" />
+	</element>
+	
+	<element name="bldgStructure">
+		<field name="objid" required="true"  />
+		<field name="structureCode"  />
+		<field name="structureTitle"  />
+		<field name="materialCode"  />
+		<field name="materialTitle"  />
+	</element>
+</schema>

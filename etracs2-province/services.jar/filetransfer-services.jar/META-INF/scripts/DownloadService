@@ -1,0 +1,17 @@
+import com.rameses.annotations.*;
+
+
+public class DownloadService {
+
+	@PersistenceContext('etracs')
+	def em;
+
+	@ProxyMethod
+	public def download( parentid, part ) {
+		def objid = parentid + '-' + part;
+		return em.sqlContext.createNamedQuery("filetransfer:findDetailById")
+					.setParameters([objid:objid])
+					.singleResult?.content;
+	}
+
+}

@@ -1,0 +1,124 @@
+import com.rameses.annotations.*;
+
+class TransmittalHtmlService
+{
+	@Service("TransmittalService")
+	def transmittalService;
+	
+	@ProxyMethod
+	public def getHtml( transmittalId ) {
+		def transmittal = transmittalService.open( transmittalId );
+		def styles = buildStyles();
+		def info = buildtransmittalInfo( transmittal );
+		def items = buildItems( transmittal.items );
+		
+		return """
+			<html>
+				<head>$styles</head>
+				<body>
+					<table width="100%">
+						<tr>$info</tr>
+						<tr>$items</tr>
+					</table>
+				</body>
+			</html>
+		""";
+	}
+	
+	private def buildStyles() {
+		return """
+			<style type="text/css">
+				body, td, th { 
+					font-family: tahoma;
+					font-size  : 12pt;
+				}	
+				td {
+					background-color:white;
+				}
+				th {
+					background-color : #CCCCCC;
+				}
+				.title {
+					background-color:#CCCCFF;
+					font-weight:bold;
+				}
+				.caption {
+					width : 120
+				}
+				.numeric {
+					text-align:right;
+				}
+				.header {
+					font-family : tahoma;
+					font-size   : 18pt;
+					width       : 120
+				}
+				.data {
+					font-weight:bold;
+				}
+			</style>
+		""";
+	}
+	
+	private def buildtransmittalInfo( transmittal ) {
+		return """
+			<table>
+				<tr>
+					<td>Transmittal No.</td>
+					<td class="data">$transmittal.docNo</b></td>
+				</tr>
+				<tr>
+					<td>LGU</td>
+					<td class="data">$transmittal.lgu</b></td>
+				</tr>
+				<tr>
+					<td>RPU Count</td>
+					<td class="data">$transmittal.rpuCount</b></td>
+				</tr>
+				<tr>
+					<td>Date Transmitted</td>
+					<td class="data">$transmittal.dtTransmitted</b></td>
+				</tr>
+			</table>
+		""";
+	}
+
+	private def buildItems( items ) {
+		def itemsHtml = "";
+		items.each {
+			def reviewed = (it.state == 'FORAPPROVAL' ? '*' : '');
+			def approved = (it.state == 'CURRENT' ? '*' : '');
+			def disapproved = (it.state == 'DISAPPROVED' ? '*' : '');
+			itemsHtml += """
+				<tr>
+					<td align="center">$it.type</td>
+					<td align="center">$it.txnType</td>
+					<td>$it.tdNo</td>
+					<td>$it.pin</td>
+					<td>$it.taxpayerName</td>
+					<td style="text-align:center">$reviewed</td>
+					<td style="text-align:center">$approved</td>
+					<td style="text-align:center">$disapproved</td>
+				</tr>
+			""";
+		}
+		
+		return """
+			<div style="background-color:silver">
+				<table width="100%" cellspacing="1">
+					<tr>
+						<th>Kind</th>
+						<th>TxnType</th>
+						<th>TD No.</th>
+						<th>PIN</th>
+						<th>Taxpayer Name</th>
+						<th style="text-align:center">Reviewed</th>
+						<th style="text-align:center">Approved</th>
+						<th style="text-align:center">Dispproved</th>
+					</tr>
+					$itemsHtml
+				</table>
+			</div>
+		""";
+	}
+}

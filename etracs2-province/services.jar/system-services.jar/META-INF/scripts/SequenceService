@@ -1,0 +1,32 @@
+
+import com.rameses.annotations.*;
+import java.text.DecimalFormat;
+
+class SequenceService {
+	@PersistenceContext("java:system")
+	def em;	
+
+	def FORMATTED_LEN = 7;
+	
+    @ProxyMethod
+	public def getNextFormattedSeries( objid ) {
+		def nextSeries = getNextSeries( objid );
+		return "$nextSeries".padLeft(FORMATTED_LEN, '0')
+	}
+	
+	@ProxyMethod
+	public def getNextSeries( objid ) {
+		def seq = em.read("sequence:sequence", [objid:objid])
+		def nextSeries = 1;
+		if( ! seq ) {
+			seq = [
+				objid      : objid,
+				nextSeries : nextSeries,
+			];
+			em.create("sequence:sequence",seq);
+		}
+		nextSeries = seq.nextSeries;
+		em.sqlContext.createNamedExecutor("sequence:incrementNextSeries").setParameters([objid:seq.objid]).execute()
+		return nextSeries;
+	}
+}

@@ -1,0 +1,75 @@
+<workunit>
+    <invokers>
+        <invoker type="formActions" caption="Close" mnemonic="c" action="_close" />
+        <invoker type="formActions" caption="Submit to Reviewer" mnemonic="s" action="submit" visibleWhen="#{state == 'SUBMITTED'}"  />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        
+        public class TransmittalController 
+        {
+            @Service("TransmittalService")
+            def svc;
+            
+            def transmittal;
+            def state;
+            def listRefreshHandler;
+            def selectedItem;
+            def title = "Transmittal Information";
+            
+            public void submit() {
+                if( MsgBox.confirm("Submit to reviewer?") ) {
+                    svc.submit( transmittal.objid );
+                    state = "RECEIVED";
+                    refreshList();
+                }
+            }
+            
+            public def getHtml() {
+                if( selectedItem?.item ) {
+                    if( ! selectedItem.item.html ) {
+                        selectedItem.item.html = svc.getItemHtml( selectedItem.item.objid );
+                    }
+                    return selectedItem.item.html;
+                }
+                return null;
+            }
+            
+            private void refreshList() {
+                if( listRefreshHandler ) {
+                    listRefreshHandler();
+                }
+            }
+            
+            def listHandler = [
+                getRows    : { return 100; },
+                getColumns : {
+                    return [
+                        new Column( name:"item.type", caption:"Kind", width:30),
+                        new Column( name:"item.txnType", caption:"Txn", width:30),
+                        new Column( name:"item.tdNo", caption:"TD No.", width:110),
+                        new Column( name:"item.pin", caption:"PIN", width:150),
+                    ]
+                },
+                fetchList  : { svc.getItemList( transmittal.objid ); },
+            ] as PageListModel;
+            
+            public def showAttachment( location ) {
+                return new PopupOpener( name:"imageviewer", caption:"Attachment", params:[url:location] );
+            }
+            
+            
+        }
+        
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.transmittal.TransmittalPage"/>
+    </pages>
+</workunit>

@@ -1,0 +1,91 @@
+<workunit>
+    <invokers>
+        <invoker type="home.action" caption="FAAS (Province Approval)" />
+        <invoker folderid="/menu/file" caption="FAAS for Province Approval" />
+        <invoker type="formActions" caption="Open" mnemonic="o" action="open" visibleWhen="#{selectedItem.item != null}" />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class FaasListController 
+        {
+            @Service("FaasService")
+            def svc;
+            
+            @Service("FaasHtmlService")
+            def htmlSvc;
+            
+            @Binding
+            def binding;
+        
+            def title = "FAAS for Province Approval";
+            
+            def selectedItem;
+            def search = [:];
+            
+            public def open() {
+                doOpen( selectedItem.item );
+            }
+            
+            public void doSearch() {
+                listHandler.load();
+            }
+            
+            def listHandler = [
+                getRows    : { return 25; },
+                getColumns : {
+                    return [
+                        new Column( name:"item.type", caption:"Type", width:50),
+                        new Column( name:"item.txnType", caption:"Txn", width:50),
+                        new Column( name:"item.tdNo", caption:"TD No.", width:120),
+                        new Column( name:"item.pin", caption:"PIN", width:120),
+                        new Column( name:"item.taxpayerName", caption:"Taxpayer"),
+                    ]
+                },
+                fetchList  : { 
+                    return svc.getList( search, it); 
+                },
+                onOpenItem : { item, colname -> doOpen( item ) },
+            ] as PageListModel;
+        
+            public def getHtml() {
+                if( selectedItem?.item ) {
+                    if( ! selectedItem.item.html ) {
+                        selectedItem.item.html = htmlSvc.getHtml( selectedItem.item.objid, false );
+                    }
+                    return selectedItem.item.html;
+                }
+                return "No record or item selected...";
+            }
+            
+            def refreshHandler = {
+                listHandler.load();
+                selectedItem = listHandler.selectedItem;
+                binding.refresh();
+            }
+            
+            def doOpen( item ) {
+                return InvokerUtil.lookupOpener("faas_municipality:open", [faas:selectedItem.item] );
+            }
+            
+            def showAttachment( params ) {
+                def data = params.split("~~");
+                def opener = InvokerUtil.lookupOpener("file:download", [objid:data[0]] );
+                opener.caption = "Attachment: " + data[1];
+                return opener;
+            }
+        }
+        
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.municipality.faas.FaasListPage"/>
+    </pages>
+</workunit>

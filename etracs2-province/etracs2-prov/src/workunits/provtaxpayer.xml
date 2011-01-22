@@ -1,0 +1,146 @@
+<workunit>
+    <invokers>
+        <invoker type="provtaxpayerinfo" />
+        
+        <invoker type="formActions" caption="New" action="initNew" visibleWhen="#{infoShown == false}" icon="images/new.png" shortcut="ctrl N" mnemonic="n" />
+        <invoker type="formActions" caption="Edit" action="initEdit" visibleWhen="#{infoShown == false &amp;&amp; taxpayerId != null}" icon="images/edit.png"  mnemonic="e" />
+        <invoker type="formActions" caption="Cancel" action="cancelEdit" immediate="true" visibleWhen="#{infoShown == true}" icon="images/cancel.png"  mnemonic="c" />
+        <invoker type="formActions" caption="Save" action="save" visibleWhen="#{infoShown == true}" icon="images/save.jpg"  shortcut="ctrl S" mnemonic="s" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class ProvinceTaxpayerInfoController 
+{
+    @Caller
+    def caller;
+    
+    @Binding
+    def binding;
+    
+    @Service("TaxpayerService")
+    def svc;
+    
+    @Service("TaxpayerHtmlService")
+    def htmlService;
+            
+    @ChangeLog(prefix=["taxpayer"])
+    def changeLog;
+    
+    def taxpayerId;
+    def taxpayer;
+    def textSearch;
+    def infoShown = false;
+    def status = "open";
+    
+    def initNew() {
+        taxpayer = createTaxpayer();
+        return doInit( "new" );
+    }
+    
+    def initEdit() {
+        taxpayer = svc.open( taxpayerId );
+        return doInit( "edit" );
+    }
+    
+    def save() {
+        if( status == "new" ) {
+            taxpayer = svc.createProvinceTaxpayer( taxpayer );
+        }
+        else {
+            def saveOption = [diff: changeLog.difference];
+            taxpayer = svc.updateProvinceTaxpayer( taxpayer, saveOption );
+        }
+        taxpayerId = taxpayer.objid;
+        changeLog.clear();
+        return resetToDefault();
+    }
+    
+    def cancelEdit() {
+        if( changeLog.hasChanges() ) {
+            if( ! MsgBox.confirm("Discard changes?") ) {
+                return "info";
+            }
+        }
+        taxpayer = createTaxpayer();
+        return resetToDefault();
+    }
+    
+    void removeItem( item ) {
+        if( MsgBox.confirm("Remove item?")) {
+            taxpayer.mappings.remove( item );
+            listHandler.load();
+        }
+    }
+    
+    def lookupTaxpayer() {
+        return InvokerUtil.lookupOpener("municipaltaxpayer:lookup", [textSearch:textSearch, onselect:selectHandler]);
+    }
+    
+    def selectHandler = { tp ->
+        if( tp.provTaxpayerId ) {
+            throw new Exception("Taxpayer has already been mapped to $tp.provTaxpayerNo - $tp.provTaxpayerName");
+        } 
+        taxpayer.mappings.add( tp );
+        listHandler.load();
+        textSearch = null;
+        binding.refresh("textSearch");
+    }
+    
+    def listHandler = [
+        getRows    : { return 50; },
+        getColumns : {
+            return [
+                new Column(name:"item.lgu", caption:"LGU", width:120),
+                new Column(name:"item.name", caption:"Name", width:350),
+                new Column(name:"item.address", caption:"Address", width:200),
+            ]
+        },
+        onRemoveItem : { item -> removeItem( item ) },
+        fetchList    : { return taxpayer.mappings; },
+    ] as PageListModel;
+   
+    def getHtml() { 
+        println "GETTING HTML";
+        if( taxpayerId ) {
+            return htmlService.getHtml( taxpayerId );
+        }
+        return "No item selected...";
+    }
+    
+    def createTaxpayer() {
+        return [lgu:OsirisContext.getEnv().get("ORG")?.name, mappings:[]];
+    }
+    
+    def resetToDefault() {
+        infoShown = false;
+        status = "open";
+        caller.updateStatus( false );
+        return "default";
+    }
+    
+    def doInit( stat) {
+        infoShown = true;
+        status = stat;
+        caller.updateStatus( true );
+        return "info";
+    }
+    
+    
+}  
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.taxpayer.ProvinceTaxpayerViewPage"/>
+        <page name="info" template="etracs2.prov.taxpayer.ProvinceTaxpayerPage"/>
+    </pages>
+</workunit>

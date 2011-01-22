@@ -1,0 +1,67 @@
+<schema>
+	<!-- td database storage -->
+	<element name="td" tablename="td">
+		<field name="objid" primary="true"/>
+		<field name="schemaName" required="true"/>
+		<field name="schemaVersion" required="true"/>
+		<field name="state" required="true"/>
+		<field name="tdNo" required="true"/>
+		<complex name="info" ref="info" required="true" serializer="default"/>
+		<complex name="assessments" ref="assessment" required="true" type="list" min="1" serializer="default"/>
+	</element>
+
+	<element name="info" >
+		<field name="tdNo"  />
+		<field name="txnType" required="true" />
+		<field name="issueDate"   />
+		<field name="effectivityYear" type="integer"   />
+		<field name="effectivityQtr" type="integer"   />
+		<complex name="title" ref="common:title" required="false" serializer="default" />
+		<complex name="previousInfo" ref="common:previousInfo" required="false" serializer="default" />
+		<complex name="cancelInfo" ref="common:cancelInfo" required="false" serializer="default" />
+		<complex name="taxpayer" ref="common:taxpayer" required="true" serializer="default" />
+		<complex name="administrator" ref="common:taxpayer" required="false" serializer="default" />
+		<complex name="appraisedBy" ref="common:signatory" serializer="default" />
+		<complex name="recommendedBy" ref="common:signatory" serializer="default" />
+		<complex name="reviewedBy" ref="common:signatory" serializer="default" required="false" />
+		<complex name="approvedBy" ref="common:signatory" serializer="default" />
+		
+		<field name="barangay" required="true" />
+		<field name="cadastralLotNo" required="true"  />
+		<field name="blockNo"  />
+		<field name="surveyNo"  />
+		<field name="titleNo"  />
+		<field name="houseNo"  />
+		<field name="street"  />
+		<field name="purok"  />
+		<complex name="boundary" ref="rp:boundary" serializer="default" required="true" />
+		<complex name="cancelInfo" ref="common:cancelInfo" serializer="default" required="false" />
+		
+		<field name="ry" required="true" type="integer" />
+		<field name="type" required="true"  />
+		<field name="propertyDescription"  />  <!-- kind of building, machine name, misc name etc. -->
+		<field name="pin"  />
+		<field name="suffix" required="true" type="integer" />
+		<field name="subSuffix"  />
+		<field name="special" required="true"  />
+		<field name="taxable" required="true" type="boolean" />
+		<field name="totalMV" required="true" type="decimal" />
+		<field name="totalAMV" required="true" type="decimal" />
+		<field name="totalAV" required="true" type="decimal" />
+		<field name="areaSqm" required="true" type="decimal" />
+		<field name="areaHec" required="true" type="decimal" />
+		
+	</element>	
+	
+	<element name="assessment">
+		<field name="classTitle" required="true" />
+		<field name="actualUseTitle" required="true" />
+		<field name="areaSqm" type="decimal" required="true" />
+		<field name="areaHec" type="decimal" required="true" />
+		<field name="marketValue" type="decimal" required="true" />
+		<field name="adjMarketValue" type="decimal" required="true" />
+		<field name="assessLevel" type="decimal" required="true" />
+		<field name="assessedValue" type="decimal" required="true" />
+	</element>
+		
+</schema>

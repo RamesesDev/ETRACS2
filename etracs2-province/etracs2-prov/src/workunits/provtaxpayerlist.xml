@@ -1,0 +1,74 @@
+<workunit>
+    <invokers>
+        <invoker type="home.action" target="window" icon="images/taxpayer.jpg" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class ProvinceTaxpayerListController 
+{
+    @FormTitle
+    def title = "Province Taxpayer"
+    
+    @Binding
+    def binding;
+    
+    @Service("TaxpayerService")
+    def svc;
+    
+    def selectedItem;
+    def editing = false;
+    
+    def search = [
+        lgu     : OsirisContext.getEnv().get("ORG")?.name,
+        lguType : OsirisContext.getEnv().get("ORG")?.type,
+    ];
+    
+    def subformHandler = InvokerUtil.lookupOpener("provtaxpayerinfo", [:]);
+    
+    void setSelectedItem( sitem ) {
+        selectedItem = sitem;
+        if( selectedItem ) {
+            subformHandler.handle.taxpayerId = selectedItem.item?.objid;
+        }
+    }
+    
+    def listHandler = [
+        getRows    : { return 25; },
+        getColumns : {
+            return [
+                new Column( name:"item.lgu", caption:"LGU", width:70),
+                new Column( name:"item.name", caption:"Name", width:200),
+                new Column( name:"item.address", caption:"Address", width:180),
+            ]
+        },
+        fetchList  : { 
+            return svc.getList( search, it); 
+        },
+    ] as PageListModel;
+    
+    void doSearch() {
+        listHandler.load();
+    }
+    
+    void updateStatus( isEditing ) {
+        editing = isEditing;
+        binding.refresh();
+    }
+    
+}  
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.taxpayer.ProvinceTaxpayerListPage"/>
+    </pages>
+</workunit>

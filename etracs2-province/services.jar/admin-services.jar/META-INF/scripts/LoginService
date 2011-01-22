@@ -1,0 +1,27 @@
+import com.rameses.annotations.*;
+import java.rmi.server.UID;
+
+class LoginService
+{
+	@PersistenceContext("etracs")
+	def em;
+	
+	@ProxyMethod
+	public def login( param ) {
+		def	res = [:];
+		res.env = [ 
+			USER     : param.uid,
+			USERID   : param.uid,
+			ORG      : [ code:"047", name:"BOHOL", id:"047", type:"PROVINCE"],
+			TITLE    : 'LAOO-II',
+		];
+		res.permissions = [ ".*" ];
+		return res;
+	}
+	
+	@ProxyMethod
+	public def logout( param ) {
+		return null;
+	}
+	
+}

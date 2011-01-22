@@ -1,0 +1,111 @@
+<workunit>
+    <invokers>
+        <invoker type="home.action" icon="images/transmittal.jpg" target="window"/>
+        <invoker type="formActions" action="saveTransmittal" caption="Save Transmittal" mnemonic="s" visibleWhen="#{save == false}"  />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import javax.swing.JFileChooser;
+        
+        public class ImportTransmittalController
+        {
+            @FormTitle
+            def title = "Import Transmittal"; 
+            
+            @Binding
+            def binding;
+            
+            @Service("TransmittalService")
+            def svc;
+            
+            def fileName;
+            def message;
+            def transmittal;
+            def importing = false;
+            def save = false;
+            
+            public void browseFile() {
+                JFileChooser jfc = new JFileChooser();
+                int ret = jfc.showOpenDialog(null);
+                if( ret == JFileChooser.APPROVE_OPTION) {
+                    def file = jfc.getSelectedFile();
+                    fileName = file.getAbsolutePath();
+                }
+            }
+            
+            public void importTransmittal() {
+                if( ! fileName )  return;
+                importing = false;
+                
+                def t = [
+                    accept  : { return true; },
+                    isEnded : { return true; },
+                    execute : { executeImport(); },
+                ] as Task;
+                
+                OsirisContext.clientContext.taskManager.addTask( t );
+                importing = true;
+                
+            }
+            
+            public void saveTransmittal() {
+                save = false;
+                if( MsgBox.confirm("Save transmittal?") ) {
+                    svc.create( transmittal );
+                    save = true;
+                }
+            }
+            
+            def listHandler = [
+                getRows    : { return 50; },
+                getColumns : {
+                    return [
+                        new Column( name:"item.type", caption:"Kind", width:30),
+                        new Column( name:"item.txnType", caption:"Txn", width:30),
+                        new Column( name:"item.tdNo", caption:"TD No.", width:110),
+                        new Column( name:"item.pin", caption:"PIN", width:150),
+                        new Column( name:"item.taxpayerName", caption:"Taxpayer", width:500),
+                    ]
+                },
+                fetchList  : { transmittal.items },
+            ] as PageListModel;
+            
+            
+            private void executeImport() {
+                try {
+                    message = "Importing file. Please wait...";
+                    transmittal = deserializeTransmittal( fileName );
+                    binding.fireNavigation("main");
+                }
+                catch ( e ) {
+                    MsgBox.alert( e.message );
+                    importing = false;
+                    message = null;
+                    binding.refresh();
+                }
+            }
+            
+            private def deserializeTransmittal( fileName ) {
+                def transmittal = null;
+                (new File(fileName)).withObjectInputStream { instream ->
+                    instream.eachObject { transmittal = it; }
+                };
+                return transmittal;
+            }
+            
+        }
+                
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.transmittal.ImportTransmittalInitPage" />
+        <page name="main" template="etracs2.prov.transmittal.ImportTransmittalPage" />
+    </pages>
+</workunit>

@@ -1,0 +1,138 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import java.text.SimpleDateFormat;
+
+public class FaasLandService
+{
+	@PersistenceContext("etracs")
+	def em;
+	
+	@ProxyMethod
+	public def build( faas, rpu) {
+		def lrpu = em.sqlContext.createNamedQuery("faas:getLandRpuById").setParameter("objid", rpu.objid).singleResult;
+		faas.rpu.rpuType = "rpuland:land";
+		def rpuInfo      = faas.rpu.info;
+		rpuInfo.idleLand = lrpu.idleLand;
+		
+		rpuInfo.landTotal = [	
+				areaSqm  : lrpu.totalAreaSqm,
+				areaHec  : lrpu.totalAreaHec,
+				adjustmentRate : lrpu.totalAdjustmentRate, 
+				adjustment     : lrpu.totalLandAdjustment,
+				mv   : lrpu.totalLandMV,
+				amv  : lrpu.totalLandAMV,
+				av   : lrpu.totalLandAV,
+		];
+		
+		def landDetails = em.sqlContext.createNamedQuery("faas:getLandDetailsByRpuId").setParameter("rpuId",rpu.objid).resultList;
+			
+		rpuInfo.landDetails = [];
+		landDetails.each { ld ->
+			def ldItem =  [ 
+					objid          : ld.objid,
+					lineNo         : ld.line_no, 
+					classId        : ld.actualUseId,
+					classCode      : ld.actualUseCode,
+					classTitle     : ld.actualUseTitle,
+					actualUseId    : ld.landAssessLevelId,
+					actualUseCode  : ld.assessLevelClassCode,
+					actualUseTitle : ld.assessLevelClassTitle,
+					subclassId     : ld.lcuvSubclassId, 
+					subclassCode   : ld.subclassCode,
+					subclassTitle  : ld.subclassTitle,
+					specificClassId    : ld.specificClassId,
+					specificClassCode  : ld.specificClassCode,
+					specificClassTitle : ld.specificClassTitle,
+					strippingId  : ld.lcuvStrippingId,
+					stripLevel   : ld.stripLevel,
+					stripRate    : ld.stripRate,
+					area           : ld.area,
+					areaSqm        : ld.areaSqm,
+					areaHec        : ld.areaHec,
+					baseValue      : ld.baseValue,
+					unitValue      : ld.unitValue,
+					totalAdjustment: ld.totalAdjustment,
+					marketValue    : ld.marketValue,
+					adjMarketValue : ld.adjMarketValue,
+					assessLevel    : ld.assessLevel,
+					assessedValue  : ld.assessedValue,
+			];
+			ldItem.itemAdjustments = buildLandItemAdjustments( ld );
+			rpuInfo.landDetails.add( ldItem );
+		}
+		
+		rpuInfo.adjustments = buildLandAdjustments( rpu );		
+		return faas;		
+	}
+	
+	private def buildLandAdjustments( rpu ) {
+		def items = [];
+		
+		def landAdjustments = em.sqlContext.createNamedQuery("faas:getLandAdjustmentByRpuId")
+									.setParameter("rpuId", rpu.objid).resultList
+		landAdjustments.each { la ->
+			def item = [
+					objid              : la.objid,
+					adjustment         : la.rate,
+					rate               : la.rate,
+					adjustmentTypeId   : la.landAdjustmentTypeId,
+					adjustmentTypeCode : la.landAdjustmentTypeCode,
+					adjustmentTypeTitle: la.landAdjustmentTypeTitle,
+					expression         : la.expression,
+					params : buildLandAdjustmentParams( la ),
+			];
+			items.add( item );
+		}
+		return items;
+	}
+	
+	private def buildLandItemAdjustments( ld ) {
+		def items = [];
+		def landDetailAdjustments = em.sqlContext.createNamedQuery("faas:getLandDetailAdjustmentByLandDetailId")
+											.setParameter("landDetailId", ld.objid).resultList;
+											
+		landDetailAdjustments.each { lda ->
+			def item = [
+					objid              : lda.objid,
+					adjustment         : 0.0,
+					rate               : 0.0,
+					adjustmentTypeId   : lda.landDetailAdjTypeId,
+					adjustmentTypeCode : lda.landDetailAdjTypeCode,
+					adjustmentTypeTitle: lda.landDetailAdjTypeTitle,
+					expression         : lda.expression,
+					params : buildLandDetailAdjParams( lda ),
+			];
+			items.add( item );
+		}
+		return items;
+	}
+	
+	private def buildLandAdjustmentParams( la ) {
+		def params = [];
+		def parameters = em.sqlContext.createNamedQuery("faas:getLandAdjustmentParamsByAdjId")
+								.setParameter("adjId", la.objid).resultList;
+		return buildParams( parameters );
+	}
+	
+	
+	private def buildLandDetailAdjParams( lda ) {
+		def parameters = em.sqlContext.createNamedQuery("faas:getLandDetailAdjustmentParamsByAdjId")
+								.setParameter("adjId", lda.objid).resultList;
+		return buildParams( parameters );
+	}
+	
+	private def buildParams( parameters  ) {
+		def params = [];
+		parameters.each { 
+			params.add( [
+				paramId    : it.objid,
+				paramCode  : it.parameter.name,
+				paramName  : it.parameter.name,
+				paramValue : it.value,
+			] );
+		}
+		return params;
+	}
+	
+}	
+

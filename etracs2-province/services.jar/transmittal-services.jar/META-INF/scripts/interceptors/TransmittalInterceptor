@@ -1,0 +1,17 @@
+import com.rameses.annotations.*;
+
+class TransmittalInterceptor 
+{
+	@Service("LogService")
+	def logService 
+	
+	@After(pattern="TransmittalService.create.*") 
+	public void interceptCreate( evt ) {
+		logService.log("CREATE", "TRANSMITTAL", evt.result.objid);
+	}
+	
+	@After(pattern="TransmittalService.submit.*") 
+	public void interceiptSubmit( evt ) {
+		logService.log("SUBMIT", "TRANSMITTAL", evt.result.objid);
+	}
+}

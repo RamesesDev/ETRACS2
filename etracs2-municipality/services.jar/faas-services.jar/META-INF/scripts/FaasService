@@ -1,0 +1,227 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import java.text.SimpleDateFormat;
+
+class FaasService
+{
+	@PersistenceContext("etracs")
+	def em;
+	
+	@PersistenceContext("etracs2")
+	def em2;
+	
+	@Env
+	def env;
+	
+	@Service("Var")
+	def vars;
+	
+	@Service("FaasLandService")
+	def landService;
+	
+    
+    @ProxyMethod
+    public def testRemote( lgu ) {
+        def ret = invokeRemoteFaasService("testRemotePost", [lgu] as Object[]);
+        return ret;
+    }
+    
+	@ProxyMethod
+	public void transmit( objid ) {
+		if( existsFaas(objid) ) throw new Exception("FAAS has already been transmitted.");
+		
+		def faas = createFaas( objid );
+		em2.validate("faas:faas", faas);
+		transmitToRemote( faas );
+		faas.state = "TRANSMITTED";
+		em2.create("faas:faas", faas);
+	}
+	
+	private void transmitToRemote( faas ) {
+		invokeRemoteFaasService("createRemoteFaas", [faas] as Object[]);
+		getAttachments( faas.objid ).each { header ->
+			header.fileSize = header.fileSize as Long;
+			invokeRemoteFaasService("createAttachmentHeader", [header] as Object[]);
+			getAttachmentDetails( header.objid ).each { detail -> 
+				invokeRemoteFaasService("createAttachmentDetail", [detail] as Object[]);
+			}
+		}
+	}
+	
+	@ProxyMethod
+	public def getList( search, params ) {
+		if( ! search.textSearch ) return getListByNamed("faas:getProvApprovalList", [], params);
+		def result = null;
+		if( (result = getListByNamed("faas:findTdByTdNo", [tdNo:search.textSearch], params))) return result;
+		if( (result = getListByNamed("faas:findTdByPin", [pin:search.textSearch], params))) return result;
+		if( (result = getListByNamed("faas:findTdByTaxpayerName", [taxpayerName:search.textSearch], params))) return result;
+		return [];
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		def faas = em.sqlContext.createNamedQuery("faas:findTdById").setParameters([objid:objid]).singleResult;
+		if( ! faas ) throw new Exception("FAAS not found.");
+		return faas;
+	}
+	
+	@ProxyMethod
+	public def getAttachments( objid ) {
+		def params = [refId:objid, refName:'FAAS'];
+		return em2.sqlContext.createNamedQuery("filetransfer:getHeaderByRefIdName").setParameters(params).resultList;
+	}
+	
+	@ProxyMethod
+	public def getAttachmentDetails( parentId ) {
+		return em2.sqlContext.createNamedQuery("filetransfer:getDetailsByParentId").setParameter("parentId", parentId).resultList;
+	}
+    
+    @ProxyMethod
+    public void removeAttachment( objid ) {
+        em2.sqlContext.createNamedExecutor("filetransfer:deleteDetailByParentId").setParameter("parentId", objid).execute();
+        em2.sqlContext.createNamedExecutor("filetransfer:deleteHeaderById").setParameter("objid", objid).execute();
+    }
+	
+	
+	
+	private def invokeRemoteFaasService( methodName, params ) {
+		def conf = [
+			"host"        : vars.remoteHost,
+			"app.context" : vars.remoteContext,
+		];
+		// name, method, params[], env
+		def svc = ScriptServiceDelegate.createRemoteService("host", conf);
+		return svc.invoke("FAASService", methodName, params, env);
+	}
+	
+	private def getListByNamed( namedQuery, searchParams, params ) {
+		return em.sqlContext.createNamedQuery(namedQuery)
+					.setParameters( searchParams )
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList;
+	}
+	
+	private def createFaas( objid ) {
+		def td = em.sqlContext.createNamedQuery("faas:getTdById").setParameter("objid", objid).singleResult;
+		def rpu = em.sqlContext.createNamedQuery("faas:getRpuById").setParameter("objid", td.rpuid).singleResult;
+		def rp  = em.sqlContext.createNamedQuery("faas:getRealPropertyById").setParameter("objid", rpu.realpropertyid).singleResult;
+		def brgy = em.sqlContext.createNamedQuery("faas:getLguById").setParameter("objid", rp.barangayId).singleResult;
+		def parentLgu = em.sqlContext.createNamedQuery("faas:getLguById").setParameter("objid", brgy.parentid).singleResult;
+		def parentParentLgu = em.sqlContext.createNamedQuery("faas:getLguById").setParameter("objid", parentLgu.objid).singleResult;
+
+		def faas = [
+			objid         : td.objid,
+			schemaName    : "faas:faas",
+			schemaVersion : "1.0",
+			transmittalId : "system",
+			state    : td.state,
+			barangay : rp.location,
+			rpuId    : rpu.objid,
+			rpId     : rp.objid,
+			info     : buildTdInfo(td),
+			rpu      : buildRpuInfo(td, rpu),
+			rp       : buildRealPropertyInfo( rp, brgy, parentLgu, parentParentLgu ),
+		];
+		if( rpu.type == "LAND" ) 
+			faas = landService.build( faas, rpu );
+		
+		/*
+		else if( td.rpu.type == PropertyType.BLDG ) items.add( bldgService.buildItem( td, item ) );
+		else if( td.rpu.type == PropertyType.MACH ) items.add( machService.buildItem( td, item ) );
+		else if( td.rpu.type == PropertyType.PLANT ) items.add( treeService.buildItem( td, item ) );
+		else if( td.rpu.type == PropertyType.MISC ) items.add( miscService.buildItem( td, item ) );
+		else throw new Exception("Invalid Property Type for TD No. $td.tdno");
+		*/
+		
+		return faas;
+		
+	}
+	
+	private def buildRealPropertyInfo( rp, brgy, parentLgu, parentParentLgu ) {
+		return [ 
+			 objid         : rp.objid,
+			 schemaName    : "rp:rp",
+			 schemaVersion : "1.0",
+			 state         : rp.state,
+			 info       : [
+				 txnType      : rp.txnType,
+				 dtCreated    : formatDate("yyyy-MM-dd",rp.createDate),
+				 provCity     : parentParentLgu?.name,
+				 muniDistrict : parentLgu.name,
+				 barangay     : brgy.name,
+				 pin          : rp.pin,
+				 provCityIndex     : rp.provCityIndex,
+				 muniDistrictIndex : rp.muniDistrictIndex,
+				 brgyIndex         : rp.brgyIndex,
+				 sectionNo         : rp.sectionNo,
+				 parcelNo          : rp.parcelNo,
+				 claimNo           : rp.claimNo,
+				 cadastralLotNo    : rp.cadastralLotNo,
+				 barangayId        : rp.barangayId,
+				 boundary : [north: rp.northBoundary, south: rp.southBoundary, east: rp.eastBoundary, west: rp.westBoundary],
+			 ]
+		]    
+	}
+	
+	private def buildRpuInfo( td, rpu ) {
+		return [ 
+			objid         : rpu.objid,
+			schemaName    : "rpu:rpu",
+			schemaVersion : "1.0",        
+			state      : td.state,
+			info       : [
+				 txnType    : td.txnType,
+				 ry         : rpu.ry,
+				 type       : rpu.type,
+				 pin        : rpu.pin,
+				 suffix     : rpu.suffix,
+				 special    : rpu.special,
+				 taxable    : rpu.taxable as boolean,
+				 totalMV    : rpu.totalMV,
+				 totalAMV   : rpu.totalAMV,
+				 totalAV    : rpu.totalAV,
+				 areaSqm    : rpu.areaInSqm,
+				 areaHec    : rpu.areaInHec,
+				 useSwornAmount : rpu.useSwornAmount,
+				 classId        : rpu.classificationId,
+				 classCode      : rpu.classCode,
+				 classTitle     : rpu.classTitle,
+				 exemptId       : rpu.exemptionTypeId,
+				 exemptCode     : rpu.exemptCode,
+				 exemptTitle    : rpu.exemptTitle,
+				 cancelReason   : rpu.cancelReason,
+				 cancelDate     : formatDate("yyyy-MM-dd",rpu.dtCancelled),
+			],
+		];
+	}
+	
+	private def buildTdInfo( td ) {
+		return [
+			tdNo             : td.tdno,
+			txnType          : td.txnType,
+			issueDate        : formatDate("yyyy-MM-dd",td.issueDate),
+			effectivityYear  : td.effectivityYear,
+			effectivityQtr   : td.effectivityQtr,
+			title            : (td.titleNo == null ? null : [titleNo: td.titleNo, titleDate: td.titleDate, titleType: td.titleType.name]),
+			taxpayer         : [taxpayerId: td.taxpayerId, taxpayerName: td.taxpayerName, taxpayerAddress: td.taxpayerAddress],
+			appraisedBy      : [name: td.appraisedBy, title: td.appraisedByPosition, dtSigned: formatDate("yyyy-MM-dd",td.issueDate),],
+			recommendedBy    : [name: td.recommendedBy, title: td.recommendedByPosition, dtSigned: formatDate("yyyy-MM-dd",td.issueDate),],                
+			approvedBy       : [name: td.approvedBy, title: td.approvedByPosition, dtSigned: formatDate("yyyy-MM-dd",td.issueDate),],        
+			previousInfo     : [prevTdNo:td.previousTdNo, prevPin:td.previousPin, prevOwner:td.previousOwner,prevAssessedValue:td.previousAssessedValue, prevMarketValue:td.previousMarketValue ], //previousinfo
+		];
+	}
+
+	private def formatDate( format, dt ) {
+		if( ! dt ) return null;
+		return (new SimpleDateFormat(format)).format( dt );
+	}
+	
+	private def existsFaas( objid ) {
+		def data = em2.sqlContext.createNamedQuery("faas:findById").setParameter("objid", objid ).singleResult;
+		if( data ) 
+			return true;
+		return false;
+	}
+}
+

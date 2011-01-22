@@ -1,0 +1,114 @@
+<workunit>
+    <invokers>
+        <invoker type="home.action" target="window" action="initForReview" icon="images/faas_review.jpg"  />
+        <invoker type="home.action" target="window" action="initForApproval" icon="images/faas_approval.jpg"/>
+        <invoker type="home.action" target="window" action="initCurrent" icon="images/faas_current.jpg"  />
+        
+        <invoker folderid="/menu/file" caption="FAAS (For Review)" action="initForReview" />
+        <invoker folderid="/menu/file" caption="FAAS (For Approval)" action="initForApproval" />
+        <invoker folderid="/menu/file" caption="FAAS (Current)" action="initCurrent" />
+        <invoker type="formActions" caption="Open" mnemonic="o" action="open" visibleWhen="#{selectedItem.item != null}" />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class FAASListController 
+        {
+            @Service("FAASService")
+            def svc;
+            
+            @Service("FAASHtmlService")
+            def htmlService;
+            
+            @Binding
+            def binding;
+            
+            @FormTitle
+            def title = "FAAS for Review";
+        
+            def state = "FORREVIEW";
+            def selectedItem;
+            def search = [:];
+            
+            public void initForReview() {
+                init( "FORREVIEW", "FAAS for Review" );
+            }
+            
+            public void initForApproval() {
+                init( "FORAPPROVAL", "FAAS for Approval" );
+            }
+            
+            public void initCurrent() {
+                init( "CURRENT", "Current FAAS" );
+            }
+            
+            public void doSearch() {
+                listHandler.load();
+            }
+            
+            public def open() {
+                return doOpen( selectedItem.item );
+            }
+            
+            def listHandler = [
+                getRows    : { return 25; },
+                getColumns : {
+                    return [
+                        new Column( name:"item.tdNo", caption:"TD No.", width:120),
+                        new Column( name:"item.pin", caption:"PIN", width:150),
+                        new Column( name:"item.taxpayerName", caption:"Taxpayer", width:200),
+                    ]
+                },
+                fetchList  : { 
+                    search.state = state;
+                    return svc.getList( search, it );  
+                },
+                onOpenItem : { item, colname -> doOpen(item); }
+            ] as PageListModel;
+        
+            def refreshHandler = {
+                listHandler.load();
+                selectedItem = listHandler.selectedItem;
+                binding.refresh();
+            } 
+            
+            public def getHtml() {
+                if( selectedItem?.item ) {
+                    if( ! selectedItem.item.html ) {
+                        selectedItem.item.html = htmlService.getHtml( selectedItem.item.objid );
+                    }
+                    return selectedItem.item.html;
+                }
+                return "No record or item selected...";
+            } 
+            
+            def showAttachment( params ) {
+                def data = params.split("~~");
+                def opener = InvokerUtil.lookupOpener("file:download", [objid:data[0]] );
+                opener.caption = "Attachment: " + data[1];
+                return opener;
+            }
+            
+            private void init( state, title ) {
+                this.state = state;
+                this.title = title;
+            }
+            
+            private def doOpen( item ) {
+                return new WindowOpener( name:"faas", caption:"FAAS ($item.tdNo)", params:[faasId:item.objid, tdNo:item.tdNo, state:item.state, listRefreshHandler:refreshHandler] );
+            }
+        }
+        
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.ListPage"/>
+    </pages>
+</workunit>

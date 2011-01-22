@@ -1,0 +1,22 @@
+import com.rameses.annotations.*;
+
+class RemoteTaxapyerService 
+{
+	@Env
+	def env;
+	
+	@ProxyMethod
+	@Async(type="topic")
+	public def post( params ) {
+		println System.getProperty("lgu.index");
+		if( params.targetLgu == "LOON" ) {
+			return "RETURNED FROM LOON.... $params"
+		}
+	}
+	
+	@ProxyMethod
+	@Async(type="topic")
+	public def reconcile( params ) {
+		return null;
+	}
+}

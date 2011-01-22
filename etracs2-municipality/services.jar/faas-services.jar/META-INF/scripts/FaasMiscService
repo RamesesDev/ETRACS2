@@ -1,0 +1,48 @@
+import com.rameses.scripting.annotations.*;
+import com.rameses.tracs.rpt.service.RPTUtilService;
+import java.rmi.server.UID;
+import com.rameses.tracs.rpt.domain.*;
+import java.text.SimpleDateFormat;
+
+public class TransmittalMiscService
+{
+	@Resource("defaultPU")
+	def em;
+	
+	@ProxyMethod
+	public def buildItem( td , item) {
+		item.faas.rpu.rpuType = "rpumisc:misc";
+		
+		def rpu = td.rpu;
+		def rpuInfo = item.faas.rpu.info;
+		
+		rpuInfo.miscAssessLevelId = rpu.miscAssessLevelId;
+		rpuInfo.actualUseCode     = rpu.actualUseCode;
+		rpuInfo.actualUseTitle    = rpu.actualUseTitle;
+		rpuInfo.assessLevel       = rpu.assessLevel;
+		rpuInfo.miscRPUItems      = buildMiscItems( rpu.miscRPUItems );
+		return item;
+	}
+	
+	private def buildMiscItems( miscRPUItems ) {
+		def items = [];
+		miscRPUItems.each {
+			items.add([	
+				objid           : it.objid,
+				unit            : it.unit,
+				depreciation    : it.depreciation,
+				marketValue     : it.marketValue,
+				adjMarketValue  : it.adjMarketValue,
+				assessLevel     : it.assessLevel,
+				assessedValue   : it.assessedValue,
+				miscItemValueId : it.miscItemValueId,
+				miscItemId      : it.miscItemId,
+				miscItemCode    : it.miscItemCode,
+				miscItemTitle   : it.miscItemTitle,
+				expression      : it.expression,
+			]);
+		}
+		return items;
+	}
+}	
+

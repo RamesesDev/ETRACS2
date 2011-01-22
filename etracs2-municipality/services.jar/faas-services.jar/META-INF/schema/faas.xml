@@ -1,0 +1,149 @@
+<schema>
+	<!-- FAAS database storage -->
+	<element name="faas" tablename="faas">
+		<link ref="faasData"/>
+	</element>
+	
+	<!-- FAAS Disapprove storage -->
+	<element name="disapproved-faas" tablename="disapproved_faas">
+		<link ref="faasData"/>
+	</element>
+	
+	<element name="faasData">
+		<field name="objid" primary="true"/>
+		<field name="schemaName" required="true"/>
+		<field name="schemaVersion" required="true"/>
+		<field name="transmittalId" required="true"/>
+		<field name="state" required="true"/>
+		<field name="barangay" required="true"/>
+		<field name="rpuId" required="true"/>
+		<field name="rpId" required="true"/>
+		<complex name="info" ref="faasInfo" serializer="default"/>
+		<complex name="rpu" ref="rpu:rpu" serializer="default" />
+		<complex name="rp" ref="rp:rp" serializer="default" />
+		<field name="remarks"/>
+		<field name="sys_dtCreated" />
+		<field name="sys_dtApproved" />
+	</element>
+
+	<!-- FAAS info -->
+	<element name="faasInfo" >
+		<field name="tdNo"  />
+		<field name="txnType" required="true" />
+		<field name="issueDate" />
+		<field name="effectivityYear" type="integer" />
+		<field name="effectivityQtr" type="integer" />
+		<complex name="title" ref="common:title" required="false" serializer="default" />
+		<complex name="previousInfo" ref="common:previousInfo" required="false" serializer="default" />
+		<complex name="cancelInfo" ref="common:cancelInfo" required="false" serializer="default" />
+		<complex name="taxpayer" ref="common:taxpayer" required="true" serializer="default" />
+		<complex name="administrator" ref="common:taxpayer" required="false" serializer="default" />
+		<complex name="beneficiary" ref="common:taxpayer" required="false" serializer="default" />
+		<complex name="appraisedBy" ref="common:signatory" serializer="default" />
+		<complex name="recommendedBy" ref="common:signatory" serializer="default" />
+		<complex name="reviewedBy" ref="common:signatory" serializer="default" required="false" />
+		<complex name="approvedBy" ref="common:signatory" serializer="default" />
+	</element>	
+	
+	<!-- *********************************************************************************
+	**  INDEXERS 
+	********************************************************************************** -->
+	<element name="faas-provapproval" tablename="faas_provapproval" indexfor="faas">
+		<field name="objid" primary="true" />
+		<field name="state" required="true"  />
+		<field name="txnType" mapfield="info.txnType" required="true"  />
+		<field name="tdNo"  mapfield="info.tdNo" />
+		<field name="issueDate" mapfield="info.issueDate" required="true" />
+		<field name="effectivityYear" mapfield="info.effectivityYear" required="true" type="integer" />
+		<field name="effectivityQtr" mapfield="info.effectivityQtr" required="true" type="integer" />
+		<field name="titleNo"  mapfield="info.title.titleNo" />
+		<field name="titleType"  mapfield="info.title.titleType" />
+		<field name="titleDate" mapfield="info.title.titleDate" />
+		<field name="taxpayerId"  mapfield="info.taxpayer.taxpayerId" />
+		<field name="taxpayerName" required="true"  mapfield="info.taxpayer.taxpayerName" />
+		<field name="taxpayerAddress" required="true"  mapfield="info.taxpayer.taxpayerAddress" />
+		<field name="appraisedBy" required="true"  mapfield="info.appraisedBy.name" />
+		<field name="appraisedByPosition" required="true"  mapfield="info.appraisedBy.title" />
+		<field name="recommendedBy"  mapfield="info.recommendedBy.name" />
+		<field name="recommendedByPosition"  mapfield="info.recommendedBy.title" />
+		<field name="reviewedBy" required="true"  mapfield="info.reviewedBy.name" />
+		<field name="reviewedByPosition" required="true"  mapfield="info.reviewedBy.title" />
+		<field name="approvedBy" required="true"  mapfield="info.approvedBy.name" />
+		<field name="approvedByPosition" required="true"  mapfield="info.approvedBy.title" />
+		<!-- RPU INFO -->
+		<field name="rpuId" required="true"  mapfield="rpu.objid" />
+		<field name="rpuState" required="true" mapfield="rpu.state" />
+		<field name="pin" required="true"  mapfield="rpu.info.pin" />
+		<field name="ry" required="true"  type="integer" mapfield="rpu.info.ry" />
+		<field name="classCode" required="true"  mapfield="rpu.info.classCode" />
+		<field name="taxable" required="true"  mapfield="rpu.info.taxable" />
+		<field name="totalMV" required="true" type="decimal" mapfield="rpu.info.totalMV"/>
+		<field name="totalAMV" required="true" type="decimal" mapfield="rpu.info.totalAMV"/>
+		<field name="totalAV" required="true" type="decimal" mapfield="rpu.info.totalAV"/>
+		<!-- REAL PROPERTY INFO -->
+		<field name="rpId" required="true"  mapfield="rp.objid" />
+		<field name="rpState" required="true"  mapfield="rp.state" />
+		<field name="barangay" mapfield="rp.info.barangay" />
+		<field name="cadastralLotNo" required="true"  mapfield="rp.info.cadastralLotNo" />
+		<field name="blockNo" required="true"  mapfield="rp.info.blockNo" />
+		<field name="surveyNo" mapfield="rp.info.surveyNo" />
+	</element>
+	
+	<element name="faaslist-columns">
+		<field name="objid" primary="true" />
+		<field name="state" required="true"  />
+		<field name="txnType" required="true"   />
+		<field name="tdNo"   />
+		<field name="issueDate" required="true"  />
+		<field name="effectivityYear" required="true"  />
+		<field name="effectivityQtr" required="true"  />
+		<field name="titleNo"   />
+		<field name="titleType"   />
+		<field name="titleDate"  />
+		<field name="taxpayerId" required="true"   />
+		<field name="taxpayerName" required="true"   />
+		<field name="taxpayerAddress" required="true"   />
+		<field name="appraisedBy" required="true"   />
+		<field name="appraisedByPosition" required="true"   />
+		<field name="recommendedBy"   />
+		<field name="recommendedByPosition"   />
+		<field name="reviewedBy"   />
+		<field name="reviewedByPosition"   />
+		<field name="approvedBy" required="true"   />
+		<field name="approvedByPosition" required="true"   />
+		<!-- RPU INFO -->
+		<field name="rpuId" required="true"   />
+		<field name="rpuState" required="true"  />
+		<field name="pin" required="true"   />
+		<field name="ry" required="true"  type="integer"  />
+		<field name="classCode" required="true"   />
+		<field name="taxable" required="true"   />
+		<field name="totalMV" required="true" type="decimal" />
+		<field name="totalAMV" required="true" type="decimal" />
+		<field name="totalAV" required="true" type="decimal" />
+		<!-- REAL PROPERTY INFO -->
+		<field name="rpId" required="true"   />
+		<field name="rpState" required="true"  />
+		<field name="barangay" required="true" />
+		<field name="cadastralLotNo" required="true"   />
+		<field name="blockNo" required="true"   />
+		<field name="surveyNo"  />
+		<field name="remarks"/>
+	</element>
+	
+	<element name="faas-current" tablename="faas_current">
+		<link ref="faaslist-columns"/>
+	</element>
+	
+	<element name="faas-cancelled" tablename="faas_cancelled">
+		<link ref="faaslist-columns"/>
+	</element>
+	
+	<element name="faas-approval" tablename="faas_approval">
+		<link ref="faaslist-columns"/>
+	</element>
+	
+	<element name="faas-disapproved" tablename="faas-disapproved">
+		<link ref="faaslist-columns"/>
+	</element>
+</schema>
