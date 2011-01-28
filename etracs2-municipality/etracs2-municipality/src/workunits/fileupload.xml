@@ -13,11 +13,15 @@
         
         public class FileUploadController 
         {
+        
+            @Caller
+            def caller;
+        
             @Binding
             def binding;
             
-            @Service('UploadService')
-            def svc;
+            @Service('FaasAttachmentService')
+            def attachmentSvc;
             
             def info = [:];
             def message;
@@ -40,7 +44,13 @@
             }
             
             void doUpload() {
-                OsirisContext.clientContext.taskManager.addTask(new UploadTask(file:file, svc:svc, info:info, callback:callback));
+                OsirisContext.clientContext.taskManager.addTask(
+                    new UploadTask(
+                        file : file, 
+                        attachmentSvc : attachmentSvc, 
+                        info : info, 
+                        callback : callback
+                ));
                 uploading = true;
             }
             
@@ -54,7 +64,7 @@
             def BYTE_SIZE = 1024 * 32;    
             
             def file;
-            def svc;
+            def attachmentSvc;
             def counter = 0;
             def info;
             def callback;
@@ -74,13 +84,13 @@
                     ftInfo.save();
                     
                     info.ftInfo = ftInfo;
-                    svc.upload( info, bytes, counter);
+                    attachmentSvc.uploadAttachment( info, bytes);
                     
-                    counter++;
-                    size += bytes.length;
+                    size += bytes.length / 1000;
                     callback("ok", "Uploading file ( $size bytes) ");
                     ended = ftInfo.eof;
                     if( ended ) {
+                        attachmentSvc.createFaasAttachment(info);
                         ftInfo.delete();
                         callback("done", "File has been successfully uploaded.");
                     }
