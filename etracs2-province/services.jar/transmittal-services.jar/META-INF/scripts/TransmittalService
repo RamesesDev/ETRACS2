@@ -15,7 +15,13 @@ class TransmittalService
 	def env;
 	
 	def CURRENT_STATE = "CURRENT";
-	def FORAPPROVAL_STATE = "FORAPPROVAL"
+	def FORAPPROVAL_STATE = "FORAPPROVAL";
+	def INCOMPLETE_STATE = "INCOMPLETE_REQUIREMENTS";
+	
+	@ProxyMethod
+	public def incompleteTransmittal( transmittalId, transmittalItemId, remarks) {
+		incompleteTransmittalItem( transmittalId, transmittalItemId, INCOMPLETE_STATE, remarks);
+	}
 	
 	@ProxyMethod
 	public def getList( search, params ) {
@@ -102,6 +108,14 @@ class TransmittalService
 	public void disapproveTransmittalItem( transmittalId, faasId, state, remarks) {
 		em.sqlContext.createNamedExecutor("transmittal:disapproveItem")
 					 .setParameters([transmittalid:transmittalId, faasid:faasId, newstate:state, remarks:remarks])
+					 .execute();		
+		changeTransmittalToClosed( transmittalId );
+	}
+	
+	@ProxyMethod
+	public void incompleteTransmittalItem( transmittalId, transmittalItemId, state, remarks) {
+		em.sqlContext.createNamedExecutor("transmittal:incompleteItem")
+					 .setParameters([transmittalid:transmittalId, objid:transmittalItemId, newstate:state, remarks:remarks])
 					 .execute();		
 		changeTransmittalToClosed( transmittalId );
 	}

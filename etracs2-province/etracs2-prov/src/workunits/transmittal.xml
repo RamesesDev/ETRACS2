@@ -1,6 +1,7 @@
 <workunit>
     <invokers>
         <invoker type="formActions" caption="Close" mnemonic="c" action="_close" />
+        <invoker type="itemActions" caption="Incomplete Requirements" mnemonic="e" action="doIncomplete" visibleWhen="#{selectedItem != null}"/>
         <invoker type="formActions" caption="Submit to Reviewer" mnemonic="s" action="submit" visibleWhen="#{state == 'SUBMITTED'}"  />
     </invokers>
     
@@ -20,6 +21,20 @@
             def listRefreshHandler;
             def selectedItem;
             def title = "Transmittal Information";
+            def remarks;
+            
+            public def doIncomplete() {
+                return new PopupOpener(outcome:"incompletePage", caption:"Incomplete Requirements");
+            }
+            
+            public def incomplete() {
+                if( MsgBox.confirm("Tag document with Incomplete Requirements?") ) {
+                    def faas = svc.incompleteTransmittal( transmittal.objid, selectedItem.item.objid, remarks );
+                    MsgBox.alert("Document is tagged - Incomplete Requirements.");
+                    refreshList();
+                    return "_close";
+                }
+            }
             
             public void submit() {
                 if( MsgBox.confirm("Submit to reviewer?") ) {
@@ -71,5 +86,6 @@
     
     <pages>
         <page template="etracs2.prov.transmittal.TransmittalPage"/>
+        <page name="incompletePage" template="etracs2.prov.IncompletePage"/>
     </pages>
 </workunit>

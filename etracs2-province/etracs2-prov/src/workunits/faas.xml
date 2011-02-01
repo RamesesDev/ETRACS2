@@ -3,7 +3,8 @@
         <invoker type="formActions" caption="Close" mnemonic="c" action="_close" />
         <invoker type="formActions" caption="Submit For Approval" mnemonic="s" action="submit" visibleWhen="#{state == 'PROVAPPROVAL'}"  />
         <invoker type="formActions" caption="Approve" mnemonic="a" action="approve" visibleWhen="#{state == 'FORAPPROVAL'}"  />
-        <invoker type="formActions" caption="Disapprove" mnemonic="d" action="_disapprovepage" visibleWhen="#{state == 'FORAPPROVAL'}" />
+        <invoker type="formActions" caption="Disapprove" mnemonic="d" action="_disapprovepage" />
+        <invoker type="formActions" caption="Return to Reviewer" mnemonic="r" action="doReturn" visibleWhen="#{state == 'FORAPPROVAL'}" />
     </invokers>
     
     <code>
@@ -20,7 +21,7 @@
             
             @Service("FAASHtmlService")
             def htmlService;
-            
+                        
             def faasId;
             def tdNo;
             def state;
@@ -37,11 +38,12 @@
                 }
             }
             
-            public void approve() {
+            public def approve() {
                 if( MsgBox.confirm("Approve FAAS?") ) {
                     def faas = faasService.approve( faasId );
                     state = faas.state;
                     refreshList();
+                    return "_close";
                 }
             }
             
@@ -49,11 +51,24 @@
                 return new PopupOpener(outcome:"disapprovepage", caption:"Disapprove FAAS");
             }
             
+            public def doReturn() {
+                return new PopupOpener(outcome:"returnpage", caption:"Return FAAS to reviewer");
+            }
+            
             public def disapprove() {
                 def faas = faasService.disapprove( faasId, remarks );
                 MsgBox.alert("Disapprove successful.");
                 refreshList();
                 return "_close";                
+            }
+            
+            public void returnDoc() {
+                if( MsgBox.confirm("Return document to reviewer?") ) {
+                    def faas = faasService.returnDoc( faasId );
+                    state = faas.state;
+                    MsgBox.alert("Document is returned to the reviewer.");
+                    refreshList();
+                }
             }
             
             public def getHtml() {
@@ -81,5 +96,6 @@
     <pages>
         <page template="etracs2.prov.faas.FAASPage"/>
         <page name="disapprovepage" template="etracs2.prov.DisapprovalPage"/>
+        <page name="returnpage" template="etracs2.prov.ReturnToReviewerPage"/>
     </pages>
 </workunit>
