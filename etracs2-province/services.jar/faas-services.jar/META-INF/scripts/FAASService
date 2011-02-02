@@ -59,7 +59,7 @@ class FAASService
 
 		def currDate = dateService.getServerDate();
 		faas.state  = FORAPPROVAL_STATE;
-		faas.info.reviewedBy  = [name:env.USER, title:env.TITLE, dtSigned:currDate];
+		faas.info.reviewedBy  = [name:env.USERNAME, title:env.JOBTITLE, dtSigned:currDate];
 		em.update( "faas:faas", faas );
 		
 		def faasData = em.read("faas:faas-provapproval", [ objid:faasId ]);
@@ -80,7 +80,7 @@ class FAASService
 		def currDate = dateService.getServerDate();
 		faas.state  = CURRENT_STATE;
 		faas.remarks = remarks;
-		faas.info.reviewedBy  = [name:env.USER, title:env.TITLE, dtSigned:currDate];
+		faas.info.reviewedBy  = [name:env.USERNAME, title:env.JOBTITLE, dtSigned:currDate];
 		faas.sys_dtApproved = currDate;
 
 		em.update( "faas:faas", faas );
@@ -91,26 +91,7 @@ class FAASService
 		em.delete("faas:faas-approval", faasData);
 		return faas;
 	}
-	
-	@ProxyMethod
-	public def approve( faasId ) {
-		def faas = open( faasId );
-		if( faas.state != FORAPPROVAL_STATE) throw new Exception("FAAS is already $faas.state.");
 		
-		def currDate = new Date();
-		faas.state  = CURRENT_STATE;
-		faas.info.approvedBy.dtSigned = currDate;
-		faas.sys_dtApproved = currDate;
-		em.update( "faas:faas", faas );
-		
-		def faasData = em.read("faas:faas-approval", [ objid:faasId ]);
-		if( !faasData ) throw new Exception("FAAS not found.");
-		faasData.state = CURRENT_STATE;
-		em.create("faas:faas-current", faasData);
-		em.delete("faas:faas-approval", faasData);
-		return faas;
-	}
-	
 	@ProxyMethod
 	public def approve( faasId ) {
 		def faas = open( faasId );
@@ -141,7 +122,7 @@ class FAASService
 		faas.remarks = remarks;
 		faas.sys_dtCreated = currDate;
 		faas.sys_dtApproved = currDate;
-		faas.info.reviewedBy  = [name:env.USER, title:env.TITLE, dtSigned:currDate];
+		faas.info.reviewedBy  = [name:env.USERNAME, title:env.JOBTITLE, dtSigned:currDate];
 		em.create("faas:disapproved-faas", faas);
 		em.create("faas:faas-disapproved", faas);
 		em.delete("faas:faas", faas);
