@@ -1,0 +1,78 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/file" caption="Manage ETRACS Users" />
+        <invoker type="formActions" action="edit" tooltip="Edit" immediate="false" mnemonic="e" visibleWhen="#{mode=='read' and user.uid!=null}" icon="images/edit16.png" />
+        <invoker type="formActions" action="cancel" tooltip="Cancel" immediate="false" mnemonic="c" visibleWhen="#{mode!='read'}" icon="images/disapprove16.png"/>
+        <invoker type="formActions" action="save" tooltip="Save" immediate="true" shortcut="ctrl s" mnemonic="s" visibleWhen="#{mode!='read'}" icon="images/save16.png"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        
+        public class ETRACSUserController
+        {
+            @Binding
+            def binding;
+            
+            @Service("ETRACSUserService")
+            def svc;
+            
+            def title = "Manage ETRACS Users";
+            def selectedItem;
+            def user = [:];
+            def searchText;
+            def mode = "read";
+            
+            void edit() {
+                mode = "edit";
+                binding.refresh();
+            }
+            
+            void cancel() {
+                mode = "read";
+                binding.refresh();
+            }
+            
+            void save() {
+                svc.save( user );
+                mode = "read";
+                binding.refresh();
+            }
+            
+            
+            
+            void setSelectedItem( selected ) {
+                user = selected.item;
+                if( !user ) user = [:];
+            }
+            
+            def listHandler = [
+                getRows    : { return 25; },
+                getColumns : { 
+                    return [
+                        new Column(name:"item.uid", caption:"UID"),
+                        new Column(name:"item.lastname", caption:"Last Name"),
+                        new Column(name:"item.firstname", caption:"First Name"),
+                        new Column(name:"item.jobtitle", caption:"Job Title"),
+                    ];
+                },
+                fetchList : { 
+                    svc.getList( searchText, it );
+                },
+            ] as PageListModel;
+            
+            void search() {
+                listHandler.load();
+            }
+        }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.admin.ETRACSUserPage"/>
+    </pages>
+</workunit>
