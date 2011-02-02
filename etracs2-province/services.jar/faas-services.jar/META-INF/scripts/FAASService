@@ -70,33 +70,6 @@ class FAASService
 	}
 
 	@ProxyMethod
-	public def open( faasId ) {
-		def faas = em.read("faas:faas", [objid:faasId]);
-		if( !faas ) throw new Exception("FAAS not found.");
-		return faas;
-	}
-
-	@ProxyMethod
-	public def submit( faasId ) {
-		def faas = open( faasId );
-		if( faas.state != PROVAPPROVAL_STATE ) throw new Exception("FAAS is already $faas.state.");
-		
-		def currDate = new Date();
-		faas.state  = FORAPPROVAL_STATE;
-		faas.info.reviewedBy  = [name:env.USER, title:env.TITLE, dtSigned:currDate];
-		em.update( "faas:faas", faas );
-		
-		def faasData = em.read("faas:faas-provapproval", [ objid:faasId ]);
-		if( !faasData ) throw new Exception("FAAS not found.");
-		faasData.state = FORAPPROVAL_STATE;
-		faasData.reviewedBy = env.USER;
-		faasData.reviewedByPosition = env.TITLE;
-		em.create("faas:faas-approval", faasData);
-		em.delete("faas:faas-provapproval", faasData);
-		return faas;
-	}
-
-	@ProxyMethod
 	public def returnDoc( faasId ) {
 		def faas = open( faasId );
 		if( faas.state == CURRENT_STATE ) throw new Exception("FAAS is already $faas.state.");
