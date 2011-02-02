@@ -25,16 +25,13 @@
             def remarks;
             
             public def doIncomplete() {
-                if(! MsgBox.confirm("Tag document with Incomplete Requirements?") ) return null;
-                
-                    return InvokerUtil.lookupOpener("message_popup",[
-                        caption:"Please provide a reason.",
-                        acceptHandler:{ msg ->
-                            def faas = svc.incompleteTransmittal( transmittal.objid, selectedItem.item.objid, msg );
-                            MsgBox.alert("Document is tagged - Incomplete Requirements.");
-                            refreshList();
-                        }
-                    ]);
+                return InvokerUtil.lookupOpener("message_popup",[
+                    caption:"Please provide a reason for return.",
+                    acceptHandler:{ msg ->
+                        def faas = svc.incompleteTransmittal( transmittal.objid, selectedItem.item.objid, msg );
+                        refreshList();
+                    }
+                ]);
             }
             
             public void submit() {

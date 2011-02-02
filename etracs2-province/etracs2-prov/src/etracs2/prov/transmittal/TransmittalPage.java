@@ -65,7 +65,6 @@ public class TransmittalPage extends javax.swing.JPanel {
 
         xActionBar2.setDepends(new String[] {"selectedItem"});
         xActionBar2.setName("formActions");
-        xActionBar2.setUseToolBar(false);
         jPanel2.add(xActionBar2, java.awt.BorderLayout.EAST);
 
         jPanel3.add(jPanel2, java.awt.BorderLayout.WEST);
@@ -84,7 +83,6 @@ public class TransmittalPage extends javax.swing.JPanel {
         jScrollPane1.setBorder(xTitledBorder1);
         xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setName("itemActions");
-        xActionBar1.setUseToolBar(false);
 
         xEditorPane1.setDepends(new String[] {"selectedItem"});
         xEditorPane1.setName("html");
@@ -97,7 +95,7 @@ public class TransmittalPage extends javax.swing.JPanel {
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(xEditorPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 212, Short.MAX_VALUE)
+            .add(xEditorPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 214, Short.MAX_VALUE)
         );
 
         org.jdesktop.layout.GroupLayout jPanel5Layout = new org.jdesktop.layout.GroupLayout(jPanel5);

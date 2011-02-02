@@ -58,7 +58,6 @@ public class FAASPage extends javax.swing.JPanel {
 
         xActionBar2.setDepends(new String[] {"selectedItem"});
         xActionBar2.setName("formActions");
-        xActionBar2.setUseToolBar(false);
         jPanel2.add(xActionBar2, java.awt.BorderLayout.EAST);
 
         jPanel3.add(jPanel2, java.awt.BorderLayout.WEST);

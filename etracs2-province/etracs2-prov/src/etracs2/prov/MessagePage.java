@@ -35,7 +35,6 @@ public class MessagePage extends javax.swing.JPanel {
         xTextArea1.setRows(5);
         xTextArea1.setCaption("Reason for Disapproval");
         xTextArea1.setName("remarks");
-        xTextArea1.setRequired(true);
         xTextArea1.setTextCase(com.rameses.rcp.constant.TextCase.UPPER);
         jScrollPane1.setViewportView(xTextArea1);
 
@@ -48,6 +47,7 @@ public class MessagePage extends javax.swing.JPanel {
         xButton2.setText("Ok");
         xButton2.setName("doOk");
 
+        xLabel1.setFont(new java.awt.Font("Arial", 1, 12));
         xLabel1.setName("caption");
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
