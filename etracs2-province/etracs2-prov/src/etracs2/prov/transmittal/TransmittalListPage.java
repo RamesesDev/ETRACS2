@@ -47,6 +47,7 @@ public class TransmittalListPage extends javax.swing.JPanel {
 
         jSplitPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         jSplitPane1.setDividerLocation(430);
+        jSplitPane1.setOneTouchExpandable(true);
         jPanel5.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -109,7 +110,6 @@ public class TransmittalListPage extends javax.swing.JPanel {
         jPanel4.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 10));
         jPanel4.setPreferredSize(new java.awt.Dimension(250, 10));
         xTextField7.setName("search.textSearch");
-        xTextField7.setPreferredSize(new java.awt.Dimension(100, 18));
         jPanel4.add(xTextField7, java.awt.BorderLayout.CENTER);
 
         xButton1.setText("...");
