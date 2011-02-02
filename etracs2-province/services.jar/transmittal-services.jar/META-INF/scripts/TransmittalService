@@ -11,6 +11,9 @@ class TransmittalService
 	@Service("FAASHtmlService")
 	def faasHtmlService;
 	
+	@Service("FAASAttachmentService")
+	def faasAttachmentSvc;
+
 	@Env
 	def env;
 	
@@ -172,6 +175,45 @@ class TransmittalService
 	
 	private def getListByName( namedQuery, params ) {
 		return em.sqlContext.createNamedQuery( namedQuery ).setParameters( params ).resultList;
+	}
+	
+@ProxyMethod
+	public def importTransmittal( def chunk ){
+try{
+		if( chunk.eof ){
+			//em2.create("transmittal:tranmittal", chunk.data );
+			return chunk.data = null;
+		}
+	
+		if( chunk.state == "ITEM" ){
+			def item = chunk.data;
+			//em.create("transmittal:transmittalItem", item );
+			
+			item.attachments.each{
+				//em.create( "transmittal:transmittalattachement", it );
+				chunk.state = "ATTACHMENT";
+				chunk.attachementSize = item.attachments.size();
+				chunk.index = 0;
+			}
+			
+			chunk.data = null;
+			return chunk;
+		}
+		
+		if( chunk.state == "ATTACHMENT" ){
+			def item = chunk.data;
+			//faasAttachmentSvc.uploadAttachment( item.refId, item.bytes );
+			if( item.eof ) chunk.index = chunk.index + 1;
+			
+			if( chunk.index >= chuk.attachementSize ){
+				chunk.state = "ITEM";
+			}
+			return chunk;
+		}
+}catch(e){
+	e.printStackTrace();
+	throw e;
+}
 	}
 	
 }

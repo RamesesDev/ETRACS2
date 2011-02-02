@@ -9,6 +9,9 @@ class FAASHtmlService
 	@Service("NumberService")
 	def numberService;
 	
+	@Service("FAASAttachmentService")
+	def attachmentService;
+
 	@ProxyMethod
 	public def getHtml( faasId ) {
 		def faas = faasService.open( faasId );
@@ -713,7 +716,24 @@ class FAASHtmlService
 	}
 	
 	private def buildAttachments( faas ) {
-		def attachments = faasService.getAttachments( faas.objid );
+		/*return """
+			<table width="100%">
+				<tr>
+					<td colspan="6" class="title">ATTACHMENTS</td>
+				</tr>
+				<tr>
+					<td><a href="showAttachment?http://localhost:8080/bohol-downloads/images/sketch-01.png">Sketch Plan </a></td>
+				</tr>
+				<tr>
+					<td><a href="showAttachment?http://localhost:8080/bohol-downloads/images/deed-01.png">Deed of Sale </a></td>
+				</tr>
+				<tr>
+					<td><a href="showAttachment?http://localhost:8080/bohol-downloads/images/rtc-01.png">Realty Tax Clearance </a></td>
+				</tr>
+			</table>
+		""";*/
+		
+		def attachments = attachmentService.getAttachments( faas.objid );
 		def trs = "";
 		attachments.each {
             trs += """
@@ -721,20 +741,19 @@ class FAASHtmlService
                     <td>
                         <a href="showAttachment?$it.objid~~$it.documentType" >$it.documentType</a>
                     </td>
-                    <td>$it.remarks</td>
+                    <td>${it.remarks ? it.remarks : ''}</td>
                 </tr>
             """;
 		}
 		return """
 			<h2>Attachments</h2>
-			<table border="1">
+			<table width="100%">
 				<tr>
-					<th>Type</th>
-					<th>Remarks</th>
+					<td colspan="2" class="title">ATTACHMENTS</td>
 				</tr>
 				$trs
 			</table>
-		""";
+		""";		
 	}
 	
 	

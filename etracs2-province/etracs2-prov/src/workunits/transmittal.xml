@@ -10,6 +10,7 @@
         
         import com.rameses.rcp.common.*;
         import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
         
         public class TransmittalController 
         {
@@ -24,16 +25,16 @@
             def remarks;
             
             public def doIncomplete() {
-                return new PopupOpener(outcome:"incompletePage", caption:"Incomplete Requirements");
-            }
-            
-            public def incomplete() {
-                if( MsgBox.confirm("Tag document with Incomplete Requirements?") ) {
-                    def faas = svc.incompleteTransmittal( transmittal.objid, selectedItem.item.objid, remarks );
-                    MsgBox.alert("Document is tagged - Incomplete Requirements.");
-                    refreshList();
-                    return "_close";
-                }
+                if(! MsgBox.confirm("Tag document with Incomplete Requirements?") ) return null;
+                
+                    return InvokerUtil.lookupOpener("message_popup",[
+                        caption:"Please provide a reason.",
+                        acceptHandler:{ msg ->
+                            def faas = svc.incompleteTransmittal( transmittal.objid, selectedItem.item.objid, msg );
+                            MsgBox.alert("Document is tagged - Incomplete Requirements.");
+                            refreshList();
+                        }
+                    ]);
             }
             
             public void submit() {
