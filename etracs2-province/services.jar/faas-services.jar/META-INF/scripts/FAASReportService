@@ -1,0 +1,587 @@
+import com.rameses.annotations.*;
+
+class FAASReportService{
+	
+	@PersistenceContext("etracs")
+	def em;
+	
+	@ProxyMethod
+	public def findFAAS( def tdNo ){
+		def faas = em.sqlContext.createNamedQuery( "faas:findCURRENT-ByTdNo" )
+						 .setParameter( "tdno", tdNo )
+						 .singleResult;
+		if( !faas ) throw new Exception("FAAS not found.");
+		return openFAAS( faas );
+	}
+	
+	@ProxyMethod
+	public def openFAAS( def data ){
+		try{
+			def reportData = null;
+			def faas = em.read("faas:faas", [ objid:data.objid ]);
+			if( !faas ) throw new Exception("FAAS not found.");
+			
+			def rpuType = faas.rpu.info.type;
+			println "RPU TYPE: " + rpuType;
+			
+			if( rpuType == "LAND" ) 
+				reportData = getLandFaas( faas );
+			if( rpuType == "BLDG" ) 
+				reportData = getBldgFaas( faas );
+			if( rpuType == "MACH" ) 
+				reportData = getMachFaas( faas );
+			if( rpuType == "PLANT" ) 
+				reportData = getPlantFaas( faas );
+			if( rpuType == "MISC" ) 
+				reportData = getMiscFaas( faas );
+			
+			return reportData;
+		}catch( ex ){
+			ex.printStackTrace();
+			throw ex;
+		}
+	}
+	
+	private def getLandFaas( def faasData ){
+
+		def landDetails = faasData.rpu.info.landDetails;
+		
+		def landAppraisals = [];
+		
+		landDetails?.each{
+			def item = [
+				classification : it.actualUseTitle,
+				subclassification : it.specificClassTitle,
+				area : it.areaSqm,
+				unitvalue : it.unitValue,
+				basemv : it.marketValue
+			];
+			landAppraisals.add( item );
+		}
+		
+		def plantDetails = faasData.rpu.info.plantDetails;
+		
+		def otherImprovements = [];
+		
+		plantDetails?.each{ 
+			def item = [
+				kind : it.treeTitle,
+				nonbearing : it.nonBearing,
+				bearing : it.bearing,
+				unitvalue : it.unitValue,
+				basemv : it.marketValue
+			];
+			otherImprovements.add( item );
+		}
+			
+		
+		def adj = faasData.rpu.info.adjustments;
+		
+		def landActualUseAdj = [];
+			
+		landDetails?.each{ detail ->	
+			def item = [
+				subclass : detail.specificClassTitle,
+				classtitle : detail.actualUseTitle,
+				marketvalue : detail.marketValue,
+				valueadjustment : new BigDecimal(0),
+				adjMarketValue : detail.adjMarketValue
+			];	
+			
+			adj?.each{ 
+				item.adjustmentfactor = it.adjustmentTypeTitle;
+				item.adjustmentrate = it.rate;
+				item.valueadjustment = item.valueadjustment + ( item.marketvalue * ( it.rate/100 ) );
+			}
+			landActualUseAdj.add( item );
+		}
+		
+		def landValueAdj = [];
+		
+		landDetails?.each{ detail ->
+			detail.itemAdjustments.each{ itemAdj ->
+				def item = [
+					subclass : detail.specificClassTitle,
+					classtitle : detail.actualUseTitle,
+					marketvalue : detail.marketValue,
+					adjMarketValue : detail.adjMarketValue,
+					adjustmentfactor : itemAdj.adjustmentTypeTitle,
+					adjustmentrate : itemAdj.rate,
+					valueadjustment : itemAdj.adjustment
+				];
+				
+				landValueAdj.add( item );
+			}
+		}
+		
+		def valueAdjustments = landActualUseAdj + landValueAdj;
+		
+		def landPropertyAssessment = [];
+		
+		landDetails?.each{ detail ->
+			def marketvalue = new BigDecimal(0);
+			def assessedvalue = new BigDecimal(0);
+			
+			def item = [
+				type : faasData.rpu.info.type,
+				actualuse : detail.actualUseTitle,
+				marketvalue : marketvalue + detail.marketValue,
+				assessmentlevel : detail.assessLevel,
+				assessedvalue : assessedvalue + detail.assessedValue,
+				taxable : faasData.rpu.info.taxable,
+				year : faasData.info.effectivityYear,
+				qtr : faasData.info.effectivityQtr
+			];
+			landPropertyAssessment.add( item );
+		}
+		
+		def plantPropertyAssessment = [];
+		
+		plantDetails?.each{ detail ->
+			def marketvalue = new BigDecimal(0);
+			def assessedvalue = new BigDecimal(0);
+			
+			def item = [
+				type : "PLANT/TREE",
+				actualuse : detail.actualUseTitle,
+				marketvalue : marketvalue + detail.marketValue,
+				assessmentlevel : detail.assessLevel,
+				assessedvalue : assessedvalue + detail.assessedValue,
+				taxable : detail.taxable,
+				year : faasData.info.effectivityYear,
+				qtr : faasData.info.effectivityQtr
+			];
+			plantPropertyAssessment.add( item );
+		}
+		
+		def propertyAssessment = landPropertyAssessment + plantPropertyAssessment;
+	
+		def landData = [
+			transactioncode : faasData.info.txnType,
+			arpn : faasData.tdNo,
+			pin : faasData.rp.info.pin,
+			cloano : faasData.rp.info.titleNo,
+			surveyno : faasData.rp.info.surveyNo,
+			lotno : faasData.rp.info.cadastralLotNo,
+			blk : faasData.rp.info.blockNo,
+			owner : faasData.info.taxpayer.taxpayerName,
+			owneraddress : faasData.info.taxpayer.taxpayerAddress,
+			admin : "",
+			adminaddress : "",
+			houseno : faasData.rp.info.houseNo,
+			street : faasData.rp.info.street,
+			brgydist : faasData.rp.info.barangay,
+			north : faasData.rp.info.boundary.north,
+			south : faasData.rp.info.boundary.south,
+			east : faasData.rp.info.boundary.east,
+			west : faasData.rp.info.boundary.west,
+			landAppraisals : landAppraisals,
+			otherImprovements : otherImprovements,
+			valueAdjustments : valueAdjustments,
+			propertyAssessment : propertyAssessment,
+			appraisedby : faasData.info.appraisedBy.name,
+			appraisedposition : faasData.info.appraisedBy.title,
+			appraisaldate : faasData.info.appraisedBy.dtSigned,
+			approvedby : faasData.info.approvedBy.name,
+			approvedposition : faasData.info.approvedBy.title,
+			approveddate : faasData.info.approvedBy.dtSigned,
+			recommending : faasData.info.recommendedBy.name,
+			recommendingposition : faasData.info.recommendedBy.title,
+			recommendingdate : faasData.info.recommendedBy.dtSigned,
+			memoranda : faasData.remarks,
+			prevpin : faasData.info.previousInfo.prevPin,
+			prevtdno : faasData.info.previousInfo.prevTdNo,
+			prevtotalav : faasData.info.previousInfo.prevAssessedValue,
+			prevtotalmv : faasData.info.previousInfo.prevMarketValue,
+			prevowner : faasData.info.previousInfo.prevOwner,
+			type : faasData.rpu.info.type
+		];
+		
+		return landData;
+	}
+	
+	private def getBldgFaas( def faasData ){
+	try{
+		def bldgUses = faasData.rpu.info.bldgUses;
+		def bldgStructures = faasData.rpu.info.bldgStructures;
+		
+		def faasFloorInfo = [];
+		bldgUses?.each{ uses ->
+			uses.bldgFloors?.each{
+				def item = [
+					floorNo : it.floorNo,
+					area : it.area,
+					baseValue : it.baseValue
+				];
+				faasFloorInfo.add( item );
+			}
+		}
+		
+		def faasStructuralMaterials = [];
+		bldgStructures?.each{
+			def item = [
+				structureTitle : it.structureTitle,
+				materialTitle : it.materialTitle
+			];
+			faasStructuralMaterials.add( item );
+		}
+		
+		def bldgParams = [];
+		def faasAdditionalItems = [];
+		def additionalItemsTotalAmount = new BigDecimal(0);
+		bldgUses?.each{ uses ->
+			uses.bldgFloors?.each{ floors ->
+				floors?.adjustments?.each{ adj ->
+					adj.params?.each{
+						def p = [
+							disp : it.paramName + " : " + it.paramValue
+						];
+						bldgParams.add( p );
+					}
+					
+					def item = [
+						objid : adj.objid,
+						bldgAdditionalItemTitle : adj.bldgAdditionalItemTitle,
+						unit : adj.unit,
+						amount : adj.amount,
+						bldgAdditionalItemExpression : adj.bldgAdditionalItemExpression,
+						faasParameters : bldgParams
+					];
+					
+					additionalItemsTotalAmount = additionalItemsTotalAmount + adj.amount;
+					
+					faasAdditionalItems.add( item );
+				}
+			}
+		}
+		
+		def faasPropertyAssessment = [];
+		bldgUses?.each{
+			def item = [
+				actualUse : it.actualUseTitle,
+				marketValue : it.marketValue,
+				assessmentLevel : it.assessLevel,
+				assessedValue : it.assessedValue
+			];
+			faasPropertyAssessment.add( item );
+		}
+		
+		def bldgData = [
+			transactioncode : faasData.info.txnType,
+			arpn : faasData.tdNo,
+			pin : faasData.rp.info.pin,
+			cloano : faasData.rp.info.titleNo,
+			surveyno : faasData.rp.info.surveyNo,
+			lotno : faasData.rp.info.cadastralLotNo,
+			blk : faasData.rp.info.blockNo,
+			owner : faasData.info.taxpayer.taxpayerName,
+			owneraddress : faasData.info.taxpayer.taxpayerAddress,
+			admin : "",
+			adminaddress : "",
+			houseno : faasData.rp.info.houseNo,
+			street : faasData.rp.info.street,
+			brgydist : faasData.rp.info.barangay,
+			bldgKindTitle : faasData.rpu.info.bldgKindTitle,
+			bldgTypeTitle : faasData.rpu.info.bldgTypeTitle,
+			permitNo : faasData.rpu.info.permitNo,
+			permitDate : faasData.rp.info.permitDate,
+			dtBldgCompleted : faasData.rpu.info.dtBldgCompleted,
+			dtBldgOccupied : faasData.rpu.info.dtBldgOccupied,
+			lfTaxpayerName : "",
+			lfSurveyNo : "",
+			lfLotNo : "",
+			lfArpNo : "",
+			lfArea : 0.0,
+			taxable : faasData.rpu.info.taxable,
+			year : faasData.info.effectivityYear,
+			qtr : faasData.info.effectivityQtr,
+			baseValue : faasData.rpu.info.baseValue,
+			totalMV : faasData.rpu.info.firstFloorBaseValue,
+			totalDepreciationRate : " " + faasData.rpu.info.depreciation + "%",
+			depreciationCost : faasData.rpu.info.totalAMV * ( faasData.rpu.info.depreciation / 100 ),
+			totalAMV : faasData.rpu.info.totalAMV,
+			faasFloorInfo : faasFloorInfo,
+			noOfStoreys : faasFloorInfo.size(),
+			faasStructuralMaterials : faasStructuralMaterials,
+			faasAdditionalItems : faasAdditionalItems,
+			faasPropertyAssessment : faasPropertyAssessment,
+			additionalItemsTotalAmount : additionalItemsTotalAmount,
+			totalConstructionCost : faasData.rpu.info.firstFloorBaseValue + additionalItemsTotalAmount,
+			appraisedby : faasData.info.appraisedBy.name,
+			appraisedposition : faasData.info.appraisedBy.title,
+			appraisaldate : faasData.info.appraisedBy.dtSigned,
+			approvedby : faasData.info.approvedBy.name,
+			approvedposition : faasData.info.approvedBy.title,
+			approveddate : faasData.info.approvedBy.dtSigned,
+			recommending : faasData.info.recommendedBy.name,
+			recommendingposition : faasData.info.recommendedBy.title,
+			recommendingdate : faasData.info.recommendedBy.dtSigned,
+			memoranda : faasData.remarks,
+			prevpin : faasData.info.previousInfo.prevPin,
+			prevtdno : faasData.info.previousInfo.prevTdNo,
+			prevtotalav : faasData.info.previousInfo.prevAssessedValue,
+			prevtotalmv : faasData.info.previousInfo.prevMarketValue,
+			prevowner : faasData.info.previousInfo.prevOwner,
+			type : faasData.rpu.info.type
+		];
+		
+		return bldgData;
+		}catch(ex){
+			ex.printStackTrace();
+			throw ex;
+		}
+	}
+	
+	private def getMachFaas( def faasData ){
+		def machineUses = faasData.rpu.info.machineUses;
+		
+		def propertyAppraisals = [];
+		machineUses?.each{ uses ->
+			uses.machineDetails?.each{
+				def item = [
+					kind : it.machineTitle,
+					brand : it.brand,
+					model : it.model,
+					capacity : it.capacity,
+					acquireddate : it.yearAcquired,
+					condition : it.status,
+					estimatedlife : it.estimatedLife,
+					remaininglife : it.remainingLife,
+					installedyear : it.yearInstalled,
+					operationyear : it.yearsUsed
+				];
+				propertyAppraisals.add( item );
+			}
+		}
+		
+		def depreciations = [];
+		machineUses?.each{ uses ->
+			uses.machineDetails?.each{
+				def item = [
+					kind : it.machineTitle,
+					originalcost : it.originalCost,
+					depreciation : it.depreciation,
+					totaldepreciationvalue : it.depreciation * it.marketValue,
+					depreciatedvalue : it.adjMarketValue
+				];
+				depreciations.add( item );
+			}
+		}
+		
+		def propertyAssessment = [];
+		machineUses?.each{
+			def item = [
+				type : faasData.rpu.info.type,
+				actualuse : it.actualUseTitle,
+				marketvalue : new BigDecimal(0),
+				assessmentlevel : it.assessLevel,
+				assessedvalue : it.assessedValue,
+				taxable : faasData.rpu.info.taxable,
+				year : faasData.info.effectivityYear,
+				qtr : faasData.info.effectivityQtr
+			];
+			
+			it.machineDetails.each{
+				item.marketvalue = item.marketvalue + it.marketValue;
+			}
+			propertyAssessment.add( item );
+		}
+		
+		def machData = [
+			transactioncode : faasData.info.txnType,
+			arpn : faasData.tdNo,
+			pin : faasData.rp.info.pin,
+			cloano : faasData.rp.info.titleNo,
+			surveyno : faasData.rp.info.surveyNo,
+			lotno : faasData.rp.info.cadastralLotNo,
+			blk : faasData.rp.info.blockNo,
+			owner : faasData.info.taxpayer.taxpayerName,
+			owneraddress : faasData.info.taxpayer.taxpayerAddress,
+			admin : "",
+			adminaddress : "",
+			houseno : faasData.rp.info.houseNo,
+			street : faasData.rp.info.street,
+			brgydist : faasData.rp.info.barangay,
+			landowner : "",
+			landpin : "",
+			propertyAppraisals : propertyAppraisals,
+			depreciations : depreciations,
+			propertyAssessment : propertyAssessment,
+			appraisedby : faasData.info.appraisedBy.name,
+			appraisedposition : faasData.info.appraisedBy.title,
+			appraisaldate : faasData.info.appraisedBy.dtSigned,
+			approvedby : faasData.info.approvedBy.name,
+			approvedposition : faasData.info.approvedBy.title,
+			approveddate : faasData.info.approvedBy.dtSigned,
+			recommending : faasData.info.recommendedBy.name,
+			recommendingposition : faasData.info.recommendedBy.title,
+			recommendingdate : faasData.info.recommendedBy.dtSigned,
+			memoranda : faasData.remarks,
+			prevpin : faasData.info.previousInfo.prevPin,
+			prevtdno : faasData.info.previousInfo.prevTdNo,
+			prevtotalav : faasData.info.previousInfo.prevAssessedValue,
+			prevtotalmv : faasData.info.previousInfo.prevMarketValue,
+			prevowner : faasData.info.previousInfo.prevOwner,
+			type : faasData.rpu.info.type
+		];
+		
+		return machData;
+	}
+	
+	private def getPlantFaas( def faasData ){
+		def landPlantDetails = faasData.rpu.info.landPlantDetails;
+		
+		def plantstreesAppraisals = [];
+		landPlantDetails?.each{
+			def item = [
+				classtitle : it.treeTitle,
+				totalno : it.bearing + it.nonBearing,
+				bearing : it.bearing,
+				nonbearing : it.nonBearing,
+				nonbearingage : it.nonBearingAge,
+				unitprice : it.unitValue,
+				marketvalue : it.marketValue
+			];
+			plantstreesAppraisals.add( item );
+		}
+		
+		def propertyAssessment = [];
+		
+		def mv = new BigDecimal(0);
+		landPlantDetails?.each{
+			mv = mv + it.marketValue;
+		}
+		
+		landPlantDetails?.each{
+			def item = [
+				type : faasData.rpu.info.type,
+				actualuse : it.treeAssessLevelTitle,
+				marketvalue : mv,
+				assessmentlevel : it.assessLevel,
+				taxable : faasData.rpu.info.taxable,
+				year : faasData.info.effectivityYear,
+				qtr : faasData.info.effectivityQtr
+			];
+			
+			propertyAssessment.add( item );
+		}
+		
+		
+		def plantData = [
+			transactioncode : faasData.info.txnType,
+			arpn : faasData.info.tdNo,
+			pin : faasData.rp.info.pin,
+			cloano : faasData.rp.info.titleNo,
+			surveyno : faasData.rp.info.surveyNo,
+			lotno : faasData.rp.info.cadastralLotNo,
+			blk : faasData.rp.info.blockNo,
+			owner : faasData.info.taxpayer.taxpayerName,
+			owneraddress : faasData.info.taxpayer.taxpayerAddress,
+			admin : "",
+			adminaddress : "",
+			houseno : faasData.rp.info.houseNo,
+			street : faasData.rp.info.street,
+			brgydist : faasData.rp.info.barangay,
+			plantstreesAppraisals : plantstreesAppraisals,
+			propertyAssessment : propertyAssessment,
+			appraisedby : faasData.info.appraisedBy.name,
+			appraisedposition : faasData.info.appraisedBy.title,
+			appraisaldate : faasData.info.appraisedBy.dtSigned,
+			approvedby : faasData.info.approvedBy.name,
+			approvedposition : faasData.info.approvedBy.title,
+			approveddate : faasData.info.approvedBy.dtSigned,
+			recommending : faasData.info.recommendedBy.name,
+			recommendingposition : faasData.info.recommendedBy.title,
+			recommendingdate : faasData.info.recommendedBy.dtSigned,
+			memoranda : faasData.remarks,
+			prevpin : faasData.info.previousInfo.prevPin,
+			prevtdno : faasData.info.previousInfo.prevTdNo,
+			prevtotalav : faasData.info.previousInfo.prevAssessedValue,
+			prevtotalmv : faasData.info.previousInfo.prevMarketValue,
+			prevowner : faasData.info.previousInfo.prevOwner,
+			type : faasData.rpu.info.type
+		];
+		
+		return plantData;
+	}
+	
+	private def getMiscFaas( def faasData ){
+		def miscItems = faasData.rpu.info.miscRPUItems;
+		
+		def faasMiscItems = [];
+		miscItems?.each{
+			def item = [
+				miscItemTitle : it.miscItemTitle,
+				expression : it.expression,
+				unit : it.unit,
+				marketValue : it.marketValue
+			];
+			
+			faasMiscItems.add( item );
+		}
+		
+		def adjusmentFactors = [];
+		miscItems?.each{
+			def item = [
+				miscItemTitle : it.miscItemTitle,
+				depreciationRate : it.depreciation,
+				unit : it.unit,
+				marketValue : it.marketValue,
+				adjMarketValue : it.adjMarketValue
+			];
+			adjusmentFactors.add( item );
+		}
+		
+		def propertyAssessment = [];
+		miscItems?.each{
+			def item = [
+				marketValue : it.marketValue,
+				assessLevel : it.assessLevel,
+				assessedValue : it.assessedValue
+			];
+			propertyAssessment.add( item );
+		}
+	
+	
+		def miscData = [
+			transactioncode : faasData.info.txnType,
+			arpn : faasData.tdNo,
+			pin : faasData.rp.info.pin,
+			cloano : faasData.rp.info.titleNo,
+			surveyno : faasData.rp.info.surveyNo,
+			lotno : faasData.rp.info.cadastralLotNo,
+			blk : faasData.rp.info.blockNo,
+			owner : faasData.info.taxpayer.taxpayerName,
+			owneraddress : faasData.info.taxpayer.taxpayerAddress,
+			admin : "",
+			adminaddress : "",
+			houseno : faasData.rp.info.houseNo,
+			street : faasData.rp.info.street,
+			brgydist : faasData.rp.info.barangay,
+			faasMiscItems : faasMiscItems,
+			adjusmentFactors : adjusmentFactors,
+			propertyAssessment : propertyAssessment,
+			taxable : faasData.rpu.info.taxable,
+			year : faasData.info.effectivityYear,
+			qtr : faasData.info.effectivityQtr,
+			appraisedby : faasData.info.appraisedBy.name,
+			appraisedposition : faasData.info.appraisedBy.title,
+			appraisaldate : faasData.info.appraisedBy.dtSigned,
+			approvedby : faasData.info.approvedBy.name,
+			approvedposition : faasData.info.approvedBy.title,
+			approveddate : faasData.info.approvedBy.dtSigned,
+			recommending : faasData.info.recommendedBy.name,
+			recommendingposition : faasData.info.recommendedBy.title,
+			recommendingdate : faasData.info.recommendedBy.dtSigned,
+			memoranda : faasData.remarks,
+			prevpin : faasData.info.previousInfo.prevPin,
+			prevtdno : faasData.info.previousInfo.prevTdNo,
+			prevtotalav : faasData.info.previousInfo.prevAssessedValue,
+			prevtotalmv : faasData.info.previousInfo.prevMarketValue,
+			prevowner : faasData.info.previousInfo.prevOwner,
+			type : faasData.rpu.info.type
+		];
+		
+		return miscData;
+	}
+}
