@@ -56,7 +56,7 @@ class FAASService
 	public def submit( faasId ) {
 		def faas = open( faasId );
 		if( faas.state != PROVAPPROVAL_STATE ) throw new Exception("FAAS is already $faas.state.");
-		
+
 		def currDate = dateService.getServerDate();
 		faas.state  = FORAPPROVAL_STATE;
 		faas.info.reviewedBy  = [name:env.USER, title:env.TITLE, dtSigned:currDate];
@@ -97,6 +97,25 @@ class FAASService
 		def faas = open( faasId );
 		if( faas.state != FORAPPROVAL_STATE) throw new Exception("FAAS is already $faas.state.");
 		
+		def currDate = new Date();
+		faas.state  = CURRENT_STATE;
+		faas.info.approvedBy.dtSigned = currDate;
+		faas.sys_dtApproved = currDate;
+		em.update( "faas:faas", faas );
+		
+		def faasData = em.read("faas:faas-approval", [ objid:faasId ]);
+		if( !faasData ) throw new Exception("FAAS not found.");
+		faasData.state = CURRENT_STATE;
+		em.create("faas:faas-current", faasData);
+		em.delete("faas:faas-approval", faasData);
+		return faas;
+	}
+	
+	@ProxyMethod
+	public def approve( faasId ) {
+		def faas = open( faasId );
+		if( faas.state != FORAPPROVAL_STATE) throw new Exception("FAAS is already $faas.state.");
+		
 		def currDate = dateService.getServerDate();
 		faas.state  = CURRENT_STATE;
 		faas.info.approvedBy.dtSigned = currDate;
@@ -117,7 +136,6 @@ class FAASService
 	public def disapprove( faasId, remarks )  {
 		def faas = open( faasId );
 		if( faas.state == CURRENT_STATE ) throw new Exception("FAAS is already $faas.state.");
-		
 		def currDate = dateService.getServerDate();
 		faas.state = DISAPPROVED_STATE;
 		faas.remarks = remarks;
