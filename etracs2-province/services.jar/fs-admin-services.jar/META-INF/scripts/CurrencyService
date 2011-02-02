@@ -1,0 +1,33 @@
+
+import com.rameses.annotations.*;
+
+class CurrencyService {
+
+	@SqlContext("java:main")
+	def db;	
+
+	@PersistenceContext("java:main")
+	def em;	
+	
+	@ProxyMethod
+	public def getList() {
+		return db.createNamedQuery( "currency:list").resultList;
+	}
+
+	@ProxyMethod
+	public def getAllowedList( def params ) {
+		return db.createNamedQuery( "currency:allowed").setParameters(params).resultList;
+	}
+	
+	@ProxyMethod
+	public def addCurrency( param ) {
+		em.create( "currency:allowed", param ); 
+	}
+	
+	@ProxyMethod
+	public def removeCurrency( param ) {
+		em.delete( "currency:allowed", param ); 
+	}
+	
+	
+}

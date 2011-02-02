@@ -25,9 +25,10 @@ public class ProvinceTaxpayerViewPage extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
         jPanel1 = new javax.swing.JPanel();
-        xActionBar2 = new com.rameses.rcp.control.XActionBar();
+        jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         xEditorPane2 = new com.rameses.rcp.control.XEditorPane();
+        xActionBar2 = new com.rameses.rcp.control.XActionBar();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -36,16 +37,31 @@ public class ProvinceTaxpayerViewPage extends javax.swing.JPanel {
         setBorder(xTitledBorder1);
         jPanel1.setLayout(new java.awt.BorderLayout());
 
-        xActionBar2.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 5, 1));
+        xEditorPane2.setName("html");
+        jScrollPane1.setViewportView(xEditorPane2);
+
+        org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 465, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel2Layout.createSequentialGroup()
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 432, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        jPanel1.add(jPanel2, java.awt.BorderLayout.CENTER);
+
+        xActionBar2.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 10, 5, 1));
         xActionBar2.setName("formActions");
         xActionBar2.setPreferredSize(new java.awt.Dimension(89, 35));
         xActionBar2.setUseToolBar(false);
         jPanel1.add(xActionBar2, java.awt.BorderLayout.NORTH);
-
-        xEditorPane2.setName("html");
-        jScrollPane1.setViewportView(xEditorPane2);
-
-        jPanel1.add(jScrollPane1, java.awt.BorderLayout.CENTER);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -54,6 +70,7 @@ public class ProvinceTaxpayerViewPage extends javax.swing.JPanel {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
     private com.rameses.rcp.control.XActionBar xActionBar2;
     private com.rameses.rcp.control.XEditorPane xEditorPane2;

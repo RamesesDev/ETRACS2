@@ -1,0 +1,62 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class ForexService {
+
+    @PersistenceContext("java:main")
+    def em; 
+
+	@Service("Var")
+	def VARS;
+	
+    @ProxyMethod	
+    public def create( forex ) {
+		em.create( "forex", forex );
+    }
+
+    @ProxyMethod	
+    public def update( forex ) {
+		em.update( "forex", forex );
+    }
+
+    @ProxyMethod	
+    public def remove( forex ) {
+		em.update( "forex", forex );
+    }
+	
+    @ProxyMethod	
+    public def getList( def param ) {
+		StringBuffer buff = new StringBuffer();
+		if(param.mode) buff.append( ' and mode=$P{mode} ' );
+		def vars = [filter: buff.toString()] 
+		em.sqlContext.createNamedQuery("forex:list").setParameters( param ).setVars(vars).resultList;
+    }
+	
+    @ProxyMethod	
+	public def getBaseCurrency() {
+		return VARS["base.currency"];
+	}
+	
+	@ProxyMethod	
+    public def convert( def param  ) {
+	    //retrieve from currency. find rate 
+	    assert param.fromCurrency;
+	    assert param.toCurrency;
+	    assert param.amount;
+	    
+	    print param.fromCurrency + " " + param.toCurrency + " " + param.amount;
+
+	    def from = em.sqlContext.createNamedQuery('forex:rate.sql').setParameter('currency', param.fromCurrency).singleResult;
+	    def to = em.sqlContext.createNamedQuery('forex:rate.sql').setParameter('currency', param.toCurrency).singleResult;
+	    
+		if ( !from ) throw new Exception('No forex setting found for currency ' + param.fromCurrency);
+		if ( !to ) throw new Exception('No forex setting found for currency ' + param.toCurrency);
+		
+	    def factor = ( to.rate / from.rate  );
+	    def amount = param.amount * factor;
+	    def fromrate = [ currency: param.fromCurrency, amount: from.rate ];
+	    def torate = [ currency: param.toCurrency, amount: to.rate ];
+	    return [currency: param.toCurrency, amount: amount, torate: torate, fromrate: fromrate];
+    }
+
+}

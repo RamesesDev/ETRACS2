@@ -1,56 +1,154 @@
 <workunit>
     <invokers>
-        <invoker folderid="menu/file" caption="Province"/>
+        <invoker folderid="menu/file" caption="Province" action="init" permission="province.view" />
         <invoker type="formActions" caption="Close" action="_close" mnemonic="c" />
-        <invoker type="formActions" caption="Edit" action="edit"/>
-        <invoker type="formActions" caption="Save" action="save"/>
+        <invoker type="formActions" caption="Save" action="save"  />
     </invokers>
     
     <code>
         
-import com.rameses.rcp.common.*;
+<![CDATA[        
+        import com.rameses.rcp.common.*;
 import com.rameses.rcp.annotations.*;
+import java.rmi.server.UID;
 
 class ProvinceController 
 {
-    def title = "Province Information";
-    def province = [ municipalities:[] ];
+    @Binding
+    def binding;
     
-    void edit() {
+    @ChangeLog(prefix=["province","province.municipalities"])
+    def changeLog;
+    
+    @Service("LguService")
+    def svc;
+    
+    def title = "Province Information";
+    def message;
+    def selectedMunicipality;
+    def selectedBarangay;
+    def province;
+    def newRecord = false;
+    
+    void init() {
+        province = svc.openProvince();
+        if( ! province ) {
+            province = [ 
+                objid         : getNewId("P"),
+                type          : "province",
+                schemaName    : "lgu:province",
+		schemaVersion : "1.0",
+                municipalities : [] 
+            ];
+            newRecord = true;
+            title = "Provine (New)";
+        }
+        else {
+            newRecord = false;
+            title = "Province: $province.name";
+        }
     }
     
     void save() {
-    
+        sortItems();
+        if( newRecord ) {
+            svc.createProvince( province ); 
+            newRecord = false;
+            title = "Province: $province.name";
+        }
+        else {
+            def saveOption = [diff: changeLog.difference];
+            svc.updateProvince( province, saveOption );
+        }
     }
-
-    def listHandler = [
+    
+    def municipalityHandler = [
+        getRows     : { return 100; },
         getColumns  : {
             return [
-                    new Column( name:"item.indexNo", caption:"Index No.", width:100, editable:true, required:true ),
-                    new Column( name:"item.name", caption:"Municipality", width:150, editable:true, required:true ),
-                    new Column( name:"item.formalName", caption:"Formal Name", editable:true, required:true ),
+                    new Column( name:"item.indexNo", caption:"Index No.", width:60, minWidth:60, editable:true, required:true ),
+                    new Column( name:"item.name", caption:"Name", width:150, editable:true, required:true ),
+                    new Column( name:"item.formalName", caption:"Formal Name", width:200, editable:true, required:true ),
             ];
         },
-        fetchList  : { return province.municipalities; },
-        createItem : { return [:]; },
-        onAddItem  : { item -> province.municipalities.add(item); },
-        validate   : { listItem -> doValidate(listItem); }
+        fetchList    : { return province.municipalities; },
+        createItem   : { return createMunicipality(); },
+        onAddItem    : { item -> province.municipalities.add(item); },
+        validate     : { listItem -> doValidate(listItem.item, province.municipalities); },
+        onRemoveItem : { item -> 
+            if( MsgBox.confirm("Delete item?") ) {
+                province.municipalities.remove( item );
+            }
+        },
+    ] as SubListModel;
+    
+    def barangayHandler = [
+        getRows     : { return 100; },
+        getColumns  : {
+            return [
+                    new Column( name:"item.indexNo", caption:"Index No.", width:60, minWidth:60, editable:true, required:true ),
+                    new Column( name:"item.name", caption:"Name", width:150, editable:true, required:true ),
+                    new Column( name:"item.formalName", caption:"Formal Name", width:200, editable:true, required:true ),
+            ];
+        },
+        fetchList    : { return selectedMunicipality?.item?.barangays; },
+        createItem   : { return createBarangay(); },
+        onAddItem    : { item -> selectedMunicipality.item.barangays.add(item); },
+        validate     : { listItem -> doValidate(listItem.item, selectedMunicipality.item.barangays); },
+        onRemoveItem : { item -> 
+            if( MsgBox.confirm("Delete item?") ) {
+                selectedMunicipality.item.barangays.remove( item );
+            }
+        },
     ] as SubListModel;
 
-    void doValidate( listItem ) {
-        def item = listItem.item;
-        checkDuplicate( province.municipalities, item, "indexNo", "Index No." ) ;
-        checkDuplicate( province.municipalities, item, "name", "Municipality" ) ;
-        checkDuplicate( province.municipalities, item, "formalName", "Formal Name" ) ;
+    void doValidate( item, list ) {
+        message = null;
+        try {
+            checkDuplicate( item, list, "indexNo", "Index No." ) ;
+            checkDuplicate( item, list, "name", "Name" ) ;
+            checkDuplicate( item, list, "formalName", "Formal Name" ) ;
+        }
+        catch( e ) {
+            message = e.message;
+            throw e;
+        }
     }
 
-    void checkDuplicate( list, item, key, caption ) {
-        if( list.find { f -> f."$key" == item."$key" } )
+    void checkDuplicate( item, list, key, caption ) {
+        if( list.find { f -> f."$key" == item."$key"  && f.objid != item.objid } )
             throw new Exception("Duplicate $caption not allowed.");
     }
     
+    def createMunicipality() {
+        return [
+            objid     : getNewId( "M" ),
+            type      : "municipality",
+            barangays : [],
+        ];
+    }
+    
+    def createBarangay() {
+        return [
+            objid : getNewId( "B" ),
+            type  : "barangay",
+        ];
+    }
+    
+    def getNewId( prefix ) {
+        return prefix + '-' + new UID();
+    }
+    
+    void sortItems() {
+        province.municipalities.sort { a, b -> return a.indexNo.compareTo(b.indexNo) };
+        province.municipalities.each { muni ->
+            muni.barangays.sort { a, b -> return a.indexNo.compareTo(b.indexNo) };
+        }
+    }
+        
 }
 
+]]>
     </code>
     
     <pages>

@@ -1,0 +1,24 @@
+
+import com.rameses.annotations.*;
+
+class LocaleService {
+
+	@SqlContext("java:main")
+	def db;	
+
+	@ProxyMethod
+	public def getCountryList() {
+		return db.createNamedQuery( "locale:country-list.sql").resultList;
+	}
+
+	@ProxyMethod
+	public def getTimezoneList( def country ) {
+		return db.createNamedQuery( "locale:timezone-list.sql").setParameter("country",country).resultList*.timezone;
+	}
+	
+	@ProxyMethod
+	public def getCurrencyList() {
+		return db.createNamedQuery( "locale:currency-list.sql").resultList;
+	}
+
+}

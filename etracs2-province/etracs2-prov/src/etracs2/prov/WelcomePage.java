@@ -38,7 +38,6 @@ public class WelcomePage extends javax.swing.JPanel {
         setBackground(new java.awt.Color(255, 255, 255));
         jPanel2.setLayout(null);
 
-        jPanel2.setOpaque(false);
         jPanel2.setPreferredSize(new java.awt.Dimension(100, 120));
         jLabel1.setFont(new java.awt.Font("Tahoma", 1, 18));
         jLabel1.setForeground(new java.awt.Color(0, 51, 153));
@@ -69,7 +68,6 @@ public class WelcomePage extends javax.swing.JPanel {
         jPanel1.setLayout(new java.awt.BorderLayout());
 
         jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(20, 60, 10, 10));
-        jPanel1.setOpaque(false);
         xActionBar1.setButtonPreferredSize(new java.awt.Dimension(200, 70));
         xActionBar1.setName("formActions");
         xActionBar1.setOpaque(false);

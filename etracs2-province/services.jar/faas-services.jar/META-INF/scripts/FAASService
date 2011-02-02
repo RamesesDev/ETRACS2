@@ -8,6 +8,9 @@ class FAASService
 	@Env
 	def env;
 	
+	@Service("Var")
+	def var;
+	
 	def PROVAPPROVAL_STATE = "PROVAPPROVAL";
 	def FORAPPROVAL_STATE = "FORAPPROVAL";
 	def CURRENT_STATE = "CURRENT";
@@ -73,7 +76,7 @@ class FAASService
 		
 		def currDate = new Date();
 		faas.state  = CURRENT_STATE;
-		faas.info.approvedBy.dtSigned = currDate;
+		faas.info.approvedBy = [ name:var.provincialAssessor.name, title:var.provincialAssessor.title, dtSigned:currDate];
 		faas.sys_dtApproved = currDate;
 		em.update( "faas:faas", faas );
 		

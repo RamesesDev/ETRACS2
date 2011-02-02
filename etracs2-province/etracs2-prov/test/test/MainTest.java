@@ -8,13 +8,10 @@
 package test;
 
 
-import com.rameses.common.AsyncResult;
 import com.rameses.persistence.EntityManager;
+import com.rameses.rcp.common.ListItem;
 import com.rameses.rcp.common.PageListModel;
-import com.rameses.rcp.common.PopupOpener;
 import com.rameses.rcp.common.SubListModel;
-import com.rameses.rcp.common.Task;
-import com.rameses.rcp.control.XTable;
 import com.rameses.rcp.framework.ChangeLog;
 import com.rameses.util.DateUtil;
 import java.util.Date;
@@ -44,6 +41,7 @@ public class MainTest extends TestCase {
         SubListModel sl;
         ChangeLog cl;
         EntityManager em;
+        ListItem li;
         
         Date dt = new Date();
         System.out.println(dt);

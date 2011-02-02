@@ -1,0 +1,48 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import java.rmi.server.UID;
+
+class LguService
+{
+	@PersistenceContext("etracs")
+	def em;
+	
+	@ProxyMethod 
+	public def createProvince( province ) {	
+		if( existsProvince() ) throw new Exception("Province already defined.");
+		updatePinInfo( province );
+		em.validate("lgu:province", province);
+		em.create("lgu:province", province);
+		return province;
+	}
+	
+	@ProxyMethod
+	public def updateProvince( province, saveOption ) {
+		updatePinInfo(province);
+		em.validate("lgu:province", province);
+		em.update("lgu:province", province);
+		return province;
+	}
+	
+	@ProxyMethod
+	public def openProvince() {
+		def province = em.sqlContext.createNamedQuery("lgu:getProvinceId").singleResult;
+		if ( !province ) return null;
+		return em.read("lgu:province", [objid:province.objid]);
+	}
+	
+	private def existsProvince( ) {
+		def data = em.sqlContext.createNamedQuery("lgu:getProvinceId").resultList;
+		return data.size() > 0;
+	}
+	
+	private void updatePinInfo( province ) {
+		province.pin   = province.indexNo;
+		province.municipalities.each { muni ->
+			muni.pin = province.pin + '-' + muni.indexNo;
+			muni.barangays.each { brgy ->
+				brgy.pin   = muni.pin + '-' + brgy.indexNo;
+			}
+		}
+	}
+}

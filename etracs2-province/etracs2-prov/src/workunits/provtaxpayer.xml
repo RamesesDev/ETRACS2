@@ -2,10 +2,10 @@
     <invokers>
         <invoker type="provtaxpayerinfo" />
         
-        <invoker type="formActions" caption="New" action="initNew" visibleWhen="#{infoShown == false}" icon="images/new.png" shortcut="ctrl N" mnemonic="n" />
-        <invoker type="formActions" caption="Edit" action="initEdit" visibleWhen="#{infoShown == false &amp;&amp; taxpayerId != null}" icon="images/edit.png"  mnemonic="e" />
-        <invoker type="formActions" caption="Cancel" action="cancelEdit" immediate="true" visibleWhen="#{infoShown == true}" icon="images/cancel.png"  mnemonic="c" />
-        <invoker type="formActions" caption="Save" action="save" visibleWhen="#{infoShown == true}" icon="images/save.jpg"  shortcut="ctrl S" mnemonic="s" />
+        <invoker type="formActions" caption="New" action="initNew" visibleWhen="#{mode == 'view'}" icon="images/new.png" shortcut="ctrl N" mnemonic="n" permission="provincetaxpayer.create"/>
+        <invoker type="formActions" caption="Edit" action="initEdit" visibleWhen="#{mode == 'view' and taxpayerId != null}" icon="images/edit.png"  mnemonic="e" permission="provincetaxpayer.edit"/>
+        <invoker type="formActions" caption="Cancel" action="cancelEdit" immediate="true" visibleWhen="#{mode == 'create' or mode == 'edit'}" icon="images/cancel.png"  mnemonic="c" />
+        <invoker type="formActions" caption="Save" action="save" visibleWhen="#{mode == 'create' or mode == 'edit'}" icon="images/save.jpg"  shortcut="ctrl S" mnemonic="s" permission="provincetaxpayer.save"/>
     </invokers>
     
     <code>
@@ -18,9 +18,6 @@ import com.rameses.osiris2.client.*;
 
 class ProvinceTaxpayerInfoController 
 {
-    @Caller
-    def caller;
-    
     @Binding
     def binding;
     
@@ -33,20 +30,21 @@ class ProvinceTaxpayerInfoController
     @ChangeLog(prefix=["taxpayer"])
     def changeLog;
     
+    def listViewHandler;
+    
     def taxpayerId;
     def taxpayer;
     def textSearch;
-    def infoShown = false;
-    def status = "open";
+    def mode = "view";
     
     def initNew() {
         taxpayer = createTaxpayer();
-        return doInit( "new" );
+        doInit("create");
     }
     
     def initEdit() {
         taxpayer = svc.open( taxpayerId );
-        return doInit( "edit" );
+        doInit( "edit" );
     }
     
     def save() {
@@ -107,7 +105,6 @@ class ProvinceTaxpayerInfoController
     ] as PageListModel;
    
     def getHtml() { 
-        println "GETTING HTML";
         if( taxpayerId ) {
             return htmlService.getHtml( taxpayerId );
         }
@@ -119,17 +116,19 @@ class ProvinceTaxpayerInfoController
     }
     
     def resetToDefault() {
-        infoShown = false;
-        status = "open";
-        caller.updateStatus( false );
+        mode = "view";
+        fireViewHandler("view");
         return "default";
     }
     
-    def doInit( stat) {
-        infoShown = true;
-        status = stat;
-        caller.updateStatus( true );
+    def doInit( action ) {
+        mode = action;
+        fireViewHandler( mode );
         return "info";
+    }
+    
+    void fireViewHandler( mode ) {
+        if(listViewHandler) listViewHandler(mode);
     }
     
     
