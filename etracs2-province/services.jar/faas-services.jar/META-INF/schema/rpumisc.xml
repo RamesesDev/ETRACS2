@@ -2,24 +2,25 @@
 	<element name="misc">
 		<link ref="rpu:rpuinfo"/>
 		<field name="miscAssessLevelId" required="true"  />
-		<field name="actualUseCode" required="true"  />
-		<field name="actualUseTitle" required="true"  />
-		<field name="assessLevel" type="decimal" />
-		<complex name="miscRPUItems" ref="miscRPUItem" type="list" min=1" serializer="default" />
+		<link ref="common:actualUse" />
+		<complex name="miscRpuItems" ref="miscRpuItem" type="list" min=1" serializer="default" />
 	</element>
 	
-	<element name="miscRPUItem">
+	<element name="miscRpuItem">
 		<field name="objid" required="true"  />
 		<field name="unit" required="true"  />
 		<field name="depreciation" required="true" type="decimal" />
-		<field name="marketValue" required="true" type="decimal" />
-		<field name="adjMarketValue" required="true" type="decimal" />
-		<field name="assessLevel" required="true" type="decimal" />
-		<field name="assessedValue" required="true" type="decimal" />
+		<link ref="assessment" />
 		<field name="miscItemValueId" required="true"  />
+		<link ref="miscItem" />
+		<field name="expression" required="true"  />
+		<complex name="params" ref="common:param" type="list" serializer="default" required="false"/>
+	</element>
+	
+	<element name="miscItem">
 		<field name="miscItemId" required="true"  />
 		<field name="miscItemCode" required="true"  />
 		<field name="miscItemTitle" required="true"  />
-		<field name="expression" required="true"  />
 	</element>
+	
 </schema>

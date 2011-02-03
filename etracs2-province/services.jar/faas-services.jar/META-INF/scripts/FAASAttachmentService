@@ -1,5 +1,6 @@
 import com.rameses.annotations.*;
 import com.rameses.io.*;
+import java.rmi.server.UID;
 
 class FAASAttachmentService {
 
@@ -18,9 +19,9 @@ class FAASAttachmentService {
 	}
 	
 	@ProxyMethod
-	public void uploadAttachment( attachment, data ) {
-		print "UPLOADING == " + attachment.objid; 
-		def fis = new FileOutputStream( findFile(attachment.objid).absolutePath, true );
+	public void uploadAttachment( fileName, data ) {
+		print "UPLOADING == " + fileName; 
+		def fis = new FileOutputStream( findFile( fileName ).absolutePath, true );
 		fis.write( data );
 		fis.close();
 	}
@@ -45,16 +46,61 @@ class FAASAttachmentService {
 		return data;
 	}
 	
-	private def findFile( id ) {
-		def fileDir = new File( var.getProperty( 'faas_attachments_temp_dir', '' ) );
+	@ProxyMethod
+	public def downloadAttachment2( fileName, info ) {
+		def file = findFile( fileName );
+		if ( !file ) throw new Exception("File not found.");
+		
+		def ftis = new FileTransferInputStream( file, info );
+		if (!info)
+			ftis.fileTransferInfo.tempFileName = "TMP" + new UID();
+		ftis.byteSize = 1024 * 32;
+		def data = [
+			bytes : ftis.readNext()
+		];
+		ftis.fileTransferInfo.save();
+		data.info = ftis.fileTransferInfo;
+		
+		if (ftis.fileTransferInfo.eof)
+			ftis.fileTransferInfo.delete();
+			
+		ftis.close();
+		return data;
+	}
+	
+	/*@ProxyMethod
+	public def downloadAttachment2( objid, info ) {
+		def file = findFile( objid );
+		if ( !file ) throw new Exception("File not found.");
+		
+		def ftis = new FileTransferInputStream( file, info );
+		ftis.byteSize = 1024 * 32;
+		def data = [
+			bytes : ftis.readNext()
+		];
+		ftis.fileTransferInfo.tempFileName = "TMP" + new UID();
+		ftis.fileTransferInfo.save();
+		data.info = ftis.fileTransferInfo;
+		
+		if (ftis.fileTransferInfo.eof)
+			ftis.fileTransferInfo.delete();
+			
+		ftis.close();
+		return data;		
+	}*/
+	
+	private def findFile( fileName ) {
+		try {
+		def fileDir = new File( var.faas_attachments_temp_dir );
 		if ( !fileDir.exists() )
 			fileDir.mkdirs();
-		fileDir.eachFileMatch( id ) { f ->
+		fileDir.eachFileMatch( fileName ) { f ->
 			return f;
 		}
-		def file = new File(var.getProperty( 'faas_attachments_temp_dir', '' ) + id );
+		def file = new File( var.faas_attachments_temp_dir + File.separator + fileName );
 		file.createNewFile();
 		return file;
+		} catch ( ex ) { print "findFile"; ex.printStackTrace(); throw ex; }
 	}
 	
 	@ProxyMethod
