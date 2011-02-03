@@ -1,0 +1,109 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/file" caption="FAAS Report" />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+            import com.rameses.rcp.common.*;
+            import com.rameses.rcp.annotations.*;
+            import com.rameses.osiris2.client.*;
+            import com.rameses.osiris2.reports.*;
+            
+            public class FAASController{
+                @Service("FAASReportService")
+                def svc;
+                
+                @Service("Var")
+                def vars;
+                
+                def tdno;
+                def data = [];
+                
+                public def view(){
+                    data = svc.findFAAS( tdno );
+                    report.viewReport();
+                    return "preview";
+                }
+                
+                def report =[
+                    getReportName : { reportName(); },
+                    getReportData : { return data; },
+                    getParameters : { getStandardReportParams(); },
+                    getSubReports : { subReports(); }
+                ] as ReportModel;
+                
+                public String reportName(){
+                    if( data.type == "LAND" )
+                        return "etracs2faasreport/reports/Land/FAASLandReport.jasper";
+                    else if( data.type == "MACH" )
+                        return "etracs2faasreport/reports/Machinery/FAASMachineryReport.jasper";
+                    else if( data.type == "BLDG" )
+                        return "etracs2faasreport/reports/Building/FAASBuildingReport.jasper";
+                    else if( data.type == "PLANT" )
+                        return "etracs2faasreport/reports/PlantTrees/FAASPlantsTreesReport.jasper";
+                    else if( data.type == "MISC" )
+                        return "etracs2faasreport/reports/Misc/FAASMiscReport.jasper";
+                }
+                    
+                public SubReport[] subReports(){
+                    if( data.type == "LAND" ){
+                        return[
+                            new SubReport("LandAppraisal","etracs2faasreport/reports/Land/LandAppraisals.jasper"),
+                            new SubReport("OtherImprovement","etracs2faasreport/reports/Land/OtherImprovements.jasper"),
+                            new SubReport("ValueAdjustment","etracs2faasreport/reports/Land/ValueAdjustments.jasper"),
+                            new SubReport("PropertyAssessment","etracs2faasreport/reports/Land/PropertyAssessment.jasper")
+                        ];
+                    }else if( data.type == "MACH" ){
+                        return[
+                            new SubReport("PropertyAppraisal","etracs2faasreport/reports/Machinery/PropertyAppraisal.jasper"),
+                            new SubReport("Depreciation","etracs2faasreport/reports/Machinery/Depreciation.jasper"),
+                            new SubReport("PropertyAssessment","etracs2faasreport/reports/Machinery/PropertyAssessment.jasper")
+                        ];
+                    }else if( data.type == "BLDG" ){
+                        return[                            
+                            new SubReport("FAASFLOORINFO","etracs2faasreport/reports/Building/FloorInformation.jasper"),
+                            new SubReport("FAASSTRUCTURALMATERIALS", "etracs2faasreport/reports/Building/StructuralMaterials.jasper"),
+                            new SubReport("FAASSTRUCTURALMATERIALS2", "etracs2faasreport/reports/Building/StructuralMaterials.jasper"),                            
+                            new SubReport("FAASADDITIONALITEMS", "etracs2faasreport/reports/Building/AdditionalItems.jasper"),
+                            new SubReport("FAASPARAMETERS", "etracs2faasreport/reports/Building/AdditionalItemsValue.jasper"),
+                            new SubReport("PROPERTYASSESSMENT", "etracs2faasreport/reports/Building/PropertyAssessment.jasper")
+                        ];
+                    }else if( data.type == "PLANT" ){
+                        return[
+                            new SubReport("PlantsTreesAppraisal","etracs2faasreport/reports/PlantTrees/PlantsAndTreesAppraisal.jasper"),
+                            new SubReport("PropertyAssessment","etracs2faasreport/reports/PlantTrees/PropertyAssessment.jasper")
+                        ];
+                    }else if( data.type == "MISC" ){
+                        return[ 
+                            new SubReport("FAASPARAMETERS", "etracs2faasreport/reports/Misc/FAASMiscItemsReport.jasper"),
+                            new SubReport("FAASMISCITEMPARAMETER", "etracs2faasreport/reports/Misc/AdditionalItemsValue.jasper"),
+                            new SubReport("ADJUSMENTFACTORS", "etracs2faasreport/reports/Misc/AdjustmentFactors.jasper"),
+                            new SubReport("PROPERTYASSESSMENT", "etracs2faasreport/reports/Misc/PropertyAssessment.jasper")                            
+                        ];
+                    }
+                }
+                
+                def getStandardReportParams() {
+                    return [
+                        LOGOLGU     : vars.LGULOGO,                    
+                        LOGOBLGF    : vars.BLGFLOGO,                    
+                        LGUNAME     : vars.LGUNAME,
+                        OFFICENAME  : vars.ASSESSOROFFICENAME,
+                        PRINTEDBY   : OsirisContext.getEnv().get("USER"),
+                        PRINTDATE   : new Date()
+                    ]; 
+                }
+                
+            }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.faas.report.ui.FAASInitPage" />
+        <page name="preview" template="etracs2.faas.report.ui.PreviewPage" />
+    </pages>
+    
+</workunit>
