@@ -46,20 +46,22 @@ public class ProvinceTaxpayerViewPage extends javax.swing.JPanel {
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 465, Short.MAX_VALUE)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 461, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel2Layout.createSequentialGroup()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 432, Short.MAX_VALUE)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 426, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel1.add(jPanel2, java.awt.BorderLayout.CENTER);
 
         xActionBar2.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 10, 5, 1));
+        xActionBar2.setButtonBorderPainted(false);
+        xActionBar2.setButtonContentAreaFilled(false);
         xActionBar2.setName("formActions");
-        xActionBar2.setPreferredSize(new java.awt.Dimension(89, 35));
+        xActionBar2.setPreferredSize(new java.awt.Dimension(89, 40));
         xActionBar2.setUseToolBar(false);
         jPanel1.add(xActionBar2, java.awt.BorderLayout.NORTH);
 
