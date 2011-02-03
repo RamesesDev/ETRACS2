@@ -1,7 +1,6 @@
 package etracs2.main;
 
 import com.rameses.osiris2.client.OsirisTestPlatform;
-import java.io.ObjectInputStream;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.LookAndFeel;
@@ -16,7 +15,6 @@ public class Main {
         }catch(Exception ign){
             UIManager.setLookAndFeel( l );
         }
-        
         Map map = new HashMap();
         map.put("default.host", "10.0.0.108:8080");
 

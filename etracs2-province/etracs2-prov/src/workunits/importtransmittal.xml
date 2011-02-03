@@ -88,28 +88,22 @@
 
                 }catch(e){
                     cancelled = true;
-                    caller.message = e.message;
+                    caller.message = "ERROR: " + e.cause?.message
                     ended = true;
-                    throw e;
                 }finally{
                     caller.binding.refresh();
                 }
             }
             
             public void end(){
-            
-                if( cancelled ) {
-                    caller.message = "Error in exporting the file.";
-                }else{
+                if( !cancelled ) {
                     caller.save = false;
                     caller.message = "Done exporting file.";
+                    caller.transmittal = caller.svc.open( chunk.transmittalId );
+                    caller.binding.fireNavigation("main");
                 }
-                
-                try{ reader.close(); }catch(e){;}
-                
-                caller.transmittal = caller.svc.open( chunk.transmittalId );
-                caller.binding.fireNavigation("main");
                 caller.binding.refresh();
+                try{ reader.close(); }catch(e){;}
             }
         }
         
