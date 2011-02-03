@@ -13,6 +13,9 @@ class FAASService
 
 	@Service("DateService")
 	def dateService;
+
+	@Service("TDService")
+	def tdService;
 	
 	def PROVAPPROVAL_STATE = "PROVAPPROVAL";
 	def FORAPPROVAL_STATE = "FORAPPROVAL";
@@ -97,15 +100,18 @@ class FAASService
 		def faas = open( faasId );
 		if( faas.state != FORAPPROVAL_STATE) throw new Exception("FAAS is already $faas.state.");
 		
-		def currDate = new Date();
+		def currDate = dateService.getServerDate();
+		def tdNo = tdService.getPINSequence( faasId );
 		faas.state  = CURRENT_STATE;
 		faas.info.approvedBy.dtSigned = currDate;
 		faas.sys_dtApproved = currDate;
+		faas.tdNo = tdNo;
 		em.update( "faas:faas", faas );
 		
 		def faasData = em.read("faas:faas-approval", [ objid:faasId ]);
 		if( !faasData ) throw new Exception("FAAS not found.");
 		faasData.state = CURRENT_STATE;
+		faasData.tdNo = tdNo;
 		em.create("faas:faas-current", faasData);
 		em.delete("faas:faas-approval", faasData);
 		return faas;
@@ -117,15 +123,19 @@ class FAASService
 		if( faas.state != FORAPPROVAL_STATE) throw new Exception("FAAS is already $faas.state.");
 		
 		def currDate = dateService.getServerDate();
+		def tdNo = tdService.getPINSequence( faasId );
 		faas.state  = CURRENT_STATE;
 		faas.info.approvedBy.dtSigned = currDate;
 		faas.sys_dtApproved = currDate;
-		faas.provincialAssessor = vars.provincialAssessor.name;
-		faas.provincialAssessor = vars.provincialAssessor.title
+		faas.tdNo = tdNo;
+		faas.info.reviewedBy  = [name:"-", title:"-", dtSigned:currDate];
+		faas.provincialAssessor = var.provincialAssessor.name;
+		faas.provincialAssessor = var.provincialAssessor.title
 		em.update( "faas:faas", faas );
 		
 		def faasData = em.read("faas:faas-approval", [ objid:faasId ]);
 		if( !faasData ) throw new Exception("FAAS not found.");
+		faasData.tdNo = tdNo;
 		faasData.state = CURRENT_STATE;
 		em.create("faas:faas-current", faasData);
 		em.delete("faas:faas-approval", faasData);
