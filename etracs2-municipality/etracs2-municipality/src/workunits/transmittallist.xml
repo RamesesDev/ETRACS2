@@ -1,0 +1,66 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/file" caption="Transmittal List" />
+        <invoker type="formActions" caption="Open" mnemonic="o" action="open" visibleWhen="#{selectedItem.item != null}" />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class TransmittalListController 
+        {
+            @Service("TransmittalService")
+            def svc;
+            
+            @Binding
+            def binding;
+        
+            def title = "Transmittal List";
+            
+            def selectedItem;
+            def search = [:];
+            
+            public def open() {
+                doOpen( selectedItem.item );
+            }
+            
+            public void doSearch() {
+                listHandler.load();
+            }
+            
+            def listHandler = [
+                getRows    : { return 25; },
+                getColumns : {
+                    return [
+                        new Column( name:"item.state", caption:"State"),
+                        new Column( name:"item.docNo", caption:"Doc No."),
+                        new Column( name:"item.rpuCount", caption:"RPU Count"),
+                        new Column( name:"item.transmittedBy", caption:"Transmitted By")
+                    ]
+                },
+                
+                fetchList  : { 
+                    return svc.getList( search, it ); 
+                },
+                
+                onOpenItem : { item, colname -> doOpen( item ) },
+                
+            ] as PageListModel;
+            
+            def doOpen( item ) {
+                return InvokerUtil.lookupOpener("transmittal_municipality:open", [bean:item] );
+            }
+        }
+        
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.municipality.transmittal.TransmittalListPage"/>
+    </pages>
+</workunit>

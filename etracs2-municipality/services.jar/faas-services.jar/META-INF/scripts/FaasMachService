@@ -1,87 +1,98 @@
-import com.rameses.scripting.annotations.*;
-import com.rameses.tracs.rpt.service.RPTUtilService;
-import java.rmi.server.UID;
-import com.rameses.tracs.rpt.domain.*;
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
 import java.text.SimpleDateFormat;
 
-public class TransmittalMachService
+public class FaasMachService
 {
-	@Resource("defaultPU")
+	
+	@PersistenceContext("etracs")
 	def em;
 	
 	@ProxyMethod
-	public def buildItem( td , item) {
-		item.faas.rpu.rpuType = "rpumach:mach";
-		buildMachUses( td, item );
-		return item;
+	public def build( faasm, rpu ) {
+		def mach = em.sqlContext.createNamedQuery( "faas:getMachRpuById" )
+						.setParameter( "objid", rpu.objid ).singleResult;
+		faas.rpu.rpuType = "rpumach:mach";
+		
+		faas.rpu.info.machineUses = buildMachUses( mach );
+		
+		return faas;
 	}
 	
-	private void buildMachUses( td, item ) {
+	private def buildMachUses( mach ) {
+		def machUses = em.sqlContext.createNamedQuery( "faas:getMachUseByRpuId" )
+						.setParameter( "rpuId", mach.objid ).resultList;
 		def uses = [];
-		td.rpu.machineUses.each {
-			uses.add([	
-				objid           : it.objid,
-				marketValue     : it.marketValue,
-				adjMarketValue  : it.adjMarketValue,
-				assessLevel     : it.assessLevel,
-				assessedValue   : it.assessedValue,
-				machAssessLevelId : it.machAssessLevelId, 
-				actualUseId     : it.actualUseId,
-				actualUseCode   : it.actualUseCode,
-				actualUseTitle  : it.actualUseTitle,
-				specialLevel    : it.specialLevel,
-				machineDetails  : buildMachineDetails( it.machineLists ),
-			]);
+		machUses.each { use ->
+			uses += [
+				objid				: use.objid,
+				actualUseId			: use.actualUseId,
+				actualUseCode		: use.actualUseCode,
+				actualUseTitle		: use.actualUseTitle,
+				machAssessLevelId	: use.machAssessLevelId,
+				specialLevel		: use.specialLevel,
+				marketValue			: use.marketValue,
+				adjMarketValue		: use.adjMarketValue,
+				assessLevel			: use.assessLevel,
+				assessedValue		: use.assessedValue,
+				machineDetails		: buildMachDetails( use )
+			];
 		}
-		item.faas.rpu.info.machineUses = uses;
+		
+		return uses;
 	}
 	
-	private def buildMachineDetails( machineList ) {
-		def machList = [];
-		machineList.each {
-			machList.add( [	
-				objid             : it.objid,
-				operationYear     : it.operationYear,
-				replacementCost   : it.replacementCost,
-				depreciation      : it.depreciation,
-				depreciationValue : it.depreciationValue,
-				marketValue       : it.marketValue,
-				adjMarketValue    : it.adjMarketValue,
-				assessLevel       : it.assessLevel,
-				assessedValue     : it.assessedValue,
-				brand             : it.brand,
-				capacity          : it.capacity,
-				model             : it.model,
-				serialNo          : it.serialNo,
-				status            : it.status,
-				yearAcquired      : it.yearAcquired,
-				estimatedLife     : it.estimatedLife,
-				remainingLife     : it.remainingLife,
-				yearInstalled     : it.yearInstalled,
-				yearsUsed         : it.yearsUsed,
-				originalCost      : it.originalCost,
-				freightCost       : it.freightCost,
-				insuranceCost     : it.insuranceCost,
-				installationCost  : it.installationCost,
-				brokerageCost     : it.brokerageCost,
-				arrastreCost      : it.arrastreCost,
-				otherCost         : it.otherCost,
-				acquisitionCost   : it.acquisitionCost,
-				ferac             : it.ferac,
-				forex             : it.forex,
-				machineId         : it.machineId,
-				machineCode       : it.machineCode,
-				machineTitle      : it.machineTitle,
-				useSwornAmount    : it.useSwornAmount,
-				swornAmount       : it.swornAmount,
-				imported          : it.imported,
-				residualRate      : it.residualRate,
-				localIndex        : it.localIndex,
-				newlyInstalled    : it.newlyInstalled,
-				autoDepreciate    : it.autoDepreciate,
-			] );
+	private def buildMachDetails( use ) {
+		def machDetails = em.sqlContext.createNamedQuery( "faas:getMachUseByRpuId" )
+						.setParameter( "useId", use.objid ).resultList;
+		def details = [];
+		machDetails.each { detail ->
+			details += [
+				objid				: detail.objid,
+				operationYear		: detail.operationYear,
+				replacementCost		: detail.replacementCost,
+				depreciation		: detail.depreciation,
+				depreciationValue	: detail.depreciationValue,
+				marketValue			: detail.marketValue,
+				adjMarketValue		: detail.adjMarketValue,
+				assessLevel			: detail.assessLevel,
+				assessedValue		: detail.assessedValue,
+				brand				: detail.brand,
+				capacity			: detail.capacity,
+				model				: detail.model,
+				serialNo			: detail.serialNo,
+				status				: detail.status,
+				yearAcquired		: detail.yearAcquired,
+				estimatedLife		: detail.estimatedLife,
+				remainingLife		: detail.remainingLife,
+				yearInstalled		: detail.yearInstalled,
+				yearsUsed			: detail.yearsUsed,
+				originalCost		: detail.originalCost,
+				freightCost			: detail.freightCost,
+				insuranceCost		: detail.insuranceCost,
+				installationCost	: detail.installationCost,
+				brokerageCost		: detail.brokerageCost,
+				arrastreCost		: detail.arrastreCost,
+				otherCost			: detail.otherCost,
+				acquisitionCost		: detail.acquisitionCost,
+				ferac				: detail.ferac,
+				forex				: detail.forex,
+				machineId			: detail.machineId,
+				machineCode			: detail.machineCode,
+				machineTitle		: detail.machineTitle,
+				useSwornAmount		: detail.useSwornAmount,
+				swornAmount			: detail.swornAmount,
+				imported			: detail.imported,
+				residualRate		: detail.residualRate,
+				localIndex			: detail.localIndex,
+				newlyInstalled		: detail.newlyInstalled,
+				autoDepreciate		: detail.autoDepreciate
+			];
 		}
-		return machList;
+		
+		return details;
 	}
+
+
 }	
 

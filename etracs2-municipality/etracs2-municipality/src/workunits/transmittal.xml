@@ -1,0 +1,177 @@
+<workunit>
+    
+    <invokers>
+        <invoker type="transmittal_municipality:open" caption="FAAS Information" action="open"/>
+        <invoker folderid="/menu/file" caption="Transmittal" action="init"/>
+        <invoker type="formActions" caption="Close" mnemonic="c" action="_close" />
+        <invoker type="formActions" caption="Save" mnemonic="s" action="save" visibleWhen="#{bean.state == 'DRAFT'}"/>
+        <invoker type="formActions" caption="Export" mnemonic="e" action="export" visibleWhen="#{bean.state == 'ACTIVE'}"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+            import com.rameses.rcp.common.*;
+            import com.rameses.rcp.annotations.*;
+            import com.rameses.osiris2.client.*;
+            import javax.swing.filechooser.*;
+            import javax.swing.*;
+            import etracs2.municipality.transmittal.TransmittalWriter;
+
+            public class TransmittalController
+            {
+
+                @Binding
+                def binding;
+                
+                def bean = [state:"DRAFT"];
+                def location;
+                
+                @FormTitle
+                def title = "Transmittal";
+
+                def message = "";
+                
+                @Service("TransmittalService")
+                def svc;
+
+                def listHandler = [
+                    getRows    : { return 25; },
+                    getColumns : {
+                        return [
+                            new Column( name:"item.type", caption:"Type", width:50),
+                            new Column( name:"item.txnType", caption:"Txn", width:50),
+                            new Column( name:"item.tdNo", caption:"TD No.", width:120),
+                            new Column( name:"item.pin", caption:"PIN", width:120),
+                            new Column( name:"item.taxpayerName", caption:"Taxpayer"),
+                        ]
+                    },
+
+                    fetchList  : {
+                        return svc.getProvinceForApprovalList( it );
+                    }
+
+                ] as PageListModel;
+                
+                def itemsHandler = [
+                    getRows    : { return 25; },
+                    getColumns : {
+                        return [
+                            new Column( name:"item.type", caption:"Type", width:50),
+                            new Column( name:"item.txnType", caption:"Txn", width:50),
+                            new Column( name:"item.tdNo", caption:"TD No.", width:120),
+                            new Column( name:"item.pin", caption:"PIN", width:120),
+                            new Column( name:"item.taxpayerName", caption:"Taxpayer"),
+                        ]
+                    },
+
+                    fetchList  : {
+                        return svc.getItems( bean.objid , it);
+                    }
+                ] as PageListModel;
+                
+                def init(){ return "init"; }
+
+                def save(){
+                    bean = svc.save( bean.remarks );
+                    return "default";
+                }
+                
+                void open(){
+                    bean = svc.open(bean.objid);
+                }
+                
+                def export(){
+                    def jfc = new JFileChooser();
+                    jfc.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY;
+                    jfc.acceptAllFileFilterUsed = false;
+                    def ret = jfc.showOpenDialog(null);
+                    if( ret == JFileChooser.APPROVE_OPTION ){
+                        def file = new File( jfc.selectedFile.absolutePath + File.separator + bean.docNo  ); 
+                        if( file.exists() ) {
+                            file.delete();
+                        }
+                        
+                        location = file.absolutePath;
+
+                        System.out.println( location );
+
+                        def task = new TransmittalTask( caller: this, header: bean );
+                        OsirisContext.clientContext.taskManager.addTask( task  );
+                        return "wait";
+                    }else{
+                        return null;
+                    }
+                }
+            }
+            
+            class TransmittalTask extends Task{
+                
+                def header;
+                def writer;
+                def bytes = 0;
+                def caller;
+                def chunk;
+                
+                public void start(){
+                    if(! writer ){
+                        try{
+                            writer = new TransmittalWriter( caller.location );
+                            caller.message = "Exporting byte transfer $bytes";
+                            caller.binding.refresh("message");
+                            chunk = [transmittalId: header.objid, eof: false, state:"TRANSMITTAL" ];
+                        }catch(e){
+                            caller.message = e.message;
+                            caller.binding.refresh("message");
+                        }
+                        ended = false;
+                    }
+                }
+                
+                public boolean accept() { return true; }
+                public void execute(){
+                    try{
+                       def bytes = 0;
+                       
+                       chunk = caller.svc.exportService( chunk );
+                       ended = chunk.eof;
+                       
+                       if( !chunk.eof ){
+                           if( chunk.state.matches("TRANSMITTAL|HEADER") ){
+                                bytes = writer.write( chunk.data );
+                                caller.message = "Exporting Transmittal ( $bytes )";
+                           } else {
+                                def part = chunk.data;
+                                bytes = writer.writeAttachment( part.filename, part.bytes ); 
+                                caller.message = "Exporting Attachment $part.filename ( $bytes )";
+                           }
+                       }
+                       
+                       chunk.data = null;
+                    }catch(e){
+                        caller.message = e.cause?.message;
+                        cancelled = true;
+                        ended = true;
+                        throw e;
+                    }
+
+                    caller.binding.refresh("message");
+                    Thread.sleep(100);
+                }
+                
+                public void end(){
+                    if( !cancelled ) caller.message = "Export success.";
+                    try{ writer.close(); }catch(ign){;}
+                    caller.binding.refresh("message");
+                }
+            }
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.municipality.transmittal.TransmittalPage"/>
+        <page name="init" template="etracs2.municipality.transmittal.TransmittalInitPage"/>
+        <page name="wait" template="etracs2.municipality.WaitPage"/>
+    </pages>
+</workunit>

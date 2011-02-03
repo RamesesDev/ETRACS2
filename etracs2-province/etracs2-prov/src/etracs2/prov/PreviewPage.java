@@ -46,7 +46,6 @@ public class PreviewPage extends javax.swing.JPanel {
         xActionBar1.setButtonContentAreaFilled(false);
         xActionBar1.setName("formActions");
         xActionBar1.setPreferredSize(new java.awt.Dimension(104, 40));
-        xActionBar1.setUseToolBar(false);
         add(xActionBar1, java.awt.BorderLayout.NORTH);
 
     }// </editor-fold>//GEN-END:initComponents

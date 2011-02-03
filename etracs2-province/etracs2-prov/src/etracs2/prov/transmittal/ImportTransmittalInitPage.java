@@ -28,10 +28,9 @@ public class ImportTransmittalInitPage extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
         jPanel1 = new javax.swing.JPanel();
-        xButton1 = new com.rameses.rcp.control.XButton();
-        xLabel1 = new com.rameses.rcp.control.XLabel();
         jLabel1 = new javax.swing.JLabel();
         xLabel2 = new com.rameses.rcp.control.XLabel();
+        xFileBrowser1 = new com.rameses.rcp.control.XFileBrowser();
         xButton2 = new com.rameses.rcp.control.XButton();
 
         setPreferredSize(new java.awt.Dimension(609, 230));
@@ -40,21 +39,16 @@ public class ImportTransmittalInitPage extends javax.swing.JPanel {
         xTitledBorder1.setTitle("Import Detail");
         xTitledBorder1.setTitlePadding(new java.awt.Insets(2, 5, 2, 5));
         jPanel1.setBorder(xTitledBorder1);
-        xButton1.setText("Browse...");
-        xButton1.setName("browseFile");
-
-        com.rameses.rcp.control.border.XLineBorder xLineBorder1 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder1.setLineColor(new java.awt.Color(153, 153, 153));
-        xLabel1.setBorder(xLineBorder1);
-        xLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
-        xLabel1.setName("fileName");
-
         jLabel1.setText("Transmittal to Import :");
 
         xLabel2.setForeground(new java.awt.Color(204, 0, 0));
         xLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         xLabel2.setFont(new java.awt.Font("Tahoma", 1, 11));
         xLabel2.setName("message");
+
+        xFileBrowser1.setName("fileName");
+        xFileBrowser1.setRequired(true);
+        xFileBrowser1.setSelectFilesOnly(false);
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -67,9 +61,7 @@ public class ImportTransmittalInitPage extends javax.swing.JPanel {
                     .add(jPanel1Layout.createSequentialGroup()
                         .add(jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 119, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(xLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 331, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                        .add(xFileBrowser1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 416, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -78,8 +70,7 @@ public class ImportTransmittalInitPage extends javax.swing.JPanel {
                 .addContainerGap()
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel1)
-                    .add(xLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 20, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(xFileBrowser1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 22, Short.MAX_VALUE)
                 .add(xLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
@@ -108,7 +99,7 @@ public class ImportTransmittalInitPage extends javax.swing.JPanel {
                 .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(83, Short.MAX_VALUE))
+                .addContainerGap(87, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
     
@@ -116,9 +107,8 @@ public class ImportTransmittalInitPage extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
-    private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
-    private com.rameses.rcp.control.XLabel xLabel1;
+    private com.rameses.rcp.control.XFileBrowser xFileBrowser1;
     private com.rameses.rcp.control.XLabel xLabel2;
     // End of variables declaration//GEN-END:variables
     

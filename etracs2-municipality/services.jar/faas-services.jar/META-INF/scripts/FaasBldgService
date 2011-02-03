@@ -1,147 +1,180 @@
-import com.rameses.scripting.annotations.*;
-import com.rameses.tracs.rpt.service.RPTUtilService;
-import java.rmi.server.UID;
-import com.rameses.tracs.rpt.domain.*;
-import java.text.SimpleDateFormat;
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
 
-public class TransmittalBldgService
+public class FaasBldgService
 {
-	@Resource("defaultPU")
+
+	@PersistenceContext("etracs")
 	def em;
 	
 	@ProxyMethod
-	public def buildItem( td , item) {
-		item.faas.rpu.rpuType        = "rpubldg:bldg";
-		buildBldgInfo( td, item );
-		buildBldgUses( td, item );
-		buildBldgStructures( td, item ); 
-		return item;
+	public def build( faas, rpu ) {
+		def bldg = em.sqlContext.createNamedQuery( "faas:getBldgRpuById" )
+					.setParameter( "objid", rpu.objid ).singleResult;
+		faas.rpu.rpuType = "rpubldg:bldg";
+		def rpuInfo = faas.rpu.info;
+		
+		buildBldgInfo( rpuInfo, bldg );
+
+		rpuInfo.bldgUses = buidBldgUses( bldg );
+		
+		rpuInfo.bldgStructures = buildBldgStructure( bldg );
+		
+		return faas;
 	}
 	
-	private void buildBldgStructures( td, item ) {
-		def structs = [];
-		td.rpu.bldgRPUStructures.each {
-			structs.add([
-				objid          : it.objid,
-				structureCode  : it.structureCode,
-				structureTitle : it.structureTitle,
-				materialCode   : it.materialCode,
-				materialTitle  : it.materialTitle,
-			]);
-		}
-		item.faas.rpu.info.bldgStructures = structs;
+	private def buildBldgInfo( rpuInfo, bldg ) {
+		print "BUILD BLDG INFO";
+		rpuInfo.psic             	= bldg.psic;
+		rpuInfo.permitNo         	= bldg.permitNo;
+		rpuInfo.permitDate       	= bldg.permitDate;
+		rpuInfo.permitIssuedBy   	= bldg.permitIssuedBy;
+		rpuInfo.title            	= bldg.title;
+		rpuInfo.dtBldgCompleted  	= bldg.dtBldgCompleted;
+		rpuInfo.dtBldgOccupied   	= bldg.dtBldgOccupied;
+		rpuInfo.constructionCost 	= bldg.constructionCost;
+		rpuInfo.totalArea        	= bldg.totalArea;
+		rpuInfo.depreciation     	= bldg.depreciation;
+		rpuInfo.totalAdjustment  	= bldg.totalAdjustment;
+		rpuInfo.swornStatement   	= bldg.swornStatement;
+		rpuInfo.swornAmount      	= bldg.swornAmount;
+		rpuInfo.additionalInfo   	= bldg.additionalInfo;
+		rpuInfo.predominant      	= bldg.predominant;
+		rpuInfo.firstFloorBaseValue	= bldg.firstFloorBaseValue;
+		rpuInfo.bldgAge          	= bldg.bldgAge;
+		rpuInfo.bldgTypeId       	= bldg.bldgTypeId;
+		rpuInfo.bldgTypeCode     	= bldg.bldgTypeCode;
+		rpuInfo.bldgTypeTitle    	= bldg.bldgTypeTitle;
+		rpuInfo.bldgTypeClassificationId = bldg.bldgTypeClassificationId;
+		rpuInfo.bldgKindId       	= bldg.bldgKindId;
+		rpuInfo.baseValue        	= bldg.baseValue;
+		rpuInfo.bldgKindCode     	= bldg.bldgKindCode;
+		rpuInfo.bldgKindTitle    	= bldg.bldgKindTitle;
+		rpuInfo.bldgBaseValueType  	= bldg.bldgBaseValueType.toString();
+		rpuInfo.bldgAssessLevelId  	= bldg.bldgAssessLevelId;
+		rpuInfo.assessLevel      	= bldg.assessLevel; 
+		rpuInfo.specialLevel     	= bldg.specialLevel;
+		rpuInfo.condominium      	= bldg.condominium;
+		rpuInfo.bldgRpuId        	= bldg.bldgRpuId;
+		rpuInfo.autoComputeBldgDepreciation = bldg.autoComputeBldgDepreciation;
+		rpuInfo.bldgClass        	= bldg.bldgClass;
 	}
 	
-	private void buildBldgUses( td, item ) {
+	private def buidBldgUses( bldg ) {
+		print "BUILD BLDG USE";
+		def bldgUses = em.sqlContext.createNamedQuery( "faas:getBldgUseByRpuId" )
+						.setParameter( "rpuId", bldg.objid ).resultList;
 		def uses = [];
-		td.rpu.bldgUses.each {
-			uses.add([	
-				objid          : it.objid,
-				area           : it.area,
-				baseValue      : it.baseValue,
-				adjustment     : it.adjustment,
-				marketValue    : it.marketValue,
-				adjMarketValue : it.adjMarketValue,
-				assessLevel    : it.assessLevel,
-				assessedValue  : it.assessedValue,
-				bldgAssessLevelId  : it.bldgAssessLevelId,
-				specialLevel   : it.specialLevel,
-				actualUseId    : it.actualUseId,
-				actualUseCode  : it.actualUseCode,
-				actualUseTitle : it.actualUseTitle,
-				bldgFloors     : buildBldgFloors( it.bldgFloors ),
-			]);
+		bldgUses.each { use ->
+			uses += [
+				objid          		: use.objid,
+				area           		: use.area,
+				baseValue      		: use.baseValue,
+				adjustment     		: use.adjustment,
+				marketValue    		: use.marketValue,
+				adjMarketValue 		: use.adjMarketValue,
+				assessLevel    		: use.assessLevel,
+				assessedValue  		: use.assessedValue,
+				bldgAssessLevelId	: use.bldgAssessLevelId,
+				specialLevel   		: use.specialLevel,
+				actualUseId    		: use.actualUseId,
+				actualUseCode  		: use.actualUseCode,
+				actualUseTitle 		: use.actualUseTitle,
+				bldgFloors			: buildBldgFloors( use )
+			]
 		}
-		item.faas.rpu.info.bldgUses = uses;
+		
+		return uses;
 	}
 	
-	private def buildBldgFloors( bldgFloors ) {
+	private def buildBldgFloors( use ) {
+		print "BUILD BLDG FLOOR";
+		def bldgFloors = em.sqlContext.createNamedQuery( "faas:getBldgFloorByUseId" )
+							.setParameter( "useId", use.objid ).resultList;
+		
 		def floors = [];
-		bldgFloors.each {
-			floors.add( [	
-				objid       : it.objid,
-				floorNo     : it.floorNo,
-				adjustment  : it.adjustment,
-				area        : it.area,
-				storeyRate  : it.storeyRate,
-				baseValue   : it.baseValue,
-				unitValue   : it.unitValue,
-				marketValue : it.marketValue,
-				adjMarketValue : it.adjMarketValue,
-				assessedValue  : it.assessedValue,
-				assessLevel    : it.assessLevel,
-				depreciateCoreAndItemsSeparately : it.depreciateCoreAndItemsSeparately,
-				adjustments : buildBldgAdjustments( it.bldgFloorAdditionals ),
-			] );
+		bldgFloors.each { floor ->
+			floors += [
+				objid       	: floor.objid,
+				floorNo     	: floor.floorNo,
+				adjustment  	: floor.adjustment,
+				area        	: floor.area,
+				storeyRate  	: floor.storeyRate,
+				baseValue   	: floor.baseValue,
+				unitValue   	: floor.unitValue,
+				marketValue 	: floor.marketValue,
+				adjMarketValue 	: floor.adjMarketValue,
+				assessedValue  	: floor.assessedValue,
+				assessLevel    	: floor.assessLevel,
+				depreciateCoreAndItemsSeparately : floor.depreciateCoreAndItemsSeparately,
+				adjustments 	: buildBldgFloorAdjustments( floor )
+			];
 		}
+		
 		return floors;
 	}
 	
-	private def buildBldgAdjustments( additionals ) {
-		def adjs = [];
-		additionals.each {
-			adjs.add( [	
-				objid  : it.objid,
-				unit   : it.unit,
-				amount : it.amount,
-				bldgAdditionalItemId    : it.bldgAdditionalItemId,
-				bldgAdditionalItemCode  : it.bldgAdditionalItemCode,
-				bldgAdditionalItemTitle : it.bldgAdditionalItemTitle,
-				params : buildParams( it.parameters ),
-			] );
-		}
-		return adjs;
-	}
+	private def buildBldgFloorAdjustments( floor ) {
+		print "BUILD BLDG FLOOR ADJ";
+		def floorAdditionals = em.sqlContext.createNamedQuery( "faas:getBldgFloorAdditionalByFloorId" )
+								.setParameter( "floorId", floor.objid ).resultList;
 		
-	private def buildParams( parameters ) {
-		def params = [];
-		parameters.each { 
-			params.add( [
-				objid : it.objid,
-				code  : it.parameter.name,
-				name  : it.parameter.name,
-				value : it.value,
-			] );
+		def additionals = [];
+		floorAdditionals.each { additional ->
+			additionals += [
+				objid 	: additional.objid,
+				unit	: additional.unit,
+				amount	: additional.amount,
+				bldgAdditionalItemId	: additional.bldgAdditionalItemId,
+				bldgAdditionalItemCode	: additional.bldgAdditionalItemCode,
+				bldgAdditionalItemTitle : additional.bldgAdditionalItemTitle,
+				bldgAdditionalItemExpression	: additional.bldgAdditionalItemExpression,
+				params	: buildAdditionalParams( additional )
+			];
 		}
+		
+		return additionals;
+	}
+	
+	private def buildAdditionalParams( additional ) {
+		print "BUILD BLDG ADD PARAM";
+		def paramLinks = em.sqlContext.createNamedQuery( "faas:getBldgAdditionalParamsByAdditionalId" )
+							.setParameter( "additionalId", additional.objid ).resultList;
+		def params = [];
+		paramLinks.each { paramLink ->
+			def paramValue = em.sqlContext.createNamedQuery( "faas:findRPTParameterValue" )
+								.setParameter( "objid", paramLink.parameters_objid ).singleResult;
+			def param = em.sqlContext.createNamedQuery( "faas:findRPTParameter" )
+							.setParameter( "objid", paramValue.parameterId ).singleResult;
+			params += [
+				paramId		: param.objid,
+				paramCode	: param.name,
+				paramName	: param.caption,
+				paramValue	: ( ( paramValue.doubleValue ) ? paramValue.doubleValue : paramValue.intValue )
+			];
+		}
+		
 		return params;
 	}
 	
-	private void buildBldgInfo( td, item )  {
-		def rpuInfo = item.faas.rpu.info;
-		rpuInfo.psic             = td.rpu.psic;
-		rpuInfo.permitNo         = td.rpu.permitNo;
-		rpuInfo.permitDate       = td.rpu.permitDate;
-		rpuInfo.permitIssuedBy   = td.rpu.permitIssuedBy;
-		rpuInfo.title            = td.rpu.title;
-		rpuInfo.dtBldgCompleted  = td.rpu.dtBldgCompleted;
-		rpuInfo.dtBldgOccupied   = td.rpu.dtBldgOccupied;
-		rpuInfo.constructionCost = td.rpu.constructionCost;
-		rpuInfo.totalArea        = td.rpu.totalArea;
-		rpuInfo.depreciation     = td.rpu.depreciation;
-		rpuInfo.totalAdjustment  = td.rpu.totalAdjustment;
-		rpuInfo.swornStatement   = td.rpu.swornStatement;
-		rpuInfo.swornAmount      = td.rpu.swornAmount;
-		rpuInfo.additionalInfo   = td.rpu.additionalInfo;
-		rpuInfo.predominant      = td.rpu.predominant;
-		rpuInfo.firstFloorBaseValue  = td.rpu.firstFloorBaseValue;
-		rpuInfo.bldgAge          = td.rpu.bldgAge;
-		rpuInfo.bldgTypeId       = td.rpu.bldgTypeId;
-		rpuInfo.bldgTypeCode     = td.rpu.bldgTypeCode;
-		rpuInfo.bldgTypeTitle    = td.rpu.bldgTypeTitle;
-		rpuInfo.bldgTypeClassificationId = td.rpu.bldgTypeClassificationId;
-		rpuInfo.bldgKindId       = td.rpu.bldgKindId;
-		rpuInfo.baseValue        = td.rpu.baseValue;
-		rpuInfo.bldgKindCode     = td.rpu.bldgKindCode;
-		rpuInfo.bldgKindTitle    = td.rpu.bldgKindTitle;
-		rpuInfo.bldgBaseValueType  = td.rpu.bldgBaseValueType.toString();
-		rpuInfo.bldgAssessLevelId  = td.rpu.bldgAssessLevelId;
-		rpuInfo.assessLevel      = td.rpu.assessLevel; 
-		rpuInfo.specialLevel     = td.rpu.specialLevel;
-		rpuInfo.condominium      = td.rpu.condominium;
-		rpuInfo.bldgRpuId        = td.rpu.bldgRpuId;
-		rpuInfo.autoComputeBldgDepreciation = td.rpu.autoComputeBldgDepreciation;
-		rpuInfo.bldgClass        = td.rpu.bldgClass;
+	private def buildBldgStructure( bldg ) {
+		print "BUILD BLDG STRUCT";
+		def bldgStructures = em.sqlContext.createNamedQuery( "faas:getBldgStructureByRpuId" )
+								.setParameter( "rpuId", bldg.objid ).resultList;
+		
+		def structures = [];
+		bldgStructures.each { structure ->
+			structures += [
+				objid			: structure.objid,
+				structureCode	: structure.structureCode,
+				structureTitle	: structure.structureTitle,
+				materialCode	: structure.materialCode,
+				materialTitle	: structure.materialTitle
+			];
+		}
+		
+		return structures;
 	}
-	
+
 }	
 

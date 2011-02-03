@@ -26,7 +26,9 @@ public class FileDownloadPage extends javax.swing.JPanel {
     private void initComponents() {
         xLabel1 = new com.rameses.rcp.control.XLabel();
 
+        setPreferredSize(new java.awt.Dimension(713, 409));
         xLabel1.setForeground(new java.awt.Color(153, 0, 0));
+        xLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         xLabel1.setFont(new java.awt.Font("Arial", 1, 11));
         xLabel1.setName("message");
 
@@ -36,15 +38,15 @@ public class FileDownloadPage extends javax.swing.JPanel {
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
-                .add(xLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 380, Short.MAX_VALUE)
+                .add(xLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 689, Short.MAX_VALUE)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
-                .add(xLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(124, Short.MAX_VALUE))
+                .add(xLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 385, Short.MAX_VALUE)
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
     

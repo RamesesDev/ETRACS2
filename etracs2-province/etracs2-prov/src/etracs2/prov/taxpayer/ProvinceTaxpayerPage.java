@@ -138,9 +138,11 @@ public class ProvinceTaxpayerPage extends javax.swing.JPanel {
         add(jPanel2, java.awt.BorderLayout.CENTER);
 
         xActionBar2.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 10, 5, 1));
+        xActionBar2.setButtonBorderPainted(false);
+        xActionBar2.setButtonContentAreaFilled(false);
         xActionBar2.setDepends(new String[] {"selectedItem"});
         xActionBar2.setName("formActions");
-        xActionBar2.setPreferredSize(new java.awt.Dimension(61, 30));
+        xActionBar2.setPreferredSize(new java.awt.Dimension(61, 40));
         add(xActionBar2, java.awt.BorderLayout.NORTH);
 
     }// </editor-fold>//GEN-END:initComponents
