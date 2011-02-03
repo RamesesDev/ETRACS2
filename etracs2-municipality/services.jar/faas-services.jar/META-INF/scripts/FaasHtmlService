@@ -1,13 +1,21 @@
-import com.rameses.annotations.*
+import com.rameses.annotations.*;
 
 class FaasService
 {
 	@Service("FaasService")
 	def faasService;
 	
-	@ProxyMethod
+	@Service("FaasAttachmentService")
+	def attachmentService;
+	
+	@Service("NumberService")
+	def numberService;
+	
+	/*@ProxyMethod
 	public def getHtml( objid, edit ) {
-		return buildHtml( faasService.open(objid), edit );
+		def faas = faasService.open(objid) ;
+		print "FAAS >> " + faas;
+		return buildHtml( faas, edit );
 	}
 	
 	private def buildHtml( faas, edit ) {
@@ -49,7 +57,7 @@ class FaasService
 	}
 
 	private def buildAttachments( faas, edit ) {
-		def attachments = faasService.getAttachments( faas.objid );
+		def attachments = attachmentService.getAttachments( faas.objid );
 		def trs = "";
 		attachments.each {
             trs += """
@@ -74,5 +82,818 @@ class FaasService
 			</table>
 		""";
 	}
+	*/
+	
+	
+	@ProxyMethod
+	public def buildHtml2( objid, edit ) {
+		def faas = faasService.createFaas(objid) ;
+		print "FAAS " + faas;
+		def data = [
+			titleInfo     : buildTitleInfo( faas ),
+			generalInfo   : buildGeneralInfo( faas ),
+			ownershipInfo : buildOwnershipInfo( faas ),
+			pinInfo       : buildPinInfo( faas ),
+			rpuInfo       : buildRpuInfo( faas ),
+			signatories   : buildSignatories( faas ),
+			attachments   : buildAttachments( faas, edit ),
+		];
+		return doBuildHtml( data );
+	}
+	
+	private def buildRpuInfo( faas ) {
+		if( faas.rpu.info.type == 'LAND' )
+			return buildLandHtml( faas );
+		else if( faas.rpu.info.type == 'BLDG' )
+			return buildBldgHtml( faas );
+		return "";
+	}
+	
+	private def buildLandHtml( faas  ) {
+		def assessment = buildLandAssessment( faas );
+		def adjustment = buildLandAdjustments( faas );
+		return """
+			<table>
+				<tr><td>$assessment</td></tr>
+				<tr><td>$adjustment</td></tr>
+			</table>
+		""";
+	}
+	
+	private def buildBldgHtml( faas  ) {
+		def info = buildBldgInfo( faas );
+		def assessment = buildBldgAssessment( faas );
+		return """
+			<table width="100%">
+				<tr>
+					<td valign="top">$info</td>
+				</tr>
+				<tr>
+					<td valign="top">$assessment</td>
+				</tr>
+			</table>
+		""";
+	}
+	
+	private def buildBldgAssessment( faas ) {
+		def info = faas.rpu.info;
+		def bldgAssessmentInfo = buildBldgAssessmentInfo( info ); 
+		def actualUses = buildBldgActualUses( info );
+		def floors = buildBldgFloors( info );
+		def floorAdjustments = buildBldgFloorAdjustments( info );
+		return """
+			<table width="100%">
+				<tr>
+					<td class="title">ASSESSMENT DETAIL</td>
+				</tr>
+				<tr>
+					<td>$bldgAssessmentInfo</td>
+				</tr>
+				<tr>
+					<td>$actualUses</td>
+				</tr>
+				<tr>
+					<td>$floors</td>
+				</tr>
+				<tr>
+					<td>$floorAdjustments</td>
+				</tr>
+			</table>
+		""";
+	}
+	
+	private def buildBldgFloorAdjustments( info ) {
+		def adjs = "";
+		info.bldgUses.each { bu ->
+			bu.bldgFloors.each { f ->
+				f.adjustments.each {
+					def params = buildParams( it.params );
+					adjs += """
+						<tr>
+							<td align="center">$f.floorNo</td>
+							<td align="center">$it.bldgAdditionalItemCode</td>
+							<td>$it.bldgAdditionalItemTitle</td>
+							<td>$it.unit</td>
+							<td class="numeric">$it.amount</td>
+							<td>$params</td>
+						</tr>
+					""";
+				}
+			}
+		}
+		
+		if( ! adjs ) return "";
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>FLOOR ADJUSTMENTS:</u></b></td>
+				</tr>
+				<tr>
+					<td>
+						<div style="background-color:silver">
+							<table cellspacing="1" width="100%">
+								<tr>
+									<th>Floor #</th>
+									<th>Code</th>
+									<th>Description</th>
+									<th>Unit</th>
+									<th>Amount</th>
+									<th>Parameters</th>
+								</tr>
+								$adjs
+							</table>
+						</div>
+					</td>
+				</tr>
+			</table>
+		""";
+	}
+	
+	private def buildParams( params ) {
+		def paramList = "";
+		params.each {
+			paramList += """
+				<tr>
+					<td>$it.paramCode</td>
+					<td>:</td>
+					<td>$it.paramValue</td>
+				</tr>
+			""";
+		}
+		return """
+			<table>
+				$paramList
+			</table>
+		""";
+	}
+	
+	private def buildBldgFloors( info ) {
+		def floors = "";
+		info.bldgUses.each { bu ->
+			bu.bldgFloors.each { f ->
+				def area = numberService.format("#,##0.0000", f.area );
+				def adjustment = numberService.format("#,##0.00", f.adjustment );
+				def mv = numberService.format("#,##0.00", f.marketValue );
+				def amv = numberService.format("#,##0.00", f.adjMarketValue );
+				floors += """
+					<tr>
+						<td>$bu.actualUseTitle</td>
+						<td align="center">$f.floorNo</td>
+						<td class="numeric">$area</td>
+						<td class="numeric">$adjustment</td>
+						<td class="numeric">$mv</td>
+						<td class="numeric">$amv</td>
+					</tr>
+				""";
+			}
+		}
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>FLOOR DETAIL:</u></b></td>
+				</tr>
+				<tr>
+					<td>
+						<div style="background-color:silver">
+							<table width="100%" cellspacing="1">
+								<tr>
+									<th>Actual Use</th>
+									<th>Floor #</th>
+									<th>Area</th>
+									<th>Adjustment</th>
+									<th>Market Value</th>
+									<th>Adj. Market Value</th>
+								</tr>
+								$floors
+							</table>
+						</div>
+					</td>
+				</tr>
+			</table>
+		""";
+	}
+	
+	private def buildBldgAssessmentInfo( info ) {
+		return """
+			<table>
+				<tr>
+					<td class="caption">Classification</td>
+					<td class="data">$info.classTitle</td>
+				</tr>
+				<tr>
+					<td class="caption">Building Type</td>
+					<td class="data">$info.bldgTypeTitle</td>
+				</tr>
+				<tr>
+					<td class="caption">Kind of Building</td>
+					<td class="data">$info.bldgKindTitle</td>
+				</tr>
+				<tr>
+					<td class="caption">Base Value</td>
+					<td class="data">$info.baseValue</td>
+				</tr>
+			</table>
+		""";
+	}
+	
+	private def buildBldgActualUses( info ) {
+		def html = """
+			<div style="background-color:silver">
+			<table width="100%" cellspacing="1">
+				<tr>
+					<th>Actual Use</th>
+					<th>Area</th>
+					<th>Adjustment</th>
+					<th>Market Value</th>
+					<th>Adj. Market Value</th>
+					<th>Assess Level (%)</th>
+					<th>Assessed Value</th>
+				</tr>
+		""";
+		
+		info.bldgUses.each {
+			def assessLevel = (info.predominant ? info.assessLevel : it.assessLevel );
+			
+			def area = numberService.format("#,##0.0000", it.area );
+			def adj = numberService.format("#,##0.00", it.adjustment );
+			def mv = numberService.format("#,##0.00", it.marketValue );
+			def amv = numberService.format("#,##0.00", it.adjMarketValue );
+			def al = numberService.format("#,##0", it.assessLevel );
+			def av = numberService.format("#,##0.00", it.assessedValue);
+				
+			html += """
+				<tr>
+					<td>$it.actualUseTitle</td>
+					<td class="numeric">$area</td>
+					<td class="numeric">$adj</td>
+					<td class="numeric">$mv</td>
+					<td class="numeric">$amv</td>
+					<td class="numeric">$al</td>
+					<td class="numeric">$av</td>
+				</tr>
+			""";
+		}
+		
+		html += "</table></div>";
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>ACTUAL USES:</u></b></td>
+				</tr>
+				<tr>
+					<td>$html</td>
+				</tr>
+			</table>
+		""";
+	}
+	
+	private def buildBldgInfo( faas ) {
+		def info = faas.rpu.info;
+		def structureList = "";
+		info.bldgStructures.each {
+			structureList += """
+				<tr>
+					<td>$it.structureTitle</td>
+					<td>$it.materialTitle</td>
+				</tr>
+			""";
+		}
+		
+		def html = """
+			<table width="100%">
+				<tr>
+					<td>
+						<table width="100%">
+							<tr>
+								<td class="title"><b>BUILDING INFORMATION</td>
+							</tr>
+							<tr>
+								<td>
+									<table width="50%">
+										<tr>
+											<td class="caption">Date Completed</td>
+											<td class="data">${info.dtBldgCompleted == null ? '' : info.dtBldgCompleted}</td>
+										</tr>
+										<tr>
+											<td class="caption">Date Occupied</td>
+											<td class="data">${info.dtBldgOccupied == null ? '' : info.dtBldgOccupied}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg Age</td>
+											<td class="data">${info.bldgAge == null ? '' : info.bldgAge}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg Class</td>
+											<td class="data">${info.bldgClass == null ? '' : info.bldgClass}</td>
+										</tr>
+										<tr>
+											<td class="caption">Is Condominium?</td>
+											<td class="data">${info.condominium == true ? 'YES' : 'NO'}</td>
+										</tr>
+										<tr>
+											<td class="caption">PSIC</td>
+											<td class="data">${info.psic == null ? '' : info.psic}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg. Permit No.</td>
+											<td class="data">${info.permitNo == null ? '' : info.permitno}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg. Permit Date</td>
+											<td class="data">${info.permitDate == null ? '' : info.permitdate}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg. Permit Issuer</td>
+											<td class="data">${info.permitIssuedBy == null ? '' : info.permitissuedby}</td>
+										</tr>
+										<tr>
+											<td class="caption">Additional Info</td>
+											<td class="data">${info.additionalInfo == null ? '' : info.additionalInfo}</td>
+										</tr>
+									</table>
+								</td>
+							</tr>
+						</table>
+					</td>
+					<td>
+						<table width="100%">
+							<tr>
+								<td class="title" colspan="2"><b>STRUCTURES</td>
+							</tr>
+							$structureList
+						</table>
+					</td>
+				</tr>
+			</table>			
+		""";
+	}
+	
+	private def buildLandAssessment( faas ) {
+		def rpuInfo = faas.rpu.info;
+		def html = """
+		<table>
+			<tr>
+				<td class="title"><b>ASSESSMENT DETAIL</td>
+			</tr>
+			
+			<tr>
+			<td>
+				<table width="100%" cellspacing="1">
+					<tr>
+						<td class="caption">Classification</td>
+						<td class="data">$rpuInfo.clasTitle</td>
+					</tr>
+					<tr>
+						<td class="caption">Taxability</td>
+						<td class="data">${rpuInfo.taxable == true ? 'TAXABLE' : 'EXEMPT'}</td>
+					</tr>
+				</table>
+			</td>
+			</tr>
+		""";
+		
+		html += """
+			<tr>
+			<td width="100%">
+				<div style="background-color:silver">
+				<table width="100%" cellspacing="1">
+					<tr>
+						<th>Classification</th>
+						<th>Specific Class</th>
+						<th>SubClass</th>
+						<th>Actual Use</th>
+						<th>Area (sqm)</th>
+						<th>Area (ha)</th>
+						<th>Strip</th>
+						<th>Unit Value</th>
+						<th>Adjustment</th>
+						<th>Market Value</th>
+						<th>Adj Market Value</th>
+						<th>Assess Level</th>
+						<th>Assessed Value</th>
+					</tr>			
+		""";
+		
+		rpuInfo.landDetails.each {
+			def areaSqm = numberService.format("#,##0.00", it.areaSqm );
+			def areaHec = numberService.format("#,##0.0000", it.areaHec);
+			def unitValue = numberService.format("#,##0.00", it.unitValue );
+			def totalAdjustment = numberService.format("#,##0.00", it.totalAdjustment );
+			def marketValue = numberService.format("#,##0.00", it.marketValue );
+			def adjMarketValue = numberService.format("#,##0.00", it.adjMarketValue );
+			def assessLevel = numberService.format("#,##0", it.assessLevel );
+			def assessedValue = numberService.format("#,##0.00", it.assessedValue);
+			
+			html += """
+				<tr>
+					<td>$it.classTitle</td>
+					<td>$it.specificClassTitle</td>
+					<td>$it.subclassTitle</td>
+					<td>$it.actualUseTitle</td>
+					<td class="numeric">$areaSqm</td>
+					<td class="numeric">$areaHec</td>
+					<td>${it.stripping == null ? "" : it.stripLevel}</td>
+					<td class="numeric">$unitValue</td>
+					<td class="numeric">$totalAdjustment</td>
+					<td class="numeric">$marketValue</td>
+					<td class="numeric">$adjMarketValue</td>
+					<td align="center" class="numeric">$assessLevel</td>
+					<td class="numeric">$assessedValue</td>
+				</tr>
+			"""
+		}
+		
+		def areaSqm = numberService.format("#,##0.00", rpuInfo.areaSqm );
+		def areaHec = numberService.format("#,##0.0000", rpuInfo.areaHec);
+		def totalMV = numberService.format("#,##0.00", rpuInfo.totalMV );
+		def totalAMV = numberService.format("#,##0.00", rpuInfo.totalAMV);
+		def totalAV = numberService.format("#,##0.00", rpuInfo.totalAV);
+			
+		html += """
+					<tr>
+						<td colspan="4" align="right"><b>TOTALS</td>
+						<td class="numeric"><b>$areaSqm</td>
+						<td class="numeric"><b>$areaHec</td>
+						<td colspan="3"></td>
+						<td class="numeric"><b>$totalMV</td>
+						<td class="numeric"><b>$totalAMV</td>
+						<td></td>
+						<td class="numeric"><b>$totalAV</td>
+					</tr>
+				</table>
+				</div>
+			</td>
+			</tr>
+		</table>
+		""";
+		return html;
+	}
+	
+	private def buildLandAdjustments( faas ) {
+		def rpuInfo = faas.rpu.info;
+		
+		if( rpuInfo.adjustments?.size() == 0 ) {
+			return "";
+		}
+			
+		def html = """
+			<tr>
+			<td>
+				<table width="100%">
+					<tr>
+						<td><b><u>LAND ADJUSTMENTS:</u></b></td>
+					</tr>
+					<tr>
+						<td>
+						<div style="background-color:silver">
+						<table width="100%" cellspacing="1">
+							<tr>
+								<th>Code</th>
+								<th>Adjustment</th>
+								<th>Adjustment Factor</th>
+							</tr>
+		""";
+		
+		rpuInfo.adjustments.each {
+			html += """
+				<tr>
+					<td style="text-align:center" >$it.adjustmentTypeCode</td>
+					<td>$it.adjustmentTypeTitle</td>
+					<td style="text-align:center">$it.rate</td>
+				</tr>
+			""";
+		}
+		
+		html += """
+						</table>
+						</div>
+						<td>
+					</tr>
+				</table>
+			</td>
+			</tr>
+		""";
+		return html;
+	}
+		
+	private def buildTitleInfo( faas ) {
+		return """
+			<table>
+				<tr>
+					<td class="header">State :</td>
+					<td class="header"><b>$faas.state</b></td>
+				</tr>
+				<tr>
+					<td class="header">TD NO. :</td>
+					<td class="header" width="300"><b>$faas.info.tdNo</b></td>
+					<td class="header">PIN :</td>
+					<td class="header" width="300"><b>$faas.rpu.info.pin</b></td>
+				</tr>
+			</table>
+		""";
+	}
+	
+	private def buildGeneralInfo( faas ) {
+		return """
+		<table width="100%">
+			<tr>
+				<td colspan="2" class="title"><b>GENERAL INFORMATION</td>
+			<tr>
+			<tr>
+				<td width="50%">
+					<table width="100%">
+						<tr>
+							<td  class="caption">TD No.</td>
+							<td class="data">$faas.info.tdNo</td>
+						</tr>
+						<tr>
+							<td  class="caption">Txn Type</td>
+							<td class="data">$faas.info.txnType</td>
+						</tr>
+						<tr>
+							<td  class="caption">Issue Date</td>
+							<td class="data">$faas.info.issueDate</td>
+						</tr>
+						<tr>
+							<td  class="caption">Effectivity</td>
+							<td ><b>${faas.info.effectivityQtr}Q - $faas.info.effectivityYear</td>
+						</tr>
+					</table>
+				</td>
+				<td valign="top" width="50%">
+					<table width="100%">
+						<tr>
+							<td  class="caption">Title No.</td>
+							<td class="data">${faas.info.title == null ? "" : faas.info.title.titleNo}</td>
+						</tr>
+						<tr>
+							<td  class="caption">Title Date</td>
+							<td class="data">${faas.info.title == null ? "" : faas.info.title.titleDate}</td>													
+						</tr>
+						<tr>
+							<td  class="caption">Title Type</td>
+							<td class="data">${faas.info.title == null ? "" : faas.info.title.titleType}</td>						
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+		""";
+	}
+	
+	private def buildOwnershipInfo( faas ) {
+		return """
+			<table width="100%">
+				<tr>
+					<td colspan="4" class="title">OWNERSHIP INFORMATION</td>
+				</tr>
+				<tr>
+					<td  class="caption">Taxpayer</td>
+					<td><b>$faas.info.taxpayer.taxpayerName</b></td>
+					<td  class="caption">Administrator</td>
+					<td><b></b></td>
+				</tr>
+				<tr>
+					<td  class="caption">Address</td>
+					<td><b>$faas.info.taxpayer.taxpayerAddress</b></td>
+					<td  class="caption">Address</td>
+					<td><b></b></td>
+				</tr>
+			</table>
+		""";
+	}	
+	
+	private def buildPinInfo( faas ) {
+		def info = faas.rp.info;
+		return """
+			<table width="100%">
+				<tr>
+					<td class="title" colspan="2"><b>PIN INFORMATION</td>
+				</tr>
+				<tr>
+					<td width="50%">
+						<table>
+							<tr>
+								<td class="caption">PIN</td>
+								<td class="data">$info.pin</td>
+							</tr>
+							<tr>
+								<td class="caption">Barangay</td>
+								<td class="data">$info.barangay</td>
+							</tr>
+							<tr>
+								<td class="caption">House No.</td>
+								<td class="data">${info.house == null ? '' : info.house}</td>
+							</tr>
+							<tr>
+								<td class="caption">Street</td>
+								<td class="data">${info.street == null ? '' : info.street}</td>
+							</tr>
+							<tr>
+								<td class="caption">Purok</td>
+								<td class="data">${info.purok == null ? '' : info.purok}</td>      
+							</tr>
+						</table>
+					</td>
+					<td valign="top" width="50%">
+						<table>
+							<tr>
+								<td class="caption">Cadastral Lot No.</td>
+								<td class="data">$info.cadastralLotNo</td>
+							</tr>
+							<tr>
+								<td class="caption">Block No.</td>
+								<td class="data">${info.blockNo == null ? '' : info.blockNo}</td>
+							</tr>
+							<tr>
+								<td class="caption">Survey No.</td>
+								<td class="data">${info.surveyNo == null ? '' : info.surveyNo}</td>
+							</tr>
+							<tr>
+								<td class="caption">Claim No.</td>
+								<td class="data">${info.claimNo == 0 ? '' : info.claimNo}</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td valign="top" colspan="2">
+						<table width="100%">
+							<tr>
+								<td colspan="4"><b><u>BOUNDARIES</u></td>
+							</tr>
+							<tr>
+								<td class="caption">North</td>
+								<td class="data">$info.boundary.north</td>
+								<td class="caption">East</td>
+								<td class="data">$info.boundary.east</td>
+							</tr>
+							<tr>
+								<td class="caption">South</td>
+								<td class="data">$info.boundary.south</td>
+								<td class="caption">West</td>
+								<td class="data">$info.boundary.west</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		""";
+	}
+	
+	private def buildSignatories( faas ) {
+		return """
+			<table width="100%">
+				<tr>
+					<td  class="caption" colspan="6" class="title">SIGNATORIES</td>
+				</tr>
+				<tr>
+					<td valign="top">
+						Appraised By:<br>
+						<br>
+						<b>$faas.info.appraisedBy.name</b><br>
+						$faas.info.appraisedBy.title<br>
+						$faas.info.appraisedBy.dtSigned
+					</td>
+					<td valign="top">
+						Recommended By:<br>
+						<br>
+						<b>$faas.info.recommendedBy.name</b><br>
+						$faas.info.recommendedBy.title<br>
+						$faas.info.recommendedBy.dtSigned
+					</td>
+					<td valign="top">
+						Reviewed By:<br>
+						<br>
+						<b>${faas.info.reviewedBy == null ? '' : faas.info.reviewedBy.name}</b><br>
+						${faas.info.reviewedBy == null ? '' : faas.info.reviewedBy.title}<br>
+						${faas.info.reviewedBy == null ? '' : faas.info.reviewedBy.dtSigned}
+					</td>
+					<td valign="top">
+						Approved By:<br>
+						<br>
+						<b>$faas.info.approvedBy.name</b><br>
+						$faas.info.approvedBy.title<br>
+						$faas.info.approvedBy.dtSigned
+					</td>
+				</tr>
+			</table>	
+		""";
+	}
+	
+	private def buildAttachments( faas, edit ) {
+		/*return """
+			<table width="100%">
+				<tr>
+					<td colspan="6" class="title">ATTACHMENTS</td>
+				</tr>
+				<tr>
+					<td><a href="showAttachment?http://localhost:8080/bohol-downloads/images/sketch-01.png">Sketch Plan </a></td>
+				</tr>
+				<tr>
+					<td><a href="showAttachment?http://localhost:8080/bohol-downloads/images/deed-01.png">Deed of Sale </a></td>
+				</tr>
+				<tr>
+					<td><a href="showAttachment?http://localhost:8080/bohol-downloads/images/rtc-01.png">Realty Tax Clearance </a></td>
+				</tr>
+			</table>
+		""";*/
+		
+		def attachments = attachmentService.getAttachments( faas.objid );
+		def trs = "";
+		attachments.each {
+            trs += """
+                <tr>
+                    <td>
+                        <a href="showAttachment?$it.objid~~$it.documentType~~$it.tmpFileName" >$it.documentType</a>
+                    </td>
+                    <td>${it.remarks ? it.remarks : ''}</td>
+                    ${edit == true ? """<td><a href="removeAttachment?$it.objid">Remove</a></td>""" : ""}
+                </tr>
+            """;
+		}
+		return """
+			<h2>Attachments</h2>
+			<table width="100%">
+				<tr>
+					<td colspan='${edit == true ? "3" : "2"}' class="title">ATTACHMENTS</td>
+				</tr>
+				$trs
+			</table>
+		""";		
+	}
+	
+	private def doBuildHtml( data ) {
+		return """
+			<html>
+				<head>
+					<style type="text/css">
+						body, td, th { 
+							font-family: tahoma;
+							font-size  : 12pt;
+						}	
+						td {
+							background-color:white;
+						}
+						th {
+							background-color : #CCCCCC;
+						}
+						.title {
+							background-color:#CCCCFF;
+							font-weight:bold;
+						}
+						.caption {
+							width : 120
+						}
+						.numeric {
+							text-align:right;
+						}
+						.header {
+							font-family : tahoma;
+							font-size   : 18pt;
+							width       : 120
+						}
+						.data {
+							font-weight:bold;
+						}
+					</style>
+				</head>
+				<body>
+					<table width="100%">
+						<tr>
+							<td>$data.titleInfo</td>
+						</tr>
+						<tr>
+							<td>$data.generalInfo</td>
+						</tr>
+						<tr>
+							<td>$data.ownershipInfo</td>
+						</tr>
+						<tr>
+							<td>$data.pinInfo</td>
+						</tr>
+						<tr>
+							<td>$data.rpuInfo</td>
+						</tr>
+						<tr>
+							<td>$data.signatories</td>
+						</tr>
+						<tr>
+							<td>$data.attachments</td>
+						</tr>
+					</table>
+				</body>
+			</html>
+		""";
+	}
+	
+	
+	
+	
+	
+	
 }
 

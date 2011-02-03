@@ -43,10 +43,12 @@ public class FaasListPage extends javax.swing.JPanel {
 
         setLayout(new java.awt.BorderLayout());
 
+        setPreferredSize(new java.awt.Dimension(1176, 638));
         jPanel2.setLayout(new java.awt.BorderLayout());
 
         jSplitPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         jSplitPane1.setDividerLocation(430);
+        jSplitPane1.setOneTouchExpandable(true);
         jPanel5.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();

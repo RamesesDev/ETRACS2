@@ -29,7 +29,7 @@
             def search = [:];
             
             public def open() {
-                doOpen( selectedItem.item );
+                return doOpen( selectedItem.item );
             }
             
             public void doSearch() {
@@ -48,15 +48,16 @@
                     ]
                 },
                 fetchList  : { 
-                    return svc.getList( search, it); 
+                    return svc.getList( search, it);
                 },
-                onOpenItem : { item, colname -> doOpen( item ) },
+                onOpenItem : { item, colname -> return doOpen( item ); },
             ] as PageListModel;
         
             public def getHtml() {
                 if( selectedItem?.item ) {
                     if( ! selectedItem.item.html ) {
-                        selectedItem.item.html = htmlSvc.getHtml( selectedItem.item.objid, false );
+                        //selectedItem.item.html = htmlSvc.getHtml( selectedItem.item.objid, false );
+                        selectedItem.item.html = htmlSvc.buildHtml2( selectedItem.item.objid, false );
                     }
                     return selectedItem.item.html;
                 }
@@ -75,7 +76,8 @@
             
             def showAttachment( params ) {
                 def data = params.split("~~");
-                def opener = InvokerUtil.lookupOpener("file:download", [objid:data[0]] );
+                print "FILE NAME >> " + data[2];
+                def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] );
                 opener.caption = "Attachment: " + data[1];
                 return opener;
             }
