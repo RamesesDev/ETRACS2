@@ -1,0 +1,24 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class ParentOrgService {
+
+    @PersistenceContext("java:main")
+    def em; 
+
+	@Env
+    def env;	
+	
+	@ProxyMethod	
+    public def getList() {
+		if( env.ORG.type == 'root' ) {
+			return em.sqlContext.createQuery( "select objid,code,name,'host' as type from host" ).resultList;
+		}
+		else {
+			def param = [objid: env.ORG.id];
+			return em.sqlContext.createQuery( 'select objid,code,name,\'host\' as type from host where objid=$P{objid}' ).setParameters(param).resultList;
+		}	
+    }
+	
+
+}

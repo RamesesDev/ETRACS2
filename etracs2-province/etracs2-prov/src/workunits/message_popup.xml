@@ -1,0 +1,35 @@
+<workunit>
+    <invokers>
+        <invoker type="message_popup" caption="Reason" target="popup"/>
+    </invokers>
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class MessageController 
+        {
+            def acceptHandler;
+            def remarks;
+            def caption;
+            
+            public def doOk() {
+                if(! remarks) throw new Exception(caption);
+            
+                if(acceptHandler)
+                    acceptHandler(remarks);
+                 
+                return "_close";
+            }
+        }
+        
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page name="returnpage" template="etracs2.prov.MessagePage"/>
+    </pages>
+</workunit>

@@ -5,6 +5,46 @@ class TDService
 	@PersistenceContext("etracs")
 	def em;
 
+	@Service("SequenceService")
+	def sequenceService;
+
+	@ProxyMethod
+	public def getPINSequence( faasId ) {
+		StringBuffer result = new StringBuffer();
+		int hyphenIndicator = 0; //max at 3
+		def faas = openFaas( faasId );
+		String pin = faas.rpu.info.pin + "";//"047-30-0038-001-60";
+		result.append( faas.rpu.info.ry + "-" );
+
+		for(int i=0 ; i<pin.length() ; i++) {
+		    	if(pin.charAt(i) == '-')
+		        	hyphenIndicator++;
+		    
+		    	if(hyphenIndicator == 3) {//stops at the 3rd hyphen as indicated in the pin sequence
+		        	result.append( pin.substring(0, i) );
+		        	break;
+		    	}
+		}
+		result.append( "-" + getNextTDNo( result.toString() ) );
+		return result.toString();
+	}
+
+	@ProxyMethod
+	public def getNextTDNo( sequence ) {
+		StringBuffer str = new StringBuffer();
+		
+		str.append( sequenceService.getNextFormattedSeries( sequence ) );
+		
+		return str.toString();
+	}
+
+	@ProxyMethod
+	public def openFaas( faasId ) {
+		def faas = em.read("faas:faas", [objid:faasId]);
+		if( !faas ) throw new Exception("FAAS not found.");
+		return faas;
+	}
+
 	@ProxyMethod
 	public def open( def objid ){
 		return em.read("td:td", [objid: objid] );

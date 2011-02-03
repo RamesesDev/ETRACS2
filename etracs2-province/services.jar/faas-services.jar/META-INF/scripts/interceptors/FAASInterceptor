@@ -5,9 +5,6 @@ class FAASInterceptor
 	@Service("TDService")
 	def tdService;
 	
-	@Service("TMCRService")
-	def tmcrService;
-	
 	@Service("LogService")
 	def logService;
 	
@@ -17,18 +14,21 @@ class FAASInterceptor
 	@Service("TaxpayerService")
 	def taxpayerService;
 	
+	@Service("RPUHistoryService")
+	def rpuHistoryService;
+	
 	@After(pattern="FAASService.create") 
 	public void interceptCreate( evt ) {
 		logService.log("CREATE", "FAAS", evt.result.objid);
 	}
 	
-	@After(pattern="FAASService.submit.*") 
+	@After(pattern="FAASService.submit") 
 	public void interceptSubmit( evt ) {
 		logService.log("SUBMIT", "FAAS", evt.result.objid);
 		transmittalService.updateItemStateToForApproval(evt.result.transmittalId, evt.result.objid);
 	}
 	
-	@After(pattern="FAASService.approve.*") 
+	@After(pattern="FAASService.approve") 
 	public void interceptApprove( evt ) {
 		def faas = evt.result;
 
@@ -45,6 +45,8 @@ class FAASInterceptor
 			  address    : faas.info.taxpayer.taxpayerAddress,
 			]  
 		);
+		
+		rpuHistoryService.post( faas );
 	}
 	
 	@After(pattern="FAASService.disapprove.*") 

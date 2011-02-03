@@ -37,7 +37,6 @@ public class ListPage extends javax.swing.JPanel {
         jPanel1 = new javax.swing.JPanel();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
         jPanel4 = new javax.swing.JPanel();
-        xButton1 = new com.rameses.rcp.control.XButton();
         xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
 
         setLayout(new java.awt.BorderLayout());
@@ -95,9 +94,12 @@ public class ListPage extends javax.swing.JPanel {
 
         jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 1, 3, 1));
         jPanel3.setOpaque(false);
-        jPanel3.setPreferredSize(new java.awt.Dimension(10, 30));
+        jPanel3.setPreferredSize(new java.awt.Dimension(10, 40));
         jPanel1.setLayout(new java.awt.BorderLayout());
 
+        xActionBar1.setButtonBorderPainted(false);
+        xActionBar1.setButtonCaptionOrientation(javax.swing.SwingConstants.RIGHT);
+        xActionBar1.setButtonContentAreaFilled(false);
         xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setName("formActions");
         xActionBar1.setUseToolBar(false);
@@ -107,11 +109,6 @@ public class ListPage extends javax.swing.JPanel {
 
         jPanel4.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 5));
         jPanel4.setPreferredSize(new java.awt.Dimension(250, 10));
-        xButton1.setText("...");
-        xButton1.setMargin(new java.awt.Insets(0, 4, 0, 4));
-        xButton1.setName("doSearch");
-        jPanel4.add(xButton1, java.awt.BorderLayout.EAST);
-
         xActionTextField1.setActionName("doSearch");
         xActionTextField1.setHint("Search");
         xActionTextField1.setName("search.textSearch");
@@ -140,7 +137,6 @@ public class ListPage extends javax.swing.JPanel {
     private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
-    private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XEditorPane xEditorPane1;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XTable xTable1;

@@ -1,0 +1,69 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/file" caption="Municipal Taxpayers" action="initMunicipal" permisssion="municipaltaxpayer.view"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class TaxpayerListController 
+        {
+            
+            @Service("TaxpayerService")
+            def svc;
+            
+            @Service("TaxpayerHtmlService")
+            def htmlService;
+            
+            @FormTitle
+            def title;
+            
+            def selectedItem;
+            def search = [:]
+            
+            def initMunicipal() {
+                search.lguType = "MUNICIPALITY";
+                title="List of Municipal Taxpayers";
+                return "default";
+            }
+            
+            void doSearch() {
+                listHandler.load();
+            }
+            
+            def listHandler = [
+                getRows    : { return 25; },
+                getColumns : {
+                    return [
+                        new Column( name:"item.lgu", caption:"LGU", width:120),
+                        new Column( name:"item.name", caption:"Name", width:250),
+                        new Column( name:"item.address", caption:"Address", width:200),
+                    ]
+                },
+                fetchList  : { return svc.getList( search, it); },
+            ] as PageListModel;
+        
+            def getHtml() {
+                if( selectedItem?.item ) {
+                    if( ! selectedItem.item.html ) {
+                        selectedItem.item.html = htmlService.getHtml( selectedItem.item.objid );
+                    }
+                    return selectedItem.item.html;
+                }
+                return "No record or item selected...";
+            }
+                                    
+        }
+        
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.ListPage"/>
+    </pages>
+</workunit>

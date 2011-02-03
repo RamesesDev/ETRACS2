@@ -43,6 +43,8 @@ UPDATE transmittalitem SET state = $P{newstate} WHERE transmittalid = $P{transmi
 [disapproveItem]
 UPDATE transmittalitem SET state = $P{newstate}, remarks = $P{remarks} WHERE transmittalid = $P{transmittalid} AND faasid = $P{faasid}
 
+[incompleteItem]
+UPDATE transmittalitem SET state = $P{newstate}, remarks = $P{remarks} WHERE transmittalid = $P{transmittalid} AND objid = $P{objid}
 
 #----------------------------------------------------------------
 # DELETES

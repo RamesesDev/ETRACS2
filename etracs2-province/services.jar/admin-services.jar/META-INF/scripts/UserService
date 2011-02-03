@@ -1,0 +1,135 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class UserService {
+
+    @PersistenceContext("java:main")
+    def em; 		
+
+    @Service("DateService")
+    def dateService; 		
+	
+	@Invoker
+	def invoker;
+	
+	@Env
+	def env;
+
+    @ProxyMethod	
+    public def create(@Param(schema="user") user ) {
+		user.objid = "USR-" + new java.rmi.server.UID();
+		user.dtcreated =  dateService.serverDate;
+		user.owner = env.USER;
+		user.userlevel = env.USERLEVEL + 1;
+		def usr = em.create( "user", user );
+		return usr;
+    }
+
+    @ProxyMethod	
+    public def open( param ) {
+		return em.read( "user", param );
+    }
+
+    @ProxyMethod	
+    public def update(@Param(schema="user") user ) {
+		em.update( "user", user );
+    }
+	
+	/**
+	* list - add query where users are filtered by org
+	*/
+    @ProxyMethod	
+    public def getList( param ) {
+		def qry = em.sqlContext.createNamedQuery( 'user:list' );
+		StringBuffer sb = new StringBuffer();
+		if(env.USERLEVEL) {
+			param.userlevel = env.USERLEVEL;
+			sb.append( ' and userlevel > $P{userlevel}' );
+		}
+		qry.setVars( [ filter: sb.toString() ] ); 
+		return qry.setParameters( param ).resultList;
+	}
+
+    @ProxyMethod	
+    public def createUserRole( @Param(schema="user:userrole") userrole ) {
+		userrole.objid = "USRROL-" + new java.rmi.server.UID();
+		return em.create( "user:userrole", userrole );
+    }
+	
+    @ProxyMethod	
+    public def updateUserRole( @Param(schema="user:userrole") userrole ) {
+		return em.update( "user:userrole", userrole );
+    }
+
+	private def serializeRole( role ) {
+		if(role.contact) role.contact = em.serializer.read( role.contact );
+		if(role.info) role.info = em.serializer.read( role.info );
+		if(role.excludepermissions) role.excludepermissions = em.serializer.read( role.excludepermissions );
+		if(role.disallowedterminals) role.disallowedterminals = em.serializer.read( role.disallowedterminals );
+		if(role.schedules) role.schedules = em.serializer.read( role.schedules );
+		return role;
+	}
+	
+	@ProxyMethod	
+    public def getUserRoles( param ) {
+		assert param.userid;
+		def list = em.sqlContext.createNamedQuery( 'user:user-roles').setParameters(param).resultList;
+		list.each { serializeRole(it); } 	
+		return list;
+    }
+	
+    @ProxyMethod	
+    public def findUserRole( param ) {
+		assert param.userid;
+		assert param.role;
+		def role = em.sqlContext.createNamedQuery( 'user:find-role.sql').setParameters(param).singleResult;
+		return serializeRole(role);
+    }
+	
+	@ProxyMethod	
+    public def removeUserRole( userrole ) {
+		em.delete( "user:userrole", userrole );
+    }
+		
+	@ProxyMethod	
+    public def createLoginAccount( String uid, def loginacct ) {
+		def loginSvc = invoker.create("LoginAccountService");
+		loginacct = loginSvc.create( loginacct );
+		def o = em.read( "user", [objid: uid] );
+		o.loginid = loginacct.uid;
+		em.update( "user", o );
+    }
+	
+	@ProxyMethod	
+    public def getLoginAccount( def usr ) {
+		def loginSvc = invoker.create("LoginAccountService");
+		def o = null;
+		if( usr.loginid ) {
+		    o = loginSvc.getAccount( [uid: usr.loginid ]);
+		}
+		if( o == null ) {
+		    o = loginSvc.createAccount();
+			o._new = true;
+			o.uid = usr.uid;
+			o.displayname = usr.firstname;
+			o.email = usr.contact.email;
+		}	
+		o._name = usr.lastname + ", " + usr.firstname;
+		return o;
+    }
+	
+	@ProxyMethod	
+    public def updateLoginAccount(  String uid, def loginacct ) {
+		def loginSvc = invoker.create("LoginAccountService");
+		loginacct = loginSvc.update( loginacct );
+		def o = em.read( "user", [objid: uid] );
+		o.loginid = loginacct.uid;
+		em.update( "user", o );
+    }
+
+	@ProxyMethod	
+    public def getUserGroupList( String groupid ) {
+		return em.sqlContext.createNamedQuery( "user:user-group-list").setParameter(1, groupid ).resultList;
+	}
+	
+}

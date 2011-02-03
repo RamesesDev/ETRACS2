@@ -29,6 +29,9 @@ public class FaasController
 
     @Service("FaasHtmlService")
     def htmlSvc;
+    
+    @Service("FaasAttachmentService")
+    def attachmentSvc;
 
     def state = PROVAPPROVAL_STATE;
     def faas;
@@ -62,8 +65,7 @@ public class FaasController
 
     def addAttachment() {
         def info = [
-                objid : faas.objid,
-                name  : "FAAS",
+                refId  : faas.objid
         ]
         return InvokerUtil.lookupOpener("file:upload",[info:info, refreshHandler: refreshHandler]);
     }
@@ -93,6 +95,10 @@ public class FaasController
         def opener = InvokerUtil.lookupOpener("file:download", [objid:data[0]] );
         opener.caption = "Attachment: " + data[1];
         return opener;
+    }
+    
+    public void save() {
+        svc.save(faas);
     }
 
 	

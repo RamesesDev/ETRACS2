@@ -18,8 +18,8 @@
             @FormTitle
             def title;
             
-            @Service('DownloadService')
-            def svc;
+            @Service('FaasAttachmentService')
+            def attachmentService;
             
             @Binding
             def binding;
@@ -30,20 +30,21 @@
             def message;
             
             void doDownload() {
-                OsirisContext.clientContext.taskManager.addTask(new DownloadTask(
-                    onExecute: { counter ->
-                        def data = svc.download( objid, counter );
-                        if ( data ) {
-                            buffer.write( data );
-                            message = "Downloading file (" + buffer.size() + " kb)";
-                            binding.refresh("message");
-                            return true;
-                        }
-                        image = buffer.toByteArray();
-                        binding.fireNavigation('viewer');
-                        return false;
-                    }
-                ));
+                def info = null;
+                OsirisContext.clientContext.taskManager.addTask(
+                    new DownloadTask(
+                        onExecute: { counter ->
+                            def data = attachmentService.downloadAttachment( objid );
+                            buffer.write( data.bytes );
+                            if ( !data.eof ) {
+                                message = "Downloading file (" + buffer.size()/1000 + " kb)";
+                                binding.refresh("message");
+                                return true;
+                            }
+                            image = buffer.toByteArray();
+                            binding.fireNavigation('viewer');
+                            return false;
+                }));
             }
                     
         }

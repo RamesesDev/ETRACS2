@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="home.action" target="window" icon="images/taxpayer.jpg" />
+        <invoker type="home.action" target="window" icon="images/taxpayer.jpg" permission="provincetaxpayer.view"/>
     </invokers>
     
     <code>
@@ -23,14 +23,16 @@ class ProvinceTaxpayerListController
     def svc;
     
     def selectedItem;
-    def editing = false;
+    def mode = "view";
     
-    def search = [
-        lgu     : OsirisContext.getEnv().get("ORG")?.name,
-        lguType : OsirisContext.getEnv().get("ORG")?.type,
-    ];
+    def search = [lguType : "PROVINCE"];
     
-    def subformHandler = InvokerUtil.lookupOpener("provtaxpayerinfo", [:]);
+    def listViewHandler = { m -> 
+        mode = m;
+        binding.refresh();
+    }
+    
+    def subformHandler = InvokerUtil.lookupOpener("provtaxpayerinfo", [ listViewHandler:listViewHandler]);
     
     void setSelectedItem( sitem ) {
         selectedItem = sitem;
@@ -55,11 +57,6 @@ class ProvinceTaxpayerListController
     
     void doSearch() {
         listHandler.load();
-    }
-    
-    void updateStatus( isEditing ) {
-        editing = isEditing;
-        binding.refresh();
     }
     
 }  

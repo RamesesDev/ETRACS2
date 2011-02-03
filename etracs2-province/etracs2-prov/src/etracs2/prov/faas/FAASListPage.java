@@ -96,11 +96,14 @@ public class FAASListPage extends javax.swing.JPanel {
 
         jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 1, 3, 1));
         jPanel3.setOpaque(false);
-        jPanel3.setPreferredSize(new java.awt.Dimension(10, 30));
+        jPanel3.setPreferredSize(new java.awt.Dimension(10, 40));
         jPanel1.setLayout(new java.awt.BorderLayout());
 
+        xActionBar1.setButtonBorderPainted(false);
+        xActionBar1.setButtonContentAreaFilled(false);
         xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setName("formActions");
+        xActionBar1.setPreferredSize(new java.awt.Dimension(82, 50));
         xActionBar1.setUseToolBar(false);
         jPanel1.add(xActionBar1, java.awt.BorderLayout.EAST);
 
@@ -109,7 +112,6 @@ public class FAASListPage extends javax.swing.JPanel {
         jPanel4.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 10));
         jPanel4.setPreferredSize(new java.awt.Dimension(250, 10));
         xTextField7.setName("search.textSearch");
-        xTextField7.setPreferredSize(new java.awt.Dimension(100, 18));
         jPanel4.add(xTextField7, java.awt.BorderLayout.CENTER);
 
         xButton1.setText("...");

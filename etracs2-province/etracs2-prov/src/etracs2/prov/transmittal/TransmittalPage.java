@@ -32,6 +32,9 @@ public class TransmittalPage extends javax.swing.JPanel {
         jPanel4 = new javax.swing.JPanel();
         jSplitPane1 = new javax.swing.JSplitPane();
         jScrollPane1 = new javax.swing.JScrollPane();
+        jPanel5 = new javax.swing.JPanel();
+        xActionBar1 = new com.rameses.rcp.control.XActionBar();
+        jPanel6 = new javax.swing.JPanel();
         xEditorPane1 = new com.rameses.rcp.control.XEditorPane();
         jPanel1 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
@@ -57,9 +60,11 @@ public class TransmittalPage extends javax.swing.JPanel {
 
         jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 1, 3, 1));
         jPanel3.setOpaque(false);
-        jPanel3.setPreferredSize(new java.awt.Dimension(10, 30));
+        jPanel3.setPreferredSize(new java.awt.Dimension(10, 40));
         jPanel2.setLayout(new java.awt.BorderLayout());
 
+        xActionBar2.setButtonBorderPainted(false);
+        xActionBar2.setButtonContentAreaFilled(false);
         xActionBar2.setDepends(new String[] {"selectedItem"});
         xActionBar2.setName("formActions");
         xActionBar2.setUseToolBar(false);
@@ -79,9 +84,46 @@ public class TransmittalPage extends javax.swing.JPanel {
         xTitledBorder1.setTitle("Quick View");
         xTitledBorder1.setTitlePadding(new java.awt.Insets(2, 5, 2, 5));
         jScrollPane1.setBorder(xTitledBorder1);
+        xActionBar1.setButtonBorderPainted(false);
+        xActionBar1.setButtonContentAreaFilled(false);
+        xActionBar1.setDepends(new String[] {"selectedItem"});
+        xActionBar1.setName("itemActions");
+        xActionBar1.setPreferredSize(new java.awt.Dimension(82, 40));
+        xActionBar1.setUseToolBar(false);
+
         xEditorPane1.setDepends(new String[] {"selectedItem"});
         xEditorPane1.setName("html");
-        jScrollPane1.setViewportView(xEditorPane1);
+
+        org.jdesktop.layout.GroupLayout jPanel6Layout = new org.jdesktop.layout.GroupLayout(jPanel6);
+        jPanel6.setLayout(jPanel6Layout);
+        jPanel6Layout.setHorizontalGroup(
+            jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(xEditorPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 339, Short.MAX_VALUE)
+        );
+        jPanel6Layout.setVerticalGroup(
+            jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel6Layout.createSequentialGroup()
+                .addContainerGap()
+                .add(xEditorPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE))
+        );
+
+        org.jdesktop.layout.GroupLayout jPanel5Layout = new org.jdesktop.layout.GroupLayout(jPanel5);
+        jPanel5.setLayout(jPanel5Layout);
+        jPanel5Layout.setHorizontalGroup(
+            jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 339, Short.MAX_VALUE)
+            .add(jPanel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        );
+        jPanel5Layout.setVerticalGroup(
+            jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel5Layout.createSequentialGroup()
+                .add(xActionBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(279, Short.MAX_VALUE))
+            .add(jPanel5Layout.createSequentialGroup()
+                .add(26, 26, 26)
+                .add(jPanel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jScrollPane1.setViewportView(jPanel5);
 
         jSplitPane1.setRightComponent(jScrollPane1);
 
@@ -131,8 +173,8 @@ public class TransmittalPage extends javax.swing.JPanel {
             .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 369, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, xTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 369, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 421, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, xTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 421, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -140,7 +182,7 @@ public class TransmittalPage extends javax.swing.JPanel {
             .add(jPanel1Layout.createSequentialGroup()
                 .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 107, Short.MAX_VALUE)
+                .add(xTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 206, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jSplitPane1.setLeftComponent(jPanel1);
@@ -158,9 +200,12 @@ public class TransmittalPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel5;
+    private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSplitPane jSplitPane1;
+    private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionBar xActionBar2;
     private com.rameses.rcp.control.XEditorPane xEditorPane1;
     private com.rameses.rcp.control.XLabel xLabel1;

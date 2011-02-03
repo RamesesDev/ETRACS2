@@ -1,0 +1,22 @@
+
+import com.rameses.annotations.*;
+
+/**
+* script to run system related tables.
+*/
+class InitSystemService {
+
+   @SqlContext("java:system")
+   def db;	
+
+   @Service("Var")
+   def VARS;	
+
+   @ProxyMethod(local=true)
+   public void run() {
+	//update the server timezone
+	VARS.server_timezone = TimeZone.getDefault().getID();
+   }
+
+
+}
