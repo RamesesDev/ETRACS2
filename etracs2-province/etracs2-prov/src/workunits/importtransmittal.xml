@@ -11,6 +11,7 @@
         import com.rameses.rcp.annotations.*;
         import com.rameses.osiris2.client.*;
         import javax.swing.JFileChooser;
+        import etracs2.prov.transmittal.*;
         
         public class ImportTransmittalController
         {
@@ -27,36 +28,17 @@
             def message;
             def transmittal;
             def importing = false;
-            def save = false;
-            
-            public void browseFile() {
-                JFileChooser jfc = new JFileChooser();
-                int ret = jfc.showOpenDialog(null);
-                if( ret == JFileChooser.APPROVE_OPTION) {
-                    def file = jfc.getSelectedFile();
-                    fileName = file.getAbsolutePath();
-                }
-            }
+            def save = true;
             
             public void importTransmittal() {
-                if( ! fileName )  return;
-                importing = false;
-                
-                def t = [
-                    accept  : { return true; },
-                    isEnded : { return true; },
-                    execute : { executeImport(); },
-                ] as Task;
-                
+                def t = new TransmitTask( caller:this );
                 OsirisContext.clientContext.taskManager.addTask( t );
-                importing = true;
-                
             }
             
             public void saveTransmittal() {
                 save = false;
                 if( MsgBox.confirm("Save transmittal?") ) {
-                    svc.create( transmittal );
+                    svc.saveTransmittal( transmittal.objid );
                     save = true;
                 }
             }
@@ -72,34 +54,66 @@
                         new Column( name:"item.taxpayerName", caption:"Taxpayer", width:500),
                     ]
                 },
-                fetchList  : { transmittal.items },
-            ] as PageListModel;
-            
-            
-            private void executeImport() {
-                try {
-                    message = "Importing file. Please wait...";
-                    transmittal = deserializeTransmittal( fileName );
-                    binding.fireNavigation("main");
-                }
-                catch ( e ) {
-                    MsgBox.alert( e.message );
-                    importing = false;
-                    message = null;
-                    binding.refresh();
-                }
-            }
-            
-            private def deserializeTransmittal( fileName ) {
-                def transmittal = null;
-                (new File(fileName)).withObjectInputStream { instream ->
-                    instream.eachObject { transmittal = it; }
-                };
-                return transmittal;
-            }
-            
-        }
+                fetchList  : { 
+                    return transmittal.items;
+                },
                 
+            ] as PageListModel;
+        }
+        
+        class TransmitTask extends Task
+        {
+            def caller;
+            def reader;
+            def counter = 0;
+            def chunk = [state:"TRANSMITTAL", eof:false, delete:""];
+            
+            public void start(){
+                if( !reader ){
+                    reader = new TransmittalReader( caller.fileName.absolutePath );
+                    caller.message = "Importing files $chunk.state [${counter}]";
+                    caller.binding.refresh();
+                    ended = false;
+                }
+            }
+
+            public boolean accept(){  return true; }
+            public void execute() {
+                try{
+                    
+                        chunk = reader.read(chunk);
+                        ended = (ended = chunk.eof); 
+                        chunk = caller.svc.importTransmittal( chunk );
+                        caller.message = "Importing files $chunk.state [${counter}]";
+                        counter ++;
+
+                }catch(e){
+                    cancelled = true;
+                    caller.message = e.message;
+                    ended = true;
+                    throw e;
+                }finally{
+                    caller.binding.refresh();
+                }
+            }
+            
+            public void end(){
+            
+                if( cancelled ) {
+                    caller.message = "Error in exporting the file.";
+                }else{
+                    caller.save = false;
+                    caller.message = "Done exporting file.";
+                }
+                
+                try{ reader.close(); }catch(e){;}
+                
+                caller.transmittal = caller.svc.open( chunk.transmittalId );
+                caller.binding.fireNavigation("main");
+                caller.binding.refresh();
+            }
+        }
+        
         ]]>
         
     </code>
