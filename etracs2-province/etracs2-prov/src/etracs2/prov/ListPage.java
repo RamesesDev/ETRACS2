@@ -94,9 +94,12 @@ public class ListPage extends javax.swing.JPanel {
 
         jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 1, 3, 1));
         jPanel3.setOpaque(false);
-        jPanel3.setPreferredSize(new java.awt.Dimension(10, 30));
+        jPanel3.setPreferredSize(new java.awt.Dimension(10, 40));
         jPanel1.setLayout(new java.awt.BorderLayout());
 
+        xActionBar1.setButtonBorderPainted(false);
+        xActionBar1.setButtonCaptionOrientation(javax.swing.SwingConstants.RIGHT);
+        xActionBar1.setButtonContentAreaFilled(false);
         xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setName("formActions");
         xActionBar1.setUseToolBar(false);
