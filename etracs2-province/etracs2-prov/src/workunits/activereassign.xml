@@ -1,0 +1,52 @@
+<workunit>
+    <invokers>
+        <invoker type="examiner.action" caption="Active Re-Assigns" icon="images/folder.png"  target="window"/>
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+public class ActiveReassignController
+{
+    @Service("ExaminerService")
+    def svc;
+    
+    def title = "Active Re-Assigns"
+    def selectedItem;
+    
+    void closeReassign() {
+        if(MsgBox.confirm("Close selected reassignment?")) {
+            svc.closeReassignById( selectedItem.item.objid );
+            listHandler.load();
+        }
+    }
+    
+    def listHandler = [
+        getRows    : { return 25; },
+        getColumns : { 
+            return [
+                new Column(name:"item.assignedFrom", caption:"From Examiner"),
+                new Column(name:"item.assignedTo", caption:"Assigned To"),
+                new Column(name:"item.validUntil", caption:"Valid Until"),
+                new Column(name:"item.remainingDays", caption:"Days Remaining"),
+            ];
+        },
+        fetchList : { 
+            return svc.getActiveReassigns( it );
+        },
+    ] as PageListModel;
+
+}
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.examiner.ActiveReassignPage"/>
+    </pages>
+</workunit>
