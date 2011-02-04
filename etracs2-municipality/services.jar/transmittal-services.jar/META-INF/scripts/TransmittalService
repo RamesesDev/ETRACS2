@@ -76,7 +76,7 @@ class TransmittalService
 			dtTransmitted : formatDate("yyyy-MM-dd HH:mm:ss", new Date()),
 			state: "ACTIVE",
 			transmittedBy : env.user,
-			rputCount: items.size()
+			rpuCount: items.size()
 		];
 		
 		em2.create("transmittal:transmittal", transmittal );
@@ -183,8 +183,7 @@ class TransmittalService
 			
 			def part = faasAttachmentSvc.downloadAttachment2( attachment.tmpFileName, chunk.partInfo );
 			chunk.partInfo = part.info;
-			if( part.info.eof ) chunk.attachmentIndex = (chunk.attachmentIndex + 1);
-			
+			if( part.info.eof || (!part.bytes) ) chunk.attachmentIndex = (chunk.attachmentIndex + 1);
 			chunk.data = [
 				filename: part.info.name,
 				bytes: part.bytes

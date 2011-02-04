@@ -74,7 +74,7 @@
 
                 def save(){
                     bean = svc.save( bean.remarks );
-                    return null;
+                    return "default";
                 }
                 
                 void open(){
@@ -149,7 +149,7 @@
                        
                        chunk.data = null;
                     }catch(e){
-                        caller.message = e.message;
+                        caller.message = e.cause?.message;
                         cancelled = true;
                         ended = true;
                         throw e;
@@ -160,14 +160,8 @@
                 }
                 
                 public void end(){
-                    try{
-                        caller.message = "Export success.";
-                    }catch(e){
-                        caller.message = e.message;
-                        cancelled = true;
-                    }finally{
-                        try{ writer.close(); }catch(ign){;}
-                    }
+                    if( !cancelled ) caller.message = "Export success.";
+                    try{ writer.close(); }catch(ign){;}
                     caller.binding.refresh("message");
                 }
             }

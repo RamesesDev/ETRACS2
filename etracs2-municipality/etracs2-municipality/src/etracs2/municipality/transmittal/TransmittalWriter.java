@@ -45,15 +45,16 @@ public class TransmittalWriter {
         File file = new File( tempAttachments.getAbsolutePath() + File.separator + name );
         
         try{
-            System.out.println("BYTES SIZE: " + bytes.length );
-            if( !file.exists() ){
-                System.out.println("CREATING FILE: " + file.createNewFile() );
+            if( bytes != null ){
+                System.out.println("BYTES SIZE: " + bytes.length );
+                if( !file.exists() ){
+                    System.out.println("CREATING FILE: " + file.createNewFile() );
+                }
+                
+                bos =  new FileOutputStream( file , true );
+                bos.write( bytes );
+                bos.flush();
             }
-            
-            bos =  new FileOutputStream( file , true );
-            bos.write( bytes );
-            bos.flush();
-            
         }catch(Exception ex){
             ex.printStackTrace();
         }finally{
