@@ -11,84 +11,9 @@ class FaasService
 	@Service("NumberService")
 	def numberService;
 	
-	/*@ProxyMethod
-	public def getHtml( objid, edit ) {
-		def faas = faasService.open(objid) ;
-		print "FAAS >> " + faas;
-		return buildHtml( faas, edit );
-	}
-	
-	private def buildHtml( faas, edit ) {
-		def attachments = buildAttachments( faas, edit );
-		return """
-			<html>	
-				<body>
-					<table>
-						<tr>
-							<td>TD No.</td>
-							<td>$faas.tdNo</td>
-						</tr>
-						<tr>
-							<td>State</td>
-							<td>$faas.state</td>
-						</tr>
-						<tr>
-							<td>Type</td>
-							<td>$faas.type</td>
-						</tr>
-						<tr>
-							<td>Txn Type</td>
-							<td>$faas.txnType</td>
-						</tr>
-						<tr>
-							<td>PIN</td>
-							<td>$faas.pin</td>
-						</tr>
-						<tr>
-							<td>Taxpayer</td>
-							<td>$faas.taxpayerName</td>
-						</tr>
-					</table>
-					<br>
-					$attachments
-				</body>
-			</html>
-		""";
-	}
-
-	private def buildAttachments( faas, edit ) {
-		def attachments = attachmentService.getAttachments( faas.objid );
-		def trs = "";
-		attachments.each {
-            trs += """
-                <tr>
-                    <td>
-                        <a href="showAttachment?$it.objid~~$it.documentType" >$it.documentType</a>
-                    </td>
-                    <td>${it.remarks ? it.remarks : ''}</td>
-                    ${edit == true ? """<td><a href="removeAttachment?$it.objid">Remove</a></td>""" : ""}
-                </tr>
-            """;
-		}
-		return """
-			<h2>Attachments</h2>
-			<table border="1">
-				<tr>
-					<th>Type</th>
-					<th>Remarks</th>
-                    ${edit == true ? '<th>Remove</th>' : ''}
-				</tr>
-				$trs
-			</table>
-		""";
-	}
-	*/
-	
-	
 	@ProxyMethod
 	public def buildHtml2( objid, edit ) {
 		def faas = faasService.createFaas(objid) ;
-		print "FAAS " + faas;
 		def data = [
 			titleInfo     : buildTitleInfo( faas ),
 			generalInfo   : buildGeneralInfo( faas ),

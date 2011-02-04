@@ -24,7 +24,6 @@ class FaasAttachmentService {
 	@ProxyMethod
 	public def downloadAttachment( objid ) {
 		try {
-		print "DOWNLOADING ATTACHMENTS";
 		def file = findFile( objid );
 		if ( !file ) throw new Exception("File not found.");
 		
@@ -70,7 +69,6 @@ class FaasAttachmentService {
 	}
 	
 	private def findFile( fileName ) {
-		print "FILE NAME >> " + fileName; 
 		def fileDir = new File( var.faas_attachments_temp_dir );
 		if ( !fileDir.exists() )
 			fileDir.mkdirs();
@@ -109,7 +107,6 @@ class FaasAttachmentService {
 	@ProxyMethod
 	public def getAttachments( refId ) {
 		try {
-		print "ATTACHMENTS FOR " + refId;
 		def params = [ refId : refId ];
 		return em2.sqlContext.createNamedQuery( "faasattachment:findAttachmentByRefId" ).setParameters( params ).resultList;
 		} catch(ex) { ex.printStackTrace(); } 

@@ -24,7 +24,6 @@ public class FaasBldgService
 	}
 	
 	private def buildBldgInfo( rpuInfo, bldg ) {
-		print "BUILD BLDG INFO";
 		rpuInfo.psic             	= bldg.psic;
 		rpuInfo.permitNo         	= bldg.permitNo;
 		rpuInfo.permitDate       	= bldg.permitDate;
@@ -61,7 +60,6 @@ public class FaasBldgService
 	}
 	
 	private def buidBldgUses( bldg ) {
-		print "BUILD BLDG USE";
 		def bldgUses = em.sqlContext.createNamedQuery( "faas:getBldgUseByRpuId" )
 						.setParameter( "rpuId", bldg.objid ).resultList;
 		def uses = [];
@@ -88,7 +86,6 @@ public class FaasBldgService
 	}
 	
 	private def buildBldgFloors( use ) {
-		print "BUILD BLDG FLOOR";
 		def bldgFloors = em.sqlContext.createNamedQuery( "faas:getBldgFloorByUseId" )
 							.setParameter( "useId", use.objid ).resultList;
 		
@@ -115,7 +112,6 @@ public class FaasBldgService
 	}
 	
 	private def buildBldgFloorAdjustments( floor ) {
-		print "BUILD BLDG FLOOR ADJ";
 		def floorAdditionals = em.sqlContext.createNamedQuery( "faas:getBldgFloorAdditionalByFloorId" )
 								.setParameter( "floorId", floor.objid ).resultList;
 		
@@ -137,7 +133,6 @@ public class FaasBldgService
 	}
 	
 	private def buildAdditionalParams( additional ) {
-		print "BUILD BLDG ADD PARAM";
 		def paramLinks = em.sqlContext.createNamedQuery( "faas:getBldgAdditionalParamsByAdditionalId" )
 							.setParameter( "additionalId", additional.objid ).resultList;
 		def params = [];
@@ -158,7 +153,6 @@ public class FaasBldgService
 	}
 	
 	private def buildBldgStructure( bldg ) {
-		print "BUILD BLDG STRUCT";
 		def bldgStructures = em.sqlContext.createNamedQuery( "faas:getBldgStructureByRpuId" )
 								.setParameter( "rpuId", bldg.objid ).resultList;
 		

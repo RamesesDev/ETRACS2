@@ -1,6 +1,9 @@
 [findById]
 SELECT * FROM faas WHERE objid = $P{objid}
 
+[updateStateToCurrent]
+UPDATE faas SET state = 'CURRENT' WHERE objid = $P{objid}
+
 
 #--------------------------------------------------------------------------------------
 # ETRACS 1.0 SUPPORT

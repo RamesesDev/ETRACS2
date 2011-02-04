@@ -20,7 +20,6 @@ class FAASAttachmentService {
 	
 	@ProxyMethod
 	public void uploadAttachment( fileName, data ) {
-		print "UPLOADING == " + fileName; 
 		def fis = new FileOutputStream( findFile( fileName ).absolutePath, true );
 		fis.write( data );
 		fis.close();
@@ -102,7 +101,7 @@ class FAASAttachmentService {
 		def file = new File( var.faas_attachments_temp_dir + File.separator + fileName );
 		file.createNewFile();
 		return file;
-		} catch ( ex ) { print "findFile"; ex.printStackTrace(); throw ex; }
+		} catch ( ex ) { ex.printStackTrace(); throw ex; }
 	}
 	
 	@ProxyMethod

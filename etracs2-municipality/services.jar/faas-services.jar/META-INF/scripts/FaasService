@@ -38,12 +38,30 @@ class FaasService
 	@Service("FaasAttachmentService")
 	def attachmentService;
 	
+	def CURRENT_STATE = 'CURRENT';
+	
     
     @ProxyMethod
     public def testRemote( lgu ) {
         def ret = invokeRemoteFaasService("testRemotePost", [lgu] as Object[]);
         return ret;
     }
+	
+	@ProxyMethod
+	public def approve( faasId, userName, tdNo, pin ) {
+		def faas = em2.read("faas:faas", [objid:faasId]);
+		
+		faas.state       = CURRENT_STATE;
+		faas.tdNo        = tdNo;
+		faas.rp.info.pin = pin;
+		
+		if( faas.rpu.info.suffix == 0 )
+			faas.rpu.info.pin = pin 
+		else
+			faas.rpu.info.pin = pin + '-' + faas.rpu.info.suffix
+	
+		em2.update("faas:faas", faas);
+	}
     
 	@ProxyMethod
 	public void transmit( objid ) {
@@ -60,7 +78,7 @@ class FaasService
 			.setParameter("objid", faas.objid)
 			.setParameter("transmittalState", 1)
 			.execute();
-		} catch (ex) { print "transmit"; ex.printStackTrace(); throw ex; }
+		} catch (ex) { ex.printStackTrace(); throw ex; }
 	}
 	
 	private void transmitToRemote( faas ) {
@@ -95,7 +113,6 @@ class FaasService
 		// name, method, params[], env
 		def remote = new DynamicHttpInvoker(vars.remoteHost, vars.remoteContext, false);
 		def svc = remote.create("FAASService");
-		print "SVC == " + svc; 
 		return svc.invoke(methodName, params);
 	}
 	
@@ -104,7 +121,7 @@ class FaasService
 		def remote = new DynamicHttpInvoker( vars.remoteHost, vars.remoteContext, false );
 		def svc = remote.create( serviceName );
 		return svc.invoke( methodName, params );
-		} catch (ex) { print "invokeRemoteService"; ex.printStackTrace(); throw ex; }
+		} catch (ex) { ex.printStackTrace(); throw ex; }
 	}
 	
 	private def getListByNamed( namedQuery, searchParams, params ) {
