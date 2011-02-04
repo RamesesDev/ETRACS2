@@ -1,0 +1,146 @@
+<workunit>
+    <invokers>
+        <invoker type="examiner.action" caption="Examiners" icon="images/folder.png" target="window"/>
+        
+        <invoker type="formActions" tooltip="New" action="create" immediate="false" visibleWhen="#{mode == 'read'}" mnemonic="n" icon="images/addnew24.png"/>
+        <invoker type="formActions" tooltip="Edit" action="edit" immediate="false" visibleWhen="#{mode == 'read' and examiner.objid != null}"  mnemonic="e" icon="images/edit24.png"/>
+        <invoker type="formActions" tooltip="Cancel" action="cancel" immediate="false" visibleWhen="#{mode != 'read'}" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" tooltip="Save" action="save"  visibleWhen="#{mode != 'read'}" mnemonic="s" shortcut="ctrl S" icon="images/save24.png"/>
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+public class ExaminerController
+{
+    @Binding
+    def binding;
+
+    @Service("ExaminerService")
+    def svc;
+    
+    def title = "Examiner Information"
+    def examiner = createExaminer();
+    def mode = "read";
+    def selectedItem;
+    def selectedMunicipality;
+    def searchText;
+    def searchMunicipality;
+    
+    void create() {
+        init( "create" );
+        examiner = createExaminer();
+    }
+    
+    void edit() {
+        init( "edit" );
+    }
+
+    void cancel() {
+        init( "read" );
+    }
+    
+    def lookupUser() {
+        return InvokerUtil.lookupOpener("etracsuser:lookup", [searchText:examiner.uid, onselect:selectUserHandler]);
+    }
+    
+    def lookupMunicipality() {
+        return InvokerUtil.lookupOpener("municipality:lookup", [searchText:searchMunicipality, onselect:selectHandler]);
+    }
+    
+    def selectUserHandler = { user ->
+        if( user ) {
+            examiner = examiner + user;
+            binding.refresh("examiner.*");
+        }
+    }
+    
+    def selectHandler = { muni ->
+        if( muni && !assigned(muni) ) {
+            examiner.municipalities.add( [objid:muni.objid, name:muni.name]);
+            searchMunicipality = null;
+            municipalityHandler.load();
+            binding.refresh("searchMunicipality");
+        }
+    }
+    
+    void save() {
+        if( mode == "create" ) {
+            svc.save( examiner );
+        }
+        else {
+            svc.update( examiner );
+        }
+        init( "read" );
+    }
+
+    void setSelectedItem( selected ) {
+        selectedItem = selected;
+        if( selectedItem.item ) 
+            examiner = svc.open( selectedItem.item.objid );
+        else 
+            examiner = createExaminer();
+    }
+    
+    def municipalityHandler = [
+        getRows    : { return 100; },
+        getColumns : { 
+            return [
+                new Column(name:"item.name", caption:"Municipality"),
+            ];
+        },
+        fetchList    : { return examiner.municipalities; },
+        onRemoveItem : { item ->  
+            if( mode != "read" && MsgBox.confirm("Delete selected item?") ) {
+                examiner.municipalities.remove( item );
+            }
+        },
+    ] as PageListModel;
+
+    def listHandler = [
+        getRows    : { return 25; },
+        getColumns : { 
+            return [
+                new Column(name:"item.uid", caption:"UID"),
+                new Column(name:"item.lastname", caption:"Last Name"),
+                new Column(name:"item.firstname", caption:"First Name"),
+            ];
+        },
+        fetchList : { 
+            svc.getList( searchText, it );
+        },
+    ] as PageListModel;
+
+    void search() {
+        listHandler.load();
+    }
+    
+    void init( status ) {
+        mode = status;
+        binding.refresh();
+    }
+    
+    def assigned( municipality ) {
+        if( examiner.municipalities.find { m -> m.name == municipality.name } )
+            return true;
+        return false;
+    }
+    
+    def createExaminer() {
+        return [ municipalities:[] ];
+    }
+
+}
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.examiner.ExaminerPage"/>
+    </pages>
+</workunit>

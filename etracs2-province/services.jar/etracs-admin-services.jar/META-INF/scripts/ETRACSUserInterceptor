@@ -1,0 +1,26 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class ETRACSUserInterceptor 
+{
+
+    @PersistenceContext("java:main")
+    def em;
+	
+	@After(pattern="UserService.create") 
+	public void createUserIntercept( def evt )  {
+		def user = evt.result;
+		em.sqlContext.createNamedExecutor("etracsuser:insertUser").setParameters(user).execute();
+	}
+	
+	@After(pattern="LoginService.login.*") 
+	public void loginIntercept( def evt )  {
+		print "loginIntercept...";
+		def env = evt.result.env;
+		def user = em.sqlContext.createNamedQuery("etracsuser:getUserInfo").setParameter("objid", env.USERID ).singleResult;
+		if( user ) {
+			env.USERNAME = user.name;
+			env.JOBTITLE = user.jobtitle;
+		}
+	}
+}
