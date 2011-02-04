@@ -29,9 +29,15 @@
             def transmittal;
             def importing = false;
             def save = true;
+            
             public void importTransmittal() {
-                def t = new TransmitTask( caller:this );
-                OsirisContext.clientContext.taskManager.addTask( t );
+                if( !importing ){
+                    def t = new TransmitTask( caller:this );
+                    OsirisContext.clientContext.taskManager.addTask( t );
+                    importing = true;
+                }else{
+                    MsgBox.alert("Already importing.");
+                }
             }
             
             public void saveTransmittal() {
@@ -89,10 +95,13 @@
                 }catch(e){
                     cancelled = true;
                     caller.message = "ERROR: " + e.cause?.message
+                    caller.importing = false;
                     ended = true;
                 }finally{
                     caller.binding.refresh();
                 }
+                
+                Thread.sleep(100);
             }
             
             public void end(){
