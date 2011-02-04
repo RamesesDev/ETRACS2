@@ -22,9 +22,10 @@ class TransmittalService
 	
 	def CURRENT_STATE = "CURRENT";
 	def FORAPPROVAL_STATE = "FORAPPROVAL"
-	def INCOMPLETE_STATE = "INCOMPLETE_REQUIREMENTS";
 	
-	@ProxyMethod
+	def INCOMPLETE_STATE = "INCOMPLETE";
+ 	
+ 	@ProxyMethod
 	public def incompleteTransmittal( transmittalId, transmittalItemId, remarks) {
 		incompleteTransmittalItem( transmittalId, transmittalItemId, INCOMPLETE_STATE, remarks);
 	}
@@ -36,7 +37,7 @@ class TransmittalService
 					 .execute();		
 		changeTransmittalToClosed( transmittalId );
 	}
-
+	
 	@ProxyMethod
 	public def getList( search, params ) {
 		def state = search.state;
@@ -57,7 +58,7 @@ class TransmittalService
 	
 	@ProxyMethod
 	public def saveTransmittal( def transmittalId ){
-		em.sqlContext.createNamedExecutor("transmittal:updateStateToSubmitted")
+		em.sqlContext.createNamedExecutor("transmittal:updateStateToReceived")
 		  .setParameter("objid", transmittalId)
 		  .execute();
 
@@ -94,20 +95,13 @@ class TransmittalService
 	@ProxyMethod
 	public def submit( transmittalId ) {
 		checkSubmittedState( transmittalId );
-		em.sqlContext.createNamedExecutor("transmittal:updateStateToReceived").setParameters([objid:transmittalId]).execute();
+		em.sqlContext.createNamedExecutor("transmittal:updateStateToSubmitted").setParameters([objid:transmittalId]).execute();
 		def items = getTransmittalItemList( transmittalId );
 		items.each {
-			def faas = em.serializer.read(it.faas);
-			
-			println "FAAS ID: " + faas.objid;
-			println "SCHEMA NAME: " + faas.schemaName;
-			
-			println faas.rpu.info.special;
-			println faas.rpu.info.idleLand;
-			
-			faasService.create( faas );
-			
-			println "done creating faas..";
+			if( it.state == "PROVAPPROVAL" ){
+				def faas = em.serializer.read(it.faas);
+				faasService.create( faas );
+			}
 		}
 		return open( transmittalId );
 	}
@@ -128,7 +122,7 @@ class TransmittalService
 	@ProxyMethod
 	public void updateItemStateToForApproval(transmittalId, faasId) {
 		updateItemState( transmittalId, faasId, FORAPPROVAL_STATE);
-		changeTransmittalToReviewed( transmittalId );
+		changeTransmittalToClosed( transmittalId );
 	}
 	
 	@ProxyMethod
@@ -151,16 +145,6 @@ class TransmittalService
 					.singleResult;
 	}
 	
-	/* Transmittal is "reviewed" if there are no items with PROVAPPROVAL state*/
-	private void changeTransmittalToReviewed( transmittalId ) {
-		def data = em.sqlContext.createNamedQuery("transmittal:countofUnreviewedItems")
-							    .setParameters([transmittalid:transmittalId])
-								.singleResult;
-		if( data.count == 0 ) {
-			em.sqlContext.createNamedExecutor("transmittal:updateStateToReviewed").setParameters([objid:transmittalId]).execute();
-		}
-	}
-	
 	/* Transmittal is "closed" if there are no items with either CURRENT or DISAPPROVED STATE*/
 	private void changeTransmittalToClosed( transmittalId ) {
 		def data = em.sqlContext.createNamedQuery("transmittal:countofUnrapprovedItems")
@@ -176,7 +160,7 @@ class TransmittalService
 		if( !data ) {
 			throw new Exception("Transmittal not found.");
 		}
-		if( data.state != "SUBMITTED" ) {
+		if( data.state != "RECEIVED" ) {
 			throw new Exception("Transmittal has already been $data.state.");
 		}
 	}

@@ -65,7 +65,7 @@ DELETE FROM transmittalitem WHERE transmittalid = $P{transmittalid}
 SELECT COUNT(*) AS count FROM transmittalitem WHERE transmittalid = $P{transmittalid} AND state = 'PROVAPPROVAL'
 
 [countofUnrapprovedItems]
-SELECT COUNT(*) AS count FROM transmittalitem WHERE transmittalid = $P{transmittalid} AND state NOT IN ('CURRENT', 'DISAPPROVED') 
+SELECT COUNT(*) AS count FROM transmittalitem WHERE transmittalid = $P{transmittalid} AND state NOT IN ('CURRENT', 'DISAPPROVED','INCOMPLETE') 
 
 [getTransmittalItemIdByParentId]
 SELECT objid, faasId FROM transmittalitem where transmittalid = $P{transmittalid}

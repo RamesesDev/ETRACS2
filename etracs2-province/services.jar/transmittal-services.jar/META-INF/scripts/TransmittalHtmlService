@@ -14,7 +14,6 @@ class TransmittalHtmlService
 			
 			def info = buildtransmittalInfo( transmittal );
 			
-			println "ITEM COUNT: " + transmittal.items.size();
 			def items = buildItems( transmittal.items );
 			
 			return """
@@ -95,13 +94,11 @@ class TransmittalHtmlService
 	private def buildItems( items ) {
 		def itemsHtml = "";
 		items.each {
-			
-			println "ITEM -> " + it;
-		
+				
 			def reviewed = (it.state == 'FORAPPROVAL' ? '*' : '');
 			def approved = (it.state == 'CURRENT' ? '*' : '');
 			def disapproved = (it.state == 'DISAPPROVED' ? '*' : '');
-			def incomplete = (it.state == 'INCOMPLETE_REQUIREMENTS' ? '*' : '');
+			def incomplete = (it.state == 'INCOMPLETE' ? '*' : '');
 			itemsHtml += """
 				<tr>
 					<td align="center">$it.type</td>
@@ -127,7 +124,7 @@ class TransmittalHtmlService
 						<th>PIN</th>
 						<th>Taxpayer Name</th>
 						<th style="text-align:center">Incomplete Requirements</th>
-						<th style="text-align:center">Reviewed</th>
+						<th style="text-align:center">For Review</th>
 						<th style="text-align:center">Approved</th>
 						<th style="text-align:center">Dispproved</th>
 					</tr>

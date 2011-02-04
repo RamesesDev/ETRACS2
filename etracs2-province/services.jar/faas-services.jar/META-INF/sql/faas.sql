@@ -13,12 +13,6 @@ SELECT state FROM faas WHERE objid = $P{objid}
 #----------------------------------------------------------------
 # DELETES
 #----------------------------------------------------------------
-[deleteFaas]
-DELETE FROM faas WHERE objid = $P{objid}
-
-[deleteProvApproval]
-DELETE FROM faas_provapproval WHERE objid = $P{objid}
-
 [deleteForApproval]
 DELETE FROM faas_approval WHERE objid = $P{objid}
 
