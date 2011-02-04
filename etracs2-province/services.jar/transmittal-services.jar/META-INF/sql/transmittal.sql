@@ -36,6 +36,8 @@ UPDATE transmittal SET state = 'REVIEWED' WHERE objid = $P{objid}
 [updateStateToClosed]
 UPDATE transmittal SET state = 'CLOSED' WHERE objid = $P{objid}
 
+[updateStateToSubmitted]
+UPDATE transmittal SET state = 'SUBMITTED' WHERE objid = $P{objid}
 
 [updateItemState]
 UPDATE transmittalitem SET state = $P{newstate} WHERE transmittalid = $P{transmittalid} AND faasid = $P{faasid}
