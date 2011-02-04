@@ -72,3 +72,6 @@ SELECT objid, faasId FROM transmittalitem where transmittalid = $P{transmittalid
 
 [deleteTransmittalAttachmentById]
 DELETE FROM transmittalattachment where refId = $P{faasId}
+
+[getAttachmentsByRefId]
+SELECT * FROM transmittalattachment where refId = $P{refId}

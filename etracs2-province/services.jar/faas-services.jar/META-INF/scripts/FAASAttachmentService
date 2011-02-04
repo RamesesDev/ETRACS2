@@ -48,12 +48,13 @@ class FAASAttachmentService {
 	
 	@ProxyMethod
 	public def downloadAttachment2( fileName, info ) {
+		try {
 		def file = findFile( fileName );
 		if ( !file ) throw new Exception("File not found.");
 		
 		def ftis = new FileTransferInputStream( file, info );
 		if (!info)
-			ftis.fileTransferInfo.tempFileName = "TMP" + new UID();
+			ftis.fileTransferInfo.tempFileName = replaceSpecialChar( "TMP" + new UID() );
 		ftis.byteSize = 1024 * 32;
 		def data = [
 			bytes : ftis.readNext()
@@ -66,6 +67,7 @@ class FAASAttachmentService {
 			
 		ftis.close();
 		return data;
+		} catch (ex) { ex.printStackTrace(); throw ex; }
 	}
 	
 	/*@ProxyMethod
@@ -107,6 +109,11 @@ class FAASAttachmentService {
 	public def getAttachments( refId ) {
 		def params = [ refId : refId ];
 		return em.sqlContext.createNamedQuery( "faasattachment:findAttachmentByRefId" ).setParameters( params ).resultList;
+	}
+	
+	private def replaceSpecialChar( tmpFileName ) {
+		tmpFileName = tmpFileName.replace(":", "_");
+		return tmpFileName;
 	}
 
 }

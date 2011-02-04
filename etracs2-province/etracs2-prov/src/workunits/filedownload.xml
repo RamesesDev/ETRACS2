@@ -18,9 +18,6 @@
             @FormTitle
             def title;
             
-            @Service('DownloadService')
-            def svc;
-            
             @Service('FAASAttachmentService')
             def attachmentService;
             
@@ -31,16 +28,18 @@
             def buffer = new ByteArrayOutputStream();
             def image;
             def message;
+            def fileName;
             
             void doDownload() {
-                def info = [:];
+                def info = null;
                 OsirisContext.clientContext.taskManager.addTask(
                     new DownloadTask(
                         onExecute: { counter ->
-                            def data = attachmentService.downloadAttachment( objid );
-                            if ( !data.eof ) {
-                                buffer.write( data.bytes );
-                                message = "Downloading file (" + buffer.size() + " kb)";
+                            def data = attachmentService.downloadAttachment2( fileName, info );
+                            buffer.write( data.bytes );
+                            if ( !data.info.eof ) {
+                                info = data.info;
+                                message = "Downloading file (" + buffer.size()/1000 + " kb)";
                                 binding.refresh("message");
                                 return true;
                             }

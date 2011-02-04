@@ -3,6 +3,10 @@ import groovy.text.SimpleTemplateEngine;
 
 class FAASHtmlService
 {
+
+	@PersistenceContext("etracs")
+	def em;
+	
 	@Service("FAASService")
 	def faasService;
 	
@@ -11,7 +15,7 @@ class FAASHtmlService
 	
 	@Service("FAASAttachmentService")
 	def attachmentService;
-
+	
 	@ProxyMethod
 	public def getHtml( faasId ) {
 		def faas = faasService.open( faasId );
@@ -375,7 +379,7 @@ class FAASHtmlService
 				<table width="100%" cellspacing="1">
 					<tr>
 						<td class="caption">Classification</td>
-						<td class="data">$rpuInfo.classTitle</td>
+						<td class="data">$rpuInfo.clasTitle</td>
 					</tr>
 					<tr>
 						<td class="caption">Taxability</td>
@@ -734,12 +738,18 @@ class FAASHtmlService
 		""";*/
 		
 		def attachments = attachmentService.getAttachments( faas.objid );
+		if( !attachments ) {
+			attachments = em.sqlContext.createNamedQuery("transmittal:getAttachmentsByRefId")
+			                           .setParameter("refId", faas.objid )
+									   .resultList;
+		}
 		def trs = "";
 		attachments.each {
+			print "ATTACHMENTS >> " + it;
             trs += """
                 <tr>
                     <td>
-                        <a href="showAttachment?$it.objid~~$it.documentType" >$it.documentType</a>
+                        <a href="showAttachment?$it.objid~~$it.documentType~~$it.tmpFileName" >$it.documentType</a>
                     </td>
                     <td>${it.remarks ? it.remarks : ''}</td>
                 </tr>
@@ -755,7 +765,6 @@ class FAASHtmlService
 			</table>
 		""";		
 	}
-	
 	
 	private def doBuildHtml( data ) {
 		return """

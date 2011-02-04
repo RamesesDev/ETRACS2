@@ -26,6 +26,7 @@ public class FileImageViewerPage extends javax.swing.JPanel {
     private void initComponents() {
         xImageViewer1 = new com.rameses.rcp.control.XImageViewer();
 
+        setPreferredSize(new java.awt.Dimension(713, 409));
         xImageViewer1.setAdvanced(true);
         xImageViewer1.setName("image");
 

@@ -73,8 +73,12 @@
                 fetchList  : { svc.getItemList( transmittal.objid ); },
             ] as PageListModel;
             
-            public def showAttachment( location ) {
-                return new PopupOpener( name:"imageviewer", caption:"Attachment", params:[url:location] );
+            public def showAttachment( params ) {
+                def data = params.split("~~");
+                print "FILE NAME >> " + data[2];
+                def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] );
+                opener.caption = "Attachment: " + data[1];
+                return opener;
             }
             
             
