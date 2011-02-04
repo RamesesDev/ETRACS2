@@ -5,6 +5,9 @@ class TransmittalService
 	@PersistenceContext("etracs")
 	def em;
 	
+	@Service("TransmittalService")
+	def transmittalSvc;
+	
 	@Service("FAASService")
 	def faasService;
 	
@@ -13,18 +16,12 @@ class TransmittalService
 	
 	@Service("FAASAttachmentService")
 	def faasAttachmentSvc;
-
+	
 	@Env
 	def env;
 	
 	def CURRENT_STATE = "CURRENT";
-	def FORAPPROVAL_STATE = "FORAPPROVAL";
-	def INCOMPLETE_STATE = "INCOMPLETE_REQUIREMENTS";
-	
-	@ProxyMethod
-	public def incompleteTransmittal( transmittalId, transmittalItemId, remarks) {
-		incompleteTransmittalItem( transmittalId, transmittalItemId, INCOMPLETE_STATE, remarks);
-	}
+	def FORAPPROVAL_STATE = "FORAPPROVAL"
 	
 	@ProxyMethod
 	public def getList( search, params ) {
@@ -45,12 +42,23 @@ class TransmittalService
 	}
 	
 	@ProxyMethod
+	public def saveTransmittal( def transmittalId ){
+		em.sqlContext.createNamedExecutor("transmittal:updateStateToSubmitted")
+		  .setParameter("objid", transmittalId)
+		  .execute();
+
+		return open( transmittalId );
+	}
+	
+	@ProxyMethod
 	public def create( @Param(schema="transmittal:transmittal") transmittal ) {
 		if( transmittalExists( transmittal.objid ) )  throw new Exception("Transmittal has already been imported.");
+		
 		em.create("transmittal:transmittal", transmittal);
 		transmittal.items.each {
 			em.create("transmittal:transmittalItem", it );
 		}
+		
 		return transmittal;
 	}
 	
@@ -76,7 +84,16 @@ class TransmittalService
 		def items = getTransmittalItemList( transmittalId );
 		items.each {
 			def faas = em.serializer.read(it.faas);
+			
+			println "FAAS ID: " + faas.objid;
+			println "SCHEMA NAME: " + faas.schemaName;
+			
+			println faas.rpu.info.special;
+			println faas.rpu.info.idleLand;
+			
 			faasService.create( faas );
+			
+			println "done creating faas..";
 		}
 		return open( transmittalId );
 	}
@@ -90,9 +107,8 @@ class TransmittalService
 	
 	@ProxyMethod 
 	public def getItemHtml( itemId ) {
-		def item = getTransmittalItem( itemId );
-		def faas = em.serializer.read(item.faas);
-		return faasHtmlService.buildHtml( faas );
+		def item = em.read("transmittal:transmittalItem", [objid:itemId]);
+		return faasHtmlService.buildHtml( item.faas );
 	}
 	
 	@ProxyMethod
@@ -111,14 +127,6 @@ class TransmittalService
 	public void disapproveTransmittalItem( transmittalId, faasId, state, remarks) {
 		em.sqlContext.createNamedExecutor("transmittal:disapproveItem")
 					 .setParameters([transmittalid:transmittalId, faasid:faasId, newstate:state, remarks:remarks])
-					 .execute();		
-		changeTransmittalToClosed( transmittalId );
-	}
-	
-	@ProxyMethod
-	public void incompleteTransmittalItem( transmittalId, transmittalItemId, state, remarks) {
-		em.sqlContext.createNamedExecutor("transmittal:incompleteItem")
-					 .setParameters([transmittalid:transmittalId, objid:transmittalItemId, newstate:state, remarks:remarks])
 					 .execute();		
 		changeTransmittalToClosed( transmittalId );
 	}
@@ -177,43 +185,81 @@ class TransmittalService
 		return em.sqlContext.createNamedQuery( namedQuery ).setParameters( params ).resultList;
 	}
 	
-@ProxyMethod
-	public def importTransmittal( def chunk ){
-try{
-		if( chunk.eof ){
-			//em2.create("transmittal:tranmittal", chunk.data );
-			return chunk.data = null;
-		}
+	@ProxyMethod
+	public void deleteTemp( def transmittalId ){
 	
-		if( chunk.state == "ITEM" ){
-			def item = chunk.data;
-			//em.create("transmittal:transmittalItem", item );
+		def item = em.read("transmittal:transmittal", [objid:transmittalId] );
+		if( item == null || item.state == "ACTIVE" ){
+			em.sqlContext.createNamedQuery("transmittal:getTransmittalItemIdByParentId")
+			.setParameter("transmittalid", transmittalId)
+			.resultList.each{
+				em.sqlContext.createNamedExecutor("transmittal:deleteTransmittalAttachmentById")
+				  .setParameter("faasId", it.faasId )
+				  .execute();
+			};
 			
-			item.attachments.each{
-				//em.create( "transmittal:transmittalattachement", it );
-				chunk.state = "ATTACHMENT";
-				chunk.attachementSize = item.attachments.size();
-				chunk.index = 0;
-			}
+			em.sqlContext.createNamedExecutor("transmittal:delete")
+						 .setParameter("objid", transmittalId)
+						 .execute();
 			
-			chunk.data = null;
-			return chunk;
+			em.sqlContext.createNamedExecutor("transmittal:deleteItemList")
+						 .setParameter("transmittalid", transmittalId)
+						 .execute();
+		} else {
+			throw new Exception("Unable to create transmittal.\n Please check if the transmittal already exist or the file is corrupted.");
 		}
 		
-		if( chunk.state == "ATTACHMENT" ){
-			def item = chunk.data;
-			//faasAttachmentSvc.uploadAttachment( item.refId, item.bytes );
-			if( item.eof ) chunk.index = chunk.index + 1;
-			
-			if( chunk.index >= chuk.attachementSize ){
-				chunk.state = "ITEM";
-			}
-			return chunk;
+		println "done delete....";
+	}
+	
+	@ProxyMethod
+	public def importTransmittal( def chunk ){
+
+		if( chunk.delete != "DONE" ){
+			chunk.delete = "DONE";
+			transmittalSvc.deleteTemp( chunk.data.transmittalId );
+						 
 		}
-}catch(e){
-	e.printStackTrace();
-	throw e;
-}
+		
+		if( chunk.state == "TRANSMITTAL" )
+			return importingTransmittal( chunk );
+		else
+			return importingAttachment( chunk );
+	}
+	
+	@ProxyMethod
+	public def importingTransmittal( def chunk ){
+		if( chunk.data.docNo ){
+			chunk.state = "ATTACHMENTS";
+			chunk.transmittalId = chunk.data.objid;
+			
+			em.create("transmittal:transmittal", chunk.data );
+			chunk.data = null;
+		}else{
+			def item = chunk.data;
+			
+			println "FAAS ID: " + item.faas.objid;
+			
+			em.create("transmittal:transmittalItem", item );
+			print "DONE CREATING TRANSMITTALITEM";
+			item.attachments.each{
+				
+				if( !em.read("transmittal:transmittalattachment", [objid:it.objid]) ){
+					em.create( "transmittal:transmittalattachment", it );
+				}
+
+			}
+			chunk.data = null;
+		}
+		return chunk;
+	}
+	
+	@ProxyMethod
+	public def importingAttachment( def chunk ){
+		if( chunk.attachments > 0 ){
+			faasAttachmentSvc.uploadAttachment( chunk.data.filename, chunk.data.bytes );
+		}
+		return chunk;
 	}
 	
 }

@@ -28,15 +28,18 @@
             def buffer = new ByteArrayOutputStream();
             def image;
             def message;
+            def fileName;
             
             void doDownload() {
                 def info = null;
                 OsirisContext.clientContext.taskManager.addTask(
                     new DownloadTask(
                         onExecute: { counter ->
-                            def data = attachmentService.downloadAttachment( objid );
+                            print "DOWNLOADING >>> " + fileName;
+                            def data = attachmentService.downloadAttachment2( fileName, info );
                             buffer.write( data.bytes );
-                            if ( !data.eof ) {
+                            if ( !data.info.eof ) {
+                                info = data.info;
                                 message = "Downloading file (" + buffer.size()/1000 + " kb)";
                                 binding.refresh("message");
                                 return true;

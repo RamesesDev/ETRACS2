@@ -27,31 +27,39 @@ public class ListPage extends javax.swing.JPanel {
         jPanel2 = new javax.swing.JPanel();
         jSplitPane1 = new javax.swing.JSplitPane();
         jPanel5 = new javax.swing.JPanel();
+        jPanel8 = new javax.swing.JPanel();
+        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
         xTable1 = new com.rameses.rcp.control.XTable();
         jPanel6 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         xEditorPane1 = new com.rameses.rcp.control.XEditorPane();
+        xActionBar1 = new com.rameses.rcp.control.XActionBar();
         jPanel7 = new javax.swing.JPanel();
         xLabel1 = new com.rameses.rcp.control.XLabel();
-        jPanel3 = new javax.swing.JPanel();
-        jPanel1 = new javax.swing.JPanel();
-        xActionBar1 = new com.rameses.rcp.control.XActionBar();
-        jPanel4 = new javax.swing.JPanel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
 
         setLayout(new java.awt.BorderLayout());
 
         jPanel2.setLayout(new java.awt.BorderLayout());
 
+        jPanel2.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
         jSplitPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         jSplitPane1.setDividerLocation(500);
         jPanel5.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setFont(new java.awt.Font("Tahoma", 1, 11));
-        xTitledBorder1.setTitle("List View");
-        xTitledBorder1.setTitlePadding(new java.awt.Insets(2, 5, 2, 5));
-        xTable1.setBorder(xTitledBorder1);
+        xTitledBorder1.setTitle("Listing");
+        jPanel5.setBorder(xTitledBorder1);
+        jPanel8.setLayout(new java.awt.BorderLayout());
+
+        jPanel8.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 1, 5, 1));
+        xActionTextField1.setActionName("doSearch");
+        xActionTextField1.setHint("Search");
+        xActionTextField1.setName("search.textSearch");
+        xActionTextField1.setPreferredSize(new java.awt.Dimension(200, 19));
+        jPanel8.add(xActionTextField1, java.awt.BorderLayout.CENTER);
+
+        jPanel5.add(jPanel8, java.awt.BorderLayout.NORTH);
+
         xTable1.setAutoResize(false);
         xTable1.setDepends(new String[] {"selectedItem"});
         xTable1.setHandler("listHandler");
@@ -64,15 +72,20 @@ public class ListPage extends javax.swing.JPanel {
         jPanel6.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder2.setFont(new java.awt.Font("Tahoma", 1, 11));
-        xTitledBorder2.setTitle("Quick View");
-        xTitledBorder2.setTitlePadding(new java.awt.Insets(2, 5, 2, 5));
-        jScrollPane1.setBorder(xTitledBorder2);
+        xTitledBorder2.setTitle("Document");
+        jPanel6.setBorder(xTitledBorder2);
         xEditorPane1.setDepends(new String[] {"selectedItem"});
         xEditorPane1.setName("html");
         jScrollPane1.setViewportView(xEditorPane1);
 
         jPanel6.add(jScrollPane1, java.awt.BorderLayout.CENTER);
+
+        xActionBar1.setButtonBorderPainted(false);
+        xActionBar1.setButtonCaptionOrientation(javax.swing.SwingConstants.RIGHT);
+        xActionBar1.setButtonContentAreaFilled(false);
+        xActionBar1.setDepends(new String[] {"selectedItem"});
+        xActionBar1.setName("formActions");
+        jPanel6.add(xActionBar1, java.awt.BorderLayout.NORTH);
 
         jSplitPane1.setRightComponent(jPanel6);
 
@@ -90,48 +103,17 @@ public class ListPage extends javax.swing.JPanel {
         xLabel1.setOpaque(true);
         jPanel7.add(xLabel1, java.awt.BorderLayout.NORTH);
 
-        jPanel3.setLayout(new java.awt.BorderLayout());
-
-        jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 1, 3, 1));
-        jPanel3.setOpaque(false);
-        jPanel1.setLayout(new java.awt.BorderLayout());
-
-        xActionBar1.setButtonBorderPainted(false);
-        xActionBar1.setButtonCaptionOrientation(javax.swing.SwingConstants.RIGHT);
-        xActionBar1.setButtonContentAreaFilled(false);
-        xActionBar1.setDepends(new String[] {"selectedItem"});
-        xActionBar1.setName("formActions");
-        xActionBar1.setPreferredSize(new java.awt.Dimension(104, 40));
-        jPanel1.add(xActionBar1, java.awt.BorderLayout.EAST);
-
-        jPanel4.setLayout(new java.awt.BorderLayout());
-
-        jPanel4.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 5));
-        jPanel4.setPreferredSize(new java.awt.Dimension(250, 10));
-        xActionTextField1.setActionName("doSearch");
-        xActionTextField1.setHint("Search");
-        xActionTextField1.setName("search.textSearch");
-        jPanel4.add(xActionTextField1, java.awt.BorderLayout.CENTER);
-
-        jPanel1.add(jPanel4, java.awt.BorderLayout.WEST);
-
-        jPanel3.add(jPanel1, java.awt.BorderLayout.WEST);
-
-        jPanel7.add(jPanel3, java.awt.BorderLayout.SOUTH);
-
         add(jPanel7, java.awt.BorderLayout.NORTH);
 
     }// </editor-fold>//GEN-END:initComponents
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
-    private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
+    private javax.swing.JPanel jPanel8;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;

@@ -7,22 +7,31 @@ class TransmittalHtmlService
 	
 	@ProxyMethod
 	public def getHtml( transmittalId ) {
-		def transmittal = transmittalService.open( transmittalId );
-		def styles = buildStyles();
-		def info = buildtransmittalInfo( transmittal );
-		def items = buildItems( transmittal.items );
-		
-		return """
-			<html>
-				<head>$styles</head>
-				<body>
-					<table width="100%">
-						<tr>$info</tr>
-						<tr>$items</tr>
-					</table>
-				</body>
-			</html>
-		""";
+		try{
+			def transmittal = transmittalService.open( transmittalId );
+			
+			def styles = buildStyles();
+			
+			def info = buildtransmittalInfo( transmittal );
+			
+			println "ITEM COUNT: " + transmittal.items.size();
+			def items = buildItems( transmittal.items );
+			
+			return """
+				<html>
+					<head>$styles</head>
+					<body>
+						<table width="100%">
+							<tr>$info</tr>
+							<tr>$items</tr>
+						</table>
+					</body>
+				</html>
+			""";
+		}catch(e){
+			e.printStackTrace();
+			throw e;
+		}
 	}
 	
 	private def buildStyles() {
@@ -86,6 +95,9 @@ class TransmittalHtmlService
 	private def buildItems( items ) {
 		def itemsHtml = "";
 		items.each {
+			
+			println "ITEM -> " + it;
+		
 			def reviewed = (it.state == 'FORAPPROVAL' ? '*' : '');
 			def approved = (it.state == 'CURRENT' ? '*' : '');
 			def disapproved = (it.state == 'DISAPPROVED' ? '*' : '');

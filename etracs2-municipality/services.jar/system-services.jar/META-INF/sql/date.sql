@@ -1,0 +1,2 @@
+[getCurrentDate]
+SELECT SELECT GETDATE()

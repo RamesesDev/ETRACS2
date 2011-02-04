@@ -1,0 +1,156 @@
+<workunit>
+    <invokers>
+        <invoker type="examiner.action" caption="Re-Assign" icon="images/folder.png" target="window"/>
+        
+        <invoker type="formActions" tooltip="New" action="create" immediate="true" visibleWhen="#{mode == 'read'}" mnemonic="n" icon="images/addNew24.png"/>
+        <invoker type="formActions" tooltip="Edit" action="edit" immediate="true" visibleWhen="#{mode == 'read' and entity.objid != null and entity.state == 'DRAFT'}"  mnemonic="e" icon="images/edit24.png"/>
+        <invoker type="formActions" tooltip="Cancel" action="cancel" immediate="true" visibleWhen="#{mode != 'read'}" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" tooltip="Save" action="save"  visibleWhen="#{mode != 'read'}" mnemonic="s" shortcut="ctrl S" icon="images/save24.png"/>
+        <invoker type="formActions" tooltip="Approve" action="approve"  visibleWhen="#{mode == 'read' and entity.objid != null and entity.state == 'DRAFT'}" mnemonic="a" icon="images/approve24.png"/>
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+public class ReassignLGUController
+{
+    @Binding
+    def binding;
+
+    @Service("ExaminerService")
+    def svc;
+    
+    def title = "Re-Assign LGU"
+    def entity = createEntity();
+    def mode = "read";
+    def selectedItem;
+    def selectedMunicipality;
+    def searchText;
+    
+    void create() {
+        init( "create" );
+        entity = createEntity();
+    }
+    
+    void edit() {
+        init( "edit" );
+    }
+
+    void cancel() {
+        init( "read" );
+    }
+    
+    void approve() {
+        if( MsgBox.confirm("Approve record?")) {
+            entity = svc.approve( entity.objid );
+            init("read");
+        }
+    }
+    
+    def lookupExaminerFrom() {
+        return InvokerUtil.lookupOpener("examiner:lookup", [searchText:entity.assignedFrom, onselect:selectExaminerFrom]);
+    }
+    
+    def lookupExaminerTo() {
+        return InvokerUtil.lookupOpener("examiner:lookup", [searchText:entity.assignedTo, onselect:selectExaminerTo]);
+    }
+    
+    def selectExaminerFrom = { examiner ->
+        if( examiner ) {
+            examiner = svc.open(examiner.objid);
+            entity.assignedFromId = examiner.objid;
+            entity.assignedFrom   = examiner.name;
+            entity.municipalities = examiner.municipalities;
+            entity.municipalities.each {
+                it.reassigned = true;
+            }
+            municipalityHandler.load();
+            binding.refresh("entity.*");
+        }
+    }
+    
+    def selectExaminerTo = { examiner ->
+        if( examiner ) {
+            if( examiner.objid == entity.assignedFromId ) throw new Exception("Examiner From should not be equal to Examiner To.");
+            examiner = svc.open(examiner.objid);
+            entity.assignedToId = examiner.objid;
+            entity.assignedTo   = examiner.name;
+            binding.refresh("entity.*");
+        }
+    }
+    
+    
+    void save() {
+        if( mode == "create" ) {
+            svc.saveReassign( entity );
+        }
+        else {
+            svc.updateReassign( entity );
+        }
+        init( "read" );
+    }
+
+    void setSelectedItem( selected ) {
+        selectedItem = selected;
+        if( selectedItem.item ) 
+            entity = svc.openReassign( selectedItem.item.objid );
+        else 
+            entity = createEntity();
+    }
+    
+    def municipalityHandler = [
+        getRows    : { return 100; },
+        getColumns : { 
+            return [
+                new Column(name:"item.reassigned", caption:"Reassign?", editable:true, type:"checkbox"),
+                new Column(name:"item.name", caption:"Municipality"),
+            ];
+        },
+        fetchList    : { return entity.municipalities; },
+    ] as PageListModel;
+
+    def listHandler = [
+        getRows    : { return 25; },
+        getColumns : { 
+            return [
+                new Column(name:"item.state", caption:"State", width:70, minWidth:70, maxWidth:70),
+                new Column(name:"item.assignedFrom", caption:"From"),
+                new Column(name:"item.assignedTo", caption:"Assigned To"),
+                new Column(name:"item.validUntil", caption:"Valid Until"),
+            ];
+        },
+        fetchList : { 
+            svc.getReassignList( searchText, it );
+        },
+    ] as PageListModel;
+
+    void search() {
+        listHandler.load();
+    }
+    
+    void init( status ) {
+        mode = status;
+        binding.refresh();
+    }
+    
+    def createEntity() {
+        return [ 
+            state : "DRAFT",
+            municipalities:[] 
+        ];
+    }
+
+}
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.examiner.ReassignLGUPage"/>
+    </pages>
+</workunit>

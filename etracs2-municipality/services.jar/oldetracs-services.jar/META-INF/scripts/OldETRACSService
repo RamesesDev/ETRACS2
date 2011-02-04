@@ -1,0 +1,36 @@
+import com.rameses.annotations.*;
+import com.rameses.invoker.client.*;
+import com.rameses.etracs1.invoker.*;
+
+class OldETRACSService {
+
+	
+	@Service("Var")
+	def var;
+	
+	@Service("FaasService")
+	def faasSvc;
+	
+	@ProxyMethod
+	public void approveTaxDeclaration( msgParams, faasId, txnType, tdNo, pin ) {
+		if (! acceptMsg( msgParams ) ) return null;
+		invokeRPTService("approveTaxDeclaration", [ msgParams.DOMAIN, msgParams.USERNAME, txnType, faasId, tdNo, pin]);
+		faasSvc.approve( faasId, msgParams.USERNAME, tdNo, pin );
+	}
+	
+	private def invokeRPTService( methodName, params ) {
+		return invokeService("rpt/RemoteRPTService", methodName, params);
+	}
+
+	private def invokeService( serviceName, methodName, params ) {
+		def invoker = new HttpServiceInvoker( var.version1_host, null );
+		def svc = invoker.create( serviceName );
+		return svc.invoke( methodName, params );
+	}
+	
+	
+	private def acceptMsg( msgParams ) {
+		return ( msgParams.DOMAIN == var.lgu_name );
+	}
+	
+}

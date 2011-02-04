@@ -1,54 +1,67 @@
-import com.rameses.scripting.annotations.*;
-import com.rameses.tracs.rpt.service.RPTUtilService;
-import java.rmi.server.UID;
-import com.rameses.tracs.rpt.domain.*;
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
 import java.text.SimpleDateFormat;
 
-public class TransmittalTreeService
+public class FaasTreeService
 {
-	@Resource("defaultPU")
+	
+	@PersistenceContext("etracs")
 	def em;
 	
 	@ProxyMethod
-	public def buildItem( td , item) {
-		item.faas.rpu.rpuType = "rpumisc:misc";
+	public def build( faas, rpu ) {
+		def tree = em.sqlContext.createNamedQuery( "faas:getTreeRpuById" )
+						.setParameter( "objid", rpu.objid ).singleResult;
+						
+		faas.rpu.rpuType = "rputree:tree";
+		def rpuInfo = faas.rpu.info;
 		
-		def rpu = td.rpu;
-		def rpuInfo = item.faas.rpu.info;
+		buildTreeInfo( rpuInfo, tree );
 		
-		rpuInfo.totalBearing     = rpu.totalBearing;
-		rpuInfo.totalNonBearing  = rpu.totalNonBearing;
-		rpuInfo.landPlantDetails = buildDetails( rpu.landPlantDetails );
-		return item;
+		rpuInfo.landPlantDetails = buildPlantDetails( tree );
+		
+		return faas;
 	}
 	
-	private def buildDetails( landPlantDetails ) {
-		def items = [];
-		landPlantDetails.each {
-			items.add([	
-				objid          : it.objid,
-				bearing        : it.bearing,
-				nonBearing     : it.nonBearing,
-				nonBearingAge  : it.nonBearingAge,
-				baseValue      : it.baseValue,
-				unitValue      : it.unitValue,
-				marketValue    : it.marketValue,
-				adjMarketValue : it.adjMarketValue,
-				assessLevel    : it.assessLevel,
-				assessedValue  : it.assessedValue,
-				treeUnitValueId    : it.treeUnitValueId,
-				treeUnitValueCode  : it.treeUnitValueCode,
-				treeUnitValueTitle : it.treeUnitValueTitle,
-				treeUnitId     : it.treeUnitId,
-				treeId         : it.treeId,
-				treeCode       : it.treeCode,
-				treeTitle      : it.treeTitle,
-				treeAssessLevelId    : it.treeAssessLevelId,
-				treeAssessLevelCode  : it.treeAssessLevelCode,
-				treeAssessLevelTitle : it.treeAssessLevelTitle, 
-			]);
-		}
-		return items;
+	private def buildTreeInfo( rpuInfo, tree ) {
+		
+		rpuInfo.totalBearing = tree.totalBearing;
+		rpuInfo.totalNonBearing = tree.totalNonBearing;
+		
 	}
+	
+	private def buildPlantDetails( tree ) {
+		def plantDetails = em.sqlContext.createNamedQuery( "faas:getLandPlantDetailByRpuId" )
+							.setParameter( "rpuId", tree.objid ).resultList;
+		def details = [];
+		plantDetails.each { detail ->
+			details += [
+				objid				: detail.objid,
+				bearing				: detail.bearing,
+				nonBearing			: detail.nonBearing,
+				nonBearingAge		: detail.nonBearingAge,
+				baseValue			: detail.baseValue,
+				unitValue			: detail.unitValue,
+				treeId				: detail.treeId,
+				treeCode			: detail.treeCode,
+				treeTitle			: detail.treeTitle,
+				treeUnitValueId		: detail.treeUnitValueId,
+				treeUnitValueCode	: detail.treeUnitValueCode,
+				treeUnitValueTitle	: detail.treeUnitValueTitle,
+				treeUnitId			: detail.treeUnitId,
+				treeAssessLevelId	: detail.treeAssessLevelId,
+				treeAssessLevelCode	: detail.treeAssessLevelCode,
+				treeAssessLevelTitle: detail.treeAssessLevelTitle,
+				marketValue			: detail.marketValue,
+				adjMarketValue		: detail.adjMarketValue,
+				assessLevel			: detail.assessLevel,
+				assessValue			: detail.assessValue
+			];
+		}
+		
+		return details;
+	}
+
+
 }	
 

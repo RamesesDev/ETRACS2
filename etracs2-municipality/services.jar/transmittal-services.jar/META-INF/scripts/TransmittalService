@@ -1,0 +1,246 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import java.text.SimpleDateFormat;
+
+class TransmittalService
+{
+
+	@PersistenceContext("etracs")
+	def em;
+	
+	@PersistenceContext("etracs2")
+	def em2;
+	
+	@Service("FaasAttachmentService")
+	def faasAttachmentSvc;
+	
+	@Service("SequenceService")
+	def gen;
+	
+	@Service("FaasService")
+	def faasService;
+	
+	@Service("Var")
+	def var;
+	
+	@Env
+	def env;
+	
+	@ProxyMethod
+	public void remove(def objid){
+	
+		getItems(objid, [_start:0, _limit:0]).each{
+			em.sqlContext.createNamedExecutor("transmittal:updateTransmittalState")
+			         .setParameter("tdId", it.objid)
+			         .setParameter("transmittalState", false)
+			         .execute();
+		}
+	
+		em2.sqlContext.createNamedExecutor("transmittal:deleteTransmittalItemByParentId")
+		             .setParameter("transmittalId", objid)
+					 .execute();
+					 
+		em2.sqlContext.createNamedExecutor("transmittal:deleteTransmittalBtId")
+		             .setParameter("objid", objid)
+					 .execute();
+		
+	}
+	
+	@ProxyMethod
+	public def open(def objid){
+		return em2.read("transmittal:transmittal", [objid:objid] );
+	}
+	
+	@ProxyMethod
+	public def getItems(def docNo, def params){
+		return em2.sqlContext.createNamedQuery("transmittal:getTransmittalItemByParentId")
+				 .setParameter("transmittalId", docNo)
+		         .setFirstResult( params._start )
+				 .setMaxResults( params._limit )
+			     .resultList;
+	}
+	
+	@ProxyMethod
+	public def save(def remarks) {
+		def lgu = var.lgu_name;
+		def objid = lgu + '-' + gen.getNextFormattedSeries('TRANSMITTAL');
+		
+		def items = getProvinceForApprovalList([_start:0, _limit:0]);
+		
+		def transmittal = [
+			objid : objid,
+			lgu : lgu,
+			schemaName : "transmittal:transmittal",
+			schemaVersion : "1.0",
+			docNo : objid,
+			dtTransmitted : formatDate("yyyy-MM-dd HH:mm:ss", new Date()),
+			state: "ACTIVE",
+			transmittedBy : env.user,
+			rpuCount: items.size()
+		];
+		
+		em2.create("transmittal:transmittal", transmittal );
+		
+		items.each{
+			
+			def faas = faasService.createFaas( it.objid );
+			
+			def item = [
+				schemaName: "transmittal:transmittalItem",
+				schemaVersion: "1.0",
+				objid : objid + faas.objid,
+				transmittalId : objid,
+				faasId: faas.objid,
+				tdNo: faas.tdNo,
+				state: faas.state,
+				pin: faas.rpu.info.pin,
+				taxpayerName: faas.info.taxpayer.taxpayerName,
+				type: faas.rpu.info.type,
+				txnType: faas.info.txnType,
+				faas: faas,
+				remarks: remarks
+			];
+			
+			em2.create("transmittal:transmittalItem", item );
+			em.sqlContext.createNamedExecutor("transmittal:updateTransmittalState")
+			  .setParameter("tdId", faas.objid)
+			  .setParameter("transmittalState", true)
+			  .execute();
+
+		}
+		
+		return transmittal;
+	}
+	
+	private def formatDate( format, dt ) {
+		if( ! dt ) return null;
+		return (new SimpleDateFormat(format)).format( dt );
+	}
+	
+	@ProxyMethod
+	public def getProvinceForApprovalList(def params) {	
+		return em.sqlContext.createNamedQuery("transmittal:getProvApprovalList")
+				 .setFirstResult( params._start )
+				 .setMaxResults( params._limit )
+				 .resultList;
+	}
+	
+	@ProxyMethod
+	public def getList( search, params ) {
+		def result = [];
+		if( ! search.textSearch ) return getListByNamed("transmittal:getList", [], params);
+		if( (result = getListByNamed("transmittal:getListByDocNo", [docNo:search.textSearch], params))) return result;
+		return result;
+	}
+	
+	private def getListByNamed(def name, def parameters , def params){
+		return em2.sqlContext.createNamedQuery(name)
+				  .setParameters( parameters )
+				  .setFirstResult( params._start )
+				  .setMaxResults( params._limit )
+				  .resultList;
+	}
+	
+	@ProxyMethod
+	public def exportService( def chunk ){
+
+		if( chunk.state == "TRANSMITTAL" ){
+			return exportTransmittalPart(chunk);
+		}else{
+			chunk.state = "ATTACHMENTS";
+			return exportAttachments(chunk);
+		}
+
+	}
+	
+	private def exportAttachments( def chunk ){
+	try{
+		if( !chunk.index ) {
+			chunk.index = 0;
+			chunk.hasNext = true;
+		}
+		
+		def	idList = em2.sqlContext.createNamedQuery("transmittal:getListTransmittalIdByParentID")
+						.setParameter("transmittalId", chunk.transmittalId )
+						.resultList;
+		
+		if( chunk.index < idList.size() ){
+		
+			if( !chunk.attachmentIndex ){
+				chunk.attachmentIndex = 0;
+			}
+			
+			def attachment = faasAttachmentSvc.getAttachments( idList[chunk.index].faasId )[chunk.attachmentIndex];
+			
+			print "ATTACHMENT -> " + attachment; 
+			
+			if( !attachment ){
+				chunk.index += 1;
+				chunk.attachmentIndex = 0;
+				print "calling exportAttachments";
+				return exportAttachments( chunk );
+			} 
+			
+			def part = faasAttachmentSvc.downloadAttachment2( attachment.tmpFileName, chunk.partInfo );
+			chunk.partInfo = part.info;
+			if( part.info.eof || (!part.bytes) ) chunk.attachmentIndex = (chunk.attachmentIndex + 1);
+			chunk.data = [
+				filename: part.info.name,
+				bytes: part.bytes
+			];
+			
+			print chunk.data.filename;
+		}else{
+			chunk.eof = true;
+		}
+		
+		return chunk;
+	}catch(e){
+		e.printStackTrace();
+		throw e;
+	}
+	}
+	
+	private def exportTransmittalPart( def chunk ){
+	
+		if( !chunk.index ) {
+			chunk.index = 0;
+			chunk.hasNext = true;
+		}
+		
+		def idList = [];
+		
+		if( chunk.hasNext ){
+			idList = em2.sqlContext.createNamedQuery("transmittal:getListTransmittalIdByParentID")
+						.setParameter("transmittalId", chunk.transmittalId )
+						.resultList;
+		}
+
+		chunk.index = (chunk.index + 1);
+		chunk.hasNext = ( chunk.index < idList.size() ) ? true : false;
+
+		if( idList ){
+
+			/*chunk.data = em2.sqlContext.createNamedQuery("transmittal:findItemByParentId")
+							.setParameter("objid", idList[ (chunk.index - 1) ].objid )
+							.resultList[0];*/
+			
+			chunk.data = em2.read("transmittal:transmittalItem", [objid: idList[ (chunk.index - 1) ].objid ] );
+			
+			println "FAAS ID" + chunk.data.faas.objid;
+			
+			chunk.data.attachments = faasAttachmentSvc.getAttachments( chunk.data.faasId );
+			
+		} else {
+			
+			chunk.data = open( chunk.transmittalId );
+			chunk.data.rpuCount = ((chunk.index) ? chunk.index+1 : 0);
+			chunk.index = null;
+			chunk.state = "HEADER";
+		}
+		
+		return chunk;
+	}
+
+}
+

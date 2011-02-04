@@ -8,131 +8,198 @@ public class FaasLandService
 	def em;
 	
 	@ProxyMethod
-	public def build( faas, rpu) {
-		def lrpu = em.sqlContext.createNamedQuery("faas:getLandRpuById").setParameter("objid", rpu.objid).singleResult;
+	public def build( faas, rpu ) {
+		def land = em.sqlContext.createNamedQuery( "faas:getLandRpuById" )
+						.setParameter( "objid", rpu.objid ).singleResult;
+						
 		faas.rpu.rpuType = "rpuland:land";
-		def rpuInfo      = faas.rpu.info;
-		rpuInfo.idleLand = lrpu.idleLand;
+		def rpuInfo = faas.rpu.info;
 		
-		rpuInfo.landTotal = [	
-				areaSqm  : lrpu.totalAreaSqm,
-				areaHec  : lrpu.totalAreaHec,
-				adjustmentRate : lrpu.totalAdjustmentRate, 
-				adjustment     : lrpu.totalLandAdjustment,
-				mv   : lrpu.totalLandMV,
-				amv  : lrpu.totalLandAMV,
-				av   : lrpu.totalLandAV,
-		];
+		buildLandInfo( rpuInfo, land );
 		
-		def landDetails = em.sqlContext.createNamedQuery("faas:getLandDetailsByRpuId").setParameter("rpuId",rpu.objid).resultList;
+		rpuInfo.landDetails = buildLandDetails( land );
+		
+		rpuInfo.plantDetails = buildPlantDetails( land );
+		
+		rpuInfo.adjustments = buildLandAdjustments( land );	
 			
-		rpuInfo.landDetails = [];
-		landDetails.each { ld ->
-			def ldItem =  [ 
-					objid          : ld.objid,
-					lineNo         : ld.line_no, 
-					classId        : ld.actualUseId,
-					classCode      : ld.actualUseCode,
-					classTitle     : ld.actualUseTitle,
-					actualUseId    : ld.landAssessLevelId,
-					actualUseCode  : ld.assessLevelClassCode,
-					actualUseTitle : ld.assessLevelClassTitle,
-					subclassId     : ld.lcuvSubclassId, 
-					subclassCode   : ld.subclassCode,
-					subclassTitle  : ld.subclassTitle,
-					specificClassId    : ld.specificClassId,
-					specificClassCode  : ld.specificClassCode,
-					specificClassTitle : ld.specificClassTitle,
-					strippingId  : ld.lcuvStrippingId,
-					stripLevel   : ld.stripLevel,
-					stripRate    : ld.stripRate,
-					area           : ld.area,
-					areaSqm        : ld.areaSqm,
-					areaHec        : ld.areaHec,
-					baseValue      : ld.baseValue,
-					unitValue      : ld.unitValue,
-					totalAdjustment: ld.totalAdjustment,
-					marketValue    : ld.marketValue,
-					adjMarketValue : ld.adjMarketValue,
-					assessLevel    : ld.assessLevel,
-					assessedValue  : ld.assessedValue,
-			];
-			ldItem.itemAdjustments = buildLandItemAdjustments( ld );
-			rpuInfo.landDetails.add( ldItem );
-		}
-		
-		rpuInfo.adjustments = buildLandAdjustments( rpu );		
 		return faas;		
 	}
 	
-	private def buildLandAdjustments( rpu ) {
-		def items = [];
+	private def buildLandInfo( rpuInfo, land ) {
+		rpuInfo.idleLand = land.idleLand;
 		
-		def landAdjustments = em.sqlContext.createNamedQuery("faas:getLandAdjustmentByRpuId")
-									.setParameter("rpuId", rpu.objid).resultList
-		landAdjustments.each { la ->
-			def item = [
-					objid              : la.objid,
-					adjustment         : la.rate,
-					rate               : la.rate,
-					adjustmentTypeId   : la.landAdjustmentTypeId,
-					adjustmentTypeCode : la.landAdjustmentTypeCode,
-					adjustmentTypeTitle: la.landAdjustmentTypeTitle,
-					expression         : la.expression,
-					params : buildLandAdjustmentParams( la ),
-			];
-			items.add( item );
-		}
-		return items;
+		rpuInfo.landTotal = [	
+			areaSqm  		: land.totalAreaSqm,
+			areaHec  		: land.totalAreaHec,
+			adjustmentRate 	: land.totalAdjustmentRate, 
+			adjustment     	: land.totalLandAdjustment,
+			mv   			: land.totalLandMV,
+			amv  			: land.totalLandAMV,
+			av   			: land.totalLandAV,
+		];
+		
+		rpuInfo.plantTotal = [
+			bearing		: land.totalPlantBearing,
+			nonBearing	: land.totalPlantNonBearing,
+			mv			: land.totalPlantMV,
+			amv			: land.totalPlantAMV,
+			av			: land.totalPlantAV	
+		];
 	}
 	
-	private def buildLandItemAdjustments( ld ) {
-		def items = [];
-		def landDetailAdjustments = em.sqlContext.createNamedQuery("faas:getLandDetailAdjustmentByLandDetailId")
-											.setParameter("landDetailId", ld.objid).resultList;
+	private def buildLandDetails( land ) {
+		def landDetails = em.sqlContext.createNamedQuery( "faas:getLandDetailsByRpuId" )
+							.setParameter( "rpuId", land.objid ).resultList;
+		def details = [];
+		landDetails.each { detail ->
+			details += [
+				objid          		: detail.objid,
+				lineNo         		: detail.line_no, 
+				classId        		: detail.actualUseId,
+				classCode      		: detail.actualUseCode,
+				classTitle     		: detail.actualUseTitle,
+				actualUseId    		: detail.landAssessLevelId,
+				actualUseCode  		: detail.assessLevelClassCode,
+				actualUseTitle 		: detail.assessLevelClassTitle,
+				subclassId     		: detail.lcuvSubclassId, 
+				subclassCode   		: detail.subclassCode,
+				subclassTitle  		: detail.subclassTitle,
+				specificClassId    	: detail.specificClassId,
+				specificClassCode  	: detail.specificClassCode,
+				specificClassTitle 	: detail.specificClassTitle,
+				strippingId  		: detail.lcuvStrippingId,
+				stripLevel   		: detail.stripLevel,
+				stripRate    		: detail.stripRate,
+				area           		: detail.area,
+				areaSqm        		: detail.areaSqm,
+				areaHec        		: detail.areaHec,
+				baseValue      		: detail.baseValue,
+				unitValue      		: detail.unitValue,
+				totalAdjustment		: detail.totalAdjustment,
+				marketValue    		: detail.marketValue,
+				adjMarketValue 		: detail.adjMarketValue,
+				assessLevel    		: detail.assessLevel,
+				assessedValue  		: detail.assessedValue,
+				itemAdjustments		: buildLandDetailAdjustments( detail )
+			];
+		}
+		
+		return details;
+	}
+	
+	private def buildLandDetailAdjustments( detail ) {
+		def detailAdjs = [];
+		def landDetailAdjustments = em.sqlContext.createNamedQuery( "faas:getLandDetailAdjustmentByLandDetailId" )
+									.setParameter( "landDetailId", detail.objid ).resultList;
 											
-		landDetailAdjustments.each { lda ->
-			def item = [
-					objid              : lda.objid,
-					adjustment         : 0.0,
-					rate               : 0.0,
-					adjustmentTypeId   : lda.landDetailAdjTypeId,
-					adjustmentTypeCode : lda.landDetailAdjTypeCode,
-					adjustmentTypeTitle: lda.landDetailAdjTypeTitle,
-					expression         : lda.expression,
-					params : buildLandDetailAdjParams( lda ),
+		landDetailAdjustments.each { adj ->
+			detailAdjs += [
+				objid              	: adj.objid,
+				adjustment         	: adj.adjustment,
+				rate               	: 0.0,
+				adjustmentTypeId   	: adj.landDetailAdjTypeId,
+				adjustmentTypeCode 	: adj.landDetailAdjTypeCode,
+				adjustmentTypeTitle	: adj.landDetailAdjTypeTitle,
+				expression         	: adj.expression,
+				params 				: buildLandDetailAdjParams( adj ),
 			];
-			items.add( item );
 		}
-		return items;
+		return detailAdjs;
 	}
 	
-	private def buildLandAdjustmentParams( la ) {
+	private def buildLandDetailAdjParams( adj ) {
+		def paramLinks = em.sqlContext.createNamedQuery( "faas:getLandDetailAdjustmentParamsByAdjId" )
+								.setParameter( "adjId", adj.objid ).resultList;
 		def params = [];
-		def parameters = em.sqlContext.createNamedQuery("faas:getLandAdjustmentParamsByAdjId")
-								.setParameter("adjId", la.objid).resultList;
-		return buildParams( parameters );
-	}
-	
-	
-	private def buildLandDetailAdjParams( lda ) {
-		def parameters = em.sqlContext.createNamedQuery("faas:getLandDetailAdjustmentParamsByAdjId")
-								.setParameter("adjId", lda.objid).resultList;
-		return buildParams( parameters );
-	}
-	
-	private def buildParams( parameters  ) {
-		def params = [];
-		parameters.each { 
-			params.add( [
-				paramId    : it.objid,
-				paramCode  : it.parameter.name,
-				paramName  : it.parameter.name,
-				paramValue : it.value,
-			] );
+		paramLinks.each { paramLink ->
+			def paramValue = em.sqlContext.createNamedQuery( "faas:findRPTParameterValue" )
+								.setParameter( "objid", paramLink.parameters_objid ).singleResult;
+			def param = em.sqlContext.createNamedQuery( "faas:findRPTParameter" )
+							.setParameter( "objid", paramValue.parameterId ).singleResult;
+			params += [
+				paramId		: param.objid,
+				paramCode	: param.name,
+				paramName	: param.caption,
+				paramValue	: ( ( paramValue.doubleValue ) ? paramValue.doubleValue : paramValue.intValue )
+			];
 		}
+		
 		return params;
 	}
 	
+	//== to be transfered to FaasTreeService
+	private def buildPlantDetails( land ) {
+		def plantDetails = em.sqlContext.createNamedQuery( "faas:getLandPlantDetailByRpuId" )
+							.setParameter( "rpuId", land.objid ).resultList;
+		def details = [];
+		plantDetails.each { detail ->
+			details += [
+				objid				: detail.objid,
+				bearing				: detail.bearing,
+				nonBearing			: detail.nonBearing,
+				nonBearingAge		: detail.nonBearingAge,
+				baseValue			: detail.baseValue,
+				unitValue			: detail.unitValue,
+				treeId				: detail.treeId,
+				treeCode			: detail.treeCode,
+				treeTitle			: detail.treeTitle,
+				treeUnitValueId		: detail.treeUnitValueId,
+				treeUnitValueCode	: detail.treeUnitValueCode,
+				treeUnitValueTitle	: detail.treeUnitValueTitle,
+				treeUnitId			: detail.treeUnitId,
+				treeAssessLevelId	: detail.treeAssessLevelId,
+				treeAssessLevelCode	: detail.treeAssessLevelCode,
+				treeAssessLevelTitle: detail.treeAssessLevelTitle,
+				marketValue			: detail.marketValue,
+				adjMarketValue		: detail.adjMarketValue,
+				assessLevel			: detail.assessLevel,
+				assessValue			: detail.assessValue
+			];
+		}
+		
+		return details;
+	}
+	
+	private def buildLandAdjustments( land ) {
+		def landAdjustments = em.sqlContext.createNamedQuery( "faas:getLandAdjustmentByRpuId" )
+								.setParameter( "rpuId", land.objid ).resultList;
+		def landAdjs = [];
+		landAdjustments.each { adj ->
+			landAdjs += [
+				objid				: adj.objid,
+				adjustment			: 0.0,
+				rate				: adj.rate,
+				adjustmentTypeId	: adj.landAdjustmentTypeId,
+				adjustmentTypeCode	: adj.landAdjustmentTypeCode,
+				adjustmentTypeTitle	: adj.landAdjustmentTypeTitle,
+				expression			: adj.expresion,
+				params				: buildLandAdjustmentParams( adj )
+			];
+		}
+		
+		return landAdjs;
+	}
+	
+	private def buildLandAdjustmentParams( adj ) {
+		def paramLinks = em.sqlContext.createNamedQuery( "faas:getLandAdjustmentParamsByAdjId" )
+								.setParameter( "adjId", adj.objid ).resultList;
+		def params = [];
+		paramLinks.each { paramLink ->
+			def paramValue = em.sqlContext.createNamedQuery( "faas:findRPTParameterValue" )
+								.setParameter( "objid", paramLink.parameters_objid ).singleResult;
+			def param = em.sqlContext.createNamedQuery( "faas:findRPTParameter" )
+							.setParameter( "objid", paramValue.parameterId ).singleResult;
+			params += [
+				paramId		: param.objid,
+				paramCode	: param.name,
+				paramName	: param.caption,
+				paramValue	: ( ( paramValue.doubleValue ) ? paramValue.doubleValue : paramValue.intValue )
+			];
+		}
+		
+		return params;
+	}
+
 }	
 

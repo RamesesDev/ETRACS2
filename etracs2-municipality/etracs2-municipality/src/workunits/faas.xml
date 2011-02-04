@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="faas_municipality:open" caption="FAAS Information" />
+        <invoker type="faas_municipality:open" target="window" caption="FAAS Information" action="init" />
         <invoker type="formActions" caption="Close" mnemonic="c" action="_close" />
         <invoker type="formActions" caption="Add Attachment" mnemonic="a" action="addAttachment" visibleWhen="#{state == PROVAPPROVAL_STATE}"  />
         <invoker type="formActions" caption="Transmit to Province" mnemonic="t" action="transmit" visibleWhen="#{state == PROVAPPROVAL_STATE}"  />
@@ -9,100 +9,106 @@
     <code>
         <![CDATA[
         
-import com.rameses.rcp.common.*;
-import com.rameses.rcp.annotations.*;
-import com.rameses.osiris2.client.*;
+            import com.rameses.rcp.common.*;
+            import com.rameses.rcp.annotations.*;
+            import com.rameses.osiris2.client.*;
 
-public class FaasController 
-{
-    def PROVAPPROVAL_STATE = 'PROVAPPROVAL'
-    def TRANSMITTED_STATE = 'TRANSMITTED'
-    
-    @Binding
-    def binding;
+            public class FaasController 
+            {
+                def PROVAPPROVAL_STATE = 'PROVAPPROVAL'
+                def TRANSMITTED_STATE = 'TRANSMITTED'
 
-    @FormTitle
-    def title = "FAAS Information";    
+                @Binding
+                def binding;
 
-    @Service("FaasService")
-    def svc;
+                @FormTitle
+                def title = "FAAS Information";    
 
-    @Service("FaasHtmlService")
-    def htmlSvc;
-    
-    @Service("FaasAttachmentService")
-    def attachmentSvc;
+                @Service("FaasService")
+                def svc;
 
-    def state = PROVAPPROVAL_STATE;
-    def faas;
-    def listRefreshHandler;
-    def html;
-    def message;
-    def transmitting = false;
+                @Service("FaasHtmlService")
+                def htmlSvc;
 
-    void transmit() {
-        if( ! MsgBox.confirm("Transmit to Province?") ) return;
-        def task = [
-            accept  : { return true; },
-            isEnded : { return true; },
-            execute : { executeTransmit() },
-        ] as Task;
-        OsirisContext.clientContext.taskManager.addTask( task );
-        message = "Transmitting FAAS to province. Please wait.";
-        transmitting = true;
-    }
-    
-    void executeTransmit() {
-        svc.transmit( faas.objid );
-        state = TRANSMITTED_STATE;
-        message = null;
-        transmitting = false;
-        html = null;
-        binding.refresh("formActions");
-        binding.refresh("message");
-        binding.refresh("html");
-    }
+                @Service("FaasAttachmentService")
+                def attachmentSvc;
 
-    def addAttachment() {
-        def info = [
-                refId  : faas.objid
-        ]
-        return InvokerUtil.lookupOpener("file:upload",[info:info, refreshHandler: refreshHandler]);
-    }
-    
-    void removeAttachment( attachmentId ) {
-        if( MsgBox.confirm("Remove attachment?") ) {
-            svc.removeAttachment( attachmentId );
-            refreshHandler();
-        }
-    }
+                def state = PROVAPPROVAL_STATE;
+                def faas;
+                def listRefreshHandler;
+                def html;
+                def message;
+                def transmitting = false;
+                
+                void init() {
+                    state = (faas.transmitted == 1) ? TRANSMITTED_STATE : PROVAPPROVAL_STATE; 
+                }
 
-    def refreshHandler = {
-        html = htmlSvc.getHtml( faas.objid, true );
-        binding.refresh("html");
-    }
+                void transmit() {
+                    if( ! MsgBox.confirm("Transmit to Province?") ) return;
+                    def task = [
+                        accept  : { return true; },
+                        isEnded : { return true; },
+                        execute : { executeTransmit() },
+                    ] as Task;
+                    OsirisContext.clientContext.taskManager.addTask( task );
+                    message = "Transmitting FAAS to province. Please wait.";
+                    transmitting = true;
+                }
 
-    public def getHtml() {
-        if( ! html ) {
-                def allowEdit = (state == PROVAPPROVAL_STATE);
-                html = htmlSvc.getHtml( faas.objid, allowEdit );
-        }
-        return html;
-    }
-    
-    def showAttachment( params ) {
-        def data = params.split("~~");
-        def opener = InvokerUtil.lookupOpener("file:download", [objid:data[0]] );
-        opener.caption = "Attachment: " + data[1];
-        return opener;
-    }
-    
-    public void save() {
-        svc.save(faas);
-    }
+                void executeTransmit() {
+                    svc.transmit( faas.objid );
+                    state = TRANSMITTED_STATE;
+                    message = null;
+                    transmitting = false;
+                    html = null;
+                    binding.refresh("formActions");
+                    binding.refresh("message");
+                    binding.refresh("html");
+                }
 
-	
-}
+                def addAttachment() {
+                    def info = [
+                            refId  : faas.objid
+                    ]
+                    return InvokerUtil.lookupOpener("file:upload",[info:info, refreshHandler: refreshHandler]);
+                }
+
+                void removeAttachment( attachmentId ) {
+                    if( MsgBox.confirm("Remove attachment?") ) {
+                        attachmentSvc.removeAttachment( attachmentId );
+                        refreshHandler();
+                    }
+                }
+
+                def refreshHandler = {
+                    //html = htmlSvc.getHtml( faas.objid, true );
+                    html = htmlSvc.buildHtml2( faas.objid, true )
+                    binding.refresh("html");
+                }
+
+                public def getHtml() {
+                    if( ! html ) {
+                            def allowEdit = (state == PROVAPPROVAL_STATE);
+                            html = htmlSvc.buildHtml2( faas.objid, allowEdit );
+                    }
+                    return html;
+                }
+
+                def showAttachment( params ) {
+                    def data = params.split("~~");
+                    print "FILE NAME >> " + data[2];
+                    def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] );
+                    opener.caption = "Attachment: " + data[1];
+                    return opener;
+                }
+
+                public void save() {
+                    svc.save(faas);
+                }
+
+
+            }
         
         
         

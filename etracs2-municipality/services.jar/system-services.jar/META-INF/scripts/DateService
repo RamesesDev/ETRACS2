@@ -6,11 +6,13 @@ class DateService {
 
    @SqlContext("java:system")
    def db;	
+   
+	@PersistenceContext("etracs2")
+	def em;
 
 	@ProxyMethod(local=true)
 	public def getServerDate() {
-		def val = db.createQuery( "select now() as dt" ).singleResult;
-		return val.dt; 
+		return em.sqlContext.createNamedQuery( "faasattachment:findAttachmentByRefId" ).singleResult; 
 	}
 
 	@ProxyMethod(local=true)
