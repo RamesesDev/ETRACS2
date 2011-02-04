@@ -74,10 +74,11 @@ public class TransmittalInitPage extends javax.swing.JPanel {
         jScrollPane1.setPreferredSize(new java.awt.Dimension(300, 70));
         xTextArea1.setColumns(20);
         xTextArea1.setRows(5);
+        xTextArea1.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
         xTextArea1.setCaption("Remarks");
         xTextArea1.setCaptionWidth(75);
         xTextArea1.setName("bean.remarks");
-        xTextArea1.setPreferredSize(new java.awt.Dimension(300, 19));
+        xTextArea1.setTextCase(com.rameses.rcp.constant.TextCase.UPPER);
         jScrollPane1.setViewportView(xTextArea1);
 
         formPanel1.add(jScrollPane1);

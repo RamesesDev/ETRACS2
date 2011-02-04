@@ -84,7 +84,16 @@ class TransmittalService
 		def items = getTransmittalItemList( transmittalId );
 		items.each {
 			def faas = em.serializer.read(it.faas);
+			
+			println "FAAS ID: " + faas.objid;
+			println "SCHEMA NAME: " + faas.schemaName;
+			
+			println faas.rpu.info.special;
+			println faas.rpu.info.idleLand;
+			
 			faasService.create( faas );
+			
+			println "done creating faas..";
 		}
 		return open( transmittalId );
 	}
@@ -234,7 +243,11 @@ class TransmittalService
 			em.create("transmittal:transmittalItem", item );
 			print "DONE CREATING TRANSMITTALITEM";
 			item.attachments.each{
-				em.create( "transmittal:transmittalattachment", it );
+				
+				if( !em.read("transmittal:transmittalattachment", [objid:it.objid]) ){
+					em.create( "transmittal:transmittalattachment", it );
+				}
+
 			}
 			chunk.data = null;
 		}
@@ -243,7 +256,9 @@ class TransmittalService
 	
 	@ProxyMethod
 	public def importingAttachment( def chunk ){
-		faasAttachmentSvc.uploadAttachment( chunk.data.filename, chunk.data.bytes );
+		if( chunk.attachments > 0 ){
+			faasAttachmentSvc.uploadAttachment( chunk.data.filename, chunk.data.bytes );
+		}
 		return chunk;
 	}
 	

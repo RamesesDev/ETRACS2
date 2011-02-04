@@ -34,6 +34,7 @@ public class TransmittalReader {
         if( !this.file.exists() ) throw new Exception("Not valid a transmittak folder.");
         
         files = attachments.listFiles();
+        
     }
     
     private void open() throws Exception{
@@ -48,35 +49,39 @@ public class TransmittalReader {
             
             FileTransferInputStream ftis = null;
             try{
-                
                 File file = getAttachment( index );
-                ftis = new FileTransferInputStream( file );
-                ftis.setByteSize( 1024 * 32 );
-                
-                byte[] bytes = ftis.readNext();
-                
-                FileTransferInfo info = ftis.getFileTransferInfo();
-                info.save();
-                
-                Map data = new HashMap();
-                data.put("bytes", bytes );
-                data.put("filename", file.getName());
-                data.put("eof", info.isEof() );
-                chunk.put("data", data );
-                
-                if( info.isEof() ) {
+                chunk.put("attachments", files.length);
+                System.out.println("ATTACHMENTS SIZE: " + files.length );
+                if( file != null ){
+                    ftis = new FileTransferInputStream( file );
+                    ftis.setByteSize( 1024 * 32 );
                     
-                    info.delete();
-                    index = index + 1;
+                    byte[] bytes = ftis.readNext();
                     
-                    if( getAttachment( index ) == null ) chunk.put("eof", true);
+                    FileTransferInfo info = ftis.getFileTransferInfo();
+                    info.save();
                     
+                    Map data = new HashMap();
+                    data.put("bytes", bytes );
+                    data.put("filename", file.getName());
+                    data.put("eof", info.isEof() );
+                    chunk.put("data", data );
+                    
+                    if( info.isEof() ) {
+                        
+                        info.delete();
+                        index = index + 1;
+                        
+                        if( getAttachment( index ) == null ) chunk.put("eof", true);
+                        
+                    }
+                    
+                    System.out.print("{FILENAME: " + file.getName() +", ");
+                    System.out.print(", BYTE READ: " + info.getBytesRead() + " ");
+                    System.out.print( ", SIZE: " + bytes.length +"]\n");
+                }else{
+                    chunk.put("eof", true);
                 }
-                
-                System.out.print("{FILENAME: " + file.getName() +", ");
-                System.out.print(", BYTE READ: " + info.getBytesRead() + " ");
-                System.out.print( ", SIZE: " + bytes.length +"]\n");
-                
             }catch(Exception ign){
                 ign.printStackTrace();
             }finally{
