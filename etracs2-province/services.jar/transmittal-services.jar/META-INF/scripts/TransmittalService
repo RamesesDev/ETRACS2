@@ -22,7 +22,21 @@ class TransmittalService
 	
 	def CURRENT_STATE = "CURRENT";
 	def FORAPPROVAL_STATE = "FORAPPROVAL"
+	def INCOMPLETE_STATE = "INCOMPLETE_REQUIREMENTS";
 	
+	@ProxyMethod
+	public def incompleteTransmittal( transmittalId, transmittalItemId, remarks) {
+		incompleteTransmittalItem( transmittalId, transmittalItemId, INCOMPLETE_STATE, remarks);
+	}
+
+	@ProxyMethod
+	public void incompleteTransmittalItem( transmittalId, transmittalItemId, state, remarks) {
+		em.sqlContext.createNamedExecutor("transmittal:incompleteItem")
+					 .setParameters([transmittalid:transmittalId, objid:transmittalItemId, newstate:state, remarks:remarks])
+					 .execute();		
+		changeTransmittalToClosed( transmittalId );
+	}
+
 	@ProxyMethod
 	public def getList( search, params ) {
 		def state = search.state;
