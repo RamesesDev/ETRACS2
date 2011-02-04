@@ -97,13 +97,14 @@ public class TransmittalListPage extends javax.swing.JPanel {
 
         jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 1, 3, 1));
         jPanel3.setOpaque(false);
+        jPanel3.setPreferredSize(new java.awt.Dimension(10, 50));
         jPanel1.setLayout(new java.awt.BorderLayout());
 
         xActionBar1.setButtonBorderPainted(false);
         xActionBar1.setButtonContentAreaFilled(false);
         xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setName("formActions");
-        xActionBar1.setPreferredSize(new java.awt.Dimension(82, 40));
+        xActionBar1.setUseToolBar(false);
         jPanel1.add(xActionBar1, java.awt.BorderLayout.EAST);
 
         jPanel4.setLayout(new java.awt.BorderLayout());
