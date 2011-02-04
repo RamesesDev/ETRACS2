@@ -125,7 +125,7 @@ SELECT * FROM MachRPU WHERE objid = $P{objid}
 SELECT * FROM MachineUse WHERE rpuId = $P{rpuId}
 
 [getMachDetailByUseId]
-SELECT * FROM machineList WHERE machineUseId = $P{useId}
+SELECT * FROM MachineList WHERE machineUseId = $P{useId}
 
 
 #------------------------------------------

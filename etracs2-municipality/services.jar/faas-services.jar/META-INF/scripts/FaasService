@@ -73,6 +73,7 @@ class FaasService
 		faas.transmitted = true;
 		faas.sys_dtCreated = dateService.getServerDate();
 		transmitToRemote( faas );
+		em2.validate("faas:faas", faas);
 		em2.create("faas:faas", faas);
 		em.sqlContext.createNamedExecutor("faas:updateTransmittedTaxDeclaration")
 			.setParameter("objid", faas.objid)
@@ -212,7 +213,7 @@ class FaasService
 				 type       : rpu.type,
 				 pin        : rpu.pin,
 				 suffix     : rpu.suffix,
-				 special    : rpu.special,
+				 special    : rpu.special as boolean,
 				 taxable    : rpu.taxable as boolean,
 				 totalMV    : rpu.totalMV,
 				 totalAMV   : rpu.totalAMV,
