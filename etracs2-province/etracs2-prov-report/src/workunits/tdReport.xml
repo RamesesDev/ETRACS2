@@ -1,16 +1,59 @@
-<workunits>
-    <Invokers>
-       <Invoker folder="menu" caption="TD Report"/> 
-    </Invokers>
+<workunit>
+    <invokers>
+        <invoker folderid="/report/rpt" caption="Tax Declaration Report"/>
+    </invokers>
+    
     <code>
-    <![CDATA[
-        public class TDReportController {
-            def bean;
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.osiris2.reports.*;
+        
+        public class TDReportController
+        {
+            @Service("TDService")
+            def svc;
             
+            @Service("Var")
+            def vars;
+            
+            def tdno;
+            def data = [];
+
+            def REPORT_PATH = "etracs2/rpt/report";
+            
+            public String doNext(){
+                data = svc.openByTdNo( tdno );
+                report.viewReport();
+                return "report";
+            }
+            
+            def report = [
+                getReportName : { return "etracs2/rpt/report/TDReport_Bayombong.jasper";},
+                getReportData : { return data;},
+                getParameters : { getStandardReportParams(); },
+                getSubReports : {  return [ new SubReport( "TDAssessmentReport", "etracs2/rpt/report/TDAssessmentReport_Bayombong.jasper") ];}
+            ] as ReportModel;
+            
+            def getStandardReportParams() {
+                return [
+                    LOGOLGU     : vars.LGULOGO,                    
+                    LOGOBLGF    : vars.BLGFLOGO,                    
+                    LGUNAME     : vars.LGUNAME,
+                    OFFICENAME  : vars.ASSESSOROFFICENAME,
+                    PRINTEDBY   : OsirisContext.getEnv().get("USER"),
+                    PRINTDATE   : new Date()
+                ]; 
+            }
         }
-    ]]>
+        
+        ]]>
     </code>
+    
     <pages>
-        <page name="rptreport"/>
+        <page template="etracs2.rpt.td.PreviewPage" name="report"/>
+        <page template="etracs2.rpt.td.TDReportInitPage"/>
     </pages>
-</workunits>
+</workunit>
