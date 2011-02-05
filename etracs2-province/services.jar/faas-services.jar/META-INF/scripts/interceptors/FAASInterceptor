@@ -17,12 +17,15 @@ class FAASInterceptor
 	@Service("RemoteFaasService")
 	def remoteService;
 	
-	@After(pattern="FAASService.create.*") 
+	@Env
+	def env;
+	
+	@After(pattern="FAASService.create") 
 	public void interceptCreate( evt ) {
 		logService.log("CREATE", "FAAS", evt.result.objid);
 	}
 	
-	@After(pattern="FAASService.submit.*") 
+	@After(pattern="FAASService.submit") 
 	public void interceptSubmit( evt ) {
 		logService.log("SUBMIT", "FAAS", evt.result.objid);
 		transmittalService.updateItemStateToForApproval(evt.result.transmittalId, evt.result.objid);
@@ -46,24 +49,29 @@ class FAASInterceptor
 			]  
 		);
 		
-		print "passing interceptApprove";
-		
-		if( faas.transmittalId == "system" ){
-			def params = [
-				action 	: "approveFAAS",
-				refId	: faas.objid,
-				targetLgu	: faas.rp.muniDistrictIndex
-			];
-			
-			remoteService.post( params );
-		}
-		
-		
+		approveRemoteFaas( faas );
 	}
 	
 	@After(pattern="FAASService.disapprove.*") 
 	public void interceptDisapprove( evt ) {
 		logService.logA("DISAPPROVE", "FAAS", evt.result.objid, evt.result.remarks);
 		transmittalService.disapproveTransmittalItem(evt.result.transmittalId, evt.result.objid, evt.result.state, evt.result.remarks);
+	}
+	
+	
+	
+	private void approveRemoteFaas( faas ) {
+		if( faas.transmittalId != "system" ) return; 
+		def params = [
+			DOMAIN 	 : faas.rp.muniDistrictIndex,
+			USERNAME : (env.USERNAME == null ? 'SYSTEM' : env.USERNAME),
+			faasId   : faas.objid,
+			txnType  : faas.info.txnType,
+			tdNo     : faas.tdNo,
+			pin      : faas.rp.info.pin,
+		];
+		println "APPROVING REMOTE WITH PARAMS -> $params";
+		remoteService.approve( params );		
+		logService.log("APPROVEREMOTE", "FAAS", faas.objid);
 	}
 }

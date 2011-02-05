@@ -2,17 +2,14 @@ import com.rameses.annotations.*;
 
 public class RemoteFaasService {
 
-	@Service("Var")
-	def var;
-
+	@Service("OldETRACSService")
+	def oldService;
+	
 	@ProxyMethod
 	@Async(type="topic")
-	public def post( params ) {
-		
-		if ( params.targetLgu == var.lgu_index ) {
-			print "INVOKED >> " + params;
-		}
-		
+	public def approve( params ) {
+		println "EXECUTING REMOTE...$params";
+		oldService.approveTaxDeclaration( params );
 	}
 
 }

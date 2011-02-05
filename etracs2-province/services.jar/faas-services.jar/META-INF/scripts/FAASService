@@ -85,7 +85,7 @@ class FAASService
 		def currDate = dateService.getServerDate();
 		faas.state = PROVAPPROVAL_STATE;
 		faas.remarks = remarks;
-		faas.info.reviewedBy  = [name:env.USER, title:env.TITLE, dtSigned:currDate];
+		faas.info.reviewedBy  = [name:env.USERNAME, title:env.JOBTITLE, dtSigned:currDate];
 		em.update( "faas:faas", faas );
 		def faasData = em.read("faas:faas-approval", [ objid:faasId ]);
 		if( !faasData ) throw new Exception("FAAS not found.");
