@@ -1,3 +1,6 @@
+[getTestList]
+SELECT * FROM faas_provapproval WHERE municipality IN ( ${list} )
+
 #----------------------------------------------------------------
 # GETTERS
 #----------------------------------------------------------------

@@ -40,6 +40,22 @@ class FAASService
 	}
 	
 	@ProxyMethod
+	public def getTestList( municipalities ) {
+		try {
+			def len = municipalities.size();
+			def vars = '';
+			if( len > 0) {
+				vars = '?,'.multiply( len )[0..(len*2)-2];
+			}
+			return em.sqlContext.createNamedQuery("faas:getTestList").setVars(["list":vars]).setParameters( municipalities).resultList;
+		}
+		catch( e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+	
+	@ProxyMethod
 	public def create( @Param(schema="faas:faas") faas ) {
 		try {
 		faas.sys_dtCreated = dateService.getServerDate();
