@@ -4,16 +4,16 @@
  * Created on February 3, 2011, 9:25 AM
  */
 
-package etracs2.prov.examiner;
+package etracs2.admin;
 
 /**
  *
  * @author  jzamss
  */
-public class ExaminerMgmtPage extends javax.swing.JPanel {
+public class ETRACSMgmtPage extends javax.swing.JPanel {
     
     /** Creates new form ExaminerMgmtPage */
-    public ExaminerMgmtPage() {
+    public ETRACSMgmtPage() {
         initComponents();
     }
     
@@ -30,7 +30,7 @@ public class ExaminerMgmtPage extends javax.swing.JPanel {
         jLabel1.setBackground(new java.awt.Color(0, 51, 153));
         jLabel1.setFont(new java.awt.Font("Tahoma", 1, 18));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel1.setText("Examiner Management");
+        jLabel1.setText("Manage ETRACS");
         jLabel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 3, 3, 3));
         jLabel1.setOpaque(true);
 
