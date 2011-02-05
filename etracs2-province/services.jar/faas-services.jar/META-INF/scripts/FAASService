@@ -147,6 +147,12 @@ class FAASService
 		return faas;
 	}
 	
+	@ProxyMethod
+	public def getCURRENTFaasByTaxpayerId( taxpayerId ) {
+		return em.sqlContext.createNamedQuery( "faas:findCURRENT-ByTaxpayerId" )
+				.setParameter( "taxpayerId", taxpayerId).resultList;
+	}
+	
 	private def getListByName( namedQuery, criteria, params ) {
 		return em.sqlContext.createNamedQuery( namedQuery )
 						.setParameters( criteria )
@@ -154,4 +160,5 @@ class FAASService
 						.setMaxResults( params._limit )
 						.resultList;
 	}
+	
 }

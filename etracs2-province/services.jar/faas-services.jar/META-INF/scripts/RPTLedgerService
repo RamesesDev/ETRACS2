@@ -1,0 +1,45 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+
+public class RPTLedgerService {
+
+	@PersistenceContext("etracs")
+	def em;
+
+	@Service("TaxpayerService")
+	def taxpayerService;
+	
+	@Service("FAASService")
+	def faasSvc;
+	
+	@Service("RemoteRPTLedgerService")
+	def remoteService;
+
+	@ProxyMethod
+	public def findTdByTaxpayerId( taxpayerId ) {
+		def taxpayer = taxpayerService.open( taxpayerId );
+		
+		def tds = [];
+		taxpayer.mappings.each { mapping ->
+			tds += faasSvc.getCURRENTFaasByTaxpayerId( mapping.objid );
+		}
+		
+		return tds;
+	}
+	
+	@ProxyMethod
+	public def generatePayments( faasId, handler ) {
+		try {
+		
+		return remoteService.findLedger( params, handler as AsyncHandler );
+		} catch ( ex ) { ex.printStackTrace(); }
+	}
+	
+	@ProxyMethod
+	public def buildHTML( ledger ) {
+	
+		
+		
+	}
+
+}
