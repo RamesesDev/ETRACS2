@@ -14,9 +14,6 @@ class FAASService
 	@Service("Var")
 	def var;
 
-	@Service("RemoteFaasService")
-	def remoteService;
-	
 	@Service("TDService")
 	def tdService;
 
@@ -67,7 +64,7 @@ class FAASService
 		
 		def currDate = dateService.getServerDate();
 		faas.state  = FORAPPROVAL_STATE;
-		faas.info.reviewedBy  = [name:env.USER, title:env.TITLE, dtSigned:currDate];
+		faas.info.reviewedBy  = [name:env.USERNAME, title:env.JOBTITLE, dtSigned:currDate];
 		em.update( "faas:faas", faas );
 		
 		def faasData = em.read("faas:faas-provapproval", [ objid:faasId ]);
@@ -100,11 +97,12 @@ class FAASService
 	
 	@ProxyMethod
 	public def approve( faasId ) {
+
 		def faas = open( faasId );
 		if( faas.state != FORAPPROVAL_STATE) throw new Exception("FAAS is already $faas.state.");
 		
 		def currDate = dateService.getServerDate();
-		def tdNo = tdService.getPINSequence( faasId );
+		//def tdNo = tdService.getPINSequence( faasId );
 		faas.state  = CURRENT_STATE;
 		faas.info.approvedBy.dtSigned = currDate;
 		faas.sys_dtApproved = currDate;
@@ -117,16 +115,6 @@ class FAASService
 		faasData.state = CURRENT_STATE;
 		em.create("faas:faas-current", faasData);
 		em.delete("faas:faas-approval", faasData);
-		
-		def params = [
-			action 	: "approveFAAS",
-			refId	: faas.objid,
-			targetLgu	: faas.rp.muniDistrictIndex
-		]
-		
-		
-		
-		remoteService.post( params );
 		
 		return faas;
 	}
@@ -143,8 +131,18 @@ class FAASService
 		faas.sys_dtApproved = currDate;
 		faas.info.reviewedBy  = [name:env.USER, title:env.TITLE, dtSigned:currDate];
 		em.create("faas:disapproved-faas", faas);
-		em.create("faas:faas-disapproved", faas);
 		em.delete("faas:faas", faas);
+		
+		def faasInfo = em.read("faas:faas-approval", faas );		
+		if( faasInfo ){
+			em.create("faas:faas-disapproved", faasInfo );
+			em.delete("faas:faas-approval", faasInfo );
+		}else{
+			faasInfo = em.read("faas:faas-provapproval", faas );
+			em.create("faas:faas-disapproved", faasInfo );
+			em.delete("faas:faas-provapproval", faasInfo );
+		}
+		
 		em.sqlContext.createNamedExecutor("faas:deleteForApproval").setParameters([objid:faasId]).execute();
 		return faas;
 	}

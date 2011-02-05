@@ -9,7 +9,7 @@ public class FaasMachService
 	def em;
 	
 	@ProxyMethod
-	public def build( faasm, rpu ) {
+	public def build( faas, rpu ) {
 		def mach = em.sqlContext.createNamedQuery( "faas:getMachRpuById" )
 						.setParameter( "objid", rpu.objid ).singleResult;
 		faas.rpu.rpuType = "rpumach:mach";
@@ -30,7 +30,7 @@ public class FaasMachService
 				actualUseCode		: use.actualUseCode,
 				actualUseTitle		: use.actualUseTitle,
 				machAssessLevelId	: use.machAssessLevelId,
-				specialLevel		: use.specialLevel,
+				specialLevel		: use.specialLevel as boolean,
 				marketValue			: use.marketValue,
 				adjMarketValue		: use.adjMarketValue,
 				assessLevel			: use.assessLevel,
@@ -43,7 +43,7 @@ public class FaasMachService
 	}
 	
 	private def buildMachDetails( use ) {
-		def machDetails = em.sqlContext.createNamedQuery( "faas:getMachUseByRpuId" )
+		def machDetails = em.sqlContext.createNamedQuery( "faas:getMachDetailByUseId" )
 						.setParameter( "useId", use.objid ).resultList;
 		def details = [];
 		machDetails.each { detail ->
@@ -80,19 +80,18 @@ public class FaasMachService
 				machineId			: detail.machineId,
 				machineCode			: detail.machineCode,
 				machineTitle		: detail.machineTitle,
-				useSwornAmount		: detail.useSwornAmount,
+				useSwornAmount		: detail.useSwornAmount as boolean,
 				swornAmount			: detail.swornAmount,
-				imported			: detail.imported,
+				imported			: detail.imported as boolean,
 				residualRate		: detail.residualRate,
 				localIndex			: detail.localIndex,
-				newlyInstalled		: detail.newlyInstalled,
-				autoDepreciate		: detail.autoDepreciate
+				newlyInstalled		: detail.newlyInstalled as boolean,
+				autoDepreciate		: detail.autoDepreciate as boolean
 			];
 		}
 		
 		return details;
 	}
-
 
 }	
 

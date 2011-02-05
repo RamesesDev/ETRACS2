@@ -12,6 +12,7 @@
             import com.rameses.rcp.common.*;
             import com.rameses.rcp.annotations.*;
             import com.rameses.osiris2.client.*;
+            import com.rameses.util.*;
 
             public class FaasController 
             {
@@ -39,6 +40,11 @@
                 def html;
                 def message;
                 def transmitting = false;
+                def task = [
+                    accept  : { return true; },
+                    isEnded : { return true; },
+                    execute : { executeTransmit() },
+                ] as Task;
                 
                 void init() {
                     state = (faas.transmitted == 1) ? TRANSMITTED_STATE : PROVAPPROVAL_STATE; 
@@ -46,25 +52,25 @@
 
                 void transmit() {
                     if( ! MsgBox.confirm("Transmit to Province?") ) return;
-                    def task = [
-                        accept  : { return true; },
-                        isEnded : { return true; },
-                        execute : { executeTransmit() },
-                    ] as Task;
                     OsirisContext.clientContext.taskManager.addTask( task );
                     message = "Transmitting FAAS to province. Please wait.";
                     transmitting = true;
                 }
 
                 void executeTransmit() {
-                    svc.transmit( faas.objid );
-                    state = TRANSMITTED_STATE;
-                    message = null;
-                    transmitting = false;
-                    html = null;
-                    binding.refresh("formActions");
-                    binding.refresh("message");
-                    binding.refresh("html");
+                    try {
+                        svc.transmit( faas.objid );
+                        state = TRANSMITTED_STATE;
+                        message = null;
+                        transmitting = false;
+                        html = null;
+                        binding.refresh();
+                    } catch ( ex ) {
+                        message = ExceptionManager.getOriginal( ex ).message;
+                        transmitting = false;
+                        binding.refresh();
+                        task.ended = true;
+                    }
                 }
 
                 def addAttachment() {

@@ -1,8 +1,8 @@
 <workunit>
     <invokers>
-        <invoker type="formActions" caption="Close" mnemonic="c" action="_close" icon="images/remove24.png" />
-        <invoker type="itemActions" caption="Incomplete Requirements" mnemonic="e" action="doIncomplete" visibleWhen="#{selectedItem != null}" icon="images/incomplete24.png"/>
-        <invoker type="formActions" caption="Submit to Reviewer" mnemonic="s" action="submit" visibleWhen="#{state == 'SUBMITTED'}"  icon="images/next24.png"/>
+        <invoker type="formActions" tooltip="Close" mnemonic="c" action="_close" icon="images/remove24.png" />
+        <invoker type="itemActions" tooltip="Incomplete Requirements" mnemonic="e" action="doIncomplete" visibleWhen="#{selectedItem != null}" icon="images/cancel24.png"/>
+        <invoker type="formActions" tooltip="Submit to Reviewer" mnemonic="s" action="submit" visibleWhen="#{state == 'RECEIVED'}"  icon="images/next24.png"/>
     </invokers>
     
     <code>
@@ -37,7 +37,7 @@
             public void submit() {
                 if( MsgBox.confirm("Submit to reviewer?") ) {
                     svc.submit( transmittal.objid );
-                    state = "RECEIVED";
+                    state = "SUBMITTED";
                     refreshList();
                 }
             }
@@ -75,7 +75,6 @@
             
             public def showAttachment( params ) {
                 def data = params.split("~~");
-                print "FILE NAME >> " + data[2];
                 def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] );
                 opener.caption = "Attachment: " + data[1];
                 return opener;
