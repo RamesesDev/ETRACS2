@@ -89,6 +89,9 @@ SELECT * FROM faas_current ORDER BY pin
 [findCURRENT-ByTdNo]
 SELECT * FROM faas_current WHERE tdno = $P{tdno} ORDER BY pin
 
+[findCURRENT-ByTaxpayerId]
+SELECT * FROM faas_current WHERE taxpayerId LIKE $P{taxpayerId} ORDER BY pin
+
 [findCURRENT-ByTaxpayerName]
 SELECT * FROM faas_current WHERE taxpayername LIKE $P{taxpayername} ORDER BY pin
 
