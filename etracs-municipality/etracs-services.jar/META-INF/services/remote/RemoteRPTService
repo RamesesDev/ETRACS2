@@ -1,0 +1,14 @@
+import com.rameses.scripting.annotations.*;
+import com.rameses.tracs.rpt.domain.TxnType;
+
+public class RemoteRPTService {
+
+	@Script("rpt/TDService")
+	def tdService;
+	
+	@ProxyMethod
+	public void approveTaxDeclaration( domain, userName, txnType, faasId, tdNo, pin ) {
+		print "RemoteRPTService ->  approveTaxDeclaration.... ";
+		tdService.approveTaxDeclaration( domain, userName, TxnType.valueOf( txnType ), faasId );
+	}
+}
