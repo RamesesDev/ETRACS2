@@ -29,27 +29,33 @@
             def image;
             def message;
             def fileName;
-            
+       
             void doDownload() {
                 def info = null;
                 OsirisContext.clientContext.taskManager.addTask(
                     new DownloadTask(
                         onExecute: { counter ->
-                            def data = attachmentService.downloadAttachment2( fileName, info );
-                            buffer.write( data.bytes );
-                            if ( !data.info.eof ) {
-                                info = data.info;
-                                message = "Downloading file (" + buffer.size()/1000 + " kb)";
+                            try{
+                                def data = attachmentService.downloadAttachment2( fileName, info );
+                                buffer.write( data.bytes );
+                                if ( !data.info.eof ) {
+                                    info = data.info;
+                                    message = "Downloading file (" + buffer.size()/1000 + " kb)";
+                                    binding.refresh("message");
+                                    return true;
+                                }
+                                image = buffer.toByteArray();
+                                binding.fireNavigation('viewer');
+                            }catch(e){
+                                message = e.cause.message;
                                 binding.refresh("message");
-                                return true;
+                                return false;
                             }
-                            image = buffer.toByteArray();
-                            binding.fireNavigation('viewer');
                             return false;
                 }));
             }
                     
-        }
+        }        
         
         class DownloadTask extends Task {
         

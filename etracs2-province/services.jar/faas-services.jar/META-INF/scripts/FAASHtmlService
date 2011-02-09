@@ -515,11 +515,24 @@ class FAASHtmlService
 	}
 		
 	private def buildTitleInfo( faas ) {
+		def remHtml = "";
+		if( faas.remarks ) {
+			remHtml += """
+				<div style="background-color:silver">
+					<table width="100%" cellspacing="1">
+						<tr>
+							<td colspan="4" style="color:red;font-weight:bold;">Returned: $faas.remarks</td>
+						</tr>
+					</table>				
+				</div>
+			"""
+		}
 		return """
+			$remHtml
 			<table>
 				<tr>
 					<td class="header">State :</td>
-					<td class="header"><b>$faas.state</b></td>
+					<td class="header" colspan="3"><b>$faas.state</b></td>
 				</tr>
 				<tr>
 					<td class="header">TD NO. :</td>
@@ -720,23 +733,6 @@ class FAASHtmlService
 	}
 	
 	private def buildAttachments( faas ) {
-		/*return """
-			<table width="100%">
-				<tr>
-					<td colspan="6" class="title">ATTACHMENTS</td>
-				</tr>
-				<tr>
-					<td><a href="showAttachment?http://localhost:8080/bohol-downloads/images/sketch-01.png">Sketch Plan </a></td>
-				</tr>
-				<tr>
-					<td><a href="showAttachment?http://localhost:8080/bohol-downloads/images/deed-01.png">Deed of Sale </a></td>
-				</tr>
-				<tr>
-					<td><a href="showAttachment?http://localhost:8080/bohol-downloads/images/rtc-01.png">Realty Tax Clearance </a></td>
-				</tr>
-			</table>
-		""";*/
-		
 		def attachments = attachmentService.getAttachments( faas.objid );
 		if( !attachments ) {
 			attachments = em.sqlContext.createNamedQuery("transmittal:getAttachmentsByRefId")

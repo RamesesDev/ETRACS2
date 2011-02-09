@@ -24,46 +24,78 @@ class FAASService
 	
 	@ProxyMethod
 	public def getList( search, params ) {
+		if( env.ASSIGNED_LGU && env.ASSIGNED_LGU.size() > 0) {
+			return getListByAssignedLgu( search, params );
+		}
+		
 		def result = null;
 		def state = search.state;
 		def textSearch = search.textSearch;
-		def findSql = "faas:find$state"; 
-		if( ! textSearch ) return getListByName("$findSql-ByState", [state:state], params);
-		if( (result = getListByName("$findSql-ByTdNo", [state:state, tdno:textSearch], params)) ) return result;
-		if( (result = getListByName("$findSql-ByTaxpayerName", [state:state, taxpayername:textSearch], params)) ) return result;
-		if( (result = getListByName("$findSql-ByPin", [state:state, pin:textSearch], params)) ) return result;
-		if( (result = getListByName("$findSql-ByBarangay", [state:state, barangay:textSearch], params)) ) return result;
-		if( (result = getListByName("$findSql-ByCadastralLotNo", [state:state, cadastrallotno:textSearch], params)) ) return result;
-		if( (result = getListByName("$findSql-BySurveyNo", [state:state, surveyno:textSearch], params)) ) return result;
-		if( (result = getListByName("$findSql-ByBlockNo", [state:state, blockno:textSearch], params)) ) return result;
+		if( ! textSearch ) return getListByName("faas:findByState", [state:state], params);
+		if( (result = getListByName("faas:findByTdNo", [state:state, tdno:textSearch], params)) ) return result;
+		if( (result = getListByName("faas:findByTaxpayerName", [state:state, taxpayername:textSearch], params)) ) return result;
+		if( (result = getListByName("faas:findByPin", [state:state, pin:textSearch], params)) ) return result;
+		if( (result = getListByName("faas:findByBarangay", [state:state, barangay:textSearch], params)) ) return result;
+		if( (result = getListByName("faas:findByCadastralLotNo", [state:state, cadastrallotno:textSearch], params)) ) return result;
+		if( (result = getListByName("faas:findBySurveyNo", [state:state, surveyno:textSearch], params)) ) return result;
+		if( (result = getListByName("faas:findByBlockNo", [state:state, blockno:textSearch], params)) ) return result;
 		return result;
 	}
 	
 	@ProxyMethod
-	public def getTestList( municipalities ) {
-		try {
-			def len = municipalities.size();
-			def vars = '';
-			if( len > 0) {
-				vars = '?,'.multiply( len )[0..(len*2)-2];
-			}
-			return em.sqlContext.createNamedQuery("faas:getTestList").setVars(["list":vars]).setParameters( municipalities).resultList;
+	public def getListByAssignedLgu( search, params ) {
+		def state = search.state;
+		def textSearch = search.textSearch;
+		def assignedLgus = env.ASSIGNED_LGU;
+		def len = assignedLgus.size;
+		def whereClause = "";
+		
+		def vars = '';
+		vars = '?,'.multiply( len )[0..(len*2)-2];
+		
+		def values = assignedLgus;
+		if( ! textSearch ) {
+			values.add( state );
+			whereClause = " WHERE municipality in ($vars) AND state = ? ORDER BY pin ";
+			return getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params );
 		}
-		catch( e) {
-			e.printStackTrace();
-			throw e;
-		}
+		
+		values = assignedLgus;
+		values.add( textSearch );
+		values.add( state );
+		def result = null;		
+		
+		whereClause = " WHERE municipality in ($vars) AND tdno = ? AND state = ? ORDER BY pin ";
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result;
+		
+		whereClause = " WHERE municipality in ($vars) AND taxpayername LIKE ? AND state = ? ORDER BY pin ";
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result;
+		
+		whereClause = " WHERE municipality in ($vars) AND pin LIKE ? AND state = ? ORDER BY pin ";
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result;
+		
+		whereClause = " WHERE municipality in ($vars) AND barangay = ? AND state = ? ORDER BY pin ";
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result;
+		
+		whereClause = " WHERE municipality in ($vars) AND cadastrallotno = ? AND state = ? ORDER BY pin ";
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result;
+		
+		whereClause = " WHERE municipality in ($vars) AND surveyno = ? AND state = ? ORDER BY pin ";
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result;
+		
+		whereClause = " WHERE municipality in ($vars) AND blockno = ? AND state = ? ORDER BY pin ";
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result;
+		
+		return result;
 	}
 	
 	@ProxyMethod
 	public def create( @Param(schema="faas:faas") faas ) {
-		try {
 		faas.sys_dtCreated = dateService.getServerDate();
 		em.create("faas:faas",  faas);
 		def list = em.indexer.getIndexFor("faas:faas");
 		em.indexer.fire( list, faas );
 		return faas;
-		} catch ( ex ) { ex.printStackTrace(); throw ex; }
 	}
 	
 	@ProxyMethod
@@ -83,13 +115,12 @@ class FAASService
 		faas.info.reviewedBy  = [name:env.USERNAME, title:env.JOBTITLE, dtSigned:currDate];
 		em.update( "faas:faas", faas );
 		
-		def faasData = em.read("faas:faas-provapproval", [ objid:faasId ]);
+		def faasData = em.read("faas:faas-list", [ objid:faasId ]);
 		if( !faasData ) throw new Exception("FAAS not found.");
 		faasData.state = FORAPPROVAL_STATE;
 		faasData.reviewedBy = env.USERNAME;
 		faasData.reviewedByPosition = env.JOBTITLE;
-		em.create("faas:faas-approval", faasData);
-		em.delete("faas:faas-provapproval", faasData);
+		em.update("faas:faas-list", faasData);
 		return faas;
 	}
 
@@ -103,35 +134,39 @@ class FAASService
 		faas.remarks = remarks;
 		faas.info.reviewedBy  = [name:env.USERNAME, title:env.JOBTITLE, dtSigned:currDate];
 		em.update( "faas:faas", faas );
-		def faasData = em.read("faas:faas-approval", [ objid:faasId ]);
+		
+		def faasData = em.read("faas:faas-list", [ objid:faasId ]);
 		if( !faasData ) throw new Exception("FAAS not found.");
 		faasData.state = PROVAPPROVAL_STATE;
-		em.create("faas:faas-returned", faasData);
-		em.delete("faas:faas-approval", faasData);
+		em.update("faas:faas-list", faasData);
 		return faas;
 	}
 	
 	@ProxyMethod
 	public def approve( faasId ) {
-
 		def faas = open( faasId );
 		if( faas.state != FORAPPROVAL_STATE) throw new Exception("FAAS is already $faas.state.");
 		
+		def faasData = em.read("faas:faas-list", [ objid:faasId ]);
+		if( !faasData ) throw new Exception("FAAS not found.");
+		
+		def newTdNo = tdService.getNextTDNo( faasData ); 
+		tdService.checkDuplicateTdNo( newTdNo );
+		
+		faasData.state = CURRENT_STATE;
+		faasData.tdNo  = newTdNo;
+		em.update("faas:faas-list", faasData);
+		
 		def currDate = dateService.getServerDate();
-		//def tdNo = tdService.getPINSequence( faasId );
-		faas.state  = CURRENT_STATE;
+		faas.state = CURRENT_STATE;
+		faas.tdNo  = newTdNo;
+		faas.info.tdNo = newTdNo;
 		faas.info.approvedBy.dtSigned = currDate;
 		faas.sys_dtApproved = currDate;
+		faas.remarks = null;
 		faas.provincialAssessor = var.provincialAssessor.name;
 		faas.provincialAssessor = var.provincialAssessor.title
 		em.update( "faas:faas", faas );
-		
-		def faasData = em.read("faas:faas-approval", [ objid:faasId ]);
-		if( !faasData ) throw new Exception("FAAS not found.");
-		faasData.state = CURRENT_STATE;
-		em.create("faas:faas-current", faasData);
-		em.delete("faas:faas-approval", faasData);
-		
 		return faas;
 	}
 	
@@ -149,29 +184,25 @@ class FAASService
 		em.create("faas:disapproved-faas", faas);
 		em.delete("faas:faas", faas);
 		
-		def faasInfo = em.read("faas:faas-approval", faas );		
-		if( faasInfo ){
-			em.create("faas:faas-disapproved", faasInfo );
-			em.delete("faas:faas-approval", faasInfo );
-		}else{
-			faasInfo = em.read("faas:faas-provapproval", faas );
-			em.create("faas:faas-disapproved", faasInfo );
-			em.delete("faas:faas-provapproval", faasInfo );
-		}
+		def faasInfo = em.read("faas:faas-list", faas );		
+		if( !faasInfo) throw new Exception("FAAS not found.");
+		em.create("faas:faas-disapproved", faasInfo );
+		em.delete("faas:faas-list", faasInfo );
 		
-		em.sqlContext.createNamedExecutor("faas:deleteForApproval").setParameters([objid:faasId]).execute();
+		//em.sqlContext.createNamedExecutor("faas:deleteForApproval").setParameters([objid:faasId]).execute();
 		return faas;
-	}
-	
-	@ProxyMethod
-	public def getCURRENTFaasByTaxpayerId( taxpayerId ) {
-		return em.sqlContext.createNamedQuery( "faas:findCURRENT-ByTaxpayerId" )
-				.setParameter( "taxpayerId", taxpayerId).resultList;
 	}
 	
 	private def getListByName( namedQuery, criteria, params ) {
 		return em.sqlContext.createNamedQuery( namedQuery )
 						.setParameters( criteria )
+						.setFirstResult( params._start )
+						.setMaxResults( params._limit )
+						.resultList;
+	}
+	
+	private def getListByVars( namedQuery, vars, values, params ) {
+		return em.sqlContext.createNamedQuery(namedQuery).setVars(vars).setParameters(values)
 						.setFirstResult( params._start )
 						.setMaxResults( params._limit )
 						.resultList;

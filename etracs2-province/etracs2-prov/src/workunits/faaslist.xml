@@ -1,13 +1,9 @@
 <workunit>
     <invokers>
-        <invoker type="home.action" target="window" action="initForReview" icon="images/faas_review.jpg"  />
-        <invoker type="home.action" target="window" action="initForApproval" icon="images/faas_approval.jpg"/>
-        <invoker type="home.action" target="window" action="initCurrent" icon="images/faas_current.jpg"  />
-        
-        <invoker folderid="/menu/file" caption="FAAS (For Review)" action="initForReview" />
-        <invoker folderid="/menu/file" caption="FAAS (For Approval)" action="initForApproval" />
-        <invoker folderid="/menu/file" caption="FAAS (Current)" action="initCurrent" />
-        <invoker type="formActions" tooltip="Open" mnemonic="o" action="open" visibleWhen="#{selectedItem.item != null}" icon="images/open24.png"/>
+        <invoker type="home.action" action="initForReview" caption="FAAS (For Review)" permission="faas.view-forreview" target="window" icon="images/faas_review.png"  />
+        <invoker type="home.action" action="initForApproval" caption="FAAS (For Approval)" permission="faas.view-forapproval" target="window" icon="images/faas_approval.png"/>
+        <invoker type="home.action" action="initCurrent" caption="FAAS (Current)" permission="faas.view-current" target="window" icon="images/faas_current.png"  />        
+        <invoker type="formActions" action="open" permission="faas.view" tooltip="Open" mnemonic="o"  visibleWhen="#{selectedItem.item != null}" icon="images/open24.png"/>
     </invokers>
     
     <code>
@@ -31,12 +27,12 @@
             @FormTitle
             def title = "FAAS for Review";
         
-            def state = "FORREVIEW";
+            def state = "PROVAPPROVAL";
             def selectedItem;
             def search = [:];
             
             public void initForReview() {
-                init( "FORREVIEW", "FAAS for Review" );
+                init( "PROVAPPROVAL", "FAAS for Review" );
             }
             
             public void initForApproval() {
@@ -90,7 +86,7 @@
             
             public def showAttachment( params ) {
                 def data = params.split("~~");
-                print "FILE NAME >> " + data[2];
+                println "FILE NAME >> " + data[2];
                 def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] );
                 opener.caption = "Attachment: " + data[1];
                 return opener;

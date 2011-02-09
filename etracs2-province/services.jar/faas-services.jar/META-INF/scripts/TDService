@@ -7,36 +7,38 @@ class TDService
 
 	@Service("SequenceService")
 	def sequenceService;
+	
+	@Service("Var")
+	def var;
 
 	@ProxyMethod
-	public def getPINSequence( faasId ) {
-		StringBuffer result = new StringBuffer();
-		int hyphenIndicator = 0; //max at 3
-		def faas = openFaas( faasId );
-		String pin = faas.rpu.info.pin + "";//"047-30-0038-001-60";
-		result.append( faas.rpu.info.ry + "-" );
-
-		for(int i=0 ; i<pin.length() ; i++) {
-		    	if(pin.charAt(i) == '-')
-		        	hyphenIndicator++;
-		    
-		    	if(hyphenIndicator == 3) {//stops at the 3rd hyphen as indicated in the pin sequence
-		        	result.append( pin.substring(0, i) );
-		        	break;
-		    	}
+	public def getNextTDNo( faasInfo ) {
+		def ry = faasInfo.ry;
+		def provinceCityIndex  = faasInfo.provinceCityIndex;
+		def municipalityIndex = faasInfo.municipalityIndex;
+		def barangayIndex = faasInfo.barangayIndex;
+		
+		def tdkey = var.td_format;
+		tdkey = tdkey.replace('Y', ry as String);
+		if( provinceCityIndex ) {
+			tdkey = tdkey.replace('P', provinceCityIndex);
+			tdkey = tdkey.replace('C', provinceCityIndex);
 		}
-		result.append( "-" + getNextTDNo( result.toString() ) );
-		return result.toString();
+		tdkey = tdkey.replace('M', municipalityIndex);
+		tdkey = tdkey.replace('B', barangayIndex);
+		def parcelNo = sequenceService.getNextFormattedSeries( tdkey );
+		
+		if( var.td_format.contains( '-') ) 
+			return tdkey + '-' + parcelNo
+		return tdkey + parcelNo;
 	}
-
+	
 	@ProxyMethod
-	public def getNextTDNo( sequence ) {
-		StringBuffer str = new StringBuffer();
-		
-		str.append( sequenceService.getNextFormattedSeries( sequence ) );
-		
-		return str.toString();
+	public void checkDuplicateTdNo( tdNo ) {
+		def faas = em.sqlContext.createNamedQuery("faas:getByTdNo").setParameter("tdNo", tdNo).singleResult;
+		if( faas ) throw new Exception("Duplicate TD No. $tdNo exists.");
 	}
+	
 
 	@ProxyMethod
 	public def openFaas( faasId ) {
