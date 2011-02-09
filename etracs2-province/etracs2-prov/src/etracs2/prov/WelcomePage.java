@@ -68,13 +68,11 @@ public class WelcomePage extends javax.swing.JPanel {
         jPanel1.setLayout(new java.awt.BorderLayout());
 
         jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(20, 60, 10, 10));
-        xActionBar1.setButtonPreferredSize(new java.awt.Dimension(200, 70));
+        xActionBar1.setButtonCaptionOrientation(javax.swing.SwingConstants.BOTTOM);
         xActionBar1.setName("formActions");
         xActionBar1.setOpaque(false);
         xActionBar1.setOrientation(com.rameses.rcp.constant.UIConstants.FLOW);
-        xActionBar1.setPreferredSize(new java.awt.Dimension(200, 25));
-        xActionBar1.setSpacing(10);
-        xActionBar1.setUseToolBar(false);
+        xActionBar1.setSpacing(25);
         jPanel1.add(xActionBar1, java.awt.BorderLayout.CENTER);
 
         jPanel3.setOpaque(false);

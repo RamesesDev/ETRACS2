@@ -1,0 +1,35 @@
+import com.rameses.annotations.*;
+
+class TaskService 
+{
+    @SqlContext("java:system")
+	def db;	
+	
+	@Service("TaskScheduler")
+	def taskSvc;
+	
+	@ProxyMethod
+	public def getList( params ) {
+		def list = db.createNamedQuery("task:getList").setFirstResult(params._start).setMaxResults(params._limit).resultList;
+		def interims = db.createNamedQuery("task:getInterimList").setFirstResult(params._start).setMaxResults(params._limit).resultList;
+		def processing = db.createNamedQuery("task:getProcessingList").setFirstResult(params._start).setMaxResults(params._limit).resultList;
+		def queued = db.createNamedQuery("task:getQueuedList").setFirstResult(params._start).setMaxResults(params._limit).resultList;
+		def suspended = db.createNamedQuery("task:getSuspendedList").setFirstResult(params._start).setMaxResults(params._limit).resultList;
+		return list + interims + suspended + processing + queued;
+	}
+	
+	@ProxyMethod
+	public def create( task ) {
+		if( !task.parameters ) task.parameters = "";
+		return taskSvc.addTask( task );
+	}
+	
+	@ProxyMethod
+	public void delete( taskId ) {
+		db.createNamedExecutor("task:deleteInterim").setParameter("taskid", taskId).execute();
+		db.createNamedExecutor("task:deleteProcessing").setParameter("taskid", taskId).execute();
+		db.createNamedExecutor("task:deleteQueued").setParameter("taskid", taskId).execute();
+		db.createNamedExecutor("task:deleteSuspended").setParameter("taskid", taskId).execute();
+		db.createNamedExecutor("task:deleteTaskById").setParameter("taskid", taskId).execute();
+	}
+}
