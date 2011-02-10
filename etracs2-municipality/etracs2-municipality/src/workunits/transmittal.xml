@@ -1,11 +1,13 @@
 <workunit>
     
     <invokers>
-        <invoker type="transmittal_municipality:open" caption="FAAS Information" action="open"/>
+        <invoker type="transmittal_municipality:quickView" action="openQuickView"/>
+        <invoker type="transmittal_municipality:open" action="open"/>
         <invoker folderid="/menu/file" caption="Transmittal" action="init"/>
-        <invoker type="formActions" caption="Close" mnemonic="c" action="_close" />
-        <invoker type="formActions" caption="Save" mnemonic="s" action="save" visibleWhen="#{bean.state == 'DRAFT'}"/>
-        <invoker type="formActions" caption="Export" mnemonic="e" action="export" visibleWhen="#{bean.state == 'ACTIVE'}"/>
+        <invoker type="formActions" tooltip="Close" mnemonic="c" action="_close" visibleWhen="#{ state == 'VIEW' }" icon="images/remove24.png"/>
+        <invoker type="formActions" tooltip="Save" mnemonic="s" action="save" visibleWhen="#{ state == 'VIEW' and bean.state == 'DRAFT'}" icon="images/save24.png"/>
+        <invoker type="formActions" tooltip="Export Transmittal" mnemonic="e" action="export" visibleWhen="#{ state == 'VIEW' and bean.state == 'ACTIVE'}" icon="images/import24.png"/>
+        <invoker type="formActions" tooltip="Import Close Transmittal" mnemonic="i" action="importTransmittal" visibleWhen="#{ state == 'VIEW' and bean.state == 'ACTIVE'}" icon="images/export24.png"/>
     </invokers>
     
     <code>
@@ -16,6 +18,7 @@
             import com.rameses.osiris2.client.*;
             import javax.swing.filechooser.*;
             import javax.swing.*;
+            import com.rameses.util.*;
             import etracs2.municipality.transmittal.TransmittalWriter;
 
             public class TransmittalController
@@ -23,6 +26,8 @@
 
                 @Binding
                 def binding;
+                
+                def state = "VIEW";
                 
                 def bean = [state:"DRAFT"];
                 def location;
@@ -70,6 +75,12 @@
                     }
                 ] as PageListModel;
                 
+                def refreshHandler = {
+                    listHandler.load();
+                    selectedItem = listHandler.selectedItem;
+                    binding.refresh();
+                }
+                
                 def init(){ return "init"; }
 
                 def save(){
@@ -77,8 +88,61 @@
                     return "default";
                 }
                 
+                def openQuickView(){
+                    open();
+                    state = "QUICKVIEW";
+                    return "quick-view";
+                }
+                
                 void open(){
+                    state = "VIEW";
                     bean = svc.open(bean.objid);
+                }
+                
+                def importTransmittal(){
+                    def jfc = new JFileChooser();
+                    def ret = jfc.showOpenDialog(null);
+                    message = "";
+                    if( ret == JFileChooser.APPROVE_OPTION ){
+                    
+                        def file = new File( jfc.selectedFile.absolutePath ); 
+                        def ois = new ObjectInputStream( new BufferedInputStream( new FileInputStream( file )));
+                        def chunk = [eof:false, transmittalId: bean.objid];
+                        def count = 0;
+                        def cancelled = false;
+                        def onExecute = {
+                            try{
+                                count += 1;
+                                def data = ois.readObject();
+                                chunk.data = data;
+                                chunk = svc.importTransmittal( chunk );
+                                message = "Importing transmittal [$count]";
+                                
+                                return chunk.eof;
+                            }catch(e){
+                                message = "ERROR: " + ExceptionManager.getOriginal( e ).message;
+                                cancelled = true;
+                                return true;
+                            }finally{
+                                binding.refresh("message");
+                            }
+                        };
+
+                        def onEnd = { 
+                            if( !cancelled ) {
+                                message = "Import successful.";
+                                binding.refresh("message");
+                            }
+                            try{ ois.close(); }catch(e){;} 
+                        };
+                        
+                        def task = new CloseTransmittalTask( onExecute:onExecute, onEnd:onEnd );
+                        OsirisContext.clientContext.taskManager.addTask( task  );
+                        
+                        return "wait";
+                    }
+                    
+                    return null;
                 }
                 
                 def export(){
@@ -88,21 +152,26 @@
                     def ret = jfc.showOpenDialog(null);
                     if( ret == JFileChooser.APPROVE_OPTION ){
                         def file = new File( jfc.selectedFile.absolutePath + File.separator + bean.docNo  ); 
-                        if( file.exists() ) {
-                            file.delete();
-                        }
+                        if( file.exists() ) file.delete();
                         
                         location = file.absolutePath;
-
-                        System.out.println( location );
 
                         def task = new TransmittalTask( caller: this, header: bean );
                         OsirisContext.clientContext.taskManager.addTask( task  );
                         return "wait";
-                    }else{
-                        return null;
                     }
+                    
+                    return null;
                 }
+            }
+            
+            class CloseTransmittalTask extends Task {
+                def onExecute;
+                def onEnd;
+                
+                public boolean accept(){ return true; }
+                public void execute(){ ended = onExecute(); }
+                public void end(){ onEnd(); }
             }
             
             class TransmittalTask extends Task{
@@ -133,7 +202,7 @@
                     try{
                        def bytes = 0;
                        
-                       chunk = caller.svc.exportService( chunk );
+                       chunk = caller.svc.exportTransmittal( chunk );
                        ended = chunk.eof;
                        
                        if( !chunk.eof ){
@@ -160,7 +229,7 @@
                 }
                 
                 public void end(){
-                    if( !cancelled ) caller.message = "Export success.";
+                    if( !cancelled ) caller.message = "Export successful.";
                     try{ writer.close(); }catch(ign){;}
                     caller.binding.refresh("message");
                 }
@@ -171,6 +240,7 @@
     
     <pages>
         <page template="etracs2.municipality.transmittal.TransmittalPage"/>
+        <page name="quick-view" template="etracs2.municipality.transmittal.TransmittalQuickViewPage"/>
         <page name="init" template="etracs2.municipality.transmittal.TransmittalInitPage"/>
         <page name="wait" template="etracs2.municipality.WaitPage"/>
     </pages>

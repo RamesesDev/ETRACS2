@@ -52,7 +52,7 @@ public class WaitPage extends javax.swing.JPanel {
                 .addContainerGap(54, Short.MAX_VALUE))
         );
 
-        xButton1.setText("OK");
+        xButton1.setText("Close");
         xButton1.setName("_default");
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);

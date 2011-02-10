@@ -10,10 +10,10 @@ package etracs2.municipality.transmittal;
  *
  * @author  prmf
  */
-public class TransmittalPage extends javax.swing.JPanel {
+public class TransmittalQuickViewPage extends javax.swing.JPanel {
     
     /** Creates new form TransimttalInitPage */
-    public TransmittalPage() {
+    public TransmittalQuickViewPage() {
         initComponents();
     }
     
@@ -24,11 +24,6 @@ public class TransmittalPage extends javax.swing.JPanel {
      */
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
-        jPanel1 = new javax.swing.JPanel();
-        xLabel5 = new com.rameses.rcp.control.XLabel();
-        jPanel3 = new javax.swing.JPanel();
-        jPanel2 = new javax.swing.JPanel();
-        xActionBar2 = new com.rameses.rcp.control.XActionBar();
         jPanel4 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
@@ -40,33 +35,7 @@ public class TransmittalPage extends javax.swing.JPanel {
 
         setLayout(new java.awt.BorderLayout());
 
-        setPreferredSize(new java.awt.Dimension(798, 534));
-        jPanel1.setLayout(new java.awt.BorderLayout());
-
-        xLabel5.setBackground(new java.awt.Color(0, 51, 153));
-        xLabel5.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 3, 3, 3));
-        xLabel5.setForeground(new java.awt.Color(255, 255, 255));
-        xLabel5.setFont(new java.awt.Font("Tahoma", 1, 18));
-        xLabel5.setName("title");
-        xLabel5.setOpaque(true);
-        jPanel1.add(xLabel5, java.awt.BorderLayout.NORTH);
-
-        jPanel3.setLayout(new java.awt.BorderLayout());
-
-        jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 1, 3, 1));
-        jPanel3.setOpaque(false);
-        jPanel3.setPreferredSize(new java.awt.Dimension(10, 30));
-        jPanel2.setLayout(new java.awt.BorderLayout());
-
-        xActionBar2.setName("formActions");
-        jPanel2.add(xActionBar2, java.awt.BorderLayout.EAST);
-
-        jPanel3.add(jPanel2, java.awt.BorderLayout.WEST);
-
-        jPanel1.add(jPanel3, java.awt.BorderLayout.CENTER);
-
-        add(jPanel1, java.awt.BorderLayout.NORTH);
-
+        setPreferredSize(new java.awt.Dimension(666, 438));
         jPanel4.setLayout(null);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -94,7 +63,7 @@ public class TransmittalPage extends javax.swing.JPanel {
         formPanel1.add(xTextField3);
 
         jPanel4.add(formPanel1);
-        formPanel1.setBounds(10, 10, 780, 110);
+        formPanel1.setBounds(10, 10, 650, 110);
 
         jPanel5.setLayout(new java.awt.BorderLayout());
 
@@ -111,7 +80,7 @@ public class TransmittalPage extends javax.swing.JPanel {
         jPanel5.add(jPanel6, java.awt.BorderLayout.CENTER);
 
         jPanel4.add(jPanel5);
-        jPanel5.setBounds(10, 130, 780, 270);
+        jPanel5.setBounds(10, 130, 650, 270);
 
         add(jPanel4, java.awt.BorderLayout.CENTER);
 
@@ -120,14 +89,9 @@ public class TransmittalPage extends javax.swing.JPanel {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.rameses.rcp.util.FormPanel formPanel1;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
-    private com.rameses.rcp.control.XActionBar xActionBar2;
-    private com.rameses.rcp.control.XLabel xLabel5;
     private com.rameses.rcp.control.XTable xTable1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;

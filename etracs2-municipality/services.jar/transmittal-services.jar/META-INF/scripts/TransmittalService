@@ -67,6 +67,8 @@ class TransmittalService
 		
 		def items = getProvinceForApprovalList([_start:0, _limit:0]);
 		
+		if( items.size() <= 0 ) throw new Exception("There is no items for transmittal");
+		
 		def transmittal = [
 			objid : objid,
 			lgu : lgu,
@@ -142,7 +144,7 @@ class TransmittalService
 	}
 	
 	@ProxyMethod
-	public def exportService( def chunk ){
+	public def exportTransmittal( def chunk ){
 
 		if( chunk.state == "TRANSMITTAL" ){
 			return exportTransmittalPart(chunk);
@@ -234,12 +236,107 @@ class TransmittalService
 		} else {
 			
 			chunk.data = open( chunk.transmittalId );
-			chunk.data.rpuCount = ((chunk.index) ? chunk.index+1 : 0);
 			chunk.index = null;
 			chunk.state = "HEADER";
+			
 		}
 		
 		return chunk;
+	}
+	
+	private def checkTransmittalPart( def chunk ){
+	
+		if( !chunk.data ){
+			throw new Exception("Invalid transmittal file or file corrupted.");
+		}
+		
+		if( !chunk.checked ){
+		
+			println (chunk.data?.type == "transmittal" && chunk.data?.status == "closed");
+		
+			if( chunk.data?.type != "transmittal" && chunk.data?.status != "closed" ){
+				throw new Exception("Invalid transmittal file or file corrupted.");
+			}
+			
+			println (chunk.transmittalId != chunk.data.transmittalId);
+			
+			if( chunk.transmittalId != chunk.data.transmittalId ){
+				throw new Exception("Invalid transmittal file or file corrupted.");
+			}
+			
+			chunk.checked = true;
+			return false;
+		}
+		
+		return true;
+	}
+	
+	@ProxyMethod
+	public def importTransmittal( def chunk ){
+	
+		if( checkTransmittalPart( chunk ) ){
+		
+			if( chunk.data.docNo ){
+				print "UPDATING TRANSMITTAL HEADER $chunk.data.docNo";
+				/*
+				em2.sqlContext.createNamedExecutor("transmittal:updateTransmittalToClose")
+				  .setParameter("transmittalId", chunk.data.objid )
+				  .execute();
+				  */
+				chunk.eof = true;
+				
+			} else{
+				print "UPATING TaxDeclaration $chunk.data.faasId";
+				
+				/*
+				em.sqlContext.createNamedExecutor( "transmittal:updateTransmittalState" )
+				  .setParameters([tdId:chunk.data.faasId, transmittalState:false])
+				  .execute();		  
+				*/
+				
+				if( chunk.data.state != 'PROVAPPROVAL' ){
+					if( chunk.data.state == 'APPROVED' ) updateApproveTransmittal( chunk.data );
+					else updateRejectTransmittal( chunk.data );
+				}
+				
+			}
+
+		}
+		return chunk;
+		
+	}
+	
+	private void updateApproveTransmittal( def item ){
+		
+		def transmittalItem = em2.read("transmittal:transmittalItem", [objid: item.objid]);
+		
+		transmittalItem.state = item.state;
+		transmittalItem.tdNo = item.tdNo;
+		transmittalIem.pin = item.pin;
+		/*
+		em2.update("transmittalItem", transmittalItem );
+		faasService.create( transmittal.faas );
+		*/
+		print "UPATING TRANSMITTAL ITEM $item.faasId";
+		print "CREATING FAAS $item.faasId";
+		print "INVOKING OLD SERVICE $item.faasId";
+		
+	}
+	
+	private void updateRejectTransmittal( def item ){
+		def transmittalItem = em2.read("transmittal:transmittalItem", [objid: item.objid]);
+		transmittalItem.state = item.state;
+		/*
+		em2.update("transmittalItem", transmittalItem );
+		em.sqlContext.createNamedExecutor("transmittal:updateTaxDeclarationState")
+		  .setParameter("tdId", item.faasId)
+		  .execute();
+		  */
+		  
+		print "UPATING TRANSMITTAL ITEM $item.faasId";
+		print "CREATING FAAS $item.faasId";
+		print "INVOKING OLD SERVICE $item.faasId";
+		  
 	}
 
 }

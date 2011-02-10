@@ -35,3 +35,12 @@ delete from transmittalItem where transmittalId = $P{transmittalId}
 
 [deleteTransmittalBtId]
 delete from transmittal where objid = $P{objid}
+
+[updateTransmittalToClose]
+update transmittal set state = 'CLOSED' 
+where objid = $P{transmittalId} 
+
+[updateTaxDeclarationState]
+UPDATE TaxDeclaration 
+SET state = 'DISAPPROVED'
+WHERE objid = $P{tdId}

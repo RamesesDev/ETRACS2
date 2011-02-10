@@ -26,13 +26,17 @@ public class TransmittalListPage extends javax.swing.JPanel {
     private void initComponents() {
         jPanel1 = new javax.swing.JPanel();
         xLabel5 = new com.rameses.rcp.control.XLabel();
+        jPanel3 = new javax.swing.JPanel();
+        jSplitPane1 = new javax.swing.JSplitPane();
+        jPanel4 = new javax.swing.JPanel();
+        xSubFormPanel1 = new com.rameses.rcp.control.XSubFormPanel();
+        xActionBar2 = new com.rameses.rcp.control.XActionBar();
+        jPanel6 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
         jPanel5 = new javax.swing.JPanel();
         xTextField7 = new com.rameses.rcp.control.XTextField();
         xButton1 = new com.rameses.rcp.control.XButton();
         jLabel1 = new javax.swing.JLabel();
-        xActionBar1 = new com.rameses.rcp.control.XActionBar();
-        jPanel4 = new javax.swing.JPanel();
         xTable1 = new com.rameses.rcp.control.XTable();
 
         setLayout(new java.awt.BorderLayout());
@@ -48,6 +52,38 @@ public class TransmittalListPage extends javax.swing.JPanel {
         xLabel5.setOpaque(true);
         jPanel1.add(xLabel5, java.awt.BorderLayout.NORTH);
 
+        add(jPanel1, java.awt.BorderLayout.NORTH);
+
+        jPanel3.setLayout(new java.awt.BorderLayout());
+
+        com.rameses.rcp.control.border.XLineBorder xLineBorder1 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder1.setLineColor(new java.awt.Color(153, 153, 153));
+        jSplitPane1.setBorder(xLineBorder1);
+        jSplitPane1.setDividerLocation(350);
+        jSplitPane1.setOneTouchExpandable(true);
+        jPanel4.setLayout(new java.awt.BorderLayout());
+
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder1.setTitle("Document View");
+        jPanel4.setBorder(xTitledBorder1);
+        xSubFormPanel1.setDepends(new String[] {"selectedItem"});
+        xSubFormPanel1.setDoubleBuffered(false);
+        xSubFormPanel1.setDynamic(true);
+        xSubFormPanel1.setHandler("formHandler");
+        jPanel4.add(xSubFormPanel1, java.awt.BorderLayout.CENTER);
+
+        xActionBar2.setDepends(new String[] {"selectedItem"});
+        xActionBar2.setName("formActions");
+        jPanel4.add(xActionBar2, java.awt.BorderLayout.NORTH);
+
+        jSplitPane1.setRightComponent(jPanel4);
+
+        jPanel6.setLayout(new java.awt.BorderLayout());
+
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder2.setTitle("List View");
+        jPanel6.setBorder(xTitledBorder2);
+        jPanel6.setPreferredSize(new java.awt.Dimension(250, 100));
         jPanel2.setLayout(new java.awt.BorderLayout());
 
         jPanel2.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 1, 3, 1));
@@ -72,25 +108,17 @@ public class TransmittalListPage extends javax.swing.JPanel {
 
         jPanel2.add(jPanel5, java.awt.BorderLayout.WEST);
 
-        xActionBar1.setDepends(new String[] {"selectedItem"});
-        xActionBar1.setName("formActions");
-        xActionBar1.setUseToolBar(false);
-        jPanel2.add(xActionBar1, java.awt.BorderLayout.CENTER);
+        jPanel6.add(jPanel2, java.awt.BorderLayout.NORTH);
 
-        jPanel1.add(jPanel2, java.awt.BorderLayout.SOUTH);
-
-        add(jPanel1, java.awt.BorderLayout.NORTH);
-
-        jPanel4.setLayout(new java.awt.BorderLayout());
-
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("List View");
-        jPanel4.setBorder(xTitledBorder1);
-        xTable1.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
         xTable1.setHandler("listHandler");
-        jPanel4.add(xTable1, java.awt.BorderLayout.CENTER);
+        xTable1.setName("selectedItem");
+        jPanel6.add(xTable1, java.awt.BorderLayout.CENTER);
 
-        add(jPanel4, java.awt.BorderLayout.CENTER);
+        jSplitPane1.setLeftComponent(jPanel6);
+
+        jPanel3.add(jSplitPane1, java.awt.BorderLayout.CENTER);
+
+        add(jPanel3, java.awt.BorderLayout.CENTER);
 
     }// </editor-fold>//GEN-END:initComponents
     
@@ -99,11 +127,15 @@ public class TransmittalListPage extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
-    private com.rameses.rcp.control.XActionBar xActionBar1;
+    private javax.swing.JPanel jPanel6;
+    private javax.swing.JSplitPane jSplitPane1;
+    private com.rameses.rcp.control.XActionBar xActionBar2;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XLabel xLabel5;
+    private com.rameses.rcp.control.XSubFormPanel xSubFormPanel1;
     private com.rameses.rcp.control.XTable xTable1;
     private com.rameses.rcp.control.XTextField xTextField7;
     // End of variables declaration//GEN-END:variables

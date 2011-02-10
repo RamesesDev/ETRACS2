@@ -1,7 +1,7 @@
 <workunit>
     <invokers>
         <invoker folderid="/menu/file" caption="Transmittal List" />
-        <invoker type="formActions" caption="Open" mnemonic="o" action="open" visibleWhen="#{selectedItem.item != null}" />
+        <invoker type="formActions" tooltip="Open" mnemonic="o" action="open" visibleWhen="#{selectedItem.item != null}" icon="images/open24.png"/>
     </invokers>
     
     <code>
@@ -18,15 +18,17 @@
             
             @Binding
             def binding;
-        
+            
             def title = "Transmittal List";
+            
+            public def getFormHandler(){
+                if( selectedItem?.item != null )
+                    return InvokerUtil.lookupOpener( "transmittal_municipality:quickView", [bean:selectedItem.item] );
+                return null;
+            }
             
             def selectedItem;
             def search = [:];
-            
-            public def open() {
-                doOpen( selectedItem.item );
-            }
             
             public void doSearch() {
                 listHandler.load();
@@ -43,16 +45,17 @@
                     ]
                 },
                 
-                fetchList  : { 
-                    return svc.getList( search, it ); 
-                },
-                
-                onOpenItem : { item, colname -> doOpen( item ) },
+                fetchList  : { return svc.getList( search, it ); },
+                onOpenItem : { item, colname -> return doOpen( item ); }
                 
             ] as PageListModel;
             
-            def doOpen( item ) {
-                return InvokerUtil.lookupOpener("transmittal_municipality:open", [bean:item] );
+            def open(){
+                return doOpen( selectedItem.item );
+            }
+            
+            def doOpen( def item ){
+                return InvokerUtil.lookupOpener( "transmittal_municipality:open", [bean:item] );
             }
         }
         

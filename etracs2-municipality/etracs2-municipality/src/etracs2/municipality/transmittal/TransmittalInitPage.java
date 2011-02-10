@@ -57,7 +57,6 @@ public class TransmittalInitPage extends javax.swing.JPanel {
         jPanel2.setLayout(new java.awt.BorderLayout());
 
         xActionBar2.setName("formActions");
-        xActionBar2.setUseToolBar(false);
         jPanel2.add(xActionBar2, java.awt.BorderLayout.EAST);
 
         jPanel3.add(jPanel2, java.awt.BorderLayout.WEST);
