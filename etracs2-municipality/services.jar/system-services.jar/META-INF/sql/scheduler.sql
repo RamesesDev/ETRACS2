@@ -4,7 +4,7 @@ values ($P{taskid}, $P{scriptname}, $P{method},$P{startdate},$P{enddate},$P{dura
 
 [start-task]
 insert into task_queue (taskid, expirydate, dtfiled)  
-select t.taskid, t.startdate, GETDATE() from task_info t where t.taskid = ?   
+select t.taskid, t.startdate, NOW() from task_info t where t.taskid = ?   
 
 [suspend-task]
 insert into task_suspended (taskid) values (?) 
@@ -22,12 +22,12 @@ insert into task_taskid select 1
 select taskid from task_taskid
 
 [add-queue]
-insert into task_queue (taskid, expirydate,dtfiled) values (?,?,GETDATE())
+insert into task_queue (taskid, expirydate,dtfiled) values (?,?,NOW())
 
 [list-queue]
 select t.taskid, q.expirydate 
 from task_info t inner join task_queue q on t.taskid = q.taskid 
-and q.expirydate <= GETDATE() 
+and q.expirydate <= NOW() 
 and  not exists (select taskid from task_suspended where taskid=q.taskid)  
 and exists (select taskid from task_info where taskid=q.taskid and (allowedhost is null or allowedhost like '%${host}%' ) ) 
 
@@ -44,7 +44,7 @@ where q.machineid=?
 
 [transfer-interim-to-processing]
 insert into task_processing (taskid, machineid, processdate, processhost) 
-select t.taskid, q.machineid, GETDATE(), q.processhost  
+select t.taskid, q.machineid, NOW(), q.processhost  
 from task_interim q inner join task_info t on t.taskid=q.taskid 
 where t.taskid=? 
 

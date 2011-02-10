@@ -35,9 +35,11 @@ class FAASInterceptor
 	public void interceptApprove( evt ) {
 		def faas = evt.result;
 
+		/*
 		tdService.post( evt.result );
 		logService.log("GENERATE", "TD", faas.objid);
 		logService.log("APPROVE", "FAAS", faas.objid);
+		*/
 		
 		transmittalService.updateItemStateToCurrent(faas.transmittalId, faas.objid);
 		taxpayerService.postMunicipalTaxpayer( 
@@ -62,6 +64,7 @@ class FAASInterceptor
 	
 	private void approveRemoteFaas( faas ) {
 		if( faas.transmittalId != "system" ) return; 
+		println "FAASInterceptor: approveRemoteFaas";
 		def params = [
 			DOMAIN 	 : faas.rp.muniDistrictIndex,
 			USERNAME : (env.USERNAME == null ? 'SYSTEM' : env.USERNAME),
@@ -69,6 +72,8 @@ class FAASInterceptor
 			txnType  : faas.info.txnType,
 			tdNo     : faas.tdNo,
 			pin      : faas.rp.info.pin,
+			issueDate  : faas.sys_dtApproved,
+			approvedBy : faas.info.approvedBy,
 		];
 		remoteService.approve( params );		
 		logService.log("APPROVEREMOTE", "FAAS", faas.objid);

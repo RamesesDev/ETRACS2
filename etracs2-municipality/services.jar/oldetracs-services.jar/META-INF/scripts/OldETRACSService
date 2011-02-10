@@ -2,9 +2,9 @@ import com.rameses.annotations.*;
 import com.rameses.invoker.client.*;
 import com.rameses.etracs1.invoker.*;
 
-class OldETRACSService {
+class OldETRACSService 
+{
 
-	
 	@Service("Var")
 	def var;
 	
@@ -13,34 +13,27 @@ class OldETRACSService {
 	
 	@ProxyMethod
 	public void approveTaxDeclaration( params ) {
-		if (acceptMsg( params ) ) {
-			invokeRPTService("approveTaxDeclaration", [ params.DOMAIN, params.USERNAME, params.txnType, params.faasId, params.tdNo, params.pin]);
-			faasSvc.approve( params.faasId, params.USERNAME, params.tdNo, params.pin );
-		}
+		println "OldETRACSService:approveTaxDeclaration -> $params.tdNo";
+		invokeRPTService("approveTaxDeclaration", [params]);
+		faasSvc.approve( params.faasId, params.USERNAME, params.tdNo, params.pin, params.issueDate, params.approvedBy );
+		println "OldETRACSService:approveTaxDeclaration successful...";
 	}
 	
 	@ProxyMethod
 	public def findLedgerByTdId2( params ) {
-		if ( acceptMsg( params ) ) {
-			return invokeRPTService( "findLedgerByTdId" , [ params.faasId ] );
-		}
+		return invokeRPTService( "findLedgerByTdId" , [ params.faasId ] );
 	}
-	
 	
 	private def invokeRPTService( methodName, params ) {
 		return invokeService("remote/RemoteRPTService", methodName, params as Object[]);
 	}
 
 	private def invokeService( serviceName, methodName, params ) {
-		def invoker = new HttpServiceInvoker( var.version1_host, null );
+		def invoker = new HttpServiceInvoker( var.etracs_version1_host, null );
 		def svc = invoker.create( serviceName );
 		return svc.invoke( methodName, params );
 	}
 	
 	
-	private def acceptMsg( params ) {
-		return true;
-		return ( params.DOMAIN == var.lgu_name );
-	}
 	
 }

@@ -1,2 +1,2 @@
 [getCurrentDate]
-SELECT SELECT GETDATE()
+SELECT NOW()
