@@ -30,6 +30,23 @@ class LguService
 		if ( !province ) return null;
 		return em.read("lgu:province", [objid:province.objid]);
 	}
+    
+    @ProxyMethod
+    public def getMunicipalityList( searchText ) {
+        def province = openProvince();
+        if( ! province ) throw new Exception("Province not defined.");
+        def munis = province.municipalities;
+        if( searchText ) {
+            munis = province.municipalities.findAll { muni ->
+                muni.name.startsWith( searchText );
+            };
+        }
+        munis.each {
+            it.barangays.clear();
+        }
+        return munis;
+        
+    }
 	
 	private def existsProvince( ) {
 		def data = em.sqlContext.createNamedQuery("lgu:getProvinceId").resultList;

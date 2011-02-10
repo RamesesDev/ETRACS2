@@ -12,14 +12,23 @@ class OldETRACSService {
 	def faasSvc;
 	
 	@ProxyMethod
-	public void approveTaxDeclaration( msgParams, faasId, txnType, tdNo, pin ) {
-		if (! acceptMsg( msgParams ) ) return null;
-		invokeRPTService("approveTaxDeclaration", [ msgParams.DOMAIN, msgParams.USERNAME, txnType, faasId, tdNo, pin]);
-		faasSvc.approve( faasId, msgParams.USERNAME, tdNo, pin );
+	public void approveTaxDeclaration( params ) {
+		if (acceptMsg( params ) ) {
+			invokeRPTService("approveTaxDeclaration", [ params.DOMAIN, params.USERNAME, params.txnType, params.faasId, params.tdNo, params.pin]);
+			faasSvc.approve( params.faasId, params.USERNAME, params.tdNo, params.pin );
+		}
 	}
 	
+	@ProxyMethod
+	public def findLedgerByTdId2( params ) {
+		if ( acceptMsg( params ) ) {
+			return invokeRPTService( "findLedgerByTdId" , [ params.faasId ] );
+		}
+	}
+	
+	
 	private def invokeRPTService( methodName, params ) {
-		return invokeService("rpt/RemoteRPTService", methodName, params);
+		return invokeService("remote/RemoteRPTService", methodName, params as Object[]);
 	}
 
 	private def invokeService( serviceName, methodName, params ) {
@@ -29,8 +38,9 @@ class OldETRACSService {
 	}
 	
 	
-	private def acceptMsg( msgParams ) {
-		return ( msgParams.DOMAIN == var.lgu_name );
+	private def acceptMsg( params ) {
+		return true;
+		return ( params.DOMAIN == var.lgu_name );
 	}
 	
 }

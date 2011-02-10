@@ -49,7 +49,10 @@ class FaasService
 	
 	@ProxyMethod
 	public def approve( faasId, userName, tdNo, pin ) {
+		println "APPROVING FAAS";
 		def faas = em2.read("faas:faas", [objid:faasId]);
+		if( !faas ) throw new Exception("FAAS not found.");
+		if( faas.state == CURRENT_STATE) throw new Exception("FAAS has already been approved.");
 		
 		faas.state       = CURRENT_STATE;
 		faas.tdNo        = tdNo;
@@ -59,7 +62,7 @@ class FaasService
 			faas.rpu.info.pin = pin 
 		else
 			faas.rpu.info.pin = pin + '-' + faas.rpu.info.suffix
-	
+			
 		em2.update("faas:faas", faas);
 	}
     

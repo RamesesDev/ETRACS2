@@ -51,13 +51,18 @@ class FAASAttachmentService {
 		def file = findFile( fileName );
 		if ( !file ) throw new Exception("File not found.");
 		
-		def ftis = new FileTransferInputStream( file, info );
-		if (!info)
-			ftis.fileTransferInfo.tempFileName = replaceSpecialChar( "TMP" + new UID() );
+		def ftis = new FileTransferInputStream( file );
+		/*def ftis = new FileTransferInputStream( file, info );
+		if (!info){
+			println "======================================";
+			ftis.fileTransferInfo.tempFileName = replaceSpecialChar( "TMP" +  new UID() );
+		}*/
+
 		ftis.byteSize = 1024 * 32;
 		def data = [
 			bytes : ftis.readNext()
 		];
+
 		ftis.fileTransferInfo.save();
 		data.info = ftis.fileTransferInfo;
 		
@@ -65,30 +70,9 @@ class FAASAttachmentService {
 			ftis.fileTransferInfo.delete();
 			
 		ftis.close();
-		return data;
-		} catch (ex) { ex.printStackTrace(); throw ex; }
+		return data;	
+		} catch ( ex ) { ex.printStackTrace(); throw ex; }
 	}
-	
-	/*@ProxyMethod
-	public def downloadAttachment2( objid, info ) {
-		def file = findFile( objid );
-		if ( !file ) throw new Exception("File not found.");
-		
-		def ftis = new FileTransferInputStream( file, info );
-		ftis.byteSize = 1024 * 32;
-		def data = [
-			bytes : ftis.readNext()
-		];
-		ftis.fileTransferInfo.tempFileName = "TMP" + new UID();
-		ftis.fileTransferInfo.save();
-		data.info = ftis.fileTransferInfo;
-		
-		if (ftis.fileTransferInfo.eof)
-			ftis.fileTransferInfo.delete();
-			
-		ftis.close();
-		return data;		
-	}*/
 	
 	private def findFile( fileName ) {
 		try {

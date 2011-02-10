@@ -58,16 +58,11 @@ public class TransmittalPage extends javax.swing.JPanel {
 
         jPanel3.setLayout(new java.awt.BorderLayout());
 
-        jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 1, 3, 1));
         jPanel3.setOpaque(false);
-        jPanel3.setPreferredSize(new java.awt.Dimension(10, 40));
         jPanel2.setLayout(new java.awt.BorderLayout());
 
-        xActionBar2.setButtonBorderPainted(false);
-        xActionBar2.setButtonContentAreaFilled(false);
         xActionBar2.setDepends(new String[] {"selectedItem"});
         xActionBar2.setName("formActions");
-        xActionBar2.setUseToolBar(false);
         jPanel2.add(xActionBar2, java.awt.BorderLayout.EAST);
 
         jPanel3.add(jPanel2, java.awt.BorderLayout.WEST);
@@ -84,12 +79,8 @@ public class TransmittalPage extends javax.swing.JPanel {
         xTitledBorder1.setTitle("Quick View");
         xTitledBorder1.setTitlePadding(new java.awt.Insets(2, 5, 2, 5));
         jScrollPane1.setBorder(xTitledBorder1);
-        xActionBar1.setButtonBorderPainted(false);
-        xActionBar1.setButtonContentAreaFilled(false);
         xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setName("itemActions");
-        xActionBar1.setPreferredSize(new java.awt.Dimension(82, 40));
-        xActionBar1.setUseToolBar(false);
 
         xEditorPane1.setDepends(new String[] {"selectedItem"});
         xEditorPane1.setName("html");
@@ -98,27 +89,25 @@ public class TransmittalPage extends javax.swing.JPanel {
         jPanel6.setLayout(jPanel6Layout);
         jPanel6Layout.setHorizontalGroup(
             jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(xEditorPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 339, Short.MAX_VALUE)
+            .add(xEditorPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 361, Short.MAX_VALUE)
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel6Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(xEditorPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE))
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, xEditorPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 317, Short.MAX_VALUE)
         );
 
         org.jdesktop.layout.GroupLayout jPanel5Layout = new org.jdesktop.layout.GroupLayout(jPanel5);
         jPanel5.setLayout(jPanel5Layout);
         jPanel5Layout.setHorizontalGroup(
             jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 339, Short.MAX_VALUE)
+            .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 361, Short.MAX_VALUE)
             .add(jPanel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         jPanel5Layout.setVerticalGroup(
             jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel5Layout.createSequentialGroup()
                 .add(xActionBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(279, Short.MAX_VALUE))
+                .addContainerGap(322, Short.MAX_VALUE))
             .add(jPanel5Layout.createSequentialGroup()
                 .add(26, 26, 26)
                 .add(jPanel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -173,8 +162,8 @@ public class TransmittalPage extends javax.swing.JPanel {
             .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 421, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, xTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 421, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 425, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, xTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 425, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -182,7 +171,7 @@ public class TransmittalPage extends javax.swing.JPanel {
             .add(jPanel1Layout.createSequentialGroup()
                 .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 206, Short.MAX_VALUE)
+                .add(xTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 226, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jSplitPane1.setLeftComponent(jPanel1);

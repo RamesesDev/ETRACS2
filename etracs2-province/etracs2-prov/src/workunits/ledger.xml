@@ -1,0 +1,100 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/file" action="initLedger" permission="rptledger.view" caption="Real Property Ledger"  />
+        <invoker type="navigationActions" action="viewPayments" permission="rptledger.view-payment" caption="View Payments"  />
+        <invoker type="navigationActions" action="viewBilling" permission="rptledger.view-billing" caption="View Billing"  />
+    </invokers>
+    
+    <code>
+        
+        <![CDATA[
+
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.common.*;
+        import com.rameses.annotations.*;
+
+        public class LedgerController
+        {
+            
+            @Env
+            def env;
+        
+            @Binding
+            def binding;
+            
+            @Service("RPTLedgerService")
+            def ledgerSvc;
+            
+            @Service("RemoteRPTLedgerService")
+            def remoteSvc;
+            
+            def bean = [
+                taxpayer : [:]
+            ];
+            
+            def html;
+            def title;
+            def ledger;
+            
+            def tdListhandler = [
+                getRows    : { return 10; },
+                
+                getColumns : {
+                    return [
+                        new Column( name:"item.tdNo", caption:"TD No.", width:120),
+                        new Column( name:"item.pin", caption:"PIN", width:150),
+                        new Column( name:"item.txnType", caption:"Txn Type", width:80 )
+                    ]
+                },
+                
+                fetchList  : { 
+                    if (! bean.taxpayer ) return [];
+                    return ledgerSvc.findTdByTaxpayerId( bean.taxpayer.objid );  
+                }
+            
+            ] as PageListModel;
+            
+            def selectTaxpayerHandler = { selectedTaxpayer ->
+                bean.taxpayer = selectedTaxpayer;
+                binding.refresh();
+            };
+            
+            public def lookupTaxpayer() {
+                return InvokerUtil.lookupOpener("provincialtaxpayer:lookup", [textSearch:bean.taxpayer.name, onselect:selectTaxpayerHandler]);
+            }
+            
+            public def initLedger() {
+                title = "Real Property Ledger";
+                return "main";
+            }
+            
+            def handler = { o->
+                ledger = o.value;
+            } as AsyncHandler;
+            
+            public void viewPayments() {
+                if (!tdListhandler.selectedItem) throw Exception("Please select TaxDeclaration to view.");
+                def params = [
+			DOMAIN 	 : (env?.DOMAIN == null ? 'LOON' : env?.DOMAIN),
+			USERNAME : (env?.USERNAME == null ? 'SYSTEM' : env?.USERNAME),
+			faasId	 : tdListhandler.selectedItem.item.objid
+		];
+               remoteSvc.findLedger( params, handler );
+            }
+            
+            public def viewBilling() {
+                return "view";
+            }
+            
+        }
+
+        ]]>
+    </code>
+    
+    <pages>
+        <page name="main" template="etracs2.prov.ledger.LedgerInitPage"/>
+        <page name="view" template="etracs2.prov.ledger.LedgerViewPage"/>
+    </pages>
+</workunit>

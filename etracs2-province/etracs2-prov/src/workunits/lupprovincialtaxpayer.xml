@@ -1,0 +1,55 @@
+<workunit>
+    <invokers>
+        <invoker type="provincialtaxpayer:lookup" caption="Provincial Taxpayer Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+        <![CDATA[
+
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+
+        class ProvincialTaxpayerLookupController 
+        {
+            @Service("TaxpayerService")
+            def svc;
+
+            def LGUTYPE = "PROVINCE";
+            def onselect;
+            def textSearch;
+            def selectedItem;
+
+            def ok() {
+                if( onselect ) {
+                    onselect( selectedItem.item );
+                }
+                return "_close";
+            }
+
+            def listHandler = [
+                getRows    : { return 25; },
+                getColumns : {
+                    return [
+                        new Column(name:"item.name", caption:"Name", width:350),
+                        new Column(name:"item.address", caption:"Address", width:200),
+                    ]
+                },
+                fetchList : { 
+                        def search = [ textSearch:textSearch, lguType:LGUTYPE ];
+                        def list = svc.getList(search, it);
+                        if( list ) return list;
+                        throw new Exception("Records not found.");
+                },
+            ] as PageListModel;
+        }  
+
+
+        ]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.LookupPage"/>
+    </pages>
+</workunit>

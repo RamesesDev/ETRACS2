@@ -1,0 +1,61 @@
+import com.rameses.scripting.annotations.*;
+import com.rameses.tracs.rpt.domain.TxnType;
+
+public class RemoteRPTService {
+
+	@Script("rpt/TDService")
+	def tdService;
+	
+	@Script("rpt/RPTLedgerService")
+	def ledgerService;
+	
+	@ProxyMethod
+	public def test( params ) {
+		return "MSG >> " + params;
+	}
+	
+	@ProxyMethod
+	public void approveTaxDeclaration( domain, userName, txnType, faasId, tdNo, pin ) {
+		tdService.approveTaxDeclaration( domain, userName, TxnType.valueOf( txnType ), faasId );
+	}
+	
+	@ProxyMethod
+	public def findLedgerByTdId( tdId ) {
+		try {
+		def ledger = ledgerService.findLedgerByTdId( tdId );
+		println "LEDGER >>> " + ledger;
+		def ledgerData = buildLedgerData( ledger );
+		
+		return ledgerData;
+		} catch (ex) { ex.printStackTrace(); }
+	}
+	
+	private def buildLedgerData( ledger ) {
+		return [
+			objid			: ledger.objid,
+			state			: ledger.state.toString(),
+			lastYearPaid	: ledger.lastYearPaid,
+			lastQtrPaid		: ledger.lastQtrPaid,
+			assessedValue   : ledger.assessedValue,
+			credits			: buildCredits( ledger )
+		];
+	}
+	
+	private def buildCredits( ledger ) {
+		def credits = [];
+		ledger.credits.each { item ->
+			credits += [
+				period 			: item.fromQtr + "QTR, " + item.fromYear + " - " + item.toQtr + "QTR, " + item.toYear,
+				basic			: item.basic,
+				basicInterest 	: item.basicInterest,
+				basicDiscount	: item.basicDiscount,
+				sef				: item.sef,
+				sefInterest		: item.sefInterest,
+				sefDiscount		: item.sefDiscount,
+				amount			: item.amount
+			];
+		}
+		return credits;
+	}
+	
+}

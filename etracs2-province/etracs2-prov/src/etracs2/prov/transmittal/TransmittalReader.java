@@ -34,7 +34,6 @@ public class TransmittalReader {
         if( !this.file.exists() ) throw new Exception("Not valid a transmittal folder.");
         
         files = attachments.listFiles();
-        
     }
     
     private void open() throws Exception{
