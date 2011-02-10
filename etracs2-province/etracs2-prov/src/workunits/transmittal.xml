@@ -1,7 +1,7 @@
 <workunit>
     <invokers>
         <invoker type="formActions" tooltip="Close" mnemonic="c" action="_close" icon="images/remove24.png" />
-        <invoker type="itemActions" tooltip="Incomplete Requirements" mnemonic="e" action="doIncomplete" visibleWhen="#{selectedItem != null}" icon="images/cancel24.png"/>
+        <invoker type="itemActions" tooltip="Incomplete Requirements" mnemonic="e" action="doIncomplete" visibleWhen="#{selectedItem != null &amp;&amp; state=='RECEIVED'}" icon="images/cancel24.png"/>
         <invoker type="formActions" tooltip="Submit to Reviewer" mnemonic="s" action="submit" visibleWhen="#{state == 'RECEIVED'}"  icon="images/next24.png"/>
     </invokers>
     
@@ -45,9 +45,7 @@
             public def getHtml() {
                 if( selectedItem?.item ) {
                     if( ! selectedItem.item.html ) {
-                        System.out.println("getHtml");
                         selectedItem.item.html = svc.getItemHtml( selectedItem.item.objid );
-                        System.out.println("done getHtml");
                     }
                     return selectedItem.item.html;
                 }

@@ -260,4 +260,53 @@ class TransmittalService
 		return chunk;
 	}
 	
+	@ProxyMethod
+	public def exportTransmittal( def chunk ){
+
+		if( chunk.index == null ){
+			chunk.index = 0;
+			chunk.hasNext = true;
+			chunk.eof = false;
+			chunk.data = [type:"transmittal", status:"closed", version:"1.0", transmittalId:chunk.transmittalId];
+			return chunk;
+		}
+		
+		def idList = [];
+		
+		if( chunk.hasNext ){
+			idList = em.sqlContext.createNamedQuery("transmittal:getTransmittalItemIdByParentId")
+		               .setParameter("transmittalid", chunk.transmittalId )
+					   .resultList;
+		}
+		
+		chunk.hasNext = ( chunk.index < (idList.size() - 1) );
+		
+		if( idList ){
+			def item = em.sqlContext.createNamedQuery("transmittal:getTransmittalItem")
+						 .setParameter("objid", idList[chunk.index].objid)
+						 .singleResult;
+			
+			chunk.data = [
+				transmittalId: item.transmittalId,
+				objid: item.objid,
+				faasId: item.faasId,
+				state: item.state,
+				pin: item.pin,
+				tdNo: item.tdNo,
+				remarks: item.remarks
+			];
+			
+			chunk.index = (chunk.index + 1);
+			chunk.eof = false;
+			
+		}else{
+
+			chunk.data = em.read("transmittal:transmittal", [objid:chunk.transmittalId]);
+			chunk.eof = true;
+
+		}
+		
+		return chunk;
+	}
+	
 }

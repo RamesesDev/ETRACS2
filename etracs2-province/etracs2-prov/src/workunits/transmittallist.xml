@@ -3,8 +3,10 @@
         <invoker folderid="/menu/file" caption="Transmittal (Received)" action="initReceived" />
         <invoker folderid="/menu/file" caption="Transmittal (Submitted)" action="initSubmitted" />
         <invoker folderid="/menu/file" caption="Transmittal (Closed)" action="initClosed" />
+        
         <invoker type="formActions" tooltip="Open" mnemonic="o" action="open" visibleWhen="#{selectedItem.item != null}" icon="images/open24.png"/>
-        <invoker type="formActions" tooltip="Delete" mnemonic="d" action="delete" visibleWhen="showDelete" icon="images/delete24.png"/>
+        <invoker type="formActions" tooltip="Delete" mnemonic="d" action="delete" visibleWhen="#{selectedItem.item != null and state == 'RECEIVED'}" icon="images/delete24.png"/>
+        <invoker type="formActions" caption="Export" mnemonic="e" action="export" visibleWhen="#{selectedItem.item != null and state == 'CLOSED'}" icon="images/export24.png"/>
     </invokers>
     
     <code>
@@ -12,11 +14,17 @@
         
         import com.rameses.rcp.common.*;
         import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import javax.swing.filechooser.*;
+        import javax.swing.*;
+        import com.rameses.util.*;
         
         public class TransmittalListController 
         {
             @Service("TransmittalService")
             def svc;
+            
+            def message;
             
             @Service("TransmittalHtmlService")
             def htmlService;
@@ -93,10 +101,6 @@
                 doInit( "CLOSED", "List of Closed Transmittals" );
             }
             
-            public def getShowDelete() {
-                return selectedItem.item == null || state == 'SUBMITTED';
-            }
-            
             private void doInit( state, title ) {
                 this.state = state;
                 this.title = title;
@@ -106,9 +110,62 @@
                 return new WindowOpener( name:"transmittal", caption:"Transmittal ($item.docNo)", params:[transmittal:item, state:item.state, listRefreshHandler:refreshHandler] );
             }
             
+            public def export(){
+
+                def jfc = new JFileChooser();
+                jfc.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY;
+                jfc.acceptAllFileFilterUsed = false;
+                def ret = jfc.showOpenDialog(null);
+                
+                if( ret == JFileChooser.APPROVE_OPTION ){
+                
+                    def file = new File( jfc.selectedFile.absolutePath + File.separator + "C-" + selectedItem.item.objid  ); 
+                    def oos = new ObjectOutputStream( new BufferedOutputStream( new FileOutputStream( file )));
+                    
+                    def chunk = [transmittalId:selectedItem.item.objid];
+                    def count = 0;
+                    def cancelled = false;
+                    def onExecute = {
+                        try{
+                            count += 1;
+                            chunk = svc.exportTransmittal( chunk );
+                            System.out.println( chunk.data );
+                            oos.writeObject( chunk.data );
+                            message = "Exporting transmittal [$count]";
+                            return chunk.eof;
+                        }catch(e){
+                            cancelled = true;
+                            message = "ERROR: " + ExceptionManager.getOriginal( e ).message;
+                            return true;
+                        }finally{
+                            binding.refresh("message");
+                        }
+                    };
+
+                    def onEnd = { 
+                        if( !cancelled ){
+                            message = "Export successful.";
+                            binding.refresh("message");
+                        }
+                        try{ oos.close(); }catch(e){;} 
+                    };
+
+                    def task = new ExportTransmittal( onExecute:onExecute, onEnd:onEnd );
+                    OsirisContext.clientContext.taskManager.addTask( task  );
+
+                    return "wait";
+                }
+            }
             
+        }
+        
+        class ExportTransmittal extends Task{
+            def onExecute;
+            def onEnd;
             
-            
+            public boolean accept(){ return true; }
+            public void execute(){ ended = onExecute(); }
+            public void end(){ onEnd(); };
         }
         
         ]]>
@@ -117,5 +174,6 @@
     
     <pages>
         <page template="etracs2.prov.ListPage"/>
+        <page template="etracs2.prov.FileDownloadPage" name="wait"/>
     </pages>
 </workunit>

@@ -31,7 +31,7 @@ public class TransmittalReader {
     private void check() throws Exception {
         if( !this.folder.exists() ) throw new Exception("Transmittal folder not found.");
         if( !this.attachments.exists() ) throw new Exception("Not valid a transmittal folder.");
-        if( !this.file.exists() ) throw new Exception("Not valid a transmittak folder.");
+        if( !this.file.exists() ) throw new Exception("Not valid a transmittal folder.");
         
         files = attachments.listFiles();
         

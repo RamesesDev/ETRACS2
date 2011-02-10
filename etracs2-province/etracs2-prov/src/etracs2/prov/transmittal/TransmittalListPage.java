@@ -71,7 +71,7 @@ public class TransmittalListPage extends javax.swing.JPanel {
         xTitledBorder2.setTitle("Quick View");
         xTitledBorder2.setTitlePadding(new java.awt.Insets(2, 5, 2, 5));
         jScrollPane1.setBorder(xTitledBorder2);
-        xEditorPane1.setDepends(new String[] {"selectedItem"});
+        xEditorPane1.setDepends(new String[] {"selectedItem", "state"});
         xEditorPane1.setName("html");
         jScrollPane1.setViewportView(xEditorPane1);
 

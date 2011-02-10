@@ -75,3 +75,6 @@ DELETE FROM transmittalattachment where refId = $P{faasId}
 
 [getAttachmentsByRefId]
 SELECT * FROM transmittalattachment where refId = $P{refId}
+
+[getTransmittalItemForProvApproval]
+SELECT * FROM transmittalitem WHERE transmittalid = $P{transmittalId} and state = 'PROVAPPROVAL' 
