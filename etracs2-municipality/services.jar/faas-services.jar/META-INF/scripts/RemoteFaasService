@@ -2,26 +2,39 @@ import com.rameses.annotations.*;
 
 public class RemoteFaasService {
 
-	@Service("OldETRACSService")
-	def oldService;
+	@Service("ETRACSIntegrationService")
+	def integration;
+	
+	@Service("ETRACSUtilService")
+	def util;
+	
+	@Service("Var")
+	def var;
 	
 	@ProxyMethod
 	@Async(type="topic")
-	public def approve( params ) {
-		if ( ! acceptMsg( params ) ) return null;
-		oldService.approveTaxDeclaration( params );
-		return null;
+	public void approve( domain, userName, faasId, txnType, tdNo, pin, issueDate	 ) {
+		if ( util.acceptMsg( domain) ) {
+			integration.approveTaxDeclaration( domain, userName, faasId, txnType, tdNo, pin, issueDate );
+		}
 	}
 	
 	@ProxyMethod
-	public def findLedgerByTdId2( params ) {
-		if ( ! acceptMsg( params ) ) return null;
-		return oldService.invokeRPTService( params );
+	@Async(type="topic")
+	public void disapprove( domain, userName, faasId, remarks, disapprovedBy, disapprovedByTitle ) {
+		println "DOMAIN -> $domain"
+		if ( util.acceptMsg( domain) ) {
+			integration.disapproveTaxDeclaration( domain, userName, faasId, remarks, disapprovedBy, disapprovedByTitle );
+			println "RemoteFaasService.disapprove success..."
+		}
 	}
 	
-	private def acceptMsg( params ) {
-		return true;
-		return ( params.DOMAIN == var.lgu_name );
+	@ProxyMethod
+	public def findLedgerByTdId2( domain, params ) {
+		if ( util.acceptMsg( domain ) ) {
+			integration.invokeRPTService( params );
+		}
+		return null;
 	}
 
 }

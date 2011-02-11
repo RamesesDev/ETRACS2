@@ -1,4 +1,5 @@
 import com.rameses.annotations.*;
+import java.rmi.server.UID;
 
 class FAASService
 {
@@ -100,6 +101,20 @@ class FAASService
 	}
 	
 	@ProxyMethod
+	public def createDisapproved( @Param(schema="faas:faas") faas ) {
+		def oid = 'F' + new UID();
+		faas.oid = oid;
+		em.create("faas:disapproved-faas", faas);
+		def list = em.indexer.getIndexFor("faas:faas");
+		em.indexer.fire( list, faas );
+		def faasInfo = em.read("faas:faas-list", faas);
+		faasInfo.oid = oid;
+		em.create("faas:faas-disapproved", faasInfo);
+		em.delete("faas:faas-list", faasInfo);
+		return faas;
+	}
+	
+	@ProxyMethod
 	public def open( faasId ) {
 		def faas = em.read("faas:faas", [objid:faasId]);
 		if( !faas ) throw new Exception("FAAS not found.");
@@ -162,6 +177,7 @@ class FAASService
 		faas.state = CURRENT_STATE;
 		faas.tdNo  = newTdNo;
 		faas.info.tdNo = newTdNo;
+		faas.info.issueDate = dateService.format('yyyy-MM-dd', currDate);
 		faas.info.approvedBy.dtSigned = currDate;
 		faas.sys_dtApproved = currDate;
 		faas.remarks = null;
@@ -184,16 +200,18 @@ class FAASService
 		faas.remarks = remarks;
 		faas.sys_dtCreated = currDate;
 		faas.sys_dtApproved = currDate;
-		faas.info.reviewedBy  = [name:env.USER, title:env.TITLE, dtSigned:currDate];
+		faas.info.reviewedBy  = [name:env.USERNAME, title:env.JOBTITLE, dtSigned:currDate];
+		
+		def oid = 'F' + new UID();
+		faas.oid = oid;
 		em.create("faas:disapproved-faas", faas);
 		em.delete("faas:faas", faas);
 		
 		def faasInfo = em.read("faas:faas-list", faas );		
 		if( !faasInfo) throw new Exception("FAAS not found.");
+		faasInfo.oid = oid;
 		em.create("faas:faas-disapproved", faasInfo );
 		em.delete("faas:faas-list", faasInfo );
-		
-		//em.sqlContext.createNamedExecutor("faas:deleteForApproval").setParameters([objid:faasId]).execute();
 		return faas;
 	}
 	

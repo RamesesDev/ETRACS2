@@ -97,9 +97,12 @@ class TransmittalService
 		em.sqlContext.createNamedExecutor("transmittal:updateStateToSubmitted").setParameters([objid:transmittalId]).execute();
 		def items = getTransmittalItemList( transmittalId );
 		items.each {
+			def faas = em.serializer.read(it.faas);
 			if( it.state == "PROVAPPROVAL" ){
-				def faas = em.serializer.read(it.faas);
 				faasService.create( faas );
+			}
+			else {
+				faasService.createDisapproved( faas );
 			}
 		}
 		return open( transmittalId );
@@ -231,15 +234,11 @@ class TransmittalService
 			chunk.transmittalId = chunk.data.objid;
 			em.create("transmittal:transmittal", chunk.data );
 			chunk.data = null;
-		}else{
+		}
+		else{
 			def item = chunk.data;
-			
-			println "FAAS ID: " + item.faas.objid;
-			
 			em.create("transmittal:transmittalItem", item );
-			print "DONE CREATING TRANSMITTALITEM";
 			item.attachments.each{
-				
 				if( !em.read("transmittal:transmittalattachment", [objid:it.objid]) ){
 					em.create( "transmittal:transmittalattachment", it );
 				}
@@ -284,15 +283,22 @@ class TransmittalService
 						 .setParameter("objid", idList[chunk.index].objid)
 						 .singleResult;
 			
+			def faas = openFaas( [objid:item.faasId] );
 			chunk.data = [
 				transmittalId: item.transmittalId,
 				objid: item.objid,
 				faasId: item.faasId,
 				state: item.state,
-				pin: item.pin,
-				tdNo: item.tdNo,
 				remarks: item.remarks
 			];
+			
+			if( faas ) {
+				chunk.data.pin = faas.rp.info.pin;
+				chunk.data.tdNo = faas.info.tdNo;
+				chunk.data.issueDate = faas.info.issueDate;
+				chunk.data.disapprovedBy = faas.info.reviewedBy?.name;
+				chunk.data.disapprovedByTitle = faas.info.reviewedBy?.title;
+			}
 			
 			chunk.index = (chunk.index + 1);
 			chunk.eof = false;
@@ -305,6 +311,12 @@ class TransmittalService
 		}
 		
 		return chunk;
+	}
+	
+	private def openFaas( key ) {
+		 def faas = em.read("faas:faas", key);
+		 if( !faas  ) faas = em.read("faas:disapproved-faas", key);
+		 return faas;
 	}
 	
 }

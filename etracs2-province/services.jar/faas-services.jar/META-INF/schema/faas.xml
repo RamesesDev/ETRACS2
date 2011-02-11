@@ -1,19 +1,22 @@
 <schema>
 	<!-- FAAS database storage -->
 	<element name="faas" tablename="faas">
+		<field name="objid" primary="true"/>
 		<link ref="faasData"/>
 	</element>
 	
 	<!-- FAAS Disapprove storage -->
 	<element name="disapproved-faas" tablename="disapproved_faas">
+		<field name="oid" primary="true"/>
+		<field name="objid"/>
 		<link ref="faasData"/>
 	</element>
 	
 	<element name="faasData">
-		<field name="objid" primary="true"/>
 		<field name="schemaName" required="true"/>
 		<field name="schemaVersion" required="true"/>
 		<field name="transmittalId" required="true"/>
+		<field name="transmitted" type="boolean" required="true"/>
 		<field name="state" required="true"/>
 		<field name="barangay" required="true"/>
 		<field name="tdNo" />
@@ -94,7 +97,6 @@
 	</element>
 	
 	<element name="faaslist-columns">
-		<field name="objid" primary="true" />
 		<field name="state" required="true"  />
 		<field name="txnType" required="true"   />
 		<field name="tdNo"   />
@@ -139,10 +141,13 @@
 	</element>
 	
 	<element name="faas-list" tablename="faas_list">
+		<field name="objid" primary="true" />
 		<link ref="faaslist-columns"/>
 	</element>
 	
 	<element name="faas-disapproved" tablename="faas_disapproved">
+		<field name="oid" primary="true" />
+		<field name="objid" required="true" />
 		<link ref="faaslist-columns"/>
 	</element>
 	

@@ -4,7 +4,6 @@ import java.text.SimpleDateFormat;
 
 class TransmittalService
 {
-
 	@PersistenceContext("etracs")
 	def em;
 	
@@ -19,6 +18,9 @@ class TransmittalService
 	
 	@Service("FaasService")
 	def faasService;
+	
+	@Service("DateService")
+	def dateService;
 	
 	@Service("Var")
 	def var;
@@ -75,7 +77,7 @@ class TransmittalService
 			schemaName : "transmittal:transmittal",
 			schemaVersion : "1.0",
 			docNo : objid,
-			dtTransmitted : formatDate("yyyy-MM-dd HH:mm:ss", new Date()),
+			dtTransmitted : dateService.format("yyyy-MM-dd HH:mm:ss", new Date()),
 			state: "ACTIVE",
 			transmittedBy : env.user,
 			rpuCount: items.size()
@@ -84,7 +86,6 @@ class TransmittalService
 		em2.create("transmittal:transmittal", transmittal );
 		
 		items.each{
-			
 			def faas = faasService.createFaas( it.objid );
 			faas.transmittalId = objid;
 			def item = [
@@ -103,20 +104,13 @@ class TransmittalService
 				remarks: remarks
 			];
 			
+			faasService.create( faas );
+			updateTaxDeclarationState( faas.objid, true );
 			em2.create("transmittal:transmittalItem", item );
-			em.sqlContext.createNamedExecutor("transmittal:updateTransmittalState")
-			  .setParameter("tdId", faas.objid)
-			  .setParameter("transmittalState", true)
-			  .execute();
 
 		}
 		
 		return transmittal;
-	}
-	
-	private def formatDate( format, dt ) {
-		if( ! dt ) return null;
-		return (new SimpleDateFormat(format)).format( dt );
 	}
 	
 	@ProxyMethod
@@ -156,7 +150,6 @@ class TransmittalService
 	}
 	
 	private def exportAttachments( def chunk ){
-	try{
 		if( !chunk.index ) {
 			chunk.index = 0;
 			chunk.hasNext = true;
@@ -174,12 +167,9 @@ class TransmittalService
 			
 			def attachment = faasAttachmentSvc.getAttachments( idList[chunk.index].faasId )[chunk.attachmentIndex];
 			
-			print "ATTACHMENT -> " + attachment; 
-			
 			if( !attachment ){
 				chunk.index += 1;
 				chunk.attachmentIndex = 0;
-				print "calling exportAttachments";
 				return exportAttachments( chunk );
 			} 
 			
@@ -191,16 +181,11 @@ class TransmittalService
 				bytes: part.bytes
 			];
 			
-			print chunk.data.filename;
 		}else{
 			chunk.eof = true;
 		}
 		
 		return chunk;
-	}catch(e){
-		e.printStackTrace();
-		throw e;
-	}
 	}
 	
 	private def exportTransmittalPart( def chunk ){
@@ -222,15 +207,8 @@ class TransmittalService
 		chunk.hasNext = ( chunk.index < idList.size() ) ? true : false;
 
 		if( idList ){
-
-			/*chunk.data = em2.sqlContext.createNamedQuery("transmittal:findItemByParentId")
-							.setParameter("objid", idList[ (chunk.index - 1) ].objid )
-							.resultList[0];*/
 			
 			chunk.data = em2.read("transmittal:transmittalItem", [objid: idList[ (chunk.index - 1) ].objid ] );
-			
-			println "FAAS ID" + chunk.data.faas.objid;
-			
 			chunk.data.attachments = faasAttachmentSvc.getAttachments( chunk.data.faasId );
 			
 		} else {
@@ -243,101 +221,13 @@ class TransmittalService
 		
 		return chunk;
 	}
-	
-	private def checkTransmittalPart( def chunk ){
-	
-		if( !chunk.data ){
-			throw new Exception("Invalid transmittal file or file corrupted.");
-		}
-		
-		if( !chunk.checked ){
-		
-			println (chunk.data?.type == "transmittal" && chunk.data?.status == "closed");
-		
-			if( chunk.data?.type != "transmittal" && chunk.data?.status != "closed" ){
-				throw new Exception("Invalid transmittal file or file corrupted.");
-			}
-			
-			println (chunk.transmittalId != chunk.data.transmittalId);
-			
-			if( chunk.transmittalId != chunk.data.transmittalId ){
-				throw new Exception("Invalid transmittal file or file corrupted.");
-			}
-			
-			chunk.checked = true;
-			return false;
-		}
-		
-		return true;
-	}
-	
+
 	@ProxyMethod
-	public def importTransmittal( def chunk ){
-	
-		if( checkTransmittalPart( chunk ) ){
-		
-			if( chunk.data.docNo ){
-				print "UPDATING TRANSMITTAL HEADER $chunk.data.docNo";
-				/*
-				em2.sqlContext.createNamedExecutor("transmittal:updateTransmittalToClose")
-				  .setParameter("transmittalId", chunk.data.objid )
-				  .execute();
-				  */
-				chunk.eof = true;
-				
-			} else{
-				print "UPATING TaxDeclaration $chunk.data.faasId";
-				
-				/*
-				em.sqlContext.createNamedExecutor( "transmittal:updateTransmittalState" )
-				  .setParameters([tdId:chunk.data.faasId, transmittalState:false])
-				  .execute();		  
-				*/
-				
-				if( chunk.data.state != 'PROVAPPROVAL' ){
-					if( chunk.data.state == 'APPROVED' ) updateApproveTransmittal( chunk.data );
-					else updateRejectTransmittal( chunk.data );
-				}
-				
-			}
-
-		}
-		return chunk;
-		
+	public void updateTaxDeclarationState( faasId, state ){
+		em.sqlContext.createNamedExecutor("transmittal:updateTransmittalState")
+			  .setParameter("tdId", faasId )
+			  .setParameter("transmittalState", state)
+			  .execute();
 	}
-	
-	private void updateApproveTransmittal( def item ){
-		
-		def transmittalItem = em2.read("transmittal:transmittalItem", [objid: item.objid]);
-		
-		transmittalItem.state = item.state;
-		transmittalItem.tdNo = item.tdNo;
-		transmittalIem.pin = item.pin;
-		/*
-		em2.update("transmittalItem", transmittalItem );
-		faasService.create( transmittal.faas );
-		*/
-		print "UPATING TRANSMITTAL ITEM $item.faasId";
-		print "CREATING FAAS $item.faasId";
-		print "INVOKING OLD SERVICE $item.faasId";
-		
-	}
-	
-	private void updateRejectTransmittal( def item ){
-		def transmittalItem = em2.read("transmittal:transmittalItem", [objid: item.objid]);
-		transmittalItem.state = item.state;
-		/*
-		em2.update("transmittalItem", transmittalItem );
-		em.sqlContext.createNamedExecutor("transmittal:updateTaxDeclarationState")
-		  .setParameter("tdId", item.faasId)
-		  .execute();
-		  */
-		  
-		print "UPATING TRANSMITTAL ITEM $item.faasId";
-		print "CREATING FAAS $item.faasId";
-		print "INVOKING OLD SERVICE $item.faasId";
-		  
-	}
-
 }
 

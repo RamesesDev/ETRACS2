@@ -1,20 +1,22 @@
 <schema>
 	<!-- FAAS database storage -->
 	<element name="faas" tablename="faas">
+		<field name="objid" primary="true"/>
 		<link ref="faasData"/>
 	</element>
 	
 	<!-- FAAS Disapprove storage -->
 	<element name="disapproved-faas" tablename="disapproved_faas">
+		<field name="oid" primary="true"/>
+		<field name="objid"/>
 		<link ref="faasData"/>
 	</element>
 	
 	<element name="faasData">
-		<field name="objid" primary="true"/>
 		<field name="schemaName" required="true"/>
 		<field name="schemaVersion" required="true"/>
 		<field name="transmittalId" required="true"/>
-		<field name="transmitted" type="boolean" />
+		<field name="transmitted" type="boolean" required="true"/>
 		<field name="state" required="true"/>
 		<field name="barangay" required="true"/>
 		<field name="tdNo" />
@@ -50,7 +52,7 @@
 	<!-- *********************************************************************************
 	**  INDEXERS 
 	********************************************************************************** -->
-	<element name="faas-provapproval" tablename="faas_provapproval" indexfor="faas">
+	<element name="faas-index" tablename="faas_list" indexfor="faas">
 		<field name="objid" primary="true" />
 		<field name="state" required="true"  />
 		<field name="txnType" mapfield="info.txnType" required="true"  />
@@ -85,14 +87,16 @@
 		<!-- REAL PROPERTY INFO -->
 		<field name="rpId" required="true"  mapfield="rp.objid" />
 		<field name="rpState" required="true"  mapfield="rp.state" />
-		<field name="barangay" mapfield="rp.info.barangay" />
+		<field name="municipalityIndex" required="true"  mapfield="rp.info.muniDistrictIndex"/>
+		<field name="barangayIndex" required="true"  mapfield="rp.info.brgyIndex" />
+		<field name="municipality" required="true"  mapfield="rp.info.muniDistrict"/>
+		<field name="barangay" required="true"  mapfield="rp.info.barangay"/>
 		<field name="cadastralLotNo" required="true"  mapfield="rp.info.cadastralLotNo" />
 		<field name="blockNo" required="true"  mapfield="rp.info.blockNo" />
 		<field name="surveyNo" mapfield="rp.info.surveyNo" />
 	</element>
 	
 	<element name="faaslist-columns">
-		<field name="objid" primary="true" />
 		<field name="state" required="true"  />
 		<field name="txnType" required="true"   />
 		<field name="tdNo"   />
@@ -126,6 +130,9 @@
 		<!-- REAL PROPERTY INFO -->
 		<field name="rpId" required="true"   />
 		<field name="rpState" required="true"  />
+		<field name="municipalityIndex" required="true"  />
+		<field name="barangayIndex" required="true"  />
+		<field name="municipality" required="true"  />
 		<field name="barangay" required="true" />
 		<field name="cadastralLotNo" required="true"   />
 		<field name="blockNo" required="true"   />
@@ -133,19 +140,14 @@
 		<field name="remarks"/>
 	</element>
 	
-	<element name="faas-current" tablename="faas_current">
+	<element name="faas-list" tablename="faas_list">
+		<field name="objid" primary="true" />
 		<link ref="faaslist-columns"/>
 	</element>
 	
-	<element name="faas-cancelled" tablename="faas_cancelled">
-		<link ref="faaslist-columns"/>
-	</element>
-	
-	<element name="faas-approval" tablename="faas_approval">
-		<link ref="faaslist-columns"/>
-	</element>
-	
-	<element name="faas-disapproved" tablename="faas-disapproved">
+	<element name="faas-disapproved" tablename="faas_disapproved">
+		<field name="oid" primary="true" />
+		<field name="objid" required="true" />
 		<link ref="faaslist-columns"/>
 	</element>
 	

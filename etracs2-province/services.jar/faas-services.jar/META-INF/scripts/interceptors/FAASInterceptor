@@ -54,28 +54,40 @@ class FAASInterceptor
 		approveRemoteFaas( faas );
 	}
 	
-	@After(pattern="FAASService.disapprove.*") 
+	@After(pattern="FAASService.disapprove") 
 	public void interceptDisapprove( evt ) {
-		logService.logA("DISAPPROVE", "FAAS", evt.result.objid, evt.result.remarks);
-		transmittalService.disapproveTransmittalItem(evt.result.transmittalId, evt.result.objid, evt.result.state, evt.result.remarks);
+		def faas = evt.result;
+		logService.logA("DISAPPROVE", "FAAS", faas.objid, faas.remarks);
+		transmittalService.disapproveTransmittalItem(faas.transmittalId, faas.objid, faas.state, faas.remarks);
+		disapproveRemoteFaas( faas ) ;
 	}
-	
-	
 	
 	private void approveRemoteFaas( faas ) {
 		if( faas.transmittalId != "system" ) return; 
 		println "FAASInterceptor: approveRemoteFaas";
-		def params = [
-			DOMAIN 	 : faas.rp.muniDistrictIndex,
-			USERNAME : (env.USERNAME == null ? 'SYSTEM' : env.USERNAME),
-			faasId   : faas.objid,
-			txnType  : faas.info.txnType,
-			tdNo     : faas.tdNo,
-			pin      : faas.rp.info.pin,
-			issueDate  : faas.sys_dtApproved,
-			approvedBy : faas.info.approvedBy,
-		];
-		remoteService.approve( params );		
+		remoteService.approve( 
+			faas.rp.muniDistrictIndex,
+			(env.USERNAME == null ? 'SYSTEM' : env.USERNAME),
+			faas.objid,
+			faas.info.txnType,
+			faas.tdNo,
+			faas.rp.info.pin,
+			faas.info.issueDate
+		);		
 		logService.log("APPROVEREMOTE", "FAAS", faas.objid);
+	}
+	
+	private void disapproveRemoteFaas( faas ) {
+		if( faas.transmittalId != "system" ) return; 
+		println "FAASInterceptor: disapproveRemoteFaas";
+		remoteService.disapprove( 
+			faas.rp.info.muniDistrictIndex,
+			(env.USERNAME == null ? 'SYSTEM' : env.USERNAME),
+			faas.objid,
+			faas.remarks,
+			env.USERNAME,
+			env.JOBTITLE
+		);		
+		logService.log("DISAPPROVEREMOTE", "FAAS", faas.objid);
 	}
 }

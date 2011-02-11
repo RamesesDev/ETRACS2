@@ -39,7 +39,10 @@
                 
                 @Service("TransmittalService")
                 def svc;
-
+                
+                @Service("ImportTransmittalService")
+                def importService;
+                
                 def listHandler = [
                     getRows    : { return 25; },
                     getColumns : {
@@ -115,7 +118,7 @@
                                 count += 1;
                                 def data = ois.readObject();
                                 chunk.data = data;
-                                chunk = svc.importTransmittal( chunk );
+                                chunk = importService.importTransmittal( chunk );
                                 message = "Importing transmittal [$count]";
                                 
                                 return chunk.eof;

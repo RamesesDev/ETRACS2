@@ -1,0 +1,111 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import java.text.SimpleDateFormat;
+
+class ImportTransmittalService
+{
+
+	@Service("TransmittalService")
+	def transmittalService;
+
+	@Service("ETRACSIntegrationService")
+	def integration;
+	
+	@PersistenceContext("etracs2")
+	def em2;
+	
+	@Service("Var")
+	def var;
+	
+	@Env
+	def env;
+	
+	def CURRENT_STATE = 'CURRENT';
+	def PROVAPPROVAL_STATE = 'PROVAPPROVAL';
+	
+	private def checkTransmittalPart( def chunk ){
+		if( !chunk.data ) throw new Exception("Invalid transmittal file or file corrupted.");
+		
+		if( !chunk.checked ){
+		
+			if( chunk.data?.type != "transmittal" && chunk.data?.status != "closed" ){
+				throw new Exception("Invalid transmittal file or file corrupted.");
+			}
+			
+			if( chunk.transmittalId != chunk.data.transmittalId ){
+				throw new Exception("Invalid transmittal file or file corrupted.");
+			}
+			
+			chunk.checked = true;
+			return false;
+		}
+		
+		return true;
+	}
+	
+	@ProxyMethod
+	public def importTransmittal( def chunk ){
+	
+		if( checkTransmittalPart( chunk ) ){
+		
+			if( chunk.data.docNo ){
+				em2.sqlContext.createNamedExecutor("transmittal:updateTransmittalToClose")
+					.setParameter("transmittalId", chunk.data.objid )
+					.execute();
+				chunk.eof = true;
+			} 
+			else {
+				def transmittalItem = em2.read("transmittal:transmittalItem", [objid: chunk.data.objid]);
+				
+				if( transmittalItem.state == PROVAPPROVAL_STATE ) {
+					if( chunk.data.state == CURRENT_STATE ) {
+						approveTransmittalItem( chunk.data, transmittalItem );
+					}
+					else {
+						//disapproved either incomplete or disapproved items
+						disapproveTransmittalItem( chunk.data, transmittalItem );
+					}
+				}
+			}
+		}
+		return chunk;
+		
+	}
+	
+	private void approveTransmittalItem( def data, def item ){
+		// parameters: domain, userName, faasId, txnType, tdNo, pin, issueDate 
+		integration.approveTaxDeclaration( 
+			var.lgu_index,
+			(env.USERNAME ? env.USERNAME : "system"),
+			data.faasId,
+			item.faas.info.txnType,
+			data.tdNo,
+			data.pin,
+			item.faas.info.issueDate
+		);
+		print "APPROVE ...";
+		item.faas.state = data.state;
+		item.state = data.state;
+		item.faas.info.tdNo = data.tdNo;
+		item.faas.rpu.pin = data.pin;
+		em2.update("transmittal:transmittalItem", item );
+	}
+	
+	private void disapproveTransmittalItem( def data, def item){
+		//parameters: domain, userName, faasId, remarks, disapprovedBy, disapprovedByTitle
+		integration.disapproveTaxDeclaration( 
+			var.lgu_index,
+			(env.USERNAME ? env.USERNAME : "system"), 
+			data.faasId ,
+			data.remarks,
+			data.disapproved,
+			data.disapprovedByTitle
+		);
+		
+		transmittalService.updateTaxDeclarationState( data.faasId, false );
+		item.state = data.state;
+		em2.update("transmittal:transmittalItem", item )
+	}
+
+}
+

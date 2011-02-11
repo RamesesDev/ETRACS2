@@ -52,12 +52,7 @@ class FAASAttachmentService {
 		if ( !file ) throw new Exception("File not found.");
 		
 		def ftis = new FileTransferInputStream( file );
-		/*def ftis = new FileTransferInputStream( file, info );
-		if (!info){
-			println "======================================";
-			ftis.fileTransferInfo.tempFileName = replaceSpecialChar( "TMP" +  new UID() );
-		}*/
-
+		
 		ftis.byteSize = 1024 * 32;
 		def data = [
 			bytes : ftis.readNext()
@@ -98,5 +93,4 @@ class FAASAttachmentService {
 		tmpFileName = tmpFileName.replace(":", "_");
 		return tmpFileName;
 	}
-
 }

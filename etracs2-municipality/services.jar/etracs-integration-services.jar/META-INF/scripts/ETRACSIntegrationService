@@ -1,0 +1,42 @@
+import com.rameses.annotations.*;
+import com.rameses.invoker.client.*;
+import com.rameses.etracs1.invoker.*;
+
+class ETRACSIntegrationService 
+{
+
+	@Service("Var")
+	def var;
+	
+	@Service("FaasService")
+	def faasSvc;
+	
+	@ProxyMethod
+	public void approveTaxDeclaration( domain, userName, faasId, txnType, tdNo, pin, issueDate ) {
+		invokeRPTService("approveTaxDeclaration", [domain, userName, faasId, txnType, tdNo, pin, issueDate]);
+		faasSvc.approve( faasId, userName, tdNo, pin, issueDate );
+		println "ETRACSIntegrationService:approveTaxDeclaration done";
+	}
+	
+	@ProxyMethod
+	public void disapproveTaxDeclaration( domain, userName, faasId, remarks, disapprovedBy, disapprovedByTitle ) {
+		invokeRPTService("disapproveTaxDeclaration", [domain, userName, faasId]);
+		faasSvc.disapprove( faasId, remarks, disapprovedBy, disapprovedByTitle );
+		println "ETRACSIntegrationService:disapproveTaxDeclaration done";
+	}
+	
+	@ProxyMethod
+	public def findLedgerByTdId2( params ) {
+		return invokeRPTService( "findLedgerByTdId" , [ params.faasId ] );
+	}
+	
+	private def invokeRPTService( methodName, params ) {
+		return invokeService("remote/RemoteRPTService", methodName, params as Object[]);
+	}
+
+	private def invokeService( serviceName, methodName, params ) {
+		def invoker = new HttpServiceInvoker( var.etracs_version1_host, null );
+		def svc = invoker.create( serviceName );
+		return svc.invoke( methodName, params );
+	}
+}
