@@ -15,12 +15,11 @@ class ETRACSUserService
 		if( (result = getListByName("etracsuser:findByLastName", [uid:searchText], params)) ) return result;
 		return result;
 	}
-	
+    
 	@ProxyMethod
 	public void save( user ) {
 		em.sqlContext.createNamedExecutor("etracsuser:updateJobTitle").setParameters(user).execute();
 	}
-	
 	
 	private def getListByName( namedQuery, values, params ) {
 		return em.sqlContext.createNamedQuery( namedQuery )
@@ -29,5 +28,5 @@ class ETRACSUserService
 					.setMaxResults( params._limit )
 					.resultList;
 	}
-
+    
 }
