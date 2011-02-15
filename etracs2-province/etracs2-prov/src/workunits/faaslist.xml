@@ -58,7 +58,6 @@
                         new Column( name:"item.municipality", caption:"Municipality", width:120),
                         new Column( name:"item.tdNo", caption:"TD No.", width:120),
                         new Column( name:"item.pin", caption:"PIN", width:150),
-                        new Column( name:"item.taxpayerName", caption:"Taxpayer", minWidth:200, width:500),
                     ]
                 },
                 fetchList  : { 
@@ -86,7 +85,6 @@
             
             public def showAttachment( params ) {
                 def data = params.split("~~");
-                println "FILE NAME >> " + data[2];
                 def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] );
                 opener.caption = "Attachment: " + data[1];
                 return opener;
@@ -98,7 +96,7 @@
             }
             
             private def doOpen( item ) {
-                return new WindowOpener( name:"faas", caption:"FAAS ($item.tdNo)", params:[faasId:item.objid, tdNo:item.tdNo, state:item.state, listRefreshHandler:refreshHandler] );
+                return InvokerUtil.lookupOpener("faas:open", [ faasId: item.objid] );
             }
         }
         

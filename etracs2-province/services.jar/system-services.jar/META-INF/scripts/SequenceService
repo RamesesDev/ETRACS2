@@ -8,6 +8,16 @@ class SequenceService {
 
 	def FORMATTED_LEN = 5;
 	
+	@ProxyMethod
+	public def getCurrentSeries( objid )  {
+		def seq = em.sqlContext.createNamedQuery("sequence:getCurrentSeries").setParameter("objid",objid).singleResult;
+		if ( ! seq ) {
+			seq = create( objid );
+			return seq.nextSeries;
+		}
+		return seq.currentSeries;
+	}
+	
     @ProxyMethod
 	public def getNextFormattedSeries( objid ) {
 		return getNextFormattedSeriesA( objid, FORMATTED_LEN ) ;
@@ -24,14 +34,30 @@ class SequenceService {
 		def seq = em.read("sequence:sequence", [objid:objid])
 		def nextSeries = 1;
 		if( ! seq ) {
+			seq = create( objid );
+		}
+		nextSeries = seq.nextSeries;
+		em.sqlContext.createNamedExecutor("sequence:incrementNextSeries").setParameter("objid",seq.objid).execute()
+		return nextSeries;
+	}
+	
+	@ProxyMethod
+	public def create( objid ) {
+		def seq = em.read("sequence:sequence", [objid:objid])
+		def nextSeries = 1;
+		if( ! seq ) {
 			seq = [
 				objid      : objid,
 				nextSeries : nextSeries,
 			];
 			em.create("sequence:sequence",seq);
 		}
-		nextSeries = seq.nextSeries;
-		em.sqlContext.createNamedExecutor("sequence:incrementNextSeries").setParameter("objid",seq.objid).execute()
-		return nextSeries;
+		return seq;
 	}
+	
+	@ProxyMethod
+	public void updateNextSeries( objid, nextSeries ) {
+		em.sqlContext.createNamedExecutor("sequence:updateNextSeries").setParameters([objid:objid, nextSeries:nextSeries]).execute();
+	}
+	
 }

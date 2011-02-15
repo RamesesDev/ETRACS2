@@ -1,10 +1,14 @@
 <workunit>
     <invokers>
-        <invoker type="formActions" tooltip="Close" mnemonic="c" action="_close" icon="images/remove24.png" />
-        <invoker type="formActions" action="submit" permission="faas.submit" tooltip="Submit For Approval" mnemonic="s" visibleWhen="#{state == 'PROVAPPROVAL'}" icon="images/submit24.png" />
-        <invoker type="formActions" action="approve" permission="faas.approve" tooltip="Approve"  mnemonic="a" visibleWhen="#{state == 'FORAPPROVAL'}" icon="images/approve24.png" />
-        <invoker type="formActions" action="doDisapprove" permission="faas.disapprove" tooltip="Disapprove" mnemonic="d" visibleWhen="#{state == 'PROVAPPROVAL' || state == 'FORAPPROVAL'}" icon="images/disapprove24.png"/>
-        <invoker type="formActions" action="doReturn" permission="faas.return" tooltip="Return to Reviewer" mnemonic="r" visibleWhen="#{state == 'FORAPPROVAL'}" icon="images/return24.png"/>
+        <invoker type="faas:open" action="open" target="window" caption="FAAS Information"/>
+        
+        <invoker type="formActions" action="submit" permission="faas.submit" tooltip="Submit For Approval" mnemonic="s" visibleWhen="#{faas.state == 'PROVAPPROVAL'}" icon="images/submit24.png" />
+        <invoker type="formActions" action="approve" permission="faas.approve" tooltip="Approve"  mnemonic="a" visibleWhen="#{faas.state == 'FORAPPROVAL'}" icon="images/approve24.png" />
+        <invoker type="formActions" action="doDisapprove" permission="faas.disapprove" tooltip="Disapprove" mnemonic="d" visibleWhen="#{faas.state == 'PROVAPPROVAL' || faas.state == 'FORAPPROVAL'}" icon="images/disapprove24.png"/>
+        <invoker type="formActions" action="doReturn" permission="faas.return" tooltip="Return to Reviewer" mnemonic="r" visibleWhen="#{faas.state == 'FORAPPROVAL'}" icon="images/return24.png"/>
+        
+        <invoker type="formActions" action="assignPin" permission="faas.assignpin" caption="Assign New PIN" mnemonic="p" visibleWhen="#{faas.state == 'FORAPPROVAL' and faas.rpu.info.type == 'LAND' and faas.info.txnType == 'ND'}" />
+        <invoker type="formActions" action="exchangePin" permission="faas.exchangepin" caption="Exchange PIN" mnemonic="x" visibleWhen="#{faas.state == 'FORAPPROVAL' and faas.rpu.info.type == 'LAND' and faas.info.txnType == 'ND'}" />
     </invokers>
     
     <code>
@@ -26,25 +30,26 @@
             def binding;
             
             def faasId;
-            def tdNo;
-            def state;
+            def faas;
             def attachment;
             def listRefreshHandler;
             def remarks;
             def title = "FAAS Information";
             
+            def open() {
+                faas = faasService.open( faasId );
+            }
+            
             public void submit() {
                 if( MsgBox.confirm("Submit FAAS?") ) {
-                    def faas = faasService.submit( faasId );
-                    state = faas.state;
+                    faas = faasService.submit( faasId );
                     refreshList();
                 }
             }
             
             public def approve() {
                 if( MsgBox.confirm("Approve FAAS?") ) {
-                    def faas = faasService.approve( faasId );
-                    state = faas.state;
+                    faas = faasService.approve( faasId );
                     refreshList();
                     return "_close";
                 }
@@ -54,8 +59,7 @@
                 return InvokerUtil.lookupOpener("message_popup", [
                     caption:"Please provide a reason for disapproval.",
                     acceptHandler:{ msg -> 
-                        def faas = faasService.disapprove( faasId, msg );
-                        state = faas.state;
+                        faas = faasService.disapprove( faasId, msg );
                         binding.refresh("formActions");
                         refreshList();
                     }
@@ -66,10 +70,31 @@
                 return InvokerUtil.lookupOpener("message_popup", [ 
                     caption:"Please provide reason for return.",
                     acceptHandler:{ msg ->
-                        def faas = faasService.returnDoc( faasId, msg );
-                        state = faas.state;
+                        faas = faasService.returnDoc( faasId, msg );
                         binding.refresh("formActions");
                         refreshList();
+                    }
+                ]);
+            }
+            
+            public def assignPin() {
+                return InvokerUtil.lookupOpener("faas:assignpin", [
+                    faas:faas,
+                    acceptHandler: { key, section, newSeries, oldSeries ->
+                        faas = faasService.assignPin( faas, key, section, newSeries, oldSeries );
+                        refreshList();
+                        binding.refresh("html");
+                    }
+                ]);
+            }
+            
+            public def exchangePin() {
+                return InvokerUtil.lookupOpener("faas:exchangepin", [
+                    faas:faas,
+                    exchangeHandler: { fromFaasId, toFaasId ->
+                        faas = faasService.exchangePin( fromFaasId, toFaasId );
+                        refreshList();
+                        binding.refresh("html");
                     }
                 ]);
             }
@@ -80,7 +105,6 @@
             
             public def showAttachment( params ) {
                 def data = params.split("~~");
-                print "FILE NAME >> " + data[2];
                 def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] );
                 opener.caption = "Attachment: " + data[1];
                 return opener;

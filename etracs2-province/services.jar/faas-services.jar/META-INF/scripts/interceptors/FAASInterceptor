@@ -2,17 +2,11 @@ import com.rameses.annotations.*;
 
 class FAASInterceptor 
 {
-	@Service("TDService")
-	def tdService;
-	
 	@Service("LogService")
 	def logService;
 	
 	@Service("TransmittalService")
 	def transmittalService;
-	
-	@Service("TaxpayerService")
-	def taxpayerService;
 	
 	@Service("RemoteFaasService")
 	def remoteService;
@@ -28,29 +22,30 @@ class FAASInterceptor
 	@After(pattern="FAASService.submit") 
 	public void interceptSubmit( evt ) {
 		logService.log("SUBMIT", "FAAS", evt.result.objid);
-		transmittalService.updateItemStateToForApproval(evt.result.transmittalId, evt.result.objid);
+	}
+	
+	@After(pattern="FAASService.assignPin") 
+	public void interceptAssignPin( evt ) {
+		def faas = evt.result;
+		def change  = "pin: $faas.rpu.info.oldPin -> $faas.rpu.info.pin";
+		logService.logB("ASSIGNPIN", "FAAS", faas.objid,'', change);
+	}
+	
+	@After(pattern="FAASService.exchangePin") 
+	public void interceptExchangePin( evt ) {
+		def faas = evt.result;
+		
+		def change  = "pin: $faas.oldPin -> $faas.rpu.info.pin";
+		logService.logA("EXCHANGEPIN", "FAAS", faas.objid, change);
+		
+		change  = "pin: $faas.rpu.info.pin -> $faas.oldPin";
+		logService.logA("EXCHANGEPIN", "FAAS", evt.args[1], change);
 	}
 	
 	@After(pattern="FAASService.approve") 
 	public void interceptApprove( evt ) {
 		def faas = evt.result;
-
-		/*
-		tdService.post( evt.result );
-		logService.log("GENERATE", "TD", faas.objid);
 		logService.log("APPROVE", "FAAS", faas.objid);
-		*/
-		
-		transmittalService.updateItemStateToCurrent(faas.transmittalId, faas.objid);
-		taxpayerService.postMunicipalTaxpayer( 
-			[ objid      : faas.info.taxpayer.taxpayerId,
-			  lgu        : faas.rp.info.muniDistrict,
-			  taxpayerNo : null,
-			  name       : faas.info.taxpayer.taxpayerName,
-			  address    : faas.info.taxpayer.taxpayerAddress,
-			]  
-		);
-		
 		approveRemoteFaas( faas );
 	}
 	
@@ -58,7 +53,6 @@ class FAASInterceptor
 	public void interceptDisapprove( evt ) {
 		def faas = evt.result;
 		logService.logA("DISAPPROVE", "FAAS", faas.objid, faas.remarks);
-		transmittalService.disapproveTransmittalItem(faas.transmittalId, faas.objid, faas.state, faas.remarks);
 		disapproveRemoteFaas( faas ) ;
 	}
 	

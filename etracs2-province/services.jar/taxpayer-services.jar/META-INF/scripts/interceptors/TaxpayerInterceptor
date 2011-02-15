@@ -5,6 +5,9 @@ class TaxpayerInterceptor
 	@Service("LogService")
 	def logService;
 		
+	@Service("TaxpayerService")
+	def taxpayerService;
+	
 	@After(pattern="TaxpayerService.create.*") 
 	public void interceptCreate( evt ) {
 		logService.log("CREATE", "ProvinceTaxpayer", evt.result.objid);
@@ -13,5 +16,18 @@ class TaxpayerInterceptor
 	@After(pattern="TaxpayerService.update.*") 
 	public void interceptUpdate( evt ) {
 		logService.logB("UPDATE", "ProvinceTaxpayer", evt.result.objid, null, evt.args[1]?.diff);
+	}
+	
+	@After(pattern="FAASService.approve") 
+	public void interceptFaasApprove( evt ) {
+		def faas = evt.result;
+		taxpayerService.postMunicipalTaxpayer( 
+			[ objid      : faas.info.taxpayer.taxpayerId,
+			  lgu        : faas.rp.info.muniDistrict,
+			  taxpayerNo : null,
+			  name       : faas.info.taxpayer.taxpayerName,
+			  address    : faas.info.taxpayer.taxpayerAddress,
+			]  
+		);
 	}
 }

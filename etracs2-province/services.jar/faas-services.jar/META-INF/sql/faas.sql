@@ -7,6 +7,12 @@ SELECT state FROM faas WHERE objid = $P{objid}
 [getByTdNo]
 SELECT state FROM faas WHERE tdNo = $P{tdNo}
 
+[getPinCount]
+SELECT COUNT(*) AS pinCount FROM faas_list WHERE pin = $P{pin}
+
+[getExchangePinList]
+SELECT objid, pin FROM faas_list WHERE objid <> $P{objid}  AND state = 'FORAPPROVAL' ORDER BY pin 
+
 #----------------------------------------------------------------
 # UPDATES
 #----------------------------------------------------------------

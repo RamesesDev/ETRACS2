@@ -46,7 +46,7 @@ public class TransmittalListPage extends javax.swing.JPanel {
         jPanel2.setLayout(new java.awt.BorderLayout());
 
         jSplitPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        jSplitPane1.setDividerLocation(430);
+        jSplitPane1.setDividerLocation(210);
         jSplitPane1.setOneTouchExpandable(true);
         jPanel5.setLayout(new java.awt.BorderLayout());
 
