@@ -35,7 +35,7 @@ public class RPUInterceptor
 	private def getRpuByPin( pin ) {
 		def rpuInfo = em.sqlContext.createNamedQuery("rpu:findByPin").setParameter("pin", pin ).singleResult;
 		if( rpuInfo ) {
-			return em.serializer.read( rpuInfo );
+			return em.serializer.read( "rpuhistory:rpu", rpuInfo );
 		}	
 		return null;
 	}
