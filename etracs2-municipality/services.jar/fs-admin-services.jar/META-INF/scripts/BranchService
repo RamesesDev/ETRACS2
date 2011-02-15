@@ -1,0 +1,59 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class BranchService {
+
+    @PersistenceContext("java:main")
+    def em; 		
+
+	@Env
+	def env;
+	
+    @ProxyMethod	
+    public def create(@Param(schema="branch") branch ) {
+		branch.objid = "BRNCH-" + new java.rmi.server.UID();
+		return em.create( "branch", branch );
+    }
+
+    @ProxyMethod	
+    public def open( param ) {
+		return em.read( "branch", param );
+    }
+
+    @ProxyMethod	
+    public def update(@Param(schema="branch") branch ) {
+		return em.update( "branch", branch );
+    }
+	
+	/**
+	* list - add query where branchs are filtered by org
+	*/
+    @ProxyMethod	
+    public def getList( params ) {
+		def qry = em.sqlContext.createNamedQuery( "branch:list.sql");
+		StringBuffer sb = new StringBuffer();
+		qry.setVars( [ filter: sb.toString() ] ); 
+		return qry.setParameters( params ).resultList;
+	}
+	
+	@ProxyMethod	
+    public def getTerminals( String branchid) {
+		return em.sqlContext.createNamedQuery( "terminal:list").setParameter( "parentid", branchid ).resultList;
+	}
+	
+	@ProxyMethod	
+    public def findByCode( String branchcode ) {
+		return em.sqlContext.createNamedQuery( "branch:by-code.sql").setParameter( "code", branchcode ).singleResult;
+	}
+	
+	@ProxyMethod	
+    public void verifyBranchUserTerminal( String branchid, String userid, String terminalId ) {
+		def o = em.sqlContext.createNamedQuery( "branch:branch-user.sql").setParameter( "branchid", branchid ).setParameter("userid", userid).singleResult;
+		if( !o ) throw new Exception("User is not registered to branch"); 
+		if( o.blockedterminals ) {
+			if( terminalid.matches( o.blockedterminals) ) throw new Exception("User is not allowed to use this terminal");
+		}
+	}
+	
+
+}

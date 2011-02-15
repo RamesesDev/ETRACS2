@@ -1,0 +1,37 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+/**
+*
+* references: session.schema
+* 
+*/
+class SessionFilter {
+
+    @PersistenceContext("java:main")
+    def em;
+
+    @Env
+    def env;		
+
+    @Before( pattern=".*", exclude="Login.*|Permission.*|TerminalService.*|system.*" ) 
+	public def checkTxnSession( def param ) {
+		if(!env.session_checked) {
+			/*
+			if( !env.SESSIONID ) {
+				throw new Warning("There is no current session. Please login");
+			}
+			def sess = em.read( "session", [sessionid: env.SESSIONID]);
+			if(!sess) {
+				throw new Warning("SESSION_EXPIRED");
+			}
+			if(sess.uid.toLowerCase() !=  env.USER.toLowerCase() )  {
+				throw new Warning("This session is not valid for this user");
+			}
+			*/
+			//check database if session is active.
+			env.session_checked = true;
+		}
+		return null;
+    }
+}

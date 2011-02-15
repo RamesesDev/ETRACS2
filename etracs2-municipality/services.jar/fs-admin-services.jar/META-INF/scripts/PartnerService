@@ -1,0 +1,46 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class PartnerService {
+
+    @PersistenceContext("java:main")
+    def em; 
+
+	@Env
+    def env;	
+	
+    @ProxyMethod	
+    public def create(@Param(schema="partner") partner ) {
+		partner.objid = "PARTNR-" + new java.rmi.server.UID();
+		return em.create( "partner", partner );
+    }
+
+    @ProxyMethod	
+    public def update(@Param(schema="partner") partner ) {
+		return em.update( "partner",partner );
+    }
+	
+    @ProxyMethod	
+    public def open( partner ) {
+		return em.read( "partner",partner );
+    }
+
+	/**
+	* list - add query where partners are filtered by admin user
+	*/
+    @ProxyMethod	
+    public def getList( params ) {
+		def qry = em.sqlContext.createNamedQuery( 'partner:list.sql' );
+		StringBuffer sb = new StringBuffer();
+		if(params!=null) sb.append( ' where parentid=$P{parentid}' ); 
+		qry.setVars( [filter: sb.toString() ] ); 
+		return qry.setParameters( params ).resultList;
+	}
+	
+	@ProxyMethod	
+    public def openByCode( qry ) {
+		def p = em.sqlContext.createNamedQuery( "partner:get-objid-by-code").setParameters( qry ).singleResult;
+		return open( p );
+    }
+	
+}

@@ -27,7 +27,6 @@ public class TransmittalInitPage extends javax.swing.JPanel {
         jPanel1 = new javax.swing.JPanel();
         xLabel5 = new com.rameses.rcp.control.XLabel();
         jPanel3 = new javax.swing.JPanel();
-        jPanel2 = new javax.swing.JPanel();
         xActionBar2 = new com.rameses.rcp.control.XActionBar();
         jPanel4 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
@@ -53,19 +52,13 @@ public class TransmittalInitPage extends javax.swing.JPanel {
 
         jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 1, 3, 1));
         jPanel3.setOpaque(false);
-        jPanel3.setPreferredSize(new java.awt.Dimension(10, 30));
-        jPanel2.setLayout(new java.awt.BorderLayout());
-
+        xActionBar2.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 5, 1, 1));
         xActionBar2.setName("formActions");
-        jPanel2.add(xActionBar2, java.awt.BorderLayout.EAST);
-
-        jPanel3.add(jPanel2, java.awt.BorderLayout.WEST);
+        jPanel3.add(xActionBar2, java.awt.BorderLayout.NORTH);
 
         jPanel1.add(jPanel3, java.awt.BorderLayout.CENTER);
 
         add(jPanel1, java.awt.BorderLayout.NORTH);
-
-        jPanel4.setLayout(null);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle(" Transimittal ");
@@ -83,9 +76,6 @@ public class TransmittalInitPage extends javax.swing.JPanel {
 
         formPanel1.add(jScrollPane1);
 
-        jPanel4.add(formPanel1);
-        formPanel1.setBounds(10, 10, 620, 110);
-
         jPanel5.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -95,9 +85,25 @@ public class TransmittalInitPage extends javax.swing.JPanel {
         xTable1.setHandler("listHandler");
         jPanel5.add(xTable1, java.awt.BorderLayout.CENTER);
 
-        jPanel4.add(jPanel5);
-        jPanel5.setBounds(10, 130, 620, 270);
-
+        org.jdesktop.layout.GroupLayout jPanel4Layout = new org.jdesktop.layout.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel4Layout.createSequentialGroup()
+                .addContainerGap()
+                .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 644, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 644, Short.MAX_VALUE))
+                .addContainerGap())
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel4Layout.createSequentialGroup()
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 110, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 310, Short.MAX_VALUE)
+                .addContainerGap())
+        );
         add(jPanel4, java.awt.BorderLayout.CENTER);
 
     }// </editor-fold>//GEN-END:initComponents
@@ -106,7 +112,6 @@ public class TransmittalInitPage extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.rameses.rcp.util.FormPanel formPanel1;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;

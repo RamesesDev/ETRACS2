@@ -36,7 +36,6 @@ public class TransmittalQuickViewPage extends javax.swing.JPanel {
         setLayout(new java.awt.BorderLayout());
 
         setPreferredSize(new java.awt.Dimension(666, 438));
-        jPanel4.setLayout(null);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle(" Transimittal ");
@@ -62,9 +61,6 @@ public class TransmittalQuickViewPage extends javax.swing.JPanel {
         xTextField3.setPreferredSize(new java.awt.Dimension(150, 19));
         formPanel1.add(xTextField3);
 
-        jPanel4.add(formPanel1);
-        formPanel1.setBounds(10, 10, 650, 110);
-
         jPanel5.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -79,9 +75,26 @@ public class TransmittalQuickViewPage extends javax.swing.JPanel {
 
         jPanel5.add(jPanel6, java.awt.BorderLayout.CENTER);
 
-        jPanel4.add(jPanel5);
-        jPanel5.setBounds(10, 130, 650, 270);
-
+        org.jdesktop.layout.GroupLayout jPanel4Layout = new org.jdesktop.layout.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel4Layout.createSequentialGroup()
+                .addContainerGap()
+                .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 646, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 646, Short.MAX_VALUE))
+                .addContainerGap())
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel4Layout.createSequentialGroup()
+                .addContainerGap()
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 110, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+                .addContainerGap())
+        );
         add(jPanel4, java.awt.BorderLayout.CENTER);
 
     }// </editor-fold>//GEN-END:initComponents

@@ -6,12 +6,17 @@ class SequenceService {
 	@PersistenceContext("java:system")
 	def em;	
 
-	def FORMATTED_LEN = 7;
+	def FORMATTED_LEN = 5;
 	
     @ProxyMethod
 	public def getNextFormattedSeries( objid ) {
+		return getNextFormattedSeriesA( objid, FORMATTED_LEN ) ;
+	}
+	
+	@ProxyMethod
+	public def getNextFormattedSeriesA( objid, len ) {
 		def nextSeries = getNextSeries( objid );
-		return "$nextSeries".padLeft(FORMATTED_LEN, '0')
+		return "$nextSeries".padLeft(len, '0')
 	}
 	
 	@ProxyMethod
@@ -26,7 +31,7 @@ class SequenceService {
 			em.create("sequence:sequence",seq);
 		}
 		nextSeries = seq.nextSeries;
-		em.sqlContext.createNamedExecutor("sequence:incrementNextSeries").setParameters([objid:seq.objid]).execute()
+		em.sqlContext.createNamedExecutor("sequence:incrementNextSeries").setParameter("objid",seq.objid).execute()
 		return nextSeries;
 	}
 }

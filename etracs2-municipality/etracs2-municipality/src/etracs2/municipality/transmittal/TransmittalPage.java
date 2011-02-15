@@ -25,10 +25,8 @@ public class TransmittalPage extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
         jPanel1 = new javax.swing.JPanel();
-        xLabel5 = new com.rameses.rcp.control.XLabel();
-        jPanel3 = new javax.swing.JPanel();
-        jPanel2 = new javax.swing.JPanel();
         xActionBar2 = new com.rameses.rcp.control.XActionBar();
+        xLabel5 = new com.rameses.rcp.control.XLabel();
         jPanel4 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
@@ -43,6 +41,10 @@ public class TransmittalPage extends javax.swing.JPanel {
         setPreferredSize(new java.awt.Dimension(798, 534));
         jPanel1.setLayout(new java.awt.BorderLayout());
 
+        xActionBar2.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 8, 1, 1));
+        xActionBar2.setName("formActions");
+        jPanel1.add(xActionBar2, java.awt.BorderLayout.CENTER);
+
         xLabel5.setBackground(new java.awt.Color(0, 51, 153));
         xLabel5.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 3, 3, 3));
         xLabel5.setForeground(new java.awt.Color(255, 255, 255));
@@ -51,23 +53,7 @@ public class TransmittalPage extends javax.swing.JPanel {
         xLabel5.setOpaque(true);
         jPanel1.add(xLabel5, java.awt.BorderLayout.NORTH);
 
-        jPanel3.setLayout(new java.awt.BorderLayout());
-
-        jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 1, 3, 1));
-        jPanel3.setOpaque(false);
-        jPanel3.setPreferredSize(new java.awt.Dimension(10, 30));
-        jPanel2.setLayout(new java.awt.BorderLayout());
-
-        xActionBar2.setName("formActions");
-        jPanel2.add(xActionBar2, java.awt.BorderLayout.EAST);
-
-        jPanel3.add(jPanel2, java.awt.BorderLayout.WEST);
-
-        jPanel1.add(jPanel3, java.awt.BorderLayout.CENTER);
-
         add(jPanel1, java.awt.BorderLayout.NORTH);
-
-        jPanel4.setLayout(null);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle(" Transimittal ");
@@ -93,9 +79,6 @@ public class TransmittalPage extends javax.swing.JPanel {
         xTextField3.setPreferredSize(new java.awt.Dimension(150, 19));
         formPanel1.add(xTextField3);
 
-        jPanel4.add(formPanel1);
-        formPanel1.setBounds(10, 10, 780, 110);
-
         jPanel5.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -110,9 +93,25 @@ public class TransmittalPage extends javax.swing.JPanel {
 
         jPanel5.add(jPanel6, java.awt.BorderLayout.CENTER);
 
-        jPanel4.add(jPanel5);
-        jPanel5.setBounds(10, 130, 780, 270);
-
+        org.jdesktop.layout.GroupLayout jPanel4Layout = new org.jdesktop.layout.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel4Layout.createSequentialGroup()
+                .addContainerGap()
+                .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 708, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 708, Short.MAX_VALUE))
+                .addContainerGap())
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel4Layout.createSequentialGroup()
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 105, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 256, Short.MAX_VALUE)
+                .addContainerGap())
+        );
         add(jPanel4, java.awt.BorderLayout.CENTER);
 
     }// </editor-fold>//GEN-END:initComponents
@@ -121,8 +120,6 @@ public class TransmittalPage extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.rameses.rcp.util.FormPanel formPanel1;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;

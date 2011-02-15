@@ -1,13 +1,14 @@
 <workunit>
     
     <invokers>
+        <invoker type="home.action" permission="transmittal.create" caption="Transmittal (Create)" target="window" action="init" icon="images/folder.png"/>
+        <invoker folderid="/menu/file" permission="transmittal.create" caption="Transmittal (Create)" target="window" action="init"/>
         <invoker type="transmittal_municipality:quickView" action="openQuickView"/>
         <invoker type="transmittal_municipality:open" action="open"/>
-        <invoker folderid="/menu/file" caption="Transmittal" action="init"/>
         <invoker type="formActions" tooltip="Close" mnemonic="c" action="_close" visibleWhen="#{ state == 'VIEW' }" icon="images/remove24.png"/>
-        <invoker type="formActions" tooltip="Save" mnemonic="s" action="save" visibleWhen="#{ state == 'VIEW' and bean.state == 'DRAFT'}" icon="images/save24.png"/>
-        <invoker type="formActions" tooltip="Export Transmittal" mnemonic="e" action="export" visibleWhen="#{ state == 'VIEW' and bean.state == 'ACTIVE'}" icon="images/import24.png"/>
-        <invoker type="formActions" tooltip="Import Close Transmittal" mnemonic="i" action="importTransmittal" visibleWhen="#{ state == 'VIEW' and bean.state == 'ACTIVE'}" icon="images/export24.png"/>
+        <invoker type="formActions" permission="transmittal.save" tooltip="Save" mnemonic="s" action="save" visibleWhen="#{ state == 'VIEW' and bean.state == 'DRAFT'}" icon="images/save24.png"/>
+        <invoker type="formActions" permission="transmittal.export" tooltip="Export Transmittal" mnemonic="e" action="export" visibleWhen="#{ state == 'VIEW' and bean.state == 'ACTIVE'}" icon="images/export24.png"/>
+        <invoker type="formActions" permission="transmittal.import" tooltip="Close Transmittal" mnemonic="i" action="importTransmittal" visibleWhen="#{ state == 'VIEW' and bean.state == 'ACTIVE'}" icon="images/import24.png"/>
     </invokers>
     
     <code>
@@ -123,6 +124,7 @@
                                 
                                 return chunk.eof;
                             }catch(e){
+                                e.printStackTrace();
                                 message = "ERROR: " + ExceptionManager.getOriginal( e ).message;
                                 cancelled = true;
                                 return true;
