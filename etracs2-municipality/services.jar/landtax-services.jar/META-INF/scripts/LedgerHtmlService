@@ -1,0 +1,148 @@
+import com.rameses.annotations.*;
+
+public class LedgerHtmlService {
+
+	@Service("NumberService")
+	def numberService;
+	
+	@ProxyMethod 
+	public def buildHtml( ledger ) {
+		def items = buildLedgerItems( ledger.items );
+		def credits = buildLedgerCredits( ledger.credits );
+		return """
+			<html>
+				<head>
+					<style type="text/css">
+						body, td, th { 
+							font-family: tahoma;
+							font-size  : 12pt;
+						}	
+						td {
+							background-color:white;
+						}
+						th {
+							background-color : #CCCCCC;
+						}
+					</style>
+				</head>
+				</body>
+					<h2>Ledger Information for TD No. $ledger.tdno</h2>
+					<table> 
+						<tr>
+							<td>Taxpayer</td>
+							<td>:</td>
+							<td>$ledger.taxpayername</td>
+						</tr>
+						<tr>
+							<td>Address</td>
+							<td>:</td>
+							<td>$ledger.taxpayeraddress</td>
+						</tr>
+						<tr>
+							<td>TD No.</td>
+							<td>:</td>
+							<td>$ledger.tdno</td>
+						</tr>
+						<tr>
+							<td>PIN</td>
+							<td>:</td>
+							<td>$ledger.pin</td>
+						</tr>
+						<tr>
+							<td>Barangay</td>
+							<td>:</td>
+							<td>$ledger.barangay</td>
+						</tr>
+						<tr>
+							<td>Classification</td>
+							<td>:</td>
+							<td>$ledger.classcode</td>
+						</tr>
+						<tr>
+							<td>Lot No.</td>
+							<td>:</td>
+							<td>$ledger.cadastrallotno</td>
+						</tr>
+					</table>
+					<br>
+					$items
+					<br>
+					$credits
+				</body>
+			</html>
+		""";
+	}
+	
+	def buildLedgerItems( items )  {
+		def trs = """
+			<tr>
+				<td colspan="4"><b>Receivable Information</b></td>
+			</tr>
+			<tr>
+				<th>TD No.</th>
+				<th>From Year</th>
+				<th>To Year</th>
+				<th>Assessed Value</th>
+			</tr>
+		""";
+		
+		items.each {
+			def av = numberService.format("#,##0.00", it.assessedvalue);
+			trs += """
+				<tr>
+					<td>$it.tdno</td>
+					<td>$it.fromyear</td>
+					<td>$it.toyear</td>
+					<td align="right">$av</td>
+				</tr>
+			""";	
+		}
+		return """
+			<div width="80%" style="background-color:silver">
+				<table width="100%" cellspacing="1">
+					$trs
+				</table>
+			</div>
+		"""
+	}
+	
+	def buildLedgerCredits( credits )  {
+		def trs = """
+			<tr>
+				<td colspan="7"><b>Credit Summary</b></td>
+			</tr>
+			<tr>
+				<th>Mode</th>
+				<th>Ref. No.</th>
+				<th>Ref. Date</th>
+				<th>Collector</th>
+				<th>Period Covered</th>
+				<th>Basic</th>
+				<th>SEF</th>
+			</tr>
+		""";
+		
+		credits.each {
+			def basic = numberService.format("#,##0.00", it.basic);
+			def sef = numberService.format("#,##0.00", it.sef);
+			trs += """
+				<tr>
+					<td>$it.mode</td>
+					<td>$it.refno</td>
+					<td>$it.txndate</td>
+					<td>$it.collectorname</td>
+					<td>${it.paymentfrom} - ${it.paymentto}</td>
+					<td align="right">$basic</td>
+					<td align="right">$sef</td>
+				</tr>
+			""";	
+		}
+		return """
+			<div style="background-color:silver">
+				<table width="100%" cellspacing="1">
+					$trs
+				</table>
+			</div>
+		"""
+	}
+}

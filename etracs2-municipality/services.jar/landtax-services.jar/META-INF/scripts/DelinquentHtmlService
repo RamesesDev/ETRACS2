@@ -1,0 +1,143 @@
+import com.rameses.annotations.*;
+
+public class DelinquentHtmlService {
+
+	@Service("NumberService")
+	def numberService;
+	
+	@Service("DateService")
+	def dateService;
+	
+	@Service("Var")
+	def var;
+	
+	@ProxyMethod 
+	public def buildHtml( barangay, dlist ) {
+		def items = buildItems( dlist );
+		def currDate = new Date();
+		def dt = dateService.format("MMM, yyyy", currDate);
+		def runDate = dateService.format("MM-dd-yyyy hh:mm:ss", currDate);
+		return """
+			<html>
+				<head>
+					<style type="text/css">
+						body, td, th { 
+							font-family: tahoma;
+							font-size  : 12pt;
+						}	
+						td {
+							background-color:white;
+						}
+						th {
+							background-color : #CCCCCC;
+						}
+						.money {
+							font-weight : bold;
+							text-align  : right;
+						}
+					</style>
+				</head>
+				</body>
+					<h2>List of Delinquent Taxpayers</h2>
+					<b>
+					Municipality of $var.lgu_name <br>
+					Barangay $barangay <br>
+					As of $dt <br>
+					</b>
+					<br>
+					$items
+				</body>
+			</html>
+		""";
+	}
+	
+	def buildItems( items )  {
+		def trs = """
+			<tr>
+				<th rowspan="2">Taxpayer</th>
+				<th rowspan="2">TD No.</th>
+				<th rowspan="2">Assessed Value</th>
+				<th rowspan="2">Basic</th>
+				<th rowspan="2">SEF</th>
+				<th rowspan="2">Discount</th>
+				<th rowspan="2">Penalty</th>
+				<th rowspan="2">Total</th>
+				<th colspan="2">Last Payment Info</th>
+				<th rowspan="2">Yrs. Delinquent</th>
+			</tr>
+			<tr>
+				<th>OR No.</th>
+				<th>OR Date</th>
+			</tr>
+		""";
+		
+		def totalBasic = 0.0;
+		def totalSef = 0.0;
+		def totalDiscount = 0.0;
+		def totalPenalty = 0.0;
+		def grandTotal = 0.0;
+		def count = 0;
+		
+		items.each {
+			totalBasic += it.basic;
+			totalSef += it.sef;
+			totalDiscount += it.discount;
+			totalPenalty += it.penalty;
+			grandTotal += it.total;
+			count++;
+			
+			def av = numberService.format("#,##0.00", it.av);
+			def basic = numberService.format("#,##0.00", it.basic);
+			def sef = numberService.format("#,##0.00", it.sef);
+			def discount = numberService.format("#,##0.00", it.discount);
+			def penalty = numberService.format("#,##0.00", it.penalty);
+			def total = numberService.format("#,##0.00", it.total);
+			
+			trs += """
+				<tr>
+					<td>$it.taxpayername</td>
+					<td>$it.tdno</td>
+					<td align="right">$av</td>
+					<td align="right">$basic</td>
+					<td align="right">$sef</td>
+					<td align="right">$discount</td>
+					<td align="right">$penalty</td>
+					<td align="right">$total</td>
+					<td align="center">${it.orno ? it.orno : ''}</td>
+					<td align="center">${it.ordate ? it.ordate : ''}</td>
+					<td align="center">$it.yrsdelinquent</td>
+				</tr>
+			""";	
+		}
+		
+		def stotalBasic = numberService.format('#,##0.00', totalBasic);
+		def stotalSef = numberService.format('#,##0.00', totalSef);
+		def stotalDiscount = numberService.format('#,##0.00', totalDiscount);
+		def stotalPenalty = numberService.format('#,##0.00', totalPenalty);
+		def sgrandTotal = numberService.format('#,##0.00', grandTotal);
+		def scount = numberService.format('#,##0', count );
+		
+		trs += """
+			<tr>
+				<td class="money" colspan="3">GRAND TOTALS : </td>
+				<td class="money">$stotalBasic</td>
+				<td class="money">$stotalSef</td>
+				<td class="money">$stotalDiscount</td>
+				<td class="money">$stotalPenalty</td>
+				<td class="money">$sgrandTotal</td>
+				<td colspan="3"></td>
+			</tr>
+		"""
+		
+		return """
+			<div style="background-color:silver">
+				<table width="100%" cellspacing="1">
+					$trs
+				</table>
+			</div>
+			<br>
+			Total Number of Delinquent Taxpayers : <b>$scount</b>
+		"""
+	}
+	
+}

@@ -1,0 +1,43 @@
+import com.rameses.annotations.*;
+
+public class RemoteLandTaxService {
+
+	@Service("ETRACSIntegrationService") 
+	def integration;
+	
+	@PersistenceContext("etracs")
+	def emOld;
+	
+	@Service("LedgerHtmlService") 
+	def ledgerHtmlService;
+	
+	@Service("DelinquentHtmlService") 
+	def delinquentService;
+	
+	
+	
+	@ProxyMethod
+	@Async(type="topic")
+	public def getLedger( domain, faasId ) {
+		if( ! integration.acceptMsg( domain ) ) return null;
+		def ledger = emOld.sqlContext.createNamedQuery("ledger:getLedgerByTdId").setParameter("tdid", faasId).singleResult;
+		ledger.items = emOld.sqlContext.createNamedQuery("ledger:getLedgerItems").setParameter("ledgerid", ledger.objid).resultList;
+		ledger.credits = emOld.sqlContext.createNamedQuery("ledger:getLedgerCredits").setParameter("ledgerid", ledger.objid).resultList;
+		return ledgerHtmlService.buildHtml( ledger );
+	}
+	
+	@ProxyMethod
+	@Async(type="topic")
+	public def generateDelinquencyReport( domain, barangay ) {
+		if( ! integration.acceptMsg( domain ) ) return null;
+		def ledgerIds = integration.invokeLandTaxReportService("getDelinquentLedgerIds", [barangay]);
+		def dlist = integration.invokeLandTaxReportService("getRPTTaxDelinquencies", [ledgerIds]);
+		dlist.sort { a, b -> 
+			def key1 = a.yrsdelinquent + a.tdno + a.taxpayername;
+			def key2 = b.yrsdelinquent + b.tdno + b.taxpayername;
+			return key1.compareTo(key2);
+		}
+		return delinquentService.buildHtml( barangay, dlist );
+	}
+	
+}

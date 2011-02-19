@@ -12,6 +12,11 @@ class ETRACSIntegrationService
 	def faasSvc;
 	
 	@ProxyMethod
+	public def acceptMsg(  domain ) {
+		return ( domain == var.lgu_index );
+	}
+	
+	@ProxyMethod
 	public void approveTaxDeclaration( domain, userName, faasId, txnType, tdNo, pin, issueDate ) {
 		invokeRPTService("approveTaxDeclaration", [domain, userName, faasId, txnType, tdNo, pin, issueDate]);
 		faasSvc.approve( faasId, userName, tdNo, pin, issueDate );
@@ -26,12 +31,13 @@ class ETRACSIntegrationService
 	}
 	
 	@ProxyMethod
-	public def findLedgerByTdId2( params ) {
-		return invokeRPTService( "findLedgerByTdId" , [ params.faasId ] );
+	public def invokeRPTService( methodName, params ) {
+		return invokeService("remote/RemoteRPTService", methodName, params as Object[]);
 	}
 	
-	private def invokeRPTService( methodName, params ) {
-		return invokeService("remote/RemoteRPTService", methodName, params as Object[]);
+	@ProxyMethod
+	public def invokeLandTaxReportService( methodName, params ) {
+		return invokeService("rpt/LandTaxReportService", methodName, params as Object[]);
 	}
 
 	private def invokeService( serviceName, methodName, params ) {

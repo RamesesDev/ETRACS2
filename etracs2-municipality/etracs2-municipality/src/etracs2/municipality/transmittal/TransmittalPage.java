@@ -109,7 +109,7 @@ public class TransmittalPage extends javax.swing.JPanel {
             .add(jPanel4Layout.createSequentialGroup()
                 .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 105, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 256, Short.MAX_VALUE)
+                .add(jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 231, Short.MAX_VALUE)
                 .addContainerGap())
         );
         add(jPanel4, java.awt.BorderLayout.CENTER);
