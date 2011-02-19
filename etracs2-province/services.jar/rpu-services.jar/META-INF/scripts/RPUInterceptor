@@ -21,11 +21,14 @@ public class RPUInterceptor
 		
 		def rpu = getRpuByPin( data.pin ) 
 		if( rpu )  {
+			data.parentid  = rpu.objid;
+			rpu.faasid     = faas.objid;
 			rpu.tdno       = data.tdno;
 			rpu.prevfaasid = data.prevfaasid;
 			em.update("rpuhistory:rpu", rpu);
 		}
 		else {
+			data.parentid = data.objid;
 			em.validate("rpuhistory:rpu", data);
 			em.create("rpuhistory:rpu", data);
 		}
@@ -33,11 +36,7 @@ public class RPUInterceptor
 	}
 	
 	private def getRpuByPin( pin ) {
-		def rpuInfo = em.sqlContext.createNamedQuery("rpu:findByPin").setParameter("pin", pin ).singleResult;
-		if( rpuInfo ) {
-			return em.serializer.read( "rpuhistory:rpu", rpuInfo );
-		}	
-		return null;
+		return em.sqlContext.createNamedQuery("rpu:findByPin").setParameter("pin", pin ).singleResult;		
 	}
 	
 	private def getPreviousFaasId( faas ) {

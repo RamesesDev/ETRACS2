@@ -1,0 +1,82 @@
+<workunit>
+    <invokers>
+        <invoker type="home.action" action="init" caption="Inquire" permission="faasinquiry.view" target="window" icon="images/inquiry.png"  />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class FAASInquiryController 
+        {
+            @Service("FAASService")
+            def svc;
+            
+            @Service("FAASHtmlService")
+            def htmlService;
+            
+            @Binding
+            def binding;
+            
+            def CURRENT_STATE = 'CURRENT'
+            def state = CURRENT_STATE;
+            def selectedItem;
+            def search = [:];
+            
+            def formActions = InvokerUtil.lookupActions("faasinquiry:action")
+                        
+            void init() {
+            }
+            
+            public void doSearch() {
+                listHandler.load();
+            }
+            
+            def listHandler = [
+                getRows    : { return 25; },
+                getColumns : {
+                    return [
+                        new Column( name:"item.municipality", caption:"Municipality", width:120),
+                        new Column( name:"item.tdNo", caption:"TD No.", width:120),
+                        new Column( name:"item.pin", caption:"PIN", width:150),
+                    ]
+                },
+                fetchList  : { 
+                    search.state = state;
+                    return svc.getListAll( search, it );  
+                },
+            ] as PageListModel;
+        
+            public def getHtml() {
+                if( selectedItem?.item ) {
+                    if( ! selectedItem.item.html ) {
+                        selectedItem.item.html = htmlService.getHtml( selectedItem.item.objid );
+                    }
+                    return selectedItem.item.html;
+                }
+                return "No record or item selected...";
+            } 
+            
+            public def showAttachment( params ) {
+                def data = params.split("~~");
+                def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] );
+                opener.caption = "Attachment: " + data[1];
+                return opener;
+            }
+            
+            public def getFaas() {
+                return selectedItem?.item;
+            }            
+        }
+        
+        ]]>
+        
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.ListPage"/>
+    </pages>
+</workunit>

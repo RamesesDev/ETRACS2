@@ -13,6 +13,16 @@ SELECT COUNT(*) AS pinCount FROM faas_list WHERE pin = $P{pin}
 [getExchangePinList]
 SELECT objid, pin FROM faas_list WHERE objid <> $P{objid}  AND state = 'FORAPPROVAL' ORDER BY pin 
 
+[getFaasHistory]
+SELECT h.objid, h.faasid, h.pin, h.tdno, lh.municipality 
+FROM rpu r, rpu_history h, faas_list lh 
+WHERE r.objid = h.parentid 
+  AND h.faasid = lh.objid 
+  AND r.faasid = $P{faasid}   
+ORDER BY h.tdno DESC   
+
+
+
 #----------------------------------------------------------------
 # UPDATES
 #----------------------------------------------------------------

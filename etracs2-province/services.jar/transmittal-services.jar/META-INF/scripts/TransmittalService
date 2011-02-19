@@ -128,8 +128,9 @@ class TransmittalService
 	}
 	
 	@ProxyMethod
-	public void updateItemStateToCurrent(transmittalId, faasId) {
+	public void updateItemStateToCurrent(transmittalId, faasId, tdNo) {
 		updateItemState( transmittalId, faasId, CURRENT_STATE);
+		updateItemTdNo(transmittalId, faasId, tdNo);
 		changeTransmittalToClosed( transmittalId );
 	}
 	
@@ -178,6 +179,12 @@ class TransmittalService
 	private void updateItemState( transmittalId, faasId, state) {
 		em.sqlContext.createNamedExecutor("transmittal:updateItemState")
 					 .setParameters([transmittalid:transmittalId, faasid:faasId, newstate:state])
+					 .execute();		
+	}
+	
+	private void updateItemTdNo(transmittalId, faasId, tdNo) {
+		em.sqlContext.createNamedExecutor("transmittal:updateItemTdNo")
+					 .setParameters([transmittalid:transmittalId, faasid:faasId, tdNo:tdNo])
 					 .execute();		
 	}
 	

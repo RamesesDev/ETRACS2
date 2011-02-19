@@ -1,0 +1,76 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/report/landtax" action="init" caption="RPT Delinquency" />
+        <invoker type="reportActions" action="_default" caption="Back" icon="images/back24.png" />
+        <invoker type="reportActions" action="sendRequest" caption="Send Request" visibleWhen="#{sending == false}" />
+    </invokers>
+    <code>
+<![CDATA[
+import com.rameses.rcp.commons.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*
+import com.rameses.common.*;
+
+class DeliquencyReportController
+{
+    @Binding
+    def binding;
+    
+    @Service("LguService")
+    def lguService;
+
+    @Service("RemoteLandTaxService")
+    def landTaxService;
+
+    def prov;
+    def municipality;
+    def barangay;
+    def sending = false;
+    def html;
+
+    void init() {
+        prov = lguService.openProvince();
+    }
+
+    def handler = { resp -> 
+        html = resp.value;
+        binding.refresh("html");
+    } as AsyncHandler
+
+    def generate() {
+        doSendRequest();
+        return "view";
+    }
+    
+    void sendRequest() {
+        doSendRequest();
+        binding.refresh("html");
+    }
+    
+    def doSendRequest() {
+        landTaxService.generateDelinquencyReport( municipality.indexNo, barangay.name, handler);
+        sending = true;
+        html = "Sending request to $municipality.name Server. Please wait...";
+    }
+    
+    def getMunicipalityList() {
+        return prov.municipalities;
+    }
+    
+    def getBarangayList() {
+        if( municipality ) {
+            return municipality.barangays;
+        }
+        return [];
+    }
+	
+}
+        
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.prov.MunicipalReportInitPage"/>
+        <page name="view" template="etracs2.prov.HtmlPage"/>
+    </pages>
+</workunit>

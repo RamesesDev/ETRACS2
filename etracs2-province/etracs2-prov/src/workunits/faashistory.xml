@@ -1,0 +1,73 @@
+<workunit>
+    <invokers>
+        <invoker type="faasinquiry:action" action="init" caption="History" target="window" icon="images/history.png" visibleWhen="#{faas != null}"/>
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class FAASHistoryController 
+{
+    @Service("FAASService")
+    def svc;
+    
+    @Service("FAASHtmlService")
+    def htmlService;
+    
+    @Caller
+    def caller;
+            
+    
+    def faasId;
+    def selectedItem;
+    
+    void init() {
+        faasId = caller.faas.objid;
+    }
+    
+    def listHandler = [
+        getRows    : { return 50; },
+        getColumns : {
+            return [
+                new Column( name:"item.municipality", caption:"Municipality", width:120),
+                new Column( name:"item.tdno", caption:"TD No.", width:120),
+                new Column( name:"item.pin", caption:"PIN", width:150),
+            ]
+        },
+        fetchList  : { 
+            return svc.getHistoryList( faasId, it );  
+        },
+    ] as PageListModel;
+    
+                
+    public def getHtml() {
+        if( selectedItem?.item ) {
+            if( ! selectedItem.item.html ) {
+                selectedItem.item.html = htmlService.getSimpleHtml( selectedItem.item.faasid);
+            }
+            return selectedItem.item.html;
+        }
+        return "No record or item selected...";
+    } 
+
+    public def showAttachment( params ) {
+        def data = params.split("~~");
+        def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] );
+        opener.caption = "Attachment: " + data[1];
+        return opener;
+    }
+}  
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.prov.faas.FAASHistoryPage" />
+    </pages>
+</workunit>

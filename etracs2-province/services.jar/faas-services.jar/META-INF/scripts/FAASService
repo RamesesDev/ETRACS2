@@ -102,6 +102,14 @@ class FAASService
 	}
 	
 	@ProxyMethod
+	public def getHistoryList( faasId, params ) {
+		return em.sqlContext.createNamedQuery("faas:getFaasHistory").setParameter("faasid", faasId)
+					.setFirstResult( params._start)
+					.setMaxResults( params._limit )
+					.resultList
+	}
+	
+	@ProxyMethod
 	public def create( @Param(schema="faas:faas") faas ) {
 		faas.sys_dtCreated = dateService.getServerDate();
 		em.create("faas:faas",  faas);
@@ -316,6 +324,11 @@ class FAASService
 				prevFaas.state = CANCELLED_STATE;
 				prevFaas.info.cancelInfo = [cancelReason:faas.info.txnType, cancelDate:faas.sys_dtApproved, cancelledByTdNo:faas.tdNo];
 				em.update("faas:faas", prevFaas);
+			}
+			prevFaas = em.read("faas:faas-list", [objid:item.faasId]);
+			if( prevFaas ) {
+				prevFaas.state = CANCELLED_STATE;
+				em.update("faas:faas-list", prevFaas);
 			}
 		}
 	}

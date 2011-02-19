@@ -60,7 +60,7 @@ public class ExaminerPage extends javax.swing.JPanel {
         add(jPanel7, java.awt.BorderLayout.NORTH);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("Search");
+        xTitledBorder1.setTitle("Listing");
         jPanel2.setBorder(xTitledBorder1);
         xTable1.setHandler("listHandler");
         xTable1.setIndex(-1);

@@ -4,18 +4,16 @@
  * Created on November 3, 2010, 4:35 PM
  */
 
-package etracs2.prov;
-
-import com.rameses.rcp.ui.annotations.StyleSheet;
+package etracs2.prov.faas;
 
 /**
  *
  * @author  jzamss
  */
-public class ListPage extends javax.swing.JPanel {
+public class FAASHistoryPage extends javax.swing.JPanel {
     
     /** Creates new form FAASList */
-    public ListPage() {
+    public FAASHistoryPage() {
         initComponents();
     }
     
@@ -29,8 +27,6 @@ public class ListPage extends javax.swing.JPanel {
         jPanel2 = new javax.swing.JPanel();
         jSplitPane1 = new javax.swing.JSplitPane();
         jPanel5 = new javax.swing.JPanel();
-        jPanel8 = new javax.swing.JPanel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
         xTable1 = new com.rameses.rcp.control.XTable();
         jPanel6 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -39,6 +35,7 @@ public class ListPage extends javax.swing.JPanel {
 
         setLayout(new java.awt.BorderLayout());
 
+        setPreferredSize(new java.awt.Dimension(965, 555));
         jPanel2.setLayout(new java.awt.BorderLayout());
 
         jPanel2.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -47,19 +44,8 @@ public class ListPage extends javax.swing.JPanel {
         jPanel5.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("Listing");
+        xTitledBorder1.setTitle("FAAS History Listing");
         jPanel5.setBorder(xTitledBorder1);
-        jPanel8.setLayout(new java.awt.BorderLayout());
-
-        jPanel8.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 1, 5, 1));
-        xActionTextField1.setActionName("doSearch");
-        xActionTextField1.setHint("Search");
-        xActionTextField1.setName("search.textSearch");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(200, 19));
-        jPanel8.add(xActionTextField1, java.awt.BorderLayout.CENTER);
-
-        jPanel5.add(jPanel8, java.awt.BorderLayout.NORTH);
-
         xTable1.setAutoResize(false);
         xTable1.setDepends(new String[] {"selectedItem"});
         xTable1.setHandler("listHandler");
@@ -98,11 +84,9 @@ public class ListPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
-    private javax.swing.JPanel jPanel8;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XEditorPane xEditorPane1;
     private com.rameses.rcp.control.XTable xTable1;
     // End of variables declaration//GEN-END:variables

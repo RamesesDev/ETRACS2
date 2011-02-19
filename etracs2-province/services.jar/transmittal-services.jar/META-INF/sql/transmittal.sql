@@ -42,6 +42,10 @@ UPDATE transmittal SET state = 'SUBMITTED' WHERE objid = $P{objid}
 [updateItemState]
 UPDATE transmittalitem SET state = $P{newstate} WHERE transmittalid = $P{transmittalid} AND faasid = $P{faasid}
 
+[updateItemTdNo]
+UPDATE transmittalitem SET tdNo = $P{tdNo} WHERE transmittalid = $P{transmittalid} AND faasid = $P{faasid}
+
+
 [disapproveItem]
 UPDATE transmittalitem SET state = $P{newstate}, remarks = $P{remarks} WHERE transmittalid = $P{transmittalid} AND faasid = $P{faasid}
 
