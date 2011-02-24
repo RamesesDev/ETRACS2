@@ -222,7 +222,10 @@ class FaasService
 				 claimNo           : rp.claimNo,
 				 cadastralLotNo    : rp.cadastralLotNo,
 				 barangayId        : rp.barangayId,
-				 boundary : [north: rp.northBoundary, south: rp.southBoundary, east: rp.eastBoundary, west: rp.westBoundary],
+				 north   : rp.northBoundary,
+				 south   : rp.southBoundary,
+				 east    : rp.eastBoundary,
+				 west    : rp.westBoundary,
 			 ]
 		]    
 	}
@@ -266,12 +269,31 @@ class FaasService
 			issueDate        : dateService.format("yyyy-MM-dd",td.issueDate),
 			effectivityYear  : td.effectivityYear,
 			effectivityQtr   : td.effectivityQtr,
-			title            : (td.titleNo == null ? null : [titleNo: td.titleNo, titleDate: td.titleDate, titleType: td.titleType.name]),
-			taxpayer         : [taxpayerId: td.taxpayerId, taxpayerName: td.taxpayerName, taxpayerAddress: td.taxpayerAddress],
-			appraisedBy      : [name: td.appraisedBy, title: td.appraisedByPosition, dtSigned: dateService.format("yyyy-MM-dd",td.issueDate),],
-			recommendedBy    : [name: td.recommendedBy, title: td.recommendedByPosition, dtSigned: dateService.format("yyyy-MM-dd",td.issueDate),],                
-			approvedBy       : [name: td.approvedBy, title: td.approvedByPosition, dtSigned: dateService.format("yyyy-MM-dd",td.issueDate),],        
-			previousInfo     : [prevTdNo:td.previousTdNo, prevPin:td.previousPin, prevOwner:td.previousOwner,prevAssessedValue:td.previousAssessedValue, prevMarketValue:td.previousMarketValue ], //previousinfo
+			titleNo          : td.titleNo,
+			titleDate        : (td.titleDate ? dateService.format('yyyy-MM-dd', td.titleDate) : null ) ,
+			titleType        : (td.titleType ? td.titleType : null ),
+			taxpayerId       : td.taxpayerId,
+			taxpayerName     : td.taxpayerName,
+			taxpayerAddress  : td.taxpayerAddress,
+			administratorId  : td.administratorId,
+			administratorName : td.administratorName,
+			administratorAddress : td.administratorAddress,
+			
+			appraisedBy        : td.appraisedBy,
+			appraisedByTitle   : td.appraisedByPosition,
+			dtAppraised        : dateService.format('yyyy-MM-dd', td.issueDate),
+			recommendedBy      : td.recommendedBy,
+			recommendedByTitle : td.recommendedByPosition,
+			dtRecommended      : dateService.format('yyyy-MM-dd', td.issueDate),
+			approvedBy         : td.approvedBy,
+			approvedByTitle    : td.appraisedByPosition,
+			dtApproved         : dateService.format('yyyy-MM-dd', td.issueDate),
+			
+			prevTdNo           : td.previousTdNo,
+			prevPin            : td.previousPin,
+			prevOwner          : td.previousOwner,
+			prevAssessedValue  : td.previousAssessedValue,
+			prevMarketValue    : td.previousMarketValue,
 		];
 	}
 	

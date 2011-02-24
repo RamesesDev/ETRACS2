@@ -215,7 +215,9 @@ class FAASService
 		
 		def currDate = dateService.getServerDate();
 		faas.state  = FORAPPROVAL_STATE;
-		faas.info.reviewedBy  = [name:env.USERNAME, title:env.JOBTITLE, dtSigned:currDate];
+		faas.info.reviewedBy = env.USERNAME;
+		faas.info.reviewedByTitle = env.JOBTITLE;
+		faas.info.dtReviewed = currDate;
 		em.update( "faas:faas", faas );
 		
 		def faasData = em.read("faas:faas-list", [ objid:faasId ]);
@@ -235,7 +237,9 @@ class FAASService
 		def currDate = dateService.getServerDate();
 		faas.state = PROVAPPROVAL_STATE;
 		faas.remarks = remarks;
-		faas.info.reviewedBy  = [name:env.USERNAME, title:env.JOBTITLE, dtSigned:currDate];
+		faas.info.reviewedBy = env.USERNAME;
+		faas.info.reviewedByTitle = env.JOBTITLE;
+		faas.info.dtReviewed = currDate;
 		em.update( "faas:faas", faas );
 		
 		def faasData = em.read("faas:faas-list", [ objid:faasId ]);
@@ -265,7 +269,7 @@ class FAASService
 		faas.tdNo  = newTdNo;
 		faas.info.tdNo = newTdNo;
 		faas.info.issueDate = dateService.format('yyyy-MM-dd', currDate);
-		faas.info.approvedBy.dtSigned = currDate;
+		faas.info.dtApproved = currDate;
 		faas.sys_dtApproved = currDate;
 		faas.remarks = null;
 		faas.provincialAssessor = var.provincialAssessor.name;
@@ -287,7 +291,9 @@ class FAASService
 		faas.remarks = remarks;
 		faas.sys_dtCreated = currDate;
 		faas.sys_dtApproved = currDate;
-		faas.info.reviewedBy  = [name:env.USERNAME, title:env.JOBTITLE, dtSigned:currDate];
+		faas.info.reviewedBy = env.USERNAME;
+		faas.info.reviewedByTitle = env.JOBTITLE;
+		faas.info.dtReviewed = currDate;
 		
 		def oid = 'F' + new UID();
 		faas.oid = oid;
@@ -322,7 +328,9 @@ class FAASService
 			def prevFaas = em.read("faas:faas", [objid:item.faasId]);
 			if( prevFaas ) {
 				prevFaas.state = CANCELLED_STATE;
-				prevFaas.info.cancelInfo = [cancelReason:faas.info.txnType, cancelDate:faas.sys_dtApproved, cancelledByTdNo:faas.tdNo];
+				prevFaas.info.cancelReason = faas.info.txnType;
+				prevFaas.info.cancelDate   = faas.sys_dtApproved;
+				prevFaas.info.cancelledByTdNo = faas.tdNo;
 				em.update("faas:faas", prevFaas);
 			}
 			prevFaas = em.read("faas:faas-list", [objid:item.faasId]);

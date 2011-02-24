@@ -55,15 +55,22 @@ class ImportTransmittalService
 				chunk.eof = true;
 			} 
 			else {
-				def transmittalItem = em2.read("transmittal:transmittalItem", [objid: chunk.data.objid]);
-				
-				if( transmittalItem.state == PROVAPPROVAL_STATE ) {
+				def item = em2.read("transmittal:transmittalItem", [objid: chunk.data.objid]);
+				item.faas.state = data.state;
+				item.state = data.state;
+				item.tdNo = data.tdNo;
+				item.faas.tdNo = data.tdNo;
+				item.faas.info.tdNo = data.tdNo;
+				item.faas.rpu.pin = data.pin;
+				item.remarks = data.remarks;
+		
+				if( item.state == PROVAPPROVAL_STATE ) {
 					if( chunk.data.state == CURRENT_STATE ) {
-						approveTransmittalItem( chunk.data, transmittalItem );
+						approveTransmittalItem( chunk.data, item );
 					}
 					else {
 						//disapproved either incomplete or disapproved items
-						disapproveTransmittalItem( chunk.data, transmittalItem );
+						disapproveTransmittalItem( chunk.data, item );
 					}
 				}
 			}
@@ -83,13 +90,6 @@ class ImportTransmittalService
 			data.pin,
 			item.faas.info.issueDate
 		);
-		print "APPROVE ...";
-		item.faas.state = data.state;
-		item.state = data.state;
-		item.tdNo = data.tdNo;
-		item.faas.tdNo = data.tdNo;
-		item.faas.info.tdNo = data.tdNo;
-		item.faas.rpu.pin = data.pin;
 		em2.update("transmittal:transmittalItem", item );
 	}
 	
@@ -105,7 +105,6 @@ class ImportTransmittalService
 		);
 		
 		transmittalService.updateTaxDeclarationState( data.faasId, false );
-		item.state = data.state;
 		em2.update("transmittal:transmittalItem", item )
 	}
 

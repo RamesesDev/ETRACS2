@@ -16,11 +16,6 @@ WHERE td.rpuid = r.objid
 AND td.state = 'PROVAPPROVAL' 
 AND ( td.transmitted IS NULL OR td.transmitted = 0 )
 
-[updateTransmittalState]
-UPDATE TaxDeclaration 
-SET transmitted = $P{transmittalState} 
-WHERE objid = $P{tdId} 
-
 [getTransmittalItemByParentId]
 SELECT * FROM transmittalItem where transmittalId = $P{transmittalId} 
 
@@ -36,11 +31,17 @@ delete from transmittalItem where transmittalId = $P{transmittalId}
 [deleteTransmittalBtId]
 delete from transmittal where objid = $P{objid}
 
+
+
+
 [updateTransmittalToClose]
 update transmittal set state = 'CLOSED' 
 where objid = $P{transmittalId} 
 
-[updateTaxDeclarationState]
+[updateTDState]
 UPDATE TaxDeclaration 
-SET state = 'DISAPPROVED'
-WHERE objid = $P{tdId}
+SET transmitted = $P{transmittalState} 
+WHERE objid = $P{tdId} 
+
+
+
