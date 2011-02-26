@@ -63,19 +63,15 @@ class TDService
 	
 	@ProxyMethod
 	public void post( def faas ) {
-		faas.info.issueDate = java.sql.Date.valueOf(faas.info.issueDate);
-		if( faas.info.title?.date ) {
-			faas.info.title.date = java.sql.Date.valueOf(faas.info.title.date);
-		}
 		def td = [
 			objid         : faas.objid,
 			schemaName    : "td:td",
 			schemaVersion : "1.0",
 			state         : faas.state,
 			tdNo          : faas.info.tdNo,
+			pin           : faas.rpu.info.pin,
 			info          : buildInfo( faas ),
 			assessments   : buildAssessment( faas ),
-			
 		];
 		
 		em.validate("td:td", td );
@@ -83,29 +79,94 @@ class TDService
 	}
 	
 	private def buildInfo( faas ) {
-		def rpInfo = faas.rp.info;
 		def info = faas.info;
-		info.barangay       = rpInfo.barangay;
-		info.cadastralLotNo = rpInfo.cadastralLotNo;
-		info.blockNo        = rpInfo.blockNo;
-		info.houseNo        = rpInfo.houseNo;
-		info.street         = rpInfo.street;
-		info.purok          = rpInfo.purok;
-		info.cancelInfo     = rpInfo.cancelInfo;
-		info.boundary       = rpInfo.boundary;
+		def rp   = faas.rp.info;
+		def rpu  = faas.rpu.info;
 		
-		def rpuInfo = faas.rpu.info;
-		info.ry        = rpuInfo.ry;
-		info.type      = rpuInfo.type;
-		info.suffix    = rpuInfo.suffix;
-		info.special   = rpuInfo.special;
-		info.taxable   = rpuInfo.taxable;
-		info.totalMV   = rpuInfo.totalMV;
-		info.totalAMV  = rpuInfo.totalAMV;
-		info.totalAV   = rpuInfo.totalAV;
-		info.areaSqm   = rpuInfo.areaSqm;
-		info.areaHec   = rpuInfo.areaHec;
-		return info;
+		return [
+			tdNo            : faas.tdNo,
+			txnType         : info.txnType,
+			issueDate       : info.issueDate,
+			effectivityYear : info.effectivityYear,
+			effectivityQtr  : info.effectivityQtr,
+			titleNo         : info.titleNo,
+			titleDate       : info.titleDate,
+			titleType       : info.titleType,
+			prevTdNo        : info.prevTdNo,
+			prevPin         : info.prevPin,
+			prevOwner       : info.prevOwner,
+			prevAssessedValue : info.prevAssessedValue,
+			prevMarketValue   : info.prevMarketValue,
+			cancelReason      : info.cancelReason,
+			cancelDate        : info.cancelDate,
+			cancelledByTdNo   : info.cancelledByTdNo,
+			taxpayerId        : info.taxpayerId,
+			taxpayerName      : info.taxpayerName,
+			taxpayerAddress   : info.taxpayerAddress,
+			administratorId   : info.administratorId,
+			administratorName : info.administratorName,
+			administratorAddress : info.administratorAddress,
+			appraisedBy          : info.appraisedBy,
+			appraisedByTitle     : info.appraisedByTitle,
+			recommendedBy        : info.recommendedBy,
+			recommendedByTitle   : info.recommendedByTitle,
+			reviewedBy           : info.reviewedBy,
+			reviewedByTitle      : info.reviewedByTitle,
+			approvedBy           : info.approvedBy,
+			approvedByTitle      : info.approvedByTitle,
+
+			barangay        : rp.barangay,
+			cadastralLotNo  : rp.cadastralLotNo,
+			blockNo         : rp.blockNo,
+			surveyNo        : rp.surveyNo,
+			houseNo         : rp.houseNo,
+			street          : rp.street,
+			purok           : rp.purok,
+			north           : rp.north,
+			south           : rp.south,
+			east            : rp.east,
+			west            : rp.west,
+
+			ry         : rpu.ry,
+			type       : rpu.type, 
+			propertyDescription : getPropertyDescription( faas ),
+			pin        : rpu.pin, 
+			suffix     : rpu.suffix,
+			subSuffix  : rpu.subSuffix,
+			special    : rpu.special,
+			taxable    : rpu.taxable,
+			totalMV    : rpu.totalMV,
+			totalAMV   : rpu.totalAMV,
+			totalAV    : rpu.totalAV,
+			areaSqm    : rpu.areaSqm,
+			areaHec    : rpu.areaHec,
+		]
+	}
+	
+	private def getPropertyDescription( faas ) {
+		def rpu = faas.rpu;
+		def desc = '';
+		if( rpu.rpuType == "rpubldg:bldg" ) 
+			desc = rpu.info.bldgKindTitle;
+		else if( rpu.rpuType == "rpumach:mach" ){
+			rpu.info.machineUses?.each{ uses ->
+				uses.machineDetails?.each{
+					if( desc.length() > 0 ) desc += ', ';
+					desc += it.machineTitle;
+				}
+			}
+		}else if( rpu.rpuType == "rpumisc:misc" ){
+			rpu.info.miscRpuItems?.each{
+				if( desc.length() > 0 ) desc += ', ';
+				desc += it.miscItemTitle;
+			}
+		}else if( rpu.rpuType == "rputree:tree" ){
+			rpu.info.landPlantDetails?.each{
+				if( desc.length() > 0 ) desc += ', ';
+				desc += it.treeTitle;
+			}
+		}
+		return desc;
 	}
 	
 	private def buildAssessment( faas ) {
@@ -135,7 +196,9 @@ class TDService
 			def area = getAreaByRpuType(rpu.rpuType, it);
 			if( !item  ) {
 				item = createItem(
-							key, rpu.info.classTitle, it.actualUseTitle,
+							key, 
+							rpu.info.classCode, rpu.info.classTitle, 
+							it.actualUseCode, it.actualUseTitle,
 							it.marketValue, it.adjMarketValue, 
 							it.assessLevel, it.assessedValue,
 							area.sqm, area.hec
@@ -174,10 +237,12 @@ class TDService
 		item.areaHec        += areaHec;
 	}
 	
-	private def createItem( key, classTitle, actualUseTitle, marketValue, adjMarketValue, assessLevel, assessedValue, areaSqm, areaHec) {
+	private def createItem( key, classCode, classTitle, actualUseCode, actualUseTitle, marketValue, adjMarketValue, assessLevel, assessedValue, areaSqm, areaHec) {
 		return [ 
 			key 		   : key,
+			classCode      : classCode,
 			classTitle     : classTitle,
+			actualUseCode  : actualUseCode,
 			actualUseTitle : actualUseTitle,
 			marketValue    : marketValue,
 			adjMarketValue : adjMarketValue,

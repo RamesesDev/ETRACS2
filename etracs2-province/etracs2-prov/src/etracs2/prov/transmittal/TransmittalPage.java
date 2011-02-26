@@ -61,6 +61,7 @@ public class TransmittalPage extends javax.swing.JPanel {
         jPanel3.setOpaque(false);
         jPanel2.setLayout(new java.awt.BorderLayout());
 
+        xActionBar2.setButtonCaptionOrientation(javax.swing.SwingConstants.BOTTOM);
         xActionBar2.setDepends(new String[] {"selectedItem"});
         xActionBar2.setName("formActions");
         jPanel2.add(xActionBar2, java.awt.BorderLayout.EAST);
@@ -73,15 +74,23 @@ public class TransmittalPage extends javax.swing.JPanel {
 
         jPanel4.setLayout(new java.awt.BorderLayout());
 
+        jPanel4.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 5));
         jSplitPane1.setDividerLocation(320);
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setFont(new java.awt.Font("Tahoma", 1, 12));
         xTitledBorder1.setTitle("Quick View");
         xTitledBorder1.setTitlePadding(new java.awt.Insets(2, 5, 2, 5));
         jScrollPane1.setBorder(xTitledBorder1);
+        jPanel5.setLayout(new java.awt.BorderLayout());
+
+        xActionBar1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
+        xActionBar1.setButtonCaptionOrientation(javax.swing.SwingConstants.BOTTOM);
         xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setName("itemActions");
+        jPanel5.add(xActionBar1, java.awt.BorderLayout.NORTH);
 
+        jPanel6.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 5, 5));
+        xEditorPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xEditorPane1.setDepends(new String[] {"selectedItem"});
         xEditorPane1.setName("html");
 
@@ -89,29 +98,14 @@ public class TransmittalPage extends javax.swing.JPanel {
         jPanel6.setLayout(jPanel6Layout);
         jPanel6Layout.setHorizontalGroup(
             jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(xEditorPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 474, Short.MAX_VALUE)
+            .add(xEditorPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 481, Short.MAX_VALUE)
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, xEditorPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 317, Short.MAX_VALUE)
         );
+        jPanel5.add(jPanel6, java.awt.BorderLayout.CENTER);
 
-        org.jdesktop.layout.GroupLayout jPanel5Layout = new org.jdesktop.layout.GroupLayout(jPanel5);
-        jPanel5.setLayout(jPanel5Layout);
-        jPanel5Layout.setHorizontalGroup(
-            jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 474, Short.MAX_VALUE)
-            .add(jPanel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-        );
-        jPanel5Layout.setVerticalGroup(
-            jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel5Layout.createSequentialGroup()
-                .add(xActionBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(322, Short.MAX_VALUE))
-            .add(jPanel5Layout.createSequentialGroup()
-                .add(26, 26, 26)
-                .add(jPanel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
         jScrollPane1.setViewportView(jPanel5);
 
         jSplitPane1.setRightComponent(jScrollPane1);

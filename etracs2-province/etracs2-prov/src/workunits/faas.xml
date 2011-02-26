@@ -2,10 +2,10 @@
     <invokers>
         <invoker type="faas:open" action="open" target="window" caption="FAAS Information"/>
         
-        <invoker type="formActions" action="doReturn" permission="faas.return" tooltip="Return to Reviewer" mnemonic="r" visibleWhen="#{faas.state == 'FORAPPROVAL'}" icon="images/return24.png"/>
-        <invoker type="formActions" action="submit" permission="faas.submit" tooltip="Submit For Approval" mnemonic="s" visibleWhen="#{faas.state == 'PROVAPPROVAL'}" icon="images/submit24.png" />
-        <invoker type="formActions" action="approve" permission="faas.approve" tooltip="Approve"  mnemonic="a" visibleWhen="#{faas.state == 'FORAPPROVAL'}" icon="images/approve24.png" />
-        <invoker type="formActions" action="doDisapprove" permission="faas.disapprove" tooltip="Disapprove" mnemonic="d" visibleWhen="#{faas.state == 'PROVAPPROVAL' || faas.state == 'FORAPPROVAL'}" icon="images/disapprove24.png"/>
+        <invoker type="formActions" action="doReturn" permission="faas.return" caption="Return" mnemonic="r" visibleWhen="#{faas.state == 'FORAPPROVAL'}" icon="images/return24.png"/>
+        <invoker type="formActions" action="submit" permission="faas.submit" caption="Submit" mnemonic="s" visibleWhen="#{faas.state == 'PROVAPPROVAL'}" icon="images/submit24.png" />
+        <invoker type="formActions" action="approve" permission="faas.approve" caption="Approve"  mnemonic="a" visibleWhen="#{faas.state == 'FORAPPROVAL'}" icon="images/approve24.png" />
+        <invoker type="formActions" action="doDisapprove" permission="faas.disapprove" caption="Disapprove" mnemonic="d" visibleWhen="#{faas.state == 'PROVAPPROVAL' || faas.state == 'FORAPPROVAL'}" icon="images/disapprove24.png"/>
         
         <invoker type="formActions" action="assignPin" permission="faas.assignpin" caption="Assign New PIN" mnemonic="p" visibleWhen="#{faas.state == 'FORAPPROVAL' and faas.rpu.info.type == 'LAND' and faas.info.txnType == 'ND'}" />
         <invoker type="formActions" action="exchangePin" permission="faas.exchangepin" caption="Exchange PIN" mnemonic="x" visibleWhen="#{faas.state == 'FORAPPROVAL' and faas.rpu.info.type == 'LAND' and faas.info.txnType == 'ND'}" />
@@ -51,7 +51,6 @@
                 if( MsgBox.confirm("Approve FAAS?") ) {
                     faas = faasService.approve( faasId );
                     refreshList();
-                    return "_close";
                 }
             }
             

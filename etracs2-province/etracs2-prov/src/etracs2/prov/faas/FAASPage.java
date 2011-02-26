@@ -34,6 +34,8 @@ public class FAASPage extends javax.swing.JPanel {
 
         setLayout(new java.awt.BorderLayout());
 
+        jScrollPane1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 5, 5));
+        xEditorPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xEditorPane1.setName("html");
         jScrollPane1.setViewportView(xEditorPane1);
 
@@ -51,12 +53,11 @@ public class FAASPage extends javax.swing.JPanel {
 
         jPanel3.setLayout(new java.awt.BorderLayout());
 
-        jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 1, 3, 1));
+        jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
         jPanel3.setOpaque(false);
         jPanel2.setLayout(new java.awt.BorderLayout());
 
-        xActionBar2.setButtonBorderPainted(false);
-        xActionBar2.setButtonContentAreaFilled(false);
+        xActionBar2.setButtonCaptionOrientation(javax.swing.SwingConstants.BOTTOM);
         xActionBar2.setDepends(new String[] {"selectedItem"});
         xActionBar2.setName("formActions");
         jPanel2.add(xActionBar2, java.awt.BorderLayout.EAST);

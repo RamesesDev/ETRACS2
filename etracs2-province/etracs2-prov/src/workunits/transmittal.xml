@@ -1,7 +1,7 @@
 <workunit>
     <invokers>
-        <invoker type="itemActions" tooltip="Incomplete Requirements" mnemonic="e" action="doIncomplete" visibleWhen="#{selectedItem != null &amp;&amp; state=='RECEIVED'}" icon="images/incomplete24.png"/>
-        <invoker type="formActions" tooltip="Submit to Reviewer" mnemonic="s" action="submit" visibleWhen="#{state == 'RECEIVED'}"  icon="images/submit24.png"/>
+        <invoker type="itemActions" action="doIncomplete" caption="Incomplete" mnemonic="e" visibleWhen="#{selectedItem != null and selectedItem.item != null and state=='RECEIVED'}" icon="images/incomplete24.png"/>
+        <invoker type="formActions" action="submit" caption="Submit" mnemonic="s" visibleWhen="#{state == 'RECEIVED'}"  icon="images/submit24.png"/>
     </invokers>
     
     <code>
@@ -62,10 +62,9 @@
                 getRows    : { return 100; },
                 getColumns : {
                     return [
-                        new Column( name:"item.type", caption:"Kind", width:30),
-                        new Column( name:"item.txnType", caption:"Txn", width:30),
-                        new Column( name:"item.tdNo", caption:"TD No.", width:110),
-                        new Column( name:"item.pin", caption:"PIN", width:150),
+                        new Column( name:"item.type", caption:"Kind", width:80),
+                        new Column( name:"item.txnType", caption:"Txn", width:80),
+                        new Column( name:"item.pin", caption:"PIN", width:160),
                     ]
                 },
                 fetchList  : { svc.getItemList( transmittal.objid ); },

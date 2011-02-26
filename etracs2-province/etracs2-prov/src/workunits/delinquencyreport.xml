@@ -21,6 +21,9 @@ class DeliquencyReportController
 
     @Service("RemoteLandTaxService")
     def landTaxService;
+    
+    @Service("Var")
+    def var;
 
     def prov;
     def municipality;
@@ -50,7 +53,23 @@ class DeliquencyReportController
     def doSendRequest() {
         landTaxService.generateDelinquencyReport( municipality.indexNo, barangay.name, handler);
         sending = true;
-        html = "Sending request to $municipality.name Server. Please wait...";
+        html = """
+            <html>
+            <body>
+                <br>
+                <br>
+                <br>
+                <table width="100%" >
+                    <tr>
+                        <td align="center"><img src="$var.url_progress_gif"></td>
+                    </tr>
+                    <tr>
+                        <td align="center">Sending request to $municipality.name Server. Please wait...</td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+        """;
     }
     
     def getMunicipalityList() {

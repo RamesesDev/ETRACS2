@@ -32,7 +32,7 @@ class FAASService
 	
 	@ProxyMethod
 	public def getList( search, params ) {
-		if( env.ASSIGNED_LGU && env.ASSIGNED_LGU.size() > 0) {
+		if( env.ASSIGNED_LGU?.size() > 0) {
 			return getListByAssignedLgu( search, params );
 		}
 		return getListAll( search, params );
@@ -143,14 +143,16 @@ class FAASService
 	public def assignPin( faas, key, section, newSeries, oldSeries ) {
 		if( faas.rpu.info.type != 'LAND') throw new Exception("Only Land RPU could be assigned a new PIN.");
 
-		checkExists( faas.objid );
+		checkExistsFaas( faas.objid );
 		
-		validateParcelSeries( key, newSeries, oldSeries ) 
+		validateParcelSeries( key, newSeries, oldSeries ) ;
 		def sectionNo = buildSectionNo( section );
 		def parcelNo = buildParcelNo( newSeries );
 		def pin = key + '-' + parcelNo;
 		checkDuplicatePin( pin, faas.rp.info.claimNo );
+		seqService.updateNextSeries( key, newSeries + 1);
 		
+		/* update faas pin related info */
 		faas.rpu.info.oldPin = faas.rpu.info.pin;
 		faas.rp.info.pin = pin;
 		faas.rp.info.sectionNo = sectionNo;
@@ -158,6 +160,7 @@ class FAASService
 		faas.rpu.info.pin = pin;
 		em.update( "faas:faas", faas );
 		
+		/* update faas-list pin related info */
 		def faasInfo = em.read("faas:faas-list", faas);
 		faasInfo.pin = pin;
 		em.update("faas:faas-list", faasInfo)
@@ -185,27 +188,10 @@ class FAASService
 		return fromFaas;
 	}
 	
-	private void updatePinInfo( faas, newPin, newSectionNo, newParcelNo ) {
-		faas.rp.info.pin = newPin;
-		faas.rp.info.sectionNo = newSectionNo;
-		faas.rp.info.parcelNo = newParcelNo;
-		faas.rpu.info.pin = newPin;
-		em.update("faas:faas", faas);
-		
-		def faasInfo = em.read('faas:faas-list', faas);
-		faasInfo.pin = newPin;
-		em.update("faas:faas-list", faasInfo);
-	}
-	
 	@ProxyMethod
 	public def getExchangePinList( faasId ) {
 		/* return FORAPPROVAL faas excluding this faasId */
 		return em.sqlContext.createNamedQuery("faas:getExchangePinList").setParameter("objid", faasId).resultList;
-	}
-	
-	private void checkExists( faasId ) {
-		def data = em.sqlContext.createNamedQuery("faas:getState").setParameter("objid", faasId).singleResult;
-		if( ! data ) throw new Exception("FAAS not found.");
 	}
 	
 	@ProxyMethod
@@ -257,26 +243,26 @@ class FAASService
 		def faasData = em.read("faas:faas-list", [ objid:faasId ]);
 		if( !faasData ) throw new Exception("FAAS not found.");
 		
-		def newTdNo = tdService.getNextTDNo( faasData ); 
-		tdService.checkDuplicateTdNo( newTdNo );
+		if( assignNewTdNo( faas ) ) {
+			def newTdNo = tdService.getNextTDNo( faasData ); 
+			tdService.checkDuplicateTdNo( newTdNo );
+			faas.tdNo  = newTdNo;
+			faas.info.tdNo = newTdNo;
+			faasData.tdNo  = newTdNo;
+		}
 		
 		faasData.state = CURRENT_STATE;
-		faasData.tdNo  = newTdNo;
 		em.update("faas:faas-list", faasData);
 		
 		def currDate = dateService.getServerDate();
 		faas.state = CURRENT_STATE;
-		faas.tdNo  = newTdNo;
-		faas.info.tdNo = newTdNo;
 		faas.info.issueDate = dateService.format('yyyy-MM-dd', currDate);
 		faas.info.dtApproved = currDate;
 		faas.sys_dtApproved = currDate;
 		faas.remarks = null;
 		faas.provincialAssessor = var.provincialAssessor.name;
 		faas.provincialAssessor = var.provincialAssessor.title
-		
 		cancelPreviousTds( faas );
-		
 		em.update( "faas:faas", faas );
 		return faas;
 	}
@@ -362,7 +348,29 @@ class FAASService
 		def seq = em_sys.sqlContext.createNamedQuery("sequence:getCurrentSeries").setParameter("objid",key).singleResult;
 		if( seq && oldSeries != seq.currentSeries ) throw new Exception("Current Series has been modified. Please try again.");
 		if( seq && seq.currentSeries > newSeries) throw new Exception("New Series $newSeries must be greater than or equal to $seq.currentSeries");
-		seqService.updateNextSeries( key, newSeries+1);
+	}
+	
+	private void updatePinInfo( faas, newPin, newSectionNo, newParcelNo ) {
+		faas.rp.info.pin = newPin;
+		faas.rp.info.sectionNo = newSectionNo;
+		faas.rp.info.parcelNo = newParcelNo;
+		faas.rpu.info.pin = newPin;
+		em.update("faas:faas", faas);
+		
+		def faasInfo = em.read('faas:faas-list', faas);
+		faasInfo.pin = newPin;
+		em.update("faas:faas-list", faasInfo);
+	}
+	
+	private void checkExistsFaas( faasId ) {
+		def data = em.sqlContext.createNamedQuery("faas:getState").setParameter("objid", faasId).singleResult;
+		if( ! data ) throw new Exception("FAAS not found.");
+	}
+	
+	private def assignNewTdNo( faas ) {
+		if( ! faas.tdNo ) return true;
+		if( faas.info.dataCapture && faas.info.dataCapture == false ) return true;
+		return false;
 	}
 	
 }

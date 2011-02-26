@@ -74,12 +74,15 @@ public class ListPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Document");
         jPanel6.setBorder(xTitledBorder2);
+        jScrollPane1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 5, 5));
+        xEditorPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xEditorPane1.setDepends(new String[] {"selectedItem"});
         xEditorPane1.setName("html");
         jScrollPane1.setViewportView(xEditorPane1);
 
         jPanel6.add(jScrollPane1, java.awt.BorderLayout.CENTER);
 
+        xActionBar1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
         xActionBar1.setButtonCaptionOrientation(javax.swing.SwingConstants.BOTTOM);
         xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setName("formActions");

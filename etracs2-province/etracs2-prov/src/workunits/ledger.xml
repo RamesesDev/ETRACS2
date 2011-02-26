@@ -26,6 +26,9 @@
             @Service("RemoteLandTaxService")
             def remoteSvc;
             
+            @Service("Var")
+            def var;
+            
             def html;
             def sending = false;
             
@@ -46,7 +49,23 @@
             void doSendRequest() {
                 remoteSvc.getLedger( caller.faas.municipalityIndex, caller.faas.objid, handler );
                 sending = true;
-                html = "Sending request to $caller.faas.municipality Server. Please wait...";
+                html = """
+                    <html>
+                    <body>
+                        <br>
+                        <br>
+                        <br>
+                        <table width="100%" >
+                            <tr>
+                                <td align="center"><img src="$var.url_progress_gif"></td>
+                            </tr>
+                            <tr>
+                                <td align="center">Sending request to $caller.faas.municipality Server. Please wait...</td>
+                            </tr>
+                        </table>
+                    </body>
+                    </html>
+                """;
             }
             
         }

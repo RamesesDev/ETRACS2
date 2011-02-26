@@ -48,7 +48,8 @@ WHERE assignedTo LIKE $P{assignedTo}
 ORDER BY validUntil 
 
 [getClosedReassignList]
-SELECT objid FROM reassignedlgu WHERE state = 'ACTIVE' AND validUntil < NOW()
+SELECT objid FROM reassignedlgu WHERE state = 'ACTIVE' AND DATE_ADD(validUntil, INTERVAL 1 DAY) < NOW() 
+
 
 
 
