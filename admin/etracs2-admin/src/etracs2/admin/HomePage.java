@@ -31,77 +31,66 @@ public class HomePage extends javax.swing.JPanel {
         jLabel2 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
         jPanel4 = new javax.swing.JPanel();
-        jLabel5 = new javax.swing.JLabel();
         xImageViewer1 = new com.rameses.rcp.control.XImageViewer();
         jPanel1 = new javax.swing.JPanel();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
-        jPanel3 = new javax.swing.JPanel();
         jPanel5 = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
         jLabel6 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
         jLabel8 = new javax.swing.JLabel();
+        jLabel5 = new javax.swing.JLabel();
 
         setLayout(new java.awt.BorderLayout());
 
         setBackground(new java.awt.Color(255, 255, 255));
         jPanel2.setLayout(null);
 
-        jPanel2.setPreferredSize(new java.awt.Dimension(100, 130));
+        jPanel2.setPreferredSize(new java.awt.Dimension(100, 110));
         jLabel1.setFont(new java.awt.Font("Tahoma", 1, 18));
         jLabel1.setForeground(new java.awt.Color(0, 51, 153));
         jLabel1.setText("Welcome to");
         jPanel2.add(jLabel1);
-        jLabel1.setBounds(144, 24, 206, 22);
+        jLabel1.setBounds(112, 24, 206, 22);
 
         jLabel3.setBackground(new java.awt.Color(0, 51, 153));
         jLabel3.setOpaque(true);
         jLabel3.setPreferredSize(new java.awt.Dimension(300, 14));
         jPanel2.add(jLabel3);
-        jLabel3.setBounds(142, 94, 1388, 6);
+        jLabel3.setBounds(-2, 94, 1532, 6);
 
         jLabel2.setFont(new java.awt.Font("Tahoma", 1, 48));
         jLabel2.setForeground(new java.awt.Color(0, 51, 153));
         jLabel2.setText("ETRACS");
         jPanel2.add(jLabel2);
-        jLabel2.setBounds(138, 40, 210, 58);
+        jLabel2.setBounds(106, 40, 210, 58);
 
         jLabel4.setFont(new java.awt.Font("Tahoma", 1, 14));
         jLabel4.setForeground(new java.awt.Color(0, 51, 153));
         jLabel4.setText("version 2.0");
         jPanel2.add(jLabel4);
-        jLabel4.setBounds(338, 72, 206, 22);
+        jLabel4.setBounds(306, 72, 206, 22);
 
         jPanel2.add(jPanel4);
         jPanel4.setBounds(174, -48, 10, 10);
-
-        jLabel5.setFont(new java.awt.Font("Tahoma", 1, 11));
-        jLabel5.setForeground(new java.awt.Color(102, 0, 0));
-        jLabel5.setText("This System is Not for Sale");
-        jPanel2.add(jLabel5);
-        jLabel5.setBounds(142, 98, 278, 22);
 
         xImageViewer1.setBorder(null);
         xImageViewer1.setFitImage(true);
         xImageViewer1.setName("imageUrl");
         jPanel2.add(xImageViewer1);
-        xImageViewer1.setBounds(10, 8, 128, 112);
+        xImageViewer1.setBounds(8, 6, 104, 92);
 
         add(jPanel2, java.awt.BorderLayout.NORTH);
 
         jPanel1.setLayout(new java.awt.BorderLayout());
 
-        jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(20, 40, 10, 10));
+        jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 20, 10, 20));
         xActionBar1.setButtonCaptionOrientation(javax.swing.SwingConstants.BOTTOM);
         xActionBar1.setName("formActions");
         xActionBar1.setOpaque(false);
         xActionBar1.setOrientation(com.rameses.rcp.constant.UIConstants.FLOW);
         xActionBar1.setSpacing(25);
         jPanel1.add(xActionBar1, java.awt.BorderLayout.CENTER);
-
-        jPanel3.setOpaque(false);
-        jPanel3.setPreferredSize(new java.awt.Dimension(50, 100));
-        jPanel1.add(jPanel3, java.awt.BorderLayout.EAST);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -127,18 +116,27 @@ public class HomePage extends javax.swing.JPanel {
         jPanel7.add(jLabel8);
         jLabel8.setBounds(14, 34, 148, 16);
 
+        jLabel5.setFont(new java.awt.Font("Tahoma", 1, 14));
+        jLabel5.setForeground(new java.awt.Color(102, 0, 0));
+        jLabel5.setText("   This System is Not for Sale.");
+
         org.jdesktop.layout.GroupLayout jPanel5Layout = new org.jdesktop.layout.GroupLayout(jPanel5);
         jPanel5.setLayout(jPanel5Layout);
         jPanel5Layout.setHorizontalGroup(
             jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel5Layout.createSequentialGroup()
-                .addContainerGap(443, Short.MAX_VALUE)
+                .add(jLabel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 393, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 50, Short.MAX_VALUE)
                 .add(jPanel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 179, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
         );
         jPanel5Layout.setVerticalGroup(
             jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel5Layout.createSequentialGroup()
-                .add(jPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 47, Short.MAX_VALUE)
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel5Layout.createSequentialGroup()
+                .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(jPanel5Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(jLabel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 36, Short.MAX_VALUE))
+                    .add(jPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 47, Short.MAX_VALUE))
                 .addContainerGap())
         );
         add(jPanel5, java.awt.BorderLayout.SOUTH);
@@ -157,7 +155,6 @@ public class HomePage extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel8;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;

@@ -94,10 +94,36 @@
             private void init( state, title ) {
                 this.state = state;
                 this.title = title;
+                initRefreshTask();
             }
             
             private def doOpen( item ) {
                 return InvokerUtil.lookupOpener("faas:open", [ faasId: item.objid, listRefreshHandler:refreshHandler] );
+            }
+            
+            
+            def refreshTask =  new RefreshListTask( refreshHandler:refreshHandler );
+            private void initRefreshTask() {
+                OsirisContext.clientContext.taskManager.addTask( refreshTask );
+            }
+            
+            @Close
+            public void doClose() {
+                refreshTask.ended = true;
+            }
+        }
+        
+        class RefreshListTask extends Task
+        {
+            def refreshHandler;
+            def MINUTE = 60 * 1000;
+            
+            public void start() { ended = false; }
+            public boolean accept(){  return true; }
+            
+            public void execute() {
+                Thread.sleep(3 * MINUTE);
+                refreshHandler();
             }
         }
         
