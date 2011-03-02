@@ -45,9 +45,7 @@ class ImportTransmittalService
 	
 	@ProxyMethod
 	public def importTransmittal( def chunk ){
-	
 		if( checkTransmittalPart( chunk ) ){
-		
 			if( chunk.data.docNo ){
 				em2.sqlContext.createNamedExecutor("transmittal:updateTransmittalToClose")
 					.setParameter("transmittalId", chunk.data.objid )
@@ -56,13 +54,12 @@ class ImportTransmittalService
 			} 
 			else {
 				def item = em2.read("transmittal:transmittalItem", [objid: chunk.data.objid]);
-				item.faas.state = data.state;
-				item.state = data.state;
-				item.tdNo = data.tdNo;
-				item.faas.tdNo = data.tdNo;
-				item.faas.info.tdNo = data.tdNo;
-				item.faas.rpu.pin = data.pin;
-				item.remarks = data.remarks;
+				item.faas.state = chunk.data.state;
+				item.tdNo = chunk.data.tdNo;
+				item.faas.tdNo = chunk.data.tdNo;
+				item.faas.info.tdNo = chunk.data.tdNo;
+				item.faas.rpu.pin = chunk.data.pin;
+				item.remarks = chunk.data.remarks;
 		
 				if( item.state == PROVAPPROVAL_STATE ) {
 					if( chunk.data.state == CURRENT_STATE ) {
@@ -90,6 +87,7 @@ class ImportTransmittalService
 			data.pin,
 			item.faas.info.issueDate
 		);
+		item.state = data.state;
 		em2.update("transmittal:transmittalItem", item );
 	}
 	
@@ -105,6 +103,7 @@ class ImportTransmittalService
 		);
 		
 		transmittalService.updateTaxDeclarationState( data.faasId, false );
+		item.state = data.state;
 		em2.update("transmittal:transmittalItem", item )
 	}
 
