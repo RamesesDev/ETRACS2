@@ -1,0 +1,148 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*
+import java.rmi.server.UID;
+
+class AccountService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname    = 'account:account'
+	def schemaversion =  '1.0'
+	
+	@ProxyMethod
+	public def getList(parentid, level) {
+		def list = [] 
+		if( parentid ) {
+			list = em.sqlContext.createNamedQuery('account:getList').setParameters([parentid:parentid, level:level]).resultList;
+		}
+		else {
+			list = em.sqlContext.createNamedQuery('account:getChartList').resultList;
+		}
+		return buildNodeInfo( list )
+	}
+	
+	
+	@ProxyMethod
+	public def getAccountList(searchText, charttype, params) {
+		if( !searchText ) {
+			return  buildNodeInfo( getListByQuery('account:getAccountList', [charttype:charttype], params) )
+		}
+		def result = []
+		if((result = getListByQuery('account:getAccountListByCode', [chartype:charttype, code:searchText], params))) {
+			return buildNodeInfo( result )
+		}
+		if((result = getListByQuery('account:getAccountListByTitle', [charttype:charttype, title:searchText+'%'], params))) {
+			return buildNodeInfo( result )
+		}
+		return buildNodeInfo( result )
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		return em.sqlContext.createNamedQuery('account:getById').setParameter('objid', objid).singleResult
+	}
+	
+	@ProxyMethod
+	public def updateChart( chart )  {
+		chart.schemaname = schemaname
+		chart.schemaversion = schemaversion
+		validateChart(chart)
+		em.update(chart.schemaname, chart, { diff -> 
+					logService.logB('UPDATE', 'Account', chart.objid, null, diff)
+				} as UpdateChangeHandler 
+			)
+		updateToYear(chart)
+		chart.nodetext = buildNodeText( chart )
+		return chart
+	}
+	
+	@ProxyMethod
+	public def createAccount( account )  {
+		account.schemaname = schemaname
+		account.schemaversion = schemaversion
+		validateAccount( account )
+		em.create( account.schemaname, account)
+		account.nodetext = buildNodeText( account )
+		return account
+	}
+		
+	@ProxyMethod
+	public def updateAccount( account )  {
+		validateAccount( account )
+		em.update(account.schemaname, account, { diff -> 
+				logService.logB("UPDATE", "Account", account.objid, null, diff)
+				} as UpdateChangeHandler 
+			)
+		account.nodetext = buildNodeText( account )
+		return account;
+	}
+	
+	@ProxyMethod
+	public void deleteAccount( account ) {
+		def subaccounts = em.sqlContext.createNamedQuery("account:getSubAccounts").setParameter("parentid", account.objid).resultList
+		subaccounts.each { subacct ->
+			deleteAccount( subacct )
+			em.delete(account.schemaname, subacct)
+		}
+		em.delete(account.schemaname, account)
+	}
+	
+	
+	private void validateChart( chart ) {
+		validateLastUpdate( chart )
+		if(chart.toyear && chart.toyear != 0 && chart.toyear < chart.fromyear ) {
+			throw new Exception("To Year must be greater than or equal to From Year.")
+		}
+		em.validate(chart.schemaname, chart)
+	}
+	
+	private void validateAccount( account ) {
+		validateLastUpdate( account )
+		checkDuplicates(account)
+		em.validate( account.schemaname, account)
+	}
+	
+	private void validateLastUpdate( entity ) {
+		def oldentity = em.read( entity.schemaname, entity )
+		util.validateLastUpdate( entity, oldentity )
+	}
+		
+	private void checkDuplicates( account ) {
+		def data = em.sqlContext.createNamedQuery('account:checkDuplicateCode').setParameters(account).singleResult
+		util.checkDuplicateError( data.count, 'Code $account.code already exists.' )
+		data = em.sqlContext.createNamedQuery('account:checkDuplicateTitle').setParameters(account).singleResult
+		util.checkDuplicateError( data.count, 'Title $account.title already exists.' )
+	}
+	
+	private void updateToYear( chart ) {
+		em.sqlContext.createNamedExecutor('account:updateToYear').setParameters([rootid:chart.objid, toyear:chart.toyear]).execute()
+	}
+	
+	private List buildNodeInfo( list ) {
+		list.each {
+			it.expanded = false
+			it.nodetext = buildNodeText( it )
+		}
+		return list
+	}
+	
+	private def buildNodeText( account ) {
+		//indent every lower levels with spaces 
+		return ' '.multiply(8 * account.level) + ( account.type == 'GLACCOUNT' ? '* ' : '') + account.code + ' - ' + account.title
+	}
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+	
+}
