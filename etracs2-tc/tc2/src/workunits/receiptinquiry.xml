@@ -1,0 +1,61 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/tc/txn" caption="Receipt Inquiry" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class ReceiptInquiryController 
+{
+    @Service("ReceiptService")
+    def svc;
+    
+    def searchText
+    def selectedItem
+    def opener
+    def txnmode = 'ONLINE'
+    def formActions
+    
+    void setSelectedItem( item ) {
+        selectedItem = item
+        opener = null
+        formActions = null
+        if( selectedItem ) {
+            opener = InvokerUtil.lookupOpener('inquiry:' + selectedItem.opener, [entity:selectedItem])
+        }
+    }
+    
+    
+    def listHandler = [
+        getRows    : { return 25 },
+        getColumns : {
+            return [
+                new Column(name:'afid', caption:'AF No.', maxWidth:50),
+                new Column(name:'serialno', caption:'Serial No.', maxWidth:80),
+                new Column(name:'payorname', caption:'Payor'),
+                new Column(name:'amount', caption:'Amount', type:'decimal', maxWidth:100),
+            ]
+        }, 
+        fetchList : { 
+            def searchParam = [ searchText:searchText ]
+            return svc.getList( searchParam, it ) 
+        },
+    ] as PageListModel
+    
+    void search() {
+        listHandler.load()
+    }
+    
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.collection.ReceiptInquiryPage"/>
+    </pages>
+</workunit>

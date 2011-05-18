@@ -1,0 +1,88 @@
+<workunit>
+    <invokers>
+        <invoker type="acctcategory:new" action="createCategory" caption="Account Category (New)" target="popup"/>
+        <invoker type="glaccount:new" action="createGlAccount" caption="GL Account (New)" target="popup"/>
+        <invoker type="subaccount:new" action="createSubAccount" caption="Sub Account (New)" target="popup"/>
+        
+        <invoker type="formActions" action="saveAndNew" caption="Save and New" mnemonic="n" icon="images/save24.png"/>
+        <invoker type="formActions" action="save" caption="Save" mnemonic="s" icon="images/save24.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import java.rmi.server.UID;
+
+class NewGLAccountController 
+{
+    @Binding
+    def binding
+    
+    @Service("AccountService")
+    def svc;
+    
+    def createHandler;
+    
+    def parentAccount;
+    def account;
+    def mode = "create";
+    def type;
+    
+    void createCategory() {
+        type = "CATEGORY";
+        createAccount( parentAccount, type );
+    }
+    
+    void createGlAccount() {
+        type = "GLACCOUNT";
+        createAccount( parentAccount, type );
+    }
+    
+    void createSubAccount() {
+        type = "SUBACCOUNT";
+        createAccount( parentAccount, type );
+    }
+
+    
+    def save() {
+        account = svc.createAccount( account, parentAccount.objid );
+        if( createHandler) createHandler( account );
+        return "_close";
+    }
+    
+    void saveAndNew() {
+       save();
+       createAccount( parentAccount, type );
+       binding.refresh();
+       binding.focus("account.acctcode");
+    }
+    
+    void createAccount( parent, type ) {
+        account = [
+            objid : 'A' + new UID(),
+            schemaname    : parent.schemaname,
+            schemaversion : parent.schemaversion,
+            accttype      : type,
+            charttype     : parent.charttype,
+            fromyear      : parent.fromyear,
+            toyear        : parent.toyear,
+            parentid      : parent.objid,
+            rootid        : (parent.rootid ? parent.rootid : parent.objid),
+            parenttitle   : parent.accttitle,
+            expanded      : false,
+            acctlevel     : parent.acctlevel + 1,
+            pathbyids     : parent.pathbyids,
+            pathbytitle   : parent.pathbytitle
+        ];
+    }
+
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.tc.account.NewAccountPage"/>
+    </pages>
+</workunit>

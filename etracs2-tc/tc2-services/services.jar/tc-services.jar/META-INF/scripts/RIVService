@@ -1,0 +1,120 @@
+import com.rameses.annotations.*;
+import java.rmi.server.UID;
+
+class RIVService
+{
+	@PersistenceContext("main")
+	def em;
+	
+	def schemaname = "riv:riv";
+	def schemaversion = "1.0";
+	
+	def DRAFT_STATE = "DRAFT";
+	def OPEN_STATE = "OPEN";
+	def CLOSED_STATE = "CLOSED";
+	
+	@Service("DateService")
+	def dateService;
+	
+	@Service("SequenceService")
+	def seqService;
+	
+	@Service('ETRACSUtilService')
+	def util;
+	
+	@ProxyMethod
+	public def getList( search, params ) {
+		if( search.requestedby ) return searchByRequester( search, params );
+		return searchAll( search, params );
+	}
+	
+	@ProxyMethod
+	public def getListByState( search, params ) {
+		if( ! search.searchText ) return getListByQuery("riv:getListByState", [:], params);
+		def result = [];
+		if((result = getListByQuery("riv:getListByTxnnoOpen", [txnno:search.searchText], params))) return result;
+		if((result = getListByQuery("riv:getListByRequesterOpen", [requestedby:search.searchText+"%"], params))) return result;
+		return result;
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		return em.read( schemaname , [objid:objid]);
+	}
+	
+	@ProxyMethod
+	public def create( riv ) {
+		riv.objid = "R" + new UID();
+		riv.schemaname = schemaname;
+		riv.schemaversion = schemaversion;
+		validate( riv );
+		em.create( riv.schemaname, riv );
+		return riv;
+	}
+	
+	@ProxyMethod
+	public def update( riv, saveOptions ) {
+		validate( riv );
+		em.update( riv.schemaname, riv );
+		return riv;
+	}
+	
+	@ProxyMethod
+	public def approve( riv ) {
+		def oldriv = em.read( riv.schemaname, riv);
+		if( oldriv.docstate != DRAFT_STATE ) throw new Exception("RIV is already $oldriv.docstate");
+		
+		def currDate = dateService.serverDate;
+		riv.txnno = getNextSeries( riv, currDate );
+		riv.txndate = dateService.format( "yyyy-MM-dd", new Date());
+		riv.docstate = OPEN_STATE;
+		em.update(riv.schemaname, riv);
+		return riv;
+	}
+	
+	@ProxyMethod
+	public void delete( riv ) {
+		checkReferencedId( riv );
+		em.delete(riv.schemaname, riv);
+	}
+	
+	private void validate( riv ) {
+		def oldriv = em.read( riv.schemaname, riv);
+		util.validateLastUpdate( riv, oldriv );
+		if( oldriv && oldriv.docstate != DRAFT_STATE ) throw new Exception("RIV is already $oldriv.docstate");
+		em.validate( riv.schemaname, riv );
+	}
+	
+	private def searchAll( search, params ) {
+		if( ! search.searchText ) return getListByQuery("riv:getList", [rivtype:search.rivtype], params);
+		def result = [];
+		if((result = getListByQuery("riv:getListByTxnno", [txnno:search.searchText, rivtype:search.rivtype], params))) return result;
+		if((result = getListByQuery("riv:getListByRequester", [rivtype:search.rivtype, requestedby:search.searchText+"%"], params))) return result;
+		return result;
+	}
+	
+	private def searchByRequester( search, params ) {
+		def result = [];
+		if((result = getListByQuery("riv:getListByRequesterTxnno", [txnno:search.searchText, requestedby:search.requestedby], params))) return result;
+		return result;
+	}
+	
+	private void checkReferencedId( riv ){
+		def data = em.sqlContext.createNamedQuery('riv:checkReferencedId').setParameter("rivid", riv.objid).singleResult
+		if( data ) util.checkDuplicateError( data.count, "Delete not allowed. RIV has already been referenced." )
+	}
+	
+	private def getListByQuery( namedQuery, values, params ) {
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters( values )
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList;
+	}
+	
+	private def getNextSeries( riv, currDate ) {
+		def year = dateService.parseDate( currDate, null ).year;
+		def sequenceKey = "RIV-" + year;
+		return (year + "") + seqService.getNextFormattedSeriesA( sequenceKey, 6);
+	}
+	
+}

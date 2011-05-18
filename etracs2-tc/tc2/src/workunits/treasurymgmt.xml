@@ -1,0 +1,42 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/tc/txn" action="init" caption="Treasury Management" />
+        <invoker type="formActions" action="back" caption="Back" mnemonic="b" />
+    </invokers>
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+class TreasuryMgmtController
+{
+    def opener
+    def openerList 
+    def caption = 'Treasury Management'
+    
+    void init() {
+        openerList = InvokerUtil.lookupOpeners('treasurymgmt.actions', null)
+    }
+    
+    def doView() {
+        if( ! opener) throw new Exception('Select a valid item.')
+        return "main" 
+    }
+    
+    def back() {
+        return "default"
+    }
+}
+
+
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.tc.treasury.TreasuryMgmtInitPage"/>
+        <page name="main" template="etracs2.tc.treasury.TreasuryMgmtPage"/>
+    </pages>
+</workunit>

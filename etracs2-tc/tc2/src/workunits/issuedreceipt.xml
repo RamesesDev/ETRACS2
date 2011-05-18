@@ -1,0 +1,75 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/tc/txn" action="init" caption="Issued Receipt" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class IssuedReceiptController 
+{
+    @Service("ReceiptService")
+    def svc;
+    
+    @Service('ETRACSUserService')
+    def userService
+    
+    def searchText
+    def selectedItem
+    def collector 
+    def formActions
+    
+    void init() {
+        collector = userService.getCollector('COL01')
+    }
+    
+    void setSelectedItem( item ) {
+        selectedItem = item 
+        formActions = null
+        if( item ) {
+            formActions = InvokerUtil.lookupActions('receipt.actions:' + item.opener, [entity:selectedItem])
+        }
+    }
+    
+    def listHandler = [
+        getRows    : { return 25 },
+        getColumns : {
+            return [
+                new Column(name:'mode', caption:'Mode', maxWidth:70),
+                new Column(name:'afid', caption:'AF No.', maxWidth:50),
+                new Column(name:'stubno', caption:'Stub No.', maxWidth:70),
+                new Column(name:'txndate', caption:'Txn Date', maxWidth:70),
+                new Column(name:'serialno', caption:'Serial No.', maxWidth:80),
+                new Column(name:'collectiontype', caption:'Collection Type'),
+                new Column(name:'payorname', caption:'Payor'),
+                new Column(name:'paidby', caption:'Paid By'),
+                new Column(name:'amount', caption:'Amount', type:'decimal', maxWidth:100),
+                new Column(name:'voidreason', caption:'Voided'),
+            ]
+        }, 
+        fetchList : { 
+            def searchParam = [ 
+                collectorid:collector.collectorid, 
+                docstate : 'OPEN',
+                searchText:searchText 
+            ]
+            return svc.getList( searchParam, it ) 
+        },
+    ] as PageListModel
+    
+    void search() {
+        listHandler.load()
+    }
+    
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.collection.IssuedReceiptPage"/>
+    </pages>
+</workunit>

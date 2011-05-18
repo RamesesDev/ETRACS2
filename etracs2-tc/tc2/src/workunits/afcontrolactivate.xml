@@ -1,0 +1,77 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/tc/txn" action="init" caption="Activate AF Control" />
+        <invoker type="afcontrol:activate" caption="Activate AF Control" target="popup"/>
+    </invokers>
+    <code>
+<![CDATA[        
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+class AFControlActivateController
+{
+    @Service('AFControlService')
+    def svc
+    
+    @Service('ETRACSUserService')
+    def userService
+    
+    def afid = '51'
+    def mode = 'ONLINE'
+    def collector
+    def onselectHandler 
+    def selectedItem
+    def list
+    
+    void init() {
+    }
+    
+    def activate() {
+        if( ! selectedItem ) throw new Exception('Select an accountable form.')        
+        if( MsgBox.confirm('Activate selected AF Control?') ) {
+            def afcontrol = svc.activateAFControl( selectedItem.objid, mode ) 
+            if( onselectHandler ) {
+                onselectHandler( afcontrol )
+            }
+            return '_close' 
+        }
+    }
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : { 
+            return [
+                new Column(name:'afid', caption:'AF No.', maxWidth:80),
+                new Column(name:'stubno', caption:'Stub No.', maxWidth:120),
+                new Column(name:'startseries', caption:'Start Series', format:'0000000'),
+                new Column(name:'endseries', caption:'End Series', format:'0000000'),
+                new Column(name:'mode', caption:'Mode'),
+            ]
+        },
+        fetchList : {
+            return list
+        },
+    ] as SubListModel
+    
+    def getCollectorList() {
+        return userService.getCollectorList()
+    }
+    
+    void setCollector( collector ) {
+        this.collector = collector 
+        list = []
+        if( collector ) {
+            list = svc.getAllInactiveList( collector.collectorid )
+        }
+        listHandler.load()
+    }
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.tc.af.AFControlActivatePage"/>
+    </pages>
+</workunit>

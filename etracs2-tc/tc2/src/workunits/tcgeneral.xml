@@ -1,0 +1,166 @@
+<workunit>
+    <invokers>
+        <invoker type="collection" caption="General Collection" afid="51" appcode="general_collection"  />
+        <invoker type="tc:general_collection" action="init" caption="General Collection" afid="51"  />
+        <invoker type="inquiry:tc:general_collection" action="initInquiry" caption="Inquiry"/>
+        
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}"/>
+        <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}"/>
+        <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}"/>
+        <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}"/>
+        <invoker type="formActions" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" visibleWhen="#{mode == 'view'}"/>
+        <invoker type="formActions" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" visibleWhen="#{mode == 'view'}"/>
+        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view' and entity.voided == 0}"/>
+
+        <invoker type="receipt.actions:tc:general_collection" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" />
+        <invoker type="receipt.actions:tc:general_collection" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P"/>
+        <invoker type="receipt.actions:tc:general_collection" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P"/>
+        <invoker type="receipt.actions:tc:general_collection" action="doVoid" caption="Void" mnemonic="v" />   
+    </invokers>
+    <code>
+<![CDATA[
+
+    import com.rameses.rcp.common.*
+    import com.rameses.rcp.annotations.*
+    import com.rameses.osiris2.client.*
+    import com.rameses.osiris2.reports.*
+    import etracs2.groovy.*
+
+    class GeneralCollectionController extends etracs2.groovy.AbstractCollectionController
+    {
+        @Service('ReceiptService')
+        def svc
+        
+        @Service('ReceiptHtmlService')
+        def htmlSvc
+    
+        def listItem
+        def message = ''
+        def selectedItem
+    
+    
+        def getService() { return svc }
+        def getHtmlService() { return htmlSvc }
+        
+        void init() {
+            super.init()
+            entity.doctype = 'MISC'
+        }
+        
+        void newRecord() {
+            init()
+            listHandler.load()
+            paymentSummary.handle.reload()
+        }
+        
+        def edit() {
+            super.edit()
+            rebuildItemAcctField()
+            return 'default'
+        }
+        
+        void rebuildItemAcctField() {
+            entity.items.each {
+                it.acct = [
+                    objid     : it.acctid,
+                    acctno    : it.acctno,
+                    accttitle : it.accttitle,
+                    fundid    : it.fundid,
+                    fundname  : it.fundname,
+                ]
+            }
+        }
+        
+        
+        /* ------------------------------------------------------------
+        * LIST SUPPORT
+        -------------------------------------------------------------- */
+        def incomeAcctLookup = InvokerUtil.lookupOpener( 'incomeacct:lookup', [:] )
+
+        def listHandler = [
+            getColumns : {
+                return [
+                    new Column( name:'acct', caption:'Account', editable:true, type:'lookup', handler:incomeAcctLookup, expression: '#{accttitle}' ),
+                    new Column( name:'amount', caption:'Amount', editable:true, type:'decimal' ),
+                    new Column( name:'remarks', caption:'Remarks', editable:true ),
+                ]
+            },
+            fetchList  : { return entity.items },
+            createItem : { return [:] },
+            validate   : { 
+                try {
+                    message = ''
+                    validate(it?.item) 
+                }
+                catch ( e ) {
+                    message = e.message
+                    throw e
+                }
+            },
+            onAddItem  : { item -> 
+                updateIncomeAcctInfo( item )
+                entity.items.add( item ) 
+                updateItemInfo()
+            },
+            onColumnUpdate : { item, colName ->
+                if( colName == 'amount' && listItem?.state != 0 ) {
+                    updateIncomeAcctInfo( item )
+                    updateItemInfo()
+                }
+            },
+            onRemoveItem  : { item ->
+                if( MsgBox.confirm("Delete selected item?") ) {
+                    entity.items.remove( item )
+                    updateItemInfo()
+                    message = ''
+                    binding.refresh('message')
+                }
+            },
+        ] as SubListModel
+
+        void updateItemInfo() {
+            entity.info.amount = calculateAmountDue()
+            def payments = []
+            payments.addAll( entity.payments )
+            updatePaymentInfo( payments )
+            calculateChange()
+            binding.refresh('entity.info.*')       
+        }
+
+        void validate( item ) {
+            if( item ) {
+                required( 'Account', item.acct )
+                required( 'Amount', item.amount)
+                if( item.amount <= 0.0 ) {
+                    throw new Exception('Amount must be greater than zero.')
+                }
+            }
+            else {
+                throw new Exception( 'Account and amount are required.' )
+            }
+        }
+
+        void updateIncomeAcctInfo( item ) {
+            item.acctid = item.acct.objid
+            item.acctno = item.acct.acctno
+            item.accttitle = item.acct.accttitle
+            item.fundid = item.acct.fundid
+            item.fundname = item.acct.fundname
+        }
+
+        void required( name, value ) {
+            if( ! value ) {
+                throw new Exception(name + ' is required.')
+            }
+        }
+
+
+    }
+]]>        
+    </code>
+    <pages>
+        <page template="etracs2.tc.collection.GeneralCollectionPage"/>
+        <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
+        <page name="html" template="etracs2.tc.HtmlPage"/>
+    </pages>
+</workunit>

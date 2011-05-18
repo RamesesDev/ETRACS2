@@ -1,0 +1,33 @@
+<schema>
+	<element name="examiner" tablename="examiner">
+		<field name="objid" primary="true"/>
+        <field name="schemaName" required="true"/>
+        <field name="schemaVersion" required="true"/>
+        <field name="uid" required="true" />
+        <complex name="municipalities" ref="municipality" type="list" required="false" serializer="default"/>
+	</element>
+    
+    <element name="reassign" tablename="reassignedlgu">
+        <field name="objid" primary="true"/>
+        <field name="schemaName" required="true"/>
+        <field name="schemaVersion" required="true"/>
+        <field name="state" required="true"/>
+        <field name="assignedFromId" required="true"/>
+        <field name="assignedFrom"  required="true"/>
+        <field name="assignedToId"  required="true"/>
+        <field name="assignedTo" required="true"/>
+        <field name="validUntil" required="true"/>
+        <field name="reason" required="true"/>
+        <complex name="municipalities" ref="reassigned-municipality" min="1" type="list" required="true" serializer="default"/>
+    </element>
+    
+    <element name="reassigned-municipality">
+        <field name="reassigned" type="boolean" required="true"/>
+        <link ref="municipality" />
+    </element>
+    
+	<element name="municipality">
+        <field name="objid" required="true"/>
+		<field name="name" required="true" />
+	</element>
+</schema>

@@ -1,0 +1,129 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/tc/master" action="init" caption="Income Account"/>
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png"/>
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png"/>
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png"/>
+        <invoker type="formActions" action="approve" shortcut="ctrl A" visibleWhen="#{mode == 'view' and entity.objid != null and entity.docstate == 'DRAFT'}" immediate="true" caption="Approve" mnemonic="a" icon="images/approve24.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class IncomeAcctController extends etracs2.groovy.CRUDController
+{
+    @Service("IncomeAcctService")
+    def svc;
+    
+    def getService() { return svc; }
+    def getCreateFocusComponent() { return "entity.acctno"; }
+    def getEditFocusComponent() { return "entity.acctno"; }
+    def getListHandler() { return listHandler; }
+    
+    def getList( searchText, params ) {
+        if( ! params ) params = [_start:0, _limit:25];
+        return svc.getList( searchText, params );
+    }
+    
+    def listHandler =[
+            getRows    : { return 20; },
+            getColumns : {
+                return [
+                    new Column(name:"acctno", caption:"Acct No.", minWidth:60),
+                    new Column(name:"accttitle", caption:"Title", width:250),
+                    new Column(name:"docstate", caption:"State", width:120),
+                ];
+            },
+            fetchList : { 
+                return list;
+            },
+     ] as SubListModel;
+        
+    
+    def createEntity() {
+        return [
+            docstate        : 'DRAFT',
+            defaultvalue : 0.0,
+        ];
+    }
+    
+    def getFundList() {
+        def fund = svc.getFundList();
+        return fund.fundname;
+    }
+    
+    def getSystemTypeList() {
+        return svc.getSystemTypeList();
+    }
+    
+    def getAmountTypeList() {
+        return ['FIX', 'FIXUNIT'];
+    }
+    
+    def lookupNgas() {
+        return InvokerUtil.lookupOpener("account:lookup.ngas", [searchText:entity.ngastitle, onselect:selectNgasHandler]);        
+    }
+    
+    def selectNgasHandler = { acct ->
+        if( acct ) {
+            entity.ngasid = acct.objid;
+            entity.ngascode = acct.acctcode;
+            entity.ngastitle = acct.accttitle;
+            binding.refresh("entity.*");
+        }
+    }
+    
+    def lookupNgasSubAcct() {
+        return InvokerUtil.lookupOpener("account:lookup.subngas", [searchText:entity.ngassubaccttitle, parentid:entity.ngasid, onselect:selectNgasSubAcctHandler]);        
+    }
+    
+    def selectNgasSubAcctHandler = { acct ->
+        if( acct ) {
+            entity.ngassubacctid = acct.objid;
+            entity.ngassubacctcode = acct.acctcode;
+            entity.ngassubaccttitle = acct.accttitle;
+            binding.refresh("entity.*");
+        }
+    }
+    
+    def lookupSre() {
+        return InvokerUtil.lookupOpener("account:lookup.sre", [searchText:entity.sretitle, onselect:selectSreHandler]);        
+    }
+    
+    def selectSreHandler = { acct ->
+        if( acct ) {
+            entity.sreid = acct.objid;
+            entity.srecode  = acct.acctcode;
+            entity.sretitle = acct.accttitle;
+            binding.refresh("entity.*");
+        }
+    }
+    
+    def lookupSreSubAcct() {
+        return InvokerUtil.lookupOpener("account:lookup.subsre", [searchText:entity.sresubaccttitle, parentid:entity.sreid, onselect:selectSreSubAcctHandler]);        
+    }
+    
+    def selectSreSubAcctHandler = { acct ->
+        if( acct ) {
+            entity.sresubacctid = acct.objid;
+            entity.sresubacctcode = acct.acctcode;
+            entity.sresubaccttitle = acct.accttitle;
+            binding.refresh("entity.*");
+        }
+    }
+    
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.account.IncomeAcctPage"/>
+    </pages>
+</workunit>

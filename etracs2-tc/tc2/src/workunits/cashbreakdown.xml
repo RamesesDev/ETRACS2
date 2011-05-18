@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <code lang="groovy">
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import java.text.DecimalFormat;
+        
+        public class CashBreakdownController {
+        
+            def entity;
+            
+            def numformat = new DecimalFormat("#,##0.00");
+        
+            def getD1000Amount() {
+                return numformat.format( entity.d1000qty * 1000.00 ); 
+            }
+            
+            def getD500Amount() {
+                return numformat.format( entity.d500qty * 500.00 ); 
+            }
+            
+            def getD200Amount() {
+                return numformat.format( entity.d200qty * 200.00 ); 
+            }
+            
+            def getD100Amount() {
+                return numformat.format( entity.d100qty * 100.00 ); 
+            }
+            
+            def getD50Amount() {
+                return numformat.format( entity.d50qty * 50.00 ); 
+            }
+            
+            def getD20Amount() {
+                return numformat.format( entity.d20qty * 20.00 ); 
+            }
+            
+            def getD10Amount() {
+                return numformat.format( entity.d10qty * 10.00 ); 
+            }
+            
+            def getTotalAmount() {
+                def amount = 0;
+                amount += entity.d1000qty * 1000.00;
+                amount += entity.d500qty * 500.00;
+                amount += entity.d200qty * 200.00;
+                amount += entity.d100qty * 100.00;
+                amount += entity.d50qty * 50.00;
+                amount += entity.d20qty * 20.00;
+                amount += entity.d10qty * 10.00;
+                amount += entity.coins;
+                return numformat.format( amount );
+            }
+            
+            def getTotalCash() {
+                return numformat.format( entity.totalcash );
+            }
+            
+        }
+        
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.CashBreakdownPage" />
+    </pages>
+</workunit>

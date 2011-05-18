@@ -1,0 +1,63 @@
+<workunit>
+    <invokers>
+        <invoker type="iraf:COLLECTOR" action="init" caption="Add Iraf Item" target="popup"/>
+        <invoker type="iraf:BARANGAY" action="init" caption="Add Iraf Item" target="popup"/>
+    </invokers>
+    
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import java.rmi.server.UID;
+
+class IRAFAddItemCollectorBrgyController
+{  
+    @Binding
+    def binding;
+    
+    def svc;
+    
+    def item;
+    def refreshHandler;
+    def iraf;
+    
+    def getAfList(){
+        return iraf.requesteditems.collect{ it.afid };
+    }
+    
+    void init(){
+        item = [ qtyreceived: 0 ];
+    }
+    
+    void addItem(){
+        def ri = iraf.requesteditems.find{ it.afid == item.afid };
+        if( ri.qtyrequested < item.qtyreceived )
+            throw new Exception("Qty received exceeds in the quantity requested.");
+        
+        ri.qtyreceived = item.qtyreceived;
+        refreshHandler();
+        init();
+    }
+
+    void setAfId(def afid){
+        this.item.afid = afid;
+        if( afid ){
+            def ri = iraf.requesteditems.find{ it.afid == afid };
+            item.qtyreceived = ri.qtyreceived
+            binding.refresh();
+        }
+    }
+    
+    def getAfId(){
+        return this.item.afid;
+    }
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.af.IRAFAddItemColBrgyPage"/>
+    </pages>
+</workunit>

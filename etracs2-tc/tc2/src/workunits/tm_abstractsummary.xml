@@ -1,0 +1,102 @@
+<workunit>
+    <invokers>
+        <invoker type="treasurymgmt.collectionsummary.actions" action="init" caption="Abstract of Collection" target="popup"/>
+    </invokers>
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import etracs2.groovy.*
+
+class TMAbstractOfCollectionController
+{
+    @Service('TreasuryMgmtService')
+    def svc
+    
+    
+    def liquidationid
+    def liquidation
+    
+    def selectedSummary
+    def summaryList
+    def receiptList
+    def charttype
+    
+    def NGAS = 'NGAS' 
+    def SRE  = 'SRE'
+    
+    void init() {
+        charttype = NGAS 
+        loadAbstractSummary()
+    }
+    
+    void setCharttype( charttype ) {
+        this.charttype = charttype 
+        loadAbstractSummary()
+    }
+    
+    void setSelectedSummary( selectedSummary ) {
+        this.selectedSummary = selectedSummary 
+        loadSummaryReceipts()
+    }
+    
+    void loadAbstractSummary() {
+        receiptList = []
+        summaryList = svc.getAbstractSummary( charttype, liquidationid )
+        summaryListHandler.load()
+    }
+    
+    void loadSummaryReceipts() {
+        receiptList = []
+        if( selectedSummary ) {
+            receiptList = svc.getAbstractSummaryReceipts( charttype, liquidationid,  selectedSummary.objid)
+        }
+        receiptListHandler.load()
+    }
+    
+    def summaryListHandler = [
+        getColumns  : {
+            return [
+                new Column( name:'acctcode',  caption:'GL Account Code' ),
+                new Column( name:'accttitle',  caption:'GL Account Title' ),
+                new Column( name:'amount', caption:'Amount', type:'decimal' ),
+            ]
+        },
+        fetchList : { return summaryList }
+    ] as SubListModel
+    
+    def receiptListHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column( name:'collectorname', caption:'Collector'),
+                new Column( name:'remittanceno', caption:'Remittance No.', maxWidth:150),
+                new Column( name:'remittancedate', caption:'Remittance Date', maxWidth:150),
+                new Column( name:'afid', caption:'AF No.', maxWidth:70),
+                new Column( name:'stubno', caption:'Stub No.', maxWidth:70),
+                new Column( name:'serialno', caption:'Serial No.', maxWidth:120),
+                new Column( name:'txndate', caption:'Txn Date', maxWidth:120),
+                new Column( name:'accttitle', caption:'Account Title'),
+                new Column( name:'amount', caption:'Amount', maxWidth:130),
+            ]
+        },
+        fetchList : { return receiptList }
+    ] as SubListModel
+    
+    def getChartTypes() {
+        return [NGAS, SRE]
+    }
+    
+}
+
+
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.tc.treasury.AbstractSummaryPage"/>
+    </pages>
+</workunit>

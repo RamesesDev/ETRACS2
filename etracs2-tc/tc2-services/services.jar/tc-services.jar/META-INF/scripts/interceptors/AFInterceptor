@@ -1,0 +1,21 @@
+import com.rameses.annotations.*;
+
+class AFInterceptor
+{
+	@Service("LogService")
+	def logService;
+	
+	@Env
+	def env;
+	
+	@After(pattern="AFService.create") 
+	public void interceptCreate( evt ) {
+		logService.log("CREATE", "AF", evt.result.objid);
+	}
+	
+	@After(pattern="AFService.delete") 
+	public void interceptDelete( evt ) {
+		logService.log("DELETE", "AF", evt.args[0].objid);
+	}
+		
+}

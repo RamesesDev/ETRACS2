@@ -1,0 +1,69 @@
+<workunit>
+    <invokers>
+        <invoker type="iraf:LGU" action="init" caption="Add Iraf Item" target="popup"/>
+    </invokers>
+    
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import java.rmi.server.UID;
+
+class IRAFAddItemController
+{  
+    @Binding
+    def binding;
+    
+    def svc;
+    
+    def refreshHandler;
+    def iraf;
+    def item = [prefix:'', suffix:''];
+    
+    def getAfList(){
+        return iraf.requesteditems.collect{ it.afid };
+    }
+    
+    void init(){
+        item = [ qtyreceived: 0, startseries: 0 ];
+    }
+    
+    def addItem(){
+        def retVal = svc.addItem( iraf, item );
+        iraf.clear();
+        iraf.putAll( retVal );
+        refreshHandler();
+        init();
+    }
+
+    void setAfId(def afid){
+        this.item.afid = afid;
+        if( afid ){
+            def ri = iraf.requesteditems.find{ it.afid == afid };
+            item.aftype = ri.aftype;
+            if( ri.aftype == 'serial' ){
+                item.prefix = '';
+                item.suffix = '';
+                item.startseries = 0;
+            }else{
+                item.prefix = 'N/A';
+                item.suffix = 'N/A';
+                item.startseries = 0;
+            }
+            binding.refresh();
+        }
+    }
+    
+    def getAfId(){
+        return this.item.afid;
+    }
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.af.IRAFAddItemLGUPage"/>
+    </pages>
+</workunit>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker folderid="/menu/tc/txn" action="init" caption="Remittances"/>
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class RemittanceListController {
+        
+            @Service("RemittanceService")
+            def svc;
+            
+            def entity;
+            
+            def searchText;
+            
+            def mode;
+            
+            def list;
+            
+            def selectedItem;
+
+            def listHandler = [
+
+                getRows    : { return 50; },
+
+                getColumns : {
+                    return [
+                        new Column( name:"txnno", caption:"Rem. No.", minWidth:60 ),
+                        new Column( name:"collectorname", caption:"Collector", width:350 ),
+                        new Column( name:"txndate", caption:"Date", format: "yyyy-MM-dd", width:100 ),
+                        new Column( name:"amount", caption:"Amount", format: "#,##0.00", width:140 )
+                    ];
+                },
+
+                fetchList : { 
+                    return svc.getList( searchText, it );
+                }
+
+            ] as PageListModel;
+            
+            def getOpener() {
+                return new Opener( name:"tc2:remittance", action:"preview", params:[entity:selectedItem] )
+            }
+            
+            void search() {
+                listHandler.load();
+            }
+            
+            void init() {
+                mode = 'view';
+            }
+
+        }
+        
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.ListMgmtPage" />
+    </pages>
+</workunit>

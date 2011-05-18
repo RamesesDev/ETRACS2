@@ -1,0 +1,121 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/entity" action="init" caption="Entity Account" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+class EntityMgmtController 
+{
+    @Binding
+    def binding
+    
+    @Service("EntityService")
+    def svc
+    
+    def selectedItem
+    def opener
+    def searchText
+    def list = []
+    def mode = 'view'
+    
+    void init() {
+        search()
+    }
+	
+    def createHandler = { changeMode('create') }
+    def editHandler   = { changeMode('edit') }
+    def cancelHandler = { changeMode('view') }
+    
+    def insertHandler = { entity ->
+        def item = findEntityFromList( entity )
+        if( item ) {
+                list.add( list.indexOf(item), entity )
+        }
+        else {
+                list.add( entity )
+        }
+        changeMode('view')
+    }
+    
+    def updateHandler = { entity ->
+        def item = findEntityFromList( entity )
+        if( item ) {
+            list.set( list.indexOf(item), entity);
+        }
+        changeMode('view')
+    }
+    
+    def deleteHandler = { entity ->
+        def item = list.find { it.objid == entity.objid }
+        list.remove( item )
+        listHandler.load()
+        changeMode('view')
+    }
+    
+    void setSelectedItem( item ) {
+        selectedItem = item 
+        opener = null
+        if( selectedItem ) {
+            String openerType = 'entity.' + selectedItem.entitytype
+            opener = InvokerUtil.lookupOpener(openerType, buildOpenerParams() )
+        }
+    }
+    
+    def buildOpenerParams() {
+        return [
+            entity        : svc.open( selectedItem.objid, selectedItem.entitytype ),
+            createHandler : createHandler,
+            editHandler   : editHandler,
+            insertHandler : insertHandler,
+            updateHandler : updateHandler,
+            deleteHandler : deleteHandler,
+            cancelHandler : cancelHandler,
+        ]
+    }
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column(name:"entityno", caption:"Entity No.", maxWidth:70),
+                new Column(name:"entityname", caption:"Name"),
+            ]
+        },
+        fetchList : { return list },
+    ] as SubListModel
+    
+    void search() {
+        fetchList( [_start:0, _limit:50] )
+    }
+    
+    void fetchList( params ) {
+        list = svc.getList( searchText, params )
+        listHandler.load()
+    }
+    
+    void changeMode( md ) {
+        mode = md
+        binding.refresh()
+    }
+	
+    def findEntityFromList( entity ) {
+            return list.find { it.objid == entity.objid }
+    }
+    
+    def getOpenerList() {
+        return InvokerUtil.lookupOpeners('entity.type', [:])
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.entity.EntityMgmtPage"/>
+    </pages>
+</workunit>

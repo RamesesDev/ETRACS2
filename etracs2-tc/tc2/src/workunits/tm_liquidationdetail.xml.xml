@@ -1,0 +1,88 @@
+<workunit>
+    <invokers>
+        <invoker type="treasurymgmt.collectionsummary.actions" action="init" caption="Remittances" target="popup"/>
+    </invokers>
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import etracs2.groovy.*
+
+class TMLiquidationDetailController
+{
+    @Service('LiquidationService')
+    def liquidationSvc
+    
+    @Service('RemittanceService')
+    def remittanceSvc
+    
+    def liquidationid
+    def liquidation
+    def selectedRemittance
+    def receiptList
+    
+    void init() {
+        receiptList = []
+        liquidation = liquidationSvc.open( liquidationid )
+    }
+    
+    void setSelectedRemittance( selectedRemittance ) {
+        this.selectedRemittance = selectedRemittance 
+        loadRemittanceReceipts( selectedRemittance )
+    }
+    
+    void loadRemittanceReceipts( remittance ) {
+        receiptList = []
+        if( remittance ) {
+            receiptList = remittanceSvc.getRemittanceReceipts( selectedRemittance.objid )
+        }
+        receiptListHandler.load()
+    }
+    
+    def remittanceListHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column( name:'collectorname', caption:'Collector'),
+                new Column( name:'txnno', caption:'Remittance No.', maxWidth:150),
+                new Column( name:'txndate', caption:'Remittance Date', maxWidth:150),
+                new Column( name:'amount', caption:'Collection', type:'decimal', maxWidth:150),
+            ]
+        },
+        fetchList : { return liquidation.remittances }
+    ] as SubListModel
+    
+    def receiptListHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column( name:'afid', caption:'AF No.'),
+                new Column( name:'mode', caption:'Mode'),
+                new Column( name:'stubno', caption:'Stub No.'),
+                new Column( name:'serialno', caption:'Serial No.'),
+                new Column( name:'txndate', caption:'Txn Date'),
+                new Column( name:'collectiontype', caption:'Collection Type'),
+                new Column( name:'payorname', caption:'Payor'),
+                new Column( name:'amount', caption:'Amount'),
+                new Column( name:'voidreason', caption:'Voided'),
+            ]
+        },
+        fetchList : { return receiptList }
+    ] as SubListModel
+    
+    def getAmount() {
+        return CommonUtil.numberFormat( liquidation?.amount , '#,##0.00' )
+    }
+}
+
+
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.tc.treasury.LiquidationDetailPage"/>
+    </pages>
+</workunit>

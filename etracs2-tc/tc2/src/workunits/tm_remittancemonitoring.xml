@@ -1,0 +1,64 @@
+<workunit>
+    <invokers>
+        <invoker type="treasurymgmt.actions" caption="Remittance Monitoring" />
+    </invokers>
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import etracs2.groovy.*
+
+class RemittanceMonitoringController
+{
+    
+    @Service('TreasuryMgmtService')
+    def svc
+    
+    @Service('ETRACSUserService')
+    def userSvc
+    
+    def collector
+    def unremittedList
+    
+    void setCollector( collector ) {
+        this.collector = collector 
+        loadUnremittedCollections( collector )
+    }
+    
+    void loadUnremittedCollections( collector ) {
+        unremittedList = []
+        if( collector ) {
+            unremittedList = svc.getOpenUnremittedCollections( collector.collectorid )
+        }
+        listHandler.load()
+    }
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column( name:'collectorname', caption:'Collector', maxWidth:250),
+                new Column( name:'lastremittanceno', caption:'Last Remittance No.', maxWidth:150),
+                new Column( name:'lastremittancedate', caption:'Last Remittance Date', maxWidth:150),
+                new Column( name:'amount', caption:'Unremitted Collection', type:'decimal', maxWidth:200),
+            ]
+        },
+        fetchList : { return unremittedList }
+    ] as SubListModel
+    
+    def getCollectorList() {
+        return userSvc.getCollectorList()
+    }
+}
+
+
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.tc.treasury.AFMonitoringPage"/>
+    </pages>
+</workunit>

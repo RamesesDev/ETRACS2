@@ -1,0 +1,154 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/tc" action="initOnline" caption="Online Collection" />
+        <invoker folderid="menu/tc" action="initOffline" caption="Offline Collection" />
+        <invoker folderid="menu/tc" action="initCapture" caption="Capture Collection" />
+    </invokers>
+    <code>
+    <![CDATA[
+    
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import etracs2.groovy.*;
+
+class CollectionController
+{
+    @Binding
+    def binding
+
+    @Service('DateService')
+    def dateService
+    
+    @Service('AFService')
+    def afService
+    
+    @Service('AFControlService')
+    def afcontrolService
+        
+    @Service('CollectionTypeService')
+    def collTypeService
+    
+    @Service('ETRACSUserService')
+    def userService
+    
+    def ONLINE_MODE = 'ONLINE'
+    def OFFLINE_MONE = 'OFFLINE'
+    def CAPTURE_MODE = 'CAPTURE'
+    
+    def txnmode
+    def collector
+    def txndate
+    def af 
+    def collectiontype
+    def opener
+    def entity 
+    def afcontrol
+	
+    
+    void initOnline()  { init( ONLINE_MODE  ) }
+    void initOffline()  { init( OFFLINE_MONE ) }
+    void initCapture()  { init( CAPTURE_MODE ) }
+	
+    //TODO: dummy collectorid 
+    void init( txnmode ) {
+        this.txnmode = txnmode
+        collector = userService.getCollector('COL01')
+        preservedTxnDate()
+    }
+	
+    def doNext() {
+        CommonUtil.required('AF Control', afcontrol)
+        lookupOpener()
+        return 'main'
+    }
+    
+    void setCollectiontype( colltype ) {
+        collectiontype = colltype
+        if( collectiontype ) {
+            getAFControlInfo()
+        }
+    }
+    
+    void getAFControlInfo( ) {
+        afcontrol = afcontrolService.getActiveAFControl( collector.collectorid, af.objid, txnmode ) 
+        if( !afcontrol ) {
+            def afcontrolList = afcontrolService.getInactiveList( collector.collectorid, af.objid, txnmode )
+            if( afcontrolList ) {
+                selectStubToUse( af, afcontrolList )
+            }
+            else {
+                throw new Exception('No assigned Accountable Form for this collector.')
+            }
+        }
+    }
+    
+    def onselectStubHandler = { afc ->
+        afcontrol = afc
+    }
+    
+    void selectStubToUse( af, afcontrolList ) {
+        def params = [
+            afid : af.objid,
+            mode : txnmode,
+            collector: collector,
+            onselectHandler : onselectStubHandler,
+            list : afcontrolList,
+        ]
+        def o = InvokerUtil.lookupOpener('afcontrol:activate', params)
+        binding.refresh('af')
+        binding.fireNavigation( o )   
+    }
+    
+    
+    def backHandler = {
+        binding.fireNavigation('default')
+    }
+    
+    def newHandler = { 
+        getAFControlInfo( ) 
+        binding.fireNavigation('default')
+    }
+	
+    void lookupOpener() {
+        String openerType = 'tc:' + collectiontype.appcode
+        def params = [
+            af             : af,
+            afcontrol      : afcontrol,
+            openerType     : openerType,
+            collectiontype : collectiontype,
+            collector      : collector,
+            txnmode        : txnmode,
+            txndate        : txndate,
+            backHandler    : backHandler, 
+            newHandler     : newHandler,
+        ]
+        opener = InvokerUtil.lookupOpener( openerType, params )
+    }
+    
+    void preservedTxnDate() {
+        if( txnmode == ONLINE_MODE ) {
+            txndate = null
+        }
+        else if( ! txndate ) {
+            txndate = dateService.serverDate
+        }
+    }
+	
+    List getAfList() {
+        return afService.getList( null, null )
+    }
+
+    List getCollectionTypeList() {
+        return collTypeService.getListByAfId( af.objid )
+    }    
+}
+        
+    ]]>
+    </code>
+    <pages>
+        <page template="etracs2.tc.collection.CollectionInitPage"/>
+        <page name="main" template="etracs2.tc.collection.CollectionMainPage"/>
+        <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
+    </pages>
+</workunit>

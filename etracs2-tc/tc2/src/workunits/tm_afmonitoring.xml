@@ -1,0 +1,71 @@
+<workunit>
+    <invokers>
+        <invoker type="treasurymgmt.actions" caption="Accountable Form Monitoring" />
+    </invokers>
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import etracs2.groovy.*
+
+class AFMonitoringController
+{
+    
+    @Service('TreasuryMgmtService')
+    def svc
+    
+    @Service('ETRACSUserService')
+    def userSvc
+    
+    def collector
+    def afcontrolList
+    
+    void setCollector( collector ) {
+        this.collector = collector 
+        loadOpenAFControls( collector )
+    }
+    
+    void loadOpenAFControls( collector ) {
+        afcontrolList = []
+        if( collector ) {
+            afcontrolList = svc.getOpenAFControls( collector.collectorid )
+        }
+        listHandler.load()
+    }
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column( name:'afid', caption:'AF No.', maxWidth:70),
+                new Column( name:'stubno', caption:'Stub No.', maxWidth:70),
+                new Column( name:'aftype', caption:'Type', maxWidth:70),
+                new Column( name:'beginseries', caption:'Begin Series'),
+                new Column( name:'endseries', caption:'End Series'),
+                new Column( name:'currentseries', caption:'Current Series'),
+                new Column( name:'beginqty', caption:'Begin Qty'),
+                new Column( name:'issuedfrom', caption:'Issued From'),
+                new Column( name:'issuedto', caption:'Issued To'),
+                new Column( name:'qtyissued', caption:'Qty Issued'),
+                new Column( name:'balance', caption:'Balance'),
+            ]
+        },
+        fetchList : { return afcontrolList }
+    ] as SubListModel
+    
+    def getCollectorList() {
+        return userSvc.getCollectorList()
+    }
+}
+
+
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.tc.treasury.AFMonitoringPage"/>
+    </pages>
+</workunit>

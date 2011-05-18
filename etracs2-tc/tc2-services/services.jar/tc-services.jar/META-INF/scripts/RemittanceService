@@ -1,0 +1,397 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+import java.text.DecimalFormat;
+
+class RemittanceService {
+
+	@PersistenceContext("main")
+	def em;
+	
+	@Service("SequenceService")
+	def seqsvc;
+	
+	@Service("DateService")
+	def dtsvc;
+	
+	@Service("ReceiptService")
+	def rctsvc;
+	
+	@Service("AFControlService")
+	def afctrlsvc;
+	
+	@Service("LogService")
+	def logsvc;
+	
+	@Service("HTMLService")
+	def htmlsvc;
+	
+	def SCHEMANAME = "remittance:remittance";
+	def SCHEMAVERSION = "1.0";
+	def LISTSCHEMANAME = "remittance:remittancelist";
+	def REMITTEDFORMSCHEMANAME = "remittance:remittedform";
+	
+	def CASH_PAYMENTTYPE = "CASH";
+	
+	@ProxyMethod
+	public def getList( searchText, params ) {
+		if ( !searchText )
+			return em.sqlContext.createNamedQuery( "remittance:getList" ).resultList;
+		def results = getRemittanceByTxnNo( searchText, params );
+		if (results) return results;	
+		results = getRemittanceByCollector( searchText, params );
+		if (results) return results;
+		return [];
+	}
+	
+	private def getRemittanceByTxnNo( txnno, params ) {
+		return em.sqlContext.createNamedQuery( "remittance:getRemittanceByTxnNo" ).setParameter( "txnno", txnno ).resultList;
+	}
+	
+	private def getRemittanceByCollector( collectorname, params ) {
+		return em.sqlContext.createNamedQuery( "remittance:getRemittanceByCollector" ).setParameter( "collectorname", collectorname ).resultList;
+	}
+
+	@ProxyMethod
+	public def open( objid ) {
+		def rem = em.read( SCHEMANAME, [objid:objid] );
+		rem.receipts = getRemittanceReceipts( rem.objid )
+		rem.otherpayments = em.sqlContext.createNamedQuery( "remittance:getOtherPaymentsByRemittance" ).setParameter( "remittanceid", rem.objid ).resultList;
+		rem.remittedforms = em.sqlContext.createNamedQuery( "remittance:getRemittedFormsByRemittance" ).setParameter( "remittanceid", rem.objid ).resultList;
+		
+		return rem;
+	}
+	
+	@ProxyMethod 
+	public def getRemittanceReceipts( objid ) {
+		return em.sqlContext.createNamedQuery( "remittance:getReceiptsByRemittance" ).setParameter( "remittanceid", objid ).resultList;
+	}
+	
+	@ProxyMethod
+	public def create( rem ) {	
+		validate( rem );
+		rem.objid = 'REM' + new UID();
+		rem.schemaname = SCHEMANAME;
+		rem.schemaversion = SCHEMAVERSION;
+		rem.docstate = 'OPEN';
+		rem.dtposted = dtsvc.format( "yyyy-MM-dd", dtsvc.getServerDate());
+		rem.info.txnno = generateRemNo();
+		closeReceipts( rem );
+		updateAfControls( rem );
+		em.validate( SCHEMANAME, rem );
+		em.create( SCHEMANAME, rem );
+		postRemittedForms( rem );
+		createListingItem( rem );
+		
+		return rem;
+	}
+	
+	private validate( rem ) {
+		if ( ( rem.info.d1000qty * 1000.00
+				+ rem.info.d500qty * 500.00
+				+ rem.info.d200qty * 200.00
+				+ rem.info.d100qty * 100.00
+				+ rem.info.d50qty * 50.00
+				+ rem.info.d20qty * 20.00
+				+ rem.info.d10qty * 10.00
+				+ rem.info.coins ) != rem.info.totalcash )
+			 throw new Exception( "Cash Received must be equal to Cash Expected." );
+		def remTemp = createRemittance( rem );
+		if (rem.receipts.size() != remTemp.receipts.size() )
+			throw new Exception( "There are new transactions not included in this remittance." );
+		if ( rem.info.amount != remTemp.info.amount )
+			throw new Exception( "Data does not coincide with current remittance data.\nPlease create new remittance." );
+		
+	}
+	
+	private void createListingItem( rem ) {
+		def dt = dtsvc.parseDate( rem.info.txndate, null );
+		em.create( LISTSCHEMANAME, [
+			objid : rem.objid,
+			docstate : rem.docstate,
+			txnno : rem.info.txnno,
+			txndate : rem.info.txndate,
+			iyear : dt.year,
+			imonth : dt.month,
+			iday : dt.day,
+			collectorid : rem.info.collectorid,
+			collectorname : rem.info.collectorname,
+			amount : rem.info.amount,
+			totalcash : rem.info.totalcash,
+			totalotherpayment : rem.info.totalotherpayment
+		]);
+	}
+	
+	private void closeReceipts( rem ) {
+		def params = [
+			collectorid : rem.info.collectorid, 
+			remittanceid : rem.objid, 
+			remittanceno : rem.info.txno, 
+			remittancedate : rem.info.txndate
+		];
+		em.sqlContext.createNamedExecutor( "remittance:closeReceiptForRemittance" ).setParameters( params ).execute();
+	}
+	
+	private void updateAfControls( rem ) {
+		em.sqlContext.createNamedExecutor( "remittance:updateAfControlForRemittance" ).setParameter( "collectorid",  rem.info.collectorid ).execute();
+		em.sqlContext.createNamedExecutor( "remittance:closeAfControl" ).setParameter( "collectorid",  rem.info.collectorid ).execute();
+	}
+	
+	private def generateRemNo() {
+		def dt = dtsvc.getServerDate();
+		def cal = Calendar.instance;
+		cal.time = dt;
+		def yr = cal.get(Calendar.YEAR);
+		def series = seqsvc.getNextFormattedSeries( 'REM-' + yr);
+		
+		return 'REM-' + yr + '-' + series;
+	}
+	
+	private void postRemittedForms( rem ) {
+		for (form in rem.remittedforms) {
+			form.remittanceid = rem.objid;
+			em.validate( REMITTEDFORMSCHEMANAME, form );
+			em.create( REMITTEDFORMSCHEMANAME, form );
+		}
+	}
+	
+	@ProxyMethod
+	public def createRemittance( rem ) {
+		rem.receipts = getUnremittedReceipts( rem.info.collectorid );
+		if ( !rem.receipts )
+			throw new Exception( "There are no unremitted receipts." );
+		
+		def reminfo = em.sqlContext.createNamedQuery( "remittance:getRemittanceInfo" ).setParameter( "collectorid", rem.info.collectorid ).singleResult;
+		rem.info.amount = reminfo.totalamount;
+		rem.info.totalcash = reminfo.totalcash;
+		rem.info.totalotherpayment = reminfo.totalotherpayment;
+		
+		rem.otherpayments = em.sqlContext.createNamedQuery( "remittance:getOtherPayments" ).setParameter( "collectorid", rem.info.collectorid ).resultList;
+
+		rem.remittedforms = createRemittedForms( rem );
+		
+		return rem;
+	}
+	
+	private def getUnremittedReceipts( collectorid ) {
+		return em.sqlContext.createNamedQuery( "remittance:getUnremittedReceipts" ).setParameter( "collectorid", collectorid ).resultList;
+	}
+	
+	private def createRemittedForms( rem ) {
+		def afctrls = em.sqlContext.createNamedQuery( "remittance:getAfControls" ).setParameters( [collectorid:rem.info.collectorid] ).resultList;
+		def remittedforms = [];
+		for (afctrl in afctrls) {
+			remittedforms += [
+				objid : "RF" + new UID(),
+				afcontrolid : afctrl.objid,
+				afid : afctrl.afid,
+				stubno : afctrl.stubno,
+				receivedfrom : (afctrl.qtyreceived == afctrl.balance) ? afctrl.startseries : null,
+				receivedto : (afctrl.qtyreceived == afctrl.balance) ? afctrl.endseries : null,
+				receivedqty : (afctrl.qtyreceived == afctrl.balance) ? afctrl.qtyreceived : null,
+				beginfrom : (afctrl.qtyreceived != afctrl.balance) ? afctrl.beginseries : null,
+				beginto : (afctrl.qtyreceived != afctrl.balance) ? afctrl.endseries : null,
+				beginqty : (afctrl.qtyreceived != afctrl.balance) ? afctrl.beginqty : null,
+				issuedfrom : afctrl.issuedfrom,
+				issuedto : afctrl.issuedto,
+				issuedqty : afctrl.qtyissued,
+				endingfrom : afctrl.currentseries,
+				endingto : afctrl.endseries,
+				endingqty : afctrl.balance
+			];
+		}
+		return remittedforms;
+	}
+	
+	private def getOtherPayments( collectorid ) {
+	}
+	
+	
+	@ProxyMethod
+	public def update( rem ) {
+		em.validate( SCHEMANAME, rem );
+		updateListingItem( rem );			
+	}
+	
+	private void updateListingItem( rem ) {
+		def dt = dtsvc.parseDate( rem.info.txndate, null );
+		em.update( LISTSCHEMANAME, [
+			objid : rem.objid,
+			docstate : rem.docstate,
+			txnno : rem.info.txnno,
+			txndate : rem.info.txndate,
+			iyear : dt.year,
+			imonth : dt.month,
+			iday : dt.day,
+			collectorid : rem.info.collectorid,
+			collectorname : rem.info.collectorname,
+			amount : rem.info.amount,
+			totalcash : rem.info.totalcash,
+			totalotherpayment : rem.info.totalotherpayment
+		]);
+	}
+	
+	
+	
+	
+	
+	@ProxyMethod
+	public def getHtml( rem ) {
+		def html = "";
+		if ( !rem )
+			return html;
+		
+		def decformat = new DecimalFormat("#,##0.00");
+		def numformat = new DecimalFormat("#,##0");
+		
+		def style = htmlsvc.getStyle();
+		/* HTML Header */
+		html = """
+			<html>
+			<head>
+				<style>
+					${style}
+				</style>
+			</head>
+			<body>
+		""";
+		
+		/* Remittance Info */
+		def amount = decformat.format( rem.info.amount );
+		html += """
+			<div class='data-group'>
+				<div class='data-header'>Info</div>
+				<table class='data-field'>
+					<tr>
+						<td class='caption'>Remittance No. :</td>
+						<td class='blue-header'>${rem.info.txnno}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Status :</td>
+						<td class='status'>${rem.docstate}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Date :</td>
+						<td class='value'>${rem.info.txndate}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Collector :</td>
+						<td class='value'>${rem.info.collectorname}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Amount :</td>
+						<td class='value'>${amount}</td>
+					</tr>
+				</table>
+			</div>
+		""";
+
+		/* Cash Breakdown */
+		def d1000 = decformat.format( rem.info.d1000qty * 1000 );
+		def d1000qty = numformat.format( rem.info.d1000qty );
+		def d500 = decformat.format( rem.info.d500qty * 500 );
+		def d500qty = numformat.format( rem.info.d500qty );
+		def d200 = decformat.format( rem.info.d200qty * 200 );
+		def d200qty = numformat.format( rem.info.d200qty );
+		def d100 = decformat.format( rem.info.d100qty * 100 );
+		def d100qty = numformat.format( rem.info.d100qty );
+		def d50 = decformat.format( rem.info.d50qty * 50 );
+		def d50qty = numformat.format( rem.info.d50qty );
+		def d20 = decformat.format( rem.info.d20qty * 20 );
+		def d20qty = numformat.format( rem.info.d20qty );
+		def d10 = decformat.format( rem.info.d10qty * 10 );
+		def d10qty = numformat.format( rem.info.d10qty );
+		def coins = decformat.format( rem.info.coins );
+		def totalcash = decformat.format( rem.info.totalcash );
+		html += """
+			<div class='data-group'>
+				<div class='data-header'>Breakdown</div>
+				<table class='data-table'>
+					<tr><th>Denomination</th><th>Qty</th><th>Amount</th></tr>
+					<tr class='item'>
+						<td class='caption align-right'>1000 x</td>
+						<td class='align-right'>${d1000qty}</td>
+						<td class='align-right'>${d1000}</td>
+					</tr>
+					<tr class='item'>
+						<td class='caption align-right'>500 x</td>
+						<td class='align-right'>${d500qty}</td>
+						<td class='align-right'>${d500}</td>
+					</tr>
+					<tr class='item'>
+						<td class='caption align-right'>200 x</td>
+						<td class='align-right'>${d200qty}</td>
+						<td class='align-right'>${d200}</td>
+					</tr>
+					<tr class='item'>
+						<td class='caption align-right'>100 x</td>
+						<td class='align-right'>${d100qty}</td>
+						<td class='align-right'>${d100}</td>
+					</tr>
+					<tr class='item'>
+						<td class='caption align-right'>50 x</td>
+						<td class='align-right'>${d50qty}</td>
+						<td class='align-right'>${d50}</td>
+					</tr>
+					<tr class='item'>
+						<td class='caption align-right'>20 x</td>
+						<td class='align-right'>${d20qty}</td>
+						<td class='align-right'>${d20}</td>
+					</tr>
+					<tr class='item'>
+						<td class='caption align-right'>10 x</td>
+						<td class='align-right'>${d10qty}</td>
+						<td class='align-right'>${d10}</td>
+					</tr>
+					<tr class='item'>
+						<td class='caption align-right'>Coins</td>
+						<td class='align-right' colspan='2'>${coins}</td>
+					</tr>
+					<tr class='summary'>
+						<td colspan='2'>Total Cash</td>
+						<td class='align-right'>${totalcash}</td>
+					</tr>
+				</table>
+			</div>
+		""";
+
+		/* Other Payment Details */
+		html += """
+			<div class='data-group'>
+				<div class='data-header'>Other Payments</div>
+				<table class='data-table'>
+					<tr>
+						<th>Type</th>
+						<th>Particulars</th>
+						<th>Amount</th>
+					</tr>
+		""";
+		for (payment in rem.otherpayments) {
+			def payamount = decformat.format( payment.amount );
+			html += """
+				<tr class='item'>
+					<td>${payment.paytype}</td>
+					<td>${payment.particulars}</td>
+					<td class='align-right'>${payamount}</td>
+				</tr>
+			""";
+		}
+		def totalotherpayment = decformat.format( rem.info.totalotherpayment );
+		html += """
+					<tr class='summary'>
+						<td colspan='2'>Total Other Payment</td>
+						<td>${totalotherpayment}</td>
+					</tr>
+				</table>
+			</div>
+		""";
+			
+		html += """	
+			</body>
+			</html>
+		""";
+			
+		return html;
+	}
+	
+}

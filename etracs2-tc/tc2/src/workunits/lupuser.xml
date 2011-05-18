@@ -1,0 +1,54 @@
+<workunit>
+    <invokers>
+        <invoker type="etracsuser:lookup" caption="ETRACS User Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+
+class UserLookupController 
+{
+    @Service("ETRACSUserService")
+    def svc;
+    
+    def onselect;
+    def searchText;
+    def selected;
+    
+    def ok() {
+        if( onselect ) {
+            onselect( selected );
+        }
+        return "_close";
+    }
+    
+    def listHandler = [
+        getRows    : { return 50; },
+        getColumns : {
+            return [
+                new Column(name:"uid", caption:"User Id"),
+                new Column(name:"name", caption:"Name"),
+                new Column(name:"jobtitle", caption:"Job Title"),
+            ]
+        },
+        fetchList : { 
+                def list = svc.getList(searchText, it);
+                if( list ) return list;
+                throw new Exception("Record not found.");
+	},
+    ] as PageListModel;
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.LookupPage"/>
+    </pages>
+</workunit>

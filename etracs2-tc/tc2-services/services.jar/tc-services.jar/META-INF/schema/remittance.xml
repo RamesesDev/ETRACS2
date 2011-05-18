@@ -1,0 +1,76 @@
+<schema>
+	
+	<element name="remittance" tablename="remittance">
+		<field name="objid" primary="true" />
+		<field name="schemaname" required="true" />
+		<field name="schemaversion" required="true" />
+		
+		<field name="docstate" required="true" />
+		<field name="dtposted" required="true" />
+		<field name="liquidationid" />
+		<field name="liquidationno" />
+		<field name="liquidationdate" />
+		<field name="liquidatingofficerid" />
+		<field name="liquidationofficername" />
+		<field name="liquidatingofficertitle" />
+		<complex name="info" ref="info" serializer="default" />
+	</element>
+
+	<element name="info">
+		<field name="txnno" required="true" />
+		<field name="txndate" required="true" />
+		<field name="collectorid" required="true" />
+		<field name="collectorname" required="true" />
+		<field name="collectortitle" />
+		<field name="amount" type="decimal" />
+		<field name="totalcash" type="decimal" />
+		<field name="totalotherpayment" type="decimal" />
+		<link ref="tc:denomination" />
+	</element>
+	
+	<element name="receipt">
+		<field name="objid" required="true" />
+		<field name="txndate" required="true" />
+		<field name="serialno" />
+		<field name="voided" />
+		<field name="paidby" required="true" />
+		<field name="amount" type="decimal" />
+	</element>
+	
+	<element name="remittedform" tablename="remittedform">
+		<field name="objid" primary="true" />
+		<field name="remittanceid" required="true" />
+		<field name="afcontrolid" required="true" /> 
+		<field name="afid" required="true" />
+		<field name="stubno" required="true" />
+		<field name="receivedfrom" type="integer" />
+		<field name="receivedto" type="integer" />
+		<field name="receivedqty" type="integer" />
+		<field name="beginfrom" type="integer" />
+		<field name="beginto" type="integer" />
+		<field name="beginqty" type="integer" />
+		<field name="issuedfrom" type="integer" />
+		<field name="issuedto" type="integer" />
+		<field name="issuedqty" type="integer" />
+		<field name="endingfrom" type="integer" />
+		<field name="endingto" type="integer" />
+		<field name="endingqty" type="integer" /> 
+	</element>
+
+	<element name="remittancelist" tablename="remittancelist">
+		<field name="objid" primary="true" />
+		<field name="docstate" required="true" />
+		<field name="txnno" required="true" />
+		<field name="txndate" required="true" />
+		<field name="iyear" type="integer" />
+		<field name="imonth" type="integer" />
+		<field name="iday" type="integer" />
+		<field name="collectorid" required="true" />
+		<field name="collectorname" required="true" />
+		<field name="liquidationid" />
+		<field name="amount" type="decimal" />
+		<field name="totalcash" type="decimal" />
+		<field name="totalotherpayment" type="decimal" />
+	</element>
+	
+</schema>

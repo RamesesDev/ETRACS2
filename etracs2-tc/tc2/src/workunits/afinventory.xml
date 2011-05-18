@@ -1,0 +1,109 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/tc/txn" action="init" caption="Accountable Form Inventory"/>
+        
+        <invoker type="formActions" action="view" caption="View Report" mnemonic="v" shortcut="ctrl v"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+import java.rmi.server.UID;
+
+class AFInventoryController
+{
+    @ChangeLog(prefix=["entity"])
+    def changeLog;
+    
+    @Binding
+    def binding;
+    
+    @Service("AFInventoryService")
+    def svc;
+    
+    @Service("Var")
+    def var;
+    
+    def list;
+    def searchText;
+    def docstate;
+    def reportData = [];
+    
+    
+    void init() {
+       list = svc.getList( searchText, docstate );
+    }
+    
+    def getStateList(){
+        return [ 'ALL', 'OPEN', 'CLOSED' ];
+    }
+    
+    void setDocstate( docstate ){
+        this.docstate = docstate;
+        list = svc.getListByDocState( docstate );
+        listHandler.load();
+    }
+    
+    void search(){
+        list = svc.getList( searchText, docstate );
+        if( !list ) throw new Exception( "No records found." );
+        listHandler.load();
+    }
+
+    def listHandler = [
+        getRows    : { return 20; },
+        getColumns : {
+            return [
+                new Column( name:"docstate", caption:"State" ),
+                new Column( name:"irafno", caption:"IRAF No." ),
+                new Column( name:"iraftype", caption:"Type" ),
+                new Column( name:"afid", caption:"AF No.", minWidth:60 ),
+                new Column( name:"aftype", caption:"AF Type", minWidth:60 ),
+                new Column( name:"stubfrom", caption:"StubFrom", minWidth:50 ),
+                new Column( name:"stubto", caption:"StubTo", minWidth:50 ),
+                new Column( name:"qtyonhand", caption:"QtyonHand", minWidth:30 ),
+                new Column( name:"qtyissued", caption:"QtyIssued", minWidth:30 ),
+                new Column( name:"prefix", caption:"Prefix", minWidth:20 ),
+                new Column( name:"startseries", caption:"Start", minWidth:50 ),
+                new Column( name:"endseries", caption:"End", minWidth:50 ),
+                new Column( name:"suffix", caption:"Suffix", minWidth:20 ),
+                new Column( name:"issuedfrom", caption:"IssuedFrom", minWidth:50 ),
+                new Column( name:"issuedto", caption:"IssuedTo", minWidth:50 ),
+            ];
+        },
+        fetchList : { 
+            return list;
+        },
+    ] as SubListModel;
+
+    
+    def afListHandler = [
+        getRows     : { return 5; },
+        getColumns  : {
+            return [
+                new Column( name:"afid", caption:"AF No." ),
+                new Column( name:"aftype", caption:"Type" ),
+                new Column( name:"totalqty", caption:"Qty On Hand", type:"integer" )
+            ];
+        },
+        fetchList   : {
+            return svc.getSummaryList();
+        }
+    ] as SubListModel;
+    
+    
+    def view(){
+        return "report:consolidatedreport";
+    }
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.af.AFInventoryPage"/>
+    </pages>
+</workunit>

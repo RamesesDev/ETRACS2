@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker folderid="/menu/tc" action="init" caption="Remittance"/>
+        
+        <invoker type="formActions" action="init" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png"/>
+        <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" caption="Next" mnemonic="n" />
+        <invoker type="formActions" action="back" shortcut="ctrl B" visibleWhen="#{mode == 'main'}" caption="Back" mnemonic="b" />
+        <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'main'}" caption="Submit" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import java.text.DecimalFormat;
+        
+        public class RemittanceController {
+        
+            @Service('RemittanceService')
+            def svc;
+            
+            @Service('ETRACSUserService')
+            def usersvc;
+            
+            @Service("DateService")
+            def dtsvc;
+            
+            def entity;
+            
+            @Caller
+            def caller;
+            
+            def mode;
+            
+            def numformat = new DecimalFormat("#,##0.00");
+            
+            //DUMMY DATA FOR COLLECTOR
+            def collector;
+        
+            def init() {
+                collector = usersvc.getCollector('COL01');
+                mode = 'init';
+                caller?.mode = 'create';
+                entity = [
+                    info : buildInfo(),
+                    receipts : [],
+                    otherpayments : [],
+                    remittedforms : []
+                ];
+                
+                return 'init';
+            }
+            
+            def preview() {
+                if (entity)
+                    entity = svc.open( entity.objid );
+                
+                return view();
+            }
+            
+            def view() {
+                mode = 'view';
+                return 'view';
+            }
+            
+            def getHtml() {
+                return svc.getHtml( entity );
+            }
+            
+            def next() {
+                entity = svc.createRemittance( entity );
+                mode = 'main';
+                return 'main';
+            }
+            
+            def back() {
+                mode = 'init';
+                return 'init';
+            }
+            
+            def submit() {
+                entity = svc.create( entity );
+                return view();
+            }
+            
+            def cancel() {
+                if (caller)
+                    return preview();
+                return '_close';
+            }
+            
+            def viewOtherPayments() {
+                return new PopupOpener( outcome:'otherpayments' );
+            }
+            
+            def viewAccountableForms() {
+                return new PopupOpener( outcome:'remittedforms' );
+            }
+            
+            def viewReceipts() {
+                return new PopupOpener( outcome:'receipts' );
+            }
+            
+            def getCashBreakdownHandler() {
+                println "Cash Breakdown";
+                return new Opener( name:"tc2:cashbreakdown", params:[entity:entity.info] );
+            }
+            
+            def buildInfo() {
+                return [
+                    txndate : dtsvc.getServerDate(),
+                    collectorid : collector.collectorid,
+                    collectorname : collector.collectorname,
+                    collectortitle : collector.collectortitle,
+                    amount : 0.00,
+                    totalcash : 0.00,
+                    totalotherpayment : 0.00,
+                    d1000qty : 0,
+                    d500qty : 0,
+                    d200qty : 0,
+                    d100qty : 0,
+                    d50qty : 0,
+                    d20qty : 0,
+                    d10qty : 0,
+                    coins : 0.00
+                ];
+            }
+            
+            def otherPaymentHandler = [
+            
+                getRows    : { return 50; },
+                
+                getColumns : {
+                    return [
+                        new Column( name:"paytype", caption:"Type", minWidth:50 ),
+                        new Column( name:"particulars", caption:"Info", minWidth:400 ),
+                        new Column( name:"amount", caption:"Amount", format: "#,##0.00", width:100 )
+                    ];
+                },
+                
+                fetchList : { 
+                    return entity.otherpayments;
+                }
+            
+            ] as PageListModel;
+            
+            def getTotalOtherPayment() {
+                return numformat.format( entity.info.totalotherpayment );
+            }
+            
+            def receiptHandler = [
+                
+                getRows    : { return 50; },
+                
+                getColumns : {
+                    return [
+                        new Column( name:"collectiontype", caption:"Type" ),
+                        new Column( name:"serialno", caption:"Serial No.", minWidth:100 ),
+                        new Column( name:"voided", caption:"Voided" ),
+                        new Column( name:"txndate", caption:"Txn Date", format: "yyyy-MM-dd", minWidth:100 ),
+                        new Column( name:"mode", caption:"Mode" ),
+                        new Column( name:"paidby", caption:"Payor", minWidth:300 ),
+                        new Column( name:"paidbyaddress", caption:"Payor Address" ),
+                        new Column( name:"amount", caption:"Amount", format: "#,##0.00", width:100 )
+                    ];
+                },
+                
+                fetchList : { 
+                    return entity.receipts;
+                }
+            
+            ] as PageListModel;
+            
+            def getTotalAmount() {
+                return numformat.format( entity.info.amount );
+            }
+            
+            def remittedFormHandler = [
+                
+                getRows    : { return 50; },
+                
+                getColumns : {
+                    return [
+                        new Column( name:"afid", caption:"AF No."),
+                        new Column( name:"stubno", caption:"Stub No." ),
+                        new Column( name:"beginfrom", caption:"Begin From"),
+                        new Column( name:"beginto", caption:"Begin To"),
+                        new Column( name:"beginqty", caption:"Begin Qty"),
+                        new Column( name:"receivedfrom", caption:"Received From"),
+                        new Column( name:"receivedto", caption:"Received To"),
+                        new Column( name:"receivedqty", caption:"Received Qty"),
+                        new Column( name:"issuedfrom", caption:"Issued From"),
+                        new Column( name:"issuedto", caption:"Issued To"),
+                        new Column( name:"issuedqty", caption:"Issued Qty"),
+                        new Column( name:"endingfrom", caption:"Ending From"),
+                        new Column( name:"endingto", caption:"Ending To"),
+                        new Column( name:"endingqty", caption:"Ending Qty")
+                    ];
+                },
+                
+                fetchList : { 
+                    return entity.remittedforms;
+                }
+            
+            ] as PageListModel;
+            
+        }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page name="view" template="etracs2.tc.HTMLViewPage" />
+        <page name="init" template="etracs2.tc.remittance.RemittanceInitPage" />
+        <page name="main" template="etracs2.tc.remittance.RemittancePage" />
+        <page name="otherpayments" template="etracs2.tc.remittance.OtherPaymentListPage" />
+        <page name="remittedforms" template="etracs2.tc.remittance.RemittedFormListPage" />
+        <page name="receipts" template="etracs2.tc.remittance.ReceiptListPage" />
+    </pages>
+</workunit>

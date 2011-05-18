@@ -1,0 +1,62 @@
+<workunit>
+    <invokers>
+        <invoker type="payment.type" caption="F10 - Check"  target="popup" shortcut="F10" />
+        <invoker type="formActions" action="doOk" caption="OK" mnemonic="o" default="true" />
+        <invoker type="formActions" action="_close" caption="Cancel" mnemonic="c" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[    
+    
+    import com.rameses.rcp.common.*
+    import com.rameses.rcp.annotations.*
+    import com.rameses.osiris2.client.*
+    
+    class CheckPaymentTypeController
+    {
+        @Binding
+        def binding
+        
+        def acceptHandler
+        
+        def bank
+        def checkno
+        def checkdate
+        def checkamount = 0.0
+
+        def doOk() {
+            validate()
+            invokeAcceptHandler()
+            return "_close"
+        }
+        
+        void invokeAcceptHandler() {
+            if( acceptHandler ) {
+                def paymentInfo = [
+                    paytype     : 'CHECK', 
+                    particulars : 'CHECK NO.: ' + checkno + '  DATE: ' + checkdate + '  BANK: ' + bank,
+                    amount      : checkamount,
+                    checkno     : checkno,
+                    checkdate   : checkdate,
+                    bank        : bank,
+                ]
+                acceptHandler( paymentInfo )
+            }
+        }
+        
+        void validate() {
+            if( checkamount <= 0 )  {
+                binding.focus('checkamount')
+                throw new Exception( 'Amount must be greater than zero.' )
+            }
+            // invoke service to impose rules for stale and postdated checks.
+        }
+        
+    }
+        
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.tc.collection.paymenttype.CheckPaymentTypePage"/>
+    </pages>
+</workunit>

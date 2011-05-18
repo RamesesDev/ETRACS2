@@ -1,0 +1,185 @@
+<workunit>
+    <invokers>
+        <invoker type="collection" caption="Cash Ticket" appcode="cash_ticket"  />
+        <invoker type="tc:cash_ticket" action="init" caption="Cash Ticket"  />
+        <invoker type="inquiry:tc:cash_ticket" action="initInquiry" />
+        
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}"/>
+        <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}"/>
+        <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}"/>
+        <invoker type="formActions" action="delete" caption="Delete" mnemonic="d" visibleWhen="#{mode == 'view'}"/>
+        
+        <invoker type="receipt.actions:tc:cash_ticket" action="doDelete" caption="Delete" mnemonic="d" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import java.text.DecimalFormat;
+
+class CashTicketCollectionController extends etracs2.groovy.AbstractCollectionController 
+{
+    @Service('ReceiptService')
+    def svc
+    
+    @Service('CashTicketHtmlService')
+    def htmlSvc
+
+    def listItem
+    def message = ''
+    def selectedItem
+    
+    int qtyissued = 0
+
+    def getService() { return svc }
+    def getHtmlService() { return htmlSvc }
+    
+    void init() {
+        super.init()
+        qtyissued = 0
+        entity.doctype = 'CASHTICKET'
+    }
+    
+    void newRecord() {
+        init()
+        listHandler.load()
+        paymentSummary.handle.reload()
+    }
+    
+    def create() {
+        validateAmount()
+        return super.create()
+    }
+    
+    def update() {
+        validateAmount()
+        return super.update()
+    }
+    
+    void validateAmount() {
+        if( entity.info.amount != entity.amount ) {
+            throw new Exception('Amount Due must be equal to Amount Collected.')
+        }
+    }
+    
+    void print() {
+        //not supported
+    }
+    
+    void setQtyissued( int qty )  {
+        checkNotOverBalance( qty )
+        qtyissued = qty
+        entity.qtyissued = qty
+        entity.amount = qty * af.denomination
+    }
+
+    void checkNotOverBalance( qty ) {
+        if( qty > afcontrol.balance ) {
+            binding.focus( 'qtyissued' )
+            throw new Exception('Quantity Issued is invalid. It should not be more than the balance of ' + afcontrol.balance + '.')
+        }
+    }    
+
+    def getAmount() {
+        return numberFormat( entity.amount, '#,##0.00' )
+    }
+    
+    def getBalance() {
+        return numberFormat( afcontrol.balance, '#,##0' )
+    }
+
+    def numberFormat( value, pattern ) {
+        if (!value ) value = 0.0
+        return (new DecimalFormat( pattern ). format(value) )
+    }
+    
+    /* ------------------------------------------------------------
+    * LIST SUPPORT
+    -------------------------------------------------------------- */
+    def incomeAcctLookup = InvokerUtil.lookupOpener( 'incomeacct:lookup', [:] )
+
+    def listHandler = [
+        getColumns : {
+            return [
+                new Column( name:'acct', caption:'Account', editable:true, type:'lookup', handler:incomeAcctLookup, expression: '#{accttitle}' ),
+                new Column( name:'amount', caption:'Amount', editable:true, type:'decimal' ),
+                new Column( name:'remarks', caption:'Remarks', editable:true ),
+            ]
+        },
+        fetchList  : { return entity.items },
+        createItem : { return [:] },
+        validate   : { 
+            try {
+                message = ''
+                validate(it?.item) 
+            }
+            catch ( e ) {
+                message = e.message
+                throw e
+            }
+        },
+        onAddItem  : { item -> 
+            updateIncomeAcctInfo( item )
+            entity.items.add( item ) 
+            updateItemInfo()
+        },
+        onColumnUpdate : { item, colName ->
+            if( colName == 'amount' && listItem?.state != 0 ) {
+                updateIncomeAcctInfo( item )
+                updateItemInfo()
+            }
+        },
+        onRemoveItem  : { item ->
+            if( MsgBox.confirm("Delete selected item?") ) {
+                entity.items.remove( item )
+                updateItemInfo()
+                message = ''
+                binding.refresh('message')
+            }
+        },
+    ] as SubListModel
+
+    void updateItemInfo() {
+        entity.info.amount = calculateAmountDue()
+        calculateChange()
+        binding.refresh('entity.info.*')       
+    }
+
+    void validate( item ) {
+        if( item ) {
+            required( 'Account', item.acct )
+            required( 'Amount', item.amount)
+            if( item.amount <= 0.0 ) {
+                throw new Exception('Amount must be greater than zero.')
+            }
+        }
+        else {
+            throw new Exception( 'Account and amount are required.' )
+        }
+    }
+
+    void updateIncomeAcctInfo( item ) {
+        item.acctid = item.acct.objid
+        item.acctno = item.acct.acctno
+        item.accttitle = item.acct.accttitle
+        item.fundid = item.acct.fundid
+        item.fundname = item.acct.fundname
+    }
+
+    void required( name, value ) {
+        if( ! value ) {
+            throw new Exception(name + ' is required.')
+        }
+    }    
+
+}
+]]>        
+    </code>
+    <pages>
+        <page template="etracs2.tc.collection.CashTicketCollectionPage"/>
+        <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
+        <page name="html" template="etracs2.tc.HtmlPage"/>
+    </pages>
+</workunit>

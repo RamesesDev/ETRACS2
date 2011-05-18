@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker folderid="/menu/tc" action="init" caption="Liquidation"/>
+        
+        <invoker type="formActions" action="init" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png"/>
+        <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" caption="Next" mnemonic="n" />
+        <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'main'}" caption="Submit" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import java.text.DecimalFormat;
+        
+        public class LiquidationController {
+        
+            @Service('LiquidationService')
+            def svc;
+            
+            @Service('ETRACSUserService')
+            def userService;
+            
+            @Service("DateService")
+            def dtsvc;
+            
+            def entity;
+            
+            @Caller
+            def caller;
+            
+            def mode;
+            
+            def numformat = new DecimalFormat("#,##0.00");
+            
+            //DUMMY DATA FOR COLLECTOR
+            def liquidatingofficer;
+        
+            def init() {
+                liquidatingofficer = userService.getLiquidatingOfficer('LIQ01');
+                mode = 'init';
+                caller?.mode = 'create';
+                entity = [
+                    info : buildInfo(),
+                    remittances : [],
+                    otherpayments : []
+                ];
+                
+                return 'init';
+            }
+            
+            def preview() {
+                if (entity)
+                    entity = svc.open( entity.objid );
+                
+                return view();
+            }
+            
+            def view() {
+                mode = 'view';
+                return 'view';
+            }
+            
+            def getHtml() {
+                return svc.getHtml( entity );
+            }
+            
+            def next() {
+                entity = svc.createLiquidation( entity );
+                mode = 'main';
+                return 'main';
+            }
+            
+            def submit() {
+                entity = svc.create( entity );
+                
+                return view();
+            }
+            
+            def cancel() {
+                if (caller)
+                    return preview();
+                return '_close';
+            }
+            
+            def viewOtherPayments() {
+                return new PopupOpener( outcome:'otherpayments' );
+            }
+
+            def viewRemittances() {
+                return new PopupOpener( outcome:'remittances' );
+            }
+            
+            def getCashBreakdownHandler() {
+                return new Opener( name:"tc2:cashbreakdown", params:[entity:entity.info] );
+            }
+            
+            def buildInfo() {
+                return [
+                    txndate : dtsvc.getServerDate(),
+                    liquidatingofficerid : liquidatingofficer.liqofficerid,
+                    liquidatingofficername : liquidatingofficer.liqofficername,
+                    liquidatingofficertitle : liquidatingofficer.liqofficertitle,
+                    amount : 0.00,
+                    totalcash : 0.00,
+                    totalotherpayment : 0.00,
+                    d1000qty : 0,
+                    d500qty : 0,
+                    d200qty : 0,
+                    d100qty : 0,
+                    d50qty : 0,
+                    d20qty : 0,
+                    d10qty : 0,
+                    coins : 0.00
+                ];
+            }
+            
+            def otherPaymentHandler = [
+            
+                getRows    : { return 50; },
+                
+                getColumns : {
+                    return [
+                        new Column( name:"paytype", caption:"Type", minWidth:50 ),
+                        new Column( name:"particulars", caption:"Info", minWidth:400 ),
+                        new Column( name:"amount", caption:"Amount", format: "#,##0.00", width:100 )
+                    ];
+                },
+                
+                fetchList : { 
+                    return entity.otherpayments;
+                }
+            
+            ] as PageListModel;
+            
+            def getTotalOtherPayment() {
+                return numformat.format( entity.info.totalotherpayment );
+            }
+            
+            def remittanceHandler = [
+                
+                getRows    : { return 50; },
+                
+                getColumns : {
+                    return [
+                        new Column( name:"txnno", caption:"Rem. No.", minWidth:100 ),
+                        new Column( name:"txndate", caption:"Date", format: "yyyy-MM-dd", minWidth:100 ),
+                        new Column( name:"collectorname", caption:"Collector", minWidth:300 ),
+                        new Column( name:"amount", caption:"Amount", format: "#,##0.00", width:100 )
+                    ];
+                },
+                
+                fetchList : { 
+                    return entity.remittances;
+                }
+            
+            ] as PageListModel;
+            
+            def getTotalAmount() {
+                return numformat.format( entity.info.amount );
+            }
+            
+            
+        }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page name="view" template="etracs2.tc.HTMLViewPage" />
+        <page name="init" template="etracs2.tc.liquidation.LiquidationInitPage" />
+        <page name="main" template="etracs2.tc.liquidation.LiquidationPage" />
+        <page name="otherpayments" template="etracs2.tc.liquidation.OtherPaymentListPage" />
+        <page name="remittances" template="etracs2.tc.liquidation.RemittanceListPage" />
+    </pages>
+</workunit>

@@ -1,0 +1,478 @@
+import com.rameses.annotations.*;
+import java.rmi.server.UID;
+
+class IRAFService
+{
+	@PersistenceContext("main")
+	def em;
+	
+	def schemaname = "iraf:iraf";
+	def schemaversion = "1.0";
+	
+	def DRAFT_STATE = "DRAFT";
+	def APPROVED_STATE = "APPROVED";
+	
+	@Service("DateService")
+	def dateService;
+	
+	@Service("SequenceService")
+	def seqService;
+	
+	@ProxyMethod
+	public def getList(def searchText, def param){
+		def list = [];
+		if( !searchText ) return getListByQueryName( list, "iraf:getList", param );
+		if( getListByQueryName( list, "iraf:getListByRivno", param + [rivno: searchText] ) ) return list;
+		if( getListByQueryName( list, "iraf:getListByRequestedBy", param + [ requestedby: searchText ] ) ) return list;
+		return list;
+	}
+	
+	@ProxyMethod
+	public def open( def objid ){
+		def iraf = em.read( "iraf:iraf", [objid: objid] );
+		if( !iraf ){
+			iraf = [
+				docstate: 'DRAFT',
+				requesteditems: [],
+				rcvitems: []
+			];
+		}else{
+			def riv = em.read( "riv:riv", [objid: iraf.rivid] );
+			riv?.items.each{ r ->
+				def ri = iraf.requesteditems.find{ it.afid == r.afid };
+				ri.qtydelivered = r.qtydelivered;
+			}
+		}
+		
+		return iraf;
+	}
+	
+	@ProxyMethod
+	public def delete(def objid){
+		em.delete( "iraf:iraf", [objid: objid] );
+	}
+
+	private def getListByQueryName( def list, def name, def param ){
+		em.sqlContext.createNamedQuery( name )
+		  .setParameters( param )
+		  .resultList.each{
+			it.info = em.serializer.read( it.info );
+			it.requesteditems = em.serializer.read( it.requesteditems );
+			it.rcvitems = em.serializer.read( it.rcvitems );
+			list.add( it );
+		  };
+		return list;
+	}
+	
+	@ProxyMethod
+	public def create(def rivid){
+
+		checkIRAFByRIV( rivid );
+
+		def riv = openRIV( rivid );
+		def iraf = [
+			schemaname: 'iraf:iraf',
+			schemaversion: '1.0',
+			rivid: riv.objid,
+			rivno: riv.txnno,
+			rivdate: riv.txndate,
+			rivrequestedby: riv.requestedby,
+			rivrequestedbytitle: riv.requestedbytitle,
+			txndate: dateService.serverDate,
+			txnno: '',
+			docstate: 'DRAFT',
+			preparedby: '',
+			preparedbytitle: '',
+			requesteditems: [],
+			rcvitems: [],
+		];
+		
+		iraf.info = [
+			rivtype: riv.rivtype,
+			rivid: riv.objid,
+			rivno: riv.txnno,
+			rivdate: riv.txndate,
+			rivrequestedbyid: riv.info.requestedbyid,
+			rivrequestedby: riv.requestedby,
+			rivrequestedbytitle: riv.requestedbytitle,
+			txndate: dateService.serverDate,
+			txnno: '',
+			docstate: 'DRAFT',
+			preparedby: '',
+			preparedbytitle: ''
+		];
+		
+		riv.items.each{
+		
+			def af = em.sqlContext.createNamedQuery("af:getById")
+							      .setParameters( [objid: it.afid] )
+								  .singleResult;
+			def ri = [
+				afid: af.objid,
+				aftype: af.aftype,
+				afunit: af.unit,
+				afpcsperunit: af.pcsperunit,
+				qtydelivered: it.qtydelivered,
+				qtyrequested: it.qtyrequested,
+				qtyreceived: 0
+			];
+			
+			iraf.requesteditems.add( ri );
+			
+		}
+		
+		println riv.rivtype;
+		
+		if( riv.rivtype != 'LGU' ){
+			iraf.txnno = "AUTO-GENERATED";
+		}
+		
+		return iraf;
+	}
+
+	@ProxyMethod
+	public def addItem( def iraf, def item ){
+		if( item.qtyreceived <= 0 ) throw new Exception("Qty received must be greater than zero.");
+		if( item.aftype == 'serial' && item.startseries <= 0 ) throw new Exception("The start series must be greater than zero.");
+		validateItems( iraf, item );
+		
+		iraf.rcvitems.add( item );
+		return iraf;
+	}
+
+	private void validateItems( def iraf, def item ){
+		def ri = iraf.requesteditems.find{ it.afid == item.afid };
+		if( !ri ) throw new Exception("AF $item.afid not in requested items.");
+		def totalQty = ri.qtydelivered + item.qtyreceived;
+		if( totalQty  > ri.qtyrequested ) throw new Exception("Qty recived exceeds the qty requested.");
+		ri.qtyreceived = totalQty;
+		item.aftype = ri.aftype;
+		item.endseries = 0;
+		
+		if( ri.aftype == 'serial' ) {
+			checkValidStartSeries( item.startseries, ri.afpcsperunit );
+			item.endseries = item.startseries + ( item.qtyreceived * ri.afpcsperunit ) - 1;
+		}
+		
+		iraf.requesteditems.each{
+			if( it.prefix == item.prefix && it.suffix == item.suffix ){
+				if( it.startseries >= item.startseries && it.endseries <= item.startseries ){
+					throw new Exception("Conflict in issuance of series in $it.prefix $it.series - $it.endseries $it.suffix");
+				}
+				
+				if( it.startseries >= item.endseries && it.endseries <= item.endseries ){
+					throw new Exception("Conflict in issuance of series in $it.prefix $it.series - $it.endseries $it.suffix");
+				}
+			}
+		}
+	}
+
+	private void checkValidStartSeries( def startseries, def pcsperunit ){
+		def rem = startseries % pcsperunit;
+		if( rem != 1 ) throw new Exception("Invalid startseries.");
+	}
+	
+	private def isIrafWithTxnnoExist( def txnno ){
+		def iraf = em.sqlContext.createNamedQuery( 'iraf:getIrafByTxnno' )
+								.setParameters([txnno: txnno])
+								.singleResult;
+		if( iraf ) return true;
+		return false;
+	}
+	
+	@ProxyMethod
+	public def save(def iraf){
+		def riv = openRIV( iraf.rivid );
+		
+		if(riv.rivtype == 'LGU' ){
+			checkIRAFItems( iraf );
+		}else{
+		
+			checkReceivedItems( iraf );
+		
+			iraf.txnno = getNextSeries(iraf.info.rivtype);
+			while( isIrafWithTxnnoExist( iraf.txnno ) ){
+				int i = 1;
+				iraf.txnno = iraf.txnno + "-"+ i;
+			}
+		}
+		
+		if( !iraf.objid ){
+		
+			iraf.objid = 'IRAF' + new UID();
+			em.validate( iraf.schemaname, iraf );
+			checkIRAFByRIV( iraf.rivid );
+			checkIRAFByIRAFNo( iraf.txnno );
+			em.save( iraf.schemaname, iraf );
+			
+		}else{
+			em.validate( iraf.schemaname, iraf );
+			em.update( iraf.schemaname, iraf );
+		}
+		
+		return iraf;
+	}
+
+	private void checkReceivedItems( iraf ){
+		for( o in iraf.requesteditems ){
+			if( o.qtyreceived > 0 ) return;
+		}
+		throw new Exception("There is at least 1 requested item to be received.");
+	}
+	
+	private def getNextSeries(def rivtype) {
+		def year = dateService.parseDate( dateService.serverDate, null ).year;
+		def prefix = "IRAF-" + rivtype[0];
+		def sequenceKey = "IRAF-" + rivtype[0] + year;
+		return prefix + seqService.getNextFormattedSeriesA( sequenceKey, 6) + year;
+	}
+	
+	private void checkIRAFItems( def iraf ){
+		if( iraf.rcvitems.size() <= 0 ) throw new Exception("There must at least 1 entry in received items ");
+	}
+	
+	private def openRIV( def rivid ){
+		def riv = em.read('riv:riv', [objid: rivid] );
+		if( riv.docstate == 'CLOSE' ) throw new Exception('RIV is already close for transaction.');
+		for( it in riv.items ){
+			if( it.qtydelivered < it.qtyrequested ){
+				return riv;
+			}
+		}
+		throw new Exception('All requested item for this RIV is already delivered.');
+	}
+
+	private void checkIRAFByRIV( def rivid ){
+		def iraf = em.sqlContext.createNamedQuery( 'iraf:getDraftIrafByRivId')
+								.setParameters([rivid: rivid])
+								.singleResult;
+		if( iraf ) throw new Exception("There is currently open IRAF( ${iraf.txnno} ) in this RIV");
+	}
+	
+	private void checkIRAFByIRAFNo( def txnno ){
+		if( isIrafWithTxnnoExist( txnno ) ) throw new Exception("IRAF number $txnno is already exist");
+	}
+	
+	@ProxyMethod
+	public def approve( def objid ){
+		def iraf = open( objid );
+		def riv = openRIV( iraf.rivid );
+
+		if( iraf.docstate != 'DRAFT' ) throw new Exception( 'Only DRAFT IRAF document can be approve.' );
+		
+		updateRIV( iraf, riv );
+		iraf.docstate = 'APPROVED';
+		if( riv.rivtype == 'LGU' ){
+			postToAFInventory( iraf );
+		}else{
+			postToAFInventoryCredit( iraf );
+		}
+		
+		em.update( iraf.schemaname, iraf );
+		return iraf;
+	}
+	
+	private void updateRIV( def iraf, def riv ){
+		def state = 'CLOSED';
+		
+		riv.items.each{ r ->
+			def ri = iraf.requesteditems.find{ it.afid == r.afid };
+			
+			r.qtydelivered += ri.qtyreceived;
+			ri.qtydelivered = r.qtydelivered;
+			
+			if( r.qtydelivered < r.qtyrequested ) state = 'OPEN';
+		}
+		
+		riv.docstate = state;
+		em.update( riv.schemaname, riv );
+	}
+	
+	private void postToAFInventory( def iraf ){
+		
+		iraf.rcvitems.each{ ri ->
+		
+			if( ri.aftype == 'serial' ) checkConflictSeries( ri );
+			
+			def af = em.sqlContext.createNamedQuery("af:getById")
+					   .setParameters([objid: ri.afid])
+					   .singleResult;
+			
+			if( !af ) throw new Exception("AF $af.objid is no longer exist.");
+			
+			def prevAf = em.sqlContext.createNamedQuery("iraf:getAFInventoryByIRAFIdOrderByStubNo")
+						   .setParameter("irafid", iraf.objid)
+						   .singleResult;
+
+			def afinventory = [
+				objid : "AFI" + new UID(),
+				schemaname: "afinventory:afinventory",
+				schemaversion: '1.0',
+				docstate: 'OPEN',
+				irafid: iraf.objid,
+				iraftype: 'LGU',
+				irafno: iraf.txnno,
+				afid: ri.afid,
+				aftype: ri.aftype,
+				afunit: af.unit,
+				stubfrom: (prevAf) ? prevAf.stubto + 1 : 1,
+				aflength: (af.serieslength) ? af.serieslength : 7,
+				stubto: (prevAf) ? (prevAf.stubto + ri.qtyreceived) : ri.qtyreceived,
+				currentstub: 1,
+				stubprefix: iraf.txnno,
+				qtyonhand: ri.qtyreceived,
+				qtyissued: 0,
+				issuedfrom: 0,
+				issuedto: 0,
+				prefix: (ri.prefix) ? ri.prefix : "",
+				suffix: (ri.suffix) ? ri.suffix : "",
+				startseries: ri.startseries,
+				endseries: ri.endseries,
+				dtposted: dateService.serverDate
+			];
+			
+			def pattern = '';
+			for( int i=0; i < afinventory.aflength; i++) pattern += "0";
+			afinventory.startserialno = "";
+			if( afinventory.prefix ) afinventory.startserialno += "$afinventory.prefix-";
+			afinventory.startserialno += new java.text.DecimalFormat( pattern ).format(afinventory.startseries);
+			if( afinventory.suffix ) afinventory.startserialno += "-$afinventory.prefix";
+
+			em.validate( afinventory.schemaname, afinventory );
+			em.save( afinventory.schemaname, afinventory );
+		}
+	}
+	
+	private void checkConflictSeries( def ri ){
+		ri.prefix = (ri.prefix) ? ri.prefix : "";
+		ri.suffix = (ri.suffix) ? ri.suffix : "";
+		
+		def it = em.sqlContext.createNamedQuery("iraf:checkConflictSeries")
+				   .setParameter("startseries",ri.startseries)
+				   .setParameter("endseries",ri.endseries)
+				   .setParameter("afid", ri.afid)
+				   .setParameter("prefix", ri.prefix )
+				   .setParameter("suffix", ri.suffix )
+				   .singleResult;
+		if( it ) 
+			throw new Exception("There is an overlapping series in af $ri.prefix $ri.startseries - $ri.endseries $ri.suffix");
+	}
+	
+	private void postToAFInventoryCredit( def iraf ){
+
+		iraf.requesteditems.each{ ri ->	
+			for( int i=0; i < ri.qtyreceived; i++){
+
+				def afinventory = getNextAFInventory( ri.afid );
+				def af =  em.sqlContext.createNamedQuery("af:getById")
+							.setParameters( [objid: ri.afid] )
+							.singleResult;
+				
+				def afinventorycredit = [
+					objid: "AFIC" + new UID(),
+					schemaname: 'afinventorycredit:afinventorycredit',
+					afinventoryid: afinventory.objid,
+					schemaversion: '1.0',
+					docstate: 'OPEN',
+					irafid: iraf.objid,
+					irafno: iraf.txnno,
+					iraftype: iraf.info.rivtype,
+					aftype: afinventory.aftype,
+					afid: afinventory.afid,
+					afunit: afinventory.afunit,
+					aflength: afinventory.aflength,
+					prefix: afinventory.prefix,
+					suffix: afinventory.suffix,
+					stubno: afinventory.stubprefix + '-' + afinventory.currentstub,
+					startseries: 0,
+					endseries: 0,
+					qtyissued: 0,
+					qtyissued: 0,
+					balance: ri.afpcsperunit
+				];
+			
+				afinventory.qtyonhand -= 1;
+				afinventory.currentstub += 1;
+				
+				if( ri.aftype == 'serial' ){
+					def afstart = ( afinventory.issuedfrom <= 0 ) ? (afinventory.startseries - ri.afpcsperunit) : afinventory.issuedfrom;
+					def afend   = afstart + ri.afpcsperunit - 1 ;
+					
+					afinventorycredit.startseries = afend + 1;
+					afinventorycredit.endseries = afinventorycredit.startseries + ri.afpcsperunit - 1;
+
+					afinventory.issuedfrom = afinventorycredit.startseries;
+					afinventory.issuedto = afinventorycredit.endseries;
+				}
+				
+				if( afinventory.qtyonhand <= 0 )
+					afinventory.docstate = 'CLOSED';
+				
+				em.update( afinventory.schemaname, afinventory );
+				
+				em.validate( afinventorycredit.schemaname, afinventorycredit );
+				em.save( afinventorycredit.schemaname, afinventorycredit );
+
+				if( iraf.info.rivtype == 'COLLECTOR' ){
+					def afcontrol = [
+						objid: "AFC" + new UID(),
+						schemaname: "afcontrol:afcontrol",
+						schemaversion: "1.0",
+						docstate: "APPROVED",
+						dtposted: dateService.serverDate,
+						active: false,
+						mode: "ONLINE",
+						dtissued: iraf.info.txndate,
+						afinventorycreditid: afinventorycredit.objid,
+						collectorid: iraf.info.rivrequestedbyid,
+						collectorname: iraf.info.rivrequestedby,
+						collectortitle: iraf.info.rivrequestedbytitle,
+						prefix: afinventorycredit.prefix,
+						suffix: afinventorycredit.suffix,
+						stubno: afinventorycredit.stubno,
+						afid: afinventorycredit.afid,
+						aftype: afinventorycredit.aftype,
+						qtyreceived: afinventorycredit.balance,
+						startseries: afinventorycredit.startseries,
+						endseries: afinventorycredit.endseries,
+						currentseries: afinventorycredit.startseries,
+						balance: afinventorycredit.balance,
+						beginseries: 0,
+						beginqty: 0,
+						qtyissued: 0,
+						issuedfrom: 0,
+						issuedto: 0,
+						serieslength: afinventorycredit.aflength
+					];
+					
+					em.validate( afcontrol.schemaname, afcontrol );
+					em.save( afcontrol.schemaname, afcontrol );
+				}
+				
+				def rcvitem = [
+					afid: afinventorycredit.afid,
+					startseries: afinventorycredit.startseries,
+					endseries: afinventorycredit.endseries,
+					prefix: afinventory.prefix,
+					suffix: afinventorycredit.suffix,
+					stubno: afinventorycredit.stubno,
+					qtyreceived: 1,				
+				];
+
+				iraf.rcvitems.add( rcvitem );
+			}
+		}
+	}
+	
+	private def getNextAFInventory( def afid ){
+		def afinventory = em.sqlContext.createNamedQuery("iraf:getNextOpenAFInventory")
+				     .setParameters([afid: afid])
+					 .singleResult;
+		if( !afinventory ) throw new Exception("There is no more accountable form(s) for $afid availabe in AF Inventory.");
+		return afinventory;
+	}
+}
+
+
+
+

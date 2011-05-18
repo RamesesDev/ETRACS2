@@ -1,0 +1,294 @@
+import com.rameses.common.*
+import com.rameses.annotations.*
+import java.rmi.server.UID
+
+class ReceiptService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('LogService')
+	def logService
+	
+	@Service('DateService')
+	def dateService
+	
+	def SCHEMANAME = 'receipt:receipt'
+	def SCHEMAVERSION = '1.0'
+	def RECEIPTITEM_SCHEMA = 'receipt:receiptitem'
+	def LIST_SCHEMA = 'receipt:receiptlist'
+	def PAYMENTITEM_SCHEMA = 'receipt:paymentitem'
+	def AFCONTROL_SCHEMA = 'afcontrol:afcontrol'
+	
+	def OPEN_STATE   = 'OPEN'
+	def CLOSED_STATE = 'CLOSED' 
+	def CASH_PAYMENT = 'CASH'
+	
+	def SERIAL_TYPE = 'serial'
+	def TRUE = 1
+	
+	
+	@ProxyMethod
+	public def create( receipt ) {
+		updateReceiptInfo( receipt )
+		validate( receipt )
+		em.create( receipt.schemaname, receipt )
+		buildDateBreakdownInfo( receipt )
+		em.create( LIST_SCHEMA, receipt )
+		postReceiptItems( receipt )
+		postPayments( receipt )
+		postAFControl( receipt )
+		logService.log('CREATE',receipt.doctype, receipt.objid)
+		return receipt 
+	}
+	
+	@ProxyMethod
+	public void update( receipt )  {
+		checkRemitted( receipt )
+		updatePayorName( receipt ) 
+		validate( receipt )
+		em.update( receipt.schemaname, receipt, { diff ->
+			logService.logB('UPDATE', 'Receipt', receipt.objid, null, diff )
+		} as UpdateChangeHandler )
+		buildDateBreakdownInfo( receipt )
+		em.update( LIST_SCHEMA, receipt )		
+		postReceiptItems( receipt )
+		postPayments( receipt )
+	}
+	
+	@ProxyMethod 
+	public def open( receiptid ) {
+		return em.read( SCHEMANAME, [objid:receiptid] )
+	}
+	
+	@ProxyMethod
+	public def voidReceipt( receiptid, reason ) {
+		if( ! IsSerialType( receiptid) ) throw new Exception('Void transaction is not allowed for this receipt.')
+		if( IsClosedReceipt( receiptid ) ) throw new Exception('Receipt has already been remitted.')
+		if( IsReceiptVoided( receiptid ) ) throw new Exception('Void transaction is not allowed.\nReceipt has already been voided.')
+		
+		def params = [objid:receiptid, voidreason:reason]
+		em.sqlContext.createNamedExecutor('receipt:voidReceipt').setParameters( params ).execute()
+		em.sqlContext.createNamedExecutor('receipt:voidReceiptList').setParameters( params ).execute()
+		logService.log('VOID', 'Receipt', receiptid)
+		return em.read( SCHEMANAME, [objid:receiptid])
+	}
+	
+	@ProxyMethod
+	public void delete( receiptid, reason ) {
+		if( IsSerialType( receiptid) ) throw new Exception('Delete transaction is not allowed for this receipt.')
+		if( IsClosedReceipt( receiptid ) ) throw new Exception('Receipt has already been remitted.')
+		
+		def rct = em.read( SCHEMANAME, [objid:receiptid] )
+		//revert afcontrol 
+		def afc = em.read(AFCONTROL_SCHEMA, [objid:rct.info.afcontrolid ])
+		afc.balance += rct.qtyissued 
+		afc.qtyissued -= rct.qtyissued
+		afc.docstate = 'APPROVED' 
+		em.update( afc.schemaname, afc, { diff ->
+				logService.logB('UPDATE', 'AFControl', afc.objid, null, diff)
+			} as UpdateChangeHandler
+		)
+		
+		def params = [objid:receiptid, receiptid:receiptid]
+		em.sqlContext.createNamedExecutor('receipt:deletePaymentItem').setParameters( params ).execute()
+		em.sqlContext.createNamedExecutor('receipt:deleteReceiptItem').setParameters( params ).execute()
+		em.sqlContext.createNamedExecutor('receipt:deleteReceiptList').setParameters( params ).execute()
+		em.sqlContext.createNamedExecutor('receipt:deleteReceipt').setParameters( params ).execute()
+		logService.logB('DELETE', 'Receipt', receiptid, 'Qty Issued: ' + rct.qtyissued, null)
+	}
+	
+	@ProxyMethod
+	public List getList( searchParam, params ) {
+		if( !searchParam.docstate ) searchParam.docstate = '%'
+		if( !searchParam.collectorid ) searchParam.collectorid = '%'
+		if( ! searchParam.searchText ) return getListByQuery( 'receipt:getList', searchParam, params )
+		
+		searchParam.collectorid = searchParam.collectorid+'%'
+		searchParam.serialno    = searchParam.searchText
+		searchParam.stubno      = searchParam.searchText
+		searchParam.txndate     = searchParam.searchText
+		searchParam.payorname   = searchParam.searchText+'%'
+		searchParam.paidby      = searchParam.searchText+'%'
+		
+		def result = []
+		if((result = getListByQuery('receipt:getListBySerialNo', searchParam, params))) return result 
+		if((result = getListByQuery('receipt:getListByStubNo', searchParam, params))) return result 
+		if((result = getListByQuery('receipt:getListByTxnDate', searchParam, params))) return result 
+		if((result = getListByQuery('receipt:getListByPayor', searchParam, params))) return result 
+		if((result = getListByQuery('receipt:getListByPaidBy', searchParam, params))) return result 
+		return result 
+	}
+	
+	
+	
+	
+	/*=========================================================================
+	** HELPER METHODS
+	=========================================================================*/
+
+	String getReceiptState( receiptid ) {
+		def data = em.sqlContext.createNamedQuery('receipt:getState').setParameter('objid', receiptid).singleResult
+		if( ! data ) throw new Exception('Receipt not found.')
+		return data.docstate 
+	}
+	
+	void validate( receipt ) {
+		checkDuplicateSerialNo( receipt.objid, receipt.info.serialno )
+		if( receipt.info.amount < 0 ) {
+			throw new Exception('Amount Due must be greater than zero.')
+		}
+		if( receipt.info.totalpayment < receipt.info.amount ) {
+			throw new Exception('Total Payment must be greater than or equal to amount due.')
+		}
+		em.validate( receipt.schemaname, receipt )
+	}
+	
+	void checkRemitted( receipt ) {
+		def oldrct = em.read(SCHEMANAME, [objid:receipt.objid ] )
+		if( oldrct.state == CLOSED_STATE) throw new Exception('Document has already been remitted.')
+	}
+		
+	void updateReceiptInfo( receipt ) {
+		receipt.objid = 'RCT' + (new UID())
+		receipt.schemaname = SCHEMANAME
+		receipt.schemaversion = SCHEMAVERSION
+		
+		def info = receipt.info 
+		Date currDate = new Date()
+		info.dtposted = currDate
+		if( ! info.txndate ) {
+			info.txndate = dateService.format( 'yyyy-MM-dd', currDate )
+		}
+		updatePayorName( receipt )
+	}
+	
+	void updatePayorName( receipt ) {
+		def info = receipt.info
+		if( ! info.payorname ) {
+			info.payorid = null
+			info.payorname = info.paidby
+			info.payoraddress = info.paidbyaddress
+		}
+	}
+	
+	void buildDateBreakdownInfo( receipt ) {
+		def txndate = receipt.info.txndate
+		if( txndate instanceof String) txndate = java.sql.Date.valueOf( txndate )
+		def dt = dateService.parseDate( txndate, null )
+		receipt.iyear  = dt.year
+		receipt.iqtr   = dt.qtr
+		receipt.imonth = dt.month
+		receipt.iday   = dt.day
+	}
+	
+	void checkDuplicateSerialNo( objid, serialno ) {
+		if( ! serialno ) return;
+		def rct = em.sqlContext.createNamedQuery('receipt:getListBySerialNo').setParameter('serialno', serialno).singleResult
+		if( rct && rct.objid != objid ) throw new Exception("Duplicate Serial No. $serialno found.")
+	}
+	
+	boolean IsClosedReceipt( receiptid ) {
+		def state = getReceiptState( receiptid )
+		if( ! state ) throw new Exception('Receipt not found.')
+		return state == CLOSED_STATE 
+	}
+	
+	boolean IsSerialType( receiptid ) {
+		def data = em.sqlContext.createNamedQuery('receipt:getSerialNo').setParameter('objid', receiptid).singleResult
+		if( data.serialno ) 
+			return true
+		return false
+	}
+	
+	boolean IsReceiptVoided( receiptid ) {
+		def data = em.sqlContext.createNamedQuery('receipt:getVoidedStatus').setParameter('objid', receiptid ).singleResult 
+		if( data ) 
+			return data.voided == TRUE
+		return false 
+	}
+	
+	
+	void postReceiptItems( receipt ) {
+		em.sqlContext.createNamedExecutor('receipt:deleteReceiptItem').setParameter('receiptid', receipt.objid ).execute()
+		receipt.items.each { item ->
+			item.objid = 'RI' + new UID()
+			item.receiptid = receipt.objid
+			em.validate(RECEIPTITEM_SCHEMA, item)
+			em.create( RECEIPTITEM_SCHEMA, item)
+		}
+	}
+	
+	void postPayments( receipt ) {
+		em.sqlContext.createNamedExecutor('receipt:deletePaymentItem').setParameter('receiptid', receipt.objid ).execute()
+		receipt.payments.each { pmt ->
+			pmt.objid = 'P' + new UID()
+			pmt.receiptid = receipt.objid
+			em.validate(PAYMENTITEM_SCHEMA, pmt)
+			em.create( PAYMENTITEM_SCHEMA, pmt )
+		}
+	}
+	
+	void postAFControl( receipt ) {
+		def afcontrol = em.read( AFCONTROL_SCHEMA, [objid: receipt.info.afcontrolid ] )
+		if( afcontrol.aftype == SERIAL_TYPE ) 
+			postSerialAFControl( receipt, afcontrol )
+		else 
+			postNonSerialAFControl( receipt, afcontrol )
+	}
+	
+	void postSerialAFControl( receipt, afcontrol ) {
+		if( receipt.info.series != afcontrol.currentseries ) {
+			throw new Exception('Receipt series is invalid.\nReceipt series is not equal to current control series.\nPlease verify that no one is using your accountable form.')
+		}
+		if( afcontrol.beginseries == 0 ) {
+			//received since
+			afcontrol.beginseries = afcontrol.startseries 
+			afcontrol.beginqty = afcontrol.qtyreceived 
+			afcontrol.qtyonhand = afcontrol.qtyreceived
+			afcontrol.qtyissued = 1
+			afcontrol.issuedfrom = afcontrol.currentseries
+			afcontrol.issuedto = afcontrol.currentseries
+			afcontrol.balance = afcontrol.qtyreceived - 1
+		}
+		else if( afcontrol.qtyissued == 0 ){
+			//first issuance after remittance
+			afcontrol.qtyissued += 1
+			afcontrol.balance -= 1
+			afcontrol.issuedfrom = afcontrol.beginseries
+			afcontrol.issuedto = afcontrol.beginseries
+		}
+		else {
+			//succeeding issuances
+			afcontrol.qtyissued += 1
+			afcontrol.balance -= 1
+			afcontrol.issuedto = afcontrol.currentseries
+		}
+		
+		afcontrol.currentseries += 1
+		em.update(AFCONTROL_SCHEMA, afcontrol )
+	}
+	
+	void postNonSerialAFControl( receipt, afcontrol) {
+		if( afcontrol.beginqty == 0 ) {
+			//received since
+			afcontrol.beginqty = afcontrol.qtyreceived 
+			afcontrol.qtyissued = receipt.qtyissued 
+			afcontrol.balance = afcontrol.qtyreceived - receipt.qtyissued
+		}
+		else {
+			afcontrol.qtyissued += receipt.qtyissued 
+			afcontrol.balance -= receipt.qtyissued
+		}
+		em.update(AFCONTROL_SCHEMA, afcontrol)
+	}	
+	
+	List getListByQuery( namedQuery, criteria, params ) {
+		if( ! params  ) params = [ _start:0, _limit:25 ]
+		return em.sqlContext.createNamedQuery( namedQuery )
+					.setParameters(criteria)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+}

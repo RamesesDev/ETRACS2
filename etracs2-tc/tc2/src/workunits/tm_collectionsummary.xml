@@ -1,0 +1,111 @@
+<workunit>
+    <invokers>
+        <invoker type="treasurymgmt.actions" action="init" caption="Collection Summary" />
+    </invokers>
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import etracs2.groovy.*
+
+class CollectionSummaryController
+{
+    @Binding
+    def binding
+    
+    @Service('DateService')
+    def dateSvc
+    
+    @Service('TreasuryMgmtService')
+    def svc
+    
+    int year
+    def month
+    List summaryList
+    def selectedItem 
+    def totalcollection = 0.0
+    def formActions
+    
+    void init() {
+        def dt = dateSvc.parseCurrentDate()
+        year = dt.year 
+        month = CommonUtil.getMonth( dt.month )
+        loadCollectionSummary()
+    }
+    
+    void setYear( int year ) {
+        if( year < 0 ) throw new Exception('Year is invalid.')
+        this.year = year
+        loadCollectionSummary()
+    }
+    
+    void setMonth( def month ) {
+        this.month = month
+        loadCollectionSummary()
+    }
+    
+    void loadCollectionSummary() {
+        summaryList = []
+        if( month ) {
+            summaryList = svc.getCollectionSummary( year, month.monthid )
+       }
+       totalcollection = CommonUtil.sum( summaryList, { it.amount } )
+       listHandler.load()
+       loadFormActions()
+    }
+    
+    void setSelectedItem( selectedItem ) {
+        this.selectedItem = selectedItem 
+        loadFormActions()
+    }
+    
+    void loadFormActions() {
+        formActions = null
+        if( selectedItem ) {
+            def params = [
+                liquidationid : selectedItem.objid,
+                liquidation : [
+                    info : [
+                        txnno   : selectedItem.txnno,
+                        txndate : selectedItem.txndate,
+                        liquidatingofficername : selectedItem.liquidatingofficername,
+                    ]
+                ]
+            ]
+            formActions = InvokerUtil.lookupActions('treasurymgmt.collectionsummary.actions', params )
+        }
+    }
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column( name:'iday', caption:'Day', maxWidth:100),
+                new Column( name:'txnno', caption:'Liquidation No.', maxWidth:200),
+                new Column( name:'liquidatingofficername', caption:'Liquidating Officer'),
+                new Column( name:'amount', caption:'Collection', type:'decimal', maxWidth:200),
+            ]
+        },
+        fetchList : { return summaryList }
+    ] as SubListModel
+    
+    def getMonthList() {
+        return CommonUtil.getMonthList()
+    }
+    
+    def getAmount() {
+        return CommonUtil.numberFormat( totalcollection, '#,##0.00')
+    }
+}
+
+
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.tc.treasury.CollectionSummaryPage"/>
+    </pages>
+</workunit>

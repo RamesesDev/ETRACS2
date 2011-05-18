@@ -1,0 +1,54 @@
+<workunit>
+    <invokers>
+        <invoker type="entity:lookup" caption="Entity Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+
+class EntityLookupController 
+{
+    @Service("EntityService")
+    def svc;
+    
+    def onselect;
+    def searchText;
+    def selected;
+    
+    def ok() {
+        if( onselect ) {
+            onselect( selected );
+        }
+        return "_close";
+    }
+    
+    def listHandler = [
+        getRows    : { return 50; },
+        getColumns : {
+            return [
+                new Column(name:"entityno", caption:"Account No.", maxWidth:90),
+                new Column(name:"entityname", caption:"Account Name"),
+                new Column(name:"entityaddress", caption:"Address"),
+            ]
+        },
+        fetchList : { 
+                def list = svc.getList(searchText, null);
+                if( list ) return list;
+                throw new Exception("Record not found.");
+	},
+    ] as SubListModel;
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.LookupPage"/>
+    </pages>
+</workunit>

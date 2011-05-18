@@ -1,0 +1,50 @@
+<workunit>
+    <invokers>
+        <invoker type="payment.type" caption="F9 - Cash" target="popup" shortcut="F9"/>
+        <invoker type="formActions" action="doOk" caption="OK" mnemonic="o" default="true" />
+        <invoker type="formActions" action="_close" caption="Cancel" mnemonic="c" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[        
+    import com.rameses.rcp.common.*
+    import com.rameses.rcp.annotations.*
+    import com.rameses.osiris2.client.*
+    
+    class CashPaymentTypeController
+    {
+        @Binding
+        def binding
+        
+        BigDecimal cashTendered = 0.00
+        def acceptHandler
+
+        def doOk() {
+            validate()
+            invokeAcceptHandler()
+            return "_close"
+        }
+        
+        void validate() {
+            if( cashTendered <= 0 )  {
+                binding.focus( 'cashTendered' )
+                throw new Exception( 'Cash Tendered must be greater than zero.' )
+            }
+        }
+        
+        void invokeAcceptHandler() {
+            if( acceptHandler ) {
+                def paymentInfo = [
+                    paytype     : 'CASH', 
+                    particulars : 'CASH PAYMENT',
+                    amount      : cashTendered,
+                ]
+                acceptHandler( paymentInfo )
+            }
+        }
+    }
+]]>        
+    </code>
+    <pages>
+        <page template="etracs2.tc.collection.paymenttype.CashPaymentTypePage"/>
+    </pages>
+</workunit>

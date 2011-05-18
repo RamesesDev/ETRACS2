@@ -1,0 +1,76 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/tc/master" action="init" caption="Collection Type"/>
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png"/>
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png"/>
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class CollectionTypeController extends etracs2.groovy.CRUDController
+{
+    @Service("CollectionTypeService")
+    def svc;
+    
+    @Service("AFService")
+    def afService;
+    
+    def getService() { return svc; }
+    def getCreateFocusComponent() { return "entity.name"; }
+    def getEditFocusComponent() { return "entity.name"; }
+    
+    def getListHandler() {
+        return [
+            getRows    : { return 50; },
+            getColumns : {
+                return [
+                    new Column(name:"name", caption:"Collection Type", width:200),
+                    new Column(name:"appcode", caption:"App Code", minWidth:140),
+                    new Column(name:"afid", caption:"AF No.", minWidth:30),
+                ];
+            },
+            fetchList : { return list; },
+        ] as SubListModel;
+    }
+    
+    def createEntity() {
+        return [
+            payerrequired : false,
+        ];
+    }
+    
+    def getAppcodelist() {
+        def openers = InvokerUtil.lookupOpeners('collection')
+        def list = []
+        openers.each {
+            if( it.properties.afid == entity.afid ) {
+                list.add( it.properties.appcode )
+            }
+        }
+        if( ! list )  {
+            list.add( 'cash_ticket' )
+        }
+        return list
+    }
+    
+    def getAflist() {
+        return afService.getList(null, null).objid;
+    }
+    
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.account.CollectionTypePage"/>
+    </pages>
+</workunit>

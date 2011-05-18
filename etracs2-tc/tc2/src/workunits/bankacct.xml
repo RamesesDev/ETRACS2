@@ -1,0 +1,78 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/tc/master" action="init" caption="Bank Account" />
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png"/>
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png"/>
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png"/>
+        <invoker type="formActions" action="approve" shortcut="ctrl V" visibleWhen="#{mode == 'view' and entity.objid != null and entity.docstate == 'DRAFT'}" immediate="true" caption="Approve" mnemonic="v" icon="images/approve24.png"/>
+    </invokers>
+    <code>
+        <![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class BankAcctController extends etracs2.groovy.CRUDController 
+{
+    @Service('BankAcctService')
+    def svc;
+    
+    @Service('FundService')
+    def fundsvc;
+    
+    def getService() { return svc; }
+    def getCreateFocusComponent() { return "entity.acctno"; }
+    def getEditFocusComponent() { return "entity.acctno"; }
+    def getListHandler() { return listHandler; }
+    def bankResult;
+    
+    def listHandler = [
+        getRows    : { return 20; },
+        getColumns : {
+            return [
+                new Column(name:"docstate", caption:"State"),
+                new Column(name:"acctno", caption:"Account No."),
+                new Column(name:"fund", caption:"Fund"),
+                new Column(name:"bankcode", caption:"Bank Code"),
+                new Column(name:"bankname", caption:"Bank Name"),
+                new Column(name:"branchname", caption:"Branch Name"),
+            ];
+        },
+        fetchList : { return list; }
+    ] as SubListModel;
+    
+    def getAccttype() {
+        return ["CHECKING", "SAVINGS", "TIME DEPOSIT"];
+    }
+    
+    def getFunds() {
+        def data = svc.getFund();
+        return data.fundname;
+    }
+    
+    def lookupBank() {
+        return InvokerUtil.lookupOpener("bank:lookup.bank", [searchText:entity.bankcode, onselect:selectBankHandler]);        
+    }
+    
+    def selectBankHandler = { bank ->
+        if( bank ) {
+            entity.bankid = bank.objid;
+            entity.bankcode = bank.bankcode;
+            entity.bankname = bank.bankname;
+            entity.branchname = bank.branchname;
+            binding.refresh("entity.*");
+        }
+    }
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.bank.BankAcctPage"/>
+    </pages>
+</workunit>

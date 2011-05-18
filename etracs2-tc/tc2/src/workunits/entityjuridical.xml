@@ -1,0 +1,50 @@
+<workunit>
+    <invokers>
+        <invoker type="entity.juridical" caption="Entity (Juridical)" />        
+        <invoker folderid="/menu/entity" action="init" caption="Juridical" />   
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" target="popup"/>
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png"/>
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png"/>
+
+    </invokers>
+    <code>
+<![CDATA[        
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+class EntityJuridicalController extends etracs2.groovy.AbstractEntityController 
+{
+    @Service("EntityService")
+    def svc
+    
+    void init() {
+        super.create()
+    }
+    
+    def getService() { return svc }
+    def getCreateFocusComponent() { return "entity.entityname"; }
+    def getEditFocusComponent() { return "entity.entityname"; }
+    
+    def createEntity() { 
+        return [
+            entitytype : 'juridical',
+            info       : [:],
+        ]
+    } 
+
+    def getOrganizationTypes() {
+        return svc.getOrganizationTypes()
+    }
+}        
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.entity.JuridicalPage"/>
+    </pages>
+</workunit>

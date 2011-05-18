@@ -1,0 +1,301 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/tc/txn" action="init" caption="Requisition Issue Voucher"/>
+        <invoker folderid="/menu/tc/txn" action="initCollector" caption="Requisition Issue Voucher (Collector)"/>
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png"/>
+        <invoker type="formActions" action="edit" visibleWhen="#{mode == 'view' and entity.objid != null and entity.docstate == 'DRAFT'}" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png"/>
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="delete" visibleWhen="#{mode == 'view' and entity.objid != null and entity.docstate != 'CLOSED'}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png"/>
+        <invoker type="formActions" action="approve" visibleWhen="#{mode == 'view' and entity.objid != null and entity.docstate == 'DRAFT'}" immediate="true" caption="Approve" mnemonic="a" icon="images/approve24.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import java.rmi.server.UID;
+
+class RIVController
+{
+    @ChangeLog(prefix=["entity"])
+    def changeLog;
+    
+    @Binding
+    def binding;
+    
+    @Service("RIVService")
+    def svc;
+    
+    @Service("Var")
+    def var;
+    
+    @Service("ETRACSUserService")
+    def svcUser;
+    
+    def dummyCol;
+    def selectedItem;
+    def list;
+    def mode = "view" ;
+    def entity;
+    def searchText;
+    def message;
+    def selectedRivItem;
+    def searchParam = [searchText:null];
+    def rivType = "LGU";
+    
+    
+    void init() {
+        entity = createEntity();
+        searchParam.rivtype = 'LGU';
+        list = svc.getList( searchParam,  [_start:0, _limit:25]);
+    }
+    
+    void initCollector() {
+       rivType = "COLLECTOR";
+       entity = createEntity();
+       searchParam.requestedby = ( env.USERNAME ? env.USERNAME : dummyCol.collectorname );
+       searchParam.rivtype = 'COLLECTOR';
+       search();
+    }
+    
+    void create() {
+        entity = createEntity();
+        mode = "create";
+        focus("entity.info.treasuryname");
+    }
+    
+    void edit() {
+        mode = "edit";
+        focus("entity.info.treasuryname");
+    }
+    
+    void cancel() {
+        open( selectedItem?.objid );
+        mode = "view";
+        message = "";
+        binding.refresh("entity.*");
+        itemHandler.load();
+    }
+    
+    void save() {
+        if( mode == "create") {
+            
+            entity = svc.create( entity );
+            insertItem( entity );
+        }
+        else {
+            entity = svc.update( entity, [diff:changeLog.difference]  );
+            updateItem( entity );
+        }
+        mode = "view";
+    }
+    
+    void approve() {
+        if( MsgBox.confirm("Approve?") ) {
+            entity = svc.approve( entity );
+            updateItem( entity );
+            binding.refresh("entity.*");
+        }
+    }
+    
+    void delete() {
+        if( MsgBox.confirm("Delete record?") ) {
+            svc.delete( entity );
+            list.remove( entity );
+            mode = "view";
+            binding.refresh("entity.*");
+        }
+    }
+
+    def listHandler = [
+        getRows    : { return 20; },
+        getColumns : {
+            return [
+                new Column(name:"txnno", caption:"RIV No.", minWidth:90),
+                new Column(name:"requestedby", caption:"Requested By", width:200),
+                new Column(name:"docstate", caption:"State", minWidth:50),
+            ];
+        },
+        fetchList : { 
+            list = svc.getList( searchParam, it );
+            return list;
+        },
+    ] as PageListModel;
+    
+    void setSelectedItem( item ) {
+        selectedItem = item;
+        if( mode !=  "create" ) {
+            open(selectedItem?.objid);
+        }
+    }
+    
+    void search() {
+        searchParam.searchText = searchText;
+        listHandler.load();
+    }
+    
+    void focus( name )  {
+        binding.refresh("entity.*");
+        binding.focus( name );
+    }
+    
+    void open( objid ) {
+        entity = svc.open( objid );
+        if( ! entity) {
+            entity = createEntity();
+        }
+    }
+
+    void insertItem( item ) {
+        if( selectedItem?.item )
+            list.add( list.indexOf( selectedItem ), item );
+        else 
+            list.add( item );
+    }
+    
+    void updateItem( item ) {
+        def entity = list.find{ a -> a.objid == item.objid };
+        if( entity ) {
+            list.set( list.indexOf(entity), item );
+        }
+    }
+    
+    
+    def createEntity() {
+        if( !env.USERID ) dummyCol = svcUser.getCollector( null );
+        return [
+            docstate   : "DRAFT",
+            rivtype : rivType,
+            requestedby: (env.USERNAME ? env.USERNAME : dummyCol.collectorname ),
+            requestedbytitle : (env.JOBTITLE ? env.JOBTITLE : dummyCol.collectortitle ),
+            info    : [ treasuryname: var.treasurer_office,
+                        lgu: var.lgu_name,
+                        requestedbyid: (env.USERID ? env.USERID : dummyCol.collectorid ),
+                        requestedby: (env.USERNAME ? env.USERNAME : dummyCol.collectorname ),
+                        requestedbytitle : (env.JOBTITLE ? env.JOBTITLE : dummyCol.collectortitle )
+                      ],
+            items  : [],
+        ];
+    }
+    
+    def createItem() {
+        return [ objid: "I" + new UID(),
+                 qtyrequested:0, 
+                 qtydelivered:0 
+               ];
+    }
+    
+    def getRivtype() {
+        if( rivType == "COLLECTOR" ) 
+            return "Collector Requisition";
+        return "LGU Requisition";
+    }
+    
+    def lookupAf = InvokerUtil.lookupOpener("af:lookup",[:]);
+    
+    def itemHandler = [
+        getRows    : { return 20; },
+        getColumns : {
+            return [
+                new Column(name:"af", caption:"AF No.", minWidth:60, editable:true, type:'lookup', handler:lookupAf, expression: '#{objid}' ),
+                new Column(name:"qtyrequested", caption:"Qty. Requested", minWidth:100, editable:true, type:"integer"),
+                new Column(name:"qtydelivered", caption:"Qty. Delivered", minWidth:100, type:"integer"),
+            ];
+        },
+        fetchList    : { return entity.items; },
+        createItem   : { return createItem(); },
+        validate     : { listItem -> doValidate( listItem?.item ); },
+        onAddItem    : { item ->
+            updateAfItem( item );
+            entity.items.add( item ); 
+        },
+        onColumnUpdate : { item, colName ->
+            if( colName == 'af' ) {
+                updateAfItem( item );
+            }
+        },
+        onRemoveItem : { item -> 
+            if( mode == "view" ) return false;
+            if( MsgBox.confirm("Remove selected item?") ) {
+                entity.items.remove( item );
+            }
+        },
+    ] as SubListModel;
+    
+    
+    void doValidate( item ) {
+        message = null;
+        try {
+            if( ! item.afid ) throw new Exception("AF No. is required.");
+            checkDuplicate(item, entity.items, "afid", "AF No. $item.afid");
+            if( item.qtyrequested <= 0 ) throw new Exception("Qty. Requested must be greater than zero.");
+        }
+        catch ( e ) {
+            message = e.message;
+            throw e;
+        }
+    }
+    
+    void checkDuplicate( item, list, key, caption ) {
+        def dup = list.find { f -> f."$key" == item."$key"  && f.objid != item.objid } 
+        if( dup ){ 
+            dup.qtyrequested += item.qtyrequested;
+            list.remove( item );
+            itemHandler.load();
+        }
+    }
+    
+    def getEnv() {
+        return OsirisContext.env;
+    }
+    
+    void updateAfItem( item ){
+        item.afid = item.af.objid;
+        item.afdescription = item.af.description;
+        item.aftype = item.af.aftype;
+        item.afunit = item.af.unit;
+        item.afpcsperunit = item.af.pcsperunit;
+    }
+    
+    
+    def lookupRequester() {
+        def opener = InvokerUtil.lookupOpener("etracsuser:lookup",[searchText:entity.requestedby, onselect:onselectRequester]);
+        opener.caption = "Lookup Requester";
+        return opener;
+    }
+    
+    def onselectRequester = { user ->
+        entity.info.requestedbyid = user.objid;
+        entity.info.requestedby = user.name;
+        entity.info.requestedbytitle = user.jobtitle;
+        entity.requestedby = user.name;
+        entity.requestedbytitle = user.jobtitle;
+        binding.refresh("entity.requested.*");
+    }
+    
+    
+    def lookupApprover() {
+        def opener = InvokerUtil.lookupOpener("etracsuser:lookup",[searchText:entity.approvedby, onselect:onselectApprover]);
+        opener.caption = "Lookup Approver";
+        return opener;
+    }
+    
+    def onselectApprover = { user ->
+        entity.info.approvedbyid = user.objid;
+        entity.info.approvedby = user.name;
+        entity.info.approvedbytitle = user.jobtitle;
+        binding.refresh("entity.info.approved.*");
+    }
+    
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.af.RIVPage"/>
+    </pages>
+</workunit>

@@ -1,0 +1,74 @@
+<workunit>
+    <invokers>
+        <invoker type="paymentsummary" />
+    </invokers>
+    <code>
+        import com.rameses.rcp.common.*
+        import com.rameses.rcp.annotations.*
+        import com.rameses.osiris2.client.*
+        
+        class PaymentSummaryController
+        {
+            @Binding
+            def binding
+            
+            def updatePaymentHandler
+            
+            def payments = []
+            
+            def acceptHandler = { payment ->
+                if( payment.paytype == 'CASH' ) {
+                    addupCashPayment( payment )
+                }
+                else {
+                    payments.add( payment )
+                }
+                invokePaymentHandler()
+                binding.refresh()
+            }
+            
+            def paymentTypes = InvokerUtil.lookupActions('payment.type', [acceptHandler:acceptHandler] )
+            
+            void addupCashPayment( payment ) {
+                def cashPayment = payments.find { it.paytype == payment.paytype }
+                if( cashPayment ) {
+                    cashPayment.amount += payment.amount
+                }
+                else {
+                    payments.add( payment )
+                }
+            }
+            
+            def listHandler = [
+                getColumns : {
+                    return [
+                        new Column( name:'item.paytype', caption:'Type' ),
+                        new Column( name:'item.particulars', caption:'Particulars' ),
+                        new Column( name:'item.amount', caption:'Amount' ),
+                    ]
+                },
+                fetchList    : { return payments },
+                onRemoveItem : { item -> 
+                    if( MsgBox.confirm('Remove payment?') ) {
+                        payments.remove( item )
+                        invokePaymentHandler()
+                    }
+                },
+            ] as SubListModel
+            
+            void reload() {
+                payments = []
+                listHandler.load()
+            }
+            
+            void invokePaymentHandler() {
+                if( updatePaymentHandler ) {
+                    updatePaymentHandler( payments )
+                }
+            }
+        }
+    </code>
+    <pages>
+        <page template="etracs2.tc.collection.paymenttype.PaymentTypeSummaryPage" />
+    </pages>
+</workunit>

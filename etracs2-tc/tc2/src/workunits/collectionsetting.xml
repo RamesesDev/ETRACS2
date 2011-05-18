@@ -1,0 +1,87 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/tc/master" action="init" caption="Collection Setting" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" caption="Save" mnemonic="s" icon="images/save24.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class CollectionSettingController 
+{
+    @Binding
+    binding
+    
+    @Service("CollectionSettingService")
+    def svc;
+    
+    def entity
+    
+    void init() {
+        entity = svc.open()
+    }
+    
+    void save() {
+        entity = svc.save( entity )
+    }
+    
+    def onselectOwnership = { ia ->
+        entity.info.lcoacctid = ia.objid
+        entity.info.lcoacctno = ia.acctno
+        entity.info.lcoaccttitle = ia.accttitle
+        entity.info.lcofundid = ia.fundid
+        binding.refresh('entity.info.lco.*')
+    }
+    
+    def lookupOwnershipAccount() {
+       return InvokerUtil.lookupOpener('incomeacct:lookup',[searchText:entity.info.lcoaccttitle, onselect:onselectOwnership]) 
+    }
+    
+    def onselectTransfer = { ia ->
+        entity.info.lctacctid = ia.objid
+        entity.info.lctacctno = ia.acctno
+        entity.info.lctaccttitle = ia.accttitle
+        entity.info.lctfundid = ia.fundid
+        binding.refresh('entity.info.lct.*')
+    }
+    
+    def lookupTransferAccount() {
+       return InvokerUtil.lookupOpener('incomeacct:lookup',[searchText:entity.info.lctaccttitle, onselect:onselectTransfer]) 
+    }
+    
+    def onselectMarriage = { ia ->
+        entity.info.marriageacctid = ia.objid
+        entity.info.marriageacctno = ia.acctno
+        entity.info.marriageaccttitle = ia.accttitle
+        entity.info.marriagefundid = ia.fundid
+        binding.refresh('entity.info.marriage.*')
+    }
+    
+    def lookupMarriageAccount() {
+       return InvokerUtil.lookupOpener('incomeacct:lookup',[searchText:entity.info.marriageaccttitle, onselect:onselectMarriage]) 
+    }
+    
+    def onselectBurial = { ia ->
+        entity.info.burialacctid = ia.objid
+        entity.info.burialacctno = ia.acctno
+        entity.info.burialaccttitle = ia.accttitle
+        entity.info.burialfundid = ia.fundid
+        binding.refresh('entity.info.burial.*')
+    }
+    
+    def lookupBurialAccount() {
+       return InvokerUtil.lookupOpener('incomeacct:lookup',[searchText:entity.info.burialaccttitle, onselect:onselectBurial]) 
+    }
+    
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.collection.setting.CollectionSettingPage"/>
+    </pages>
+</workunit>

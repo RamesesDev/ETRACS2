@@ -1,0 +1,124 @@
+<workunit>
+    <invokers>
+        <invoker type="collection" caption="Large Cattle Transfer" afid="52" appcode="cattle_transfer"  />
+        <invoker type="inquiry:tc:cattle_transfer" action="initInquiry" />
+        <invoker type="tc:cattle_transfer" action="init" caption="Large Cattle Transfer" afid="52"  />
+        
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}"/>
+        <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}"/>
+        <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}"/>
+        <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}"/>
+        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view'}"/>
+        
+        <invoker type="receipt.actions:tc:cattle_transfer" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" />
+        <invoker type="receipt.actions:tc:cattle_transfer" action="doVoid" caption="Void" mnemonic="v" />
+    </invokers>
+    <code>
+<![CDATA[
+
+    import com.rameses.rcp.common.*;
+    import com.rameses.rcp.annotations.*;
+    import com.rameses.osiris2.client.*;
+
+    class CattleTransferCollectionController extends etracs2.groovy.AbstractCollectionController
+    {
+        @Binding
+        def binding
+        
+        @Service('ReceiptService')
+        def svc
+        
+        @Service('IncomeAcctService')
+        def acctSvc
+        
+        @Service('LargeCattleHtmlService')
+        def htmlSvc
+        
+        @Service('DateService')
+        def dateSvc
+        
+        @Service('CollectionSettingService')
+        def collSvc
+        
+        def getService() { return svc }
+        def getHtmlService() { return htmlSvc }
+
+        
+        void init() {
+            super.init()
+            entity.doctype = 'CATTLE_TRANSFER'
+            addReceiptItem()
+            addDefaultCashPayment()
+        }
+        
+        def getHtml() {
+            return htmlSvc.getTransferHtml( entity.objid )
+        }
+        
+        def create() {
+            validate()
+            return super.create()
+        }
+        
+        def update() {
+            validate()
+            return super.update()
+        }
+        
+        void addReceiptItem() {
+            def cs = collSvc.open()
+            def ia = acctSvc.open( cs.info.lctacctid )
+            def item = [
+                acctid    : ia.objid,
+                acctno    : ia.acctno,
+                accttitle : ia.accttitle,
+                fundid    : ia.fundid,
+                fundname  : ia.fundname,
+                amount    : cs.info.lctamount,
+            ]
+            entity.items.add( item )
+            entity.info.amount = item.amount
+        }
+        
+        void addDefaultCashPayment() {
+            entity.payments.add( [
+                paytype     : 'CASH',
+                particulars : 'CASH',
+                amount      : entity.info.amount,
+            ])
+            entity.info.totalpayment = entity.info.amount
+            entity.info.cash = entity.info.amount
+            reinitializePaymentSummary()
+        }
+        
+        void validate() {
+            validateAge()
+            validateIssueDate()
+        }
+        
+        void validateAge() {
+            if( entity.age <= 0 ) throw new Exception('Age must be greater than zero.')
+        }
+        
+        void validateIssueDate() {
+            if( entity.issuedate ) {
+                Date dt = java.sql.Date.valueOf(entity.issuedate)
+                if( dt > dateSvc.serverDate ) {
+                    throw new Exception('Issue date must be less than today.')
+                }
+            }
+        }
+        
+        List getSexList() {
+            return ['MALE','FEMALE']
+        }
+        
+    }
+]]>        
+    </code>
+    <pages>
+        <page template="etracs2.tc.collection.LargeCattleTransferCollectionPage"/>
+        <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
+        <page name="html" template="etracs2.tc.HtmlPage"/>
+    </pages>
+</workunit>

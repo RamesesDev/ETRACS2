@@ -1,0 +1,39 @@
+<schema>
+	<element name="riv" tablename="riv">
+		<field name="objid" primary="true" />
+		<field name="schemaname" required="true"/>
+		<field name="schemaversion"  required="true"/>
+		<field name="docstate"  required="true"/> <!-- DRAFT, OPEN, CLOSED -->
+		<field name="rivtype" required="true"/> <!-- riv:main, riv:collector -->
+		<field name="txnno"  />
+		<field name="txndate" />
+		<field name="requestedby" required="true"/>
+		<field name="requestedbytitle" required="true"/>
+		<complex name="info" ref="info" serializer="default"/>
+		<complex name="items" ref="items" type="list" serializer="default" min="1"/>
+	</element>
+	
+	<element name="info">
+		<field name="treasuryname" required="true"/>
+		<field name="lgu"  required="true"/>
+		<field name="requestedbyid" />
+		<field name="requestedby" required="true"/>
+		<field name="requestedbytitle" required="true"/>
+		<field name="approvedbyid" />
+		<field name="approvedby" />
+		<field name="approvedbytitle"/>
+		<field name="afinventoryid" />
+	</element>
+	
+	<element name="items">
+		<field name="objid" required="true"/>
+		<field name="afid" required="true"/>
+		<field name="afdescription" />
+		<field name="aftype" />
+		<field name="afunit" />
+		<field name="afpcsperunit" />
+		<field name="qtyrequested" type="integer" required="true"/>
+		<field name="qtydelivered" type="integer" required="true"/>
+	</element>
+</schema>
+

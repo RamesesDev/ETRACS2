@@ -1,0 +1,80 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class AFControlService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def SCHEMANAME = 'afcontrol:afcontrol'
+	def SCHEMAVERSION = '1.0'
+	
+	def APPROVED_STATE = 'APPROVED'
+	def CLOSED_STATE = 'CLOSED'
+	def SERIAL_TYPE = 'serial'
+	def NONSERIAL_TYPE = 'nonserial'
+	
+	
+	@ProxyMethod
+	public def open( objid ) {
+		return em.read( SCHEMANAME, [objid:objid] )
+	}
+	
+	@ProxyMethod
+	public Map getActiveAFControl( collectorid, afid, mode ) {
+		def params = [collectorid:collectorid, afid:afid, mode:mode]
+		Map afcontrol = em.sqlContext.createNamedQuery('afcontrol:getActiveByCollectorId').setParameters(params).singleResult
+		if( afcontrol ) buildSerialNo( afcontrol )
+		return afcontrol 
+	}
+	
+	@ProxyMethod
+	public List getInactiveList( collectorid, afid, mode ) {
+		def params = [collectorid:collectorid, afid:afid, mode:mode]
+		return em.sqlContext.createNamedQuery('afcontrol:getInactiveList').setParameters(params).resultList
+	}
+	
+	@ProxyMethod
+	public List getAllInactiveList( collectorid ) {
+		return em.sqlContext.createNamedQuery('afcontrol:getAllInactiveList').setParameter('collectorid', collectorid).resultList
+	}
+	
+	@ProxyMethod
+	public def activateAFControl( objid, mode )  {
+		def afcontrol = em.read( SCHEMANAME, [objid:objid] )
+		if( afcontrol.docstate != APPROVED_STATE ) throw new Exception('AF Control is already ' + afcontrol.state + '.')
+		if( afcontrol.mode != mode ) throw new Exception('AF Control is already in  ' + afcontrol.mode + ' mode.' )
+		if( afcontrol.active == false ) throw new Exception('AF Control is already ACTIVE.')
+		checkHasActive( afcontrol )
+		em.sqlContext.createNamedExecutor('afcontrol:activateControl').setParameter('objid', objid).execute()
+		buildSerialNo( afcontrol)
+		return afcontrol 
+	}
+	
+	@ProxyMethod
+	public void buildSerialNo( afcontrol ) {
+		afcontrol.serialno = null
+		if( afcontrol.aftype == SERIAL_TYPE ) {
+			afcontrol.serialno = formatSeries( afcontrol.currentseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength)
+		}
+	}
+	
+	@ProxyMethod
+	public def formatSeries( series, prefix, suffix, serieslength ) {
+		def p = (prefix ? prefix + '-' : '')
+		def s  = (suffix ? '-' + suffix : '')
+		return p + (series+'').padLeft(serieslength, '0') + s  
+	}
+	
+	void checkHasActive( afcontrol ) {
+		def data = getActiveAFControl( afcontrol.collectorid, afcontrol.afid, afcontrol.mode )
+		if( data ) throw new Exception('Cannot activate selected form.\nAccountable Form with Stub No. ' + data.stubno + ' is still an active for collector ' + afcontrol.collectorname + '.')
+	}
+	
+}

@@ -1,0 +1,106 @@
+<workunit>
+    <invokers>
+        <invoker type="collection" caption="Large Cattle Ownership" afid="53" appcode="cattle_ownership"  />
+        <invoker type="inquiry:tc:cattle_ownership" action="initInquiry" />
+        <invoker type="tc:cattle_ownership" action="init" caption="Large Cattle Ownership" afid="53"  />
+        
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}"/>
+        <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}"/>
+        <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}"/>
+        <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}"/>
+        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view'}"/>
+        
+        <invoker type="receipt.actions:tc:cattle_ownership" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" />
+        <invoker type="receipt.actions:tc:cattle_ownership" action="doVoid" caption="Void" mnemonic="v" />
+    </invokers>
+    <code>
+<![CDATA[
+
+    import com.rameses.rcp.common.*;
+    import com.rameses.rcp.annotations.*;
+    import com.rameses.osiris2.client.*;
+
+    class CattleOwnershipCollectionController extends etracs2.groovy.AbstractCollectionController
+    {
+        @Binding
+        def binding
+        
+        @Service('ReceiptService')
+        def svc
+        
+        @Service('IncomeAcctService')
+        def acctSvc
+        
+        @Service('LargeCattleHtmlService')
+        def htmlSvc
+        
+        @Service('CollectionSettingService')
+        def collSvc
+        
+        def getService() { return svc }
+        def getHtmlService() { return htmlSvc }
+        
+        void init() {
+            super.init()
+            entity.doctype = 'CATTLE_OWNERSHIP'
+            addReceiptItem()
+            addDefaultCashPayment()
+        }
+        
+        def getHtml() {
+            return htmlSvc.getOwnershipHtml( entity.objid )
+        }
+        
+        def create() {
+            validateAge()
+            return super.create()
+        }
+        
+        def update() {
+            validateAge()
+            return super.update()
+        }
+        
+        void addReceiptItem() {
+            def cs = collSvc.open()
+            def ia = acctSvc.open( cs.info.lcoacctid )
+            def item = [
+                acctid    : ia.objid,
+                acctno    : ia.acctno,
+                accttitle : ia.accttitle,
+                fundid    : ia.fundid,
+                fundname  : ia.fundname,
+                amount    : cs.info.lcoamount,
+            ]
+            entity.items.add( item )
+            entity.info.amount = item.amount
+        }
+        
+        void addDefaultCashPayment() {
+            entity.payments.add( [
+                paytype     : 'CASH',
+                particulars : 'CASH',
+                amount      : entity.info.amount,
+            ])
+            entity.info.totalpayment = entity.info.amount
+            entity.info.cash = entity.info.amount
+            reinitializePaymentSummary()
+        }
+        
+        void validateAge() {
+            if( entity.age <= 0 ) throw new Exception('Age must be greater than zero.')
+        }
+        
+        List getSexList() {
+            return ['MALE','FEMALE']
+        }
+        
+    }
+]]>        
+    </code>
+    <pages>
+        <page template="etracs2.tc.collection.LargeCattleOwnershipCollectionPage"/>
+        <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
+        <page name="html" template="etracs2.tc.HtmlPage"/>
+    </pages>
+</workunit>

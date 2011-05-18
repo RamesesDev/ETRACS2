@@ -1,0 +1,57 @@
+<workunit>
+    <invokers>
+        <invoker type="af:lookup" caption="Accountable Form Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+
+class AFLookupController extends LookupModel 
+{
+    @Service("AFService")
+    def svc;
+    
+    def onselect;
+    def searchText;
+    def selected;
+    
+    def ok() {
+        return select();
+    }
+    
+    def getListHandler() {
+        return this;
+    }
+    
+    int getRows() { return 20; }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"objid", caption:"AF Id", maxWidth:90),
+            new Column(name:"description", caption:"Description"),
+            new Column(name:"aftype", caption:"AF Type"),
+        ]
+    }
+    
+    List fetchList( Map params ) {
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getAFList(s, params);
+        if( list ) return list;
+        throw new Exception("Record not found.");
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.LookupPage"/>
+    </pages>
+</workunit>
