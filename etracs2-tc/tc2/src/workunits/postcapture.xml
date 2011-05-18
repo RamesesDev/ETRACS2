@@ -63,18 +63,17 @@ class PostCaptureController
     
     def updateDetailHandler = { rct ->
         updateDetailAmount(rct)
-        binding.refresh('selectedSummary|selectedDetail')
     }
     
     def deleteDetailHandler = { rct ->
         selectedSummary.details.remove( selectedDetail )
         if( ! selectedSummary.details ) {
             entity.summaries.remove( selectedSummary )
-            calculateSummaryTotal()
+            calculateTotals()
             summaryHandler.load()
         }
         else {
-            calculateSummaryTotal()
+            calculateTotals()
             detailHandler.load()
         }
     }
@@ -85,16 +84,13 @@ class PostCaptureController
             selectedDetail.amount = 0.0
             selectedDetail.voidreason = rct.voidreason
         }
-        calculateSummaryTotal()
+        calculateTotals()
     }
     
-    void calculateSummaryTotal() {
+    void calculateTotals() {
         selectedSummary.amount = CommonUtil.sum( selectedSummary.details, {it.amount} )
-        calculateAmount()
-    }
-    
-    void calculateAmount() {
         entity.amount = CommonUtil.sum( entity.summaries, {it.amount} )
+        binding.refresh('selectedSummary|selectedDetail|entity.amount')
     }
     
     void loadEntity() {

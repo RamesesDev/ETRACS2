@@ -11,13 +11,13 @@ SELECT * FROM incomeaccount WHERE acctno LIKE $P{acctno}  ORDER BY acctno
 SELECT * FROM incomeaccount WHERE accttitle LIKE $P{accttitle} ORDER BY accttitle   
 
 [getIncomeAccountList]
-SELECT objid, acctno, accttitle, fundid FROM incomeaccount WHERE docstate = 'APPROVED'
+SELECT objid, acctno, accttitle, fundid, fundname  FROM incomeaccount WHERE docstate = 'APPROVED'
 
 [getIncomeAccountListByNo]
-SELECT objid, acctno, accttitle, fundid FROM incomeaccount WHERE docstate = 'APPROVED' AND acctno = $P{acctno}
+SELECT objid, acctno, accttitle, fundid, fundname  FROM incomeaccount WHERE docstate = 'APPROVED' AND acctno = $P{acctno}
 
 [getIncomeAccountListByTitle]
-SELECT objid, acctno, accttitle, fundid FROM incomeaccount WHERE docstate = 'APPROVED' AND accttitle LIKE $P{accttitle}
+SELECT objid, acctno, accttitle, fundid, fundname FROM incomeaccount WHERE docstate = 'APPROVED' AND accttitle LIKE $P{accttitle}
 
 [getFund]
 SELECT * FROM fund WHERE docstate = "APPROVED"
