@@ -26,7 +26,8 @@ CREATE TABLE afcontrol (
 	 prefix varchar(10) default NULL,                                          
 	 suffix varchar(10) default NULL,                                          
 	 serieslength int(11) NOT NULL,                                            
-	 receiptformat varchar(50) default NULL,                                   
+	 receiptformat varchar(50) default NULL,
+	 cancelledseries text,
 	 PRIMARY KEY  (objid)
    ) ENGINE=InnoDB DEFAULT CHARSET=latin1 ;
 

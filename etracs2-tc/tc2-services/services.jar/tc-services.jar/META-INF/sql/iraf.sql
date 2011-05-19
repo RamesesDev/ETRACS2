@@ -33,4 +33,22 @@ AND   a.suffix = $P{suffix}
 [getAFInventoryByIRAFIdOrderByStubNo]
 SELECT o.* FROM afinventory o 
 WHERE o.irafid = $P{irafid} 
+AND   o.afid = $P{afid} 
 ORDER BY o.stubto desc 
+
+[checkSerialInUse] 
+SELECT ac.objid FROM afinventory ai 
+INNER JOIN afinventorycredit aic on aic.afinventoryid = ai.objid 
+INNER JOIN afcontrol ac on ac.afinventorycreditid = aic.objid 
+WHERE ( ac.docstate = 'CLOSED' OR ac.active = 1 ) 
+AND   ( ac.startseries >= $P{series} AND ac.endseries <= $P{series} ) 
+AND   ac.currentseries > $P{series} 
+AND   ai.irafid = $P{irafid} 
+
+[getAFControlBySeries] 
+SELECT ac.objid FROM afinventory ai  
+INNER JOIN afinventorycredit aic on aic.afinventoryid = ai.objid  
+INNER JOIN afcontrol ac on ac.afinventorycreditid = aic.objid  
+WHERE   ai.irafid = $P{irafid} 
+AND     ac.afid = $P{afid}
+AND   (ac.startseries <= $P{series} AND ac.endseries >= $P{series} ) 

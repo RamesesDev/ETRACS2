@@ -50,6 +50,7 @@ public class IRAFPage extends javax.swing.JPanel {
         jPanel6 = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
         jPanel11 = new javax.swing.JPanel();
+        xButton2 = new com.rameses.rcp.control.XButton();
         xButton1 = new com.rameses.rcp.control.XButton();
         jPanel8 = new javax.swing.JPanel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
@@ -179,6 +180,12 @@ public class IRAFPage extends javax.swing.JPanel {
         jPanel7.setBorder(javax.swing.BorderFactory.createEmptyBorder(2, 4, 2, 4));
         jPanel7.setOpaque(false);
         jPanel11.setPreferredSize(new java.awt.Dimension(100, 34));
+        xButton2.setText("Cancelled Series");
+        xButton2.setDepends(new String[] {"receivedItem"});
+        xButton2.setName("viewCancelledSeries");
+        xButton2.setVisibleWhen("#{entity.docstate == 'APPROVED' && entity.info.rivtype == 'LGU' && receivedItem != null && receivedItem.aftype == 'serial'}");
+        jPanel11.add(xButton2);
+
         xButton1.setText("Add");
         xButton1.setName("add");
         jPanel11.add(xButton1);
@@ -192,6 +199,7 @@ public class IRAFPage extends javax.swing.JPanel {
         xDataTable2.setDynamic(true);
         xDataTable2.setHandler("receivedHandler");
         xDataTable2.setImmediate(true);
+        xDataTable2.setName("receivedItem");
         jPanel8.add(xDataTable2);
         xDataTable2.setBounds(0, 130, 550, 110);
 
@@ -254,6 +262,7 @@ public class IRAFPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XActionTextField xActionTextField2;
     private com.rameses.rcp.control.XButton xButton1;
+    private com.rameses.rcp.control.XButton xButton2;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XDataTable xDataTable2;
     private com.rameses.rcp.control.XDataTable xDataTable3;

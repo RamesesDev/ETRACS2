@@ -265,8 +265,24 @@ class ReceiptService
 			afcontrol.issuedto = afcontrol.currentseries
 		}
 		
-		afcontrol.currentseries += 1
+		afcontrol.currentseries = getNextCurrentSeries( afcontrol );
+		
 		em.update(AFCONTROL_SCHEMA, afcontrol )
+	}
+	
+	def getNextCurrentSeries( afcontrol ){
+		def currentseries = afcontrol.currentseries + 1;
+		if( afcontrol.cancelledseries ){
+			afcontrol.currentseries = getNextAvailableSeries( ac.cancelledseries, currentseries );
+		}
+		return afcontrol.currentseries;
+	}
+	
+	def getNextAvailableSeries( def cancelledseries, def series ){
+		while( cancelledseries.find{ it.series == series } ){
+			return series += 1;
+		}
+		return series;
 	}
 	
 	void postNonSerialAFControl( receipt, afcontrol) {

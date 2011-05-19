@@ -89,6 +89,7 @@ class IRAFController
         
     ] as SubListModel;
     
+    def receivedItem;
     def requestedHandler = [
         getRows    : { return 10; },
         getColumns : {
@@ -166,6 +167,9 @@ class IRAFController
     
     void cancel(){
         init();
+        if( selectedItem ){
+            setSelectedItem( selectedItem );
+        }
     }
     
     def getEnv() {
@@ -177,6 +181,10 @@ class IRAFController
         if( mode !=  "create") {
             this.entity = svc.open( selectedItem?.objid );
         }
+    }
+    
+    def viewCancelledSeries(){
+        return InvokerUtil.lookupOpener("iraf:irafcancelledseries", [iraf: this.entity, svc: svc, rcvitem: receivedItem]);
     }
     
 }

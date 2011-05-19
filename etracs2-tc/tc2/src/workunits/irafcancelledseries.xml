@@ -1,0 +1,74 @@
+<workunit>
+    <invokers>
+        <invoker type="iraf:irafcancelledseries" caption="Cancelled Series" target="popup"/>
+    </invokers>
+    
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import java.rmi.server.UID;
+
+class IRAFAddItemCollectorBrgyController
+{  
+    @Binding
+    def binding;
+    
+    def svc;
+    def iraf;
+    def rcvitem;
+    
+    def bean = [:];
+    
+    public void add(){
+        if( !isInBetweenSeries() )
+            throw new Exception("Series to be cancelled are not in $rcvitem.startseries - $rcvitem.endseries");
+        
+        if( !MsgBox.confirm("Are you sure you want to add this as cancelled") ) return;
+        
+        svc.addCancelledSeries( iraf.objid, bean, rcvitem.afid );
+        
+        if( !rcvitem.cancelledseries ) rcvitem.cancelledseries = [];
+        
+        rcvitem.cancelledseries.add( bean );
+        bean = [:];
+        
+        handler.load();
+        binding.refresh();
+    }
+    
+    private def isInBetweenSeries(){
+        def fromseries = bean.fromseries;
+        def toseries = bean.toseries;
+
+        if( !isBeetween( rcvitem.startseries, rcvitem.endseries, fromseries ) ) return false;
+        if( !isBeetween( rcvitem.startseries, rcvitem.endseries, toseries ) ) return false;
+
+        return true;
+    }
+	
+    private boolean isBeetween( def start, def end, mid ){
+        return ( mid >= start && mid <= end );
+    }
+    
+    def handler = [
+        getColumns : {
+            return [
+                new Column(name:"fromseries", caption:"From Series", format:"#"),
+                new Column(name:"toseries", caption:"To Series", format:"#"),
+                new Column(name:"remarks", caption:"Remarks")
+            ];
+        },
+        fetchList    : { return rcvitem.cancelledseries }
+    ] as SubListModel;
+    
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.af.IRAFCancelledSeriesPage"/>
+    </pages>
+</workunit>

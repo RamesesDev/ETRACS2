@@ -20,6 +20,8 @@ public class IRAFAddItemLGUPage extends javax.swing.JPanel {
     public IRAFAddItemLGUPage() {
         initComponents();
         jPanel11.setLayout( new FlowLayout( FlowLayout.TRAILING ) );
+        xNumberField1.setFieldType( Integer.class );
+        xNumberField2.setFieldType( Integer.class );
     }
     
     /** This method is called from within the constructor to

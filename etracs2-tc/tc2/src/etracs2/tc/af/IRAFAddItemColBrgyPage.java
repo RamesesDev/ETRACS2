@@ -6,7 +6,6 @@
 
 package etracs2.tc.af;
 
-import com.rameses.rcp.ui.annotations.StyleSheet;
 import java.awt.FlowLayout;
 
 /**
@@ -19,6 +18,7 @@ public class IRAFAddItemColBrgyPage extends javax.swing.JPanel {
     public IRAFAddItemColBrgyPage() {
         initComponents();
         jPanel11.setLayout( new FlowLayout( FlowLayout.TRAILING ) );
+        xNumberField1.setFieldType( Integer.class );
     }
     
     /** This method is called from within the constructor to
