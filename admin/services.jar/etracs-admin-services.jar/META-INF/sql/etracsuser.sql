@@ -22,8 +22,16 @@ WHERE u.objid = $P{objid}
 ORDER BY u.uid  
 
 [getLiquidatingOfficers]
-SELECT * FROM etracsuser WHERE name LIKE $P{name} AND isliquidating = 1 ORDER BY name 
+SELECT * FROM etracsuser WHERE isliquidating = 1 ORDER BY name 
 
+[getLiquidatingOfficer]
+SELECT * FROM etracsuser WHERE objid = $P{objid} AND isliquidating = 1 
+
+[getCollectors]
+SELECT * FROM etracsuser WHERE iscollector = 1 ORDER BY name 
+
+[getCollector]
+SELECT * FROM etracsuser WHERE objid = $P{objid} AND iscollector = 1 
 
 
 #-------------------------------------------------
