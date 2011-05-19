@@ -10,8 +10,9 @@
     <code>
         <![CDATA[
         
-        import com.rameses.rcp.common.*;
-        import com.rameses.rcp.annotations.*;
+        import com.rameses.rcp.common.*
+        import com.rameses.rcp.annotations.*
+        import com.rameses.osiris2.client.* 
         
         public class ETRACSUserController
         {
@@ -26,6 +27,7 @@
             def user = [:];
             def searchText;
             def mode = "read";
+            def lqofficername 
             
             void edit() {
                 mode = "edit";
@@ -43,11 +45,34 @@
                 binding.refresh();
             }
             
+            def onselectLiquidatingOfficer = { lqofficer ->
+                user.lqofficerid = lqofficer.objid 
+                user.lqofficername = lqofficer.name
+                user.lqofficertitle = lqofficer.jobtitle 
+                lqofficername = user.lqofficername
+                binding.refresh('user.*|lqofficername')
+            }
+            
+            def lookupLiquidatingOfficer() {
+                return InvokerUtil.lookupOpener('etracsuser:lookup.liquidating', [searchText:lqofficername, onselect:onselectLiquidatingOfficer])
+            }
             
             
             void setSelectedItem( selected ) {
-                user = selected.item;
+                user = selected?.item;
                 if( !user ) user = [:];
+                lqofficername = user.lqofficername
+            }
+            
+            void setLqofficername( lqofficername ) {
+                this.lqofficername = lqofficername
+                if( ! lqofficername ) resetLiquidatingInfo()
+            }
+            
+            void resetLiquidatingInfo() {
+                user.lqofficerid = null
+                user.lqofficername = null
+                user.lqofficertitle = null
             }
             
             def listHandler = [

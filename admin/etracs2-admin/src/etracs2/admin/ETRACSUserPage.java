@@ -39,6 +39,9 @@ public class ETRACSUserPage extends javax.swing.JPanel {
         xLabel3 = new com.rameses.rcp.control.XLabel();
         xLabel4 = new com.rameses.rcp.control.XLabel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
+        xTextField2 = new com.rameses.rcp.control.XTextField();
+        xSeparator1 = new com.rameses.rcp.control.XSeparator();
+        xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
 
         setLayout(new java.awt.BorderLayout());
@@ -93,6 +96,7 @@ public class ETRACSUserPage extends javax.swing.JPanel {
 
         xLabel2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel2.setCaption("User ID");
+        xLabel2.setCaptionWidth(105);
         xLabel2.setDepends(new String[] {"selectedItem"});
         xLabel2.setName("user.uid");
         xLabel2.setPreferredSize(new java.awt.Dimension(0, 19));
@@ -100,6 +104,7 @@ public class ETRACSUserPage extends javax.swing.JPanel {
 
         xLabel3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel3.setCaption("Last Name");
+        xLabel3.setCaptionWidth(105);
         xLabel3.setDepends(new String[] {"selectedItem"});
         xLabel3.setName("user.lastname");
         xLabel3.setPreferredSize(new java.awt.Dimension(0, 19));
@@ -107,16 +112,46 @@ public class ETRACSUserPage extends javax.swing.JPanel {
 
         xLabel4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel4.setCaption("First Name");
+        xLabel4.setCaptionWidth(105);
         xLabel4.setDepends(new String[] {"selectedItem"});
         xLabel4.setName("user.firstname");
         xLabel4.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xLabel4);
 
-        xTextField1.setCaption("Job Title");
+        xTextField1.setCaption("Middle Name");
+        xTextField1.setCaptionWidth(105);
         xTextField1.setDepends(new String[] {"selectedItem"});
-        xTextField1.setName("user.jobtitle");
+        xTextField1.setName("user.middlename");
         xTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xTextField1);
+
+        xTextField2.setCaption("Job Title");
+        xTextField2.setCaptionWidth(105);
+        xTextField2.setDepends(new String[] {"selectedItem"});
+        xTextField2.setName("user.jobtitle");
+        xTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel1.add(xTextField2);
+
+        xSeparator1.setPreferredSize(new java.awt.Dimension(0, 20));
+        org.jdesktop.layout.GroupLayout xSeparator1Layout = new org.jdesktop.layout.GroupLayout(xSeparator1);
+        xSeparator1.setLayout(xSeparator1Layout);
+        xSeparator1Layout.setHorizontalGroup(
+            xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 352, Short.MAX_VALUE)
+        );
+        xSeparator1Layout.setVerticalGroup(
+            xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 20, Short.MAX_VALUE)
+        );
+        formPanel1.add(xSeparator1);
+
+        xActionTextField2.setActionName("lookupLiquidatingOfficer");
+        xActionTextField2.setCaption("Liquidating Officer");
+        xActionTextField2.setCaptionWidth(105);
+        xActionTextField2.setDepends(new String[] {"selectedItem"});
+        xActionTextField2.setName("lqofficername");
+        xActionTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel1.add(xActionTextField2);
 
         xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setName("formActions");
@@ -128,7 +163,7 @@ public class ETRACSUserPage extends javax.swing.JPanel {
             .add(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 295, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 362, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 372, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -137,8 +172,8 @@ public class ETRACSUserPage extends javax.swing.JPanel {
             .add(jPanel3Layout.createSequentialGroup()
                 .add(xActionBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 354, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(47, Short.MAX_VALUE))
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 390, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
@@ -174,12 +209,15 @@ public class ETRACSUserPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel7;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
+    private com.rameses.rcp.control.XActionTextField xActionTextField2;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
     private com.rameses.rcp.control.XLabel xLabel4;
+    private com.rameses.rcp.control.XSeparator xSeparator1;
     private com.rameses.rcp.control.XTable xTable1;
     private com.rameses.rcp.control.XTextField xTextField1;
+    private com.rameses.rcp.control.XTextField xTextField2;
     // End of variables declaration//GEN-END:variables
     
 }

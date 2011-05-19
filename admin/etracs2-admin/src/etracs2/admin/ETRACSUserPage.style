@@ -6,10 +6,22 @@
     enabled:false;
 }
 
-"user.*" [mode == 'read'] {
+"user.*|lqofficername" [mode == 'read'] {
     readonly:true;
 }
 
-"user.*" [mode != 'read'] {
+"user.*|lqofficername" [mode != 'read'] {
     readonly:false;
+}
+
+"lqofficername" [user == null] {
+    visible:false;
+}
+
+"lqofficername" [user.iscollector == 0] {
+    visible:false;
+}
+
+"lqofficername" [user.iscollector == 1] {
+    visible:true;
 }

@@ -1,64 +1,51 @@
 [getList]
-SELECT u.objid, u.uid, u.lastname, u.firstname, eu.jobtitle 
-FROM user u, etracsuser eu 
-WHERE u.objid = eu.objid 
+SELECT * FROM etracsuser u 
 ORDER BY u.uid
 
 [findByUid]
-SELECT u.objid, u.uid, u.lastname, u.firstname, eu.jobtitle 
-FROM user u, etracsuser eu 
-WHERE u.objid = eu.objid 
-  AND u.uid LIKE $P{uid}
+SELECT * FROM etracsuser u 
+WHERE u.uid LIKE $P{uid}
 ORDER BY u.uid  
 
 [findByLastName]
-SELECT u.objid, u.uid, u.lastname, u.firstname, eu.jobtitle 
-FROM user u, etracsuser eu 
-WHERE u.objid = eu.objid 
-  AND u.lastname LIKE $P{lastname} 
+SELECT * FROM etracsuser u 
+WHERE u.lastname LIKE $P{lastname} 
 ORDER BY u.uid  
 
 [getUserInfo]
 SELECT 
-	CONCAT(u.firstname, ' ', u.lastname) AS name,  
-	eu.jobtitle 
-FROM user u, etracsuser eu  
-WHERE u.objid = eu.objid  
-  AND u.objid = $P{objid}  
+	name,
+	formalname, 
+	u.jobtitle 
+FROM etracsuser u 
+WHERE u.objid = $P{objid}  
 ORDER BY u.uid  
 
+[getLiquidatingOfficers]
+SELECT * FROM etracsuser WHERE name LIKE $P{name} AND isliquidating = 1 ORDER BY name 
 
-[insertUser]
-INSERT INTO etracsuser (objid, uid) VALUES( $P{objid}, $P{uid} ) 
-
-
-[updateJobTitle]
-UPDATE etracsuser SET jobtitle = $P{jobtitle} WHERE objid = $P{objid} 
 
 
 #-------------------------------------------------
 # EXAMINER SUPPORT 
 #-------------------------------------------------
 [getExaminerList]
-SELECT u.objid, u.uid, u.lastname, u.firstname, eu.jobtitle 
-FROM user u, etracsuser eu, examiner ex  
-WHERE u.objid = eu.objid 
-  AND u.objid = ex.objid 
+SELECT u.objid, u.uid, u.lastname, u.firstname, u.jobtitle 
+FROM etracsuser u, examiner ex  
+WHERE u.objid = ex.objid 
 ORDER BY u.uid  
 
 [findExaminerByUid]
-SELECT u.objid, u.uid, u.lastname, u.firstname, eu.jobtitle 
-FROM user u, etracsuser eu, examiner ex  
-WHERE u.objid = eu.objid 
-  AND u.objid = ex.objid 
+SELECT u.objid, u.uid, u.lastname, u.firstname, u.jobtitle 
+FROM etracsuser u, examiner ex  
+WHERE u.objid = ex.objid 
   AND u.uid LIKE $P{uid}
 ORDER BY u.uid  
 
 [findExaminerByLastName]
-SELECT u.objid, u.uid, u.lastname, u.firstname, eu.jobtitle 
-FROM user u, etracsuser eu, examiner ex  
-WHERE u.objid = eu.objid 
-  AND u.objid = ex.objid 
+SELECT u.objid, u.uid, u.lastname, u.firstname, u.jobtitle 
+FROM etracsuser u, examiner ex  
+WHERE u.objid = ex.objid 
   AND u.lastname LIKE $P{lastname} 
 ORDER BY u.uid  
 
