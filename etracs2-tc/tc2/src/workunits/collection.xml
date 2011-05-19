@@ -50,10 +50,9 @@ class CollectionController
     void initOffline()  { init( OFFLINE_MONE ) }
     void initCapture()  { init( CAPTURE_MODE ) }
 	
-    //TODO: dummy collectorid 
     void init( txnmode ) {
         this.txnmode = txnmode
-        collector = userService.getCollector('COL01')
+        collector = getCollector()
         preservedTxnDate()
     }
 	
@@ -142,6 +141,10 @@ class CollectionController
     List getCollectionTypeList() {
         return collTypeService.getListByAfId( af.objid )
     }    
+    
+    def getCollector(){
+        return userService.getCollector( OsirisContext.env.USERID  )
+    }
 }
         
     ]]>

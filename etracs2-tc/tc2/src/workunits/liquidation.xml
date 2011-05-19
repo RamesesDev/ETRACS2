@@ -37,11 +37,10 @@
             
             def numformat = new DecimalFormat("#,##0.00");
             
-            //DUMMY DATA FOR COLLECTOR
             def liquidatingofficer;
         
             def init() {
-                liquidatingofficer = userService.getLiquidatingOfficer('LIQ01');
+                liquidatingofficer = getLiquidatingOfficer()
                 mode = 'init';
                 caller?.mode = 'create';
                 entity = [
@@ -102,9 +101,9 @@
             def buildInfo() {
                 return [
                     txndate : dtsvc.getServerDate(),
-                    liquidatingofficerid : liquidatingofficer.liqofficerid,
-                    liquidatingofficername : liquidatingofficer.liqofficername,
-                    liquidatingofficertitle : liquidatingofficer.liqofficertitle,
+                    liquidatingofficerid : liquidatingofficer.lqofficerid,
+                    liquidatingofficername : liquidatingofficer.lqofficername,
+                    liquidatingofficertitle : liquidatingofficer.lqofficertitle,
                     amount : 0.00,
                     totalcash : 0.00,
                     totalotherpayment : 0.00,
@@ -162,6 +161,10 @@
             
             def getTotalAmount() {
                 return numformat.format( entity.info.amount );
+            }
+            
+            def getLiquidatingOfficer() {
+                return userService.getLiquidatingOfficer( OsirisContext.env.USERID );
             }
             
             
