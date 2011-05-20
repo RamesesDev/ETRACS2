@@ -43,6 +43,8 @@ public class ETRACSUserPage extends javax.swing.JPanel {
         xSeparator1 = new com.rameses.rcp.control.XSeparator();
         xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        xList1 = new com.rameses.rcp.control.XList();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -62,7 +64,7 @@ public class ETRACSUserPage extends javax.swing.JPanel {
         xTitledBorder1.setTitle("Search");
         jPanel2.setBorder(xTitledBorder1);
         xTable1.setHandler("listHandler");
-        xTable1.setIndex(-1);
+        xTable1.setIndex(-10);
         xTable1.setName("selectedItem");
 
         xActionTextField1.setActionName("search");
@@ -156,6 +158,15 @@ public class ETRACSUserPage extends javax.swing.JPanel {
         xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setName("formActions");
 
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder3.setTitle("Assigned Roles");
+        jScrollPane1.setBorder(xTitledBorder3);
+        xList1.setDepends(new String[] {"selectedItem"});
+        xList1.setDynamic(true);
+        xList1.setExpression("#{role}");
+        xList1.setItems("user.roles");
+        jScrollPane1.setViewportView(xList1);
+
         org.jdesktop.layout.GroupLayout jPanel3Layout = new org.jdesktop.layout.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
@@ -163,8 +174,10 @@ public class ETRACSUserPage extends javax.swing.JPanel {
             .add(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 362, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 372, Short.MAX_VALUE))
+                    .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 386, Short.MAX_VALUE)
+                    .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                        .add(org.jdesktop.layout.GroupLayout.LEADING, jScrollPane1)
+                        .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 362, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
@@ -172,8 +185,10 @@ public class ETRACSUserPage extends javax.swing.JPanel {
             .add(jPanel3Layout.createSequentialGroup()
                 .add(xActionBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 390, Short.MAX_VALUE)
-                .addContainerGap())
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 168, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 198, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(29, Short.MAX_VALUE))
         );
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
@@ -207,6 +222,7 @@ public class ETRACSUserPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel7;
+    private javax.swing.JScrollPane jScrollPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XActionTextField xActionTextField2;
@@ -214,6 +230,7 @@ public class ETRACSUserPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
     private com.rameses.rcp.control.XLabel xLabel4;
+    private com.rameses.rcp.control.XList xList1;
     private com.rameses.rcp.control.XSeparator xSeparator1;
     private com.rameses.rcp.control.XTable xTable1;
     private com.rameses.rcp.control.XTextField xTextField1;

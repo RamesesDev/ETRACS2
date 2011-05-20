@@ -31,22 +31,23 @@ class ETRACSUserService
 	}
 	
 	@ProxyMethod
+	public List loadUserRoles( objid  ) {
+		def roles = em.sqlContext.createNamedQuery('etracsuser:getUserRoles').setParameter('userid', objid).resultList
+		roles.sort()
+		return roles
+	}
+	
+	
+	@ProxyMethod
 	public Map getCollector( collectorid ) {
 		def collector = em.sqlContext.createNamedQuery('etracsuser:getCollector').setParameter('objid', collectorid).singleResult
 		if( !collector ) throw new Exception('Collector does not exists.')
 		return collector
-		// return [collectorid:'COL01', collectorname:'SUSAN SANTOS', collectortitle:'RCC II']
 	}
 	
 	@ProxyMethod
 	public List getCollectorList() {
 		return em.sqlContext.createNamedQuery('etracsuser:getCollectors')
-		/*
-		return [
-			[collectorid:'COL01', collectorname:'SUSAN SANTOS', collectortitle:'RCC II'],
-			[collectorid:'COL02', collectorname:'MIGUEL TAN', collectortitle:'RCC I'],
-		]
-		*/
 	}
 	
 	@ProxyMethod
@@ -54,8 +55,6 @@ class ETRACSUserService
 		def lqofficer = em.sqlContext.createNamedQuery('etracsuser:getLiquidatingOfficer').setParameter('objid', lqofficerid).singleResult
 		if( ! lqofficer ) throw new Exception('Liquidating Officer does not exists.')
 		return lqofficer 
-		
-		// return [liqofficerid:'LIQ01', liqofficername:'EUGENE YU', liqofficer:'TREASURER'];
 	}
 	
 	@ProxyMethod

@@ -58,11 +58,18 @@
             }
             
             
-            void setSelectedItem( selected ) {
-                user = selected?.item;
-                if( !user ) user = [:];
+            void setSelectedItem( selectedItem ) {
+                this.selectedItem = selectedItem
+                if( selectedItem?.item ) {
+                    user = selectedItem.item
+                    user.roles = svc.loadUserRoles( user.objid )
+                }
+                else {
+                    user = [:]
+                }
                 lqofficername = user.lqofficername
             }
+            
             
             void setLqofficername( lqofficername ) {
                 this.lqofficername = lqofficername

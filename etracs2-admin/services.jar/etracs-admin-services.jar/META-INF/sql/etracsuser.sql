@@ -21,6 +21,10 @@ FROM etracsuser u
 WHERE u.objid = $P{objid}  
 ORDER BY u.uid  
 
+[getUserRoles]
+SELECT role FROM user_role WHERE userid = $P{userid} 
+
+
 [getLiquidatingOfficers]
 SELECT * FROM etracsuser WHERE isliquidating = 1 ORDER BY name 
 
