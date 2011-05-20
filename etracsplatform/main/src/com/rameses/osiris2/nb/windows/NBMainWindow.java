@@ -1,5 +1,6 @@
-package com.rameses.osiris2.nb;
+package com.rameses.osiris2.nb.windows;
 
+import com.rameses.osiris2.nb.*;
 import com.rameses.platform.interfaces.MainWindow;
 import com.rameses.platform.interfaces.MainWindowListener;
 import java.awt.Component;

@@ -1,5 +1,6 @@
 package com.rameses.osiris2.nb;
 
+import com.rameses.osiris2.nb.windows.NBMainWindow;
 import java.awt.Container;
 import java.util.Hashtable;
 import java.util.Map;

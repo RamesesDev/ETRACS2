@@ -1,7 +1,9 @@
 package com.rameses.osiris2.nb.bootstrap;
 
 import com.rameses.osiris2.nb.NBManager;
-import com.rameses.osiris2.nb.StartupWindow;
+import com.rameses.osiris2.nb.windows.StartupWindow;
+import com.rameses.platform.interfaces.ViewContext;
+import java.awt.Component;
 import java.io.Serializable;
 import org.openide.ErrorManager;
 import org.openide.util.NbBundle;
@@ -72,16 +74,22 @@ final class NBBootStrapTopComponent extends TopComponent implements StartupWindo
     protected String preferredID() {
         return PREFERRED_ID;
     }
-
+    
     public boolean canClose() {
         return false;
     }
-
+    
     public void start() {
         NBManager.getInstance().init(this);
         add( new DownloadPanel() );
     }
     
+    protected void addImpl(Component comp, Object constraints, int index) {
+        super.addImpl(comp, constraints, index);
+        if ( comp instanceof ViewContext ) {
+            ((ViewContext) comp).display();
+        }
+    }
     
     final static class ResolvableHelper implements Serializable {
         private static final long serialVersionUID = 1L;

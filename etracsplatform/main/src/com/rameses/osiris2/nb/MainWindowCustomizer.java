@@ -1,5 +1,6 @@
 package com.rameses.osiris2.nb;
 
+import com.rameses.osiris2.nb.windows.GlassPane;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -46,6 +47,8 @@ public class MainWindowCustomizer
         LayerContainerHandler lch = new LayerContainerHandler();
         lch.rootPane = rootPane;
         layeredPane.addContainerListener(lch);
+        
+        frame.setGlassPane(new GlassPane());
     }
     
     //<editor-fold defaultstate="collapsed" desc=" ContentPaneHandler (Class) ">
@@ -67,14 +70,6 @@ public class MainWindowCustomizer
                 Container toolbar = (Container) c;
                 toolbar.setLayout(new ToolbarPanelLayout());
                 NBManager.getInstance().setToolbarView(toolbar); 
-                
-//                JToolBar tbar = new JToolBar();
-//                tbar.setLayout(new ToolbarLayout());                
-//                tbar.setName("toolbarpanel");
-//                tbar.setFloatable(false);
-//                tbar.setRollover(true);
-//                toolbar.add(tbar);
-//                NBManager.getInstance().setToolbarView(tbar);
             }
             else if (c instanceof JPanel)
             {

@@ -1,4 +1,4 @@
-package com.rameses.osiris2.nb;
+package com.rameses.osiris2.nb.windows;
 
 import java.awt.BorderLayout;
 import java.awt.Component;

@@ -7,7 +7,9 @@
  * and open the template in the editor.
  */
 
-package com.rameses.osiris2.nb;
+package com.rameses.osiris2.nb.windows;
+
+import com.rameses.osiris2.nb.*;
 
 /**
  *

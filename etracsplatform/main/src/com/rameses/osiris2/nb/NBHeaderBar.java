@@ -7,6 +7,7 @@ import java.awt.Insets;
 import java.awt.LayoutManager;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.net.URL;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -25,8 +26,17 @@ public class NBHeaderBar extends JLayeredPane {
         setLayout(layout);
         
         logo = new Logo();
+//        URL u = getClass().getResource("/com/rameses/osiris2/nb/icons/osiris2.png");
+//        logo.setIcon(new ImageIcon(u));
         add(logo, PALETTE_LAYER);
         layout.jcLogo = logo;
+    }
+
+    public void removeAll() {
+        for(Component c : getComponents()) {
+            if( c == logo ) continue;
+            super.remove(c);
+        }
     }
     
     public void setTopView(JComponent top) {
