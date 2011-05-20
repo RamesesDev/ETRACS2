@@ -1,0 +1,45 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class HostService {
+
+    @PersistenceContext("java:main")
+    def em; 
+
+	@Env
+    def env;	
+	
+    @ProxyMethod	
+    public def create(@Param(schema="host") host ) {
+		host.objid = "HOST-" + new java.rmi.server.UID();
+		return em.create( "host", host );
+    }
+
+    @ProxyMethod	
+    public def update(@Param(schema="host") host ) {
+		em.update( "host",host );
+    }
+	
+    @ProxyMethod	
+    public def open( host ) {
+		return em.read( "host",host );
+    }
+
+	/**
+	* list - add query where hosts are filtered by admin user
+	*/
+    @ProxyMethod	
+    public def getList( params ) {
+		def qry = em.sqlContext.createNamedQuery( 'host:list.sql');
+		StringBuffer sb = new StringBuffer();
+		if( env.ORG.id != "root" ) {
+			sb.append( 'objid = $P{objid}' );
+			params.objid = env.ORG.id;
+		}
+		if(sb.length() > 0 ) sb.insert(0, " where " );
+		qry.setVars( [filter: sb.toString() ] ); 
+		return qry.setParameters( params ).resultList;
+	}
+	
+
+}

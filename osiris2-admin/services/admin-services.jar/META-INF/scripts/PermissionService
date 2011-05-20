@@ -1,0 +1,99 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class PermissionService {
+
+    @PersistenceContext("java:main")
+    def em; 		
+
+	@ProxyMethod
+    public def getAllPermissions() {
+		return [];
+    }	
+
+	//retrieves permission sets and retrieves all permissions
+	private List getAllPermissionsByPermissionSetName( String name ) {
+		def qry = em.sqlContext.createNamedQuery("permission:by-permissionset");
+        List items = qry.setParameter('permissionset', name).resultList;
+		List list = [];
+		for( o in items ) {
+			List perms = em.serializer.read( o.permissions );	
+			list.addAll(  perms.collect { [ action:o.module +":"+it.action, title: it.title, visible: (it.visible!=null) ? it.visible : true ] } );   
+		}
+		return list;
+	}
+	
+	@ProxyMethod
+    public Map getPermissionSetByRole( String role ) {
+		def o = em.read( "role", [name:role] );
+		def excludes = o.excludepermissions;
+		if(excludes==null) excludes = [];	
+		def permSets = o.permissionsets;
+		def map = [:];
+		for( p in permSets ) {
+			def list = getAllPermissionsByPermissionSetName(p);
+			list = list.findAll{ it.visible == true && excludes.indexOf(it.action) < 0 };
+			if(list) map.put( p, list );
+		}
+		return map;
+    }	
+	
+    @ProxyMethod
+    public List getUserAllowedPermissions( def u ) {
+        def usr = em.read( "user", u );
+		def roles = em.sqlContext.createNamedQuery("userrole:permissions").setParameter( "objid", usr.objid ).resultList;
+		List excludeList = [];
+		List roleExcludeList = [];
+		List permsets = [];
+		for( ur in roles ) {
+			if(ur.role_excludedpermissions) roleExcludeList += em.serializer.read( ur.role_excludedpermissions );
+			if(ur.excludepermissions) excludeList += em.serializer.read( ur.excludepermissions );  	
+			if(ur.permissionsets) permsets += em.serializer.read( ur.permissionsets );
+		}
+		//get the permissions per permission set
+		List perms = [];
+		for( permsetName  in permsets.unique() ) {
+			perms += getAllPermissionsByPermissionSetName(permsetName)*.action
+		}
+		return perms.unique() - roleExcludeList.unique() - excludeList.unique();
+    }
+		
+	
+    @ProxyMethod
+    public List getAllowedPermissionsByRole( List roles, List excludeList ) {
+		List roleExcludeList = [];
+		List permsets = [];
+		for( r in roles ) {
+			def rol = em.read( "role", [name:r] );	
+			roleExcludeList += rol.excludepermissions;
+			permsets += rol.permissionsets;	
+		}
+	
+		//get the permissions per permission set
+		List perms = [];
+		for( permsetName  in permsets.unique() ) {
+			perms += getAllPermissionsByPermissionSetName(permsetName)*.action
+		}
+		return perms.unique() - roleExcludeList.unique() - excludeList.unique();
+    }
+     
+
+
+	//This is called for loading permissions in managing different orgs. 
+	@ProxyMethod
+    public List getManagementPermissions( param ) {	
+		List roles = [];
+		List excluded = [];
+		def qry = em.sqlContext.createNamedQuery( "userrole:user-access" );
+		def userRoles = qry.setParameters( [userid: param.userid, groupid:  param.groupid ] ).resultList;
+		for( ur in userRoles ) {
+			roles.add( ur );
+			if( ur.excludepermissions ) excluded += em.serializer.read( ur.excludepermissions );
+		}
+		def permList = getAllowedPermissionsByRole( roles*.role, excluded ); 	
+		permList += ["system.*"];	
+		return permList;		
+	}	
+	
+
+}

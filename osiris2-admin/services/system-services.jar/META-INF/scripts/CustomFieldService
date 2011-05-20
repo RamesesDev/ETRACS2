@@ -1,0 +1,16 @@
+import com.rameses.annotations.*;
+
+class CustomFieldService {
+
+	@PersistenceContext("java:system")
+	def em;	
+
+	@ProxyMethod
+	public def getFields( String name ) {
+		def o = em.read( "customschema", [name:name] );
+		return o.content;
+	}
+   
+	
+	
+}

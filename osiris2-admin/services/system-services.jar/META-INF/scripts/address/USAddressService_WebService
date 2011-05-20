@@ -1,0 +1,73 @@
+import com.rameses.soapws.XMLSOAP2;
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+public class USAddressService {
+
+	private static String wsdl = "http://www.webservicex.net/uszip.asmx?WSDL";
+	private static String targetURI = "http://www.webservicex.net/uszip.asmx/";
+
+	private def xmlSoap;
+	
+	public USAddressService() {
+		xmlSoap = new XMLSOAP2(wsdl);
+        xmlSoap.targetURI = "http://www.webserviceX.NET";
+        xmlSoap.namespace = "http://www.w3.org/2003/05/soap-envelope";
+		xmlSoap.showParameterType = true;
+        xmlSoap.timeout = 5000;
+		xmlSoap.showParameterNamespace = true;
+	}	
+	
+	@ProxyMethod
+	public def findByZipcode(def z) {
+		def action = xmlSoap.createAction("GetInfoByZIP");        
+        action.addParameter("USZip", z.zipcode); 
+        def res = xmlSoap.invoke(action);
+		def xml = new XmlSlurper().parseText(res);
+        if(!xml.NewDataSet.Table[0].ZIP.text() )
+            throw new Exception("Zipcode not found");
+		z.city = xml.NewDataSet.Table[0].CITY.text();
+		z.state = xml.NewDataSet.Table[0].STATE.text();
+		return z;
+	}
+	
+	@ProxyMethod
+	public def findByState(def z) {
+		def action = xmlSoap.createAction("GetInfoByState");        
+        action.addParameter("USState", z.state);        
+        def res = xmlSoap.invoke(action);
+		def xml = new XmlSlurper().parseText(res);
+		def list = [];
+		xml.NewDataSet.Table.list().each{ 
+			def data = [:];
+			it.children().each{ o->data.put(o.name(), o.text())  }
+			list.add( data );	
+		};
+		return list;
+	}
+
+	@ProxyMethod
+	public def findByCity(def z) {
+		def action = xmlSoap.createAction("GetInfoByCity");        
+        action.addParameter("USCity", z.city);
+        def res = xmlSoap.invoke(action);
+		def xml = new XmlSlurper().parseText(res);
+		def list = [];
+		xml.NewDataSet.Table.list().each{ 
+			def data = [:];
+			it.children().each{ o->data.put(o.name(), o.text())  }
+			list.add( data );	
+		};
+		return list;
+	}
+	
+	
+
+	@ProxyMethod
+	public def verify(def z) {
+		return findByZipcode( z );	
+	}
+}
+
+
+

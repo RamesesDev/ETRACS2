@@ -1,0 +1,42 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class AgentService {
+
+    @PersistenceContext("java:main")
+    def em; 		
+
+	@Env
+	def env;
+	
+    @ProxyMethod	
+    public def create(@Param(schema="agent") agent ) {
+		agent.objid = "AGNT-" + new java.rmi.server.UID();
+		return em.create( "agent", agent );
+    }
+
+    @ProxyMethod	
+    public def open( param ) {
+		assert param.objid;
+		return em.read( "agent",param );
+    }
+
+
+    @ProxyMethod	
+    public def update(@Param(schema="agent") agent ) {
+		return em.update( "agent",agent );
+    }
+	
+	/**
+	* list - add query where agents are filtered by org
+	*/
+    @ProxyMethod	
+    public def getList( param ) {
+		def qry = em.sqlContext.createNamedQuery( "agent:list.sql" );
+		StringBuffer sb = new StringBuffer();
+		qry.setVars( [ filter: sb.toString() ] ); 
+		return qry.setParameters( param ).resultList;
+	}
+	
+
+}

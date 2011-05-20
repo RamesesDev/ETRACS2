@@ -1,0 +1,51 @@
+import com.rameses.annotations.*;
+
+class TestService {
+
+	@ProxyMethod(local=true)
+	public def test( def param ) {
+		print param;
+		return "ok you typed->" + param;
+	}
+	
+	@ProxyMethod(local=true)
+	public def testMap( def param ) {
+		print param;
+		return [first:"elmo", last:"nazareno", remarks: param, options:[ ['dog','cat'] ]  ];
+	}
+	
+	
+	@ProxyMethod(local=true)
+	public def multiply( def param1, def param2 ) {
+		print param1 + " " + param2 ;
+		return param1 * param2;
+	}
+	
+	@PersistenceContext("main")
+	def em;
+	
+	@ProxyMethod(local=true)
+	public void saveData( def param ) {
+		print "saving data ..." + param;
+	}
+	
+	@ProxyMethod(local=true)
+	public def getData( def o ) {
+		print "getting data";
+		return [firstname: o + "/donnie", lastname:  o+ "/evalle"]; 
+	}
+
+	@ProxyMethod(local=true)
+	public def getList( def o ) {
+		print o;
+		return [
+			[firstname: "paul", lastname: "mcartney"],
+			[firstname: "john", lastname: "lennon"],
+			[firstname: "george", lastname: "harrison"],
+			[firstname: "ringo", lastname: "starr"],
+		]	; 
+	}
+	
+	
+	
+}

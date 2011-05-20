@@ -1,0 +1,148 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+/**
+* The profile should include the user groups and permissions.
+*/
+public class LoginProfileService {
+
+    @PersistenceContext("java:main")
+    def em;
+
+	@Service("PermissionService")
+	def permissionSvc;
+	
+	@Service("DateService")
+	def dateSvc;
+	
+	@Env
+	def ENV;
+
+	@Service("Var")
+	def VARS;
+
+	@ProxyMethod(local=true)
+	public def loadProfile( def req ) {
+		def env = req.out.env;
+		def terminal = loadTerminal( ENV.TERMINALID, ENV.CLIENTCODE, ENV.MACADDRESS );
+		def userInfo = loadUserInfo( env.USERTYPE, env.USERID );
+		env.USERLEVEL = userInfo.userlevel;
+		env.USER = userInfo.uid;
+		env.USERINFO = [firstname: userInfo.firstname, lastname: userInfo.lastname];
+		
+		if(terminal) {
+			def client = em.read( terminal.parenttype, [objid: terminal.parentid] );
+			env.CLIENT = [code:client.code, type:terminal.parenttype, id:client.objid, name: client.name, timezone: client.timezone, country:client.country, address: client.address ];
+			if( client.parenttype && client.parenttype != 'root' ) {	
+				def org = em.read( client.parenttype, [objid: client.parentid] );
+				env.ORG = [code:org.code, type:client.parenttype, id:org.objid, name: org.name, timezone: org.timezone, country:org.country, address: org.address ];
+			}
+		}
+		
+		if(!env.ORG )
+			env.ORG = [code:"root", type:"root", id:"root", timezone: VARS.server_timezone, country:VARS.server_country];
+		
+		//BUILD LOCALE
+		if( env.CLIENT ) {
+			env.COUNTRY = env.CLIENT.country;
+			env.TIMEZONE = env.CLIENT.timezone;
+		}	
+		else {
+			env.COUNTRY = env.ORG.country;
+			env.TIMEZONE = env.ORG.timezone;
+		}
+		if( env.TIMEZONE )
+			env.LOCALE_TIME = java.sql.Timestamp.valueOf( dateSvc.getLocaleTime(env.TIMEZONE) );
+		
+		req.out.permissions = loadPermissions(env);
+		return req;
+	}
+
+	private def loadTerminal(def terminalid, def clientcode, def macaddress) {
+		//in case terminal was not specified or registered, assume root access
+		if(!terminalid) return null;
+		def term = em.read( "terminal", [terminalid: terminalid] );
+		if(term.macaddress != macaddress )
+			throw new Warning("INVALID_MACHINE_REGISTERED");
+			
+		if(term.parentcode!=clientcode) 
+			throw new Exception( "Terminal id is incorrect for this client" );
+		return term;	
+	}
+
+	private def loadUserInfo(def type, def id) {
+		if(type=="root") {
+			return [parenttype:"root",parentid:"root",userlevel:0, uid:"root"];	
+		}
+		else {	
+			def usr = em.read( type, [objid:id] );
+			if(!usr.userlevel) usr.userlevel = 1;
+			return usr;
+		}	
+	}
+	
+	
+	private def loadPermissions(env) {
+		List roles = [];
+		List excluded = [];
+		
+		
+		def qry = em.sqlContext.createNamedQuery( "userrole:user-access" );
+		//there are 3 user scopes applicable to users
+		//admin, user, superuser
+
+		//load root
+		def userRoles = qry.setParameters( [userid: env.USERID, groupid:  "root"] ).resultList;
+		
+		//load org level
+		userRoles += qry.setParameters( [userid: env.USERID, groupid:  env.ORG.id ] ).resultList;
+		//load group level
+		if(env.CLIENT)
+			userRoles += qry.setParameters( [userid: env.USERID, groupid:  env.CLIENT.id ] ).resultList;
+
+		//check each user role
+		//if disallowedterminals is specified and terminal is specified terminal must not be on the list 
+		//if schedule is specified and locale time is not within any of the schedules, do not include it 
+		def terminal = ENV.TERMINALID;
+
+		for( ur in userRoles ) {
+			if(ur.disallowedterminals && terminal) {
+				def disallowList = em.serializer.read( ur.disallowedterminals);
+				if(disallowList.contains( terminal)) continue;
+			}	
+			if(ur.schedules) {
+				def skedList = em.serializer.read( ur.schedules );
+				if(skedList) {
+					boolean pass = false;
+					Date d = env.LOCALE_TIME;
+					for( sked in skedList) {
+						if(TimeUtil.checkSchedule( d, sked.trim() )) {
+							pass = true;
+							break;	
+						}	
+					}
+					if(!pass) continue;
+				}	
+			}
+			roles.add( ur );
+			if(ur.role_excludedpermissions) excluded += em.serializer.read( ur.role_excludedpermissions );
+			if( ur.excludepermissions ) excluded += em.serializer.read( ur.excludepermissions );
+		}
+		//special routine for root user
+		if( !roles ) 
+			throw new Exception("You do not have sufficient privileges to access the system.");
+		
+		def permList = permissionSvc.getAllowedPermissionsByRole( roles*.role, excluded ); 
+		permList += ["system.*"];		
+		/*
+		println "ACCESSING ...";
+		permList.each {
+			println it;
+		}
+		*/
+		return permList;
+	}
+	
+	
+
+}

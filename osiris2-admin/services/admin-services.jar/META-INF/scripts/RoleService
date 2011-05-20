@@ -1,0 +1,18 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class RoleService {
+
+    @PersistenceContext("java:main")
+    def em; 		
+
+	@Env
+	def env;
+	
+    @ProxyMethod	
+    public def getAvailableRoles(param) {
+		return em.sqlContext.createQuery( 'select * from role where not(name=\'ROOT\') and groupclass=$P{groupclass}' ).setParameters(param).resultList;
+    }
+	
+
+}

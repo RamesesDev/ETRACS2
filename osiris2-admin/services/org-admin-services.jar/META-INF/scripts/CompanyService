@@ -1,0 +1,56 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class CompanyService {
+
+    @PersistenceContext("java:main")
+    def em; 		
+
+	@Env
+	def env;
+	
+    @ProxyMethod	
+    public def create(@Param(schema="company") entity ) {
+		entity.objid = "COMP-" + new java.rmi.server.UID();
+		return em.create( "company", entity );
+    }
+
+    @ProxyMethod	
+    public def open( param ) {
+		return em.read( "company", param );
+    }
+
+    @ProxyMethod	
+    public def update(@Param(schema="company") entity ) {
+		return em.update( "company", entity );
+    }
+	
+    @ProxyMethod	
+    public def getList( params ) {
+		def qry = em.sqlContext.createNamedQuery( "company:list.sql");
+		StringBuffer sb = new StringBuffer();
+		qry.setVars( [ filter: sb.toString() ] );
+		return qry.setParameters( params ).resultList;
+	}
+	
+	@ProxyMethod	
+    public def findByCode( String code ) {
+		return em.sqlContext.createNamedQuery( "company:by-code.sql").setParameter( "company", code ).singleResult;
+	}
+	
+	@ProxyMethod	
+    public def getManagedList( params ) {
+		def qry = null;
+		if( env.USERID == 'root' ) { 
+			qry = em.sqlContext.createNamedQuery( "company:list.sql");
+		}
+		else {
+			params.userid = env.USERID;
+			qry = em.sqlContext.createNamedQuery( "company:managed-list.sql");
+		}
+		StringBuffer sb = new StringBuffer();
+		qry.setVars( [ filter: sb.toString() ] );
+		return qry.setParameters( params ).resultList;
+	}
+	
+}

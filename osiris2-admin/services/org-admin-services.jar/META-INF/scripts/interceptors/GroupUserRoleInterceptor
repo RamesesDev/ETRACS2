@@ -1,0 +1,51 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class GroupUserRoleInterceptor {
+
+	@PersistenceContext("java:main")
+    def em; 
+
+	private void cleanUp( String userId, String role ) {
+		em.sqlContext.createNamedExecutor( 'user:remove-role-group').setParameter("userid", userId ).setParameter("role", role).execute();
+	}
+	
+	@After(pattern="UserService.removeUserRole", eval="args[0].roleclass.matches('businessunituser|branchuser')")	
+    public def roleRemoved( def evt ) {
+		def ur = evt.args[0];
+		cleanUp( ur.userid, ur.role );
+    }
+	
+    @After(pattern="UserService.saveUserRole", eval="args[0].roleclass.matches('businessunituser|branchuser')")	
+    public def roleUpdated( def evt ) {
+		def ur = evt.args[0];
+		def p = em.sqlContext.createNamedQuery( 'user:find.sql').setParameter(1, ur.userid ).singleResult;
+		
+		//remove existing user roles first.
+		cleanUp( ur.userid, ur.role );
+		
+		String unittype = ur.info.grouptype ;
+		ur.info.groups.each {
+			def group = em.read( unittype, [objid:it.id] ); 
+			def o = [:];
+			o.userid = ur.userid;
+		    o.groupid = group.objid;
+			o.groupcode = group.code;
+			o.grouptype = unittype;
+			o.maingroupid = group.parentid;
+			o.maingroupcode = group.parentcode;
+			o.maingrouptype = group.parenttype;
+			o.username = p.lastname + ", " + p.firstname;
+			if(it.allowedterminals) o.allowedterminals = it.allowedterminals.join(",");
+			if(it.disallowedterminals) o.disallowedterminals = it.disallowedterminals.join(",");
+			o.role = ur.role;
+			if(it.schedule) o.schedule = it.schedule.join(";");	
+			if(it.excludepermissions) o.excludepermissions = it.excludepermissions;
+			em.create( "user:rolegroup", o );
+		}
+    }
+
+
+	
+
+}
