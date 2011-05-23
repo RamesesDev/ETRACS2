@@ -47,7 +47,10 @@ SELECT objid, acctcode, accttitle FROM account WHERE accttitle LIKE $P{accttitle
  WHERE a.objid = $P{parentid}
 
 [getPathByTitle]
- SELECT d.accttitle AS parent3, c.accttitle AS parent2, b.accttitle AS parent1, a.accttitle AS parent
+ SELECT CONCAT(d.acctcode, '-', d.accttitle) AS parent3, 
+        CONCAT(c.acctcode, '-', c.accttitle) AS parent2, 
+        CONCAT(b.acctcode, '-', b.accttitle) AS parent1, 
+        CONCAT(a.acctcode, '-', a.accttitle) AS parent
  FROM account a
 	LEFT JOIN account b ON b.objid = a.parentid 
 	LEFT JOIN account c ON c.objid = b.parentid
@@ -74,3 +77,9 @@ WHERE objid <> $P{objid}
 [checkReferencedId]
 SELECT COUNT(*) AS count FROM account a, incomeaccount i WHERE i.ngasid = $P{objid} OR i.sreid = $P{objid}
   
+[getReportData]
+SELECT acctcode, accttitle, accttype  
+FROM account a  
+WHERE a.charttype = $P{charttype}  
+AND a.acctlevel != 0  
+ORDER BY acctlevel
