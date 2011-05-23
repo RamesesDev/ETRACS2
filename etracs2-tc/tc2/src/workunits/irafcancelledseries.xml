@@ -61,6 +61,15 @@ class IRAFAddItemCollectorBrgyController
                 new Column(name:"remarks", caption:"Remarks")
             ];
         },
+        
+        onRemoveItem : { item -> 
+            if( MsgBox.confirm("Remove selected item?") ) {
+                svc.deleteCancelledSeries( iraf.objid, item, rcvitem.afid );
+                rcvitem.cancelledseries.remove(item);
+                binding.refresh();
+            }
+        },
+        
         fetchList    : { return rcvitem.cancelledseries }
     ] as SubListModel;
     

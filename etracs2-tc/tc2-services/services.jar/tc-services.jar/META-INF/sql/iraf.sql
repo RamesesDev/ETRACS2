@@ -30,7 +30,7 @@ AND   a.startseries <= $P{endseries}
 AND   a.prefix = $P{prefix} 
 AND   a.suffix = $P{suffix} 
 
-[getAFInventoryByIRAFIdOrderByStubNo]
+[getAFInventoryByIRAFIdOrderByStubNo] 
 SELECT o.* FROM afinventory o 
 WHERE o.irafid = $P{irafid} 
 AND   o.afid = $P{afid} 
@@ -46,9 +46,9 @@ AND   ac.currentseries > $P{series}
 AND   ai.irafid = $P{irafid} 
 
 [getAFControlBySeries] 
-SELECT ac.objid FROM afinventory ai  
-INNER JOIN afinventorycredit aic on aic.afinventoryid = ai.objid  
-INNER JOIN afcontrol ac on ac.afinventorycreditid = aic.objid  
+SELECT ac.schemaname, ac.objid FROM afcontrol ac 
+INNER JOIN afinventorycredit aic on aic.objid = ac.afinventorycreditid 
+INNER JOIN afinventory ai on ai.objid = aic.afinventoryid 
 WHERE   ai.irafid = $P{irafid} 
-AND     ac.afid = $P{afid}
+AND     ac.afid = $P{afid} 
 AND   (ac.startseries <= $P{series} AND ac.endseries >= $P{series} ) 
