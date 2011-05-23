@@ -483,13 +483,21 @@ class IRAFService
 						if( !afcontrol.cancelledseries ) afcontrol.cancelledseries = [];
 						afcontrol.cancelledseries.add( [series: series, remarks: it.remarks] );
 						afcontrol.balance = afcontrol.balance - 1;
+						afcontrol.currentseries = getNextCurrentSeries( afcontrol );
 					}
 				}
 			}
 		}
 	}
 	
-	
+	private def getNextCurrentSeries( def afcontrol ){
+		def currentseries = afcontrol.currentseriesseries;
+		while( afcontrol.cancelledseries.find{ it.series == currentseries } ){
+			currentseries +=1;
+		}
+		return currentseries;
+	}
+
 	private def getNextAFInventory( def afid ){
 		def afinventory = em.sqlContext.createNamedQuery("iraf:getNextOpenAFInventory")
 				     .setParameters([afid: afid])
@@ -527,6 +535,7 @@ class IRAFService
 				if( !afcontrol.cancelledseries ){ afcontrol.cancelledseries = []; }
 				afcontrol.cancelledseries.add( [series: series, remarks: cancelledseries.remarks] );
 				afcontrol.balance = afcontrol.balance - 1;
+				afcontrol.currentseries = getNextCurrentSeries( afcontrol );
 				em.update( afcontrol.schemaname, afcontrol );
 			}
 		}
