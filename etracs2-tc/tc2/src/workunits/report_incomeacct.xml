@@ -1,0 +1,65 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/tc/reports" action="init" caption="Income Account Listing"/>
+        
+        <invoker type="formActions" action="view" caption="View" mnemonic="v" shortcut="ctrl v" visibleWhen="#{mode == 'build'}" />
+        <invoker type="formActions" action="back" caption="Back" mnemonic="b" shortcut="ctrl b" visibleWhen="#{mode == 'view'}" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class IncomeAcctListingController extends etracs2.groovy.ReportController
+{
+    @Service("Var")
+    def var;
+    
+    @Service("DateService")
+    def dateSvc;
+    
+    @Service("IncomeAcctListingService")
+    def svc;
+    
+    def getVarService() { return var; }
+    def getDateService() { return dateSvc; }
+    def getService() { return svc; }
+    def chartType;
+    
+    void init(){
+        entity = [
+            charttype : 'NGAS'
+        ];
+    }
+    
+    def getChartTypeList(){
+        return [ 'NGAS', 'SRE' ];
+    }
+    
+    void setChartType( chartType ){
+        entity.charttype = chartType;
+    }
+    
+    public String reportName(){
+        return "etracs2/tc/report/IncomeAcctListingwChart.jasper";
+    }
+    
+    def getStandardReportParams() {  
+        return super.standardReportParams + [
+            charttype   : entity.charttype
+        ]; 
+    }
+    
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page name="reportPage" template="etracs2.tc.report.IncomeAcctListingPage"/>
+        <page name="preview" template="etracs2.tc.PreviewPage" />
+    </pages>
+</workunit>
