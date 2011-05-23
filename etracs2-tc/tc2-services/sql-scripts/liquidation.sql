@@ -23,6 +23,9 @@ liquidatingofficername varchar(100) NOT NULL,
 amount decimal(10,2) default NULL,                                                  
 totalcash decimal(10,2) default NULL,                                               
 totalotherpayment decimal(10,2) default NULL,                                       
+depositedid varchar(50) NOT NULL,                                      
+depositedbyname varchar(100) NOT NULL,                                      
+depositedbytitle varchar(100) NOT NULL,                                      
 PRIMARY KEY  (objid),                                                               
 CONSTRAINT FK_liquidation FOREIGN KEY (objid) REFERENCES liquidation (objid)  
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1
