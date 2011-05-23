@@ -302,8 +302,7 @@ class IRAFService
 			if( !af ) throw new Exception("AF $af.objid is no longer exist.");
 			
 			def prevAf = em.sqlContext.createNamedQuery("iraf:getAFInventoryByIRAFIdOrderByStubNo")
-						   .setParameter("irafid", iraf.objid)
-						   .setParameter("afid", af.objid )
+						   .setParameters([irafid: iraf.objid, afid:af.objid ])
 						   .singleResult;
 
 			def afinventory = [
@@ -352,12 +351,13 @@ class IRAFService
 		ri.suffix = (ri.suffix) ? ri.suffix : "";
 		
 		def it = em.sqlContext.createNamedQuery("iraf:checkConflictSeries")
-				   .setParameter("startseries",ri.startseries)
-				   .setParameter("endseries",ri.endseries)
-				   .setParameter("afid", ri.afid)
-				   .setParameter("prefix", ri.prefix )
-				   .setParameter("suffix", ri.suffix )
-				   .singleResult;
+				   .setParameter( [
+						startseries: ri.startseries,
+					    endseries: ri.endseries,
+					    afid: ri.afid,
+					    prefix: ri.prefix,
+					    suffix: ri.suffix
+				   ]).singleResult;
 		if( it ) 
 			throw new Exception("There is an overlapping series in af $ri.prefix $ri.startseries - $ri.endseries $ri.suffix");
 	}
