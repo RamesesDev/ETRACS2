@@ -31,8 +31,10 @@ public class BankAcctPage extends javax.swing.JPanel {
         jPanel4 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
+        xTextField3 = new com.rameses.rcp.control.XTextField();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
+        xTextField2 = new com.rameses.rcp.control.XTextField();
         xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
         xTextField4 = new com.rameses.rcp.control.XTextField();
         xTextField5 = new com.rameses.rcp.control.XTextField();
@@ -89,6 +91,13 @@ public class BankAcctPage extends javax.swing.JPanel {
         xTextField1.setRequired(true);
         formPanel1.add(xTextField1);
 
+        xTextField3.setCaption("Account name");
+        xTextField3.setCaptionWidth(100);
+        xTextField3.setDepends(new String[] {"selectedItem"});
+        xTextField3.setName("entity.bankacctname");
+        xTextField3.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel1.add(xTextField3);
+
         xComboBox1.setCaption("Account Type");
         xComboBox1.setCaptionWidth(100);
         xComboBox1.setDepends(new String[] {"selectedItem"});
@@ -104,6 +113,14 @@ public class BankAcctPage extends javax.swing.JPanel {
         xComboBox2.setName("entity.fund");
         xComboBox2.setRequired(true);
         formPanel1.add(xComboBox2);
+
+        xTextField2.setCaption("Currency");
+        xTextField2.setCaptionWidth(100);
+        xTextField2.setDepends(new String[] {"selectedItem"});
+        xTextField2.setName("entity.currency");
+        xTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
+        xTextField2.setRequired(true);
+        formPanel1.add(xTextField2);
 
         xActionTextField2.setActionName("lookupBank");
         xActionTextField2.setCaption(" Bank Code");
@@ -142,8 +159,8 @@ public class BankAcctPage extends javax.swing.JPanel {
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel4Layout.createSequentialGroup()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 215, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(130, Short.MAX_VALUE))
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 244, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(129, Short.MAX_VALUE))
         );
         jPanel2.add(jPanel4, java.awt.BorderLayout.CENTER);
 
@@ -168,6 +185,8 @@ public class BankAcctPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XTextField xTextField1;
+    private com.rameses.rcp.control.XTextField xTextField2;
+    private com.rameses.rcp.control.XTextField xTextField3;
     private com.rameses.rcp.control.XTextField xTextField4;
     private com.rameses.rcp.control.XTextField xTextField5;
     // End of variables declaration//GEN-END:variables

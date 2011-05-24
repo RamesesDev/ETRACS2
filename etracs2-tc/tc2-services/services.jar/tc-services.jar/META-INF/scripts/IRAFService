@@ -302,8 +302,7 @@ class IRAFService
 			if( !af ) throw new Exception("AF $af.objid is no longer exist.");
 			
 			def prevAf = em.sqlContext.createNamedQuery("iraf:getAFInventoryByIRAFIdOrderByStubNo")
-						   .setParameter("irafid", iraf.objid)
-						   .setParameter("afid", af.objid )
+						   .setParameters([irafid: iraf.objid, afid:af.objid ])
 						   .singleResult;
 
 			def afinventory = [
@@ -352,12 +351,13 @@ class IRAFService
 		ri.suffix = (ri.suffix) ? ri.suffix : "";
 		
 		def it = em.sqlContext.createNamedQuery("iraf:checkConflictSeries")
-				   .setParameter("startseries",ri.startseries)
-				   .setParameter("endseries",ri.endseries)
-				   .setParameter("afid", ri.afid)
-				   .setParameter("prefix", ri.prefix )
-				   .setParameter("suffix", ri.suffix )
-				   .singleResult;
+				   .setParameter( [
+						startseries: ri.startseries,
+					    endseries: ri.endseries,
+					    afid: ri.afid,
+					    prefix: ri.prefix,
+					    suffix: ri.suffix
+				   ]).singleResult;
 		if( it ) 
 			throw new Exception("There is an overlapping series in af $ri.prefix $ri.startseries - $ri.endseries $ri.suffix");
 	}
@@ -483,13 +483,21 @@ class IRAFService
 						if( !afcontrol.cancelledseries ) afcontrol.cancelledseries = [];
 						afcontrol.cancelledseries.add( [series: series, remarks: it.remarks] );
 						afcontrol.balance = afcontrol.balance - 1;
+						afcontrol.currentseries = getNextCurrentSeries( afcontrol );
 					}
 				}
 			}
 		}
 	}
 	
-	
+	private def getNextCurrentSeries( def afcontrol ){
+		def currentseries = afcontrol.currentseriesseries;
+		while( afcontrol.cancelledseries.find{ it.series == currentseries } ){
+			currentseries +=1;
+		}
+		return currentseries;
+	}
+
 	private def getNextAFInventory( def afid ){
 		def afinventory = em.sqlContext.createNamedQuery("iraf:getNextOpenAFInventory")
 				     .setParameters([afid: afid])
@@ -521,12 +529,13 @@ class IRAFService
 			
 			if( ac ){
 				def afcontrol = em.read("afcontrol:afcontrol", [objid: ac.objid] );
-				if( series < afcontrol.currentseries ) {
+				if( afcontrol.currentseries > series ) {
 					throw new Exception("Series $series in AF $afcontrol.afid is already in use.");
 				}
 				if( !afcontrol.cancelledseries ){ afcontrol.cancelledseries = []; }
 				afcontrol.cancelledseries.add( [series: series, remarks: cancelledseries.remarks] );
 				afcontrol.balance = afcontrol.balance - 1;
+				afcontrol.currentseries = getNextCurrentSeries( afcontrol );
 				em.update( afcontrol.schemaname, afcontrol );
 			}
 		}
@@ -585,6 +594,37 @@ class IRAFService
 		return ( mid >= start && mid <= end );
 	}
 	
+	@ProxyMethod
+	public def deleteCancelledSeries( def irafid, def cancelledseries, def afid ){
+		def iraf = em.read("iraf:iraf", [objid: irafid] );
+		if( !iraf ) throw new Exception("IRAF reference record not found.");
+		for( rc in iraf.rcvitems ){
+			if( rc.afid == afid ){
+				def cs = rc?.cancelledseries.find{ it.hashCode() == cancelledseries.hashCode() };
+				if( !cs ) throw new Exception("Cancelled Series is already deleted.");
+				rc.cancelledseries.remove( cs );
+				
+				def param = [irafid: iraf.objid, afid: afid, series: cancelledseries.fromseries];
+				
+				def afcontrol = em.sqlContext.createNamedQuery("iraf:getAFControlBySeries")
+							      .setParameters( param )
+								  .singleResult;
+
+				if( afcontrol ){
+					afcontrol = em.read( afcontrol.schemaname, [objid: afcontrol.objid] );
+					checkAFControlCurrentSeriesGreaterThanTheFromSeries( afcontrol, cancelledseries.fromseries );
+					em.update(afcontrol.schemaname, afcontrol );
+				}
+			}
+		} 
+		em.update(iraf.schemaname, iraf);
+		return iraf; 
+	}
+	
+	private void checkAFControlCurrentSeriesGreaterThanTheFromSeries( def afcontrol, def fromseries ){
+		if(  afcontrol.currentseries > fromseries ) 
+			throw new Exception("Unable to delete.\nCurrent series in afcontrol is greater than the from series.");
+	}
 }
 
 
