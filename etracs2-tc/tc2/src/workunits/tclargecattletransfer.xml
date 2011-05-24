@@ -1,17 +1,17 @@
 <workunit>
     <invokers>
-        <invoker type="collection" caption="Large Cattle Transfer" afid="52" appcode="cattle_transfer"  />
-        <invoker type="inquiry:tc:cattle_transfer" action="initInquiry" />
-        <invoker type="tc:cattle_transfer" action="init" caption="Large Cattle Transfer" afid="52"  />
+        <invoker type="collection" caption="Large Cattle Transfer" afid="52" appcode="cattle_transfer" permission="collection_cattletransfer.create"/>
+        <invoker type="inquiry:tc:cattle_transfer" action="initInquiry" permission="collection_cattletransfer.inquiry"/>
+        <invoker type="tc:cattle_transfer" action="init" caption="Large Cattle Transfer" afid="52"  permission="collection_cattletransfer.create"/>
         
-        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}"/>
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}" permission="collection_cattletransfer.create"/>
         <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}"/>
         <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}"/>
         <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}"/>
-        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view'}"/>
+        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view'}" permission="collection_cattletransfer.void"/>
         
-        <invoker type="receipt.actions:tc:cattle_transfer" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" />
-        <invoker type="receipt.actions:tc:cattle_transfer" action="doVoid" caption="Void" mnemonic="v" />
+        <invoker type="receipt.actions:tc:cattle_transfer" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" permission="collection_cattletransfer.edit"/>
+        <invoker type="receipt.actions:tc:cattle_transfer" action="doVoid" caption="Void" mnemonic="v" permission="collection_cattletransfer.void"/>
     </invokers>
     <code>
 <![CDATA[
@@ -42,6 +42,7 @@
         
         def getService() { return svc }
         def getHtmlService() { return htmlSvc }
+        def getCollectionTitle() { return 'Large Cattle Transfer' }
 
         
         void init() {
@@ -104,7 +105,7 @@
             if( entity.issuedate ) {
                 Date dt = java.sql.Date.valueOf(entity.issuedate)
                 if( dt > dateSvc.serverDate ) {
-                    throw new Exception('Issue date must be less than today.')
+                    throw new Exception('Issue date must be less than or equal to today.')
                 }
             }
         }

@@ -72,7 +72,7 @@ public class LargeCattleOwnershipCollectionPage extends javax.swing.JPanel {
         xLabel9.setBackground(new java.awt.Color(1, 47, 8));
         xLabel9.setForeground(new java.awt.Color(255, 255, 255));
         xLabel9.setFont(new java.awt.Font("Arial", 1, 18));
-        xLabel9.setName("opener.caption");
+        xLabel9.setName("collectionTitle");
         xLabel9.setOpaque(true);
         jPanel3.add(xLabel9, java.awt.BorderLayout.SOUTH);
 
@@ -329,7 +329,7 @@ public class LargeCattleOwnershipCollectionPage extends javax.swing.JPanel {
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 199, Short.MAX_VALUE)
+            .add(jPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 199, Short.MAX_VALUE)
         );
         jPanel5.add(jPanel6, java.awt.BorderLayout.CENTER);
 

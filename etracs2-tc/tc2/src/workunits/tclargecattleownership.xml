@@ -1,17 +1,17 @@
 <workunit>
     <invokers>
-        <invoker type="collection" caption="Large Cattle Ownership" afid="53" appcode="cattle_ownership"  />
-        <invoker type="inquiry:tc:cattle_ownership" action="initInquiry" />
-        <invoker type="tc:cattle_ownership" action="init" caption="Large Cattle Ownership" afid="53"  />
+        <invoker type="collection" caption="Large Cattle Ownership" afid="53" appcode="cattle_ownership" permission="collection_cattleownership.create" />
+        <invoker type="inquiry:tc:cattle_ownership" action="initInquiry" permission="collection_cattleownership.inquiry" />
+        <invoker type="tc:cattle_ownership" action="init" caption="Large Cattle Ownership" afid="53" permission="collection_cattleownership.create"  />
         
-        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}"/>
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}" permission="collection_cattleownership.create" />
         <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}"/>
         <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}"/>
         <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}"/>
-        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view'}"/>
+        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view'}" permission="collection_cattleownership.void" />
         
-        <invoker type="receipt.actions:tc:cattle_ownership" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" />
-        <invoker type="receipt.actions:tc:cattle_ownership" action="doVoid" caption="Void" mnemonic="v" />
+        <invoker type="receipt.actions:tc:cattle_ownership" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" permission="collection_cattleownership.edit" />
+        <invoker type="receipt.actions:tc:cattle_ownership" action="doVoid" caption="Void" mnemonic="v" permission="collection_cattleownership.void" />
     </invokers>
     <code>
 <![CDATA[
@@ -39,6 +39,7 @@
         
         def getService() { return svc }
         def getHtmlService() { return htmlSvc }
+        def getCollectionTitle() { return 'Large Cattle Ownership' }
         
         void init() {
             super.init()

@@ -69,7 +69,7 @@ public class CashTicketCollectionPage extends javax.swing.JPanel {
         xLabel9.setBackground(new java.awt.Color(1, 47, 8));
         xLabel9.setForeground(new java.awt.Color(255, 255, 255));
         xLabel9.setFont(new java.awt.Font("Arial", 1, 18));
-        xLabel9.setName("opener.caption");
+        xLabel9.setName("collectionTitle");
         xLabel9.setOpaque(true);
         jPanel3.add(xLabel9, java.awt.BorderLayout.SOUTH);
 
