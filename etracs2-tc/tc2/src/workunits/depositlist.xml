@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker folderid="/menu/tc/txn" action="init" caption="Deposits" />
+    </invokers>
+    
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+class DepositListController {
+
+    @Service("DepositService")
+    def svc
+
+    def searchText
+    def selectedItem
+    def mode = 'view' 
+    def opener
+    
+    void setSelectedItem( selectedItem ) {
+        this.selectedItem = selectedItem
+        opener = null
+        if( selectedItem ) {
+            opener = InvokerUtil.lookupOpener( 'deposit.view', [entity:selectedItem] )
+        }
+    }
+
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column( name:'docstate', caption:'State'),
+                new Column( name:'txnno', caption:'Deposit No.', minWidth:100 ),
+                new Column( name:'depositedbyname', caption:'Deposited By'),
+                new Column( name:'amount', caption:'Amount', type:'decimal' )
+            ]
+        },
+        fetchList : { return svc.getList( searchText, it ) }
+    ] as PageListModel
+
+    void search() {
+        listHandler.load();
+    }
+
+    void init() {
+        mode = 'view';
+    }
+}
+               
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.ListMgmtPage" />
+    </pages>
+</workunit>

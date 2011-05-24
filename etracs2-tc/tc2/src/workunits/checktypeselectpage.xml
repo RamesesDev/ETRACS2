@@ -1,0 +1,45 @@
+<workunit>
+    <invokers>
+        <invoker type="checktype.select" caption="Select Check Type" target="popup"/>
+    </invokers>
+    <code>
+
+<![CDATA[
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+class CheckTypeSelectController 
+{
+    @Binding
+    def binding
+    
+    @Service('DepositService')
+    def svc
+    
+    def selectHandler
+    def checktype
+    
+    def ok() {
+        if( ! checktype ) throw new Exception('Type of Check is required.')
+        invokeSelectHandler()
+        return '_close'
+    }
+    
+    void invokeSelectHandler() {
+        if( selectHandler ) selectHandler( checktype )
+    }
+    
+    List getCheckTypes() {
+        return svc.checkTypes
+    }
+}
+
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.tc.deposit.CheckTypeSelectPage"/>
+    </pages>
+        
+</workunit>

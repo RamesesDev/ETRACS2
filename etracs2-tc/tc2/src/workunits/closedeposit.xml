@@ -1,0 +1,73 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/tc/txn" action="init"  caption="Close Deposit" />
+        <invoker type="closedeposit" action="initClose" caption="Close Deposit" target="popup" />
+        
+        <invoker type="formActions" action="save" caption="Save" mnemonic="s" shortcut="ctrl S" />
+    </invokers>
+    <code>
+
+<![CDATA[
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import etracs2.groovy.*
+
+class CloseDepositController 
+{
+    @Binding
+    def binding
+
+    @Service('DepositService')
+    def svc
+    
+    @Service('DepositHtmlService')
+    def htmlSvc
+    
+    
+    def entity
+    def selectedSummary
+    
+    void init() {
+    }
+    
+    void initClose() {
+        entity = svc.open( entity.objid )
+    }
+    
+    def save() {
+        if( MsgBox.confirm('Saving this record will close the deposit. Proceed?') ) {
+            svc.closeDeposit( entity )
+            return '_close' 
+        }
+    }
+    
+    def summaryHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column(name:'fundname', caption:'Fund'),
+                new Column(name:'bankname', caption:'Bank Name', maxWidth:100),
+                new Column(name:'bankacctno', caption:'Account No.', maxWidth:120),
+                new Column(name:'amount', caption:'Amount', type:'decimal', maxWidth:100),
+                new Column(name:'validationno', caption:'Validation No.', editable:true),
+                new Column(name:'validationdate', caption:'Validation Date', editable:true ),
+            ]
+        },
+        fetchList : { return entity.fundsummaries },
+    ] as SubListModel
+    
+    def getHtml() {
+        return htmlSvc.getHtml( entity.objid )
+    }
+}
+
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.tc.deposit.CloseDepositPage"/>
+        <page name="view" template="etracs2.tc.deposit.DepositViewPage"/>
+    </pages>
+        
+</workunit>

@@ -12,6 +12,9 @@ class ETRACSUserService
 	def logSvc
 	
 	def USER_SCHEMA = 'etracsuser' 
+	def CASHIER_ROLE = 'CASHIER'
+	def COLLECTOR_ROLE = 'COLLECTOR'
+	def LIQUIDATING_OFFICER_ROLE = 'LIQUIDATING_OFFICER' 
 	
 	
 	@ProxyMethod
@@ -39,6 +42,44 @@ class ETRACSUserService
 	
 	
 	@ProxyMethod
+	public def getUserByRole( userid, role ) {
+		def user = em.sqlContext.createNamedQuery('etracsuser:getUserByRole').setParameters([objid:userid, role:role]).singleResult
+		if( ! user ) throw new Exception('User does not exists or is not asigned the ' + role + ' role.' )
+		return user 
+	}
+	
+	@ProxyMethod
+	public Map getCashier( cashierid ) {
+		return getUserByRole( cashierid, CASHIER_ROLE )
+	}
+	
+	@ProxyMethod
+	public Map getCollector( collectorid ) {
+		return getUserByRole( collectorid, COLLECTOR_ROLE )
+	}
+	
+	@ProxyMethod
+	public def getLiquidatingOfficer( lqofficerid ) {
+		return getUserByRole( lqofficerid, LIQUIDATING_OFFICER_ROLE)
+	}
+	
+	
+	
+	@ProxyMethod
+	public List getUsersByRole( role ) {
+		return em.sqlContext.createNamedQuery('etracsuser:getUsersByRole').setParameters([role:role]).resultList
+	}
+	
+	@ProxyMethod
+	public Map getCollectorList() {
+		return getUsersByRole( COLLECTOR_ROLE )
+	}
+	
+	
+	
+	
+	/*
+	@ProxyMethod
 	public Map getCollector( collectorid ) {
 		def collector = em.sqlContext.createNamedQuery('etracsuser:getCollector').setParameter('objid', collectorid).singleResult
 		if( !collector ) throw new Exception('Collector does not exists.')
@@ -47,7 +88,7 @@ class ETRACSUserService
 	
 	@ProxyMethod
 	public List getCollectorList() {
-		return em.sqlContext.createNamedQuery('etracsuser:getCollectors')
+		return em.sqlContext.createNamedQuery('etracsuser:getCollectors').resultList 
 	}
 	
 	@ProxyMethod
@@ -56,6 +97,7 @@ class ETRACSUserService
 		if( ! lqofficer ) throw new Exception('Liquidating Officer does not exists.')
 		return lqofficer 
 	}
+	*/
 	
 	@ProxyMethod
 	public List getLiquidatingOfficers(searchText, params) {

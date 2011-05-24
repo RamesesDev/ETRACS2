@@ -1,0 +1,300 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/tc/txn" caption="Deposit" />
+        
+        <invoker type="initActions" action="doNext" caption="Next" mnemonic="n" shortcut="ctrl N" />
+        <invoker type="mainActions" action="deposit" caption="Deposit" mnemonic="d" shortcut="ctrl D" />
+        <invoker type="viewActions" action="closeDeposit" caption="Close Deposit" mnemonic="d" shortcut="ctrl D" visibleWhen="#{entity.docstate == 'OPEN'}" />        
+        <invoker type="noncashActions" action="addNonCashPayments" caption="Add Non-Cash Payment" mnemonic="a" shortcut="ctrl a" visibleWhen="#{selectedSummary != null}"/>
+        <invoker type="noncashActions" action="addExternalPayment" caption="Add External Non-Cash Payment" mnemonic="e" shortcut="ctrl e" visibleWhen="#{selectedSummary != null}"/>
+        
+        <invoker type="deposit.view" action="doView" caption="View" mnemonic="v" shortcut="ctrl V" />
+    </invokers>
+    <code>
+
+<![CDATA[
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import com.rameses.osiris2.reports.*
+import etracs2.groovy.*
+
+
+class DepositController 
+{
+    @Binding
+    def binding
+
+    @Service('DepositService')
+    def svc
+    
+    @Service('DepositHtmlService')
+    def htmlSvc
+    
+    
+    def entity
+    def selectedSummary
+    def denominationOpener
+    def openNonCashPayments = []
+    
+    
+    void init() {
+        entity = [:]
+    }
+    
+    void setSelectedSummary( selectedSummary ) {
+        resetSummaryDenominations()
+        this.selectedSummary = selectedSummary
+        lookupDenominationOpener()
+    }
+    
+    def doNext() {
+        entity = svc.createDeposit( cashierid )
+        openNonCashPayments.addAll( entity.noncashpayments )
+        entity.noncashpayments = null
+        return 'main' 
+    }
+    
+    def deposit() {
+        resetSummaryDenominations()
+        if( MsgBox.confirm('Post Deposit?') ) {
+            svc.deposit( entity )
+            return 'view'
+        }
+        return 'main' 
+    }
+    
+    def doView() {
+        entity = svc.open( entity.objid )
+        return 'view'
+    }
+    
+    def closeDeposit() {
+        return InvokerUtil.lookupOpener('closedeposit', [entity:entity])
+    }
+    
+    void printCashDepositSlip( fundid ) {
+        def reportName = "depositslip/cash"
+         def cashReport = [
+            getReportName : { return reportName },
+            getReportData : { return buildCashReportData( fundid ) },
+        ] as ServerReportModel
+        cashReport.viewReport()
+        ReportUtil.print( cashReport.report, true )
+    }
+    
+    def selectCheckTypeHandler = { checktype ->
+        doPrintCheckDepositSlip( fundid, checktype )
+    }
+    
+    def fundid
+    def printCheckDepositSlip( fundid )  {
+        this.fundid = fundid
+        return InvokerUtil.lookupOpener('checktype.select', [selectHandler:selectCheckTypeHandler])
+    }
+    
+    void doPrintCheckDepositSlip( fundid, checktype ) {
+        def reportName = "depositslip/check"
+         def checkReport  = [
+            getReportName : { return reportName },
+            getReportData : { return buildCheckReportData( fundid, checktype ) },
+        ] as ServerReportModel
+        checkReport.viewReport()
+        ReportUtil.print( checkReport.report, true )
+    }
+    
+    def buildDepositReportData( fundSummary ) {
+        if( ! fundSummary ) throw new Exception('Fund does not exists or invalid.\nReload deposit record and try again.')
+        return [
+            txndate      : CommonUtil.formatDate('MM-dd-yyyy',entity.txndate),
+            bankacctno   : fundSummary.bankacctno,
+            bankacctname : (fundSummary.bankacctname ? fundSummary.bankacctname : 'LGU BOHOL' ),
+            cash         : fundSummary.cash,
+            noncash      : fundSummary.noncash,
+        ]
+    }
+    
+    def buildCashReportData( fundid ) {
+        def fundSummary = entity.fundsummaries.find{ it.fundid == fundid }
+        def data = buildDepositReportData( fundSummary )
+        if( fundSummary.cash == 0 ) throw new Exception('There is no cash for deposit.')
+        data.denominations = []
+        fundSummary.denominations.each {
+            if( it.amount > 0 ) {
+                data.denominations.add([
+                    denomination : it.caption,
+                    qty          : it.qty,
+                    amount       : it.amount,
+                ])
+            }
+        }
+        return data
+    }
+    
+    def buildCheckReportData( fundid, checktype ) {
+        def fundSummary = entity.fundsummaries.find{ it.fundid == fundid }
+        def data = buildDepositReportData( fundSummary )
+        if( ! fundSummary.noncashpayments ) throw new Exception('There are no checks for deposit.')
+        def checks = fundSummary.noncashpayments.findAll{ it.checktype == checktype  }
+        if( !checks ) throw new Exception('There are no ' + checktype + ' Checks for deposit.')
+        data.noncashpayments = []
+        checks.each {
+            def extended = GroovyObjectDeserializer.instance.deserialize( it.extended )
+            data.noncashpayments.add([
+                bankname  : extended.bank,
+                checkno   : extended.checkno,
+                checkdate : extended.checkdate,
+                amount    : it.amount,
+            ])
+        }
+        return data
+    }
+    
+    
+    
+    void resetSummaryDenominations() {
+        if( selectedSummary ) {
+            selectedSummary.denominations = denominationOpener.handle.list 
+        }
+    }
+    
+    def addPaymentsHandler = { payments ->
+        if( ! selectedSummary.noncashpayments ) {
+            selectedSummary.noncashpayments = []
+        }
+        checkOverDeposit( payments )
+        selectedSummary.noncashpayments.addAll( payments ) 
+        openNonCashPayments.removeAll( payments )
+        calculateSummaryDeposits()
+        updateDenominationHandlerAmount()
+        noncashHandler.load()
+    }
+    
+    def addNonCashPayments() {
+        def params = [cashierid:cashierid, addHandler:addPaymentsHandler, payments:openNonCashPayments]
+        return InvokerUtil.lookupOpener('noncashpayment.select', params )
+    }
+    
+    def addExternalPaymentHandler = { pmt ->
+        pmt.source = 'MANUAL'
+        addPaymentsHandler( [pmt] )
+    }
+    
+    def addExternalPayment() {
+        def params = [cashierid:cashierid, acceptHandler:addExternalPaymentHandler]
+        return InvokerUtil.lookupOpener('payment.type.check', params )
+    }
+    
+    void updateDenominationHandlerAmount() {
+        denominationOpener?.handle.totalAmount = selectedSummary.cash
+    }
+    
+    void calculateSummaryDeposits() {
+        selectedSummary.noncash = selectedSummary.noncashpayments.sum( {it.amount} )
+        selectedSummary.cash = selectedSummary.amount - selectedSummary.noncash
+        binding.refresh('selectedSummary|totalNonCashPayment') 
+    }
+    
+    void checkOverDeposit( payments ) {
+        def totalDeposits = payments.sum( {it.amount} ) + selectedSummary.noncash 
+        if( totalDeposits > selectedSummary.amount ) {
+            throw new Exception('Total of selected payments is more than amount to be deposited.')
+        }
+    }
+    
+    void doRemoveItem( pmt ) {
+        if( MsgBox.confirm('Remove selected non-cash payment?') ) {
+            selectedSummary.noncashpayments.remove( pmt )
+            pmt.checked = false 
+            openNonCashPayments.add( pmt )
+            selectedSummary.cash += pmt.amount 
+            selectedSummary.noncash -= pmt.amount
+            updateDenominationHandlerAmount()
+            noncashHandler.load()
+            binding.refresh('selectedSummary|totalNonCashPayment|denominationOpener')
+        }
+    }
+    
+    def summaryHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column(name:'fundname', caption:'Fund'),
+                new Column(name:'bankname', caption:'Bank Name', maxWidth:100),
+                new Column(name:'branchname', caption:'Branch', , maxWidth:80),
+                new Column(name:'bankacctno', caption:'Account No.', maxWidth:120),
+                new Column(name:'accttype', caption:'Account', maxWidth:90),
+                new Column(name:'cash', caption:'Cash', type:'decimal', maxWidth:100),
+                new Column(name:'noncash', caption:'Non-Cash', type:'decimal', maxWidth:100),
+                new Column(name:'amount', caption:'Amount', type:'decimal', maxWidth:100),
+            ]
+        },
+        fetchList : { return entity.fundsummaries },
+    ] as SubListModel
+    
+    def noncashHandler =[
+        getRows    : { return 50 },
+        getColumns : { 
+            return [
+                new Column(name:'paytype', caption:'Pay Type', maxWidth:80),
+                new Column(name:'particulars', caption:'Particulars'),
+                new Column(name:'amount', caption:'Amount', maxWidth:120),
+            ]        
+        },
+        onRemoveItem : { pmt -> doRemoveItem(pmt) },
+        fetchList    : { return selectedSummary?.noncashpayments },
+    ] as SubListModel
+    
+    def liquidationHandler = [
+        getRows    : { return 50 },
+        getColumns : { 
+            return [
+                new Column(name:'liquidatingofficername', caption:'Liquidating Officer'),
+                new Column(name:'liquidatingofficertitle', caption:'Job Title'),
+                new Column(name:'txnno', caption:'Liquidation No.'),
+                new Column(name:'txndate', caption:'Liquidation Date'),
+                new Column(name:'amount', caption:'Amount', type:'decimal'),
+            ]
+        },
+        fetchList  : { return entity.liquidations },
+    ] as SubListModel
+    
+    
+    def getTotalNonCashPayment() {
+        return CommonUtil.formatNumber('#,##0.00', selectedSummary?.noncash )
+    }
+    
+    def getTotalCash() {
+        return CommonUtil.formatNumber('#,##0.00', selectedSummary?.cash )
+    }
+    
+    def getCashierid() {
+        return OsirisContext.env.USERID 
+    }
+    
+    def getCashiername() {
+        return OsirisContext.env.USERNAME
+    }    
+    
+    void lookupDenominationOpener() {
+        denominationOpener = null
+        if( selectedSummary ) {
+            denominationOpener = InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:selectedSummary.cash, list:selectedSummary.denominations])
+        }
+    }
+ 
+    def getHtml() {
+        return htmlSvc.getHtml( entity.objid )
+    }
+}
+
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.tc.deposit.DepositInitPage"/>
+        <page name="main" template="etracs2.tc.deposit.DepositPage"/>
+        <page name="view" template="etracs2.tc.deposit.DepositViewPage"/>
+    </pages>
+        
+</workunit>
