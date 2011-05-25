@@ -8,7 +8,7 @@ SELECT objid, txnno, docstate, requestedby, rivtype FROM riv WHERE txnno = $P{tx
 SELECT objid, txnno, docstate, requestedby, rivtype FROM riv WHERE requestedby LIKE $P{requestedby} AND rivtype = $P{rivtype}
 
 [getListByRequesterTxnno]
-SELECT objid, txnno, docstate, requestedby, rivtype FROM riv WHERE txnno = $P{txnno} AND requestedby LIKE $P{requestedby} 
+SELECT objid, txnno, docstate, requestedby, rivtype FROM riv WHERE txnno LIKE $P{txnno} AND requestedby LIKE $P{requestedby} AND rivtype = $P{rivtype}
 
 [getListByState]
 SELECT objid, txnno, docstate, requestedby, rivtype FROM riv WHERE docstate = 'OPEN'
