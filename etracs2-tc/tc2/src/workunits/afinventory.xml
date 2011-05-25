@@ -1,8 +1,6 @@
 <workunit>
     <invokers>
-        <invoker folderid="/menu/tc/txn" action="init" caption="Accountable Form Inventory"/>
-        
-        <invoker type="formActions" action="view" caption="View Report" mnemonic="v" shortcut="ctrl v"/>
+        <invoker folderid="/menu/tc/txn" action="init" caption="Accountable Form Inventory" permission="afinventory.view"/>
     </invokers>
     <code>
 <![CDATA[
@@ -32,9 +30,12 @@ class AFInventoryController
     def docstate;
     def reportData = [];
     
+    def formActions
+    
     
     void init() {
        list = svc.getList( searchText, docstate );
+       formActions = InvokerUtil.lookupActions('afinventory.reports', [:])
     }
     
     def getStateList(){

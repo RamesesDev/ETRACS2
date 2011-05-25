@@ -47,6 +47,10 @@ SELECT voided FROM receipt WHERE objid = $P{objid}
 [getSerialNo]
 SELECT serialno FROM receiptlist WHERE objid = $P{objid} 
 
+[checkDuplicateSerialNo]
+SELECT objid, serialno FROM receiptlist WHERE serialno = $P{serialno} 
+
+
 
 [voidReceipt]
 UPDATE receipt SET voided = 1, voidreason = $P{voidreason} WHERE objid = $P{objid} 

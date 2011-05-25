@@ -1,6 +1,7 @@
 package etracs2.groovy
 
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 
 class CommonUtil 
 {
@@ -24,9 +25,15 @@ class CommonUtil
         }
     }
     
-    public static String numberFormat( value, pattern ) {
+    public static String formatNumber( pattern, value ) {
         if (!value ) value = 0.0
-        return (new DecimalFormat( pattern ). format(value) )
+        return (new DecimalFormat( pattern ).format(value) )
+    }
+    
+    public static String formatDate( pattern, value ) {
+        if (!value ) return ''
+        if( ! value instanceof Date ) return value
+        return (new SimpleDateFormat( pattern ).format(value) )
     }
     
     

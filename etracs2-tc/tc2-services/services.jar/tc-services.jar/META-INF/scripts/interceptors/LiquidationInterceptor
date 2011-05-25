@@ -1,0 +1,31 @@
+import com.rameses.annotations.*;
+
+class LiquidationInterceptor
+{
+	@PersistenceContext('main')
+	def em 
+	
+	@Service("LogService")
+	def logService;
+	
+	@Service('DateService')
+	def dateSvc
+	
+	@Env
+	def env;
+	
+	@After(pattern="LiquidationService.create") 
+	public void interceptCreate( evt ) {
+		postToRevenue( evt.result )
+	}
+	
+	void postToRevenue( liquidation ) {
+		def params = [
+			liquidationid : liquidation.objid, 
+			timestamp     : dateSvc.buildCustomTimeStamp( liquidation.dtposted ) 
+		]
+		em.sqlContext.createNamedExecutor('revenue:postLiquidation').setParameters( params ).execute()
+	}
+	
+		
+}

@@ -1,21 +1,21 @@
 <workunit>
     <invokers>
         <invoker type="collection" caption="General Collection" afid="51" appcode="general_collection"  />
-        <invoker type="tc:general_collection" action="init" caption="General Collection" afid="51"  />
-        <invoker type="inquiry:tc:general_collection" action="initInquiry" caption="Inquiry"/>
+        <invoker type="tc:general_collection" action="init" caption="General Collection" afid="51"  permission="collection_general.create" />
+        <invoker type="inquiry:tc:general_collection" action="initInquiry" caption="Inquiry" permission="collection_general.inquire"/>
         
-        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}"/>
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}" permission="collection_general.create"/>
         <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}"/>
         <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}"/>
-        <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}"/>
-        <invoker type="formActions" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" visibleWhen="#{mode == 'view'}"/>
-        <invoker type="formActions" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" visibleWhen="#{mode == 'view'}"/>
-        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view' and entity.voided == 0}"/>
+        <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}" />
+        <invoker type="formActions" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" visibleWhen="#{mode == 'view'}" permission="collection_general.print"/>
+        <invoker type="formActions" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" visibleWhen="#{mode == 'view'}" permission="collection_general.print"/>
+        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view' and entity.voided == 0}" permission="collection_general.void"/>
 
-        <invoker type="receipt.actions:tc:general_collection" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" />
-        <invoker type="receipt.actions:tc:general_collection" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P"/>
-        <invoker type="receipt.actions:tc:general_collection" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P"/>
-        <invoker type="receipt.actions:tc:general_collection" action="doVoid" caption="Void" mnemonic="v" />   
+        <invoker type="receipt.actions:tc:general_collection" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" permission="collection_general.edit"/>
+        <invoker type="receipt.actions:tc:general_collection" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" permission="collection_general.print"/>
+        <invoker type="receipt.actions:tc:general_collection" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" permission="collection_general.print"/>
+        <invoker type="receipt.actions:tc:general_collection" action="doVoid" caption="Void" mnemonic="v" permission="collection_general.void"/>   
     </invokers>
     <code>
 <![CDATA[
@@ -37,10 +37,10 @@
         def listItem
         def message = ''
         def selectedItem
-    
-    
+        
         def getService() { return svc }
         def getHtmlService() { return htmlSvc }
+        def getCollectionTitle() { return 'General Collection' }
         
         void init() {
             super.init()
