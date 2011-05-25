@@ -47,6 +47,9 @@ SELECT * FROM etracsuser WHERE objid = $P{objid} AND isliquidating = 1
 [getCollectors]
 SELECT * FROM etracsuser WHERE iscollector = 1 ORDER BY name 
 
+[getCollectorsByLqOfficerId]
+SELECT * FROM etracsuser WHERE lqofficerid = $P{lqofficerid} 
+
 [getCollector]
 SELECT * FROM etracsuser WHERE objid = $P{objid} AND iscollector = 1 
 

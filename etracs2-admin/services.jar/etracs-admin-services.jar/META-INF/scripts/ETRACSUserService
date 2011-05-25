@@ -71,41 +71,21 @@ class ETRACSUserService
 	}
 	
 	@ProxyMethod
-	public Map getCollectorList() {
+	public List getCollectorList() {
 		return getUsersByRole( COLLECTOR_ROLE )
 	}
 	
-	
-	
-	
-	/*
 	@ProxyMethod
-	public Map getCollector( collectorid ) {
-		def collector = em.sqlContext.createNamedQuery('etracsuser:getCollector').setParameter('objid', collectorid).singleResult
-		if( !collector ) throw new Exception('Collector does not exists.')
-		return collector
+	public List getCollectorsByLqOfficerId( lqofficerid ) {
+		return em.sqlContext.createNamedQuery('etracsuser:getCollectorsByLqOfficerId').setParameter('lqofficerid', lqofficerid).resultList
 	}
-	
-	@ProxyMethod
-	public List getCollectorList() {
-		return em.sqlContext.createNamedQuery('etracsuser:getCollectors').resultList 
-	}
-	
-	@ProxyMethod
-	public def getLiquidatingOfficer( liqofficerid ) {
-		def lqofficer = em.sqlContext.createNamedQuery('etracsuser:getLiquidatingOfficer').setParameter('objid', lqofficerid).singleResult
-		if( ! lqofficer ) throw new Exception('Liquidating Officer does not exists.')
-		return lqofficer 
-	}
-	*/
 	
 	@ProxyMethod
 	public List getLiquidatingOfficers(searchText, params) {
 		if( ! searchText ) searchText = ''
 		return getListByName('etracsuser:getLiquidatingOfficers', [name: searchText+'%'], params )
 	}
-	
-	
+		
 	private def getListByName( namedQuery, values, params ) {
 		return em.sqlContext.createNamedQuery( namedQuery )
 					.setParameters(values)
