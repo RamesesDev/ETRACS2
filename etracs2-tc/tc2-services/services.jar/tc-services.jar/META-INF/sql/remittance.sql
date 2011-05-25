@@ -69,29 +69,37 @@ ORDER BY afid, stubno
 
 
 [updateAfControlForRemittance]
-UPDATE afcontrol 
-SET beginseries = currentseries, 
-beginqty = balance, 
-qtyissued = 0, 
-issuedfrom = 0, 
-issuedto = 0 
+UPDATE afcontrol SET 
+	beginseries = currentseries, 
+	beginqty = balance, 
+	qtyissued = 0, 
+	issuedfrom = 0, 
+	issuedto = 0 
 WHERE collectorid = $P{collectorid}
 
 [closeAfControl]
-UPDATE afcontrol 
-SET docstate = 'CLOSED' 
+UPDATE afcontrol SET 
+	docstate = 'CLOSED' 
 WHERE beginqty = 0 
-AND collectorid = $P{collectorid}
+  AND docstate = 'OPEN' 
+  AND collectorid = $P{collectorid}
 
 [closeReceiptForRemittance]
-UPDATE receiptlist rl, receipt r 
-SET rl.docstate = 'CLOSED', 
-rl.remittanceid = $P{remittanceid}, 
-rl.remittanceno = $P{remittanceno}, 
-rl.remittancedate = $P{remittancedate}, 
-r.docstate = 'CLOSED', 
-r.remittanceid = $P{remittanceid}, 
-r.remittanceno = $P{remittanceno}, 
-r.remittancedate = $P{remittancedate} 
+UPDATE receipt r SET 
+	r.docstate = 'CLOSED', 
+	r.remittanceid = $P{remittanceid}, 
+	r.remittanceno = $P{remittanceno}, 
+	r.remittancedate = $P{remittancedate} 
+WHERE r.collectorid = $P{collectorid} 
+  AND r.docstate = 'OPEN' 
+  
+[closeReceiptListForRemittance]
+UPDATE receiptlist rl SET 
+	rl.docstate = 'CLOSED', 
+	rl.remittanceid = $P{remittanceid}, 
+	rl.remittanceno = $P{remittanceno}, 
+	rl.remittancedate = $P{remittancedate}
 WHERE rl.collectorid = $P{collectorid} 
-AND r.objid = rl.objid
+  AND rl.docstate = 'OPEN' 
+  
+  

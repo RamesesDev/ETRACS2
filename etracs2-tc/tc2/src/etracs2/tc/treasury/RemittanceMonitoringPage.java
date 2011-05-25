@@ -42,9 +42,6 @@ public class RemittanceMonitoringPage extends javax.swing.JPanel {
         jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
         jPanel2.setLayout(new java.awt.BorderLayout());
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("Remittance Monitoring ");
-        jPanel2.setBorder(xTitledBorder1);
         jPanel5.setLayout(new java.awt.BorderLayout());
 
         formPanel1.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
@@ -70,9 +67,9 @@ public class RemittanceMonitoringPage extends javax.swing.JPanel {
         jPanel4.setLayout(new java.awt.BorderLayout());
 
         jPanel4.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 10, 10, 10));
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder2.setTitle("List of Unremitted Collections");
-        xDataTable1.setBorder(xTitledBorder2);
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder1.setTitle("List of Unremitted Collections");
+        xDataTable1.setBorder(xTitledBorder1);
         xDataTable1.setDepends(new String[] {"collector"});
         xDataTable1.setDynamic(true);
         xDataTable1.setHandler("listHandler");

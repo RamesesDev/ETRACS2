@@ -1,0 +1,69 @@
+<workunit>
+    <invokers>
+        <invoker type="noncashpayment.select" caption="Add Checks for Deposit" />
+    </invokers>
+    <code>
+
+<![CDATA[
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+class DepositCheckSelectController 
+{
+    @Binding
+    def binding
+    
+    @Service('DepositService')
+    def svc
+    
+    
+    def cashierid
+    def addHandler
+    def payments 
+    def selected 
+    def checktype
+    
+    def ok() {
+        if( ! checktype ) throw new Exception('Type of Check is required.')
+        def selectedPayments = payments.findAll { it.checked == true }
+        setCheckTypeInfo(selectedPayments )
+        invokeAddHandler( selectedPayments )
+        return '_close' 
+    }
+    
+    void setCheckTypeInfo( payments ) {
+        payments.each{ it.checktype = checktype }
+    }
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column(name:'checked', caption:' ', type:'boolean', editable:true, maxWidth:30 ), 
+                new Column(name:'paytype', caption:'Pay Type'), 
+                new Column(name:'particulars', caption:'Particulars'), 
+                new Column(name:'amount', caption:'Amount'), 
+            ]
+        },
+        fetchList : { return payments }
+    ] as SubListModel
+
+    
+    void invokeAddHandler( selectedPayments ) {
+        if( selectedPayments && addHandler ) addHandler( selectedPayments )
+    }
+    
+    List getCheckTypes() {
+        return svc.checkTypes
+    }
+}
+
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.tc.deposit.CheckDepositSelectPage"/>
+    </pages>
+        
+</workunit>

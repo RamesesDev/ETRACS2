@@ -12,6 +12,10 @@ SELECT * FROM etracsuser u
 WHERE u.lastname LIKE $P{lastname} 
 ORDER BY u.uid  
 
+[findById]
+SELECT * FROM etracsuser u  
+WHERE u.objid = $P{objid} 
+
 [getUserInfo]
 SELECT 
 	name,
@@ -24,6 +28,19 @@ ORDER BY u.uid
 [getUserRoles]
 SELECT role FROM user_role WHERE userid = $P{userid} 
 
+[getUserByRole]
+SELECT DISTINCT u.* 
+FROM etracsuser u, user_role ur  
+WHERE u.objid = ur.userid  
+  AND u.objid = $P{objid} 
+  AND ur.role = $P{role} 
+
+[getUsersByRole]
+SELECT DISTINCT u.* 
+FROM etracsuser u, user_role ur  
+WHERE u.objid = ur.userid  
+  AND ur.role = $P{role} 
+
 
 [getLiquidatingOfficers]
 SELECT * FROM etracsuser WHERE isliquidating = 1 ORDER BY name 
@@ -33,6 +50,9 @@ SELECT * FROM etracsuser WHERE objid = $P{objid} AND isliquidating = 1
 
 [getCollectors]
 SELECT * FROM etracsuser WHERE iscollector = 1 ORDER BY name 
+
+[getCollectorsByLqOfficerId]
+SELECT * FROM etracsuser WHERE lqofficerid = $P{lqofficerid} 
 
 [getCollector]
 SELECT * FROM etracsuser WHERE objid = $P{objid} AND iscollector = 1 

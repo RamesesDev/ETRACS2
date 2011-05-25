@@ -45,9 +45,6 @@ public class CollectionSummaryPage extends javax.swing.JPanel {
         jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
         jPanel2.setLayout(new java.awt.BorderLayout());
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("Collection Summary");
-        jPanel2.setBorder(xTitledBorder1);
         xDataTable1.setDepends(new String[] {"year", "month"});
         xDataTable1.setHandler("listHandler");
         xDataTable1.setImmediate(true);

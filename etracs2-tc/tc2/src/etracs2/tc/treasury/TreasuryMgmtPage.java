@@ -36,7 +36,7 @@ public class TreasuryMgmtPage extends javax.swing.JPanel {
         xActionBar1.setName("formActions");
         jPanel1.add(xActionBar1, java.awt.BorderLayout.NORTH);
 
-        xLabel1.setBackground(new java.awt.Color(0, 0, 51));
+        xLabel1.setBackground(new java.awt.Color(0, 51, 102));
         xLabel1.setForeground(new java.awt.Color(255, 255, 255));
         xLabel1.setDepends(new String[] {"formActions"});
         xLabel1.setFont(new java.awt.Font("Arial", 1, 18));

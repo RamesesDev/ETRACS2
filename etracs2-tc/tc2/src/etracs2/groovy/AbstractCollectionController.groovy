@@ -36,6 +36,7 @@ abstract class AbstractCollectionController
             
     abstract def getService()
     abstract def getHtmlService()
+    abstract def getCollectionTitle() 
     
     void init() {
         mode = 'create'
@@ -192,7 +193,7 @@ abstract class AbstractCollectionController
             docstate    : initState(),
             opener      : openerType,
             voided      : 0,
-            collectorid : collector.collectorid,
+            collectorid : collector.objid,
             info     : [
                 mode             : txnmode,
                 afid             : af.objid,
@@ -204,9 +205,9 @@ abstract class AbstractCollectionController
                 collectiontypeid : collectiontype.objid,
                 collectiontype   : collectiontype.name,
                 payorrequired    : collectiontype.payorrequired,
-                collectorid      : collector.collectorid,
-                collectorname    : collector.collectorname,
-                collectortitle   : collector.collectortitle,
+                collectorid      : collector.objid,
+                collectorname    : collector.name,
+                collectortitle   : collector.jobtitle,
                 amount       : 0.00,
                 totalpayment : 0.00,
                 cash         : 0.00,
@@ -277,15 +278,15 @@ abstract class AbstractCollectionController
     }
 
     def getAmount() {
-        return CommonUtil.numberFormat( entity.info.amount, '#,##0.00' )
+        return CommonUtil.formatNumber( '#,##0.00', entity.info.amount )
     }
 
     def getTotalpayment() {
-        return CommonUtil.numberFormat( entity.info.totalpayment, '#,##0.00' )
+        return CommonUtil.formatNumber( '#,##0.00', entity.info.totalpayment )
     }
 
     def getChange() {
-        return CommonUtil.numberFormat( entity.info.change, '#,##0.00' )
+        return CommonUtil.formatNumber( '#,##0.00', entity.info.change )
     }
     
     void invokeNewHandler() {
