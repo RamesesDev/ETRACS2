@@ -12,6 +12,10 @@ SELECT * FROM etracsuser u
 WHERE u.lastname LIKE $P{lastname} 
 ORDER BY u.uid  
 
+[findById]
+SELECT * FROM etracsuser u  
+WHERE u.objid = $P{objid} 
+
 [getUserInfo]
 SELECT 
 	name,
