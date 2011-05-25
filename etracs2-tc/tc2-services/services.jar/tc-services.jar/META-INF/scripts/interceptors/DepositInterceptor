@@ -1,0 +1,28 @@
+import com.rameses.annotations.*;
+
+class DepositInterceptor
+{
+	@PersistenceContext('main')
+	def em 
+	
+	@Service('DateService')
+	def dateSvc
+	
+	@Env
+	def env;
+	
+	@After(pattern="Deposit.create") 
+	public void interceptCreate( evt ) {
+		postToRevenue( evt.result )
+	}
+	
+	void postToRevenue( deposit ) {
+		def params = [
+			depositid  : deposit.objid, 
+			timestamp  : dateSvc.buildCustomTimeStamp( deposit.dtposted ) 
+		]
+		em.sqlContext.createNamedExecutor('revenue:postDeposit').setParameters( params ).execute()
+	}
+	
+		
+}

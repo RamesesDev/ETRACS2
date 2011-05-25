@@ -41,8 +41,9 @@ class LiquidationService {
 		liq.schemaname = SCHEMANAME;
 		liq.schemaversion = SCHEMAVERSION;
 		liq.docstate = 'OPEN';
-		liq.dtposted = dtsvc.format( "yyyy-MM-dd", dtsvc.getServerDate());
+		liq.dtposted = dtsvc.getServerDate()
 		liq.info.txnno = generateLiqNo();
+		liq.info.txndate = dtsvc.format( "yyyy-MM-dd", liq.dtposted);
 		closeRemittance( liq );
 		em.validate( SCHEMANAME, liq );
 		em.create( SCHEMANAME, liq );
@@ -126,11 +127,7 @@ class LiquidationService {
 	}
 	
 	private def getSubordinates( userid ) {
-		def collectors = usrsvc.getCollectorList();
-		for (collector in collectors) {
-			collector.objid = collector.collectorid;
-		}
-		return collectors;
+		return usrsvc.getCollectorsByLqOfficerId( userid );
 	}
 	
 	@ProxyMethod

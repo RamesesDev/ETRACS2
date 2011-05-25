@@ -38,11 +38,10 @@
             
             def numformat = new DecimalFormat("#,##0.00");
             
-            //DUMMY DATA FOR COLLECTOR
             def collector;
         
             def init() {
-                collector = usersvc.getCollector('COL01');
+                collector = usersvc.getCollector( OsirisContext.env.USERID );
                 mode = 'init';
                 caller?.mode = 'create';
                 entity = [
@@ -113,9 +112,9 @@
             def buildInfo() {
                 return [
                     txndate : dtsvc.getServerDate(),
-                    collectorid : collector.collectorid,
-                    collectorname : collector.collectorname,
-                    collectortitle : collector.collectortitle,
+                    collectorid : collector.objid,
+                    collectorname : collector.name,
+                    collectortitle : collector.jobtitle,
                     amount : 0.00,
                     totalcash : 0.00,
                     totalotherpayment : 0.00,
