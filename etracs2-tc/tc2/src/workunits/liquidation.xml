@@ -7,7 +7,11 @@
         <invoker type="formActions" action="init" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png"/>
         <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" caption="Next" mnemonic="n" />
         <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'main'}" caption="Submit" mnemonic="s" icon="images/save24.png"/>
-        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view' and mode != 'report'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="reports" visibleWhen="#{mode == 'view' and entity.docstate == 'OPEN'}"  immediate="true" caption="Reports" mnemonic="r" icon=""/>
+        <invoker type="formActions" action="back" visibleWhen="#{mode == 'report'}"  immediate="true" caption="Back" mnemonic="b" icon="images/back24.png"/>
+        <invoker type="formActions" action="viewReport" visibleWhen="#{mode == 'report'}"  immediate="true" caption="View" mnemonic="v" icon=""/>
+        
     </invokers>
     
     <code lang="groovy">
@@ -167,7 +171,26 @@
                 return userService.getLiquidatingOfficer( OsirisContext.env.USERID );
             }
             
+            def reports(){
+                mode = 'report';
+                return "reports";
+            }
             
+            def back(){
+                mode = 'view';
+                return "view"
+            }
+            
+            def selectedreport;
+            def reports;
+            public def getReportList(){
+                if( !reports ) reports = InvokerUtil.lookupOpeners("liquidation:report", [liquidation: entity] );
+                return reports;
+            }
+
+            public def viewReport(){
+                return selectedreport;
+            }
         }
         
         ]]>
@@ -179,5 +202,6 @@
         <page name="main" template="etracs2.tc.liquidation.LiquidationPage" />
         <page name="otherpayments" template="etracs2.tc.liquidation.OtherPaymentListPage" />
         <page name="remittances" template="etracs2.tc.liquidation.RemittanceListPage" />
+        <page name="reports" template="etracs2.tc.liquidation.LiquidationReportPage" />
     </pages>
 </workunit>
