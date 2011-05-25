@@ -41,6 +41,7 @@ abstract class CRUDController {
         mode = "view";
         binding.refresh("entity.*");
         listHandler.load();
+        focus( 'selectedItem' )
     }
     
     void save() {

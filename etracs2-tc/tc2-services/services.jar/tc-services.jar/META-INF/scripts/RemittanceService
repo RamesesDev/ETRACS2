@@ -74,8 +74,9 @@ class RemittanceService {
 		rem.schemaname = SCHEMANAME;
 		rem.schemaversion = SCHEMAVERSION;
 		rem.docstate = 'OPEN';
-		rem.dtposted = dtsvc.format( "yyyy-MM-dd", dtsvc.getServerDate());
 		rem.info.txnno = generateRemNo();
+		rem.dtposted = dtsvc.getServerDate()
+		rem.info.txndate = dtsvc.format( "yyyy-MM-dd", rem.dtposted );
 		closeReceipts( rem );
 		updateAfControls( rem );
 		em.validate( SCHEMANAME, rem );

@@ -1,8 +1,8 @@
 <workunit>
     <invokers>
-        <invoker folderid="menu/tc" action="initOnline" caption="Online Collection" />
-        <invoker folderid="menu/tc" action="initOffline" caption="Offline Collection" />
-        <invoker folderid="menu/tc" action="initCapture" caption="Capture Collection" />
+        <invoker folderid="menu/tc" action="initOnline" caption="Online Collection" permission="collection.create_online"/>
+        <invoker folderid="menu/tc" action="initOffline" caption="Offline Collection" permission="collection.create_offline"/>
+        <invoker folderid="menu/tc" action="initCapture" caption="Capture Collection" permission="collection.create_capture"/>
     </invokers>
     <code>
     <![CDATA[
@@ -57,9 +57,16 @@ class CollectionController
     }
 	
     def doNext() {
-        CommonUtil.required('AF Control', afcontrol)
-        lookupOpener()
-        return 'main'
+        try {
+            CommonUtil.required('AF Control', afcontrol)
+            lookupOpener()
+            return 'main'
+        }
+        catch( e ) {
+            // an exception is thrown if no registered opener found which is mostly
+            // caused by lack of permission
+            throw new Exception('You do not have sufficient permissions for this collection type.\nPlease contact your administrator for assistance.')
+        }
     }
     
     void setCollectiontype( colltype ) {
@@ -70,9 +77,9 @@ class CollectionController
     }
     
     void getAFControlInfo( ) {
-        afcontrol = afcontrolService.getActiveAFControl( collector.collectorid, af.objid, txnmode ) 
+        afcontrol = afcontrolService.getActiveAFControl( collector.objid, af.objid, txnmode ) 
         if( !afcontrol ) {
-            def afcontrolList = afcontrolService.getInactiveList( collector.collectorid, af.objid, txnmode )
+            def afcontrolList = afcontrolService.getInactiveList( collector.objid, af.objid, txnmode )
             if( afcontrolList ) {
                 selectStubToUse( af, afcontrolList )
             }

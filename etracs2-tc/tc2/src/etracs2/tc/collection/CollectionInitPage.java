@@ -39,6 +39,7 @@ public class CollectionInitPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("Initial Collection Information");
         formPanel1.setBorder(xTitledBorder1);
+        xComboBox3.setAllowNull(false);
         xComboBox3.setCaption("AF No.");
         xComboBox3.setCaptionWidth(100);
         xComboBox3.setExpression("#{objid}");

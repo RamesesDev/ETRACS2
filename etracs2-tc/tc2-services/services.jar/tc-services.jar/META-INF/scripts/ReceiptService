@@ -184,7 +184,7 @@ class ReceiptService
 	
 	void checkDuplicateSerialNo( objid, serialno ) {
 		if( ! serialno ) return;
-		def rct = em.sqlContext.createNamedQuery('receipt:getListBySerialNo').setParameter('serialno', serialno).singleResult
+		def rct = em.sqlContext.createNamedQuery('receipt:checkDuplicateSerialNo').setParameter('serialno', serialno).singleResult
 		if( rct && rct.objid != objid ) throw new Exception("Duplicate Serial No. $serialno found.")
 	}
 	
@@ -271,9 +271,9 @@ class ReceiptService
 	}
 	
 	def getNextCurrentSeries( afcontrol ){
-		def currentseries = afcontrol.currentseries + 1;
+		afcontrol.currentseries = afcontrol.currentseries + 1;
 		if( afcontrol.cancelledseries ){
-			afcontrol.currentseries = getNextAvailableSeries( ac.cancelledseries, currentseries );
+			afcontrol.currentseries = getNextAvailableSeries( ac.cancelledseries, afcontrol.currentseries );
 		}
 		return afcontrol.currentseries;
 	}
