@@ -95,7 +95,11 @@ class RIVService
 	
 	private def searchByRequester( search, params ) {
 		def result = [];
-		if((result = getListByQuery("riv:getListByRequesterTxnno", [txnno:search.searchText, requestedby:search.requestedby], params))) return result;
+		if( !search.searchText ){
+			if((result = getListByQuery("riv:getListByRequester", [requestedby:search.requestedby, rivtype:search.rivtype], params))) return result;
+		} else{
+			if((result = getListByQuery("riv:getListByRequesterTxnno", [txnno:search.searchText +"%", requestedby:search.requestedby, rivtype:search.rivtype], params))) return result;
+		}
 		return result;
 	}
 	

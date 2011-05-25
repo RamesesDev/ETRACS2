@@ -142,9 +142,9 @@ class IRAFService
 	private void validateItems( def iraf, def item ){
 		def ri = iraf.requesteditems.find{ it.afid == item.afid };
 		if( !ri ) throw new Exception("AF $item.afid not in requested items.");
-		def totalQty = ri.qtydelivered + item.qtyreceived;
-		if( totalQty  > ri.qtyrequested ) throw new Exception("Qty recived exceeds the qty requested.");
-		ri.qtyreceived = item.qtyreceived;
+		def totalQty = ri.qtyreceived + item.qtyreceived + ri.qtydelivered;
+		if( totalQty  > ri.qtyrequested ) throw new Exception("Qty recieved exceeds the qty requested.");
+		ri.qtyreceived += item.qtyreceived;
 		item.aftype = ri.aftype;
 		item.endseries = 0;
 		
@@ -153,14 +153,16 @@ class IRAFService
 			item.endseries = item.startseries + ( item.qtyreceived * ri.afpcsperunit ) - 1;
 		}
 		
-		iraf.requesteditems.each{
-			if( it.prefix == item.prefix && it.suffix == item.suffix ){
-				if( it.startseries >= item.startseries && it.endseries <= item.startseries ){
-					throw new Exception("Conflict in issuance of series in $it.prefix $it.series - $it.endseries $it.suffix");
-				}
-				
-				if( it.startseries >= item.endseries && it.endseries <= item.endseries ){
-					throw new Exception("Conflict in issuance of series in $it.prefix $it.series - $it.endseries $it.suffix");
+		iraf.rcvitems.each{
+			if( it.afid == item.afid ){
+				if( it.prefix == item.prefix && it.suffix == item.suffix ){
+					if( isBeetween( it.starseries, it.endseries, item.startseries ) ){
+						throw new Exception("Conflict in issuance of series in $it.startseries - $it.endseries");
+					}
+					
+					if( isBeetween( it.starseries, it.endseries, item.endseries ) ){
+						throw new Exception("Conflict in issuance of series in $it.startseries - $it.endseries");
+					}
 				}
 			}
 		}
@@ -288,7 +290,7 @@ class IRAFService
 	}
 	
 	private void postToAFInventory( def iraf ){
-		
+				
 		def stubcount = 1;
 		
 		iraf.rcvitems.each{ ri ->
@@ -343,7 +345,7 @@ class IRAFService
 			em.save( afinventory.schemaname, afinventory );
 			
 			stubcount += 1;
-		}
+		}	
 	}
 	
 	private void checkConflictSeries( def ri ){
@@ -351,7 +353,7 @@ class IRAFService
 		ri.suffix = (ri.suffix) ? ri.suffix : "";
 		
 		def it = em.sqlContext.createNamedQuery("iraf:checkConflictSeries")
-				   .setParameter( [
+				   .setParameters( [
 						startseries: ri.startseries,
 					    endseries: ri.endseries,
 					    afid: ri.afid,

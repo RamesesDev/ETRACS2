@@ -1,0 +1,23 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+
+class ConsolidatedReportService {
+	@PersistenceContext('main')	
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+
+	
+	@ProxyMethod
+	public def buildReport( entity ){
+		def data = [];
+		
+		data = em.sqlContext.createNamedQuery( 'account:getReportData' ).setParameter('charttype', entity.charttype).resultList;
+		
+		return data;
+	}
+}

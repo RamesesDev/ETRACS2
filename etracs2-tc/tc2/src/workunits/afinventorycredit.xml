@@ -1,6 +1,8 @@
 <workunit>
     <invokers>
         <invoker folderid="/menu/tc/txn" action="init" caption="Accountable Form Inventory Credit"/>
+    
+        <invoker type="formActions" action="view" caption="View Report" mnemonic="v" shortcut="ctrl v"/>
     </invokers>
     <code>
 <![CDATA[
@@ -82,7 +84,10 @@ class AFInventoryCreditController
         }
     ] as SubListModel;
     
-    
+    def view(){
+        def viewReport = InvokerUtil.lookupOpener("report:consolidatedreport",[type:'afinventorycredit']);
+        return viewReport;
+    }
     
 }
 
