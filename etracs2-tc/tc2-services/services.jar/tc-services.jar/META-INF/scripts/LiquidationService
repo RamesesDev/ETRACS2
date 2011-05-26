@@ -45,10 +45,10 @@ class LiquidationService {
 		liq.info.txnno = generateLiqNo();
 		liq.info.txndate = dtsvc.format( "yyyy-MM-dd", liq.dtposted);
 		closeRemittance( liq );
+		liq.fundsummaries = getFundSummaries( liq.objid );
 		em.validate( SCHEMANAME, liq );
 		em.create( SCHEMANAME, liq );
 		createListingItem( liq );
-		
 		return liq;
 	}
 	
@@ -298,5 +298,10 @@ class LiquidationService {
 		
 		return html;
 	}
-
+	
+	private def getFundSummaries(def liquidationid){
+		return em.sqlContext.createNamedQuery("liquidation:getFundSummaries")
+                 .setParameter("liquidationid", liquidationid )
+				 .resultList;
+	}
 }
