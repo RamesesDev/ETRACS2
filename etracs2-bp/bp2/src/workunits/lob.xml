@@ -1,0 +1,112 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/bp/master" action="init" caption="Line Of Business" />
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view'}" immediate="true" caption="Delete" mnemonic="d" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class LobController extends etracs2.groovy.CRUDController 
+{
+    @Binding
+    def binding
+    
+    @Service("LobService")
+    def svc;
+    
+    def searchAttribute
+    def attribute
+    
+    def onselectClassification = { lobclass ->
+        updateClassificationInfo( lobclass )
+        binding.refresh('entity.classification')
+    }
+    
+    def lookupClassification() {
+        return InvokerUtil.lookupOpener('lobclassification.lookup', [searchText:entity.classification, onselect:onselectClassification])
+    }
+    
+    def onselectAttribute = { attr ->
+        entity.attributes.add( attr )
+        attributeListHandler.load()
+        searchAttribute = null
+        binding.refresh('searchAttribute')
+    }
+    
+    def lookupAttribute() {
+        return InvokerUtil.lookupOpener('lobattribute.lookup', [searchText:searchAttribute, onselect:onselectAttribute])
+    }
+    
+    void updateClassificationInfo( lobclass ) {
+        entity.classificationid = lobclass?.objid
+        entity.classification = lobclass?.name 
+    }
+    
+    def attributeListHandler = [
+        getColumns : {
+            return [
+                new Column(name:'name', caption:'Attribute'),
+            ]
+        },
+        onRemoveItem : { removeAttribute( it ) },
+        fetchList    : { return entity?.attributes },
+    ] as SubListModel
+        
+    void removeAttribute( item ) {
+        if( MsgBox.confirm('Remove selected attribute?') ) {
+            entity.attributes.remove( item )
+        }
+    }
+    
+    void create() {
+        super.create()
+        attributeListHandler.load()
+    }
+    
+    void setSelectedItem( item ) {
+        super.setSelectedItem( item )
+        attributeListHandler.load()
+    }
+    
+    
+    
+    
+    def getService() { return svc; }
+    def getCreateFocusComponent() { return "entity.name"; }
+    def getEditFocusComponent() { return "entity.name"; }
+    def getListHandler() { return listHandler; }
+    
+    def createEntity() {
+        return [ 
+            attributes       : [] 
+        ]
+    }
+    
+    def listHandler = [
+        getRows    : { return 20; },
+        getColumns : {
+            return [
+                new Column(name:"name", caption:"Line of Business"),
+                new Column(name:"classification", caption:"Classification"),
+            ];
+        },
+        fetchList : { return list; },
+    ] as SubListModel;
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.bp.master.LobPage"/>
+    </pages>
+</workunit>
