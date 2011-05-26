@@ -62,6 +62,14 @@ class DateService {
 		return map;
 	}
 	
+	@ProxyMethod
+	public def buildCustomTimeStamp( dt ) {
+		// return a custom timestamp formatted as  YYYYQMMDD where YYYY - year, Q - quarter, MM - month, DD - day e.g, 2011-05-24 -> 201120524
+		// this could be used as criteria for date based queries such as year, qtrly, monthly and daily 
+		def map = parseDate(dt, null)
+		return map.year + '' + map.qtr +  (map.month + '').padLeft(2, '0') + (map.day+'').padLeft(2, '0')
+	}
+	
 	@ProxyMethod(local=true) 
 	public def getCurrentTimeStamp() {
 		return getTimeStamp( serverDate );
