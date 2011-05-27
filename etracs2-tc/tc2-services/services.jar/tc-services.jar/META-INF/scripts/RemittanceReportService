@@ -1,0 +1,45 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+import java.text.DecimalFormat;
+
+class RemittanceReportService {
+
+	@PersistenceContext("main")
+	def em;
+	
+	@Service("DateService")
+	def dtsvc;
+	
+	@ProxyMethod
+	public def generateRCD( rem ) {
+		
+		def data = [
+			collectorName 		: rem.info.collectorname,
+			collectorTitle		: rem.info.collectortitle,
+			docNo 				: rem.info.txnno,
+			dateposted			: dtsvc.parse( "yyyy-MM-dd", rem.info.txndate ),
+			totalDenomination	: rem.info.totalcash,
+			totalchecks			: rem.info.totalotherpayments,
+			amount				: rem.info.amount,
+			liquidatingOfficerName	: rem.liquidatingofficername,
+			liquidatingOfficerTitle	: rem.liquidatingofficertitle,
+			remittedforms			: getSerialRemittedFormsByRemittance( rem.objid ),
+			nonserialremittances 	: getNonSerialRemittedFormsByRemittance( rem.objid ),
+			otherpayments		: rem.otherpayments
+		]
+		
+		return data;
+		
+	}
+	
+	private def getSerialRemittedFormsByRemittance( remid ) {
+		return em.sqlContext.createNamedQuery( "remittance:getSerialRemittedFormsByRemittance" ).setParameters( [remittanceid:remid] ).resultList;
+	}
+	
+	private def getNonSerialRemittedFormsByRemittance( remid ) {
+		return em.sqlContext.createNamedQuery( "remittance:getNonSerialRemittedFormsByRemittance" ).setParameters( [remittanceid:remid] ).resultList;
+	}
+	
+	
+}
