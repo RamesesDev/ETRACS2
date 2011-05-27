@@ -1,4 +1,4 @@
-package etracs2.groovy
+package etracs2.tc.groovy
 
 import com.rameses.util.NumberToWords
 

@@ -59,9 +59,15 @@ abstract class CRUDController {
     void delete() {
         if( MsgBox.confirm("Delete record?") ) {
             service.delete( entity );
-            list.remove( entity );
+            removeItem( entity )
             mode = "view";
         }
+    }
+    
+    void removeItem( entity ) {
+        def item = findEntityFromList( entity )
+        list.remove( item );
+        listHandler.load()
     }
     
     void approve(){
@@ -79,14 +85,10 @@ abstract class CRUDController {
     
     void setSelectedItem( item ) {
         selectedItem = item;
-        if( mode !=  "create" ) {
-            entity = selectedItem
-                    if( ! entity ) {
-                entity = createEntity();
-                    }else{
-                entity = selectedItem;
-                    }
-        } else {
+        entity = selectedItem
+        if( ! entity ) {
+            entity = createEntity();
+        }else{
             open( entity.objid )
         }
     }

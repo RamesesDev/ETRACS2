@@ -1,0 +1,80 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/bp/master" action="init" caption="Variable" />
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view'}" immediate="true" caption="Delete" mnemonic="d" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class VariableController extends etracs2.groovy.CRUDController 
+{
+    @Binding
+    def binding
+    
+    @Service("VariableService")
+    def svc;
+    
+    def arrayvalue
+    
+    void doAdd() {
+        def value = MsgBox.prompt('Enter value:')
+        if( ! value ) return 
+        if( ! entity.arrayvalues.contains( value ) ) {
+            entity.arrayvalues.add( value.toUpperCase() )
+            binding.refresh('arrayvalue')
+        }
+    }
+    
+    void doRemove() {
+        if( MsgBox.confirm('Remove selected item?') ) {
+            entity.arrayvalues.remove( arrayvalue )
+            binding.refresh( 'arrayvalue' ) 
+        }
+    }
+    
+    def getDataTypes() {
+        return svc.getDataTypes()
+    }
+    
+    
+    
+    def getService() { return svc; }
+    def getCreateFocusComponent() { return "entity.name"; }
+    def getEditFocusComponent() { return "entity.name"; }
+    def getListHandler() { return listHandler; }
+    
+    def createEntity() {
+        return [ 
+            arrayvalues : [] 
+        ]
+    }
+    
+    def listHandler = [
+        getRows    : { return 20; },
+        getColumns : {
+            return [
+                new Column(name:"name", caption:"Name"),
+                new Column(name:"caption", caption:"Caption"),
+                new Column(name:"datatype", caption:"Data Type"),
+            ];
+        },
+        fetchList : { return list; },
+    ] as SubListModel;
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.bp.master.VariablePage"/>
+    </pages>
+</workunit>
