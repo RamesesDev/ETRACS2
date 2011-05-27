@@ -13,20 +13,18 @@ import com.rameses.rcp.annotations.*;
 import com.rameses.osiris2.client.*;
 import com.rameses.osiris2.reports.*;
 
-class IncomeAcctListingController extends etracs2.groovy.ReportController
-{
-    @Service("Var")
-    def var;
-    
-    @Service("DateService")w
-    def dateSvc;
-    
+class IncomeAcctListingController
+{   
+    @Service("ReportParameterService")
+    def svcParams;
+
     @Service("IncomeAcctListingService")
     def svc;
     
-    def getVarService() { return var; }
-    def getDateService() { return dateSvc; }
-    def getService() { return svc; }
+    def mode = "build";
+    def entity = [];
+    def data = [];
+
     def chartType;
     
     void init(){
@@ -43,16 +41,31 @@ class IncomeAcctListingController extends etracs2.groovy.ReportController
         entity.charttype = chartType;
     }
     
-    public String reportName(){
-        return "etracs2/tc/report/IncomeAcctListingwChart.jasper";
+    def view() {
+       data = svc.buildReport( entity );
+       if( !data ) throw new Exception("No results found.");
+       report.viewReport();
+       mode = 'view';
+       return "preview";
     }
     
-    def getStandardReportParams() {  
-        return super.standardReportParams + [
+    def back(){
+        mode = 'build';
+        return "reportPage";
+    }
+        
+    def report =[
+        getReportName : { "incomeaccount/incomeacct" },
+        getReportData : { return data; },
+        getParameters : { getStandardParameter(); }
+    ] as ServerReportModel;
+    
+    
+    def getStandardParameter(){
+        return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [ 
             charttype   : entity.charttype
         ]; 
     }
-    
 }
 
 ]]>        
