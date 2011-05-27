@@ -15,3 +15,39 @@ SELECT
 FROM remittancelist rml 
 INNER JOIN liquidationlist ll on ll.objid = rml.liquidationid 
 WHERE ll.objid = $P{liquidationid} 
+
+[getRemittanceFundTotalByLiquidationAndFund] 
+SELECT SUM( o.amount ), o.remittanceno, o.collectorname FROM revenue o 
+WHERE o.liquidationid = $P{liquidationid}  
+AND   o.fundid = $P{fundid} 
+GROUP BY o.remittanceno, o.collectorname 
+
+[getFundList] 
+SELECT o.objid, o.fundname FROM fund o 
+
+[getRevenueByGLAccountSRE]  
+SELECT  
+	a.pathbytitle AS pathtitle,  
+	a.acctcode AS acctcode,  
+	a.accttitle AS accttitle,
+	SUM(r.amount) AS amount 
+FROM revenue r 
+INNER JOIN account a ON a.objid = r.sreid 
+WHERE r.fundid = $P{fundid} 
+AND   r.liquidationid = $P{liquidationid}
+GROUP BY a.pathbytitle, a.acctcode, a.accttitle 
+ORDER BY a.acctlevel, acctcode 
+
+[getRevenueByGLAccountNGAS]  
+SELECT  
+	a.pathbytitle AS pathtitle,  
+	a.acctcode AS acctcode,  
+	a.accttitle AS accttitle,
+	SUM(r.amount) AS amount 
+FROM revenue r 
+INNER JOIN account a ON a.objid = r.ngasid
+WHERE r.fundid = $P{fundid} 
+AND   r.liquidationid = $P{liquidationid}
+AND   r.fundid = $P{fundid}
+GROUP BY a.pathbytitle, a.acctcode, a.accttitle 
+ORDER BY a.acctlevel, acctcode 
