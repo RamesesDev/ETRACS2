@@ -35,7 +35,7 @@ abstract class ReportController {
         getReportName : { reportName(); },
         getReportData : { return data; },
         getParameters : { getStandardReportParams(); }
-    ] as ReportModel;
+    ] as ServerReportModel;
     
     
     def getStandardReportParams() {
