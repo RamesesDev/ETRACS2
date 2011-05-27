@@ -5,9 +5,14 @@
         <invoker folderid="/menu/tc" action="init" caption="Liquidation" permission="liquidation.create" />
         
         <invoker type="formActions" action="init" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" permission="liquidation.create"/>
+        <invoker type="formActions" action="viewRCD" visibleWhen="#{mode == 'view' and entity.objid != null}"  immediate="true" caption="A. RCD" mnemonic="a"/>
         <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" caption="Next" mnemonic="n" />
-        <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'main'}" caption="Submit" mnemonic="s" icon="images/save24.png" permission="liquidation.submit"/>
-        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'main'}" caption="Submit" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view' and mode != 'report' and mode != 'rcd'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="reports" visibleWhen="#{mode == 'view' and entity.objid != null}"  immediate="true" caption="Reports" mnemonic="r" icon=""/>
+        <invoker type="formActions" action="back" visibleWhen="#{mode == 'report' or mode == 'rcd'}"  immediate="true" caption="Back" mnemonic="b" icon="images/back24.png"/>
+        <invoker type="formActions" action="viewReport" visibleWhen="#{mode == 'report'}"  immediate="true" caption="View" mnemonic="v" icon=""/>
+
     </invokers>
     
     <code lang="groovy">
@@ -15,10 +20,14 @@
         import com.rameses.rcp.common.*;
         import com.rameses.rcp.annotations.*;
         import com.rameses.osiris2.client.*;
+        import com.rameses.osiris2.reports.*
         import java.text.DecimalFormat;
         
         public class LiquidationController {
         
+            @Service("LiquidationReportService")
+            def reportSvc;
+
             @Service('LiquidationService')
             def svc;
             
@@ -167,7 +176,42 @@
                 return userService.getLiquidatingOfficer( OsirisContext.env.USERID );
             }
             
+            def reports(){
+                mode = 'report';
+                return "reports";
+            }
             
+            def back(){
+                mode = 'view';
+                return "view"
+            }
+            
+            def selectedreport;
+            def reports = [];
+            public def getReportList(){
+                if( !reports ) reports = InvokerUtil.lookupOpeners("liquidation:report", [liquidation: entity] );
+                return reports;
+            }
+
+            public def viewReport(){
+                return selectedreport;
+            }
+            
+            def reportModel = [
+                getReportName : { return 'liquidation/rcd'; },
+                getReportData : { return reportSvc.buildRCDReportData( entity.objid ); }
+            ] as ServerReportModel;
+            
+            public def getReport(){
+                return reportModel.report;
+            }
+            
+            public def viewRCD(){
+                reportModel.viewReport();
+                mode = 'rcd';
+                return 'rcd';
+            }
+
         }
         
         ]]>
@@ -179,5 +223,7 @@
         <page name="main" template="etracs2.tc.liquidation.LiquidationPage" />
         <page name="otherpayments" template="etracs2.tc.liquidation.OtherPaymentListPage" />
         <page name="remittances" template="etracs2.tc.liquidation.RemittanceListPage" />
+        <page name="reports" template="etracs2.tc.liquidation.LiquidationReportPage" />
+        <page name="rcd" template="etracs2.tc.PreviewPage" />
     </pages>
 </workunit>

@@ -58,3 +58,8 @@ r.liquidationofficername = $P{liquidatingofficername},
 r.liquidatingofficertitle = $P{liquidatingofficertitle} 
 WHERE rl.docstate = 'OPEN' 
 AND rl.collectorid = $P{collectorid}
+
+[getFundSummaries] 
+SELECT o.fundid, o.fundname, SUM( o.amount ) FROM revenue o
+WHERE o.liquidationid = $P{liquidationid} 
+GROUP BY o.fundid, o.fundname 
