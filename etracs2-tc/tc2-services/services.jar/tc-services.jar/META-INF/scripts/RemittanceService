@@ -71,7 +71,6 @@ class RemittanceService {
 	
 	@ProxyMethod
 	public def save( rem ) {
-		try {
 		validate( rem );
 		rem.objid = 'REM' + new UID();
 		rem.schemaname = SCHEMANAME;
@@ -88,7 +87,6 @@ class RemittanceService {
 		createListingItem( rem );
 		
 		return rem;
-		} catch (ex) { ex.printStackTrace(); }
 	}
 	
 	private validate( rem ) {
@@ -132,7 +130,6 @@ class RemittanceService {
 			remittanceno : rem.info.txnno, 
 			remittancedate : rem.info.txndate
 		];
-		print "closeReceipts " + params;
 		em.sqlContext.createNamedExecutor( "remittance:closeReceiptForRemittance" ).setParameters( params ).execute();
 		em.sqlContext.createNamedExecutor( "remittance:closeReceiptListForRemittance" ).setParameters( params ).execute();
 	}
@@ -162,7 +159,6 @@ class RemittanceService {
 	
 	@ProxyMethod
 	public def createRemittance( rem ) {
-		print "COLLECTOR ID " + rem.collectorid;
 		rem.receipts = getUnremittedReceipts( rem.collectorid );
 		if ( !rem.receipts )
 			throw new Exception( "There are no unremitted receipts." );
@@ -292,7 +288,7 @@ class RemittanceService {
 		""";
 
 		/* Cash Breakdown */
-		def d1000 = decformat.format( rem.info.d1000qty * 1000 );
+		/*def d1000 = decformat.format( rem.info.d1000qty * 1000 );
 		def d1000qty = numformat.format( rem.info.d1000qty );
 		def d500 = decformat.format( rem.info.d500qty * 500 );
 		def d500qty = numformat.format( rem.info.d500qty );
@@ -358,7 +354,33 @@ class RemittanceService {
 					</tr>
 				</table>
 			</div>
+		""";*/
+		html += """
+			<div class='data-group'>
+				<div class='data-header'>Breakdown</div>
+				<table class='data-table'>
+					<tr><th>Denomination</th><th>Qty</th><th>Amount</th></tr>
+			
 		""";
+		for (denom in rem.info.denominations) {
+			html += """
+				<tr>
+					<td class='align-right'>${denom.caption} x </td>
+					<td class='align-right'>${denom.qty}</td>
+					<td class='align-right'>${denom.amount}</td>
+				</tr>
+			""";
+		}
+		def totalcash = decformat.format( rem.info.totalcash );
+		html += """
+					<tr class='summary'>
+						<td colspan='2'>Total Cash</td>
+						<td class='align-right'>${totalcash}</td>
+					</tr>
+				</table>
+			</div>
+		""";
+		
 
 		/* Other Payment Details */
 		html += """

@@ -43,23 +43,30 @@ WHERE rm.liquidationid = $P{liquidationid}
 AND rm.objid = r.remittanceid 
 AND r.objid = pay.receiptid 
 
+[getFundSummaries] 
+SELECT fundid, fundname, SUM( amount ) FROM revenue 
+WHERE liquidationid = $P{liquidationid} 
+GROUP BY fundid, fundname 
+
+
 
 
 
 [closeRemittances]
-UPDATE remittancelist rl, remittance r 
-SET rl.docstate = 'CLOSED', 
-r.docstate = 'CLOSED', 
-r.liquidationid = $P{liquidationid}, 
-r.liquidationno = $P{liquidationno}, 
-r.liquidationdate = $P{liquidationdate}, 
-r.liquidatingofficerid = $P{liquidatingofficerid}, 
-r.liquidationofficername = $P{liquidatingofficername}, 
-r.liquidatingofficertitle = $P{liquidatingofficertitle} 
-WHERE rl.docstate = 'OPEN' 
-AND rl.collectorid = $P{collectorid}
+UPDATE remittance SET 
+	docstate = 'CLOSED', 
+	liquidationid = $P{liquidationid}, 
+	liquidationno = $P{liquidationno}, 
+	liquidationdate = $P{liquidationdate}, 
+	liquidatingofficerid = $P{liquidatingofficerid}, 
+	liquidatingofficername = $P{liquidatingofficername}, 
+	liquidatingofficertitle = $P{liquidatingofficertitle} 
+WHERE docstate = 'OPEN' 
+AND collectorid = $P{collectorid}
 
-[getFundSummaries] 
-SELECT o.fundid, o.fundname, SUM( o.amount ) FROM revenue o
-WHERE o.liquidationid = $P{liquidationid} 
-GROUP BY o.fundid, o.fundname 
+
+[closeRemittanceLists]
+UPDATE remittancelist 
+SET docstate = 'CLOSED' 
+WHERE docstate = 'OPEN' 
+AND collectorid = $P{collectorid}
