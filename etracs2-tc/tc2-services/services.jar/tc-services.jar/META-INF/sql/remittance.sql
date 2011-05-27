@@ -74,11 +74,6 @@ WHERE docstate = 'APPROVED'
 AND collectorid = $P{collectorid} 
 ORDER BY afid, stubno
 
-[getFundSummaries] 
-SELECT o.fundid, o.fundname, SUM( o.amount ) FROM receiptitem ri, receiptlist rl
-WHERE ri.receiptid = rl.objid 
-	AND rl.collectorid = $P{collectorid}
-GROUP BY o.fundid, o.fundname 
 
 
 

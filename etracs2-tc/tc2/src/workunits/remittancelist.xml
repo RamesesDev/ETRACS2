@@ -2,7 +2,10 @@
 <workunit>
     
     <invokers>
-        <invoker folderid="/menu/tc/txn" action="init" caption="Remittances" permission="remittance.viewlist"/>
+        <invoker folderid="/menu/tc/txn" caption="Remittances" permission="remittance.viewlist"/>
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" permission="remittance.create"/>
+        <invoker type="formActions" action="open" shortcut="ctrl O" immediate="true" caption="Open" mnemonic="o" icon="images/addnew24.png" permission="remittance.create"/>
     </invokers>
     
     <code lang="groovy">
@@ -19,8 +22,6 @@
             def entity;
             
             def searchText;
-            
-            def mode;
             
             def list;
             
@@ -45,17 +46,23 @@
 
             ] as PageListModel;
             
-            def getOpener() {
-                return new Opener( name:"tc2:remittance", action:"preview", params:[entity:selectedItem] )
-            }
-            
             void search() {
                 listHandler.load();
             }
             
-            void init() {
-                mode = 'view';
+            def create() {
+                return new WindowOpener( name:"tc2:remittance", action:"create" );
             }
+            
+            def open() {
+                return new WindowOpener( name:"tc2:remittance", action:"open", params:[entity:selectedItem] );
+            }
+            
+            def getHtml() {
+                return svc.getHtml( svc.open(selectedItem?.objid) );
+            }
+            
+            
 
         }
         
@@ -64,6 +71,6 @@
     </code>
     
     <pages>
-        <page template="etracs2.tc.ListMgmtPage" />
+        <page template="etracs2.tc.remittance.RemittanceListMgmtPage" />
     </pages>
 </workunit>

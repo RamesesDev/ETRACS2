@@ -70,7 +70,8 @@ class RemittanceService {
 	}
 	
 	@ProxyMethod
-	public def save( rem ) {	
+	public def save( rem ) {
+		try {
 		validate( rem );
 		rem.objid = 'REM' + new UID();
 		rem.schemaname = SCHEMANAME;
@@ -87,6 +88,7 @@ class RemittanceService {
 		createListingItem( rem );
 		
 		return rem;
+		} catch (ex) { ex.printStackTrace(); }
 	}
 	
 	private validate( rem ) {
@@ -114,7 +116,7 @@ class RemittanceService {
 			docstate : rem.docstate,
 			txnno : rem.info.txnno,
 			txndate : rem.info.txndate,
-			txntimestamp : dtsvc.buildCustomTimeStamp( rem.info.txnno ),
+			txntimestamp : dtsvc.buildCustomTimeStamp( rem.info.txndate ),
 			collectorid : rem.collectorid,
 			collectorname : rem.info.collectorname,
 			amount : rem.info.amount,
@@ -130,6 +132,7 @@ class RemittanceService {
 			remittanceno : rem.info.txnno, 
 			remittancedate : rem.info.txndate
 		];
+		print "closeReceipts " + params;
 		em.sqlContext.createNamedExecutor( "remittance:closeReceiptForRemittance" ).setParameters( params ).execute();
 		em.sqlContext.createNamedExecutor( "remittance:closeReceiptListForRemittance" ).setParameters( params ).execute();
 	}
@@ -159,6 +162,7 @@ class RemittanceService {
 	
 	@ProxyMethod
 	public def createRemittance( rem ) {
+		print "COLLECTOR ID " + rem.collectorid;
 		rem.receipts = getUnremittedReceipts( rem.collectorid );
 		if ( !rem.receipts )
 			throw new Exception( "There are no unremitted receipts." );
@@ -172,19 +176,11 @@ class RemittanceService {
 
 		rem.remittedforms = createRemittedForms( rem );
 		
-		rem.fundsummaries = getFundSummaries( rem.collectorid ); 
-		
 		return rem;
 	}
 	
 	private def getUnremittedReceipts( collectorid ) {
 		return em.sqlContext.createNamedQuery( "remittance:getUnremittedReceipts" ).setParameter( "collectorid", collectorid ).resultList;
-	}
-	
-	private def getFundSummaries(def collectorid){
-		return em.sqlContext.createNamedQuery("remittance:getFundSummaries")
-                 .setParameter("collectorid", collectorid )
-				 .resultList;
 	}
 	
 	private def createRemittedForms( rem ) {

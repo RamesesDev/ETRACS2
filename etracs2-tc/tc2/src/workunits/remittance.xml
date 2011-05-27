@@ -10,6 +10,7 @@
         <invoker type="formActions" action="back" shortcut="ctrl B" visibleWhen="#{mode == 'main'}" caption="Back" mnemonic="b" />
         <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'main'}" caption="Submit" mnemonic="s" icon="images/save24.png" permission="remittance.submit"/>
         <invoker type="formActions" action="viewRCD" shortcut="ctrl R" visibleWhen="#{mode == 'view'}" immediate="true" caption="View RCD" mnemonic="r" icon="images/addnew24.png" permission="remittance.create"/>
+        <invoker type="formActions" action="viewOtherReports" shortcut="ctrl O" visibleWhen="#{mode == 'view'}" immediate="true" caption="Other Reports" mnemonic="o" icon="images/addnew24.png" permission="remittance.create"/>
     </invokers>
     
     <code lang="groovy">
@@ -41,11 +42,14 @@
             
             def collector;
         
+            def denominationOpener;
+            
             def create() {
                 collector = usersvc.getCollector( OsirisContext.env.USERID );
                 mode = 'init';
                 caller?.mode = 'create';
                 entity = [
+                    collectorid : collector.objid,
                     info : buildInfo(),
                     receipts : [],
                     otherpayments : [],
@@ -63,11 +67,6 @@
                 return 'main';
             }
             
-            def view() {
-                mode = 'view';
-                return 'view';
-            }
-            
             def getHtml() {
                 return svc.getHtml( entity );
             }
@@ -75,6 +74,7 @@
             def next() {
                 entity = svc.createRemittance( entity );
                 mode = 'main';
+                denominationOpener = InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:entity.info.totalcash, list:entity.info.denominations]);
                 return 'main';
             }
             
@@ -84,19 +84,19 @@
             }
             
             def submit() {
-                if (! MsgBox.confirm( "Do you want to submit this codument?" ) )
+                if (! MsgBox.confirm( "Do you want to submit this document?" ) )
                     return null;
+                entity.info.denominations = denominationOpener.handle.list;
                 entity = svc.save( entity );
-                return view();
+                if (caller)
+                    caller.binding.refresh();
+                return 'main';
             }
             
             def close() {
                 return '_close';
             }
             
-            def getDenominationOpener() {
-                return InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:entity.info.totalcash, list:entity.info.denominations]);
-            }
             
             def viewOtherPayments() {
                 return new PopupOpener( outcome:'otherpayments' );
@@ -110,15 +110,9 @@
                 return new PopupOpener( outcome:'receipts' );
             }
             
-            def getCashBreakdownHandler() {
-                println "Cash Breakdown";
-                return new Opener( name:"tc2:cashbreakdown", params:[entity:entity.info] );
-            }
-            
             def buildInfo() {
                 return [
                     txndate : dtsvc.getServerDate(),
-                    collectorid : collector.objid,
                     collectorname : collector.name,
                     collectortitle : collector.jobtitle,
                     amount : 0.00,
@@ -209,6 +203,9 @@
             def viewRCD() {
                 return new Opener( name:'tc2:remittance_report_A', action:'view', params:[entity:entity] );
             }
+            
+            def viewOtherReports() {
+            }
 
         }
         
@@ -222,5 +219,6 @@
         <page name="otherpayments" template="etracs2.tc.remittance.OtherPaymentListPage" />
         <page name="remittedforms" template="etracs2.tc.remittance.RemittedFormListPage" />
         <page name="receipts" template="etracs2.tc.remittance.ReceiptListPage" />
+        <page name="otherreports" template="etracs2.tc.remittance.OtherReportsPage" />
     </pages>
 </workunit>
