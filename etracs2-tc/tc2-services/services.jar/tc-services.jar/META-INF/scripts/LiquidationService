@@ -36,6 +36,7 @@ class LiquidationService {
 	
 	@ProxyMethod
 	public def create( liq ) {
+		try {
 		validate( liq );
 		liq.objid = "LIQ" + new UID();
 		liq.schemaname = SCHEMANAME;
@@ -50,6 +51,7 @@ class LiquidationService {
 		em.create( SCHEMANAME, liq );
 		createListingItem( liq );
 		return liq;
+		} catch (ex) { ex.printStackTrace(); }
 	}
 	
 	private void validate( liq ) {
@@ -62,6 +64,9 @@ class LiquidationService {
 				+ liq.info.d10qty * 10.00
 				+ liq.info.coins ) != liq.info.totalcash )
 			 throw new Exception( "Cash Received must be equal to Cash Expected." );
+		def liqTemp = createLiquidation( liq );
+		if (liq.remittances.size() != liqTemp.remittances.size() )
+			throw new Exception( "There are new transactions not included in this Liquidation." );
 	}
 	
 	private def generateLiqNo() {
@@ -86,6 +91,7 @@ class LiquidationService {
 				collectorid : collector.objid
 			];
 			em.sqlContext.createNamedExecutor( "liquidation:closeRemittances" ).setParameters( params ).execute();
+			em.sqlContext.createNamedExecutor( "liquidation:closeRemittanceLists" ).setParameters( params ).execute();
 		}
 	}
 	
