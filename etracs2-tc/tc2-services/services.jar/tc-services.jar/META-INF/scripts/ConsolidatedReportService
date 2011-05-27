@@ -1,0 +1,301 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class ConsolidatedReportService {
+	@PersistenceContext('main')	
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = "craaf:craaf"
+	def schemaversion = "1.0"
+	
+	def cal = Calendar.getInstance()
+	
+	@ProxyMethod
+	public def buildReport( entity ){
+		def year = Integer.parseInt( entity.year );
+		
+		def data = [];
+		
+		
+		
+		
+		return data;
+	}
+	
+	@ProxyMethod
+	public void createCRAAF( iraf ){
+		def year = cal.get(Calendar.YEAR);
+		def month = cal.get(Calendar.MONTH) + 1;
+		println "SIZE: " + iraf.rcvitems.size();
+		if( iraf.info.rivtype == 'LGU' ){
+			iraf.rcvitems.each{ ri ->
+				def craaf = getList( ri.afid );
+				def afinventoryid = getAFInventoryId( iraf.objid, ri.afid );
+				
+				if( !craaf ) init( iraf.objid, ri );
+				else if( craaf.afinventoryid != afinventoryid ) createCRAAFByIRAF( iraf.objid, ri );
+			}
+		}
+		else updateCRAAFbyIRAF( iraf );
+	}
+	
+	private void init( irafid, ri ){
+		println "init";
+		def afinventoryid = getAFInventoryId( irafid, ri.afid );
+		
+		if( ri.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
+		
+		if( ri.prefix.length() != 0 ) ri.prefix = ri.prefix + "-";
+		else ri.prefix = "";
+		
+		if( ri.suffix.length() != 0 ) ri.suffix = "-" + ri.suffix;
+		else ri.suffix = "";
+		
+		def craaf = [
+			objid 			: 'CRAAF' + new UID(),
+			schemaname		: schemaname,
+			schemaversion	: schemaversion,
+			afinventoryid	: afinventoryid,
+			craafyear		: cal.get(Calendar.YEAR),
+			craafmonth		: cal.get(Calendar.MONTH) + 1,
+			afid			: ri.afid,
+			beginqty		: ri.qtyreceived,
+			beginfrom		: ri.prefix + ri.startseries + ri.suffix,
+			beginto			: ri.prefix + ri.endseries + ri.suffix,
+			receivedqty		: 0,
+			issuedqty		: 0,
+			canceledqty		: 0,
+			endingqty		: ri.qtyreceived,
+			endingfrom		: ri.prefix + ri.startseries + ri.suffix,
+			endingto		: ri.prefix + ri.endseries + ri.suffix
+		];
+		
+		em.validate( craaf.schemaname, craaf );
+		em.save( craaf.schemaname, craaf );
+	}
+	
+	private def getList( afid ){
+		return em.sqlContext.createNamedQuery('consolidatedreport:getList').setParameter("afid", afid ).singleResult;
+	}
+	
+	private def getAFInventoryId( irafid, afid ){
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryId' ).setParameters([irafid:irafid, afid:afid]).singleResult.objid;
+	}
+	
+	private void createCRAAFByIRAF( irafid, ri ){
+		println "createCRAAFByIRAF";
+		
+		def afinventoryid = getAFInventoryId( irafid, ri.afid );
+		
+		if( ri.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
+		
+		if( ri.prefix.length() != 0 ) ri.prefix = ri.prefix + "-";
+		else ri.prefix = "";
+		
+		if( ri.suffix.length() != 0 ) ri.suffix = "-" + ri.suffix;
+		else ri.suffix = "";
+		
+		def craaf = [
+			objid 			: 'CRAAF' + new UID(),
+			schemaname		: schemaname,
+			schemaversion	: schemaversion,
+			afinventoryid	: afinventoryid,
+			craafyear		: cal.get(Calendar.YEAR),
+			craafmonth		: cal.get(Calendar.MONTH) + 1,
+			afid			: ri.afid,
+			beginqty		: 0,
+			receivedqty		: ri.qtyreceived,
+			receivedfrom	: ri.prefix + ri.startseries + ri.suffix,
+			receivedto		: ri.prefix + ri.endseries + ri.suffix,
+			issuedqty		: 0,
+			canceledqty		: 0,
+			endingqty		: ri.qtyreceived,
+			endingfrom		: ri.prefix + ri.startseries + ri.suffix,
+			endingto		: ri.prefix + ri.endseries + ri.suffix
+		];
+		
+		em.validate( craaf.schemaname, craaf );
+		em.save( craaf.schemaname, craaf );
+	
+	}
+	
+	private void updateCRAAFbyIRAF( iraf ){
+		println "updateCRAAFbyIRAF";
+		
+		iraf.rcvitems.each{ ri ->
+			def afic = getAFInventoryCredit( iraf.objid, ri.afid );
+			def series = getSeries( iraf.objid, ri.afid );
+			def craafitem = getCRAAFItem( afic.afinventoryid, ri.afid, "" );
+			
+			if( afic.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
+			
+			if( afic.prefix.length() != 0 ) afic.prefix = afic.prefix + "-";
+			else afic.prefix = "";
+			
+			if( afic.suffix.length() != 0 ) afic.suffix = "-" + afic.suffix;
+			else afic.suffix = "";
+			
+			em.sqlContext.createNamedExecutor( 'consolidatedreport:updateCRAAFbyIRAFCol' )
+					.setParameters(
+						[
+							afinventoryid	: afic.afinventoryid,
+							afid			: afic.afid,
+							issuedqty		: craafitem.issuedqty + ri.qtyreceived,
+							issuedfrom		: afic.prefix + series.startseries + afic.suffix,
+							issuedto		: afic.prefix + series.endseries + afic.suffix,
+							endingqty		: craafitem.endingqty - ri.qtyreceived,
+							endingfrom		: afic.prefix + (series.endseries + 1) + afic.suffix,
+							endingto		: craafitem.endingto
+						]
+					).execute();
+			createCRAAFCredit( iraf.objid, craaf.objid, 'IRAF', iraf.txndate, ri.qtyreceived );
+		}
+	}
+	
+	private def getAFInventoryCredit( irafid, afid ){
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryCredit' ).setParameters([irafid:irafid, afid:afid]).singleResult;
+	}
+	
+	private def getSeries( irafid, afid ){
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getStartEndSeries' ).setParameters([irafid:irafid, afid:afid]).singleResult;
+	}
+	
+	private def getCRAAFItem( afinventoryid, afid, afinventorycreditid ){
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getCRAAFItem' ).setParameters([afinventoryid:afinventoryid, afinventorycreditid:afinventorycreditid, afid:afid]).singleResult;
+	}
+	
+	@ProxyMethod
+	public void updateCRAAFbyRemittance( rem ){
+		def year = cal.get(Calendar.YEAR);
+		def month = cal.get(Calendar.MONTH) + 1;
+		
+		rem.remittedforms.each{ rf -> 
+			def afcontrol = getAFControl( rf.afcontrolid );
+			def craafitem = getCRAAFItem( "", rf.afid, afcontrol.afinventorycreditid );
+			
+			if( !craafitem ) 
+				createCRAAFbyRemittance( rem, rf, afcontrol );
+			if( craafitem.year == year && craafitem.month == month && rf.issuedqty != 0 )
+				( rem.objid, craafitem, rf, afcontrol );
+			else if( craafitem.year != year || craafitem.month != month )
+				createCRAAFbyRemittanceNextMonth( rem, rf, afcontrol );
+		}
+	}
+	
+	private void createCRAAFbyRemittance( rem, rf, afcontrol ){
+		
+		if( afcontrol.prefix.length() != 0 ) afcontrol.prefix = afcontrol.prefix + "-";
+		else afcontrol.prefix = "";
+		
+		if( afcontrol.suffix.length() != 0 ) afcontrol.suffix = "-" + afcontrol.suffix;
+		else afcontrol.suffix = "";
+		
+		def craaf = [
+			objid 			: 'CRAAF' + new UID(),
+			schemaname		: schemaname,
+			schemaversion	: schemaversion,
+			afinventorycreditid	: afcontrol.afinventorycreditid,
+			craafyear		: cal.get(Calendar.YEAR),
+			craafmonth		: cal.get(Calendar.MONTH) + 1,
+			collectorid		: rem.info.collectorid,
+			collectorname	: rem.info.collectorname,
+			collectortitle	: rem.info.collectortitle,
+			afid			: rf.afid,
+			beginqty		: 0,
+			receivedqty		: afcontrol.qtyreceived,
+			receivedfrom	: afcontrol.prefix + afcontrol.startseries + afcontrol.suffix,
+			receivedto		: afcontrol.prefix + afcontrol.endseries + afcontrol.suffix,
+			issuedqty		: 0,
+			canceledqty		: 0,
+			endingqty		: afcontrol.qtyreceived,
+			endingfrom		: afcontrol.prefix + afcontrol.startseries + afcontrol.suffix,
+			endingto		: afcontrol.prefix + afcontrol.endseries + afcontrol.suffix
+		];
+		
+		em.validate( craaf.schemaname, craaf );
+		em.save( craaf.schemaname, craaf );
+	}
+	
+	private void createCRAAFbyRemittanceNextMonth( rem, rf, afcontrol ){
+		
+		def craaf = [
+			objid 			: 'CRAAF' + new UID(),
+			schemaname		: schemaname,
+			schemaversion	: schemaversion,
+			afinventorycreditid	: afcontrol.afinventorycreditid,
+			craafyear		: cal.get(Calendar.YEAR),
+			craafmonth		: cal.get(Calendar.MONTH) + 1,
+			collectorid		: rem.info.collectorid,
+			collectorname	: rem.info.collectorname,
+			collectortitle	: rem.info.collectortitle,
+			afid			: rf.afid,
+			beginqty		: rf.beginqty,
+			beginfrom		: rf.beginfrom,
+			beginto			: rf.beginto,
+			receivedqty		: 0,
+			issuedqty		: rf.issuedqty,
+			issuedfrom		: rf.issuedfrom,
+			issuedto		: rf.issuedto,
+			canceledqty		: 0,
+			endingqty		: rf.endingqty,
+			endingfrom		: rf.endingfrom,
+			endingto		: rf.endingto
+		];
+		
+		em.validate( craaf.schemaname, craaf );
+		em.save( craaf.schemaname, craaf );
+		
+	}
+	
+	private void updateCRAAFbyRemittance( remid, craafitem, rf, afcontrol ){
+		
+		if( afcontrol.prefix.length() != 0 ) afcontrol.prefix = afcontrol.prefix + "-";
+		else afcontrol.prefix = "";
+		
+		if( afcontrol.suffix.length() != 0 ) afcontrol.suffix = "-" + afcontrol.suffix;
+		else afcontrol.suffix = "";
+		
+		em.sqlContext.createNamedExecutor('consolidatedreport:updateCRAAFbyRemittance')
+				.setParameters(
+					[
+						objid		: craafitem.objid,
+						issuedqty	: craafitem.issuedqty + rf.issuedqty,
+						issuedfrom	: afcontrol.prefix + rf.issuedfrom + afcontrol.suffix,
+						issuedto	: afcontrol.prefix + rf.issuedto + afcontrol.suffix,
+						endingqty	: rf.endingqty,
+						endingfrom	: afcontrol.prefix + rf.endingfrom + afcontrol.suffix,
+						endingto	: afcontrol.prefix + rf.endingto + afcontrol.suffix
+					]
+				).execute();	
+		
+		createCRAAFCredit( remid, craafitem.objid, 'REMITTANCE', rem.info.txndate, rf.issuedqty );
+	}
+	
+	private def getAFControl( afcontrolid ){
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFControl' ).setParameter("afcontrolid", afcontrolid).singleResult;
+	}
+	
+	private void createCRAAFCredit( objid, craafid, type, txndate, qty ){
+		def craafCredit = [
+			objid			: 'CRAAFCR' + new UID(),
+			schemaname		: 'craafcredit:craafcredit',
+			schemaversion	: '1.0',
+			craafid			: craafid,
+			reftype			: type,
+			refno			: objid,
+			refdate			: txndate,
+			qty				: qty
+		]	
+		
+		em.validate( craafCredit.schemaname, craafCredit );
+		em.save( craafCredit.schemaname, craafCredit );
+	}
+
+}

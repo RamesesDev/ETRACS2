@@ -1,6 +1,9 @@
 [getList]
 SELECT * FROM afinventory WHERE iraftype = 'LGU'
 
+[getById]
+SELECT * FROM afinventory WHERE objid = $P{objid}
+
 [getListByState]
 SELECT * FROM afinventory WHERE iraftype = 'LGU' AND docstate = $P{docstate}
 
@@ -31,3 +34,6 @@ SELECT * FROM afinventory WHERE iraftype = 'LGU' AND startseries LIKE $P{startse
 [getSummaryList]
 SELECT afid, aftype, SUM(qtyonhand) AS totalqty FROM afinventory WHERE docstate = 'OPEN' AND iraftype = 'LGU'   
 GROUP BY afid, aftype
+
+[getInventoryCreditByAFInventoryId]
+SELECT * FROM afinventorycredit WHERE afinventoryid = $P{afinventoryid}

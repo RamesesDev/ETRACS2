@@ -25,15 +25,19 @@ class AFInventoryController
     @Service("Var")
     def var;
     
+    def selectedItem;
     def list;
+    def listCredit;
     def searchText;
     def docstate;
     def reportData = [];
+    def afsummary;
     
-    def formActions
+    def formActions;
     
     
     void init() {
+       println "init";
        list = svc.getList( searchText, docstate );
        formActions = InvokerUtil.lookupActions('afinventory.reports', [:])
     }
@@ -45,16 +49,18 @@ class AFInventoryController
     void setDocstate( docstate ){
         this.docstate = docstate;
         list = svc.getListByDocState( docstate );
-        listHandler.load();
+        inventoryHandler.load();
+        inventoryCreditHandler.load();
     }
     
     void search(){
         list = svc.getList( searchText, docstate );
         if( !list ) throw new Exception( "No records found." );
-        listHandler.load();
+        inventoryHandler.load();
+        inventoryCreditHandler.load();
     }
 
-    def listHandler = [
+    def inventoryHandler = [
         getRows    : { return 20; },
         getColumns : {
             return [
@@ -79,7 +85,27 @@ class AFInventoryController
             return list;
         },
     ] as SubListModel;
-
+    
+    def inventoryCreditHandler = [
+        getRows    : { return 20; },
+        getColumns : {
+            return [
+                new Column( name:"docstate", caption:"State" ),
+                new Column( name:"irafno", caption:"IRAF No." ),
+                new Column( name:"iraftype", caption:"Type" ),
+                new Column( name:"afid", caption:"AF No.", minWidth:60 ),
+                new Column( name:"aftype", caption:"AF Type", minWidth:60 ),
+                new Column( name:"qtyissued", caption:"QtyIssued", minWidth:30 ),
+                new Column( name:"prefix", caption:"Prefix", minWidth:20 ),
+                new Column( name:"startseries", caption:"Start", minWidth:50 ),
+                new Column( name:"endseries", caption:"End", minWidth:50 ),
+                new Column( name:"suffix", caption:"Suffix", minWidth:20 ),
+            ];
+        },
+        fetchList : { 
+            return listCredit;
+        },
+    ] as SubListModel;
     
     def afListHandler = [
         getRows     : { return 5; },
@@ -95,6 +121,25 @@ class AFInventoryController
         }
     ] as SubListModel;
     
+    void setAfsummary( item ){
+        afsummary = item;
+        
+        if( afsummary ) loadItems( afsummary.afid );
+    }
+    
+    void loadItems( afid ){
+        list = svc.loadInventory( afid );
+    }
+   
+    void setSelectedItem( item ) {
+        selectedItem = item;
+        
+        if( selectedItem ) loadCredits( selectedItem );
+    }
+    
+    void loadCredits( item ) {
+        listCredit = svc.loadCredit( item );
+    }
     
     def view(){
         def viewReport = InvokerUtil.lookupOpener("report:consolidatedreport",[:]);
