@@ -28,7 +28,7 @@ public class Main {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws Exception {
-        //UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         Map params = new HashMap();
         params.put("default.host", "localhost:8080");
         params.put("app.context", "bohol");
