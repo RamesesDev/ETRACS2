@@ -21,19 +21,14 @@ class ConsolidatedReportService {
 	public def buildReport( entity ){
 		def year = Integer.parseInt( entity.year );
 		
-		def data = [];
-		
-		
-		
-		
-		return data;
+		return em.sqlContext.createNamedQuery('consolidatedreport:getReportData').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
 	}
 	
 	@ProxyMethod
 	public void createCRAAF( iraf ){
 		def year = cal.get(Calendar.YEAR);
 		def month = cal.get(Calendar.MONTH) + 1;
-		println "SIZE: " + iraf.rcvitems.size();
+		
 		if( iraf.info.rivtype == 'LGU' ){
 			iraf.rcvitems.each{ ri ->
 				def craaf = getList( ri.afid );
@@ -47,7 +42,7 @@ class ConsolidatedReportService {
 	}
 	
 	private void init( irafid, ri ){
-		println "init";
+		
 		def afinventoryid = getAFInventoryId( irafid, ri.afid );
 		
 		if( ri.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
@@ -90,7 +85,6 @@ class ConsolidatedReportService {
 	}
 	
 	private void createCRAAFByIRAF( irafid, ri ){
-		println "createCRAAFByIRAF";
 		
 		def afinventoryid = getAFInventoryId( irafid, ri.afid );
 		
@@ -127,7 +121,6 @@ class ConsolidatedReportService {
 	}
 	
 	private void updateCRAAFbyIRAF( iraf ){
-		println "updateCRAAFbyIRAF";
 		
 		iraf.rcvitems.each{ ri ->
 			def afic = getAFInventoryCredit( iraf.objid, ri.afid );
@@ -155,7 +148,7 @@ class ConsolidatedReportService {
 							endingto		: craafitem.endingto
 						]
 					).execute();
-			createCRAAFCredit( iraf.objid, craaf.objid, 'IRAF', iraf.txndate, ri.qtyreceived );
+			createCRAAFCredit( iraf.objid, craafitem.objid, 'IRAF', iraf.txndate, ri.qtyreceived );
 		}
 	}
 	
@@ -180,17 +173,23 @@ class ConsolidatedReportService {
 			def afcontrol = getAFControl( rf.afcontrolid );
 			def craafitem = getCRAAFItem( "", rf.afid, afcontrol.afinventorycreditid );
 			
-			if( !craafitem ) 
-				createCRAAFbyRemittance( rem, rf, afcontrol );
-			if( craafitem.year == year && craafitem.month == month && rf.issuedqty != 0 )
-				( rem.objid, craafitem, rf, afcontrol );
-			else if( craafitem.year != year || craafitem.month != month )
-				createCRAAFbyRemittanceNextMonth( rem, rf, afcontrol );
+			if( rf.issuedqty == null ) rf.issuedqty = 0;
+			
+			if( !craafitem )
+				createCRAAFbyRem( rem, rf, afcontrol );
+			
+			def craaf = getCRAAFItem( "", rf.afid, afcontrol.afinventorycreditid );
+			
+			if( craaf.craafyear == year && craaf.craafmonth == month && rf.issuedqty != 0 )
+				updateCRAAFbyRem( rem.objid, craaf, rf, afcontrol, rem.info.txndate );
+			if( craaf.craafyear != year || craaf.craafmonth != month )
+				createCRAAFbyRemNextMonth( rem, rf, afcontrol );
+			
 		}
 	}
 	
-	private void createCRAAFbyRemittance( rem, rf, afcontrol ){
-		
+	private void createCRAAFbyRem( rem, rf, afcontrol ){
+		println "createCRAAFbyRem";
 		if( afcontrol.prefix.length() != 0 ) afcontrol.prefix = afcontrol.prefix + "-";
 		else afcontrol.prefix = "";
 		
@@ -204,7 +203,7 @@ class ConsolidatedReportService {
 			afinventorycreditid	: afcontrol.afinventorycreditid,
 			craafyear		: cal.get(Calendar.YEAR),
 			craafmonth		: cal.get(Calendar.MONTH) + 1,
-			collectorid		: rem.info.collectorid,
+			collectorid		: rem.collectorid,
 			collectorname	: rem.info.collectorname,
 			collectortitle	: rem.info.collectortitle,
 			afid			: rf.afid,
@@ -223,8 +222,8 @@ class ConsolidatedReportService {
 		em.save( craaf.schemaname, craaf );
 	}
 	
-	private void createCRAAFbyRemittanceNextMonth( rem, rf, afcontrol ){
-		
+	private void createCRAAFbyRemNextMonth( rem, rf, afcontrol ){
+		println "createCRAAFbyRemNextMonth";
 		def craaf = [
 			objid 			: 'CRAAF' + new UID(),
 			schemaname		: schemaname,
@@ -240,7 +239,7 @@ class ConsolidatedReportService {
 			beginfrom		: rf.beginfrom,
 			beginto			: rf.beginto,
 			receivedqty		: 0,
-			issuedqty		: rf.issuedqty,
+			issuedqty		: (rf.issuedqty ? rf.issuedqty : 0),
 			issuedfrom		: rf.issuedfrom,
 			issuedto		: rf.issuedto,
 			canceledqty		: 0,
@@ -254,8 +253,8 @@ class ConsolidatedReportService {
 		
 	}
 	
-	private void updateCRAAFbyRemittance( remid, craafitem, rf, afcontrol ){
-		
+	private void updateCRAAFbyRem( remid, craaf, rf, afcontrol, txndate ){
+		println "updatedCRAAFbyRem"
 		if( afcontrol.prefix.length() != 0 ) afcontrol.prefix = afcontrol.prefix + "-";
 		else afcontrol.prefix = "";
 		
@@ -265,8 +264,8 @@ class ConsolidatedReportService {
 		em.sqlContext.createNamedExecutor('consolidatedreport:updateCRAAFbyRemittance')
 				.setParameters(
 					[
-						objid		: craafitem.objid,
-						issuedqty	: craafitem.issuedqty + rf.issuedqty,
+						objid		: craaf.objid,
+						issuedqty	: craaf.issuedqty + rf.issuedqty,
 						issuedfrom	: afcontrol.prefix + rf.issuedfrom + afcontrol.suffix,
 						issuedto	: afcontrol.prefix + rf.issuedto + afcontrol.suffix,
 						endingqty	: rf.endingqty,
@@ -275,7 +274,7 @@ class ConsolidatedReportService {
 					]
 				).execute();	
 		
-		createCRAAFCredit( remid, craafitem.objid, 'REMITTANCE', rem.info.txndate, rf.issuedqty );
+		createCRAAFCredit( remid, craaf.objid, 'REMITTANCE', txndate, rf.issuedqty );
 	}
 	
 	private def getAFControl( afcontrolid ){
