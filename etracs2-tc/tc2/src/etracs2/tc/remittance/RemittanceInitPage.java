@@ -32,7 +32,7 @@ public class RemittanceInitPage extends javax.swing.JPanel {
 
         setLayout(new java.awt.BorderLayout());
 
-        setPreferredSize(new java.awt.Dimension(583, 466));
+        setPreferredSize(new java.awt.Dimension(643, 466));
         xActionBar1.setButtonFont(new java.awt.Font("Arial", 1, 12));
         xActionBar1.setName("formActions");
         add(xActionBar1, java.awt.BorderLayout.NORTH);

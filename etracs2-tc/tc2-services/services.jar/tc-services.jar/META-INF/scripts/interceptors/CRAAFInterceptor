@@ -1,0 +1,32 @@
+import com.rameses.annotations.*;
+
+class CRAAFInterceptor
+{
+	@Service("ConsolidatedReportService")
+	def svc;
+	
+	@Service("LogService")
+	def logService;
+	
+	@Env
+	def env;
+	
+	@After(pattern="IRAFService.approve") 
+	public void interceptIRAFApproved( evt ) {
+		def iraf = evt.result;
+
+		svc.createCRAAF( iraf );
+		
+		logService.log("GENERATE", "CRAAF", iraf.objid);	
+	}
+	
+	@After(pattern="RemittanceService.save") 
+	public void interceptRemittanceCreate( evt ) {
+		def rem = evt.result;
+		
+		svc.updateCRAAFbyRemittance( rem );
+		
+		logService.log("UPDATE", "CRAAF", rem.objid);
+	}
+}
+

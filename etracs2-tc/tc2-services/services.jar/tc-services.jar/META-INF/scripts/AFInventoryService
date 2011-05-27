@@ -32,9 +32,24 @@ class AFInventoryService
 	}
 	
 	@ProxyMethod
+	public def open( objid ){
+		return em.sqlContext.createNamedQuery( 'afinventory:getById' ).setParameter("objid", objid).singleResult;
+	}
+	
+	@ProxyMethod
 	public def getListByDocState( docstate ){
 		if( docstate == 'ALL' ) return getListByQuery( 'afinventory:getList', [:] );
 		else return em.sqlContext.createNamedQuery( 'afinventory:getListByState' ).setParameter( "docstate", docstate ).resultList;
+	}
+	
+	@ProxyMethod
+	public def loadInventory( afid ){
+		return getListByQuery( 'afinventory:getListByAfId', [afid:afid] );
+	}
+	
+	@ProxyMethod
+	public def loadCredit( item ){
+		return em.sqlContext.createNamedQuery( 'afinventory:getInventoryCreditByAFInventoryId' ).setParameter( 'afinventoryid', item.objid ).resultList;
 	}
 	
 	@ProxyMethod

@@ -29,8 +29,19 @@ AND rl.objid = $P{remittanceid}
 [getRemittedFormsByRemittance]
 SELECT * FROM remittedform 
 WHERE remittanceid = $P{remittanceid} 
-ORDER BY afid, receivedfrom
+ORDER BY afid, stubno
 
+[getSerialRemittedFormsByRemittance]
+SELECT * FROM remittedform 
+WHERE remittanceid = $P{remittanceid} 
+	AND aftype = 'serial' 
+ORDER BY afid, stubno
+
+[getNonSerialRemittedFormsByRemittance]
+SELECT * FROM remittedform 
+WHERE remittanceid = $P{remittanceid} 
+	AND aftype = 'nonserial' 
+ORDER BY afid, stubno
 
 
 [getUnremittedReceipts]
@@ -68,6 +79,7 @@ ORDER BY afid, stubno
 
 
 
+
 [updateAfControlForRemittance]
 UPDATE afcontrol SET 
 	beginseries = currentseries, 
@@ -85,21 +97,21 @@ WHERE beginqty = 0
   AND collectorid = $P{collectorid}
 
 [closeReceiptForRemittance]
-UPDATE receipt r SET 
-	r.docstate = 'CLOSED', 
-	r.remittanceid = $P{remittanceid}, 
-	r.remittanceno = $P{remittanceno}, 
-	r.remittancedate = $P{remittancedate} 
-WHERE r.collectorid = $P{collectorid} 
-  AND r.docstate = 'OPEN' 
+UPDATE receipt SET 
+	docstate = 'CLOSED', 
+	remittanceid = $P{remittanceid}, 
+	remittanceno = $P{remittanceno}, 
+	remittancedate = $P{remittancedate} 
+WHERE collectorid = $P{collectorid} 
+  AND docstate = 'OPEN' 
   
 [closeReceiptListForRemittance]
-UPDATE receiptlist rl SET 
-	rl.docstate = 'CLOSED', 
-	rl.remittanceid = $P{remittanceid}, 
-	rl.remittanceno = $P{remittanceno}, 
-	rl.remittancedate = $P{remittancedate}
-WHERE rl.collectorid = $P{collectorid} 
-  AND rl.docstate = 'OPEN' 
+UPDATE receiptlist SET 
+	docstate = 'CLOSED', 
+	remittanceid = $P{remittanceid}, 
+	remittanceno = $P{remittanceno}, 
+	remittancedate = $P{remittancedate}
+WHERE collectorid = $P{collectorid} 
+  AND docstate = 'OPEN' 
   
   

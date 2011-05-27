@@ -54,6 +54,8 @@ class RemittanceService {
 
 	@ProxyMethod
 	public def open( objid ) {
+		if (!objid)
+			return null;
 		def rem = em.read( SCHEMANAME, [objid:objid] );
 		rem.receipts = getRemittanceReceipts( rem.objid )
 		rem.otherpayments = em.sqlContext.createNamedQuery( "remittance:getOtherPaymentsByRemittance" ).setParameter( "remittanceid", rem.objid ).resultList;
@@ -68,7 +70,7 @@ class RemittanceService {
 	}
 	
 	@ProxyMethod
-	public def create( rem ) {	
+	public def save( rem ) {
 		validate( rem );
 		rem.objid = 'REM' + new UID();
 		rem.schemaname = SCHEMANAME;
@@ -88,7 +90,7 @@ class RemittanceService {
 	}
 	
 	private validate( rem ) {
-		if ( ( rem.info.d1000qty * 1000.00
+		/*if ( ( rem.info.d1000qty * 1000.00
 				+ rem.info.d500qty * 500.00
 				+ rem.info.d200qty * 200.00
 				+ rem.info.d100qty * 100.00
@@ -96,7 +98,7 @@ class RemittanceService {
 				+ rem.info.d20qty * 20.00
 				+ rem.info.d10qty * 10.00
 				+ rem.info.coins ) != rem.info.totalcash )
-			 throw new Exception( "Cash Received must be equal to Cash Expected." );
+			 throw new Exception( "Cash Received must be equal to Cash Expected." );*/
 		def remTemp = createRemittance( rem );
 		if (rem.receipts.size() != remTemp.receipts.size() )
 			throw new Exception( "There are new transactions not included in this remittance." );
@@ -112,10 +114,8 @@ class RemittanceService {
 			docstate : rem.docstate,
 			txnno : rem.info.txnno,
 			txndate : rem.info.txndate,
-			iyear : dt.year,
-			imonth : dt.month,
-			iday : dt.day,
-			collectorid : rem.info.collectorid,
+			txntimestamp : dtsvc.buildCustomTimeStamp( rem.info.txndate ),
+			collectorid : rem.collectorid,
 			collectorname : rem.info.collectorname,
 			amount : rem.info.amount,
 			totalcash : rem.info.totalcash,
@@ -125,9 +125,9 @@ class RemittanceService {
 	
 	private void closeReceipts( rem ) {
 		def params = [
-			collectorid : rem.info.collectorid, 
+			collectorid : rem.collectorid, 
 			remittanceid : rem.objid, 
-			remittanceno : rem.info.txno, 
+			remittanceno : rem.info.txnno, 
 			remittancedate : rem.info.txndate
 		];
 		em.sqlContext.createNamedExecutor( "remittance:closeReceiptForRemittance" ).setParameters( params ).execute();
@@ -135,8 +135,8 @@ class RemittanceService {
 	}
 	
 	private void updateAfControls( rem ) {
-		em.sqlContext.createNamedExecutor( "remittance:updateAfControlForRemittance" ).setParameter( "collectorid",  rem.info.collectorid ).execute();
-		em.sqlContext.createNamedExecutor( "remittance:closeAfControl" ).setParameter( "collectorid",  rem.info.collectorid ).execute();
+		em.sqlContext.createNamedExecutor( "remittance:updateAfControlForRemittance" ).setParameter( "collectorid",  rem.collectorid ).execute();
+		em.sqlContext.createNamedExecutor( "remittance:closeAfControl" ).setParameter( "collectorid",  rem.collectorid ).execute();
 	}
 	
 	private def generateRemNo() {
@@ -159,16 +159,16 @@ class RemittanceService {
 	
 	@ProxyMethod
 	public def createRemittance( rem ) {
-		rem.receipts = getUnremittedReceipts( rem.info.collectorid );
+		rem.receipts = getUnremittedReceipts( rem.collectorid );
 		if ( !rem.receipts )
 			throw new Exception( "There are no unremitted receipts." );
 		
-		def reminfo = em.sqlContext.createNamedQuery( "remittance:getRemittanceInfo" ).setParameter( "collectorid", rem.info.collectorid ).singleResult;
+		def reminfo = em.sqlContext.createNamedQuery( "remittance:getRemittanceInfo" ).setParameter( "collectorid", rem.collectorid ).singleResult;
 		rem.info.amount = reminfo.totalamount;
 		rem.info.totalcash = reminfo.totalcash;
 		rem.info.totalotherpayment = reminfo.totalotherpayment;
 		
-		rem.otherpayments = em.sqlContext.createNamedQuery( "remittance:getOtherPayments" ).setParameter( "collectorid", rem.info.collectorid ).resultList;
+		rem.otherpayments = em.sqlContext.createNamedQuery( "remittance:getOtherPayments" ).setParameter( "collectorid", rem.collectorid ).resultList;
 
 		rem.remittedforms = createRemittedForms( rem );
 		
@@ -180,32 +180,31 @@ class RemittanceService {
 	}
 	
 	private def createRemittedForms( rem ) {
-		def afctrls = em.sqlContext.createNamedQuery( "remittance:getAfControls" ).setParameters( [collectorid:rem.info.collectorid] ).resultList;
+		def afctrls = em.sqlContext.createNamedQuery( "remittance:getAfControls" ).setParameters( [collectorid:rem.collectorid] ).resultList;
 		def remittedforms = [];
 		for (afctrl in afctrls) {
 			remittedforms += [
 				objid : "RF" + new UID(),
 				afcontrolid : afctrl.objid,
+				aftype : afctrl.aftype,
 				afid : afctrl.afid,
 				stubno : afctrl.stubno,
-				receivedfrom : (afctrl.qtyreceived == afctrl.balance) ? afctrl.startseries : null,
-				receivedto : (afctrl.qtyreceived == afctrl.balance) ? afctrl.endseries : null,
+				receivedfrom : (afctrl.qtyreceived == afctrl.balance) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.startseries + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
+				receivedto : (afctrl.qtyreceived == afctrl.balance) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.endseries + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
 				receivedqty : (afctrl.qtyreceived == afctrl.balance) ? afctrl.qtyreceived : null,
-				beginfrom : (afctrl.qtyreceived != afctrl.balance) ? afctrl.beginseries : null,
-				beginto : (afctrl.qtyreceived != afctrl.balance) ? afctrl.endseries : null,
+				beginfrom : (afctrl.qtyreceived != afctrl.balance) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.beginseries + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
+				beginto : (afctrl.qtyreceived != afctrl.balance) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.endseries + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
 				beginqty : (afctrl.qtyreceived != afctrl.balance) ? afctrl.beginqty : null,
-				issuedfrom : afctrl.issuedfrom,
-				issuedto : afctrl.issuedto,
-				issuedqty : afctrl.qtyissued,
-				endingfrom : afctrl.currentseries,
-				endingto : afctrl.endseries,
-				endingqty : afctrl.balance
+				issuedfrom : (afctrl.qtyissued != 0) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.issuedfrom + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
+				issuedto : (afctrl.qtyissued != 0) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.issuedto + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
+				issuedqty : (afctrl.qtyissued != 0) ? afctrl.qtyissued : null,
+				endingfrom : (afctrl.balance != 0) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.currentseries + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
+				endingto : (afctrl.balance != 0) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.endseries + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
+				endingqty : (afctrl.balance != 0) ? afctrl.balance : null
 			];
 		}
+		
 		return remittedforms;
-	}
-	
-	private def getOtherPayments( collectorid ) {
 	}
 	
 	
@@ -225,7 +224,7 @@ class RemittanceService {
 			iyear : dt.year,
 			imonth : dt.month,
 			iday : dt.day,
-			collectorid : rem.info.collectorid,
+			collectorid : rem.collectorid,
 			collectorname : rem.info.collectorname,
 			amount : rem.info.amount,
 			totalcash : rem.info.totalcash,
@@ -289,7 +288,7 @@ class RemittanceService {
 		""";
 
 		/* Cash Breakdown */
-		def d1000 = decformat.format( rem.info.d1000qty * 1000 );
+		/*def d1000 = decformat.format( rem.info.d1000qty * 1000 );
 		def d1000qty = numformat.format( rem.info.d1000qty );
 		def d500 = decformat.format( rem.info.d500qty * 500 );
 		def d500qty = numformat.format( rem.info.d500qty );
@@ -355,7 +354,33 @@ class RemittanceService {
 					</tr>
 				</table>
 			</div>
+		""";*/
+		html += """
+			<div class='data-group'>
+				<div class='data-header'>Breakdown</div>
+				<table class='data-table'>
+					<tr><th>Denomination</th><th>Qty</th><th>Amount</th></tr>
+			
 		""";
+		for (denom in rem.info.denominations) {
+			html += """
+				<tr>
+					<td class='align-right'>${denom.caption} x </td>
+					<td class='align-right'>${denom.qty}</td>
+					<td class='align-right'>${denom.amount}</td>
+				</tr>
+			""";
+		}
+		def totalcash = decformat.format( rem.info.totalcash );
+		html += """
+					<tr class='summary'>
+						<td colspan='2'>Total Cash</td>
+						<td class='align-right'>${totalcash}</td>
+					</tr>
+				</table>
+			</div>
+		""";
+		
 
 		/* Other Payment Details */
 		html += """

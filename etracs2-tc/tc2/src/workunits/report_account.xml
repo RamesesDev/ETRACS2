@@ -14,20 +14,19 @@ import com.rameses.osiris2.client.*;
 import com.rameses.osiris2.reports.*;
 import java.rmi.server.UID;
 
-class AccountListingController extends etracs2.groovy.ReportController
+class AccountListingController
 {
+    @Service("ReportParameterService")
+    def svcParams;
+    
     @Service("AccountListingService")
     def svc;
     
-    @Service("Var")
-    def var;
+
+    def mode = "build";
+    def entity = [];
+    def data = [];
     
-    @Service("DateService")
-    def dateSvc;
-    
-    def getVarService() { return var; }
-    def getDateService() { return dateSvc; }
-    def getService() { return svc; }
     def chartType;
     
     void init(){
@@ -44,12 +43,28 @@ class AccountListingController extends etracs2.groovy.ReportController
         entity.charttype = chartType;
     }
     
-    public String reportName(){
-        return "etracs2/tc/report/AccountListing.jasper";
+    def view() {
+       data = svc.buildReport( entity );
+       if( !data ) throw new Exception("No results found.");
+       report.viewReport();
+       mode = 'view';
+       return "preview";
     }
     
+    def back(){
+        mode = 'build';
+        return "reportPage";
+    }
+        
+    def report =[
+        getReportName : { "accounting/account" },
+        getReportData : { return data; },
+        getParameters : { getStandardReportParams(); }
+    ] as ServerReportModel;
+    
+    
     def getStandardReportParams() {
-        return super.standardReportParams + [
+        return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [
             charttype   : entity.charttype
         ]; 
     }
