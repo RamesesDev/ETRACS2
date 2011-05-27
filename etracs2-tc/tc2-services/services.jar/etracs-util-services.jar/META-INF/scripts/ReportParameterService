@@ -11,15 +11,15 @@ class ReportParameterService{
 	
 	@ProxyMethod
 	public def getStandardParameter( def username ){
-		def lguname = varService.get('lgu_name');
+		def lguname = var.get('lgu_name');
         if( lguname ){
-            def lgutype = varService.get('lgu_type');
+            def lgutype = var.get('lgu_type');
             if( lgutype == 'province' ) lguname = 'PROVINCE OF ' + lguname;
             else if( lgutype == 'city' ) lguname = 'CITY OF ' + lguname;
             else lguname = 'MUNICIPALITY OF ' + lguname;
         }
         
-        def parentlguname = varService.get('parent_lgu_name');
+        def parentlguname = var.get('parent_lgu_name');
         if( parentlguname ) parentlguname = 'PROVINCE OF ' + parentlguname;
 	
 		return [
@@ -33,7 +33,7 @@ class ReportParameterService{
 			ASSESSORNAME : var.get('assessor_name'),
 			ASSESSORTITLE : var.get('assessor_title'),
 			ASSESSOROFFICETITLE: var.get('assess_office_title'),
-            PRINTEDBY   : ( username : 'SYSTEM' ),
+            PRINTEDBY   : (username) ? username : 'SYSTEM' ,
             PRINTDATE   : dateService.serverDate
 		];
 	}
