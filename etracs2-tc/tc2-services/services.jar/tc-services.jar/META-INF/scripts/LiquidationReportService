@@ -1,0 +1,46 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+
+public class LiquidationReportServices{
+	
+	@PersistenceContext("main")
+	def em;
+
+	def amountInWords = { sb, amount ->
+		def abovetenth = [9:'BILLION', 5:'MILLION', 4:'THOUSAND', 3:'HUNDRED'];
+		def tenth = [9:'NINETY', 8:'EIGTHTY', 7:'SEVENTY', 6:'SIXTHY', 5:'FIFTY',
+					 4:'FOURTY', 3:'THIRTY', 2:'TWEENTY', 19:'NINETEEN',
+					 18:'EIGHTEEN', 17:'SEVENTEEN', 16:'SIXTEEN', 15:'FIFTHEEN',
+					 14:'FOURTEEN', 13:'THIRTEEN', 12:'TWELVE', 11:'ELEVEN'];
+		def ones = [1:'ONE', 2:'TWO', 3:'THREE', 4:'FOUR', 5:'FIVE', 6:'SIX', 7:'SEVEN', 8:'EIGHT', 9:'NINE', 10: 'TEN'];
+		def str = amount.toString();
+		if( str.indexof(".") != -1 ){
+			def val = parseInt( str.substring( str.indexof(".")+1, str.length() ) );
+			amountInWords( sb, new BigDecimal( str.substring( 0, str.indexof(".")+1 ) ) );
+			sb.append( val );
+			return;
+		}
+		
+		if( amount >= 100 ){
+			def val = parseInt( str.substring( 0, str.length() % 3 ) );
+		}
+		
+	}	
+	
+	@ProxyMethod
+	public def buildRCDReportData( def liquidationid ){
+		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
+		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
+		def reportData = liquidation.info;
+		
+		reportData.txndate = liquidation.dtposted;
+
+		reportData.otherpayments = em.sqlContext.createNamedQuery("liquidationreport:getOtherPaymentsByLiquidation")
+									 .setParameters([liquidationid: liquidationid])
+									 .resultList;
+		reportData.remittances = em.sqlContext.createNamedQuery("liquidationreport:getRemittancesByLiquidation")
+								   .setParameters( [liquidationid: liquidationid] )
+								   .resultList;
+		return reportData;
+	}
+}
