@@ -2,13 +2,14 @@
 <workunit>
     
     <invokers>
-        <invoker folderid="/menu/tc" action="init" caption="Remittance" permission="remittance.create"/>
+        <invoker folderid="/menu/tc" action="create" caption="Remittance" permission="remittance.create"/>
         
-        <invoker type="formActions" action="init" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" permission="remittance.create"/>
+        <invoker type="formActions" action="close"  immediate="true" caption="Close" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" permission="remittance.create"/>
         <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" caption="Next" mnemonic="n" />
         <invoker type="formActions" action="back" shortcut="ctrl B" visibleWhen="#{mode == 'main'}" caption="Back" mnemonic="b" />
         <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'main'}" caption="Submit" mnemonic="s" icon="images/save24.png" permission="remittance.submit"/>
-        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="viewRCD" shortcut="ctrl R" visibleWhen="#{mode == 'view'}" immediate="true" caption="View RCD" mnemonic="r" icon="images/addnew24.png" permission="remittance.create"/>
     </invokers>
     
     <code lang="groovy">
@@ -40,7 +41,7 @@
             
             def collector;
         
-            def init() {
+            def create() {
                 collector = usersvc.getCollector( OsirisContext.env.USERID );
                 mode = 'init';
                 caller?.mode = 'create';
@@ -54,11 +55,12 @@
                 return 'init';
             }
             
-            def preview() {
+            def open() {
                 if (entity)
                     entity = svc.open( entity.objid );
+                mode = 'view';
                 
-                return view();
+                return 'main';
             }
             
             def view() {
@@ -82,14 +84,18 @@
             }
             
             def submit() {
-                entity = svc.create( entity );
+                if (! MsgBox.confirm( "Do you want to submit this codument?" ) )
+                    return null;
+                entity = svc.save( entity );
                 return view();
             }
             
-            def cancel() {
-                if (caller)
-                    return preview();
+            def close() {
                 return '_close';
+            }
+            
+            def getDenominationOpener() {
+                return InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:entity.info.totalcash, list:entity.info.denominations]);
             }
             
             def viewOtherPayments() {
@@ -117,15 +123,7 @@
                     collectortitle : collector.jobtitle,
                     amount : 0.00,
                     totalcash : 0.00,
-                    totalotherpayment : 0.00,
-                    d1000qty : 0,
-                    d500qty : 0,
-                    d200qty : 0,
-                    d100qty : 0,
-                    d50qty : 0,
-                    d20qty : 0,
-                    d10qty : 0,
-                    coins : 0.00
+                    totalotherpayment : 0.00
                 ];
             }
             
@@ -135,8 +133,8 @@
                 
                 getColumns : {
                     return [
-                        new Column( name:"paytype", caption:"Type", minWidth:50 ),
-                        new Column( name:"particulars", caption:"Info", minWidth:400 ),
+                        new Column( name:"paytype", caption:"Type" ),
+                        new Column( name:"particulars", caption:"Info" ),
                         new Column( name:"amount", caption:"Amount", format: "#,##0.00", width:100 )
                     ];
                 },
@@ -158,11 +156,11 @@
                 getColumns : {
                     return [
                         new Column( name:"collectiontype", caption:"Type" ),
-                        new Column( name:"serialno", caption:"Serial No.", minWidth:100 ),
+                        new Column( name:"serialno", caption:"Serial No." ),
                         new Column( name:"voided", caption:"Voided" ),
-                        new Column( name:"txndate", caption:"Txn Date", format: "yyyy-MM-dd", minWidth:100 ),
+                        new Column( name:"txndate", caption:"Txn Date", format: "yyyy-MM-dd" ),
                         new Column( name:"mode", caption:"Mode" ),
-                        new Column( name:"paidby", caption:"Payor", minWidth:300 ),
+                        new Column( name:"paidby", caption:"Payor" ),
                         new Column( name:"paidbyaddress", caption:"Payor Address" ),
                         new Column( name:"amount", caption:"Amount", format: "#,##0.00", width:100 )
                     ];
@@ -207,15 +205,20 @@
             
             ] as PageListModel;
             
+            
+            def viewRCD() {
+                return new Opener( name:'tc2:remittance_report_A', action:'view', params:[entity:entity] );
+            }
+
         }
         
         ]]>
     </code>
     
     <pages>
-        <page name="view" template="etracs2.tc.HTMLViewPage" />
-        <page name="init" template="etracs2.tc.remittance.RemittanceInitPage" />
+        <!--page name="view" template="etracs2.tc.HTMLViewPage" /-->
         <page name="main" template="etracs2.tc.remittance.RemittancePage" />
+        <page name="init" template="etracs2.tc.remittance.RemittanceInitPage" />
         <page name="otherpayments" template="etracs2.tc.remittance.OtherPaymentListPage" />
         <page name="remittedforms" template="etracs2.tc.remittance.RemittedFormListPage" />
         <page name="receipts" template="etracs2.tc.remittance.ReceiptListPage" />

@@ -6,10 +6,13 @@
 
 package etracs2.tc.remittance;
 
+import com.rameses.rcp.ui.annotations.StyleSheet;
+
 /**
  *
  * @author  alvin
  */
+@StyleSheet("etracs2/tc/stylesheet/Document.style")
 public class RemittancePage extends javax.swing.JPanel {
     
     /** Creates new form RemittancePage */
@@ -41,6 +44,7 @@ public class RemittancePage extends javax.swing.JPanel {
         xButton1 = new com.rameses.rcp.control.XButton();
         xButton3 = new com.rameses.rcp.control.XButton();
         xButton4 = new com.rameses.rcp.control.XButton();
+        jPanel4 = new javax.swing.JPanel();
         xSubFormPanel2 = new com.rameses.rcp.control.XSubFormPanel();
 
         xButton2.setMnemonic('d');
@@ -51,7 +55,7 @@ public class RemittancePage extends javax.swing.JPanel {
 
         setLayout(new java.awt.BorderLayout());
 
-        setPreferredSize(new java.awt.Dimension(583, 466));
+        setPreferredSize(new java.awt.Dimension(643, 466));
         xActionBar1.setName("formActions");
         add(xActionBar1, java.awt.BorderLayout.NORTH);
 
@@ -96,7 +100,7 @@ public class RemittancePage extends javax.swing.JPanel {
         formPanel3.setBounds(10, 20, 530, 80);
 
         jPanel1.add(jPanel2);
-        jPanel2.setBounds(10, 10, 560, 110);
+        jPanel2.setBounds(10, 10, 620, 110);
 
         jPanel3.setLayout(null);
 
@@ -138,28 +142,36 @@ public class RemittancePage extends javax.swing.JPanel {
         xButton1.setFont(new java.awt.Font("Arial", 1, 12));
         xButton1.setName("viewOtherPayments");
         jPanel3.add(xButton1);
-        xButton1.setBounds(70, 160, 150, 25);
+        xButton1.setBounds(70, 160, 150, 23);
 
         xButton3.setMnemonic('f');
         xButton3.setText("Accountable Forms");
         xButton3.setFont(new java.awt.Font("Arial", 1, 12));
         xButton3.setName("viewAccountableForms");
         jPanel3.add(xButton3);
-        xButton3.setBounds(70, 190, 150, 25);
+        xButton3.setBounds(70, 190, 150, 23);
 
         xButton4.setMnemonic('r');
         xButton4.setText("View Receipts");
         xButton4.setFont(new java.awt.Font("Arial", 1, 12));
         xButton4.setName("viewReceipts");
         jPanel3.add(xButton4);
-        xButton4.setBounds(70, 220, 150, 25);
+        xButton4.setBounds(70, 220, 150, 23);
 
         jPanel1.add(jPanel3);
         jPanel3.setBounds(10, 130, 290, 290);
 
-        xSubFormPanel2.setHandler("cashBreakdownHandler");
-        jPanel1.add(xSubFormPanel2);
-        xSubFormPanel2.setBounds(310, 130, 260, 290);
+        jPanel4.setLayout(new java.awt.BorderLayout());
+
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder3.setTitle("Cash Breakdown");
+        jPanel4.setBorder(xTitledBorder3);
+        xSubFormPanel2.setDynamic(true);
+        xSubFormPanel2.setHandler("denominationOpener");
+        jPanel4.add(xSubFormPanel2, java.awt.BorderLayout.CENTER);
+
+        jPanel1.add(jPanel4);
+        jPanel4.setBounds(310, 130, 320, 290);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -172,6 +184,7 @@ public class RemittancePage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
