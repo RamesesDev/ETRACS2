@@ -117,6 +117,9 @@ class LiquidationService {
 	@ProxyMethod
 	public def createLiquidation( liq ) {
 		// TO BE EDITTED
+		liq.info.amount = 0.0;
+		liq.info.totalcash = 0.0;
+		liq.info.totalotherpayment = 0.0;
 		for (collector in getSubordinates( liq.info.liquidatingofficerid )) {
 			def remits = em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceByCollector" ).setParameter( "collectorid", collector.objid ).resultList;
 			if ( remits ) {
