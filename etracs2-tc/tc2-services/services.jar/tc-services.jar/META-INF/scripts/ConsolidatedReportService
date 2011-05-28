@@ -23,6 +23,7 @@ class ConsolidatedReportService {
 		
 		def data = em.sqlContext.createNamedQuery('consolidatedreport:getReportDataGeneral').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
 		data += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCollector').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
+		data += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCanceledSeries').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
 		
 		data.each{
 			if( it.beginqty == 0 ) it.beginqty = null;
@@ -89,6 +90,17 @@ class ConsolidatedReportService {
 			endingto		: ri.prefix + ri.endseries + ri.suffix
 		];
 		
+		if( ri.cancelledseries.size() != 0 ){
+			ri.cancelledseries.each{
+				craaf += [
+					canceledqty 	: it.toseries - it.fromseries,
+					canceledfrom 	: it.fromseries,
+					canceledto 		: it.toseries,
+					cancelreason	: it.remarks
+				];	
+			}
+		}
+		
 		em.validate( craaf.schemaname, craaf );
 		em.save( craaf.schemaname, craaf );
 	}
@@ -137,6 +149,17 @@ class ConsolidatedReportService {
 			endingfrom		: ri.prefix + ri.startseries + ri.suffix,
 			endingto		: ri.prefix + ri.endseries + ri.suffix
 		];
+		
+		if( ri.cancelledseries.size() != 0 ){
+			ri.cancelledseries.each{
+				craaf += [
+					canceledqty 	: it.toseries - it.fromseries,
+					canceledfrom 	: it.fromseries,
+					canceledto 		: it.toseries,
+					cancelreason	: it.remarks
+				];	
+			}
+		}
 		
 		em.validate( craaf.schemaname, craaf );
 		em.save( craaf.schemaname, craaf );
