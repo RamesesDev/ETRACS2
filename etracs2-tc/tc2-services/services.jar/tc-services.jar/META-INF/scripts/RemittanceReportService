@@ -17,7 +17,7 @@ class RemittanceReportService {
 		def data = [
 			collectorName 		: rem.info.collectorname,
 			collectorTitle		: rem.info.collectortitle,
-			docNo 				: rem.info.txnno,
+			docno 				: rem.info.txnno,
 			dateposted			: dtsvc.parse( "yyyy-MM-dd", rem.info.txndate ),
 			totalDenomination	: rem.info.totalcash,
 			totalchecks			: rem.info.totalotherpayments,
@@ -26,7 +26,8 @@ class RemittanceReportService {
 			liquidatingOfficerTitle	: rem.liquidatingofficertitle,
 			remittedforms			: getSerialRemittedFormsByRemittance( rem.objid ),
 			nonserialremittances 	: getNonSerialRemittedFormsByRemittance( rem.objid ),
-			otherpayments		: rem.otherpayments
+			otherpayments		: rem.otherpayments,
+			denominations		: rem.info.denominations
 		]
 		
 		return data;
@@ -41,5 +42,68 @@ class RemittanceReportService {
 		return em.sqlContext.createNamedQuery( "remittance:getNonSerialRemittedFormsByRemittance" ).setParameters( [remittanceid:remid] ).resultList;
 	}
 	
+	
+	
+	@ProxyMethod
+	public def generateReportByCollectionType( rem, collectiontype ) {
+		rem.info.txndate = dtsvc.parse( "yyyy-MM-dd", rem.info.txndate );
+		rem.receipts = getReceiptsByRemittanceCollectionType( rem, collectiontype );
+		return rem;
+	}
+	
+	private def getReceiptsByRemittanceCollectionType( rem, collectiontype ) {
+		def qry = em.sqlContext.createNamedQuery( "remittance:getReceiptsByRemittanceCollectionType" );
+		if ( collectiontype )
+			qry.setParameter( "collectiontypeid", collectiontype.objid )
+		return qry.setParameter( "remittanceid", rem.objid ).resultList;
+	}
+	
+	
+	
+	@ProxyMethod
+	public def generateReportByFund( rem, fund ) {
+		rem.info.txndate = dtsvc.parse( "yyyy-MM-dd", rem.info.txndate );
+		rem.receipts = getReceiptDetailsByFund( rem, fund );
+		rem.acctsummaries = getIncomeAccuntSummaryByFund( rem, fund );
+		return rem;
+	}
+	
+	private def getReceiptDetailsByFund( rem, fund ) {
+		def qry = em.sqlContext.createNamedQuery( "remittance:getReceiptDetailsByFund" );
+		if ( fund )
+			qry.setParameter( "fundid", fund.objid );
+		return qry.setParameter( "remittanceid", rem.objid ).resultList;
+	}
+	
+	private def getIncomeAccuntSummaryByFund( rem, fund ) {
+		def qry = em.sqlContext.createNamedQuery( "remittance:getIncomeAccuntSummaryByFund" );
+		if ( fund )
+			qry.setParameter( "fundid", fund.objid );
+		return qry.setParameter( "remittanceid", rem.objid ).resultList;
+	}
+	
+	
+	
+	@ProxyMethod
+	public def generateReportByFundDetailed( rem, fund ) {
+		rem.info.txndate = dtsvc.parse( "yyyy-MM-dd", rem.info.txndate );
+		rem.serials = getSerialReceiptDetailsByFund( rem, fund );
+		rem.nonserial = getNonSerialReceiptDetailsByFund( rem, fund );
+		return rem;
+	}
+	
+	private def getSerialReceiptDetailsByFund( rem, fund ) {
+		def qry = em.sqlContext.createNamedQuery( "remittance:getSerialReceiptDetailsByFund" );
+		if ( fund )
+			qry.setParameter( "fundid", fund.objid );
+		return qry.setParameter( "remittanceid", rem.objid ).resultList;
+	}
+	
+	private def getNonSerialReceiptDetailsByFund( rem, fund ) {
+		def qry = em.sqlContext.createNamedQuery( "remittance:getNonSerialReceiptDetailsByFund" );
+		if ( fund )
+			qry.setParameter( "fundid", fund.objid );
+		return qry.setParameter( "remittanceid", rem.objid ).resultList;
+	}
 	
 }
