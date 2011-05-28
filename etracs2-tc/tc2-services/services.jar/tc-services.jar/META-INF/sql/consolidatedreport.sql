@@ -19,6 +19,8 @@ GROUP BY afid
 [getAFControl]
 SELECT * FROM afcontrol WHERE objid = $P{afcontrolid}
 
+[getReportData]
+SELECT * FROM craaf WHERE craafmonth = $P{craafmonth} AND craafyear = $P{craafyear}
 
 [updateCRAAFbyIRAFCol]
 UPDATE craaf SET
