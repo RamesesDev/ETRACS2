@@ -24,70 +24,16 @@
 	<import value="net.sf.jasperreports.engine.data.*" />
 
 
-	<field name="path" class="java.lang.String"/>
+	<field name="title" class="java.lang.String"/>
 	<field name="amount" class="java.math.BigDecimal"/>
-	<field name="accttitle" class="java.lang.String"/>
-	<field name="acctcode" class="java.lang.String"/>
-	<field name="parentcode" class="java.lang.String"/>
-	<field name="parenttitle" class="java.lang.String"/>
+	<field name="header" class="java.lang.Boolean"/>
 
 	<variable name="totalcheck" class="java.math.BigDecimal" resetType="Report" calculation="System">
 		<initialValueExpression><![CDATA[BigDecimal.ZERO]]></initialValueExpression>
 	</variable>
-	<variable name="TOTAL_AMOUNT" class="java.math.BigDecimal" resetType="Group" resetGroup="account" calculation="Sum">
+	<variable name="TOTAL_AMOUNT" class="java.math.BigDecimal" resetType="Report" calculation="Sum">
 		<variableExpression><![CDATA[$F{amount}]]></variableExpression>
 	</variable>
-
-		<group  name="account" >
-			<groupExpression><![CDATA[$F{path}+$F{parenttitle}+$F{parentcode}]]></groupExpression>
-			<groupHeader>
-			<band height="12"  isSplitAllowed="true" >
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="0"
-						y="0"
-						width="552"
-						height="12"
-						key="textField"/>
-					<box></box>
-					<textElement>
-						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{path}.substring($F{path}.indexOf("/"), $F{path}.length())]]></textFieldExpression>
-				</textField>
-			</band>
-			</groupHeader>
-			<groupFooter>
-			<band height="11"  isSplitAllowed="true" >
-				<textField isStretchWithOverflow="true" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="100"
-						y="0"
-						width="304"
-						height="11"
-						key="textField"/>
-					<box></box>
-					<textElement verticalAlignment="Top">
-						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["TOTAL COLLECTION IN " + $F{parentcode}+"-"+$F{parenttitle}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="true" pattern="##0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="413"
-						y="0"
-						width="139"
-						height="11"
-						key="textField"/>
-					<box></box>
-					<textElement textAlignment="Right" verticalAlignment="Top">
-						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
-					</textElement>
-				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$V{TOTAL_AMOUNT}]]></textFieldExpression>
-				</textField>
-			</band>
-			</groupFooter>
-		</group>
 		<background>
 			<band height="0"  isSplitAllowed="true" >
 			</band>
@@ -108,29 +54,48 @@
 			<band height="11"  isSplitAllowed="true" >
 				<textField isStretchWithOverflow="true" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="100"
+						x="-1"
 						y="0"
-						width="304"
+						width="404"
 						height="11"
-						key="textField-1"/>
+						key="textField-2">
+							<printWhenExpression><![CDATA[new Boolean($F{header}.booleanValue() == false)]]></printWhenExpression>
+						</reportElement>
 					<box leftPadding="2" rightPadding="2"></box>
 					<textElement verticalAlignment="Top">
-						<font fontName="Tahoma" size="8"/>
+						<font fontName="Tahoma" pdfFontName="Helvetica" size="8" isBold="false"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{acctcode}+"-"+$F{accttitle}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{title} ]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true" pattern="##0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="413"
 						y="0"
 						width="139"
 						height="11"
-						key="textField"/>
+						key="textField-3">
+							<printWhenExpression><![CDATA[new Boolean($F{header}.booleanValue() == false)]]></printWhenExpression>
+						</reportElement>
 					<box leftPadding="2" rightPadding="2"></box>
 					<textElement textAlignment="Right" verticalAlignment="Top">
-						<font fontName="Tahoma" size="8"/>
+						<font fontName="Tahoma" pdfFontName="Helvetica" size="8" isBold="false"/>
 					</textElement>
 				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{amount}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="-1"
+						y="0"
+						width="404"
+						height="11"
+						key="textField-4">
+							<printWhenExpression><![CDATA[new Boolean($F{header}.booleanValue() == true )]]></printWhenExpression>
+						</reportElement>
+					<box leftPadding="2" rightPadding="2"></box>
+					<textElement verticalAlignment="Top">
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{title}]]></textFieldExpression>
 				</textField>
 			</band>
 		</detail>
@@ -143,7 +108,33 @@
 			</band>
 		</pageFooter>
 		<summary>
-			<band height="0"  isSplitAllowed="true" >
+			<band height="18"  isSplitAllowed="true" >
+				<staticText>
+					<reportElement
+						x="284"
+						y="5"
+						width="116"
+						height="13"
+						key="staticText-1"/>
+					<box></box>
+					<textElement>
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="10" isBold="true"/>
+					</textElement>
+				<text><![CDATA[TOTAL]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="413"
+						y="5"
+						width="139"
+						height="13"
+						key="textField"/>
+					<box leftPadding="2"></box>
+					<textElement textAlignment="Right">
+						<font pdfFontName="Helvetica-Bold" isBold="true"/>
+					</textElement>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$V{TOTAL_AMOUNT}]]></textFieldExpression>
+				</textField>
 			</band>
 		</summary>
 </jasperReport>

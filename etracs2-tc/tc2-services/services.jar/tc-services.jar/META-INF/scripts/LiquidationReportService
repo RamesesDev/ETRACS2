@@ -31,31 +31,72 @@ public class LiquidationReportServices{
 		def reportData = [
 			txndate: liquidation.dtposted,
 			txnno: liquidation.info.txnno,
-			liquidationofficername: liquidation.liquidationofficername,
-			liquidationofficertitle: liquidation.liquidationofficertitle
+			liquidatingofficername: liquidation.info.liquidatingofficername,
+			liquidatingofficertitle: liquidation.info.liquidatingofficertitle
 		];
+		
+		def map = [liquidationid: liquidationid, fundid: fundid];
 		
 		reportData.list = em.sqlContext.createNamedQuery("liquidationreport:getRemittanceFundTotalByLiquidationAndFund")
 		                    .setParameters([liquidationid: liquidationid, fundid: fundid])
 							.resultList;
+		
 		return reportData;
 	}
 	
 	@ProxyMethod
 	public def buildReportCData( def liquidationid, def chart, def fundid ){
 		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
+		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
+		def reportData = [
+			txndate: liquidation.dtposted,
+			txnno: liquidation.info.txnno,
+			liquidatingofficername: liquidation.info.liquidatingofficername,
+			liquidatingofficertitle: liquidation.info.liquidatingofficertitle
+		];
+		
+		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByGLAccount$chart")
+		             .setParameters([liquidationid: liquidationid, fundid: fundid])
+					 .resultList;
+
+		
+		def display = { idx, val, last ->
+			if( !last )
+				return [title: (' '*(idx*10))+val, header:true];
+			else
+				return [title: (' '*(idx*10))+val.acctcode+"-"+val.accttitle, header:false, amount: val.amount];
+		};
+		
+		reportData.data = buildTree( list, display );
+		return reportData;
+	}
+	
+	@ProxyMethod
+	public def buildReportDData( def liquidationid, def chart, def fundid ){
+		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
 		
 		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
 		def reportData = [
 			txndate: liquidation.dtposted,
 			txnno: liquidation.info.txnno,
-			liquidationofficername: liquidation.liquidationofficername,
-			liquidationofficertitle: liquidation.liquidationofficertitle
+			liquidationofficername: liquidation.info.liquidationofficername,
+			liquidationofficertitle: liquidation.info.liquidationofficertitle
 		];
-		
-		reportData.list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByGLAccount$chart")
+
+		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByIncomeAccount$chart")
 		                    .setParameters([liquidationid: liquidationid, fundid: fundid])
-							.resultList;
+							.resultList.each{
+								it.pathtitle += "/$it.parentcode-$it.parenttitle";
+							};
+		
+		def display = { idx, val, last ->
+			if( !last )
+				return [title: (' '*(idx*10))+val, header:true];
+			else
+				return [title: (' '*(idx*10))+val.acctcode+"-"+val.accttitle, header:false, amount: val.amount];
+		};
+
+		reportData.data = buildTree( list, display );
 		
 		return reportData;
 	}
@@ -63,5 +104,30 @@ public class LiquidationReportServices{
 	@ProxyMethod
 	public def getFundList(){
 		return em.sqlContext.createNamedQuery("liquidationreport:getFundList").resultList;
+	}
+
+	private def buildTree( def list, def display ){
+
+		def handler = [];
+		def results = [];
+	
+		def analyzeTree = { idx, name ->
+			def n = handler.find{ it.name == name };
+			if( !n ) {
+				handler.add( [name:name, idx:idx]);
+				results.add( display( idx, name, false ) );
+			}
+			return idx + 1;
+		}
+		
+		list.each{ val ->
+			def idx = 0;
+			val.pathtitle.split('/').each{ 
+				idx = analyzeTree( idx, it );
+			};
+			results.add( display( idx+1, val, true )  );
+		}
+
+		return results;
 	}
 }

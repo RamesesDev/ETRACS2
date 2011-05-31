@@ -34,7 +34,7 @@ public class LiquidationReportCPage extends javax.swing.JPanel {
 
         setLayout(new java.awt.BorderLayout());
 
-        xReportPanel1.setDepends(new String[] {"fund"});
+        xReportPanel1.setDepends(new String[] {"fund", "chart"});
         xReportPanel1.setName("report");
         org.jdesktop.layout.GroupLayout xReportPanel1Layout = new org.jdesktop.layout.GroupLayout(xReportPanel1);
         xReportPanel1.setLayout(xReportPanel1Layout);
