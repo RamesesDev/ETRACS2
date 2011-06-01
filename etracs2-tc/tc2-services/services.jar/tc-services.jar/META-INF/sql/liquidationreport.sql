@@ -87,3 +87,18 @@ AND   r.liquidationid = $P{liquidationid}
 AND   r.fundid = $P{fundid} 
 GROUP BY a.pathbytitle, a.acctcode, a.accttitle, r.acctno, r.accttitle 
 ORDER BY a.pathbytitle 
+
+[getRevenueByLiquidationId]
+SELECT 
+	r.collectorname as collectorname,  
+	r.receiptdate as receiptdate,  
+	r.serialno as serialno, 
+	r.payorname as payorname,  
+	r.accttitle as accttitle,  
+	r.amount as amount, 
+	r.acctno as acctno,
+	r.voided as voided,
+	r.afid as afid 
+FROM revenue r 
+WHERE r.liquidationid = $P{liquidationid}
+ORDER BY r.serialno, r.receiptdate

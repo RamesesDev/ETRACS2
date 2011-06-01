@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
     <invokers>
-        <invoker type="liquidation:report" caption="Liquidation Report By Chart And Fund"/>
+        <invoker type="liquidation:report" caption="Liquidation Report Detailed By Fund And GL Account"/>
         <invoker type="formActions" action="back" caption="Back" icon="images/cancel24.png"/>
     </invokers>
 
@@ -27,7 +27,7 @@
             
             def reportModel = [
                 getReportName : { return 'liquidation/reportc'; },
-                getReportData : { return [liquidationData] },
+                getReportData : { return [liquidationData]; },
                 getParameters : { return svcParam.getStandardParameter( 'system' )+param; }
             ] as ServerReportModel;
             
@@ -39,10 +39,6 @@
             public def getLiquidationData(){
                 if( !fund ) fund = fundList[0];
                 if( !chart ) chart = chartList[0];
-                
-                param.put('FUND', fund.fundname );
-                param.put('CHART', chart );
-                
                 return svc.buildReportCData( liquidation.objid, chart , fund.objid );
             }
             
@@ -60,12 +56,22 @@
             def back(){
                 return "_close";
             }
+            
+            void setChart(def val){
+                this.chart = val;
+                this.param.put("CHART", val );
+            }
+            
+            void setFund(def val){
+                this.fund = val;
+                this.param.put("FUND", val.fundname );
+            }
 
         }
         ]]>
     </code>
     
     <pages>
-        <page template="etracs2.tc.liquidation.LiquidationReportBPage" />
+        <page template="etracs2.tc.liquidation.LiquidationReportCPage" />
     </pages>
 </workunit>

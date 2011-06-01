@@ -5,6 +5,9 @@ public class LiquidationReportServices{
 	
 	@PersistenceContext("main")
 	def em;
+	
+	@Service("Var")
+	def vars;
 
 	@ProxyMethod
 	public def buildRCDReportData( def liquidationid ){
@@ -99,6 +102,50 @@ public class LiquidationReportServices{
 		reportData.data = buildTree( list, display );
 		
 		return reportData;
+	}
+	
+	@ProxyMethod
+	public def exportNGASToCsv( def liquidationid ){
+		StringBuffer sb = new StringBuffer();
+		def formatDate = { date, format -> 
+			return new java.text.SimpleDateFormat(format).format(date); 
+		}
+        def lq = em.read("liquidation:liquidationlist", [objid: liquidationid]);
+        sb.append("Republic of the Philippines\n");
+        sb.append(vars.get('lgu_formal_name') + "\n");
+        sb.append("Office of the Provincial Accountant\n");
+        sb.append("Date : " + formatDate( lq.txndate, 'MMM dd yyyy' ) );
+        sb.append("\n\n");
+		
+		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByLiquidationId")
+		             .setParameter("liquidationid", liquidationid )
+					 .resultList;
+					 
+		def vr = [:];
+		
+		def append = { val ->
+			sb.append( val.collectorname.replaceAll(",", " ") + ',' );
+			sb.append( formatDate( val.receiptdate, 'MM/dd/yyyy' ) + ',' );
+			sb.append( ((val.serialno) ? val.serialno : val.afid) + ',' );
+			sb.append( val.payorname.replaceAll(","," ") + ',' );
+			if( val.voided == 0 ){
+				sb.append( val.accttitle + ',' );
+				sb.append( val.amount + ',' );
+				sb.append( val.acctno );
+			}else{
+				sb.append( '*** VOID ***,' );
+				sb.append( '0.0,' );
+				sb.append( '***' );
+			}
+			sb.append( '\n' );
+		}
+		
+		list.each{
+			if( vr.serialno != it.serialno ) append( it );
+			if( it.voided != 0 ) vr = it;
+		}
+		
+		return sb.toString();
 	}
 	
 	@ProxyMethod

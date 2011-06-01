@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="liquidation:report" action="generateCvs" caption="Export to eNGAS(CSV) "/>
+    </invokers>
+
+    <code lang="groovy">
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.osiris2.reports.*
+        import javax.swing.JFileChooser;
+
+        public class LiquidationReportByFund {
+
+            @Service("LiquidationReportService")
+            def svc;
+            def liquidation;
+            
+            public def generateCvs(){
+                def data = svc.exportNGASToCsv( liquidation.objid );
+                def previouspath = System.getProperty("chooser.previouspath");
+                JFileChooser chooser = new JFileChooser( previouspath );
+                chooser.fileSelectionMode = JFileChooser.FILES_ONLY;
+                def sdf = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
+                def fileName = liquidation.info.txnno +"-"+ sdf.format(new Date()) +".csv";
+                chooser.selectedFile = new File( fileName );
+                int res = chooser.showSaveDialog( null );
+                if( res == JFileChooser.APPROVE_OPTION ){
+                    BufferedWriter writer = null;
+                    StringReader reader = null;
+                    try{
+                        reader = new StringReader( data );
+                        writer = new BufferedWriter( new FileWriter( chooser.selectedFile.absolutePath  ) );
+                        int i = -1;
+                        while( ( i = reader.read() ) != -1 ){
+                            writer.write( i );
+                        }
+                    }catch(Exception ex){
+                        throw ex;
+                    }finally{
+                        try{ writer.close(); }catch(Exception ex){;}
+                    }
+                    println chooser.selectedFile.parent;
+                    System.setProperty("chooser.previouspath", chooser.selectedFile.parent );
+                    MsgBox.alert( "Liquidation No. $liquidation.info.txno successfully exported to eNGAS." );
+                }
+                
+                return '_close';
+            }
+        }
+        ]]>
+    </code>
+</workunit>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
     <invokers>
-        <invoker type="liquidation:report" caption="Liquidation Report By Fund"/>
+        <invoker type="liquidation:report" caption="Liquidation Report Detailed By Fund And Income Account"/>
         <invoker type="formActions" action="back" caption="Back" icon="images/cancel24.png"/>
     </invokers>
 
@@ -22,11 +22,12 @@
             
             def fund;
             def liquidation;
-            def param =[:];
+            
+            def param = [:];
             
             def reportModel = [
-                getReportName : { return 'liquidation/reportb'; },
-                getReportData : { return [liquidationData] },
+                getReportName : { return 'liquidation/reportc'; },
+                getReportData : { return [liquidationData]; },
                 getParameters : { return svcParam.getStandardParameter( 'system' )+param; }
             ] as ServerReportModel;
             
@@ -37,7 +38,8 @@
             
             public def getLiquidationData(){
                 if( !fund ) fund = fundList[0];
-                return svc.buildReportBData( liquidation.objid, fund.objid );
+                if( !chart ) chart = chartList[0];
+                return svc.buildReportDData( liquidation.objid, chart , fund.objid );
             }
             
             def funds;
@@ -46,13 +48,23 @@
                 return funds;
             }
             
-            void setFund( def val ){
-                this.fund = val;
-                this.param.put("FUND", val?.fundname );
+            def chart;
+            public def getChartList(){
+                return ['NGAS','SRE'];
             }
             
             def back(){
                 return "_close";
+            }
+            
+            void setChart(def val){
+                this.chart = val;
+                this.param.put("CHART", val );
+            }
+            
+            void setFund(def val){
+                this.fund = val;
+                this.param.put("FUND", val.fundname );
             }
 
         }
@@ -60,6 +72,6 @@
     </code>
     
     <pages>
-        <page template="etracs2.tc.liquidation.LiquidationReportBPage" />
+        <page template="etracs2.tc.liquidation.LiquidationReportCPage" />
     </pages>
 </workunit>
