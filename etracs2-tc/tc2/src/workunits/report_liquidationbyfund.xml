@@ -23,6 +23,7 @@
             def fund;
             def liquidation;
             def param =[:];
+            def fundid;
             
             def reportModel = [
                 getReportName : { return 'liquidation/reportb'; },
@@ -37,7 +38,7 @@
             
             public def getLiquidationData(){
                 if( !fund ) fund = fundList[0];
-                return svc.buildReportBData( liquidation.objid, fund.objid );
+                return svc.buildReportBData( liquidation.objid, fundid );
             }
             
             def funds;
@@ -48,6 +49,7 @@
             
             void setFund( def val ){
                 this.fund = val;
+                this.fundid = val?.objid;
                 this.param.put("FUND", val?.fundname );
             }
             
