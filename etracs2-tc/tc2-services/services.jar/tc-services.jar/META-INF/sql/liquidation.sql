@@ -69,6 +69,6 @@ AND collectorid = $P{collectorid}
 UPDATE remittancelist 
 SET docstate = 'CLOSED', 
 	liquidationid = $P{liquidationid}, 
-	liquidationno = $P{liquidationno}
+	liquidationno = $P{liquidationno} 
 WHERE docstate = 'OPEN' 
 AND collectorid = $P{collectorid}
