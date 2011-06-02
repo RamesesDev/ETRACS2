@@ -55,14 +55,11 @@ class LiquidationService {
 	}
 	
 	private void validate( liq ) {
-		if ( ( liq.info.d1000qty * 1000.00
-				+ liq.info.d500qty * 500.00
-				+ liq.info.d200qty * 200.00
-				+ liq.info.d100qty * 100.00
-				+ liq.info.d50qty * 50.00
-				+ liq.info.d20qty * 20.00
-				+ liq.info.d10qty * 10.00
-				+ liq.info.coins ) != liq.info.totalcash )
+		def totalcash = 0.00;
+		for (denom in liq.info.denominations) {
+			totalcash += denom.amount;
+		}
+		if ( totalcash != liq.info.totalcash )
 			 throw new Exception( "Cash Received must be equal to Cash Expected." );
 		def liqTemp = createLiquidation( liq );
 		if (liq.remittances.size() != liqTemp.remittances.size() )
@@ -141,9 +138,11 @@ class LiquidationService {
 	
 	@ProxyMethod
 	public def open( objid ) {
+		if (!objid)
+			return null;
 		def liq = em.read( SCHEMANAME, [objid:objid] );
-		liq.remittances = em.sqlContext.createNamedQuery( "liquidation:getRemittancesByLiquidation" ).setParameter( "liquidationid", liq.objid ).resultList;
-		liq.otherpayments = em.sqlContext.createNamedQuery( "liquidation:getOtherPaymentsByLiquidation" ).setParameter( "liquidationid", liq.objid ).resultList;
+		liq.remittances = em.sqlContext.createNamedQuery( "liquidation:getRemittancesByLiquidation" ).setParameter( "liquidationid", objid ).resultList;
+		liq.otherpayments = em.sqlContext.createNamedQuery( "liquidation:getOtherPaymentsByLiquidation" ).setParameter( "liquidationid", objid ).resultList;
 
 		return liq;
 	}
@@ -201,66 +200,24 @@ class LiquidationService {
 		""";
 		
 		/* Cash Breakdown */
-		def d1000 = decformat.format( liq.info.d1000qty * 1000 );
-		def d1000qty = numformat.format( liq.info.d1000qty );
-		def d500 = decformat.format( liq.info.d500qty * 500 );
-		def d500qty = numformat.format( liq.info.d500qty );
-		def d200 = decformat.format( liq.info.d200qty * 200 );
-		def d200qty = numformat.format( liq.info.d200qty );
-		def d100 = decformat.format( liq.info.d100qty * 100 );
-		def d100qty = numformat.format( liq.info.d100qty );
-		def d50 = decformat.format( liq.info.d50qty * 50 );
-		def d50qty = numformat.format( liq.info.d50qty );
-		def d20 = decformat.format( liq.info.d20qty * 20 );
-		def d20qty = numformat.format( liq.info.d20qty );
-		def d10 = decformat.format( liq.info.d10qty * 10 );
-		def d10qty = numformat.format( liq.info.d10qty );
-		def coins = decformat.format( liq.info.coins );
-		def totalcash = decformat.format( liq.info.totalcash );
 		html += """
 			<div class='data-group'>
 				<div class='data-header'>Breakdown</div>
 				<table class='data-table'>
 					<tr><th>Denomination</th><th>Qty</th><th>Amount</th></tr>
-					<tr class='item'>
-						<td class='caption align-right'>1000 x</td>
-						<td class='align-right'>${d1000qty}</td>
-						<td class='align-right'>${d1000}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>500 x</td>
-						<td class='align-right'>${d500qty}</td>
-						<td class='align-right'>${d500}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>200 x</td>
-						<td class='align-right'>${d200qty}</td>
-						<td class='align-right'>${d200}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>100 x</td>
-						<td class='align-right'>${d100qty}</td>
-						<td class='align-right'>${d100}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>50 x</td>
-						<td class='align-right'>${d50qty}</td>
-						<td class='align-right'>${d50}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>20 x</td>
-						<td class='align-right'>${d20qty}</td>
-						<td class='align-right'>${d20}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>10 x</td>
-						<td class='align-right'>${d10qty}</td>
-						<td class='align-right'>${d10}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>Coins</td>
-						<td class='align-right' colspan='2'>${coins}</td>
-					</tr>
+			
+		""";
+		for (denom in liq.info.denominations) {
+			html += """
+				<tr>
+					<td class='align-right'>${denom.caption} x </td>
+					<td class='align-right'>${denom.qty}</td>
+					<td class='align-right'>${denom.amount}</td>
+				</tr>
+			""";
+		}
+		def totalcash = decformat.format( liq.info.totalcash );
+		html += """
 					<tr class='summary'>
 						<td colspan='2'>Total Cash</td>
 						<td class='align-right'>${totalcash}</td>

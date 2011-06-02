@@ -1,0 +1,46 @@
+<workunit>
+    <invokers>
+        <invoker type="formActions" action="close"  immediate="true" caption="Close" mnemonic="c" icon="images/cancel24.png"/>
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.osiris2.reports.*;
+        import java.rmi.server.UID;
+
+        class LiquidationReportRCDController {
+        
+            @Service("LiquidationReportService")
+            def svc;
+            
+            @Service("ReportParameterService")
+            def paramSvc;
+        
+            def entity;
+        
+            def report = [
+                getReportName : { return 'liquidation/rcd' },
+                getReportData : { return reportSvc.buildRCDReportData( entity.objid ); }, 
+                getParameters : { return paramSvc.getStandardParameter( OsirisContext.env.USERNAME ) }
+            ] as ServerReportModel;
+            
+            def close() {
+                return '_close';
+            }
+            
+            void view() {
+                report.viewReport();
+            }
+
+        }
+
+        ]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.PreviewPage" />
+    </pages>
+</workunit>

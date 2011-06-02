@@ -42,6 +42,7 @@ public class LiquidationPage extends javax.swing.JPanel {
         xNumberField11 = new com.rameses.rcp.control.XNumberField();
         xButton1 = new com.rameses.rcp.control.XButton();
         xButton3 = new com.rameses.rcp.control.XButton();
+        jPanel4 = new javax.swing.JPanel();
         xSubFormPanel2 = new com.rameses.rcp.control.XSubFormPanel();
 
         xButton2.setMnemonic('d');
@@ -97,7 +98,7 @@ public class LiquidationPage extends javax.swing.JPanel {
         formPanel3.setBounds(10, 20, 530, 80);
 
         jPanel1.add(jPanel2);
-        jPanel2.setBounds(10, 10, 620, 110);
+        jPanel2.setBounds(10, 10, 640, 110);
 
         jPanel3.setLayout(null);
 
@@ -132,28 +133,36 @@ public class LiquidationPage extends javax.swing.JPanel {
         formPanel2.add(xNumberField11);
 
         jPanel3.add(formPanel2);
-        formPanel2.setBounds(40, 50, 270, 100);
+        formPanel2.setBounds(20, 60, 270, 100);
 
         xButton1.setMnemonic('o');
         xButton1.setText("Other Payments");
         xButton1.setFont(new java.awt.Font("Arial", 1, 12));
         xButton1.setName("viewOtherPayments");
         jPanel3.add(xButton1);
-        xButton1.setBounds(90, 180, 150, 25);
+        xButton1.setBounds(80, 180, 150, 23);
 
         xButton3.setMnemonic('r');
         xButton3.setText("View Remittances");
         xButton3.setFont(new java.awt.Font("Arial", 1, 12));
         xButton3.setName("viewRemittances");
         jPanel3.add(xButton3);
-        xButton3.setBounds(90, 210, 150, 25);
+        xButton3.setBounds(80, 210, 150, 23);
 
         jPanel1.add(jPanel3);
-        jPanel3.setBounds(10, 130, 350, 290);
+        jPanel3.setBounds(10, 130, 310, 290);
 
-        xSubFormPanel2.setHandler("cashBreakdownHandler");
-        jPanel1.add(xSubFormPanel2);
-        xSubFormPanel2.setBounds(370, 130, 260, 290);
+        jPanel4.setLayout(new java.awt.BorderLayout());
+
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder3.setTitle("Cash Breakdown");
+        jPanel4.setBorder(xTitledBorder3);
+        xSubFormPanel2.setDynamic(true);
+        xSubFormPanel2.setHandler("denominationOpener");
+        jPanel4.add(xSubFormPanel2, java.awt.BorderLayout.CENTER);
+
+        jPanel1.add(jPanel4);
+        jPanel4.setBounds(330, 130, 320, 290);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -166,6 +175,7 @@ public class LiquidationPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
