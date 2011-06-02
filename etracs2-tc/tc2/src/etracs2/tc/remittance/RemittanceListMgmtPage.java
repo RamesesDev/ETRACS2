@@ -69,6 +69,7 @@ public class RemittanceListMgmtPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Document");
         jPanel2.setBorder(xTitledBorder2);
+        xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setFont(new java.awt.Font("Arial", 0, 12));
         xActionBar1.setName("formActions");
         jPanel2.add(xActionBar1, java.awt.BorderLayout.NORTH);

@@ -53,7 +53,6 @@
             def create() {
                 collector = usersvc.getCollector( OsirisContext.env.USERID );
                 mode = 'init';
-                caller?.mode = 'create';
                 entity = [
                     collectorid : collector.objid,
                     info : buildInfo(),
@@ -69,7 +68,7 @@
                 if (entity)
                     entity = svc.open( entity.objid );
                 mode = 'view';
-                denominationOpener = InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:entity.info.totalcash, list:entity.info.denominations, mode:'view']);
+                denominationOpener = InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:entity.info.totalcash, list:entity.info.denominations, mode:'read']);
                 
                 return 'main';
             }
