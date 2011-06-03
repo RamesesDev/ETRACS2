@@ -82,6 +82,7 @@ public class AccountPage extends javax.swing.JPanel {
         xNumberField1.setFieldType(BigDecimal.class);
         xNumberField1.setName("account.target");
         xNumberField1.setPattern("###0.00");
+        xNumberField1.setPreferredSize(new java.awt.Dimension(75, 18));
         formPanel1.add(xNumberField1);
 
         jPanel1.add(formPanel1);
