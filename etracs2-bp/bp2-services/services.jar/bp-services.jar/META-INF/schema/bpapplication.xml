@@ -1,0 +1,55 @@
+<schema>
+	<element name="bpapplication" tablename="bpapplication" >
+		<field name="objid" primary="true"/>
+		<field name="schemaname" required="true" />
+		<field name="schemaversion" required="true" />
+		<field name="docstate" required="true" />
+		<field name="taxpayerid" required="true" />
+		<field name="businessid"/>
+		<complex name="info" ref="bpinfo" serializer="default"/>
+	</element>
+	
+	<element name="bpinfo">
+		<field name="lobs" ref="lob"/>
+		<field name="appinfos" ref="appinfo"/>
+		<field name="taxfees" ref="taxfee"/>
+		<complex name="applicationsignatories" ref="signatory" type="list"/>
+		<complex name="assessmentsignatories"  ref="signatory" type="list"/>
+	</element>
+	
+	<element name="lob">
+		<field name="lobid"/>
+		<field name="name"/>
+		<field name="assessmenttype"/>
+	<element>
+	
+	<element name="appinfo">
+		<field name="lobid"/>
+		<field name="varid"/>
+		<field name="varname"/>
+		<field name="vartype"/>
+		<field name="value"/>
+		<field name="arrayvalue"/>
+	</element>
+	
+	<element name="taxfee">
+		<field name="acctid"/>
+		<field name="acctno"/>
+		<field name="accttitle"/>
+		<field name="assessedvalue" type="decimal"/>
+		<field name="amountdue" type="decimal"/>
+	</element>
+	
+	<element name="requirement">
+		<field name="requirement"/>
+		<field name="complied" type="boolean"/>
+		<field name="remarks"/>
+	</requirement>
+	
+	<element name="signatory">
+		<field name="name"/>
+		<field name="title"/>
+		<field name="department"/>
+	</element>
+</schema>
+
