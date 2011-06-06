@@ -1,0 +1,65 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+import java.text.DecimalFormat;
+
+class TDReportService {
+
+	@PersistenceContext("main")
+	def em;
+	
+	@Service("DateService")
+	def dtsvc;
+	
+	@ProxyMethod
+	public def generateAbstractOfCollectionDaily( txndate ) {
+		txndate = dtsvc.parse( "yyyy-MM-dd", txndate );
+		def txntimestamp = dtsvc.buildCustomTimeStamp( txndate );
+		return [
+			receipts : getReceiptsByDate( txntimestamp ),
+			acctsummaries : getReceiptSummaryByDate( txntimestamp )
+		];
+	}
+	
+	private def getReceiptsByDate( txntimestamp ) {
+		return em.sqlContext.createNamedQuery( "tcreport:getReceiptsByDate" ).setParameters( [txntimestamp:txntimestamp] ).resultList;
+	}
+	
+	private def getReceiptSummaryByDate( txntimestamp ) {
+		return em.sqlContext.createNamedQuery( "tcreport:getReceiptSummaryByDate" ).setParameters( [txntimestamp:txntimestamp] ).resultList;
+	}
+	
+	@ProxyMethod
+	public def generateAbstractOfCollectionMonthly( params ) {
+		def monthtimestamp = params.year + '' + dtsvc.getQtrByMonth( params.month.index )  + ( params.month.index + '' ).padLeft( 2, '0' );
+		return [
+			receipts : getReceiptsByMonth( monthtimestamp ),
+			acctsummaries : getReceiptSummaryByMonth( monthtimestamp )
+		];
+	}
+	
+	private def getReceiptsByMonth( monthtimestamp ) {
+		return em.sqlContext.createNamedQuery( "tcreport:getReceiptsByMonth" ).setParameters( [monthtimestamp:monthtimestamp] ).resultList;
+	}
+	
+	private def getReceiptSummaryByMonth( monthtimestamp ) {
+		return em.sqlContext.createNamedQuery( "tcreport:getReceiptSummaryByMonth" ).setParameters( [monthtimestamp:monthtimestamp] ).resultList;
+	}
+	
+	@ProxyMethod
+	public def generateAbstractOfCollectionQuarterly( params ) {
+		def qtrtimestamp = params.year + '' + params.qtr.index;
+		return [
+			receipts : getReceiptsByQtr( qtrtimestamp ),
+			acctsummaries : getReceiptSummaryByQtr( qtrtimestamp )
+		];
+	}
+	
+	private def getReceiptsByQtr( qtrtimestamp ) {
+		return em.sqlContext.createNamedQuery( "tcreport:getReceiptsByQtr" ).setParameters( [qtrtimestamp:qtrtimestamp] ).resultList;
+	}
+	
+	private def getReceiptSummaryByQtr( qtrtimestamp ) {
+		return em.sqlContext.createNamedQuery( "tcreport:getReceiptSummaryByQtr" ).setParameters( [qtrtimestamp:qtrtimestamp] ).resultList;
+	}
+}

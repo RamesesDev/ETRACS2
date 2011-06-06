@@ -10,6 +10,8 @@
 package etracs2.tc.main;
 
 import com.rameses.osiris2.client.OsirisTestPlatform;
+import com.rameses.osiris2.reports.ServerReportModel;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.UIManager;
@@ -30,7 +32,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         //UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         Map params = new HashMap();
-        params.put("default.host", "10.0.0.108:8080");
+        params.put("default.host", "localhost:8080");
         params.put("app.context", "bohol");
         OsirisTestPlatform.runTest( params );
     }
