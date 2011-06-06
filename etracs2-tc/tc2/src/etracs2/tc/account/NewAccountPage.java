@@ -7,6 +7,7 @@
 package etracs2.tc.account;
 
 import com.rameses.rcp.ui.annotations.StyleSheet;
+import java.math.BigDecimal;
 
 /**
  *
@@ -33,6 +34,7 @@ public class NewAccountPage extends javax.swing.JPanel {
         xLabel1 = new com.rameses.rcp.control.XLabel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xTextField2 = new com.rameses.rcp.control.XTextField();
+        xNumberField1 = new com.rameses.rcp.control.XNumberField();
         jPanel2 = new javax.swing.JPanel();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
 
@@ -69,6 +71,14 @@ public class NewAccountPage extends javax.swing.JPanel {
         xTextField2.setRequired(true);
         formPanel1.add(xTextField2);
 
+        xNumberField1.setCaption("Target");
+        xNumberField1.setCaptionWidth(60);
+        xNumberField1.setFieldType(BigDecimal.class);
+        xNumberField1.setName("account.target");
+        xNumberField1.setPattern("###0.00");
+        xNumberField1.setPreferredSize(new java.awt.Dimension(75, 18));
+        formPanel1.add(xNumberField1);
+
         jPanel3.add(formPanel1, java.awt.BorderLayout.CENTER);
 
         jPanel1.add(jPanel3, java.awt.BorderLayout.CENTER);
@@ -103,6 +113,7 @@ public class NewAccountPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel3;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XLabel xLabel1;
+    private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
     // End of variables declaration//GEN-END:variables
