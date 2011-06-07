@@ -76,6 +76,7 @@ abstract class CRUDController {
             mode = "view";
         }
         listHandler.refresh();
+        binding.focus( "selectedItem" );
     }
     
     void focus( name ) {
@@ -85,6 +86,7 @@ abstract class CRUDController {
     
     void setSelectedItem( item ) {
         selectedItem = item;
+        if( mode == "create" ) return;
         entity = selectedItem
         if( ! entity ) {
             entity = createEntity();
