@@ -1,0 +1,82 @@
+<workunit>
+    <invokers>
+        <invoker type="rulecondition.type" action="create" caption="Business Organization" index="10" />        
+        <invoker type="rulecondition.businessorg.open" action="open" caption="Business Organization Condition" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPRuleConditionBusinessOrgController 
+{
+    @Binding
+    def binding
+    
+    @Service('BPApplicationService')
+    def svc 
+    
+    def condition
+    def selectedItem
+    def title = 'Business Organization is any of the following:'
+    
+    void create() {
+        condition = [
+            opener        : 'rulecondition.businessorg',
+            organizations : [],
+        ]
+    }
+    
+    void open() {
+    }
+    
+    //must be implemented by a condition handler
+    void accept() {
+        if( ! condition.organizations ) throw new Exception('At least one Organization is required.')
+        condition.displaytext = buildDisplayText()
+    }
+    
+    def buildDisplayText() {
+        def orgs = condition.organizations.join(', ')
+        return title + ' ' + orgs
+    }
+    
+    
+    
+    /* -------------------------------------------
+    **  List support
+    ------------------------------------------- */
+    def onselectHandler = { org ->
+        if( ! condition.organizations.contains( org ) ) {
+            condition.organizations.add( org )
+            binding.refresh('selectedItem')
+        }
+    }
+    
+    def add() {
+        def list = svc.getOrganizationTypes()
+        list.removeAll( condition.organizations )
+        def params = [ 
+            list            : list,
+            title           : title,
+            onselectHandler : onselectHandler,
+        ]
+        return InvokerUtil.lookupOpener('list.multiselect', params )
+    }
+    
+    void remove() {
+        if( ! selectedItem ) return
+        selectedItem.each{ condition.organizations.remove( it ) }
+        binding.refresh('selectedItem')
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.condition.BusinessOrgConditionPage" />
+    </pages>
+</workunit>

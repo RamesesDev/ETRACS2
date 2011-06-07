@@ -1,0 +1,47 @@
+<workunit>
+    <invokers>
+        <invoker type="ruleanalyzer.inputvalues" caption="Input Values" target="popup"  />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osisirs2.client.*
+
+class InputValuesController
+{
+    @Binding
+    def binding
+    
+    def entity 
+    def selectedInfo
+    def selectedLobInfo
+    def inputHandler
+    
+    def infoListHandler = [
+        getColumns : { return [
+            new Column(name:'lobname', caption:'Line of Business'),
+            new Column(name:'varname', caption:'Variable'),
+            new Column(name:'value', caption:'Value', editable:true),
+        ]},
+        fetchList : { return entity.infos }
+    ] as SubListModel
+    
+    def cancel() {
+        return '_close'
+    }
+    
+    def ok() {
+        if( inputHandler ) inputHandler( entity )
+        return '_close'
+    }
+}
+
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.analyzer.InputValuesPage" />
+    </pages>
+</workunit>

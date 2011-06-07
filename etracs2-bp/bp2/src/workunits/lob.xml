@@ -7,6 +7,7 @@
         <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
         <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
         <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view'}" immediate="true" caption="Delete" mnemonic="d" />
+        <invoker type="formActions" action="approve" shortcut="ctrl A" visibleWhen="#{mode == 'view' and entity.docstate=='DRAFT'}" immediate="true" caption="Approve" mnemonic="a" />
     </invokers>
     <code>
 <![CDATA[
@@ -25,6 +26,12 @@ class LobController extends etracs2.groovy.CRUDController
     
     def searchAttribute
     def attribute
+    
+    void approve() {
+        if( MsgBox.confirm('Approve?') ) {
+            entity = svc.approve( entity.objid ) 
+        }
+    }
     
     def onselectClassification = { lobclass ->
         updateClassificationInfo( lobclass )

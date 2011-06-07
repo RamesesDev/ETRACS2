@@ -1,0 +1,86 @@
+<workunit>
+    <invokers>
+        <invoker type="rulecondition.type" action="create" caption="Line of Business" index="60" />        
+        <invoker type="rulecondition.lob.open" action="open" caption="Line of Business Condition" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPRuleLobController 
+{
+    @Binding
+    def binding
+    
+    def condition
+    def selectedItem
+    def INCLUDE = 'INCLUDE'
+    def EXCLUDE = 'EXCLUDE'
+    def searchText
+    
+    void create() {
+        condition = [
+            opener      : 'rulecondition.lob',
+            includetype : INCLUDE,
+            lobs        : [],
+        ]
+    }
+    
+    void open() {
+    }
+    
+    //must be implemented by a condition handler
+    void accept() {
+        if( ! condition.lobs ) throw new Exception('At least one Line of Business is required.')
+        condition.displaytext = buildDisplayText()
+    }
+    
+    def buildDisplayText() {
+        def lobs = condition.lobs.name.join(', ')
+        if( condition.includetype == INCLUDE )
+            return 'Line of Business includes the following: ' + lobs
+        else
+            return 'Line of Business excludes the following: ' + lobs
+    }
+    
+    def getIncludeTypes() {
+        return [ INCLUDE, EXCLUDE]
+    }
+    
+    
+    /* -------------------------------------------
+    **  List support
+    ------------------------------------------- */
+    def onselectHandler = { slob ->
+        def lob = [ objid:slob.objid, name:slob.name ]
+        if( ! condition.lobs.contains( lob ) ) {
+            condition.lobs.add( lob )
+            searchText = null
+            binding.refresh('selectedItem|searchText')
+            
+        }
+    }
+    
+    def lookupLob() {
+        return InvokerUtil.lookupOpener('lob.lookup', [searchText:searchText, onselect:onselectHandler])
+    }
+    
+    void remove() {
+        if( ! selectedItem ) return
+        selectedItem.each{ condition.lobs.remove( it ) }
+        binding.refresh('selectedItem')
+    }
+    
+    
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.condition.LobConditionPage" />
+    </pages>
+</workunit>

@@ -1,0 +1,82 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/bp/master" action="init" caption="Rule Management" />
+        <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" />
+        <invoker type="formActions" action="open" caption="Open" mnemonic="o" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" />
+        <invoker type="formActions" action="remove" caption="Delete" mnemonic="d" shortcut="ctrl D" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'DRAFT'}" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class RuleMgmtController 
+{
+    @Binding
+    def binding
+    
+    @Service('RuleService')
+    def svc 
+    
+    
+    def searchText
+    def selectedItem 
+    def list = []
+    
+    void init() {
+        search()
+    }
+    
+    def create() {
+        return InvokerUtil.lookupOpener('rule.create', [:])
+    }
+    
+    def updateHandler = {
+        binding.refresh('html')
+    }
+    
+    def open() {
+        def entity = svc.open( selectedItem.objid )
+        return InvokerUtil.lookupOpener('rule.open', [entity:entity, updateHandler:updateHandler])
+    }
+    
+    void remove() {
+        if( MsgBox.confirm('Delete rule?') ) {
+            svc.remove( selectedItem.objid )
+            list.remove( selectedItem )
+            listHandler.load()
+        }
+    }
+    
+    void search() {
+        list = svc.getList( searchText, null )
+        listHandler.load()
+    }
+    
+    def listHandler = [
+        getColumns   : {
+            return [
+                new Column(name:'agendagroup', caption:'Group', maxWidth:120),
+                new Column(name:'docstate', caption:'State', maxWidth:80 ),
+                new Column(name:'rulename', caption:'Rule Name'),
+                new Column(name:'author', caption:'Author', maxWidth:120),
+                new Column(name:'salience', caption:'Salience', maxWidth:80 ),
+            ]
+        },
+        fetchList : { return list },
+        onOpenItem : {item, colname -> open() }
+    ] as PageListModel
+    
+    def getHtml() {
+        svc.getHtml( selectedItem?.objid )
+    }
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.rule.RuleMgmtPage" />
+    </pages>
+</workunit>

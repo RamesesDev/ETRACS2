@@ -1,0 +1,69 @@
+<workunit>
+    <invokers>
+        <invoker type="ruleaction.create" action="create" caption="Select An Action" target="popup" />
+        <invoker type="ruleaction.open" action="open" caption="Open Action" target="popup" />
+        
+        <invoker type="mainActions" action="ok" caption="OK" mnemonic="o" />
+        <invoker type="mainActions" action="_close" caption="Cancel" mnemonic="c" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class RuleActionController 
+{
+    def addHandler
+    def updateHandler
+    def action
+    def opener 
+    def mode 
+    def rule 
+    
+    void create() {
+        mode = 'create' 
+    }
+    
+    def open() {
+        mode = 'open' 
+        return 'main'
+    }
+    
+    def next() {   
+        if( !opener ) throw new Exception('Select an action.')
+        return 'main' 
+    }
+    
+    def ok() {
+        opener.handle.accept()
+        action = opener.handle.action
+        if( mode == 'create') 
+            invokeAddHandler()
+        else 
+            invokeUpdateHandler()
+        return '_close' 
+    }
+    
+    void invokeAddHandler() {
+        if( addHandler ) addHandler( action )
+    }
+    
+    void invokeUpdateHandler() {
+        if( updateHandler ) updateHandler( action )
+    }
+    
+    def getOpeners() {
+        return InvokerUtil.lookupOpeners('ruleaction.type', [rule:rule, action:action])
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.rule.RuleActionInitPage" />
+        <page name="main" template="etracs2.rule.RuleActionPage" />
+    </pages>
+</workunit>

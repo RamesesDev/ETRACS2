@@ -1,0 +1,85 @@
+<workunit>
+    <invokers>
+        <invoker type="rulecondition.type" action="create" caption="Line of Business Classification" index="3" />        
+        <invoker type="rulecondition.lobclassification.open" action="open" caption="Line of Business Classification Condition" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPRuleConditionLobClassificationController 
+{
+    @Binding
+    def binding
+    
+    @Service('BPApplicationService')
+    def svc 
+    
+    @Service('LobClassificationService')
+    def lobSvc
+    
+    def condition
+    def selectedItem
+    def title =  'Line of Busines Classification is any of the following: '
+    
+    void create() {
+        condition = [
+            opener : 'rulecondition.lobclassification',
+            lobclassifications : [],
+        ]
+    }
+    
+    void open() {
+    }
+    
+    //must be implemented by a condition handler
+    void accept() {
+        if( ! condition.lobclassifications ) throw new Exception('At least one Line of Busines Classification is required.')
+        condition.displaytext = buildDisplayText()
+    }
+    
+    def buildDisplayText() {
+        def classifications = condition.lobclassifications.name.join(', ')
+        return title + ' '  + classifications
+    }
+    
+    
+    
+    /* -------------------------------------------
+    **  List support
+    ------------------------------------------- */
+    def onselectHandler = { lobclass ->
+        if( ! condition.lobclassifications.contains( lobclass ) ) {
+            condition.lobclassifications.add( lobclass )
+            binding.refresh('selectedItem')
+        }
+    }
+    
+    def add() {
+        def list = lobSvc.getClassifications()
+        list.removeAll( condition.lobclassifications )
+        def params = [ 
+            list            : list,
+            title           : title,
+            onselectHandler : onselectHandler,
+        ]
+        return InvokerUtil.lookupOpener('list.multiselectexp', params )
+    }
+    
+    void remove() {
+        if( ! selectedItem ) return
+        selectedItem.each{ condition.lobclassifications.remove( it ) }
+        binding.refresh('selectedItem')
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.condition.LobClassificationConditionPage" />
+    </pages>
+</workunit>

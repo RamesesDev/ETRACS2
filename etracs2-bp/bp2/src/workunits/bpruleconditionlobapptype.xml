@@ -1,0 +1,82 @@
+<workunit>
+    <invokers>
+        <invoker type="rulecondition.type" action="create" caption="Line of Business Assessment Type" index="2" />        
+        <invoker type="rulecondition.lobtype.open" action="open" caption="Line of Business Type Condition" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPRuleConditionLobApplicationTypeController 
+{
+    @Binding
+    def binding
+    
+    @Service('BPApplicationService')
+    def svc 
+    
+    def condition
+    def selectedItem
+    def title =  'Line of Business Assessment Type is any of the following: '
+    
+    void create() {
+        condition = [
+            opener : 'rulecondition.lobtype',
+            types  : [],
+        ]
+    }
+    
+    void open() {
+    }
+    
+    //must be implemented by a condition handler
+    void accept() {
+        if( ! condition.types ) throw new Exception('At least one Line of Business Type is required.')
+        condition.displaytext = buildDisplayText()
+    }
+    
+    def buildDisplayText() {
+        def types = condition.types.join(', ')
+        return title + ' '  + types
+    }
+    
+    
+    
+    /* -------------------------------------------
+    **  List support
+    ------------------------------------------- */
+    def onselectHandler = { type ->
+        if( ! condition.types.contains( type ) ) {
+            condition.types.add( type )
+            binding.refresh('selectedItem')
+        }
+    }
+    
+    def add() {
+        def list = svc.getApplicationTypes()
+        list.removeAll( condition.types )
+        def params = [ 
+            list            : list,
+            title           : title,
+            onselectHandler : onselectHandler,
+        ]
+        return InvokerUtil.lookupOpener('list.multiselect', params )
+    }
+    
+    void remove() {
+        if( ! selectedItem ) return
+        selectedItem.each{ condition.types.remove( it ) }
+        binding.refresh('selectedItem')
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.condition.LOBAssessmentTypeConditionPage" />
+    </pages>
+</workunit>

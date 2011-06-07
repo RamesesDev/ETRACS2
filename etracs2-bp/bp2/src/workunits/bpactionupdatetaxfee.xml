@@ -1,0 +1,86 @@
+<workunit>
+    <invokers>
+        <invoker type="ruleaction.type" action="create" caption="Update Amount Due" index="10" />        
+        <invoker type="ruleaction.updatetaxfee.open" action="open" caption="Update Amount Due Action" />        
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPRuleActionUpdateTaxFeeController
+{
+    @Binding
+    def binding
+    
+    @Service('BPApplicationService')
+    def svc 
+    
+    def action
+    def rule
+    def opener 
+    
+    void create() {
+        action = [
+            opener  : 'ruleaction.updatetaxfee',
+            expr    : null,
+            conditions : [],
+        ]
+        createOpener()
+    }
+    
+    void open() {
+        createOpener()
+    }
+    
+    //must be implemented by a handler
+    void accept() {
+        if( opener && opener.handle ) {
+            action.expr = opener.handle.expr
+        }
+        if( ! action.expr ) throw new Exception('Computation Formula is required.')
+        action.displaytext = buildDisplayText()
+    }
+    
+    def buildDisplayText() {
+        return 'Update amount due using the formula : ' + action.expr 
+    }
+    
+    
+    
+    void createOpener() {
+        def formuladef = buildFormulaDef()
+        opener = InvokerUtil.lookupOpener('formulaeditor', [formuladef:formuladef, expr:action.expr ])
+    }
+    
+    def buildFormulaDef() {
+        def parameters = buildParameters()
+        return [
+            fields     : [],
+            variables  : parameters,
+            parameters : [],
+            functions  : [],
+        ]
+    }
+    
+    def buildParameters() {
+        def vars = []
+        vars += [
+            objid   : 'AMOUNTDUE',
+            name    : 'AMOUNTDUE',
+            caption : 'Amount Due',
+            description : 'Amount Due',
+        ]
+        return vars
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.action.UpdateTaxFeePage" />
+    </pages>
+</workunit>

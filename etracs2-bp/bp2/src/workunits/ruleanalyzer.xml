@@ -1,0 +1,157 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/bp/master" action="init" caption="Rule Analyzer" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class RuleAnalyzerController
+{
+    @Binding
+    def binding
+    
+    @Service('BPRuleService')
+    def svc 
+    
+    @Service('BPApplicationService')
+    def appSvc
+    
+    @Service('LGUService')
+    def lguSvc
+    
+    @Service('LobClassificationService')
+    def lobclassSvc
+    
+    def selectedLob
+    def selectedInfo
+    def selectedTaxFee
+    def barangay
+    
+    def entity
+    
+    void init() {
+        createEntity()
+    }
+    
+    void resetComputation() {
+        entity.infos = []
+        entity.taxfees = []
+        binding.refresh('selectedInfo|selectedTaxFee')
+    }
+    
+    void getInfos() {
+        resetComputation()
+        entity = svc.buildInfos( entity )
+        binding.refresh('selectedInfo')
+    }
+    
+    
+    /* ------------------------------------------------------------------------
+    // Input Values Support
+    //------------------------------------------------------------------------ */
+    def inputHandler = { app ->
+        convertDataTypes( app ) //TODO: Temporary while ui is not yet available
+        entity = svc.buildTaxFees( app )
+        taxfeeListHandler.load()
+        binding.refresh('selectedTaxFee')
+        binding.refresh('selectedInfo')
+    }
+    
+    void convertDataTypes( app ) {
+        app.infos.each { info ->
+            if( info.vartype == 'decimal' ) info.value = Double.parseDouble( info.value +'' )
+            else if( info.vartype == 'integer' ) info.value = Integer.parseInt( info.value +'' )
+        }
+    }
+    
+    def inputValues() {
+        getInfos()
+        return InvokerUtil.lookupOpener('ruleanalyzer.inputvalues', [entity:entity, inputHandler:inputHandler] )
+    }
+    
+    def lobLookup = InvokerUtil.lookupOpener( 'lob.lookup', [:] )
+    
+    def lobListHandler = [
+        getColumns : { return [
+            new Column(name:'lob', caption:'Name',editable:true, type:'lookup', handler:lobLookup, expression:'#{name}' ),
+            new Column(name:'assessmenttype', caption:'Type', maxWidth:150, editable:true ),
+        ]},
+        createItem : { return [:] },
+        fetchList  : { return entity.lobs },
+        onAddItem  : { item -> doAddItem( item ) },
+        onRemoveItem : { item -> 
+            if( MsgBox.confirm('Delete selecte line of business?') ) {
+                entity.lobs.remove( item )
+                resetComputation()
+            }
+        }
+    ] as SubListModel
+    
+    def appinfoListHandler = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'lobname', caption:'Line of Business'),
+            new Column(name:'varname', caption:'Variable'),
+            new Column(name:'value', caption:'Value', editable:true ),
+        ]},
+        fetchList : { return entity.infos },
+    ] as SubListModel
+    
+    def taxfeeListHandler = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'lobname', caption:'Line of Business'),
+            new Column(name:'accttitle', caption:'Account'),
+            new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal'),
+            new Column(name:'amountdue', caption:'Amount Due', type:'decimal'),
+        ]},
+        fetchList : { return entity.taxfees },
+    ] as SubListModel
+    
+    void doAddItem( item ) {
+        item.objid = item.lob.objid
+        item.name = item.lob.name
+        item.classificationid = item.lob.classificationid 
+        entity.lobs.add( item )
+    }
+    
+    
+    void createEntity() {
+        entity = [
+            objid  : 'B0001', 
+            lobs   : [],
+            infos  : [],
+            taxfee : [],
+        ]
+    }
+    
+    void setLobclassification( lobclassification )  {
+        this.lobclassification = lobclassification
+        entity.classificationid = lobclassification?.objid
+        entity.classification   = lobclassification?.name 
+    }   
+    
+    void setBarangay( barangay ) {
+        this.barangay = barangay
+        entity.barangayid = barangay?.objid
+        entity.barangay   = barangay?.name
+    }
+    
+    List getApplicationTypes() { return appSvc.getApplicationTypes() }
+    List getOfficeTypes() { return appSvc.getOfficeTypes() }
+    List getOrganizationTypes() { return appSvc.getOrganizationTypes() }
+    List getClassifications() { return lobclassSvc.getList(null, null) }
+    List getBarangays() { return lguSvc.getBarangays() }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.analyzer.RuleAnalyzerPage"/>
+    </pages>
+</workunit>

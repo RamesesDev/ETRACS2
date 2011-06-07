@@ -1,0 +1,41 @@
+<workunit>
+    <invokers>
+        <invoker type="list.multiselect" action="init" caption="List of Values" target="popup" />
+    </invokers>
+    <code>
+<![CDATA[
+    
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class MultiSelectController 
+{
+    def onselectHandler
+    def list 
+    def title 
+    def selectedItem
+    
+    void init(){}
+    
+    def ok() {
+        invokeSelectHandler()
+        return '_close' 
+    }
+    
+    void invokeSelectHandler() {
+        if( onselectHandler ) {
+            selectedItem.each {
+                onselectHandler( it )
+            }
+        }
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.common.MultiSelectListPage"/>
+    </pages>
+</workunit>

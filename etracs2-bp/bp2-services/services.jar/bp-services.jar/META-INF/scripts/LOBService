@@ -24,6 +24,22 @@ class LobService
 	}
 	
 	@ProxyMethod
+	public def getApprovedList( searchText, params ) {
+		if( ! searchText ) {
+			return em.sqlContext.createNamedQuery('lob:getApprovedList').resultList
+		}
+		return em.sqlContext.createNamedQuery('lob:getApprovedListByName').setParameter('name', searchText+'%').resultList
+	}
+	
+	@ProxyMethod
+	public List lookup( searchText ) {
+		if( ! searchText ) {
+			return em.sqlContext.createNamedQuery('lob:lookup').resultList
+		}
+		return em.sqlContext.createNamedQuery('lob:lookupByName').setParameter('name', searchText+'%').resultList
+	}
+	
+	@ProxyMethod
 	public def open( objid ) {
 		return em.read( SCHEMA_NAME, [objid:objid] )
 	}
@@ -57,6 +73,16 @@ class LobService
 		catch( e ) {
 			throw new Exception('Delete not allowed. Line of Business has already been referenced.')
 		}
+	}
+	
+	@ProxyMethod
+	public def approve( objid ) {
+		def lob = em.read(SCHEMA_NAME, [objid:objid])
+		if( !lob) throw new Exception('Line of Business not found.\nThe record might have been deleted. Please do a requery. ')
+		if( lob.docstate == APPROVED_STATE ) throw new Exception('Record has already been approved.')
+		lob.docstate = APPROVED_STATE
+		em.update( lob.schemaname, lob )
+		return lob 
 	}
 	
 	@ProxyMethod

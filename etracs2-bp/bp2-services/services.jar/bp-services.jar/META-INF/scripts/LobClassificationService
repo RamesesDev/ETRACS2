@@ -54,6 +54,11 @@ class LobClassificationService
 		}
 	}
 	
+	@ProxyMethod
+	public List getClassifications() {
+		return em.sqlContext.createNamedQuery('lobclassification:getClassifications').resultList
+	}	
+	
 	private void validate( lobclass ) {
 		checkDuplicateName( lobclass )
 		em.validate( lobclass.schemaname, lobclass )

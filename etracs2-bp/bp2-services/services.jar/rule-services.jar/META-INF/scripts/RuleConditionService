@@ -1,0 +1,81 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class RuleConditionService
+{
+	@ProxyMethod
+	public String buildConditionRuleText( condition ) {
+		if( ! condition.opener ) throw new Exception('Condition Opener must be specified.')
+		if( condition.opener == 'rulecondition.variable' ) return buildVariableCondition( condition )
+		if( condition.opener == 'rulecondition.taxfee' ) return buildTaxFeeCondition( condition )
+		if( condition.opener == 'rulecondition.officetype') return buildOfficeTypeCondition( condition )
+		if( condition.opener == 'rulecondition.lobclassification') return buildLobClassificationCondition( condition )
+		if( condition.opener == 'rulecondition.lobtype') return buildLobApplicationTypeCondition( condition )
+		if( condition.opener == 'rulecondition.lob') return buildLobCondition( condition )
+		if( condition.opener == 'rulecondition.businessorg') return buildBusinessOrgCondition( condition ) 
+		if( condition.opener == 'rulecondition.barangay') return buildBarangayCondition( condition)
+		if( condition.opener == 'rulecondition.applicationtype') return buildApplicationTypeCondition( condition ) 
+		
+		throw new Exception('RuleText definition for opener ' + condition.opener + ' is not defined in RuleTextService.' )
+	}
+
+	
+	
+	String buildApplicationTypeCondition( condition ) {
+		def types = condition.types.join('|')
+        return 'ApplicationFact( applicationtype matches "' + types + '", appid == $appid )'
+	}
+	
+	String buildBarangayCondition( condition ) {
+        def barangays = condition.barangays.objid.join('|')
+        return 'ApplicationFact( barangayid matches "' + barangays + '", appid == $appid )'
+	}	
+	
+	String buildVariableCondition( condition ) {
+		def var = condition.variable
+		if( condition.perline ) {
+            return var.name + ':InputVariableFact( varid=="' + var.objid + '",appid == $appid, lobid == $lobid' +  buildValueCondition( var ) + ' )'
+         }
+         return var.name + ':InputVariableFact( varid=="' + var.objid + '",appid == $appid, lobid == null' +  buildValueCondition( var ) + ' )'
+	}
+	
+	String buildTaxFeeCondition( condition ) {
+		def acctids = condition.accounts.objid.join('|')
+        return 'TAXFEEFACT: TaxFeeFact( AMOUNTDUE:assessedvalue, acctid matches "' + acctids + '", appid == $appid)'
+	}
+	
+	String buildOfficeTypeCondition( condition ) {
+        def types = condition.officetypes.join('|')
+        return 'ApplicationFact( officetype matches "' + types + '", appid == $appid )'
+    }
+	
+	String buildLobClassificationCondition( condition ) {
+        def classifications = condition.lobclassifications.objid.join('|')
+        return 'LOBFact( classificationid matches "' + classifications + '", lobid == $lobid, appid == $appid )'
+    }
+	
+	String buildLobApplicationTypeCondition( condition ) {
+        def types = condition.types.join('|')
+        return 'LOBFact( assessmenttype matches "' + types + '", lobid == $lobid, appid == $appid )'
+    }
+	
+	String buildLobCondition( condition ) {
+        def lobs = condition.lobs.objid.join('|')
+        if( condition.includetype == 'INCLUDE' )
+            return 'LOBFact( lobid matches "' + lobs + '", lobid == $lobid, appid == $appid )'
+        else 
+            return 'LOBFact( lobid not matches "' + lobs + '", lobid == $lobid, appid == $appid )'
+    }
+    
+	String buildBusinessOrgCondition( condition ) {
+        def orgs = condition.organizations.join('|')
+        return 'ApplicationFact( organization matches "' + orgs + '", appid == $appid )'
+    }
+    
+	def buildValueCondition( var) {
+        if( var.datatype == 'decimal' || var.datatype == 'integer' ) return ', value >= 0'
+        if( var.datatype == 'string_array' ) return ', value == "' + var.value + '"'
+        return ''
+    }
+}

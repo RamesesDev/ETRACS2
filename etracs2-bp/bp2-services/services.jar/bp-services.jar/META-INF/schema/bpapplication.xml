@@ -1,0 +1,104 @@
+<schema>
+	<element name="bpapplication" tablename="bpapplication" >
+		<field name="objid" primary="true"/>
+		<field name="schemaname" required="true" />
+		<field name="schemaversion" required="true" />
+		<field name="docstate" required="true" />
+		<field name="businessid" />
+		<field name="parentid" />
+		<complex name="info" ref="info" serializer="default" />
+		<complex name="taxfees" ref="taxfee" type="list" min="1" serializer="default"/>
+		<complex name="appinfos" ref="appinfo" type="list" serializer="default"/>
+		<complex name="requirements" ref="requirement" type="list" serializer="default" />
+		<complex name="signatories" ref="signatory" serializer="default"/>
+	</element>
+	
+	<element name="info">
+		<field name="mode" required="true"  /> <!-- CAPTURE, ONLINE -->
+		<field name="taxpayerid" required="true"  />
+		<field name="taxpayername"  required="true" />
+		<field name="taxpayeraddress"  required="true" />
+		<field name="administrator" />
+		<field name="administratoraddress" />
+		
+		<field name="appno" required="true" />
+		<field name="type" required="true" /> <!-- NEW, RENEW, RETIRE, ADDLOB, RETIRELOB, UPDATE -->
+		<field name="dtapplied"  required="true" />
+		<field name="yrapplied" required="true" type="integer" />
+		<field name="tradename" required="true"  />
+		<field name="businessaddress"  required="true" />
+		<field name="pin"  />
+		<field name="barangayid" required="true"  />
+		<field name="barangayname" required="true"  />
+		<field name="officetype" required="true" />
+		<field name="organizationtype" required="true" />
+		<field name="ctcno"  />
+		<field name="ctcplaceissued"  />
+		<field name="ctcdtissued" />
+		<field name="sss"  />
+		<field name="tin"  />
+		<field name="amtdue" type="decimal"  required="true" />
+		<field name="amtpaid" type="decimal" required="true" />
+		<field name="totaltax" type="decimal" required="true" />
+		<field name="totalregfee" type="decimal" required="true" />
+		<field name="totalcharge" type="decimal" required="true" />
+		<field name="permitid"  />
+		<field name="permitno"  />
+		<field name="permitdate"  />
+	</element>
+	
+	<element name="taxfee">
+		<field name="iyear" required="true" type="integer" />
+		<field name="type"  required="true" /> <!-- NEW, RENEW, etc -->
+		<field name="lobid"  />
+		<field name="lobname"  />
+		<field name="acctid" required="true"  />
+		<field name="acctno"  />
+		<field name="accttitle" required="true"  />
+		<field name="accttype" required="true" />
+		<field name="assessedvalue" required="true" type="decimal" />
+		<field name="amtdue" required="true" type="decimal" />		
+	</element>
+	
+	<element name="appinfo">
+		<field name="lobid"  />
+		<field name="varid" required="true" />
+		<field name="varname" required="true" />
+		<field name="varcaption" required="true" />
+		<field name="required" required="true"  />
+		<field name="beforeprint" required="true"  />
+		<field name="calculated" required="true"  />
+		<field name="stringvalue"  />
+		<field name="doublevalue"  type="decimal"/>
+		<field name="booleanvalue"  />
+		<field name="integervalue" type="integer" />
+		<field name="oldstringvalue"  />
+		<field name="olddoublevalue"  type="decimal"/>
+		<field name="oldbooleanvalue"  />
+		<field name="oldintegervalue" type="integer" />
+	</element>
+	
+	<element name="requirement">
+		<field name="name"  required="true" />
+		<field name="refno"  required="true" />
+		<field name="remarks"  />
+		<field name="accomplished" required="true" type="boolean" />
+	</element>
+	
+	
+	<element name="signatory">
+		<field name="assessedby"  />
+		<field name="assessedbytitle"  />
+		<field name="dtassessed"  />
+		<field name="approvedby"  />
+		<field name="approvedbytitle"  />
+		<field name="dtapproved"  />
+		<field name="releasedby"  />
+		<field name="releasedbytitle"  />
+		<field name="dtreleased"  />
+		<field name="renewedby"  />
+		<field name="renewedbytitle"  />
+		<field name="dtrenewed"  />
+	</element>
+</schema>
+

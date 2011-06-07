@@ -1,0 +1,65 @@
+<workunit>
+    <invokers>
+        <invoker type="ruleaction.type" action="create" caption="Require Information" index="1" />        
+        <invoker type="ruleaction.requireinfo.open" action="open" caption="Require Information Action" />        
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPRuleActionRequireInfoController
+{
+    @Binding
+    def binding
+    
+    @Service('BPApplicationService')
+    def svc 
+    
+    @Service('VariableService')
+    def varSvc
+    
+    def action
+    def rule
+    
+    void create() {
+        action = [
+            opener       : 'ruleaction.requireinfo',
+            variable     : null,
+            applyperlob  : true,
+            required     : true,
+            requiredbeforeprint : false, 
+            conditions   : [],
+        ]
+    }
+    
+    void open() {
+    }
+    
+    //must be implemented by a handler
+    void accept() {
+        if( ! action.variable ) throw new Exception('Information is required.')
+        action.displaytext = buildDisplayText()
+    }
+    
+    def buildDisplayText() {
+        if( action.applyperlob == true ) 
+            return 'Ask information : ' + action.variable.name + ' per each Line of Business'
+        return 'Ask information : ' + action.variable.name + ' per Establishment'
+    }
+    
+    
+    List getVariables() {
+        return varSvc.getList( null, null )
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.action.AddInfoActionPage" />
+    </pages>
+</workunit>

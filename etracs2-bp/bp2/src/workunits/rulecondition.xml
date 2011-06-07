@@ -1,0 +1,68 @@
+<workunit>
+    <invokers>
+        <invoker type="rulecondition.create" action="create" caption="Select A Condition" target="popup" />
+        <invoker type="rulecondition.open" action="open" caption="Open Condition" target="popup" />
+        
+        <invoker type="mainActions" action="ok" caption="OK" mnemonic="o" />
+        <invoker type="mainActions" action="_close" caption="Cancel" mnemonic="c"  immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class RuleConditionController 
+{
+    def addConditionHandler
+    def updateConditionHandler 
+    def condition 
+    def opener 
+    def mode 
+    
+    void create() {
+        mode = 'create' 
+    }
+    
+    def open() {
+        mode = 'open' 
+        return 'main'
+    }
+    
+    def next() {   
+        if( !opener ) throw new Exception('Select a type of condition.')
+        return 'main' 
+    }
+    
+    def ok() {
+        opener.handle.accept()
+        condition = opener.handle.condition
+        if( mode == 'create') 
+            invokeAddHandler()
+        else 
+            invokeUpdateHandler()
+        return '_close' 
+    }
+    
+    void invokeAddHandler() {
+        if( addConditionHandler ) addConditionHandler( condition )
+    }
+    
+    void invokeUpdateHandler() {
+        if( updateConditionHandler ) updateConditionHandler( condition )
+    }
+    
+    def getOpeners() {
+        return InvokerUtil.lookupOpeners('rulecondition.type', [condition:condition])
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.rule.RuleConditionInitPage" />
+        <page name="main" template="etracs2.rule.RuleConditionPage" />
+    </pages>
+</workunit>

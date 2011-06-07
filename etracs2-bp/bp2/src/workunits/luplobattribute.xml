@@ -1,0 +1,52 @@
+<workunit>
+    <invokers>
+        <invoker type="lobattribute.lookup" caption="LOB Attribute Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+
+class LobAttributeLookupController 
+{
+    @Service("LobService")
+    def svc;
+    
+    def onselect;
+    def searchText;
+    def selected;
+    
+    def ok() {
+        if( onselect ) {
+            onselect( selected );
+        }
+        return "_close";
+    }
+    
+    def listHandler = [
+        getRows    : { return 20; },
+        getColumns : {
+            return [
+                new Column(name:"name", caption:"Attribute"),
+            ];
+        },
+        fetchList : { 
+            def list = svc.getAttributes(searchText, it);
+            if(list) return list;
+            throw new Exception("Record not found.");
+        }
+    ] as PageListModel;
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.common.LookupPage"/>
+    </pages>
+</workunit>

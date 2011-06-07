@@ -1,0 +1,87 @@
+<workunit>
+    <invokers>
+        <invoker type="rulecondition.type" action="create" caption="Tax Fee Account" index="90" />        
+        <invoker type="rulecondition.taxfee.open" action="open" caption="Tax Fee Account Condition" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPRuleConditionTaxFeeController 
+{
+    @Binding
+    def binding
+    
+    @Service('BPApplicationService')
+    def svc 
+    
+    def condition
+    def selectedItems
+    def searchText
+    
+    void create() {
+        condition = [
+            opener   : 'rulecondition.taxfee',
+            accounts : [],
+            option   : null,
+        ]
+    }
+    
+    void open() {
+    }
+    
+    void remove() {
+        if( selectedItems ) {
+            selectedItems.each{ 
+                condition.accounts.remove( it ) 
+            }
+            binding.refresh('selectedItems')
+        }
+    }
+    
+    //must be implemented by a condition handler
+    void accept() {
+        if( ! condition.accounts ) throw new Exception('At least one Tax Fee Account is required.')
+        condition.displaytext = buildDisplayText()
+    }
+    
+    def buildDisplayText() {
+        def accttitles = condition.accounts.accttitle.join(', ')
+        return 'Tax Fee Account is any of the following: ' + accttitles
+    }
+        
+    List getOptions() {
+        return [
+            [name:'ANY', caption:'each line of business calculated'],
+            [name:'NOT_HIGHEST', caption:'not the highest amount computed'],
+            [name:'NOT_LOWEST', caption:'not the lowest amount computed'],
+            [name:'HIGHEST', caption:'the highest amount computed'],
+            [name:'LOWEST', caption:'the lowest amount computed'],
+        ]
+    }
+    
+    /* -------------------------------------------
+    **  Lookup support
+    ------------------------------------------- */
+    def onselectHandler = { account -> 
+        if( ! condition.accounts.contains( account ) ){
+            condition.accounts.add( account )
+            binding.refresh('selectedItems')
+        }
+    }
+    
+    def lookupAccount() {
+        return InvokerUtil.lookupOpener('incomeacct:lookup', [searchText:searchText, onselect:onselectHandler] )
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.condition.TaxFeeConditionPage" />
+    </pages>
+</workunit>

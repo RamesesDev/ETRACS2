@@ -1,0 +1,82 @@
+<workunit>
+    <invokers>
+        <invoker type="rulecondition.type" action="create" caption="Office Type" index="30" />        
+        <invoker type="rulecondition.officetype.open" action="open" caption="Office Type Condition" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPRuleConditionOfficeTypeController 
+{
+    @Binding
+    def binding
+    
+    @Service('BPApplicationService')
+    def svc 
+    
+    def condition
+    def selectedItem
+    def title =  'Office Type is any of the following: '
+    
+    void create() {
+        condition = [
+            opener : 'rulecondition.officetype',
+            officetypes  : [],
+        ]
+    }
+    
+    void open() {
+    }
+    
+    //must be implemented by a condition handler
+    void accept() {
+        if( ! condition.officetypes ) throw new Exception('At least one Office Type is required.')
+        condition.displaytext = buildDisplayText()
+    }
+    
+    def buildDisplayText() {
+        def types = condition.officetypes.join(', ')
+        return title + ' '  + types
+    }
+    
+    
+    
+    /* -------------------------------------------
+    **  List support
+    ------------------------------------------- */
+    def onselectHandler = { type ->
+        if( ! condition.officetypes.contains( type ) ) {
+            condition.officetypes.add( type )
+            binding.refresh('selectedItem')
+        }
+    }
+    
+    def add() {
+        def list = svc.getOfficeTypes()
+        list.removeAll( condition.officetypes )
+        def params = [ 
+            list            : list,
+            title           : title,
+            onselectHandler : onselectHandler,
+        ]
+        return InvokerUtil.lookupOpener('list.multiselect', params )
+    }
+    
+    void remove() {
+        if( ! selectedItem ) return
+        selectedItem.each{ condition.officetypes.remove( it ) }
+        binding.refresh('selectedItem')
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.condition.OfficeTypeConditionPage" />
+    </pages>
+</workunit>

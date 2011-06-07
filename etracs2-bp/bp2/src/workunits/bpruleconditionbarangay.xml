@@ -1,0 +1,85 @@
+<workunit>
+    <invokers>
+        <invoker type="rulecondition.type" action="create" caption="Barangay" index="40" />        
+        <invoker type="rulecondition.barangay.open" action="open" caption="Barangay Condition" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPRuleConditionBarangayController 
+{
+    @Binding
+    def binding
+    
+    @Service('BPApplicationService')
+    def svc 
+    
+    @Service('LGUService')
+    def lguSvc
+    
+    def condition
+    def selectedItem
+    def title =  'Barangay is any of the following: '
+    
+    void create() {
+        condition = [
+            opener : 'rulecondition.barangay',
+            barangays : [],
+        ]
+    }
+    
+    void open() {
+    }
+    
+    //must be implemented by a condition handler
+    void accept() {
+        if( ! condition.barangays ) throw new Exception('At least one Barangay is required.')
+        condition.displaytext = buildDisplayText()
+    }
+    
+    def buildDisplayText() {
+        def barangays = condition.barangays.name.join(', ')
+        return title + ' '  + barangays
+    }
+    
+    
+    
+    /* -------------------------------------------
+    **  List support
+    ------------------------------------------- */
+    def onselectHandler = { brgy ->
+        if( ! condition.barangays.contains( brgy ) ) {
+            condition.barangays.add( brgy )
+            binding.refresh('selectedItem')
+        }
+    }
+    
+    def add() {
+        def list = lguSvc.getBarangays()
+        list.removeAll( condition.barangays )
+        def params = [ 
+            list            : list,
+            title           : title,
+            onselectHandler : onselectHandler,
+        ]
+        return InvokerUtil.lookupOpener('list.multiselectexp', params )
+    }
+    
+    void remove() {
+        if( ! selectedItem ) return
+        selectedItem.each{ condition.barangays.remove( it ) }
+        binding.refresh('selectedItem')
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.condition.BarangayConditionPage" />
+    </pages>
+</workunit>

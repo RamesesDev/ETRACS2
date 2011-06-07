@@ -1,0 +1,83 @@
+<workunit>
+    <invokers>
+        <invoker type="formulaeditor" action="init" caption="Formula Editor" />
+    </invokers>
+    <code>
+
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris.client.*
+
+class FormulaEditorController 
+{
+    @Binding
+    def binding
+    
+    def formuladef
+    def selectedDefinitionType
+    def selectedDefinition
+    def expr = ''
+    
+    void init() {
+    }
+    
+    void setSelectedDefinitionType( selectedDefinitionType ) {
+        this.selectedDefinitionType = selectedDefinitionType
+        definitionListHandler.load()
+    }
+    
+    /*-------------------------------------------
+    ** DefinitionListHandler Support
+    -------------------------------------------*/
+    def definitionListHandler = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'name'),
+        ]},
+        fetchList  : { return selectedDefinitionType?.items },
+        onOpenItem : { item, colname -> 
+            expr = ( expr == null ? '' : expr )
+            expr += item.name
+            binding.refresh('expr') 
+        },
+    ] as SubListModel
+    
+    def getDefinitionTypes() {
+        return [
+            [definitiontype:'Fields', items:formuladef.fields],
+            [definitiontype:'Parameters', items:formuladef.parameters],
+            [definitiontype:'Variables', items:formuladef.variables],
+            [definitiontype:'Functions', items:formuladef.functions],
+        ]
+    }
+    
+    def getHtmlInfo() {
+        return 'Definition Information'
+    }
+    
+    /* formuladef structure
+    def createFormulaDefinition() {
+        return [
+            expression : null,
+            fields     : [],
+            variables  : [],
+            parameters : [],
+            functions  : [],
+        ]
+    }
+    */
+    
+    
+    
+    
+}
+
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.action.FormulaEditorPage"/>
+    </pages>
+</workunit>

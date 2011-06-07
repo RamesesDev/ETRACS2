@@ -1,0 +1,141 @@
+<workunit>
+    <invokers>
+        <invoker type="ruleaction.type" action="create" caption="Tax, Fee or Charge" index="2" />        
+        <invoker type="ruleaction.taxfeecharge.open" action="open" caption="Tax, Fee or Charge Action" />        
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPRuleActionTaxFeeChargeController
+{
+    @Binding
+    def binding
+    
+    @Service('BPApplicationService')
+    def svc 
+    
+    def action
+    def rule
+    def computationMode
+    def opener 
+    
+    void create() {
+        // applytype       -> PERLINE, MIN, MAX
+        // computationmode -> FORMULA, RANGE
+        action = [
+            opener       : 'ruleaction.taxfeecharge',
+            expr         : '',
+            acctid       : null,
+            accttitle    : null,
+            applytype    : null,
+            computationmode : null, 
+            conditions   : [],
+        ]
+    }
+    
+    void open() {
+        
+    }
+    
+        
+    //must be implemented by a handler
+    void accept() {
+        if( opener && opener.handle ) {
+            action.expr = opener.handle.expr
+        }
+        if( ! action.expr ) throw new Exception('Formula for computing tax, fee or charge is required.')
+        action.displaytext = buildDisplayText()
+    }
+    
+    def buildDisplayText() {
+        if( action.computationmode == 'FORMULA' ) 
+            return buildFormulaDisplayText()
+        return buildRangeDisplayText()
+    }
+    
+    def buildFormulaDisplayText() {
+        if( action.applytype.name == 'PERLINE' ) 
+            return 'Calculate ' + action.accttitle + ' per each Line of Business using the formula: ' + action.expr
+        else if( action.applytype.name == 'MAX' ) 
+            return 'Calculate ' + action.accttitle + ' based on maximum value using the formula: ' + action.expr
+        else if( action.applytype.name == 'MIN' ) 
+            return 'Calculate ' + action.accttitle + ' based on minimum value using the formula: ' + action.expr
+        else
+            throw new Exception('Invalid apply type : ' + action.applytype.name )
+    }
+    
+    def buildRangeDisplayText(){
+        return 'TODO:'
+    }
+    
+       
+    void setComputationMode( computationMode ) {
+        this.computationMode = computationMode
+        action.computationmode = computationMode 
+        opener = null
+        def formuladef = buildFormulaDef()
+        if( computationMode == 'FORMULA' ) 
+            opener = InvokerUtil.lookupOpener('formulaeditor', [expr:action.expr, formuladef:formuladef] )
+        else if( computationMode == 'RANGE' ) 
+            opener = InvokerUtil.lookupOpener('bprangeentry', [:] )
+    }
+    
+    def buildFormulaDef() {
+        def variables = buildVariables()
+        return [
+            expression : null,
+            fields     : [],
+            variables  : variables,
+            parameters : [],
+            functions  : [],
+        ]
+    }
+    
+    def buildVariables() {
+        def vars = []
+        def inputVars = rule.conditions.findAll{ it.opener == 'rulecondition.variable' }
+        inputVars.each {
+            vars += [
+                objid   : it.variable.objid,
+                name    : it.variable.name,
+                caption : it.variable.caption,
+                description : it.variable.description,
+            ]
+        }
+        return vars
+    }
+    
+    def getComputationModes() {
+        return ['FORMULA','RANGE']
+    }
+    
+    def getApplyTypes() {
+        return [
+            [name:'PERLINE', caption:'Apply per Line of Business'],
+            [name:'MAX', caption:'Apply once per establishment based on maximum value'],
+            [name:'MIN', caption:'Apply once per establishment based on minimum value'],
+        ]
+    }
+    
+    def selectAcctHandler = { acct ->
+        action.acctid = acct.objid 
+        action.accttitle = acct.accttitle
+        binding.refresh('action.accttitle')
+    }
+    
+    def lookupAccount() {
+        return InvokerUtil.lookupOpener('incomeacct:lookup', [searchText:action.accttitle, onselect:selectAcctHandler])
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.action.AddTaxFeeActionPage" />
+    </pages>
+</workunit>

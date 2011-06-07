@@ -1,0 +1,139 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class RuleActionService
+{
+	@ProxyMethod
+	public String buildActionRuleText( rule, action ) {
+		if( ! action.opener ) throw new Exception('Action Opener must be specified.')
+		
+		if( action.opener == 'ruleaction.requireinfo' ) return buildRequireInfoAction( rule, action  )
+		if( action.opener == 'ruleaction.updatetaxfee' ) return buildUpdateTaxFeeAction( rule, action ) 
+		if( action.opener == 'ruleaction.taxfeecharge' ) return buildAddTaxFeeAction( rule, action )
+		
+		throw new Exception('RuleText definition for opener ' + action.opener + ' is not defined in RuleTextService.' )
+	}
+	
+	/*--------------------------------------------------------
+	* buildRequireInfoAction Support 
+	-------------------------------------------------------- */
+	String buildRequireInfoAction( rule, action ) {
+		def s = ''
+		s += 'Map m = new HashMap();\n'
+		
+		if( action.applyperlob == true ) {
+			s += 'm.put("lobid", $lobid );\n'
+			s += 'm.put("lobname", $lobname );\n'
+		}
+		else {
+			s += 'm.put("lobid", null);\n'
+			s += 'm.put("lobname", null);\n'
+		}
+        s += 'm.put("rulename", "' + rule.rulename + '");\n'
+        s += 'm.put("varid", "' + action.variable.objid + '" );\n'
+        s += 'm.put("varname", "' + action.variable.name + '");\n'
+        s += 'm.put("vartype", "' + action.variable.datatype + '");\n'
+        s += 'm.put("requiredperlob", ' + action.applyperlob + ' );\n'
+        s += 'm.put("required", ' + action.required + ' );\n'
+        s += 'm.put("requiredbeforeprint", ' + action.requiredbeforeprint + ' );\n'
+        s += 'm.put("value",null);\n'
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("addInfo", m );\n'
+        return s 
+	}
+	
+	/*--------------------------------------------------------
+	* buildAddTaxFeeAction Support 
+	-------------------------------------------------------- */
+	String buildAddTaxFeeAction( rule, action ) {
+		if( action.computationmode == 'FORMULA' ) 
+            return buildFormulaRuleText( rule, action )
+        return buildRangeRuleText(rule, action )
+	}
+	
+    String buildFormulaRuleText(rule, action ) {
+        def s = ''
+        s += 'Map m = new HashMap();\n'
+        s += 'm.put("rulename", "' + rule.rulename + '");\n'
+        s += 'm.put("appid", $appid);\n'
+        
+		if( action.applytype.name == 'PERLINE' ) {
+            s += 'm.put("lobid", $lobid);\n'
+            s += 'm.put("lobname", $lobname);\n'
+        }
+        else {
+            s += 'm.put("lobid", null);\n'
+            s += 'm.put("lobname", null);\n'
+        }
+        s += 'm.put("expr", "' + action.expr + '");\n'
+        s += 'm.put("acctid", "' + action.acctid + '");\n'
+        s += 'm.put("accttitle", "' + action.accttitle + '");\n'
+        s += 'm.put("applytype", "' + action.applytype.name + '" );\n' 
+
+        def inputVars = buildVariables( rule, action )
+        if( inputVars ) {
+            s += 'List varlist = new ArrayList();\n'
+            
+            inputVars.each { var ->
+                s += 'varlist.add( ' + var.name + ');\n'
+            }
+            
+            s += 'm.put("inputvars", varlist );\n'
+        }
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("addTaxFee", m );\n'
+        return s 
+    }
+    
+    def buildRangeRuleText() {
+        return '' //TODO:
+    }
+	
+	def buildVariables( rule, action ) {
+        def vars = []
+        def inputVars = rule.conditions.findAll{ it.opener == 'rulecondition.variable' }
+        inputVars.each {
+            vars += [
+                objid   : it.variable.objid,
+                name    : it.variable.name,
+                caption : it.variable.caption,
+                description : it.variable.description,
+            ]
+        }
+        return vars
+    }
+
+	
+	
+	/*--------------------------------------------------------
+	* buildUpdateTaxFeeAction Support 
+	-------------------------------------------------------- */
+	String buildUpdateTaxFeeAction( rule, action ) {
+		def updateType = determineUpdateType( rule )
+        
+        def s = ''
+        s += 'Map m = new HashMap();\n'
+        s += 'm.put("rulename", "' + rule.rulename + '");\n'
+        s += 'm.put("taxfeefact", TAXFEEFACT );\n'
+        s += 'm.put("expr", "' + action.expr + '");\n'
+        s += 'm.put("varname", "AMOUNTDUE");\n'
+        s += 'm.put("varvalue", AMOUNTDUE);\n'
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("' + updateType + '", m );\n'
+        return s 
+	}
+	
+    
+    def determineUpdateType( rule ){
+        def taxfeeCond = rule.conditions.find{ it.opener == 'rulecondition.taxfee' }
+        if(taxfeeCond ) {
+            if( taxfeeCond.option.name == 'NOT_HIGHEST' ) return 'updateNotHighestTaxFee'
+            if( taxfeeCond.option.name == 'NOT_LOWEST' ) return 'updateNotLowestTaxFee'
+            if( taxfeeCond.option.name == 'HIGHEST' ) return 'updateHighestTaxFee'
+            if( taxfeeCond.option.name == 'LOWEST' ) return 'updateLowestTaxFee'
+        }
+        return 'updateAnyTaxFee' 
+    }
+
+}

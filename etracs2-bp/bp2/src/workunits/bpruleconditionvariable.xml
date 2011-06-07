@@ -1,0 +1,78 @@
+<workunit>
+    <invokers>
+        <invoker type="rulecondition.type" action="create" caption="Use Application Data" index="80" />        
+        <invoker type="rulecondition.variable.open" action="open" caption="Use Application Data Condition" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPRuleConditionVariableController 
+{
+    @Binding
+    def binding
+    
+    @Service('BPApplicationService')
+    def svc 
+    
+    @Service('VariableService')
+    def varSvc
+    
+    def condition
+    def variableOpener
+    def variable 
+    
+    void create() {
+        condition = [
+            opener   : 'rulecondition.variable',
+            variable : null,
+            value    : null, 
+            perline  : false,
+        ]
+    }
+    
+    void open() {
+    }
+    
+    
+    def selectHandler = { value ->
+        variable.value = value
+    }
+    
+    void setVariable( variable ) {
+        if( variable ) variable = varSvc.open( variable.objid )
+        this.variable = variable 
+        condition.variable = variable
+        variableOpener = null
+        if( variable?.datatype == 'string_array' ) {
+            variableOpener = InvokerUtil.lookupOpener('variablevalue', [variable:variable, selectHandler:selectHandler])
+        }
+    }
+    
+    
+    //must be implemented by a condition handler
+    void accept() {
+        if( ! condition.variable ) throw new Exception('Property is required.')
+        if( condition.variable.vartype == 'string_array' && condition.value == null ) throw new Exception('Value is required.')
+        condition.displaytext = buildDisplayText()
+    }
+    
+    def buildDisplayText() {
+        return 'Use Application Data Provided: '  + condition.variable.name
+    }
+    
+    def getVariables() {
+        return varSvc.getList( null, null )
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.rule.condition.VariableConditionPage" />
+    </pages>
+</workunit>
