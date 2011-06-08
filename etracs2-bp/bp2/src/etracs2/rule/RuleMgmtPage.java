@@ -51,6 +51,7 @@ public class RuleMgmtPage extends javax.swing.JPanel {
 
         add(jPanel1, java.awt.BorderLayout.NORTH);
 
+        xDataTable1.setDynamic(true);
         xDataTable1.setHandler("listHandler");
         xDataTable1.setImmediate(true);
         xDataTable1.setName("selectedItem");

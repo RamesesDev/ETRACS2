@@ -136,8 +136,33 @@ class RuleService
 		def actions = ''
 		rule.actions.each {
 			actions += it.displaytext + '<br>'
+			if( it.computationmode == 'RANGE' ) {
+				actions += displayActionRange( it )
+			}
 		}
+		println actions
 		return actions
+	}
+	
+	def displayActionRange( action ) {
+		String s = ''
+        s += '<table border="1" >'
+        s += '<tr>'
+        s += '<th>Greater than or equal</th>'
+        s += '<th>Less than</th>'
+        s += '<th>Formula</th>'
+        s += '</tr>'
+        
+        action.ranges.each {
+            s += '<tr>'
+            s += '<td>' + it.rangefrom + '</td>'
+            s += '<td>' + it.rangeto + '</td>'
+            s += '<td>' + it.expr + '</td>'
+            s += '</tr>'
+        }
+		
+        s += '</table>'
+		return s 
 	}
 	
 	void validate( rule ) {
@@ -156,9 +181,66 @@ class RuleService
 	}
 	
 	void buildRuleText( rule ) {
+		if( rule.actiontype != 'RANGE' ) {
+			buildSimpleRuleText( rule )
+		}
+		else {
+			buildRangeRuleText( rule ) 
+		}
+	}
+	
+	void buildSimpleRuleText( rule ) {
+		def ruleHeader = buildRuleHeader( rule, '' )
 		def conditions = buildConditions( rule )
 		def actions = buildActions( rule )
 		
+		def ruletext = ''
+		ruletext += ruleHeader
+		ruletext += conditions 
+		ruletext += 'then\n\n'
+		ruletext += actions 
+		ruletext += 'end\n'
+		rule.ruletext = ruletext 
+	}
+	
+	void buildRangeRuleText( rule ) {
+		def rangeAction = rule.actions.find{ it.computationmode == 'RANGE'}
+		if( ! rangeAction ) return 
+		
+		def ruletext = ''
+		ruletext += 'package ' + rule.packagename + ';\n'
+		ruletext += 'import bp.assessment.facts.*;\n'
+		ruletext += 'import java.util.*;\n\n'
+		ruletext += 'global com.rameses.rules.common.RuleAction actionList\n\n'
+		
+		def index = 0
+		rangeAction.ranges.each { range ->
+			def ruleHeader = buildRuleHeader( rule, index )
+			def conditions = buildConditions( rule )
+			conditions += condSvc.buildRangeCondition( rangeAction, range )
+			def actions = buildActions( rule )
+			actions += actionSvc.buildRangeAction( rule, rangeAction, range, index  )
+			
+			def rt = ''
+			rt += 'rule "' + rule.rulename + index + '"\n'
+			rt += 'agenda-group "' + rule.agendagroupid + '"\n'
+			rt += 'salience ' + rule.salience + '\n\n'
+
+			rt += 'when\n' 
+			rt += '$app : ApplicationFact( $appid: appid )\n'
+			rt += '$lob : LOBFact( $lobid:lobid, $lobname:name, appid == $appid)	\n'
+			rt += conditions 
+			rt += 'then\n\n'
+			rt += actions 
+			rt += 'end\n\n'
+			ruletext += rt 
+			index += 1
+		}
+		rangeAction.ruletext = ruletext 
+		rule.ruletext = ruletext 
+	}
+	
+	def buildRuleHeader( rule, index ) {
 		def ruletext = ''
 		ruletext += 'package ' + rule.packagename + ';\n'
 		ruletext += 'import bp.assessment.facts.*;\n'
@@ -166,18 +248,14 @@ class RuleService
 		
 		ruletext += 'global com.rameses.rules.common.RuleAction actionList\n\n'
 
-		ruletext += 'rule "' + rule.rulename + '"\n'
+		ruletext += 'rule "' + rule.rulename + index + '"\n'
 		ruletext += 'agenda-group "' + rule.agendagroupid + '"\n'
 		ruletext += 'salience ' + rule.salience + '\n\n'
 
 		ruletext += 'when\n' 
 		ruletext += '$app : ApplicationFact( $appid: appid )\n'
 		ruletext += '$lob : LOBFact( $lobid:lobid, $lobname:name, appid == $appid)	\n'
-		ruletext += conditions 
-		ruletext += 'then\n'
-		ruletext += actions 
-		ruletext += 'end\n'
-		rule.ruletext = ruletext 
+		return ruletext 
 	}
 	
 	def buildConditions( rule ) {
@@ -191,7 +269,11 @@ class RuleService
 	}	
 	
 	def buildActions( rule ) {
-		rule.actions.each { it.ruletext = actionSvc.buildActionRuleText( rule, it ) }
+		int index = 0
+		rule.actions.each { 
+			it.ruletext = actionSvc.buildActionRuleText( rule, it, index ) 
+			index += 1
+		}
 		return rule.actions.ruletext.join('\n')
 	}	
 	

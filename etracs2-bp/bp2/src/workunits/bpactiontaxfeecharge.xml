@@ -34,21 +34,41 @@ class BPRuleActionTaxFeeChargeController
             applytype    : null,
             computationmode : null, 
             conditions   : [],
+            ranges       : [],
+            variable     : null,
         ]
     }
     
     void open() {
-        
+        setComputationMode( action.computationmode  )
     }
     
         
     //must be implemented by a handler
     void accept() {
+        if( action.computationmode == 'FORMULA' ) {
+            processFormulaMode()
+        }
+        else {
+            processRangeMode()
+        }
+        rule.actiontype = 'RANGE'
+        action.displaytext = buildDisplayText()
+    }
+    
+    void processFormulaMode() {
         if( opener && opener.handle ) {
             action.expr = opener.handle.expr
         }
-        if( ! action.expr ) throw new Exception('Formula for computing tax, fee or charge is required.')
-        action.displaytext = buildDisplayText()
+        required('Account', action.acctid )
+        required('Formula for computing tax, fee or charge', action.expr )
+        action.ranges.clear()
+    }
+    
+    void processRangeMode() {
+        required('Account', action.acctid )
+        required('Variable', action.variable )
+        required('At least one (1) range ', action.ranges )
     }
     
     def buildDisplayText() {
@@ -69,19 +89,19 @@ class BPRuleActionTaxFeeChargeController
     }
     
     def buildRangeDisplayText(){
-        return 'TODO:'
+        return 'Calculate ' + action.accttitle + ' based on Tax Table using ' + action.variable.name + '.'
     }
     
        
     void setComputationMode( computationMode ) {
-        this.computationMode = computationMode
+        this.computationMode = ( computationMode ? computationMode : action.computationmode)
         action.computationmode = computationMode 
         opener = null
         def formuladef = buildFormulaDef()
         if( computationMode == 'FORMULA' ) 
             opener = InvokerUtil.lookupOpener('formulaeditor', [expr:action.expr, formuladef:formuladef] )
         else if( computationMode == 'RANGE' ) 
-            opener = InvokerUtil.lookupOpener('bprangeentry', [:] )
+            opener = InvokerUtil.lookupOpener('bprangeentry', [rule:rule, action:action] )
     }
     
     def buildFormulaDef() {
@@ -130,6 +150,11 @@ class BPRuleActionTaxFeeChargeController
     def lookupAccount() {
         return InvokerUtil.lookupOpener('incomeacct:lookup', [searchText:action.accttitle, onselect:selectAcctHandler])
     }
+    
+    void required(caption, value ) {
+        if( !value ) throw new Exception(caption + ' is required.')
+    }
+    
     
 }
 

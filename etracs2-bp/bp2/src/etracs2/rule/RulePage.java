@@ -54,7 +54,9 @@ public class RulePage extends javax.swing.JPanel {
         xActionBar1.setName("formActions");
         add(xActionBar1, java.awt.BorderLayout.NORTH);
 
+        formPanel1.setIndex(-100);
         xTextField1.setCaption("Rule Name");
+        xTextField1.setIndex(-50);
         xTextField1.setName("entity.rulename");
         xTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField1.setRequired(true);

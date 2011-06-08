@@ -13,6 +13,7 @@ class RuleConditionService
 		if( condition.opener == 'rulecondition.lobclassification') return buildLobClassificationCondition( condition )
 		if( condition.opener == 'rulecondition.lobtype') return buildLobApplicationTypeCondition( condition )
 		if( condition.opener == 'rulecondition.lob') return buildLobCondition( condition )
+		if( condition.opener == 'rulecondition.lobattribute') return buildLobAttributeCondition( condition )
 		if( condition.opener == 'rulecondition.businessorg') return buildBusinessOrgCondition( condition ) 
 		if( condition.opener == 'rulecondition.barangay') return buildBarangayCondition( condition)
 		if( condition.opener == 'rulecondition.applicationtype') return buildApplicationTypeCondition( condition ) 
@@ -20,6 +21,13 @@ class RuleConditionService
 		throw new Exception('RuleText definition for opener ' + condition.opener + ' is not defined in RuleTextService.' )
 	}
 
+	@ProxyMethod
+	public def buildRangeCondition( action, range ) {
+		if( range.rangeto > 0 )
+			return 'InputVariableFact( varid=="' + action.variable.objid + '", value >= ' + range.rangefrom + ', value < ' + range.rangeto + ', appid == $appid, lobid == $lobid )\n'
+		else 
+			return 'InputVariableFact( varid=="' + action.variable.objid + '", value >= ' + range.rangefrom + ', appid == $appid, lobid == $lobid )\n'
+	}
 	
 	
 	String buildApplicationTypeCondition( condition ) {
@@ -67,6 +75,15 @@ class RuleConditionService
         else 
             return 'LOBFact( lobid not matches "' + lobs + '", lobid == $lobid, appid == $appid )'
     }
+	
+	String buildLobAttributeCondition( condition ) {
+		def attrs = ''
+		condition.attributes.each {
+			if( attrs.length() > 0 ) attrs += ' || '
+			attrs += 'attributes contains "' + it.name + '"'
+		}
+		return 'LOBFact( lobid == $lobid, appid == $appid , ' + attrs + ')'
+	}
     
 	String buildBusinessOrgCondition( condition ) {
         def orgs = condition.organizations.join('|')

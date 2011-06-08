@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="bprangeentry" caption="Range Entry" />
+        <invoker type="bprangeentry" action="init" caption="Range Entry" />
     </invokers>
     <code>
 
@@ -10,10 +10,179 @@ import com.rameses.rcp.annotations.*
 import com.rameses.rcp.common.*
 import com.rameses.osiris.client.*
 
-class FormulaEditorController 
+class BPRangeEntryController 
 {
     @Binding
     def binding
+    
+    def rule 
+    def action 
+    def selectedRange
+    def msg 
+    def listItem
+    
+    void init() {
+        action.startvalue = getLastRangeToValue()
+    }
+    
+    
+    /*-------------------------------------------------------
+    * List Support
+    -------------------------------------------------------*/
+    def listHandler = [
+        createItem  : { return doCreateItem() },
+        getRows     : { return 50 },
+        getColumns  : { return [
+            new Column(name:'rangefrom', caption:'Greater than or equal', type:'decimal' ),
+            new Column(name:'rangeto', caption:'Less than', type:'decimal', editableWhen:'#{root.allowColumnEdit[item]}' ),
+            new Column(name:'expr', caption:'Value', editable:true ),
+        ]},
+        fetchList   : { return action.ranges  },
+        validate    : {listItem -> 
+            try {
+                doValidate( listItem ) 
+            }
+            catch( e ) {
+                setMessage( e.message )
+                throw e
+            }
+        },
+        onAddItem     : { item -> doAddItem( item ) },
+        onColumnUpdate : { item, colName -> doColumnUpdate( item, colName ) },
+    ] as SubListModel
+    
+    
+    def allowColumnEdit = { item ->
+        if( action.ranges.size() == 0 ) return true
+        if( item.rangefrom == null) return true
+        return isLastItem( item )
+    } as Map
+    
+    def doCreateItem() {
+        return [
+            rangefrom : null,
+            rangeto   : null,
+            expr      : null,
+        ]
+    }
+    
+    void doAddItem( item ) {
+        action.ranges.add( item ) 
+        clearMessage()
+    }
+    
+    void doValidate( listItem ) {
+        if( listItem.item.rangeto == null ) throw new Exception('Less Than Value is required.')
+        required('Value', listItem.item.expr)
+        if( listItem.item.rangeto < 0 ) throw new Exception('Less Than Value must be greater than or equal to zero.')
+        if( listItem.item.rangeto > 0 && listItem.item.rangeto < listItem.item.rangefrom ) 
+            throw new Exception('Less Than Value must be greater than From Value.')
+        clearMessage()
+    }
+    
+    void doColumnUpdate( item, colName ) {
+        try {
+            if( ! isLastItem( item ) && listItem.state != 0 ) throw new Exception('Editing is not allowed.\nOnly the last item can be edited.')
+            if( colName == 'rangeto' && listItem.state == 0 ) {
+                item.rangefrom = getLastRangeToValue()
+            }
+        }
+        catch( e ) {
+            setMessage( e.message )
+            throw e
+        }
+    }
+    
+    
+    def isFirstItem() {
+        return action.ranges.size() == 0
+    }
+    
+    def isLastItem( item ) {
+        return action.ranges.size() == action.ranges.indexOf( item ) + 1
+    }
+    
+    void required(caption, value ) {
+        if( !value ) throw new Exception( caption + ' is required.')
+    }
+    
+    void clearMessage() {
+        msg = null
+        binding.refresh('msg') 
+    }
+    
+    void setMessage( msg ) {
+        this.msg = msg
+        binding.refresh('msg') 
+    }
+    
+    /*-------------------------------------------------------
+    * Button Support
+    -------------------------------------------------------*/
+    void removeAll() {
+        if( MsgBox.confirm('Remove all items?') ) {
+            action.ranges.clear()
+            listHandler.load()
+        }
+    }
+    
+    void removeLast() {
+        if( action.ranges.size() > 0 ) {
+            action.ranges.remove( action.ranges.size() -1 )
+            listHandler.load()
+        }
+    }
+    
+    void changeStart() {
+        if( action.ranges.size() > 0 ) {
+            if( ! MsgBox.confirm('Changing the start amount will remove existing ranges. Proceed?') ) {
+               return
+            }
+        }
+        def newStart = MsgBox.prompt("Enter a new start value.")
+        action.startValue = convertToDouble( newStart )
+        action.ranges.clear()
+        listHandler.load()
+    }
+    
+    def convertToDouble( newStart ){
+        if( ! newStart ) return 0.0
+        try {
+            return Double.parseDouble( newStart )
+        }
+        catch( e ){
+            throw new Exception('Invalid start value.')
+        }
+    }
+    
+    /*-------------------------------------------------------
+    * Misc Support
+    -------------------------------------------------------*/
+    
+    List getVariables() {
+        def vars = []
+        def inputVars = rule.conditions.findAll{ it.opener == 'rulecondition.variable' }
+        inputVars.each {
+            vars += [
+                objid   : it.variable.objid,
+                name    : it.variable.name,
+                caption : it.variable.caption,
+                description : it.variable.description,
+            ]
+        }
+        return vars
+    }
+    
+    def getLastRangeToValue() {
+        def lastValue = ( action.startvalue ? action.startvalue : 0.0 )
+        if( action.ranges.size() > 0 ) {
+            def lastItem = action.ranges.get( action.ranges.size() - 1 )
+            if( lastItem ) {
+                lastValue = lastItem.rangeto
+            }
+        }
+        return lastValue
+    }
     
 }
 

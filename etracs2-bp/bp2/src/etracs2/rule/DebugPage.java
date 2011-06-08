@@ -37,6 +37,7 @@ public class DebugPage extends javax.swing.JPanel {
         jScrollPane1.setName("rule.ruletext");
         xTextArea1.setColumns(20);
         xTextArea1.setRows(5);
+        xTextArea1.setName("rule.ruletext");
         jScrollPane1.setViewportView(xTextArea1);
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);

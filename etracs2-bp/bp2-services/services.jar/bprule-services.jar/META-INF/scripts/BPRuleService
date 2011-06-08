@@ -85,16 +85,22 @@ public class BPRuleService
 	
 	def createLobFacts( app ) {
 		def facts = []
-		app.lobs.each { lob ->
+		app.lobs.each { lobitem ->
 			def lobfact = ruleService.createFact(BPASSESSMENT_RULESET, FACTS_PACKAGE + 'LOBFact')
 			lobfact.appid = app.objid 
-			lobfact.lobid = lob.objid 
-			lobfact.name = lob.name 
-			lobfact.assessmenttype = lob.assessmenttype
-			lobfact.classificationid = lob.classificationid 
+			lobfact.lobid = lobitem.lob.objid 
+			lobfact.name = lobitem.lob.name 
+			lobfact.assessmenttype = lobitem.assessmenttype
+			lobfact.classificationid = lobitem.lob.classificationid 
+			lobfact.attributes = loadLobAttributes( lobitem.lob.objid  )
 			facts += lobfact 
 		}
 		return facts 
+	}
+	
+	def loadLobAttributes( lobid  ) {
+		def lob = em.read('lob', [objid:lobid] )
+		return lob.attributes.name  
 	}
 	
 	def createInputVariableFacts( app ) {
@@ -185,8 +191,6 @@ class AddTaxFeeHandler implements RuleActionHandler
 	
 	void processApplyMaxValue( drools, taxfee ) {
 		def prevtaxfee = app.taxfees.find{ it.lobid == taxfee.lobid && it.acctid == taxfee.acctid }
-		println 'prevtaxfee -> ' + prevtaxfee 
-		println 'taxfee -> ' + taxfee 
 		if( ! prevtaxfee ) {
 			app.taxfees.add( taxfee )
 		}

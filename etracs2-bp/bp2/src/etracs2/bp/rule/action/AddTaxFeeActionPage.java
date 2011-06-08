@@ -32,6 +32,7 @@ public class AddTaxFeeActionPage extends javax.swing.JPanel {
 
         xActionTextField1.setActionName("lookupAccount");
         xActionTextField1.setCaption("Account");
+        xActionTextField1.setIndex(-10);
         xActionTextField1.setName("action.accttitle");
         xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
         xActionTextField1.setRequired(true);
@@ -40,6 +41,7 @@ public class AddTaxFeeActionPage extends javax.swing.JPanel {
         xComboBox1.setAllowNull(false);
         xComboBox1.setCaption("Apply");
         xComboBox1.setExpression("#{caption}");
+        xComboBox1.setIndex(-9);
         xComboBox1.setItems("applyTypes");
         xComboBox1.setName("action.applytype");
         xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));
@@ -50,6 +52,7 @@ public class AddTaxFeeActionPage extends javax.swing.JPanel {
         xComboBox2.setCaption("Mode");
         xComboBox2.setDynamic(true);
         xComboBox2.setImmediate(true);
+        xComboBox2.setIndex(-8);
         xComboBox2.setItems("computationModes");
         xComboBox2.setName("computationMode");
         xComboBox2.setPreferredSize(new java.awt.Dimension(0, 22));

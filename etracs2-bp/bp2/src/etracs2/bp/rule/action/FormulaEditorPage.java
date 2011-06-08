@@ -52,7 +52,7 @@ public class FormulaEditorPage extends javax.swing.JPanel {
         xTextArea2.setColumns(20);
         xTextArea2.setRows(5);
         xTextArea2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        xTextArea2.setFont(new java.awt.Font("Tahoma", 0, 14));
+        xTextArea2.setFont(new java.awt.Font("Tahoma", 1, 14));
         xTextArea2.setName("expr");
         xTextArea2.setTextCase(com.rameses.rcp.constant.TextCase.UPPER);
         add(xTextArea2, java.awt.BorderLayout.NORTH);

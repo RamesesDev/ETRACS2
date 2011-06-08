@@ -10,6 +10,7 @@
         <invoker type="formActions" action="deploy" caption="Deploy" mnemonic="d" shortcut="ctrl D" visibleWhen="#{mode == 'view'  and entity.docstate != 'DEPLOYED'}"/>
         <invoker type="formActions" action="undeploy" caption="Undeploy" mnemonic="u" shortcut="ctrl U" visibleWhen="#{mode == 'view'  and entity.docstate == 'DEPLOYED'}"/>
         <invoker type="formActions" action="debug" caption="Debug" mnemonic="g" shortcut="ctrl G" />
+        <invoker type="formActions" action="remove" caption="Delete" mnemonic="d" shortcut="ctrl D" visibleWhen="#{entity.docstate == 'DRAFT'}" />
     </invokers>
     <code>
 <![CDATA[
@@ -79,6 +80,13 @@ class RuleController
     void undeploy() {
         if( MsgBox.confirm('Undeploy rule?') ) {
             entity = svc.undeploy( entity.objid )
+        }
+    }
+    
+    def remove() {
+        if( MsgBox.confirm('Delete rule?') ) {
+            svc.remove( entity.objid )
+            return '_close' 
         }
     }
     

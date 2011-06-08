@@ -38,6 +38,7 @@ public class VariableConditionPage extends javax.swing.JPanel {
         xComboBox1.setDynamic(true);
         xComboBox1.setExpression("#{caption}");
         xComboBox1.setImmediate(true);
+        xComboBox1.setIndex(-10);
         xComboBox1.setItems("variables");
         xComboBox1.setName("variable");
         xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));

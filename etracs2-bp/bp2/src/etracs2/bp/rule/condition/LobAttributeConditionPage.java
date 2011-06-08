@@ -10,10 +10,10 @@ package etracs2.bp.rule.condition;
  *
  * @author  jzamora
  */
-public class LobAssessmentTypeConditionPage extends javax.swing.JPanel {
+public class LobAttributeConditionPage extends javax.swing.JPanel {
     
     /** Creates new form RuleConditionPage */
-    public LobAssessmentTypeConditionPage() {
+    public LobAttributeConditionPage() {
         initComponents();
     }
     
@@ -33,10 +33,11 @@ public class LobAssessmentTypeConditionPage extends javax.swing.JPanel {
 
         setPreferredSize(new java.awt.Dimension(408, 401));
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("Line of Business Assessment Type Condition");
+        xTitledBorder1.setTitle("Line of Business Attribute Condition");
         jPanel1.setBorder(xTitledBorder1);
         xList1.setDynamic(true);
-        xList1.setItems("condition.types");
+        xList1.setExpression("#{name}");
+        xList1.setItems("condition.attributes");
         xList1.setMultiselect(true);
         xList1.setName("selectedItem");
         jScrollPane1.setViewportView(xList1);
@@ -46,7 +47,7 @@ public class LobAssessmentTypeConditionPage extends javax.swing.JPanel {
         xButton1.setDefaultCommand(true);
         xButton1.setName("add");
 
-        jLabel1.setText("Line of Business Assessment Type is any of the following :");
+        jLabel1.setText("Line of Business attribute is any of the following:");
 
         xButton2.setMnemonic('r');
         xButton2.setText("Remove");
@@ -57,12 +58,12 @@ public class LobAssessmentTypeConditionPage extends javax.swing.JPanel {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel1Layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 299, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 299, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 299, Short.MAX_VALUE)
+                    .add(jLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 299, Short.MAX_VALUE)
+                    .add(jPanel1Layout.createSequentialGroup()
                         .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
@@ -73,8 +74,8 @@ public class LobAssessmentTypeConditionPage extends javax.swing.JPanel {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jLabel1)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 7, Short.MAX_VALUE)
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 257, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
