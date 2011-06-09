@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invoker folderid="/menu/rpt/master" action="init" caption="Structure Template" index="9" />
+    <invoker type="rpt.master" caption="Structure Template" />
+        
+        <invoker type="formActions" action="close" shortcut="ctrl c"  immediate="true" caption="Close" mnemonic="c" />
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null }" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+    
+    <code lang="groovy">
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import java.rmi.server.UID;
+        
+        public class StructureTemplateController  {
+            @Binding
+            def binding
+            
+            @Service("StructureTemplateService")
+            def svc;
+            
+            def structures;
+            def list;
+            def mode = "view" ;
+            def entity;
+            
+            void init(){
+                entity = svc.open();
+                mode = 'view';
+                
+                if( !entity ){ 
+                    mode = 'create';
+                    entity = createEntity();
+                }
+                
+            }
+            
+            def createEntity() {
+                return [
+                    structures : [],
+                ];
+            }
+            
+            def lookupStructures = InvokerUtil.lookupOpener("structures:lookup",[:]);
+            
+            def structuresHandler = [
+                getRows    : { return 20; },
+                getColumns : {
+                    return [
+                        new Column(name:"structure", caption:"Code", minWidth:50, editable:true, type:"lookup", handler:lookupStructures, expression: '#{structurecode}'),
+                        new Column(name:"structuredesc", caption:"Structure", minWidth:200, editable:false)
+                    ];
+                },
+                fetchList : { 
+                    return entity.structures; 
+                },
+                createItem : { return [:]; },
+                onAddItem : { item ->
+                    updateStructures( item );
+                    entity.structures.add( item );
+                },
+                onColumnUpdate : { item, colName ->
+                    if( colName == 'structure' ) {
+                        updateStructures( item );
+                    }
+                },
+                onRemoveItem : { item -> 
+                    if( mode == "view" ) return false;
+                    if( MsgBox.confirm("Remove selected item?") ) {
+                        entity.structures.remove( item );
+                    }
+                },
+            ] as SubListModel;
+            
+            void updateStructures( item ){
+                item.objid = item.structure.objid;
+                item.structurecode = item.structure.structurecode;
+                item.structuredesc = item.structure.structuredesc;
+            }
+            
+            void save(){
+                if( mode == 'create' ) svc.create( entity );
+                else svc.update( entity );
+                
+                mode = 'view';
+                MsgBox.alert( "Settings saved." );
+                binding.refresh("entity.*");
+            }
+            
+            void edit(){
+                mode = "edit";
+                focus( "entity.structurecode" );
+            }
+            
+            void cancel() {
+                mode = "view";
+                binding.refresh("entity.*");
+                structuresHandler.load();
+            }
+            
+            void focus( name ) {
+                binding.refresh("entity.*");
+                binding.focus( name );
+            }
+            
+            def close(){
+                return "_close";
+            }
+        }
+        
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.master.structures.StructureTemplatePage" />
+    </pages>
+</workunit>
