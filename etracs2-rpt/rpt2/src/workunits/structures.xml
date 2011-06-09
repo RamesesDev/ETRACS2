@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invoker folderid="/menu/rpt/master" action="init" caption="Structures" index="8" />
+    <invoker type="rpt.master" caption="Structures" />
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null }" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
+    
+    <code lang="groovy">
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import java.rmi.server.UID;
+        
+        public class StructuresController  extends etracs2.groovy.CRUDController  {
+            @Service("StructuresService")
+            def svc;
+            
+            def materials;
+            
+            def getService() { return svc; }
+            def getCreateFocusComponent() { return "entity.structurecode"; }
+            def getEditFocusComponent() { return "entity.structurecode"; }
+            def getListHandler() { return listHandler; }
+            
+            
+            def createEntity() {
+                return [
+                    materials : [],
+                ];
+            }
+            
+            def listHandler = [
+                getRows    : { return 20; },
+                getColumns : {
+                    return [
+                        new Column(name:"structurecode", caption:"Code", minWidth:50),
+                        new Column(name:"structuredesc", caption:"Structure", minWidth:200)
+                    ];
+                },
+                fetchList : { 
+                    return list; 
+                },
+            ] as SubListModel;
+            
+            def lookupMaterials = InvokerUtil.lookupOpener("materials:lookup",[:]);
+            
+            def materialsHandler = [
+                getRows    : { return 20; },
+                getColumns : {
+                    return [
+                        new Column(name:"material", caption:"Code", minWidth:50, editable:true, type:"lookup", handler:lookupMaterials, expression: '#{materialcode}'),
+                        new Column(name:"materialdesc", caption:"Material", minWidth:200, editable:false)
+                    ];
+                },
+                fetchList : { 
+                    return entity.materials; 
+                },
+                createItem : { return [:]; },
+                onAddItem : { item ->
+                    updateMaterials( item );
+                    entity.materials.add( item );
+                },
+                onColumnUpdate : { item, colName ->
+                    if( colName == 'material' ) {
+                        updateMaterials( item );
+                    }
+                },
+                onRemoveItem : { item -> 
+                    if( mode == "view" ) return false;
+                    if( MsgBox.confirm("Remove selected item?") ) {
+                        entity.materials.remove( item );
+                    }
+                },
+            ] as SubListModel;
+            
+            void updateMaterials( item ){
+                item.objid = item.material.objid;
+                item.materialcode = item.material.materialcode;
+                item.materialdesc = item.material.materialdesc;
+            }
+        }
+        
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.master.structures.StructuresPage" />
+    </pages>
+</workunit>
