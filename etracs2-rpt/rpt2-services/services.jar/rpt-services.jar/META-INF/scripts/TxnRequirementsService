@@ -1,0 +1,112 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class TxnRequirementsService{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = 'txnrequirements:txnrequirements';
+	def schemaversion = '1.0';
+	
+	@ProxyMethod
+	public def getList( searchText, params ){
+		if( !searchText ) return getListByQuery( 'txnrequirements:getList', [:], params );
+		
+		def result = [];
+		
+		if((result = getListByQuery( 'txnrequirements:getListByType', [txntype:searchText+"%"], params ))) return result;
+		
+		return result;
+	}
+	
+	@ProxyMethod
+	public def getTxnTypes(){
+		return getListByQuery( 'txnrequirements:getTxnTypes', [:], [:] )	;
+	}
+	
+	@ProxyMethod
+	public def getAllTxnTypes(){
+		return getListByQuery( 'txnrequirements:getAllTxnTypes', [:], [:] )	;
+	}
+	
+	@ProxyMethod
+	public def open( objid ){
+		def txnrequirement = em.sqlContext.createNamedQuery( 'txnrequirements:getById' ).setParameter( 'objid', objid ).singleResult;
+		if( txnrequirement ) return em.read( schemaname, txnrequirement );
+		
+		return null;
+	}
+	
+	@ProxyMethod
+	public def create( txnrequirement ){
+		txnrequirement.objid = "TR" + new UID();
+		txnrequirement.schemaname = schemaname;
+		txnrequirement.schemaversion = schemaversion;
+		
+		validate( txnrequirement );
+		em.create( txnrequirement.schemaname, txnrequirement );
+		
+		updateTxnType( txnrequirement );
+		
+		return txnrequirement;
+	}
+	
+	private void updateTxnType( txnrequirement ){
+		em.sqlContext.createNamedExecutor( 'txnrequirements:updateTxnType' ).setParameter( "objid", txnrequirement.txntypeid ).execute();
+	}
+	
+	@ProxyMethod
+	public def update( txnrequirement ){
+		validateUpdate( txnrequirement );
+		
+		em.update( txnrequirement.schemaname, txnrequirement, { diff ->
+			logService.logB( 'UPDATE', 'TxnRequirement', txnrequirement.objid, null, diff );
+		} as UpdateChangeHandler )
+		
+		return txnrequirement;
+	}
+	
+	@ProxyMethod
+	public void delete( txnrequirement ){
+		em.delete( txnrequirement.schemaname, txnrequirement );
+	}
+	
+	
+	private void validate( txnrequirement ){
+		def oldtxnrequirement = em.read(txnrequirement.schemaname, txnrequirement);
+		util.validateLastUpdate( txnrequirement, oldtxnrequirement );
+		
+		checkDuplicates( txnrequirement );
+		em.validate(txnrequirement.schemaname, txnrequirement);
+	}
+	
+	private void validateUpdate( txnrequirement ){
+		def oldtxnrequirement = em.read(txnrequirement.schemaname, txnrequirement);
+		util.validateLastUpdate( txnrequirement, oldtxnrequirement );
+		
+		em.validate(txnrequirement.schemaname, txnrequirement);
+	}
+	
+	private void checkDuplicates( txnrequirement ){
+		def data = em.sqlContext.createNamedQuery( 'txnrequirements:checkDuplicateType' ).setParameter( 'txntype', txnrequirement.txntype ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Txn Requirement $txnrequirement.txntype already exists." );
+	}
+	
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+
+}
