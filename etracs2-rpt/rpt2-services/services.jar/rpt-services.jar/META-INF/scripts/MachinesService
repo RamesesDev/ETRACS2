@@ -1,0 +1,96 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class MachinesService{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = 'machines:machines';
+	def schemaversion = '1.0';
+	
+	@ProxyMethod
+	public def getList( searchText, params ){
+		if( !searchText ) return getListByQuery( 'machines:getList', [:], params );
+		
+		def result = [];
+		
+		if((result = getListByQuery( 'machines:getListByCode', [machinecode:searchText+"%"], params ))) return result;
+		if((result = getListByQuery( 'machines:getListByDescription', [machinedesc:searchText+"%"], params ))) return result;
+		
+		return result;
+	}
+	
+	@ProxyMethod
+	public def open( objid ){
+		return em.sqlContext.createNamedQuery( 'machines:getById' ).setParameter( 'objid', objid ).singleResult;
+	}
+	
+	@ProxyMethod
+	public def create( machine ){
+		machine.objid = "MACH" + new UID();
+		machine.schemaname = schemaname;
+		machine.schemaversion = schemaversion;
+		
+		validate( machine );
+		em.create( machine.schemaname, machine );
+		
+		return machine;
+	}
+	
+	@ProxyMethod
+	public def update( machine ){
+		validateUpdate( machine );
+		
+		em.update( machine.schemaname, machine, { diff ->
+			logService.logB( 'UPDATE', 'MACHINE', machine.objid, null, diff );
+		} as UpdateChangeHandler )
+		
+		return machine;
+	}
+	
+	@ProxyMethod
+	public void delete( machine ){
+		em.delete( machine.schemaname, machine );
+	}
+	
+	
+	private void validate( machine ){
+		def oldmachine = em.read(machine.schemaname, machine);
+		util.validateLastUpdate( machine, oldmachine );
+		
+		checkDuplicates( machine );
+		em.validate(machine.schemaname, machine);
+	}
+	
+	private void validateUpdate( machine ){
+		def oldmachine = em.read(machine.schemaname, machine);
+		util.validateLastUpdate( machine, oldmachine );
+		
+		em.validate(machine.schemaname, machine);
+	}
+	
+	private void checkDuplicates( machine ){
+		def data = em.sqlContext.createNamedQuery( 'machines:checkDuplicateCode' ).setParameter( 'machinecode', machine.machinecode ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Machine $machine.machinecode already exists." );
+		data = em.sqlContext.createNamedQuery( 'machines:checkDuplicateDescription' ).setParameter( 'machinedesc', machine.machinedesc ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Machine $machine.machinedesc already exists." );
+	}
+	
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+
+}
