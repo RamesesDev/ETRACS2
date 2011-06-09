@@ -35,7 +35,7 @@ class ExemptionTypesService{
 	
 	@ProxyMethod
 	public def create( exemptiontype ){
-		exemptiontype.objid = "F" + new UID();
+		exemptiontype.objid = "EX" + new UID();
 		exemptiontype.schemaname = schemaname;
 		exemptiontype.schemaversion = schemaversion;
 		
@@ -58,19 +58,9 @@ class ExemptionTypesService{
 	
 	@ProxyMethod
 	public void delete( exemptiontype ){
-		checkReferencedId( exemptiontype );
 		em.delete( exemptiontype.schemaname, exemptiontype );
 	}
 	
-	@ProxyMethod
-	public def approve( objid ){
-		def exemptiontype = em.read( 'exemptiontype:exemptiontype', [objid:objid] );
-		
-		exemptiontype.docstate = 'APPROVED';
-		em.update( 'exemptiontype:exemptiontype', exemptiontype );
-		
-		return exemptiontype;
-	}
 	
 	private void validate( exemptiontype ){
 		def oldexemptiontype = em.read(exemptiontype.schemaname, exemptiontype);
@@ -94,9 +84,6 @@ class ExemptionTypesService{
 		if( data.count > 0 ) throw new Exception( "Exemption Type $exemptiontype.exemptdesc already exists." );
 	}
 	
-	private void checkReferencedId( exemptiontype ){
-		
-	}
 	
 	private def getListByQuery(namedQuery, values, params ) {
 		if( ! params ) params = [ _start:0, _limit:50 ]

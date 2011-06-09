@@ -35,7 +35,7 @@ class PropertyClassificationService{
 	
 	@ProxyMethod
 	public def create( propertyclass ){
-		propertyclass.objid = "F" + new UID();
+		propertyclass.objid = "PC" + new UID();
 		propertyclass.schemaname = schemaname;
 		propertyclass.schemaversion = schemaversion;
 		
@@ -61,16 +61,7 @@ class PropertyClassificationService{
 		checkReferencedId( propertyclass );
 		em.delete( propertyclass.schemaname, propertyclass );
 	}
-	
-	@ProxyMethod
-	public def approve( objid ){
-		def propertyclass = em.read( 'propertyclassification:propertyclassification', [objid:objid] );
-		
-		propertyclass.docstate = 'APPROVED';
-		em.update( 'propertyclassification:propertyclassification', propertyclass );
-		
-		return propertyclass;
-	}
+
 	
 	private void validate( propertyclass ){
 		def oldpropertyclass = em.read(propertyclass.schemaname, propertyclass);
