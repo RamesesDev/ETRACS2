@@ -1,3 +1,9 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : june 6, 2011
+*/
+
 import com.rameses.annotations.*
 import com.rameses.common.*
 import java.rmi.server.UID
@@ -140,7 +146,6 @@ class RuleService
 				actions += displayActionRange( it )
 			}
 		}
-		println actions
 		return actions
 	}
 	
@@ -181,101 +186,110 @@ class RuleService
 	}
 	
 	void buildRuleText( rule ) {
-		if( rule.actiontype != 'RANGE' ) {
-			buildSimpleRuleText( rule )
-		}
-		else {
-			buildRangeRuleText( rule ) 
-		}
-	}
-	
-	void buildSimpleRuleText( rule ) {
-		def ruleHeader = buildRuleHeader( rule, '' )
-		def conditions = buildConditions( rule )
-		def actions = buildActions( rule )
+		def permutedConditions = generatePermutedConditions( rule) 
+		def permutedRules = generateRulePermutations( permutedConditions, buildActions( rule ) )
 		
-		def ruletext = ''
-		ruletext += ruleHeader
-		ruletext += conditions 
-		ruletext += 'then\n\n'
-		ruletext += actions 
-		ruletext += 'end\n'
+		def ruleImports = buildImportHeader( rule )
+		def ruletext = ''		
+		ruletext += ruleImports
+		
+		permutedRules.each { prule ->
+			def ruleHeader = buildRuleHeader( rule, prule.key )
+			def conditions = prule.conditions.join('\n')
+			def action    = prule.action
+			
+			def rt = ''
+			rt += ruleHeader
+			rt += conditions 
+			rt += '\n\nthen\n'
+			rt += action
+			rt += 'end\n\n'
+			ruletext += rt 
+		}
 		rule.ruletext = ruletext 
 	}
 	
-	void buildRangeRuleText( rule ) {
-		def rangeAction = rule.actions.find{ it.computationmode == 'RANGE'}
-		if( ! rangeAction ) return 
+	def generateRulePermutations( conds, actions ) {
+		int permSize = (conds.size() * actions.size() )as int 
 		
+		def permutations =[]
+		1.upto( permSize ) { permutations += [key:it, conditions:[], action:null] }
+		for(int i=1; i<=permSize; i++) {
+			def permutation = permutations.find{ it.key == i }
+			permutation.conditions += conds[ i%conds.size() ]
+			def action = actions[i%actions.size()]
+			permutation.action = action.ruletext 
+			//add action specific conditions 
+			action.conditions.each { cond ->
+				permutation.conditions += cond
+			}
+		}
+		return permutations
+	}
+	
+	/* return a list of permuted conditions */
+	List generatePermutedConditions( rule ) {
+		List conds = []
+		rule.conditions.each {
+			def cond =  condSvc.buildConditionRuleText( it )
+			conds.add( cond )
+		}
+		rule.actions.conditions.each  { 
+			if( it ) conds.add( [it] )
+		}
+		return generatePermutations( conds ) 
+	}
+	
+	List buildActions( rule ) {
+		List actions = []
+		rule.actions.each { 
+			def actionList = actionSvc.buildActionRuleText( rule, it ) 
+			actionList.each {
+				actions.add( it )
+			}
+		}
+		return actions 
+	}
+	
+	List generatePermutations( list ) {
+		int maxSize = list.max{it.size()}.size()
+		
+		def permutations = []
+		0.upto( maxSize - 1) {
+			permutations += [ key:it, items:[] ]
+		}
+		
+		list.each { item ->
+			for( int i=0; i<maxSize; i++){ 
+				def permutation = permutations.find{ it.key == i }
+				permutation.items.add( item[i % item.size()] )
+			}
+		}
+		return permutations.items
+	}
+	
+	
+	def buildImportHeader( rule ) {
 		def ruletext = ''
 		ruletext += 'package ' + rule.packagename + ';\n'
 		ruletext += 'import bp.assessment.facts.*;\n'
 		ruletext += 'import java.util.*;\n\n'
 		ruletext += 'global com.rameses.rules.common.RuleAction actionList\n\n'
-		
-		def index = 0
-		rangeAction.ranges.each { range ->
-			def ruleHeader = buildRuleHeader( rule, index )
-			def conditions = buildConditions( rule )
-			conditions += condSvc.buildRangeCondition( rangeAction, range )
-			def actions = buildActions( rule )
-			actions += actionSvc.buildRangeAction( rule, rangeAction, range, index  )
-			
-			def rt = ''
-			rt += 'rule "' + rule.rulename + index + '"\n'
-			rt += 'agenda-group "' + rule.agendagroupid + '"\n'
-			rt += 'salience ' + rule.salience + '\n\n'
-
-			rt += 'when\n' 
-			rt += '$app : ApplicationFact( $appid: appid )\n'
-			rt += '$lob : LOBFact( $lobid:lobid, $lobname:name, appid == $appid)	\n'
-			rt += conditions 
-			rt += 'then\n\n'
-			rt += actions 
-			rt += 'end\n\n'
-			ruletext += rt 
-			index += 1
-		}
-		rangeAction.ruletext = ruletext 
-		rule.ruletext = ruletext 
+		return ruletext 
 	}
 	
 	def buildRuleHeader( rule, index ) {
 		def ruletext = ''
-		ruletext += 'package ' + rule.packagename + ';\n'
-		ruletext += 'import bp.assessment.facts.*;\n'
-		ruletext += 'import java.util.*;\n\n'
-		
-		ruletext += 'global com.rameses.rules.common.RuleAction actionList\n\n'
-
 		ruletext += 'rule "' + rule.rulename + index + '"\n'
 		ruletext += 'agenda-group "' + rule.agendagroupid + '"\n'
+		ruletext += 'no-loop\n'
 		ruletext += 'salience ' + rule.salience + '\n\n'
-
 		ruletext += 'when\n' 
 		ruletext += '$app : ApplicationFact( $appid: appid )\n'
 		ruletext += '$lob : LOBFact( $lobid:lobid, $lobname:name, appid == $appid)	\n'
 		return ruletext 
 	}
 	
-	def buildConditions( rule ) {
-		rule.conditions.each { 
-			it.ruletext = condSvc.buildConditionRuleText( it ) 
-		}
-		def s = rule.conditions.ruletext.join('\n')
-		s += '\n'
-		s += rule.actions.conditions.ruletext.flatten().join('\n')
-		return s
-	}	
-	
-	def buildActions( rule ) {
-		int index = 0
-		rule.actions.each { 
-			it.ruletext = actionSvc.buildActionRuleText( rule, it, index ) 
-			index += 1
-		}
-		return rule.actions.ruletext.join('\n')
-	}	
 	
 	void deployRulePackage( rule ) {
 		ruleMgmt.removeRulePackage( RULESET, '', rule.packagename, false )
@@ -285,4 +299,12 @@ class RuleService
 	void undeployRulePackage( rule ) {
 		ruleMgmt.removeRulePackage( RULESET, '', rule.packagename, false )
 	}
+	
+	void printList( caption, list ) {
+		list.each {
+			println caption + '----------------------------------' 
+			println it 
+		}
+	}
 }
+

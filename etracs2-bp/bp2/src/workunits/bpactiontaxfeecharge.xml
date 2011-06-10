@@ -106,11 +106,12 @@ class BPRuleActionTaxFeeChargeController
     
     def buildFormulaDef() {
         def variables = buildVariables()
+        def parameters = buildParameters()
         return [
             expression : null,
             fields     : [],
             variables  : variables,
-            parameters : [],
+            parameters : parameters,
             functions  : [],
         ]
     }
@@ -120,11 +121,27 @@ class BPRuleActionTaxFeeChargeController
         def inputVars = rule.conditions.findAll{ it.opener == 'rulecondition.variable' }
         inputVars.each {
             vars += [
-                objid   : it.variable.objid,
+                objid   : it.variable.objsid,
                 name    : it.variable.name,
                 caption : it.variable.caption,
                 description : it.variable.description,
             ]
+        }
+        return vars
+    }
+    
+    def buildParameters() {
+        def vars = []
+        def inputVars = rule.conditions.findAll{ it.opener == 'rulecondition.summary' }
+        inputVars.each { opener ->
+            opener.summaries.each {
+                vars += [
+                    objid   : it.objid,
+                    name    : it.name,
+                    caption : it.name,
+                    description : it.name,
+                ]
+            }
         }
         return vars
     }

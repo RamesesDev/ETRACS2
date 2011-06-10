@@ -35,21 +35,21 @@ class BPRuleConditionVariableController
     }
     
     void open() {
-        setVariable(condition?.variable)
+        setVariable(condition.variable)
     }
     
     
     def selectHandler = { value ->
-        variable.value = value
+        condition.value = value
     }
     
     void setVariable( variable ) {
-        if( variable ) variable = varSvc.open( variable?.objid )
+        if( variable ) variable = varSvc.open( variable.objid )
         this.variable = variable 
         condition.variable = variable
         variableOpener = null
         if( variable?.datatype == 'string_array' ) {
-            variableOpener = InvokerUtil.lookupOpener('variablevalue', [variable:variable, selectHandler:selectHandler])
+            variableOpener = InvokerUtil.lookupOpener('variablevalue', [variable:variable, selectedValue:condition.value, selectHandler:selectHandler])
         }
     }
     

@@ -1,3 +1,9 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : june 6, 2011
+*/
+
 import com.rameses.annotations.*;
 import com.rameses.rules.common.*;
 
@@ -11,6 +17,9 @@ public class BPRuleService
 	
 	@Service('VariableService')
 	def varSvc
+	
+	@Service('BPApplicationService') 
+	def appSvc
 	
 	def BPASSESSMENT_RULESET = 'bpassessment'
 	def FACTS_PACKAGE = 'bp.assessment.facts.'
@@ -48,7 +57,7 @@ public class BPRuleService
 	
 	void buildActionCommands( app, facts, actionList ) {
 		actionList.addCommand( 'addInfo', new AppInfoHandler( app:app ) )
-		actionList.addCommand( 'addTaxFee', new AddTaxFeeHandler( app:app, facts:facts, ruleService:ruleService ) )
+		actionList.addCommand( 'addTaxFee', new AddTaxFeeHandler( em:em, app:app, facts:facts, ruleService:ruleService ) )
 		actionList.addCommand( 'updateAnyTaxFee', new UpdateAnyTaxFeeHandler( app:app, facts:facts, ruleService:ruleService  ) )
 		actionList.addCommand( 'updateHighestTaxFee', new UpdateHighestTaxFeeHandler( app:app, facts:facts, ruleService:ruleService ) )
 		actionList.addCommand( 'updateLowestTaxFee', new UpdateLowestTaxFeeHandler( app:app, facts:facts, ruleService:ruleService ) )
@@ -62,6 +71,7 @@ public class BPRuleService
 		facts += createApplicationFact( app )
 		facts += createLobFacts( app )
 		facts += createInputVariableFacts( app )
+		facts += createTaxFeeSummaryFacts( app )
 		return facts
 	}
 	
@@ -94,6 +104,22 @@ public class BPRuleService
 			lobfact.classificationid = lobitem.lob.classificationid 
 			lobfact.attributes = loadLobAttributes( lobitem.lob.objid  )
 			facts += lobfact 
+		}
+		return facts 
+	}
+	
+	def createTaxFeeSummaryFacts( app ) {
+		def facts = []
+		appSvc.getAccountSummaryTypes().each {
+			def fact = ruleService.createFact(BPASSESSMENT_RULESET, FACTS_PACKAGE + 'InputVariableFact' )
+			fact.appid = app.objid 
+			fact.lobid = null
+			fact.varid = it.objid 
+			fact.varname = it.name
+			fact.vartype = 'decimal'
+			fact.value   = 0.0
+			fact.systype = 'SUMMARY'
+			facts += fact 
 		}
 		return facts 
 	}
@@ -157,6 +183,7 @@ class AddTaxFeeHandler implements RuleActionHandler
 	def facts
 	def app
 	def ruleService
+	def em 
 	def BPASSESSMENT_RULESET = 'bpassessment'
 	def FACTS_PACKAGE = 'bp.assessment.facts.'
 	
@@ -168,6 +195,7 @@ class AddTaxFeeHandler implements RuleActionHandler
 			lobname   : tfvalue.lobname,
 			acctid    : tfvalue.acctid,
 			accttitle : tfvalue.accttitle,
+			systype   : getIncomeAccountSystemType( tfvalue.acctid, tfvalue.accttitle, tfvalue.rulename ),
 			rulename  : tfvalue.rulename,
 			assessedvalue : av, 
 			amountdue     : av,
@@ -175,6 +203,7 @@ class AddTaxFeeHandler implements RuleActionHandler
 		if( tfvalue.applytype == 'MAX' ) processApplyMaxValue( drools, taxfee )
 		else if( tfvalue.applytype == 'MIN' ) processApplyMinValue( drools, taxfee )
 		else  processApplyPerLine( drools, taxfee )
+		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
 	}
 	
 	void insertTaxFeeFact( drools, taxfee ) {
@@ -184,7 +213,6 @@ class AddTaxFeeHandler implements RuleActionHandler
 		fact.acctid = taxfee.acctid 
 		fact.assessedvalue = taxfee.assessedvalue
 		fact.amountdue = taxfee.amountdue
-		fact.tempvalue = 0.0 
 		drools.insert( fact )
 		facts.add( fact )
 	}
@@ -234,6 +262,12 @@ class AddTaxFeeHandler implements RuleActionHandler
 		return (new Util( ruleService:ruleService )).evaluate( tfvalue.expr, params )
 	}
 	
+	def getIncomeAccountSystemType( acctid, accttitle, rulename  ) {
+		def acct = em.sqlContext.createNamedQuery('bprule:getIncomeAccountById').setParameter('objid', acctid ).singleResult
+		if( !acct ) throw new Exception('Cannot open ' + accttitle + ' record. \nPlease check that it has not been deleted. If deleted, modify rule ' + rulename + '.')
+		return acct.systype 
+	}
+	
 }
 
 class UpdateAnyTaxFeeHandler implements RuleActionHandler
@@ -248,6 +282,7 @@ class UpdateAnyTaxFeeHandler implements RuleActionHandler
 		def params = [:]
 		params[tfvalue.varname] = tfvalue.varvalue 
 		taxfee.amountdue = (new Util(ruleService:ruleService)).evaluate( tfvalue.expr, params )
+		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
 	}
 }
 
@@ -265,7 +300,8 @@ class UpdateHighestTaxFeeHandler implements RuleActionHandler
 		def maxav = taxfees.assessedvalue.max()
 		def highestTaxFees = taxfees.findAll{ it.assessedvalue == maxav }
 		util.updateAmountDue( tfvalue, highestTaxFees )
-		util.insertFact( drools, facts, FACTS_PACKAGE + 'HighestComputed')
+		util.insertFact( drools, app.objid, tffact.acctid, facts, FACTS_PACKAGE + 'HighestComputed')
+		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
 	}	
 }
 
@@ -281,9 +317,19 @@ class UpdateNotHighestTaxFeeHandler implements RuleActionHandler
 		def tffact = tfvalue.taxfeefact
 		def taxfees = util.getAffectedTaxesFees( app, tfvalue )
 		def maxav = taxfees.assessedvalue.max()
+		
+		//update not highest taxfees 
 		def nothighestTaxFees = taxfees.findAll{ it.assessedvalue < maxav }
 		util.updateAmountDue( tfvalue, nothighestTaxFees )
-		util.insertFact( drools, facts, FACTS_PACKAGE + 'NotHighestComputed' )
+		
+		//if there are more than 1 equal highest values, adjust taxfees ( count - 1 )
+		def equalHighestTaxFees = taxfees.findAll{ it.assessedvalue == maxav }
+		if( equalHighestTaxFees.size() > 1 ) {
+			equalHighestTaxFees.remove(0)
+			util.updateAmountDue( tfvalue, equalHighestTaxFees)
+		}
+		util.insertFact( drools, facts, app.objid, tffact.acctid, FACTS_PACKAGE + 'NotHighestComputed' )
+		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
 	}
 }
 
@@ -301,7 +347,8 @@ class UpdateLowestTaxFeeHandler implements RuleActionHandler
 		def minav = taxfees.assessedvalue.min()
 		def lowestTaxFees = taxfees.findAll{ it.assessedvalue == minav }
 		util.updateAmountDue( tfvalue, lowestTaxFees )
-		util.insertFact( drools, facts, FACTS_PACKAGE + 'LowestComputed' )
+		util.insertFact( drools, facts, app.objid, tffact.acctid, FACTS_PACKAGE + 'LowestComputed' )
+		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
 	}
 }
 
@@ -316,10 +363,20 @@ class UpdateNotLowestTaxFeeHandler implements RuleActionHandler
 		def util = new Util(ruleService:ruleService)
 		def tffact = tfvalue.taxfeefact
 		def taxfees = util.getAffectedTaxesFees( app, tfvalue )
+		
+		//update lowest taxfees 
 		def minav = taxfees.assessedvalue.min()
 		def notlowestTaxFees = taxfees.findAll{ it.assessedvalue > minav }
 		util.updateAmountDue( tfvalue, notlowestTaxFees )
-		util.insertFact( drools, facts, FACTS_PACKAGE + 'NotLowestComputed' )
+		
+		//if there are more than 1 equal lowest values, adjust taxfees (count - 1)
+		def equalLowestTaxFees = taxfees.findAll{ it.assessedvalue == minav }
+		if( equalLowestTaxFees.size() > 1 ) {
+			equalLowestTaxFees.remove(0)
+			util.updateAmountDue( tfvalue, equalLowestTaxFees )
+		}
+		util.insertFact( drools, facts, app.objid, tffact.acctid, FACTS_PACKAGE + 'NotLowestComputed' )
+		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
 	}
 }
 
@@ -329,6 +386,7 @@ class Util
 
 	def ruleService 
 	def BPASSESSMENT_RULESET = 'bpassessment'
+	def FACTS_PACKAGE = 'bp.assessment.facts.'
 	
 	public def evaluate( expr, params ) {
 		return (new GroovyShell( new Binding( params) )).evaluate( expr )
@@ -347,10 +405,26 @@ class Util
 		}
 	}
 	
-	public void insertFact( drools, facts, factname ) {
+	public void insertFact( drools, facts, appid, acctid, factname ) {
 		def fact = ruleService.createFact(BPASSESSMENT_RULESET, factname)
+		fact.appid = appid
+		fact.acctid = acctid 
 		drools.insert( fact )
 		facts.add( fact )
+	}
+	
+	void insertTaxFeeSummaryFact( drools, app ) {
+		def systypes = app.taxfees.collect{ it.systype }.unique()
+		def summaryGroups = app.taxfees.groupBy{ it.systype }
+
+		systypes.each { systype ->
+			def total = summaryGroups[systype].amountdue.sum()
+			def summfact = ruleService.createFact(BPASSESSMENT_RULESET, FACTS_PACKAGE + 'TaxFeeSummaryFact')	
+			summfact.appid = app.objid 
+			summfact.name = systype 
+			summfact.value = total
+			drools.insert( summfact )
+		}
 	}
 }
 

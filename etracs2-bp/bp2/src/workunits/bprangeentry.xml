@@ -53,8 +53,8 @@ class BPRangeEntryController
     
     
     def allowColumnEdit = { item ->
-        if( action.ranges.size() == 0 ) return true
-        if( item.rangefrom == null) return true
+        if( isFirstItem() ) return true
+        if( isNewEntry( item ) ) return true
         return isLastItem( item )
     } as Map
     
@@ -82,7 +82,7 @@ class BPRangeEntryController
     
     void doColumnUpdate( item, colName ) {
         try {
-            if( ! isLastItem( item ) && listItem.state != 0 ) throw new Exception('Editing is not allowed.\nOnly the last item can be edited.')
+            if( colName == 'rangeto' && ! isLastItem( item ) && listItem.state != 0 ) throw new Exception('Editing is not allowed.\nOnly the last item can be edited.')
             if( colName == 'rangeto' && listItem.state == 0 ) {
                 item.rangefrom = getLastRangeToValue()
             }
@@ -96,6 +96,10 @@ class BPRangeEntryController
     
     def isFirstItem() {
         return action.ranges.size() == 0
+    }
+    
+    def isNewEntry( item ) {
+        return item.rangefrom == null 
     }
     
     def isLastItem( item ) {
