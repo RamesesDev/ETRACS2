@@ -30,6 +30,8 @@ class RuleAnalyzerController
     def selectedInfo
     def selectedTaxFee
     def barangay
+    def totalAssessment = 0.0
+    def inputtedValues = []
     
     def entity
     
@@ -40,12 +42,14 @@ class RuleAnalyzerController
     void resetComputation() {
         entity.infos = []
         entity.taxfees = []
+        calculateTotalAssessment()
         binding.refresh('selectedInfo|selectedTaxFee')
     }
     
     void getInfos() {
-        resetComputation()
+        inputtedValues.clear() 
         entity = svc.buildInfos( entity )
+        calculateTotalAssessment()
         binding.refresh('selectedInfo')
     }
     
@@ -53,12 +57,67 @@ class RuleAnalyzerController
     /* ------------------------------------------------------------------------
     // Input Values Support
     //------------------------------------------------------------------------ */
+    
+    /* ------------------------------------------------------------------------
+    * Checks if there are still infos required before printing. If present,
+    * execute rule again for re-evaluation. However infos that are not required
+    * before printing are preserved and not included in the re-evaluation to avoid 
+    * infinite loop in the rule. The preserved infos are added when all infos are gathered. 
+    *
+    * return true if there are still infos required before printing 
+    ------------------------------------------------------------------------*/
+    def additionalInfos = []
     def inputHandler = { app ->
+        additionalInfos.clear()
+        additionalInfos = determineAdditionalInfos(app)
+        if( additionalInfos ) {
+            //preserve currently inputted values
+            inputtedValues.addAll( app.infos )
+            //remove additional infos to avoid infinite loop
+            app.infos.clear()
+            app.infos.addAll( additionalInfos )
+            app = svc.buildInfos( app )
+            
+            //exclude previous infos from result 
+            removeAllInfos( app, additionalInfos )
+            removeAllInfos( app, inputtedValues ) 
+            return app 
+        }
+    }
+    
+    def removeAllInfos( app, list ) {
+        list.each { item ->
+            app.infos.removeAll( app.infos.findAll{ it.lobid == item.lobid && it.varid == item.varid } )
+        }
+    }
+    
+    List determineAdditionalInfos( app ) {
+        return app.infos.findAll { it.requiredbeforeprint == true }
+    }
+    
+    def acceptInputHandler = { app ->
+        app.infos.addAll( inputtedValues)
         convertDataTypes( app ) //TODO: Temporary while ui is not yet available
         entity = svc.buildTaxFees( app )
+        sortInfos( entity )
         taxfeeListHandler.load()
+        calculateTotalAssessment()
         binding.refresh('selectedTaxFee')
         binding.refresh('selectedInfo')
+    }
+    
+    def inputValues() {
+        resetComputation()
+        getInfos()
+        return InvokerUtil.lookupOpener('ruleanalyzer.inputvalues', [entity:entity, inputHandler:inputHandler, acceptInputHandler:acceptInputHandler] ) 
+    }
+    
+    void sortInfos( app ) {
+        app.infos.sort{ a, b -> 
+            def atext = (a.lobname ? a.lobname : '-') + a.name 
+            def btext = (b.lobname ? b.lobname : '-') + b.name 
+            return atext <=> btext 
+        }		
     }
     
     void convertDataTypes( app ) {
@@ -68,10 +127,6 @@ class RuleAnalyzerController
         }
     }
     
-    def inputValues() {
-        getInfos()
-        return InvokerUtil.lookupOpener('ruleanalyzer.inputvalues', [entity:entity, inputHandler:inputHandler] )
-    }
     
     def lobLookup = InvokerUtil.lookupOpener( 'lob.lookup', [:] )
     
@@ -95,10 +150,11 @@ class RuleAnalyzerController
         getRows    : { return 50 },
         getColumns : { return [
             new Column(name:'lobname', caption:'Line of Business'),
-            new Column(name:'varname', caption:'Variable'),
+            new Column(name:'varcaption', caption:'Variable'),
             new Column(name:'value', caption:'Value', editable:true ),
         ]},
         fetchList : { return entity.infos },
+        onOpenItem :{ item, colName-> displayRuleInfo( item ) },
     ] as SubListModel
     
     def taxfeeListHandler = [
@@ -110,24 +166,30 @@ class RuleAnalyzerController
             new Column(name:'amountdue', caption:'Amount Due', type:'decimal'),
         ]},
         fetchList : { return entity.taxfees },
+        onOpenItem :{ item, colName-> displayRuleInfo( item ) },
     ] as SubListModel
     
+    
+    def displayRuleInfo( item ) {
+        return InvokerUtil.lookupOpener('rule.htmlinfo', [rulename:item.rulename])
+    }
+    
     void doAddItem( item ) {
-        /*
-        item.objid = item.lob.objid
-        item.name = item.lob.name
-        item.classificationid = item.lob.classificationid 
-        */
         entity.lobs.add( item )
     }
     
+    void calculateTotalAssessment() {
+        def total = entity.taxfees.amountdue?.sum()
+        totalAssessment = (total ? total : 0.0)
+        binding.refresh('totalAssessment') 
+    }
     
     void createEntity() {
         entity = [
             objid  : 'B0001', 
             lobs   : [],
             infos  : [],
-            taxfee : [],
+            taxfees : [],
         ]
     }
     

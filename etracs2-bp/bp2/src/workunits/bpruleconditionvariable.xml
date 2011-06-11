@@ -24,6 +24,7 @@ class BPRuleConditionVariableController
     def condition
     def variableOpener
     def variable 
+    def variableList 
     
     void create() {
         condition = [
@@ -35,16 +36,14 @@ class BPRuleConditionVariableController
     }
     
     void open() {
-        setVariable(condition.variable)
+        setVariable( varSvc.open( condition.variable.objid ) )  
     }
-    
     
     def selectHandler = { value ->
         condition.value = value
     }
     
     void setVariable( variable ) {
-        if( variable ) variable = varSvc.open( variable.objid )
         this.variable = variable 
         condition.variable = variable
         variableOpener = null
@@ -66,7 +65,15 @@ class BPRuleConditionVariableController
     }
     
     def getVariables() {
-        return varSvc.getList( null, null )
+        if( !variableList  ) {
+            variableList = varSvc.getList( null, null )
+            variableList.each {
+                if( it.datatype == 'string_array' ) {
+                    it.arrayvalues = GroovyObjectDeserializer.instance.deserialize( it.arrayvalues )
+                }
+            }
+        }
+        return variableList 
     }
     
 }

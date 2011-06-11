@@ -33,6 +33,7 @@ class RuleController
     def selectedAction
     def agendagroup
     def agendalist 
+    int editedIndex
     
     def updateHandler 
     
@@ -105,11 +106,13 @@ class RuleController
     }
 
     def updateConditionHandler = { condition ->
+        entity.conditions.set(editedIndex, condition )
         selectedCondition = condition
         binding.refresh('selectedCondition') 
     }
     
     def openCondition() {
+        editedIndex = entity.conditions.indexOf( selectedCondition )
         def conditionOpener = selectedCondition.opener + '.open'
         def opener = InvokerUtil.lookupOpener(conditionOpener, [condition:selectedCondition])
         return InvokerUtil.lookupOpener('rulecondition.open',[opener:opener, condition:selectedCondition, updateConditionHandler:updateConditionHandler])        
@@ -136,12 +139,16 @@ class RuleController
         return InvokerUtil.lookupOpener('ruleaction.create',[rule:entity, addHandler:addActionHandler])
     }
     
+    
+    
     def updateActionHandler = { action -> 
+        entity.actions.set(editedIndex, action )
         selectedAction = action 
         binding.refresh('selectedCondition') 
     }
     
     def openAction() {
+        editedIndex = entity.actions.indexOf( selectedAction )
         def actionOpener = selectedAction.opener + '.open'
         def opener = InvokerUtil.lookupOpener(actionOpener, [rule:entity, action:selectedAction])
         return InvokerUtil.lookupOpener('ruleaction.open', [rule:entity, opener:opener, action:selectedAction, updateHandler:updateActionHandler])        

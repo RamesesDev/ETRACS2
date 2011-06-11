@@ -56,7 +56,7 @@ public class BPRuleService
 	}
 	
 	void buildActionCommands( app, facts, actionList ) {
-		actionList.addCommand( 'addInfo', new AppInfoHandler( app:app ) )
+		actionList.addCommand( 'addInfo', new AppInfoHandler( em:em, app:app ) )
 		actionList.addCommand( 'addTaxFee', new AddTaxFeeHandler( em:em, app:app, facts:facts, ruleService:ruleService ) )
 		actionList.addCommand( 'updateAnyTaxFee', new UpdateAnyTaxFeeHandler( app:app, facts:facts, ruleService:ruleService  ) )
 		actionList.addCommand( 'updateHighestTaxFee', new UpdateHighestTaxFeeHandler( app:app, facts:facts, ruleService:ruleService ) )
@@ -80,6 +80,7 @@ public class BPRuleService
 		def facts = []
 		facts += createApplicationFact( app )
 		facts += createLobFacts( app )
+		facts += createInputVariableFacts( app )
 		return facts 
 	}
 	
@@ -167,13 +168,24 @@ class AppInfoHandler implements RuleActionHandler
 { 
 	def app
 	def facts
+	def em 
 	
 	public void execute( drools, var ) {
-		//do not add if already present in infos 
-		def info = app.infos.find{ it.lobid == var.lobid && it.varid == var.varid }
-		if( !info ) {
+		if( ! isAdded(var)  ) {
+			var.putAll( getVariableInfo( var ) )
 			app.infos.add( var )
 		}
+	}
+		
+	boolean isAdded( var ) {
+		def varInfo = app.infos.find{ it.lobid == var.lobid && it.varid == var.varid }  
+		return varInfo != null 
+	}
+	
+	Map getVariableInfo( var ) {
+		def varInfo = em.sqlContext.createNamedQuery('bprule:getVarInfo').setParameter('objid', var.varid).singleResult 
+		if( ! varInfo ) throw new Exception('Variable ' + var.varname + ' does not exists.\nCheck if variable was not deleted.')
+		return varInfo 
 	}
 }
 
@@ -188,7 +200,7 @@ class AddTaxFeeHandler implements RuleActionHandler
 	def FACTS_PACKAGE = 'bp.assessment.facts.'
 	
 	public void execute( drools, tfvalue ) {
-		def av =  calculateAssessedValue( tfvalue );
+		def av =  calculateAssessedValue( tfvalue )
 		def taxfee = [
 			appid     : tfvalue.appid,
 			lobid     : tfvalue.lobid,
@@ -259,7 +271,15 @@ class AddTaxFeeHandler implements RuleActionHandler
 		tfvalue.inputvars.each { inputvar -> 
 			params[inputvar.varname] =  inputvar.value 
 		}
-		return (new Util( ruleService:ruleService )).evaluate( tfvalue.expr, params )
+		def resolvedExpr = resolveFunctions( tfvalue.expr )
+		return (new Util( ruleService:ruleService )).evaluate( resolvedExpr, params )
+	}
+	
+	def resolveFunctions( expr ) {
+		def util = new Util( ruleService:ruleService )
+		def resolvedExpr =  util.resolveIIF( expr )
+		resolvedExpr = util.resolveFixed( expr )
+		return resolvedExpr
 	}
 	
 	def getIncomeAccountSystemType( acctid, accttitle, rulename  ) {
@@ -390,6 +410,31 @@ class Util
 	
 	public def evaluate( expr, params ) {
 		return (new GroovyShell( new Binding( params) )).evaluate( expr )
+	}
+	
+	public def resolveIIF( expr ) {
+		def pattern = ~/@IIF\(.+\)/
+		def matcher = pattern.matcher( expr )
+		while( matcher ) {
+			def match = matcher[0]
+			def iif = match.replaceFirst('@IIF','').replaceFirst(',', ' ? ').reverse().replaceFirst(',', ':').reverse()
+			expr = expr.replaceFirst(pattern.pattern(), iif)
+			matcher = pattern.matcher( expr )
+		} 
+		return expr
+	}
+	
+	public def resolveFixed( expr ) {
+		def pattern = ~/@FIXED\(.+\)/
+		def matcher = pattern.matcher( expr )
+		while( matcher ) {
+			def match = matcher[0]
+			def fixed = match.replaceFirst('@FIXED','(int)')
+			expr = expr.replaceFirst(pattern.pattern(), fixed)
+			matcher = pattern.matcher( expr )
+		} 
+		return expr
+		
 	}
 	
 	public def getAffectedTaxesFees( app, tfvalue ) {

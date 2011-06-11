@@ -17,12 +17,13 @@ class InputValuesController
     def entity 
     def selectedInfo
     def selectedLobInfo
-    def inputHandler
+    def inputHandler 
+    def acceptInputHandler
     
     def infoListHandler = [
         getColumns : { return [
             new Column(name:'lobname', caption:'Line of Business'),
-            new Column(name:'varname', caption:'Variable'),
+            new Column(name:'varcaption', caption:'Variable'),
             new Column(name:'value', caption:'Value', editable:true),
         ]},
         fetchList : { return entity.infos }
@@ -33,8 +34,15 @@ class InputValuesController
     }
     
     def ok() {
-        if( inputHandler ) inputHandler( entity )
-        return '_close'
+        if( inputHandler ) entity = inputHandler( entity )
+        if( entity.infos ) {
+            infoListHandler.load()
+            return 'default' 
+        }
+        else {
+            if( acceptInputHandler ) acceptInputHandler( entity )
+            return '_close'
+        }
     }
 }
 

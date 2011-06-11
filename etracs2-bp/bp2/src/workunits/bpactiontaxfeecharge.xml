@@ -107,12 +107,13 @@ class BPRuleActionTaxFeeChargeController
     def buildFormulaDef() {
         def variables = buildVariables()
         def parameters = buildParameters()
+        def functions = defineFunctions()
         return [
             expression : null,
             fields     : [],
             variables  : variables,
             parameters : parameters,
-            functions  : [],
+            functions  : functions,
         ]
     }
     
@@ -128,6 +129,17 @@ class BPRuleActionTaxFeeChargeController
             ]
         }
         return vars
+    }
+    
+    def defineFunctions() {
+        return [
+            defineFunction('IIF', '@IIF( expr, truevalue, falsevalue )', 'Ternary IF Condition', 'Performs immediate IF evaluation'),
+            defineFunction('FIXED', '@FIXED( numberexpr )', 'Fixed Function', 'Converts number to integer.' ),
+        ]
+    }
+    
+    def defineFunction(objid, name, caption, description) {
+        return [objid:objid, name:name, caption:caption, description:description ]
     }
     
     def buildParameters() {

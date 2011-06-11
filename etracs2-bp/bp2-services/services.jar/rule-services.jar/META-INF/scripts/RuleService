@@ -37,8 +37,17 @@ class RuleService
 	
 	@ProxyMethod
 	public def getList( searchText, params ) {
-		if( ! searchText ) return em.sqlContext.createNamedQuery('rule:getList').resultList
-		return em.sqlContext.createNamedQuery('rule:getListByName').setParameter('name', searchText+'%').resultList
+		if( ! params ) params = [_start:0, _limit:50]
+		if( ! searchText ) {
+			return em.sqlContext.createNamedQuery('rule:getList')
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+		}
+		return em.sqlContext.createNamedQuery('rule:getListByName').setParameter('name', searchText+'%')
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
 	}
 	
 	@ProxyMethod
@@ -102,6 +111,13 @@ class RuleService
 	@ProxyMethod
 	public List getAgendaGroups() {
 		return em.sqlContext.createNamedQuery('rule:getRuleGroups').resultList 
+	}
+	
+	@ProxyMethod
+	public def getHtmlByRuleName( rulename ) {
+		def rule = getList( rulename, null )
+		if( ! rule ) throw new Exception('Rule ' + rulename + ' not found. Please verify that it has not been deleted.')
+		return getHtml( rule[0].objid )
 	}
 	
 	@ProxyMethod
