@@ -21,7 +21,24 @@ class ConsolidatedReportService {
 	public def buildReport( entity ){
 		def year = Integer.parseInt( entity.year );
 		
-		return em.sqlContext.createNamedQuery('consolidatedreport:getReportData').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
+		def data = em.sqlContext.createNamedQuery('consolidatedreport:getReportDataGeneral').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
+		data += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCollector').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
+		data += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCanceledSeries').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
+		
+		data.each{
+			if( it.beginqty == 0 ) it.beginqty = null;
+			if( it.receivedqty == 0 ) it.receivedqty = null;
+			if( it.issuedqty == 0 ) it.issuedqty = null;
+			if( it.endingqty == 0 ) it.endingqty = null;
+			
+			if( it.beginqty == it.endingqty || it.receivedqty == it.endingqty ){
+				it.endingqty = null;
+				it.endingfrom = null;
+				it.endingto = null;
+			}
+		}
+		
+		return data;
 	}
 	
 	@ProxyMethod
@@ -42,10 +59,11 @@ class ConsolidatedReportService {
 	}
 	
 	private void init( irafid, ri ){
-		
+		def af = getAF( ri.afid );
 		def afinventoryid = getAFInventoryId( irafid, ri.afid );
 		
 		if( ri.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
+		if( ri.aftype == 'nonserial' ) ri.qtyreceived = ri.qtyreceived * af.pcsperunit;
 		
 		if( ri.prefix.length() != 0 ) ri.prefix = ri.prefix + "-";
 		else ri.prefix = "";
@@ -72,6 +90,17 @@ class ConsolidatedReportService {
 			endingto		: ri.prefix + ri.endseries + ri.suffix
 		];
 		
+		if( ri.cancelledseries ){
+			ri.cancelledseries.each{
+				craaf += [
+					canceledqty 	: it.toseries - it.fromseries,
+					canceledfrom 	: it.fromseries,
+					canceledto 		: it.toseries,
+					cancelreason	: it.remarks
+				];	
+			}
+		}
+		
 		em.validate( craaf.schemaname, craaf );
 		em.save( craaf.schemaname, craaf );
 	}
@@ -84,11 +113,17 @@ class ConsolidatedReportService {
 		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryId' ).setParameters([irafid:irafid, afid:afid]).singleResult.objid;
 	}
 	
+	private def getAF( afid ){
+		return em.sqlContext.createNamedQuery('consolidatedreport:getAF').setParameter("afid", afid ).singleResult;
+	}
+	
 	private void createCRAAFByIRAF( irafid, ri ){
 		
+		def af = getAF( ri.afid );
 		def afinventoryid = getAFInventoryId( irafid, ri.afid );
 		
 		if( ri.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
+		if( ri.aftype == 'nonserial' ) ri.qtyreceived = ri.qtyreceived * af.pcsperunit;
 		
 		if( ri.prefix.length() != 0 ) ri.prefix = ri.prefix + "-";
 		else ri.prefix = "";
@@ -115,6 +150,17 @@ class ConsolidatedReportService {
 			endingto		: ri.prefix + ri.endseries + ri.suffix
 		];
 		
+		if( ri.cancelledseries ){
+			ri.cancelledseries.each{
+				craaf += [
+					canceledqty 	: it.toseries - it.fromseries,
+					canceledfrom 	: it.fromseries,
+					canceledto 		: it.toseries,
+					cancelreason	: it.remarks
+				];	
+			}
+		}
+		
 		em.validate( craaf.schemaname, craaf );
 		em.save( craaf.schemaname, craaf );
 	
@@ -126,8 +172,10 @@ class ConsolidatedReportService {
 			def afic = getAFInventoryCredit( iraf.objid, ri.afid );
 			def series = getSeries( iraf.objid, ri.afid );
 			def craafitem = getCRAAFItem( afic.afinventoryid, ri.afid, "" );
-			
+			def af = getAF( ri.afid );
+		
 			if( afic.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
+			if( afic.aftype == 'nonserial' ) ri.qtyreceived = ri.qtyreceived * af.pcsperunit;
 			
 			if( afic.prefix.length() != 0 ) afic.prefix = afic.prefix + "-";
 			else afic.prefix = "";

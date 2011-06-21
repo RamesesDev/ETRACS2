@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invoker folderid="/menu/rpt/master" action="init" caption="RPT Setting" index="2" />
+    <invoker type="rpt.master" caption="RPT Setting" />
+    
+    <invoker type="formActions" action="close" shortcut="ctrl c"  immediate="true" caption="Close" mnemonic="c" />
+    <invoker type="formActions" action="save" shortcut="ctrl S" caption="Save" mnemonic="s" icon="images/save24.png"/>
+    
+    <code lang="groovy">
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import java.rmi.server.UID;
+        
+        public class RPTSettingController {
+            @Binding
+            def binding;
+            
+            @Service("RPTSettingService")
+            def svc;
+            
+            @Service('DateService')
+            def svcDate;
+            
+            def entity;
+            def mode;
+            def selectedItem;
+            
+            void init(){
+                entity = svc.open();
+                mode = 'update';
+                
+                if( !entity ){ 
+                    mode = 'create';
+                    entity = createEntity();
+                }
+                
+            }
+            
+            def createEntity(){
+                return [
+                    ry                          : svcDate.getServerDate(),
+                    provinceindexlength         : 3,
+                    municipalityindexlength     : 2,
+                    barangayindexlength         : 4,
+                    sectionlength               : 3,
+                    parcellength                : 2,
+                    approvedmvbelow             : 0.0,
+                    allowlandcancellation       : 0,
+                    roundadjmarketvalue         : 0,
+                    agriculturaltitle           : "",
+                    adjustplanttree             : 0,
+                    allowtransferwithbalance    : 0,
+                    allowcorrectionwithbalance  : 1,
+                    allowdepreciationwithbalance: 1,
+                    allowchangetaxabilitywithbalance : 1,
+                    allowsubdivisionwithbalance : 1,
+                    allowconsolidationwithbalance : 1,
+                    allowreclasswithbalance     : 1,
+                    usenewtdprintout            : 1,
+                    landreportbasedonactualuse  : 1,
+                    propertyclassifications     : []
+                ];
+            }
+            
+            def getPropertyClassifications(){
+                return entity?.propertyclassifications;
+            }
+            
+            void save(){
+                if( mode == 'create' ) svc.create( entity );
+                else svc.update( entity );
+                
+                MsgBox.alert( "Settings saved." );
+            }
+            
+            def lookupAgricultural(){
+                return InvokerUtil.lookupOpener("propertyclass:lookup",[onselect:selectAgricultural]);
+            }
+            
+            def selectAgricultural = { agri ->
+                entity.agriculturalid = agri.objid;
+                entity.agriculturaltitle = agri.propertydesc;
+                binding.refresh("entity.*");
+            }
+            
+            def add(){
+                def opener = InvokerUtil.lookupOpener("propertyclass:lookup",[onselect:selectPropertyclass]);
+                return opener;
+            }
+            
+             def selectPropertyclass = { property ->
+                entity.propertyclassifications.add( [
+                    objid           : property.objid,
+                    propertycode    : property.propertycode,
+                    propertydesc    : property.propertydesc
+                ]);
+                
+                binding.refresh("entity.*");
+            }
+            
+            void remove(){
+                entity.propertyclassifications.remove( selectedItem );
+            }
+            
+            def close(){
+                return "_close";
+            }
+           
+        }
+        
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.master.rptsetting.RPTSettingPage" />
+    </pages>
+</workunit>

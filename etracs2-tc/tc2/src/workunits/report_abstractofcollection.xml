@@ -1,0 +1,41 @@
+<workunit>
+    <invokers>
+       <invoker folderid="/menu/tc/reports" caption="Abstract of Collection" />
+        
+        <invoker type="formActions" action="close"  immediate="true" caption="Close" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="viewReport"  immediate="true" caption="Next" />
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.osiris2.reports.*;
+        import java.rmi.server.UID;
+
+        class AbstractOfCollectionReportController {
+        
+            def reports;
+            
+            def selectedreport;
+        
+            def getReportList() {
+                if( !reports ) reports = InvokerUtil.lookupOpeners("abstractofcollection:report");
+                return reports;
+            } 
+            
+            def viewReport() {
+                if (!selectedreport) return null;
+                return selectedreport;
+            }
+
+        }
+
+        ]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.report.abstractofcollection.AbstractOfCollectionInitPage" />
+    </pages>
+</workunit>

@@ -2,16 +2,16 @@
 <workunit>
     
     <invokers>
-        <invoker folderid="/menu/tc" action="init" caption="Liquidation" permission="liquidation.create" />
+        <invoker folderid="/menu/tc" action="create" caption="Liquidation" permission="liquidation.create" />
         
-        <invoker type="formActions" action="init" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" permission="liquidation.create"/>
-        <invoker type="formActions" action="viewRCD" visibleWhen="#{mode == 'view' and entity.objid != null}"  immediate="true" caption="A. RCD" mnemonic="a"/>
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" permission="liquidation.create"/>
         <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" caption="Next" mnemonic="n" />
         <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'main'}" caption="Submit" mnemonic="s" icon="images/save24.png"/>
-        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view' and mode != 'report' and mode != 'rcd'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="close" visibleWhen="#{mode != 'view' and mode != 'report' and mode != 'rcd'}"  immediate="true" caption="Close" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="viewRCD" visibleWhen="#{mode == 'view' and entity.objid != null}"  immediate="true" caption="A. RCD" mnemonic="a"/>
         <invoker type="formActions" action="reports" visibleWhen="#{mode == 'view' and entity.objid != null}"  immediate="true" caption="Reports" mnemonic="r" icon=""/>
         <invoker type="formActions" action="back" visibleWhen="#{mode == 'report' or mode == 'rcd'}"  immediate="true" caption="Back" mnemonic="b" icon="images/back24.png"/>
-        <invoker type="formActions" action="viewReport" visibleWhen="#{mode == 'report'}"  immediate="true" caption="View" mnemonic="v" icon=""/>
+        <invoker type="formActions" action="viewReport" visibleWhen="#{mode == 'report'}"  immediate="true" caption="Generate" mnemonic="g" icon=""/>
 
     </invokers>
     
@@ -24,9 +24,6 @@
         import java.text.DecimalFormat;
         
         public class LiquidationController {
-        
-            @Service("LiquidationReportService")
-            def reportSvc;
 
             @Service('LiquidationService')
             def svc;
@@ -46,12 +43,13 @@
             
             def numformat = new DecimalFormat("#,##0.00");
             
+            def denominationOpener;
+            
             def liquidatingofficer;
         
-            def init() {
+            def create() {
                 liquidatingofficer = getLiquidatingOfficer()
                 mode = 'init';
-                caller?.mode = 'create';
                 entity = [
                     info : buildInfo(),
                     remittances : [],
@@ -61,16 +59,13 @@
                 return 'init';
             }
             
-            def preview() {
+            def open() {
                 if (entity)
                     entity = svc.open( entity.objid );
-                
-                return view();
-            }
-            
-            def view() {
                 mode = 'view';
-                return 'view';
+                denominationOpener = InvokerUtil.lookupOpener( 'cashreceipt:breakdown', [totalAmount:entity.info.totalcash, list:entity.info.denominations, mode:'read'] );
+                
+                return 'main';
             }
             
             def getHtml() {
@@ -80,20 +75,28 @@
             def next() {
                 entity = svc.createLiquidation( entity );
                 mode = 'main';
+                denominationOpener = InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:entity.info.totalcash, list:entity.info.denominations]);
                 return 'main';
+            }
+            
+            def back(){
+                mode = 'init';
+                return 'init';
             }
             
             def submit() {
                 if (! MsgBox.confirm( "Do you want to submit this document?" ) )
                     return null;
+                entity.info.denominations = denominationOpener.handle.list;
                 entity = svc.create( entity );
+                if (caller)
+                    caller.binding.refresh();
+                mode = 'view';
                 
-                return view();
+                return 'main';
             }
             
-            def cancel() {
-                if (caller)
-                    return preview();
+            def close() {
                 return '_close';
             }
             
@@ -103,10 +106,6 @@
 
             def viewRemittances() {
                 return new PopupOpener( outcome:'remittances' );
-            }
-            
-            def getCashBreakdownHandler() {
-                return new Opener( name:"tc2:cashbreakdown", params:[entity:entity.info] );
             }
             
             def buildInfo() {
@@ -182,12 +181,7 @@
                 mode = 'report';
                 return "reports";
             }
-            
-            def back(){
-                mode = 'view';
-                return "view"
-            }
-            
+
             def selectedreport;
             def reports = [];
             public def getReportList(){
@@ -196,22 +190,12 @@
             }
 
             public def viewReport(){
+                println selectedreport;
                 return selectedreport;
             }
             
-            def reportModel = [
-                getReportName : { return 'liquidation/rcd'; },
-                getReportData : { return reportSvc.buildRCDReportData( entity.objid ); }
-            ] as ServerReportModel;
-            
-            public def getReport(){
-                return reportModel.report;
-            }
-            
             public def viewRCD(){
-                reportModel.viewReport();
-                mode = 'rcd';
-                return 'rcd';
+                return new Opener( name:'tc2:liquidation_report_rcd', action:'view', params:[entity:entity] );
             }
 
         }
@@ -220,12 +204,11 @@
     </code>
     
     <pages>
-        <page name="view" template="etracs2.tc.HTMLViewPage" />
+        <!--page name="view" template="etracs2.tc.HTMLViewPage" /-->
         <page name="init" template="etracs2.tc.liquidation.LiquidationInitPage" />
         <page name="main" template="etracs2.tc.liquidation.LiquidationPage" />
         <page name="otherpayments" template="etracs2.tc.liquidation.OtherPaymentListPage" />
         <page name="remittances" template="etracs2.tc.liquidation.RemittanceListPage" />
         <page name="reports" template="etracs2.tc.liquidation.LiquidationReportPage" />
-        <page name="rcd" template="etracs2.tc.PreviewPage" />
     </pages>
 </workunit>

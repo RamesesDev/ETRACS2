@@ -90,15 +90,12 @@ class RemittanceService {
 	}
 	
 	private validate( rem ) {
-		/*if ( ( rem.info.d1000qty * 1000.00
-				+ rem.info.d500qty * 500.00
-				+ rem.info.d200qty * 200.00
-				+ rem.info.d100qty * 100.00
-				+ rem.info.d50qty * 50.00
-				+ rem.info.d20qty * 20.00
-				+ rem.info.d10qty * 10.00
-				+ rem.info.coins ) != rem.info.totalcash )
-			 throw new Exception( "Cash Received must be equal to Cash Expected." );*/
+		def totalcash = 0.00;
+		for (denom in rem.info.denominations) {
+			totalcash += denom.amount;
+		}
+		if ( totalcash != liq.info.totalcash )
+			 throw new Exception( "Cash Received must be equal to Cash Expected." );
 		def remTemp = createRemittance( rem );
 		if (rem.receipts.size() != remTemp.receipts.size() )
 			throw new Exception( "There are new transactions not included in this remittance." );
@@ -188,18 +185,18 @@ class RemittanceService {
 				afcontrolid : afctrl.objid,
 				aftype : afctrl.aftype,
 				afid : afctrl.afid,
-				stubno : afctrl.stubno,
-				receivedfrom : (afctrl.qtyreceived == afctrl.balance) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.startseries + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
-				receivedto : (afctrl.qtyreceived == afctrl.balance) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.endseries + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
+				stubno : afctrl.stubno, 
+				receivedfrom : (afctrl.qtyreceived == afctrl.balance) ? afctrlsvc.formatSeries( afctrl.startseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
+				receivedto : (afctrl.qtyreceived == afctrl.balance) ? afctrlsvc.formatSeries( afctrl.endseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
 				receivedqty : (afctrl.qtyreceived == afctrl.balance) ? afctrl.qtyreceived : null,
-				beginfrom : (afctrl.qtyreceived != afctrl.balance) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.beginseries + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
-				beginto : (afctrl.qtyreceived != afctrl.balance) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.endseries + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
+				beginfrom : (afctrl.qtyreceived != afctrl.balance) ? afctrlsvc.formatSeries( afctrl.beginseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
+				beginto : (afctrl.qtyreceived != afctrl.balance) ? afctrlsvc.formatSeries( afctrl.endseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
 				beginqty : (afctrl.qtyreceived != afctrl.balance) ? afctrl.beginqty : null,
-				issuedfrom : (afctrl.qtyissued != 0) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.issuedfrom + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
-				issuedto : (afctrl.qtyissued != 0) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.issuedto + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
+				issuedfrom : (afctrl.qtyissued != 0) ? afctrlsvc.formatSeries( afctrl.issuedfrom, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
+				issuedto : (afctrl.qtyissued != 0) ? afctrlsvc.formatSeries( afctrl.issuedto, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
 				issuedqty : (afctrl.qtyissued != 0) ? afctrl.qtyissued : null,
-				endingfrom : (afctrl.balance != 0) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.currentseries + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
-				endingto : (afctrl.balance != 0) ? ((afctrl.prefix) ? afctrl.prefix + "-" : "") + afctrl.endseries + ((afctrl.suffix) ? "-" + afctrl.suffix : "") : null,
+				endingfrom : (afctrl.balance != 0) ? afctrlsvc.formatSeries( afctrl.currentseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
+				endingto : (afctrl.balance != 0) ? afctrlsvc.formatSeries( afctrl.endseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
 				endingqty : (afctrl.balance != 0) ? afctrl.balance : null
 			];
 		}
@@ -288,73 +285,6 @@ class RemittanceService {
 		""";
 
 		/* Cash Breakdown */
-		/*def d1000 = decformat.format( rem.info.d1000qty * 1000 );
-		def d1000qty = numformat.format( rem.info.d1000qty );
-		def d500 = decformat.format( rem.info.d500qty * 500 );
-		def d500qty = numformat.format( rem.info.d500qty );
-		def d200 = decformat.format( rem.info.d200qty * 200 );
-		def d200qty = numformat.format( rem.info.d200qty );
-		def d100 = decformat.format( rem.info.d100qty * 100 );
-		def d100qty = numformat.format( rem.info.d100qty );
-		def d50 = decformat.format( rem.info.d50qty * 50 );
-		def d50qty = numformat.format( rem.info.d50qty );
-		def d20 = decformat.format( rem.info.d20qty * 20 );
-		def d20qty = numformat.format( rem.info.d20qty );
-		def d10 = decformat.format( rem.info.d10qty * 10 );
-		def d10qty = numformat.format( rem.info.d10qty );
-		def coins = decformat.format( rem.info.coins );
-		def totalcash = decformat.format( rem.info.totalcash );
-		html += """
-			<div class='data-group'>
-				<div class='data-header'>Breakdown</div>
-				<table class='data-table'>
-					<tr><th>Denomination</th><th>Qty</th><th>Amount</th></tr>
-					<tr class='item'>
-						<td class='caption align-right'>1000 x</td>
-						<td class='align-right'>${d1000qty}</td>
-						<td class='align-right'>${d1000}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>500 x</td>
-						<td class='align-right'>${d500qty}</td>
-						<td class='align-right'>${d500}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>200 x</td>
-						<td class='align-right'>${d200qty}</td>
-						<td class='align-right'>${d200}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>100 x</td>
-						<td class='align-right'>${d100qty}</td>
-						<td class='align-right'>${d100}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>50 x</td>
-						<td class='align-right'>${d50qty}</td>
-						<td class='align-right'>${d50}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>20 x</td>
-						<td class='align-right'>${d20qty}</td>
-						<td class='align-right'>${d20}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>10 x</td>
-						<td class='align-right'>${d10qty}</td>
-						<td class='align-right'>${d10}</td>
-					</tr>
-					<tr class='item'>
-						<td class='caption align-right'>Coins</td>
-						<td class='align-right' colspan='2'>${coins}</td>
-					</tr>
-					<tr class='summary'>
-						<td colspan='2'>Total Cash</td>
-						<td class='align-right'>${totalcash}</td>
-					</tr>
-				</table>
-			</div>
-		""";*/
 		html += """
 			<div class='data-group'>
 				<div class='data-header'>Breakdown</div>

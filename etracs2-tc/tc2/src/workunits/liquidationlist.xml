@@ -2,7 +2,10 @@
 <workunit>
     
     <invokers>
-        <invoker folderid="/menu/tc/txn" action="init" caption="Liquidations" permission="liquidation.viewlist"/>
+        <invoker folderid="/menu/tc/txn" caption="Liquidations" permission="liquidation.viewlist"/>
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" permission="liquidation.create"/>
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" immediate="true" caption="Open" mnemonic="o" icon="images/addnew24.png" permission="liquidation.create"/>
     </invokers>
     
     <code lang="groovy">
@@ -20,11 +23,12 @@
             
             def searchText;
             
-            def mode;
-            
             def list;
             
             def selectedItem;
+            
+            @Binding
+            def binding;
 
             def listHandler = [
 
@@ -45,16 +49,20 @@
 
             ] as PageListModel;
             
-            def getOpener() {
-                return new Opener( name:"tc2:liquidation", action:"preview", params:[entity:selectedItem] )
-            }
-            
             void search() {
                 listHandler.load();
             }
+
+            def create() {
+                return new WindowOpener( name:"tc2:liquidation", action:"create" );
+            }
             
-            void init() {
-                mode = 'view';
+            def open() {
+                return new WindowOpener( name:"tc2:liquidation", action:"open", params:[entity:selectedItem] );
+            }
+            
+            def getHtml() {
+                return svc.getHtml( svc.open(selectedItem?.objid) );
             }
 
         }
@@ -64,6 +72,6 @@
     </code>
     
     <pages>
-        <page template="etracs2.tc.ListMgmtPage" />
+        <page template="etracs2.tc.liquidation.LiquidationListMgmtPage" />
     </pages>
 </workunit>

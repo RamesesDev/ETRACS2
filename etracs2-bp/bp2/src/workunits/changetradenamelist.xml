@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker folderid="/menu/bp/txn" caption="Change Tradename List"/>
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" />
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" immediate="true" caption="Open" mnemonic="o" />
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class ChangeTradenameListController {
+        
+            @Service("BusinessTxnService")
+            def svc;
+            
+            def entity;
+            
+            def searchText;
+            
+            def list;
+            
+            def selectedItem;
+            
+            @Binding
+            def binding;
+
+            def listHandler = [
+
+                getRows    : { return 50; },
+
+                getColumns : {
+                    return [
+                        new Column( name:"txnno", caption:"Txn. No."),
+                        new Column( name:"newtradename", caption:"New Trade Name"),
+                        new Column( name:"prevtradename", caption:"Previous Trade Name"),
+                        new Column( name:"taxpayername", caption:"Owner" )
+                    ];
+                },
+
+                fetchList : { 
+                    return svc.getChangeTradenameList( searchText, it );
+                }
+
+            ] as PageListModel;
+            
+            void search() {
+                listHandler.load();
+            }
+
+            def create() {
+                return new WindowOpener( name:"bp2:changetradename", action:"create" );
+            }
+            
+            def open() {
+                return new WindowOpener( name:"bp2:changetradename", action:"open", params:[entity:selectedItem] );
+            }
+            
+            def getHtml() {
+                if ( !selectedItem )
+                    return "";
+                return svc.getHtml( svc.open( selectedItem?.objid, selectedItem?.txntype ) );
+            }
+
+        }
+        
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.bp.ListMgmtPage" />
+    </pages>
+</workunit>

@@ -11,6 +11,8 @@
         <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'main'}" caption="Submit" mnemonic="s" icon="images/save24.png" permission="remittance.submit"/>
         <invoker type="formActions" action="viewRCD" shortcut="ctrl R" visibleWhen="#{mode == 'view'}" immediate="true" caption="View RCD" mnemonic="r" icon="images/addnew24.png" permission="remittance.create"/>
         <invoker type="formActions" action="viewOtherReports" shortcut="ctrl O" visibleWhen="#{mode == 'view'}" immediate="true" caption="Other Reports" mnemonic="o" icon="images/addnew24.png" permission="remittance.create"/>
+        <invoker type="formActions" action="backToMain" shortcut="ctrl B" visibleWhen="#{mode == 'reports'}" immediate="true" caption="Back" mnemonic="b"/>
+        <invoker type="formActions" action="viewReport" shortcut="ctrl V" visibleWhen="#{mode == 'reports'}" immediate="true" caption="View" mnemonic="v" icon="images/addnew24.png" permission="remittance.create"/>
     </invokers>
     
     <code lang="groovy">
@@ -44,10 +46,13 @@
         
             def denominationOpener;
             
+            def selectedreport;
+            
+            def reports;
+            
             def create() {
                 collector = usersvc.getCollector( OsirisContext.env.USERID );
                 mode = 'init';
-                caller?.mode = 'create';
                 entity = [
                     collectorid : collector.objid,
                     info : buildInfo(),
@@ -63,7 +68,7 @@
                 if (entity)
                     entity = svc.open( entity.objid );
                 mode = 'view';
-                denominationOpener = InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:entity.info.totalcash, list:entity.info.denominations, mode:'view']);
+                denominationOpener = InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:entity.info.totalcash, list:entity.info.denominations, mode:'read']);
                 
                 return 'main';
             }
@@ -203,10 +208,27 @@
             
             
             def viewRCD() {
-                return new Opener( name:'tc2:remittance_report_A', action:'view', params:[entity:entity] );
+                return new Opener( name:'tc2:remittance_report_rcd', action:'view', params:[entity:entity] );
             }
             
+            def getReportList() {
+                if( !reports ) reports = InvokerUtil.lookupOpeners("remittance:report", [entity: entity] );
+                return reports;
+            } 
+            
             def viewOtherReports() {
+                mode = 'reports';
+                return 'otherreports';
+            }
+            
+            def viewReport() {
+                if (!selectedreport) return null;
+                return selectedreport;
+            }
+            
+            def backToMain() {
+                mode = 'view';
+                return 'main';
             }
 
         }

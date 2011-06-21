@@ -5,6 +5,9 @@ public class LiquidationReportServices{
 	
 	@PersistenceContext("main")
 	def em;
+	
+	@Service("Var")
+	def vars;
 
 	@ProxyMethod
 	public def buildRCDReportData( def liquidationid ){
@@ -12,11 +15,14 @@ public class LiquidationReportServices{
 		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
 		def reportData = liquidation.info;
 		
+		print reportData.denominations;
+		
 		reportData.txndate = liquidation.dtposted;
 
 		reportData.otherpayments = em.sqlContext.createNamedQuery("liquidationreport:getOtherPaymentsByLiquidation")
 									 .setParameters([liquidationid: liquidationid])
 									 .resultList;
+									 
 		reportData.remittances = em.sqlContext.createNamedQuery("liquidationreport:getRemittancesByLiquidation")
 								   .setParameters( [liquidationid: liquidationid] )
 								   .resultList;
@@ -31,37 +37,149 @@ public class LiquidationReportServices{
 		def reportData = [
 			txndate: liquidation.dtposted,
 			txnno: liquidation.info.txnno,
-			liquidationofficername: liquidation.liquidationofficername,
-			liquidationofficertitle: liquidation.liquidationofficertitle
+			liquidatingofficername: liquidation.info.liquidatingofficername,
+			liquidatingofficertitle: liquidation.info.liquidatingofficertitle
 		];
 		
+		def map = [liquidationid: liquidationid, fundid: fundid];
+		print map;
 		reportData.list = em.sqlContext.createNamedQuery("liquidationreport:getRemittanceFundTotalByLiquidationAndFund")
 		                    .setParameters([liquidationid: liquidationid, fundid: fundid])
 							.resultList;
+		
+		println reportData.list;
+		
 		return reportData;
 	}
 	
 	@ProxyMethod
 	public def buildReportCData( def liquidationid, def chart, def fundid ){
 		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
+		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
+		def reportData = [
+			txndate: liquidation.dtposted,
+			txnno: liquidation.info.txnno,
+			liquidatingofficername: liquidation.info.liquidatingofficername,
+			liquidatingofficertitle: liquidation.info.liquidatingofficertitle
+		];
+		
+		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByGLAccount$chart")
+		             .setParameters([liquidationid: liquidationid, fundid: fundid])
+					 .resultList;
+
+		
+		def display = { idx, val, last ->
+			if( !last )
+				return [title: (' '*(idx*10))+val, header:true];
+			else
+				return [title: (' '*(idx*10))+val.acctcode+"-"+val.accttitle, header:false, amount: val.amount];
+		};
+		
+		reportData.data = buildTree( list, display );
+		return reportData;
+	}
+	
+	@ProxyMethod
+	public def buildReportDData( def liquidationid, def chart, def fundid ){
+		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
 		
 		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
 		def reportData = [
 			txndate: liquidation.dtposted,
 			txnno: liquidation.info.txnno,
-			liquidationofficername: liquidation.liquidationofficername,
-			liquidationofficertitle: liquidation.liquidationofficertitle
+			liquidationofficername: liquidation.info.liquidationofficername,
+			liquidationofficertitle: liquidation.info.liquidationofficertitle
 		];
-		
-		reportData.list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByGLAccount$chart")
+
+		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByIncomeAccount$chart")
 		                    .setParameters([liquidationid: liquidationid, fundid: fundid])
-							.resultList;
+							.resultList.each{
+								it.pathtitle += "/$it.parentcode-$it.parenttitle";
+							};
+		
+		def display = { idx, val, last ->
+			if( !last )
+				return [title: (' '*(idx*10))+val, header:true];
+			else
+				return [title: (' '*(idx*10))+val.acctcode+"-"+val.accttitle, header:false, amount: val.amount];
+		};
+
+		reportData.data = buildTree( list, display );
 		
 		return reportData;
 	}
 	
 	@ProxyMethod
+	public def exportNGASToCsv( def liquidationid ){
+		StringBuffer sb = new StringBuffer();
+		def formatDate = { date, format -> 
+			return new java.text.SimpleDateFormat(format).format(date); 
+		}
+        def lq = em.read("liquidation:liquidationlist", [objid: liquidationid]);
+        sb.append("Republic of the Philippines\n");
+        sb.append(vars.get('lgu_formal_name') + "\n");
+        sb.append("Office of the Provincial Accountant\n");
+        sb.append("Date : " + formatDate( lq.txndate, 'MMM dd yyyy' ) );
+        sb.append("\n\n");
+		
+		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByLiquidationId")
+		             .setParameter("liquidationid", liquidationid )
+					 .resultList;
+					 
+		def vr = [:];
+		
+		def append = { val ->
+			sb.append( val.collectorname.replaceAll(",", " ") + ',' );
+			sb.append( formatDate( val.receiptdate, 'MM/dd/yyyy' ) + ',' );
+			sb.append( ((val.serialno) ? val.serialno : val.afid) + ',' );
+			sb.append( val.payorname.replaceAll(","," ") + ',' );
+			if( val.voided == 0 ){
+				sb.append( val.accttitle + ',' );
+				sb.append( val.amount + ',' );
+				sb.append( val.acctno );
+			}else{
+				sb.append( '*** VOID ***,' );
+				sb.append( '0.0,' );
+				sb.append( '***' );
+			}
+			sb.append( '\n' );
+		}
+		
+		list.each{
+			if( vr.serialno != it.serialno ) append( it );
+			if( it.voided != 0 ) vr = it;
+		}
+		
+		return sb.toString();
+	}
+	
+	@ProxyMethod
 	public def getFundList(){
 		return em.sqlContext.createNamedQuery("liquidationreport:getFundList").resultList;
+	}
+
+	private def buildTree( def list, def display ){
+
+		def handler = [];
+		def results = [];
+	
+		def analyzeTree = { idx, name ->
+			def n = handler.find{ it.name == name };
+			if( !n ) {
+				handler.add( [name:name, idx:idx]);
+				results.add( display( idx, name, false ) );
+			}
+			return idx + 1;
+		}
+		
+		list.each{ val ->
+			def idx = 0;
+			val.pathtitle.split('/').each{ 
+				idx = analyzeTree( idx, it );
+			};
+			results.add( display( idx+1, val, true )  );
+		}
+
+		return results;
 	}
 }

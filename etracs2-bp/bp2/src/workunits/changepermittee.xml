@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker folderid="/menu/bp" action="create" caption="Change Permittee" />
+        
+        <invoker type="formActions" action="close" immediate="true" caption="Close" />
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" />
+        <invoker type="formActions" action="back" shortcut="ctrl B" visibleWhen="#{mode == 'edit' &amp;&amp; entity.docstate == null}" immediate="true" caption="Back" mnemonic="b" />
+        <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" immediate="true" caption="Next" mnemonic="n" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'init' &amp;&amp; mode != 'view' &amp;&amp; entity.docstate != 'SUBMITTED' &amp;&amp; entity.docstate != 'APPROVED'}" caption="Save" mnemonic="s" />
+        <invoker type="formActions" action="edit" shortcut="ctrl D" visibleWhen="#{mode == 'view' &amp;&amp; entity.docstate == 'DRAFT' }" caption="Edit" mnemonic="d" />
+        <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'view' &amp;&amp; entity.docstate == 'DRAFT'}" caption="Submit" mnemonic="s" />
+        <invoker type="formActions" action="approve" shortcut="ctrl A" visibleWhen="#{entity.docstate == 'SUBMITTED'}" caption="Approve" mnemonic="a" />
+        <invoker type="formActions" action="reject" shortcut="ctrl R" visibleWhen="#{entity.docstate == 'SUBMITTED'}" caption="Reject" mnemonic="r" />
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.osiris2.reports.*;
+        
+        public class ChangePermitteeController {
+
+            @Service('BusinessTxnService')
+            def svc;
+            
+            @Caller
+            def caller;
+            
+            @Binding
+            def binding;
+            
+            def mode;
+
+            def entity;
+            
+            def filter;
+        
+            def create() {
+                mode = 'init';
+                entity = [
+                    info : buildInfo(),
+                    business : buildBusiness()
+                ];
+                return 'init';
+            }
+            
+            def buildInfo() {
+                return [:];
+            }
+            
+            def buildBusiness() {
+                return [:];
+            }
+            
+            def next() {
+                mode = 'edit';
+                return 'main';
+            }
+            
+            def onselectBusiness = { sb ->
+                filter = "";
+                entity.businessid = sb.objid;
+                entity.business.tradename = sb.tradename;
+                entity.business.businessaddress = sb.businessaddress;
+                entity.business.taxpayerid = sb.taxpayerid;
+                entity.business.taxpayername = sb.taxpayername;
+                entity.business.taxpayeraddress = sb.taxpayeraddress;
+                entity.business.adminid = sb.adminid;
+                entity.business.adminname = sb.adminname;
+                entity.business.adminaddress = sb.adminaddress;
+                binding.refresh();
+            }
+            
+            def lookupBusiness() {
+                return InvokerUtil.lookupOpener( 'business:lookup', [onselect:onselectBusiness, searchText:filter] );
+            }
+            
+            def onselectOwner = { sa ->
+                entity.info.newtaxpayerid = sa.objid;
+                entity.info.newtaxpayername = sa.entityname;
+                entity.info.newtaxpayeraddress = sa.entityaddress;
+                binding.refresh();
+            }
+            
+            def lookupOwner() {
+                return InvokerUtil.lookupOpener( 'entity:lookup', [onselect:onselectOwner, searchText:entity.info.newtaxpayername] );
+            }
+            
+            def open() {
+                mode = 'view';
+                entity = svc.open( entity.objid, entity.txntype );
+                return 'main';
+            }
+
+            void edit() {
+                mode = 'edit';
+            }
+            
+            void save() {
+                if ( !entity.objid )
+                    entity = svc.createChangePermittee( entity );
+                else
+                    entity = svc.update( entity );
+                mode = 'view';
+                if ( caller )
+                    caller.binding.refresh();
+                binding.refresh();
+            }
+            
+            void submit() {
+                if (! MsgBox.confirm( "Do you want to submit this document?" ) )
+                    return;
+                entity = svc.submitTransaction( entity );
+                mode = 'view';
+                binding.refresh();
+            }
+            
+            void approve() {
+                if (! MsgBox.confirm( "Do you want to approve this document?" ) )
+                    return;
+                entity = svc.approveTransaction( entity );
+                mode = 'view';
+                binding.refresh();
+            }
+            
+            void reject() {
+                if (! MsgBox.confirm( "Do you want to reject this document?" ) )
+                    return;
+                entity = svc.rejectTransaction( entity );
+                mode = 'view';
+                binding.refresh();
+            }
+            
+            def close() {
+                return '_close';
+            }
+
+        }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page name="init" template="etracs2.bp.transaction.SelectBusinessPage" />
+        <page name="main" template="etracs2.bp.transaction.changepermittee.ChangePermitteePage" />
+    </pages>
+</workunit>
