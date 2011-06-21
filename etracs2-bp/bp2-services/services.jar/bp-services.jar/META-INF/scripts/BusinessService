@@ -1,0 +1,21 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class BusinessService {
+
+	@PersistenceContext('main')
+	def em
+	
+	@ProxyMethod
+	public def getList( searchText, params ) {
+		if ( !searchText )
+			return em.sqlContext.createNamedQuery( "business:getList" ).resultList;
+		def businesslist = em.sqlContext.createNamedQuery( "business:getListByTradename" ).setParameters( [tradename:searchText] ).resultList;
+		if ( businesslist )
+			return businesslist;
+		businesslist = em.sqlContext.createNamedQuery( "business:getListByOwnername" ).setParameters( [taxpayername:searchText] ).resultList;
+		return businesslist;
+	}
+	
+}

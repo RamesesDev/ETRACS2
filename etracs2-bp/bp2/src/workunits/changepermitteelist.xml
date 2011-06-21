@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker folderid="/menu/bp/txn" caption="Change Permittee"/>
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" />
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" immediate="true" caption="Open" mnemonic="o" />
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class ChangePermitteeListController {
+        
+            @Service("BusinessTxnService")
+            def svc;
+            
+            def entity;
+            
+            def searchText;
+            
+            def list;
+            
+            def selectedItem;
+            
+            @Binding
+            def binding;
+
+            def listHandler = [
+
+                getRows    : { return 50; },
+
+                getColumns : {
+                    return [
+                        new Column( name:"txnno", caption:"Txn. No."),
+                        new Column( name:"tradename", caption:"Trade Name"),
+                        new Column( name:"businessaddress", caption:"Address" ),
+                        new Column( name:"prevtaxpayername", caption:"Prev. Owner" ),
+                        new Column( name:"prevtaxpayeraddress", caption:"Prev. Owner Address" ),
+                        new Column( name:"newtaxpayername", caption:"New Owner" ),
+                        new Column( name:"newtaxpayeraddress", caption:"New Owner Address" )
+                    ];
+                },
+
+                fetchList : { 
+                    return svc.getChangePermitteeList( searchText, it );
+                }
+
+            ] as PageListModel;
+            
+            void search() {
+                listHandler.load();
+            }
+
+            def create() {
+                return new WindowOpener( name:"bp2:changepermittee", action:"create" );
+            }
+            
+            def open() {
+                return new WindowOpener( name:"bp2:changepermittee", action:"open", params:[entity:selectedItem] );
+            }
+            
+            def getHtml() {
+                if ( !selectedItem )
+                    return "";
+                return svc.getHtml( svc.open( selectedItem?.objid, selectedItem?.txntype ) );
+            }
+
+        }
+        
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.bp.ListMgmtPage" />
+    </pages>
+</workunit>
