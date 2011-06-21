@@ -2,16 +2,125 @@ import com.rameses.annotations.*
 import com.rameses.common.*
 import java.rmi.server.UID
 
-class BPApplicationService
-{
+class BPApplicationService{
+	
+	def SCHEMANAME = 'bpapplication:bpapplication';
+	def SCHEMAVERSION = '1.0';
+	
+	@Service('SequenceService')
+	def sequenceSvc;
+	
 	@PersistenceContext('main')
-	def em
+	def em;
+
+	private def format( def date, def format ){
+		def sdf = new java.text.SimpleDateFormat( format );
+		if( date instanceof Date ) return sdf.format( date );
+		return sdf.parse( date );
+	}
 	
-	@Service('LogService')
-	def logService
+	@ProxyMethod
+	public def save( def application ){
+		if( application.txndate ){
+			def txndate = format( application.txndate, 'yyyy-MM-dd');
+			application.iyear = format( txndate, 'yyyy' );
+			if( application.info.lobs ){
+				application.info.lobs.each{ it.iyear = application.iyear; }
+			}
+		}
+		if( !application.objid ) return createBP( application );
+		else return update( application );
+	}
 	
-	def SCHEMA_NAME = 'bpapp'
-	def SCHEMA_VERSION = '1.0'
+	@ProxyMethod
+	public def createBP( def application ){
+		application.objid = 'BP'+new UID();
+		application.schemaname = SCHEMANAME;
+		application.schemaversion = SCHEMAVERSION;
+		application.tradename = application.info.tradename;
+		application.businessaddress = application.info.businessaddress;
+		application.txnno = getNextSeries();
+		
+		em.validate( SCHEMANAME, application );
+		em.create( SCHEMANAME, application );
+		return application;
+	}
+	
+	@ProxyMethod
+	public def update( def application ){
+		em.validate( SCHEMANAME, application );
+		em.update( SCHEMANAME, application );
+		return application;
+	}
+	
+	private def getNextSeries(){
+		def year = new java.text.SimpleDateFormat('yyyy').format( new Date() );
+		def prefix = 'BP-'+year;
+		return prefix + sequenceSvc.getNextFormattedSeriesA( 'BP'+year, 5 );
+	}
+	
+	@ProxyMethod
+	public def open( def objid ){
+		def application = em.read( SCHEMANAME, [objid: objid] );
+		if( !application ) throw new Exception("Application document no longer exist.");
+		return application;
+	}
+	
+	@ProxyMethod
+	public def getList(def searchText, def param){
+		return em.sqlContext.createNamedQuery('bpapplication:getList')
+				 .resultList;
+	}
+	
+	@ProxyMethod
+	public def evaluateTxnType(def application){
+		if( application.txntype == 'NEW' || application.txnmode == 'CAPTURE' ) return [application];
+		def res = em.sqlContext.createNamedQuery("bpapplication:getBusinessFor"+application.txntype)
+				    .setParameters([taxpayerid: application.taxpayerid])
+				    .resultList.eac{ 
+						it.lobs = em.serializer.read( it.info ).lobs;
+					};
+		if( !res ) throw new Exception("There is no business to process this transaction.");
+		return res;
+	}
+	
+	@ProxyMethod
+	public def submitForAssessment( def applicationid ) {
+		def app = open( applicationid );
+		if( app.docstate != 'DRAFT' ) throw new Exception("Only DRAFT application can be submit for assessment.");
+		
+		evaluateApplicationInfo( application );
+		
+		app.docstate = 'FOR_ASSESSMENT';
+		em.update( SCHEMANAME, app );
+		return app;
+	}
+	
+	@ProxyMethod
+	public void evaluateApplicationInfo( def application ){
+		throw new Exeception("evalateApplicationInfo not yet supported.");
+	}
+	
+	@ProxyMethod
+	public def evaluateAssessment( def application ){
+		def app = open( application.objid );
+		/*************************************************/
+		//insert code her for computing taxes and fees    
+		/*************************************************/
+		em.update( SCHEMANAME, app );
+		return app;
+	}
+	
+	@ProxyMethod
+	public def approve( def applicationid ) {
+		def app = open( applicationid );
+		if( app.docstate != 'FOR_ASSESSMENT' ) throw new Exception('ONLY FOR_ASSESSMENT document can be approved.');
+		app.docstate = 'APPROVED';
+		/** add code here for approving application */
+		
+		em.update( SCHEMANAME, app );
+		return app;
+	}
 	
 	@ProxyMethod
 	public List getApplicationTypes() {
@@ -27,5 +136,4 @@ class BPApplicationService
 	public List getOfficeTypes() {
 		return ['MAIN','BRANCH']
 	}
-	
 }

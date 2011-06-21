@@ -1,0 +1,51 @@
+<workunit>
+    <invokers>
+        <invoker type="'bp:business_list'" caption="Business List" target="popup" modal="true"/>
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+
+class LookupBusinessListController 
+{
+    def onselect;
+    def searchText;
+    def list;
+    def selected;
+    
+    def ok() {
+        if( onselect ) onselect( selected );
+        return "_close";
+    }
+    
+    def listHandler = [
+        getRows    : { return 50; },
+        getColumns : {
+            return [
+                new Column(name:"txnno", caption:"App No."),
+                new Column(name:"tradename", caption:"Trade Name"),
+                new Column(name:"businessaddress", caption:"Business Address")
+            ]
+        },
+        fetchList : { 
+            return list;
+	},
+    ] as SubListModel;
+    
+    void search(){;}
+    
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.bp.LookupPage"/>
+    </pages>
+</workunit>

@@ -1,0 +1,65 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/bp/txn" caption="Business Application List"/>
+        
+        <invoker type="formActions" action="newApp" caption="New" mnemonic="n" icon="images/new24.png"/>
+        <invoker type="formActions" action="openApp" caption="Open" mnemonic="n" icon="images/open24.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class BusinessApplicationListController
+{
+    @Binding
+    def binding;
+    
+    @Service("BPApplicationService")
+    def svc;
+    
+    def searchText;
+    def html;
+    
+    def selectedItem;
+    def listHandler = [
+        getRows : { return 20; },
+        fetchList : { param ->
+            return svc.getList( searchText, param );
+        },
+        
+        getColumns :{
+            return [
+                new Column(name:'txnno', caption:'Transaction No.'),
+                new Column(name:'tradename', caption:'Trade Name.'),
+                new Column(name:'businessaddress', caption:'Business Address No.'),
+                new Column(name:'docstate', caption:'State')
+            ];
+        }
+    ] as PageListModel;
+    
+    public def getHtml(){
+        if( selectedItem ) return 'APP No: ' + ( (selectedItem.txnno) ? selectedItem.txnno : '' );
+        return 'No item selected.';
+    }
+    
+    def newApp(){
+        return InvokerUtil.lookupOpener('bp:new',[:]);
+    }
+    
+    def openApp(){ 
+        def application = svc.open( selectedItem.objid );
+        return InvokerUtil.lookupOpener( 'bp:'+application.docstate, [application: application]);
+    }
+   
+}
+
+]]>        
+    </code>
+    
+    <pages>
+        <page template="etracs2.bp.application.ApplicationListPage"/>
+    </pages>
+</workunit>
