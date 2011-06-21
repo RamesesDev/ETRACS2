@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker type="business:lookup" caption="Business Lookup" target="popup" />
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class BusinessLookupController {
+        
+            @Service("BusinessService")
+            def svc;
+
+            def onselect;
+            def searchText;
+            def selected;
+
+            def ok() {
+                if( onselect ) {
+                    onselect( selected );
+                }
+                return "_close";
+            }
+
+            def listHandler = [
+                getRows    : { return 50; },
+                getColumns : {
+                    return [
+                        new Column(name:"tradename", caption:"Trade Name"),
+                        new Column(name:"businessaddress", caption:"Address"),
+                        new Column(name:"taxpayername", caption:"Owner Name"),
+                        new Column(name:"taxpayeraddress", caption:"Owner Address")
+                    ]
+                },
+                fetchList : { 
+                        def list = svc.getList(searchText, null);
+                        if( list ) return list;
+                        throw new Exception("Record not found.");
+                }
+            ] as SubListModel;
+
+        }
+        
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.bp.LookupPage"/>
+    </pages>
+</workunit>
