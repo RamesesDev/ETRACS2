@@ -1,0 +1,60 @@
+<workunit>
+    <invokers>
+        <invoker type="rptofficers:lookup" action="init" caption="RPT Officers Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+
+class LookupRPTOfficersController extends LookupModel 
+{
+    @Service("RPTOfficersService")
+    def svc;
+    
+    def onselect;
+    def searchText;
+    def selected;
+    
+    void init() {;}
+    
+     def ok() {
+        search = null
+        if( onselect ) onselect( selected )
+        return select();
+    }
+    
+    def getListHandler() {
+        return this;
+    }
+    
+    int getRows() { return 20; }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"fullname", caption:"Name", width:250),
+            new Column(name:"position", caption:"Position", width:50)
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getList( s, params);
+        if( list ) return list;
+        throw new Exception("Record not found.");
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.LookupPage"/>
+    </pages>
+</workunit>

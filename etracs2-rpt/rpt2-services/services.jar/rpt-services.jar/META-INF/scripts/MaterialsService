@@ -1,0 +1,108 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class MaterialsService{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = 'materials:materials';
+	def schemaversion = '1.0';
+	
+	@ProxyMethod
+	public def getList( searchText, params ){
+		if( !searchText ) return getListByQuery( 'materials:getList', [:], params );
+		
+		def result = [];
+		
+		if((result = getListByQuery( 'materials:getListByCode', [materialcode:searchText+"%"], params ))) return result;
+		if((result = getListByQuery( 'materials:getListByMaterial', [materialdesc:searchText+"%"], params ))) return result;
+		
+		return result;
+	}
+	
+	@ProxyMethod
+	public def getLookupList( searchText, params ){
+		if( !searchText ) return getListByQuery( 'materials:getLookupList', [:], params );
+		
+		def result = [];
+		
+		if((result = getListByQuery( 'materials:getListByLookupCode', [materialcode:searchText+"%"], params ))) return result;
+		if((result = getListByQuery( 'materials:getListByLookupMaterial', [materialdesc:searchText+"%"], params ))) return result;
+		
+		return result;
+	}
+	
+	@ProxyMethod
+	public def open( objid ){
+		return em.sqlContext.createNamedQuery( 'materials:getById' ).setParameter( 'objid', objid ).singleResult;
+	}
+	
+	@ProxyMethod
+	public def create( material ){
+		material.objid = "MAT" + new UID();
+		material.schemaname = schemaname;
+		material.schemaversion = schemaversion;
+		
+		validate( material );
+		em.create( material.schemaname, material );
+		
+		return material;
+	}
+	
+	@ProxyMethod
+	public def update( material ){
+		validateUpdate( material );
+		
+		em.update( material.schemaname, material, { diff ->
+			logService.logB( 'UPDATE', 'Material', material.objid, null, diff );
+		} as UpdateChangeHandler )
+		
+		return material;
+	}
+	
+	@ProxyMethod
+	public void delete( material ){
+		em.delete( material.schemaname, material );
+	}
+	
+	
+	private void validate( material ){
+		def oldmaterial = em.read(material.schemaname, material);
+		util.validateLastUpdate( material, oldmaterial );
+		
+		checkDuplicates( material );
+		em.validate(material.schemaname, material);
+	}
+	
+	private void validateUpdate( material ){
+		def oldmaterial = em.read(material.schemaname, material);
+		util.validateLastUpdate( material, oldmaterial );
+		
+		em.validate(material.schemaname, material);
+	}
+	
+	private void checkDuplicates( material ){
+		def data = em.sqlContext.createNamedQuery( 'materials:checkDuplicateCode' ).setParameter( 'materialcode', material.materialcode ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Material $material.materialcode already exists." );
+		data = em.sqlContext.createNamedQuery( 'materials:checkDuplicateMaterial' ).setParameter( 'materialdesc', material.materialdesc ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Material $material.materialdesc already exists." );
+	}
+	
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+
+}

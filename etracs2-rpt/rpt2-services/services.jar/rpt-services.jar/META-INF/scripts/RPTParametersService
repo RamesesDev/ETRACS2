@@ -1,0 +1,96 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class RPTParametersService{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = 'rptparameters:rptparameters';
+	def schemaversion = '1.0';
+	
+	@ProxyMethod
+	public def getList( searchText, params ){
+		if( !searchText ) return getListByQuery( 'rptparameters:getList', [:], params );
+		
+		def result = [];
+		
+		if((result = getListByQuery( 'rptparameters:getListByName', [paramname:searchText+"%"], params ))) return result;
+		if((result = getListByQuery( 'rptparameters:getListByCaption', [paramcaption:searchText+"%"], params ))) return result;
+		
+		return result;
+	}
+	
+	@ProxyMethod
+	public def open( objid ){
+		return em.sqlContext.createNamedQuery( 'rptparameters:getById' ).setParameter( 'objid', objid ).singleResult;
+	}
+	
+	@ProxyMethod
+	public def create( rptparameter ){
+		rptparameter.objid = "PARAM" + new UID();
+		rptparameter.schemaname = schemaname;
+		rptparameter.schemaversion = schemaversion;
+		
+		validate( rptparameter );
+		em.create( rptparameter.schemaname, rptparameter );
+		
+		return rptparameter;
+	}
+	
+	@ProxyMethod
+	public def update( rptparameter ){
+		validateUpdate( rptparameter );
+		
+		em.update( rptparameter.schemaname, rptparameter, { diff ->
+			logService.logB( 'UPDATE', 'RPT PARAMETER', rptparameter.objid, null, diff );
+		} as UpdateChangeHandler )
+		
+		return rptparameter;
+	}
+	
+	@ProxyMethod
+	public void delete( rptparameter ){
+		em.delete( rptparameter.schemaname, rptparameter );
+	}
+	
+	
+	private void validate( rptparameter ){
+		def oldrptparameter = em.read(rptparameter.schemaname, rptparameter);
+		util.validateLastUpdate( rptparameter, oldrptparameter );
+		
+		checkDuplicates( rptparameter );
+		em.validate(rptparameter.schemaname, rptparameter);
+	}
+	
+	private void validateUpdate( rptparameter ){
+		def oldrptparameter = em.read(rptparameter.schemaname, rptparameter);
+		util.validateLastUpdate( rptparameter, oldrptparameter );
+		
+		em.validate(rptparameter.schemaname, rptparameter);
+	}
+	
+	private void checkDuplicates( rptparameter ){
+		def data = em.sqlContext.createNamedQuery( 'rptparameters:checkDuplicateName' ).setParameter( 'paramname', rptparameter.paramname ).singleResult;
+		if( data.count > 0 ) throw new Exception( "$rptparameter.paramname already exists." );
+		data = em.sqlContext.createNamedQuery( 'rptparameters:checkDuplicateCaption' ).setParameter( 'paramcaption', rptparameter.paramcaption ).singleResult;
+		if( data.count > 0 ) throw new Exception( "$rptparameter.paramcaption already exists." );
+	}
+	
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+
+}

@@ -1,0 +1,37 @@
+import com.rameses.annotations.*
+
+public class BPEnum{
+	
+	@ProxyMethod
+	public def getOrganizations(){
+		return ['SINGLE PROPRIETORSHIP', 'PARTNERSHIP',
+		        'CORPORATION', 'COOPERATIVE', 'ASSOCIATION',
+		        'GOVERNMENT', 'ESTATE', 'TRUST', 
+		        'FOUNDATION', 'NON-STOCK/NON-PROFIT'];
+	}
+	
+	@ProxyMethod
+	public def getOfficeTypes(){
+		return ['MAIN','BRANCH'];
+	}
+	
+	@ProxyMethod
+	public def getApplicationTypes(){
+		return ['NEW','RENEW','RETIRE','ADD LINE','RETIRE LINE'];
+	}
+	
+	@ProxyMethod
+	public def getApplicationModes(){
+		return ['CAPTURE','ONLINE'];
+	}
+	
+	@ProxyMethod
+	public def getTypes(def arrNames){
+		def map = [:];
+		for( m in arrNames ){
+			def mname = 'get'+m.charAt(0).toString().toUpperCase()+m.substring(1,m.length());
+			map.put( m, this.invokeMethod( mname, null ) );
+		}
+		return map;
+	}
+}
