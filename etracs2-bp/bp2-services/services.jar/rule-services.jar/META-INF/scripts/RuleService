@@ -36,15 +36,18 @@ class RuleService
 	def RULESET = 'bpassessment' 
 	
 	@ProxyMethod
-	public def getList( searchText, params ) {
+	public def getList( ruleset, searchText, params ) {
+		if( ! ruleset ) return []
 		if( ! params ) params = [_start:0, _limit:50]
 		if( ! searchText ) {
 			return em.sqlContext.createNamedQuery('rule:getList')
+					.setParameter('ruleset', ruleset )
 					.setFirstResult( params._start )
 					.setMaxResults( params._limit )
 					.resultList
 		}
-		return em.sqlContext.createNamedQuery('rule:getListByName').setParameter('name', searchText+'%')
+		return em.sqlContext.createNamedQuery('rule:getListByName')
+					.setParameters( [ name: searchText+'%', ruleset: ruleset])
 					.setFirstResult( params._start )
 					.setMaxResults( params._limit )
 					.resultList

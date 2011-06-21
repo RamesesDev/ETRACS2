@@ -1,0 +1,201 @@
+<workunit>
+    <invokers>
+        <invoker type="bpbillingrule_condition.create" action="init" caption="BP Billing Rule Condition" target="popup" />
+        <invoker type="bpbillingrule_condition.open" action="open" caption="BP Billing Rule Condition" target="popup" />
+    </invokers>
+    <code>
+        
+<![CDATA[       
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+public class BillingRuleConditionController 
+{
+    @Binding
+    def binding
+    
+    @Service('BPBillingRuleService')
+    def svc 
+    
+    def addHandler
+    def updateHandler
+    
+    def rule
+    def condition
+    def selectedConstraint
+    
+    List facts
+    List operators
+    
+    def fact
+    def field   
+    def fieldvar
+    def operator 
+    def usevar
+    def mode 
+    def varlist
+    def opener 
+    
+    
+    def valueHandler
+    
+    void init() {
+        mode = 'create'
+        condition = svc.createCondition()
+    }
+    
+    def open() {
+        fact = condition.fact 
+        varlist = rule.varlist 
+        return 'main' 
+    }
+    
+    def doNext() {
+        if( ! fact ) throw new Exception('Fact is required')
+        return "main" 
+    }
+    
+    def ok() {
+        condition.fact = fact
+        condition.displaytext = buildConditionText()
+        condition.opener = 'bpbillingrule_condition'
+        if( mode == 'create' )
+            invokeAddHandler()
+        else   
+            invokeUpdateHandler()
+        return '_close'
+    }
+    
+    
+    /* -----------------------------------------------
+    * Constraint Support
+    ----------------------------------------------- */
+    void add() {
+        condition.constraints.add( buildConstraint() )
+        resetConstraintInfo()
+        binding?.refresh('selectedConstraint') 
+    }
+    
+    void removeConstraint() {
+        condition.constraints.remove( selectedConstraint )
+    }
+    
+    
+    
+    /* -----------------------------------------------
+    * Miscellaneous Support
+    ----------------------------------------------- */
+    void setFact( fact ) {
+        this.fact = fact
+    }
+    
+    void setField( field ) {
+        this.field = field
+        initOperators()
+    }
+    
+    void setOperator( operator ) {
+        this.operator = operator
+        initValueHandlerOpener()
+    }
+    
+    void setUsevar( usevar ) {
+        this.usevar = usevar
+        initValueHandlerOpener()
+    }
+    
+    void resetConstraintInfo() {
+        field = null
+        fieldvar = null
+        operator = null
+        usevar = false
+        valueHandler = null
+    }
+    
+    void initOperators() {
+        operators = []
+        if( field ) {
+            operators = svc.getOperators( field.type )
+        }
+    }
+    
+    void initValueHandlerOpener() {
+        valueHandler = null
+        if( operator && field ) {
+            def opener = 'datatype.' + field.type
+            def varlist = buildVarList()
+            valueHandler = InvokerUtil.lookupOpener( opener ,[usevar:usevar, varlist:varlist, lookupHandler:field.lookuphandler])
+        }
+    }
+    
+    void invokeAddHandler() {
+        if( addHandler ) addHandler( condition )
+    }
+    
+    void invokeUpdateHandler() {
+        if( updateHandler ) updateHandler( condition )
+    }
+    
+    List buildVarList() {
+        if( condition.factvar ) varlist.add( condition.factvar )
+        condition.constraints.each { 
+            if( it.fieldvar ) varlist.add( it.fieldvar )
+        }
+        return varlist
+    }
+    
+    Map buildConstraint() {
+        def constraint = [
+            field    : field,
+            fieldvar : fieldvar,
+            operator : operator,
+            usevar   : usevar,
+            value    : valueHandler?.handle?.value,
+            arrayvalue : valueHandler?.handle?.arrayvalue,
+        ]
+        constraint.displaytext = buildConstraintText( constraint )
+        return constraint
+    }
+    
+    String buildConstraintText( constraint ) {
+        String s = ''
+        if( constraint.fieldvar ) s += constraint.fieldvar + ':' 
+        s += field.caption
+        s += ' ' + constraint.operator.name 
+        s += ' ' + constraint.value
+        return s 
+    }
+    
+    String buildConditionText() {
+        String s = ''
+        if( condition.factvar ) s += condition.factvar + ':'
+        s += condition.fact.name + '(' 
+        s += condition.constraints.displaytext.join(',') 
+        s += ')'
+        return s 
+    }
+    
+    /* -----------------------------------------------
+    * Miscellaneous Support
+    ----------------------------------------------- */
+    List getFields() {
+        return svc.getFields( fact.name )
+    }
+    
+    List getFacts() {
+        if( ! facts ) facts = svc.getFacts()
+        return facts
+    }
+    
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.billing.rule.RuleConditionInitPage"/>
+        <page name="main" template="etracs2.bp.billing.rule.RuleConditionPage"/>
+    </pages>
+</workunit>

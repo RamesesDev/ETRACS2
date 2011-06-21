@@ -1,0 +1,58 @@
+<workunit>
+    <invokers>
+        <invoker type="bpbillingrule_action.type" action="create" caption="Discount Computation" index="1" />        
+        <invoker type="bpbillingrule_action_discount.open" action="open" caption="Discount Computation Action" />        
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPBillingDiscountRuleController
+{
+    @Binding
+    def binding
+    
+    @Service('BPBillingRuleService')
+    def svc 
+    
+    def action
+    def varlist 
+    def selectedVariable
+    def title = 'Calculate Discount Action'
+    def accttitle 
+    def rule
+    
+    void create() {
+        action = [
+            opener    : 'bpbillingrule_action_discount',
+            acctid    : null,
+            accttitle : null, 
+            expr      : null,
+        ]
+    }
+    
+    void open() {
+    }
+    
+    //must be implemented by a handler
+    void accept() {
+        if( ! action.expr ) throw new Exception('Discount Computation Expression is required.')
+        action.displaytext = buildDisplayText()
+        action.actiontype = 'calcDiscount' 
+    }
+    
+    def buildDisplayText() {
+        return 'Calculate Discount using the formula: ' + action.expr 
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.billing.rule.DiscountActionPage" />
+    </pages>
+</workunit>

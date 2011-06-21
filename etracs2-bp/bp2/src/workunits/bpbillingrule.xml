@@ -1,7 +1,7 @@
 <workunit>
     <invokers>
-        <invoker type="rule.create" action="create" caption="New Rule" target="popup" />
-        <invoker type="rule.open" action="open" caption="Rule Information" target="popup" />
+        <invoker type="bpbillingrule.create" action="create" caption="New Rule" target="popup" />
+        <invoker type="bpbillingrule.open" action="open" caption="Rule Information" target="popup" />
         
         <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' }"/>
         <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c" shortcut="ctrl C" visibleWhen="#{mode == 'edit' }"/>
@@ -19,12 +19,12 @@ import com.rameses.rcp.annotations.*
 import com.rameses.rcp.common.*
 import com.rameses.osiris2.client.*
 
-class RuleController 
+class BPBillingRuleController 
 {
     @Binding
     def binding
     
-    @Service('RuleService')
+    @Service('BPBillingRuleService')
     def svc 
     
     def mode
@@ -33,19 +33,18 @@ class RuleController
     def selectedAction
     def agendagroup
     def agendalist 
-    int actionIndex
-    int conditionIndex
-    def ruleset
+    int editedIndex
+    def ruleset 
     
     def updateHandler 
     
     void init() {
         mode = 'view' 
-        createEntity()
+        entity = svc.createRule()
     }
     
     void create() {
-        createEntity()
+        entity = svc.createRule()
         agendagroup = null
         mode = 'create' 
         binding?.focus('entity.rulename')
@@ -94,31 +93,40 @@ class RuleController
     }
     
     def debug() {
-        return InvokerUtil.lookupOpener('rule.debug',[rule:entity] )
+        return InvokerUtil.lookupOpener('rule.debug',[rule:entity])
     }
+    
+    
+    /* -----------------------------------------------------------
+    * Condition Support
+    * ----------------------------------------------------------- */
     
     def addConditionHandler = { condition ->
         entity.conditions.add( condition )
+        buildVarList().each {
+            if( ! entity.varlist.contains( it ) ) {
+                entity.varlist.add( it )
+            }
+        }
         conditionListHandler.load()
     }
     
     def addCondition() {
         fixRuleName()
-        return InvokerUtil.lookupOpener('rulecondition.create',[addConditionHandler:addConditionHandler])
+        return InvokerUtil.lookupOpener('bpbillingrule_condition.create',[addHandler:addConditionHandler, varlist:entity.varlist])
     }
 
     def updateConditionHandler = { condition ->
-        entity.conditions.set(conditionIndex, condition )
+        entity.conditions.set(editedIndex, condition )
         selectedCondition = condition
         binding.refresh('selectedCondition') 
     }
     
     def openCondition() {
-        conditionIndex = entity.conditions.indexOf( selectedCondition )
-        if( conditionIndex < 0 ) conditionIndex = 0
+        editedIndex = entity.conditions.indexOf( selectedCondition )
         def conditionOpener = selectedCondition.opener + '.open'
         def opener = InvokerUtil.lookupOpener(conditionOpener, [condition:selectedCondition])
-        return InvokerUtil.lookupOpener('rulecondition.open',[opener:opener, condition:selectedCondition, updateConditionHandler:updateConditionHandler])        
+        return InvokerUtil.lookupOpener('bpbillingrule_condition.open', [opener:opener, rule:entity, condition:selectedCondition, updateHandler:updateConditionHandler])        
     }
     
     void removeCondition() {
@@ -126,7 +134,25 @@ class RuleController
         entity.conditions.remove( selectedCondition )
     }
     
+    def conditionListHandler = [
+        getRows     : { return 50 },
+        getColumns  : { 
+            return [ new Column(name:'displaytext', caption:'') ]
+        },
+        fetchList   : { return entity.conditions },
+        onOpenItem  : { item, colname ->  openCondition() },
+    ] as SubListModel
     
+    List buildVarList() {
+        def varlist = []
+        entity.conditions.each {cond ->
+            if( cond.factvar ) varlist.add( cond.factvar )
+            cond.constraints.each { 
+                if( it.fieldvar ) varlist.add( it.fieldvar )
+            }
+        }
+        return varlist
+    }
     
     /* -----------------------------------------------------------
     * Action Support
@@ -138,24 +164,22 @@ class RuleController
     }
     
     def addAction() {
+        println 'varlist -> ' + entity.varlist 
         fixRuleName()
-        return InvokerUtil.lookupOpener('ruleaction.create',[rule:entity, addHandler:addActionHandler])
+        return InvokerUtil.lookupOpener('bpbillingrule_action.create',[rule:entity, addHandler:addActionHandler])
     }
     
-    
-    
     def updateActionHandler = { action -> 
-        entity.actions.set(actionIndex, action )
+        entity.actions.set(editedIndex, action )
         selectedAction = action 
         binding.refresh('selectedCondition') 
     }
     
     def openAction() {
-        actionIndex = entity.actions.indexOf( selectedAction )
-        if( actionIndex < 0 ) actionIndex = 0
+        editedIndex = entity.actions.indexOf( selectedAction )
         def actionOpener = selectedAction.opener + '.open'
         def opener = InvokerUtil.lookupOpener(actionOpener, [rule:entity, action:selectedAction])
-        return InvokerUtil.lookupOpener('ruleaction.open', [rule:entity, opener:opener, action:selectedAction, updateHandler:updateActionHandler])        
+        return InvokerUtil.lookupOpener('bpbillingrule_action.open', [rule:entity, opener:opener, action:selectedAction, updateHandler:updateActionHandler])        
     }
     
     void removeAction() {
@@ -163,17 +187,20 @@ class RuleController
         entity.actions.remove( selectedAction )
     }
     
-    void createEntity() {
-        entity = [
-            salience   : 50000,
-            version    : '1.0',
-            author     : getAuthor(),
-            opener     : 'rule',
-            ruleset    : ruleset, 
-            conditions : [],
-            actions    : [],
-        ]
-    }
+    def actionListHandler = [
+        getRows     : { return 50 },
+        getColumns  : { 
+            return [ new Column(name:'displaytext', caption:'') ]
+        },
+        fetchList   : { return entity.actions },
+        onOpenItem  : { item, colname ->  openAction() },
+        
+    ] as SubListModel
+    
+    
+    /* -----------------------------------------------------------
+    * Miscellaneous Support
+    * ----------------------------------------------------------- */
     
     void setAgendagroup( agendagroup )  {
         this.agendagroup = agendagroup
@@ -195,26 +222,6 @@ class RuleController
     def findAgendaGroup() {
         return agendaGroups.find{ it.objid == entity.agendagroupid }
     }
-    
-    
-    def conditionListHandler = [
-        getRows     : { return 50 },
-        getColumns  : { 
-            return [ new Column(name:'displaytext', caption:'') ]
-        },
-        fetchList   : { return entity.conditions },
-        onOpenItem  : { item, colname ->  openCondition() },
-    ] as SubListModel
-    
-    def actionListHandler = [
-        getRows     : { return 50 },
-        getColumns  : { 
-            return [ new Column(name:'displaytext', caption:'') ]
-        },
-        fetchList   : { return entity.actions },
-        onOpenItem  : { item, colname ->  openAction() },
-        
-    ] as SubListModel
     
     void invokeUpdateHandler() {
         if( updateHandler ) updateHandler()

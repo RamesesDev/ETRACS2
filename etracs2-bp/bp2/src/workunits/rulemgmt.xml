@@ -1,7 +1,7 @@
 <workunit>
     <invokers>
         <invoker folderid="menu/bp/master" action="init" caption="Rule Management" />
-        <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" />
+        <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{ruleset != null}"/>
         <invoker type="formActions" action="open" caption="Open" mnemonic="o" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" />
         <invoker type="formActions" action="remove" caption="Delete" mnemonic="d" shortcut="ctrl D" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'DRAFT'}" />
     </invokers>
@@ -25,12 +25,17 @@ class RuleMgmtController
     def selectedItem 
     def list = []
     
+    def selectedRuleset
+    def ruleset
+    
     void init() {
         search()
     }
     
     def create() {
-        return InvokerUtil.lookupOpener('rule.create', [:])
+        if( ! selectedRuleset ) return null 
+        def opener = selectedRuleset?.properties?.opener + '.create'
+        return InvokerUtil.lookupOpener(opener, [ruleset:ruleset])
     }
     
     def updateHandler = {
@@ -39,7 +44,8 @@ class RuleMgmtController
     
     def open() {
         def entity = svc.open( selectedItem.objid )
-        return InvokerUtil.lookupOpener('rule.open', [entity:entity, updateHandler:updateHandler])
+        def opener = entity.opener + '.open' 
+        return InvokerUtil.lookupOpener(opener, [entity:entity, updateHandler:updateHandler])
     }
     
     void remove() {
@@ -51,7 +57,7 @@ class RuleMgmtController
     }
     
     void search() {
-        list = svc.getList( searchText, null )
+        list = svc.getList( ruleset, searchText, null )
         listHandler.load()
     }
     
@@ -72,11 +78,39 @@ class RuleMgmtController
     def getHtml() {
         svc.getHtml( selectedItem?.objid )
     }
+    
+    /*------------------------------------------------------------------
+    * Opener Handlers
+    ------------------------------------------------------------------*/
+    def addHandler = { rule ->
+        int index = list.indexOf( selectedItem )
+        if( index >= 0 ) {
+            list.insert( index, rule )
+        }
+        else {
+            list.add( rule )
+        }
+        binding.refresh('selectedItem')
+    }
+    
+    
+    /*------------------------------------------------------------------
+    * RuleSet Handlers
+    ------------------------------------------------------------------*/
+    void setSelectedRuleset( selectedRuleset ) {
+        this.selectedRuleset = selectedRuleset
+        ruleset = selectedRuleset?.properties.ruleset
+        search()
+    }
+    
+    def getRulesets() {
+        return InvokerUtil.lookupOpeners('ruleset', null)
+    }
 }
 
 ]]>
     </code>
     <pages>
-        <page template="etracs2.rule.RuleMgmtPage" />
+        <page template="etracs2.rule.RuleMgmtMainPage" />
     </pages>
 </workunit>

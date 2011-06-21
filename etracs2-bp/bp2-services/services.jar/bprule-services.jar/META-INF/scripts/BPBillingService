@@ -1,0 +1,199 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : june 6, 2011
+*/
+
+import com.rameses.annotations.*;
+import com.rameses.rules.common.*;
+
+public class BPBillingService
+{
+	@PersistenceContext('main')
+	def em 
+	
+	@Resource("RuleService/local")
+	def ruleService;
+	
+	@ProxyMethod
+	public def buildBill( bill ) {
+		def facts = createFacts( bill  )
+		def actionList = ruleService.createRuleAction()
+		buildActionCommands( bill, facts, actionList )
+		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'SURCHARGE' )
+		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'INTEREST' )
+		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'DISCOUNT' )
+		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'SUMMARY' )
+		return bill
+	}	
+	
+	def createFacts( bill ) {
+		def facts = []
+		def cyfact = createCYFact()
+		facts += cyfact
+		facts += createLedgerFacts( bill, cyfact )
+		return facts 
+	}
+	
+	def createCYFact( ) {
+		def cyfact = ruleService.createFact('bpbilling','bp.billing.facts.CurrentYearFact')
+		cyfact.year  = 2011 
+		cyfact.qtr   = 2 
+		cyfact.month = 6 
+		cyfact.day   = 14
+		return cyfact
+	}
+	
+	def createLedgerFacts( bill, cyfact ) {
+		def facts = []
+		def ledgerFact = ruleService.createFact('bpbilling','bp.billing.facts.BPLedgerFact')
+		ledgerFact.ledgerid = bill.ledgerid 
+		ledgerFact.yearstarted = bill.yearstarted
+		ledgerFact.lastyearpaid = bill.lastyearpaid
+		ledgerFact.lastqtrpaid  = bill.lastqtrpaid
+		facts += ledgerFact 
+		
+		bill.taxfees.each {
+			def tffact = ruleService.createFact('bpbilling','bp.billing.facts.TaxFeeFact')
+			tffact.taxfeeid = it.objid 
+			tffact.ledgerid = bill.ledgerid 
+			tffact.lobid = it.lobid 
+			tffact.lobname = it.lobname 
+			tffact.year = it.year
+			tffact.qtr = it.qtr 
+			tffact.acctid = it.acctid
+			tffact.accttitle = it.accttitle
+			tffact.amount    = it.amount 
+			tffact.surcharge = 0.0
+			tffact.interest = 0.0
+			tffact.discount = 0.0
+			tffact.monthsfromjan = calculateNoOfMonthsFromJan( cyfact, it.year, it.qtr )
+			tffact.monthsfromqtr = calculateNoOfMonthsFromQtr( cyfact, it.year, it.qtr )
+			facts += tffact 
+		}
+		return facts 
+	}
+	
+	void buildActionCommands( bill, facts, actionList ) {
+		actionList.addCommand( 'calcSurcharge', new CalcSurchargeHandler( em:em, bill:bill ) )		
+		actionList.addCommand( 'calcInterest', new CalcInterestHandler( em:em, bill:bill ) )	
+		actionList.addCommand( 'calcDiscount', new CalcDiscountHandler( em:em, bill:bill ) )	
+	}
+	
+	int calculateNoOfMonthsFromQtr(currentFact, year, qtr) {
+		int currYear = currentFact.year
+		int currMonth = currentFact.month
+		if(year < currYear) {
+			return ((currYear - year) * 12 - (3 * (qtr-1))) + currMonth 
+		}
+		else {
+			int nm = currMonth - (3 * (qtr-1))
+			return nm < 0 ? 0 : nm
+		}
+	}
+	
+	int calculateNoOfMonthsFromJan(currentFact, year, qtr) {
+		int currYear = currentFact.year
+		int currMonth = currentFact.month
+		if(year < currYear) {
+			return ( currYear - year ) * 12 + currMonth
+		}
+		else {
+			return currMonth
+		}
+	}
+}	
+
+class CalcSurchargeHandler implements RuleActionHandler 
+{
+	def em
+	def bill 
+	def ruleService
+	
+	public void execute( drools, taxfee) {	
+		updateSurcharge( taxfee )
+	}
+	
+	void updateSurcharge( taxfee) {
+		def tf = bill.taxfees.find{ it.objid == taxfee.taxfeeid }
+		tf.surcharge = 0.0
+		if( taxfee ) {
+			tf.surcharge = taxfee.surcharge 
+		}
+	}
+}
+
+class CalcInterestHandler implements RuleActionHandler 
+{
+	def em
+	def bill 
+	def ruleService
+	
+	public void execute( drools, taxfee) {	
+		updateInterest( taxfee )
+		//drools.update( taxfee )
+	}
+	
+	void updateInterest( taxfee) {
+		def tf = bill.taxfees.find{ it.objid == taxfee.taxfeeid }
+		tf.interest = 0.0
+		if( taxfee ) {
+			tf.interest = taxfee.interest
+		}
+	}
+}
+
+class CalcDiscountHandler implements RuleActionHandler 
+{
+	def em
+	def bill 
+	def ruleService
+	
+	public void execute( drools, taxfee) {	
+		updateDiscount( taxfee )
+	}
+	
+	void updateDiscount( taxfee) {
+		def tf = bill.taxfees.find{ it.objid == taxfee.taxfeeid }
+		tf.discount = 0.0
+		if( taxfee ) {
+			tf.discount = taxfee.discount
+		}
+	}
+}
+
+class Util
+{
+
+	def ruleService 
+	
+	public def evaluate( expr, params ) {
+		return (new GroovyShell( new Binding( params) )).evaluate( expr )
+	}
+	
+	public def resolveIIF( expr ) {
+		def pattern = ~/@IIF\(.+\)/
+		def matcher = pattern.matcher( expr )
+		while( matcher ) {
+			def match = matcher[0]
+			def iif = match.replaceFirst('@IIF','').replaceFirst(',', ' ? ').reverse().replaceFirst(',', ':').reverse()
+			expr = expr.replaceFirst(pattern.pattern(), iif)
+			matcher = pattern.matcher( expr )
+		} 
+		return expr
+	}
+	
+	public def resolveFixed( expr ) {
+		def pattern = ~/@FIXED\(.+\)/
+		def matcher = pattern.matcher( expr )
+		while( matcher ) {
+			def match = matcher[0]
+			def fixed = match.replaceFirst('@FIXED','(int)')
+			expr = expr.replaceFirst(pattern.pattern(), fixed)
+			matcher = pattern.matcher( expr )
+		} 
+		return expr
+		
+	}
+
+}
