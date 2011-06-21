@@ -1,0 +1,112 @@
+<workunit>
+    <invokers>
+
+        <invoker folderid="/menu/bp/txn" action="init"             caption="Business Application"/>
+        <invoker type="bp:new" action="init"             caption="Business Application" target="window"/>
+        
+        <invoker folderid="/menu/bp/txn" action="initCaptureNew"   caption="Business Application(CAPTURE NEW)"/>
+        <invoker folderid="/menu/bp/txn" action="initCaptureRenew" caption="Business Application(CAPTURE RENEW)"/>
+        <invoker folderid="/menu/bp/txn" action="initNew" caption="Business Application(NEW)"/>
+        <invoker folderid="/menu/bp/txn" action="initRenew" caption="Business Application(RENEW)"/>
+        <invoker folderid="/menu/bp/txn" action="initAddline" caption="Business Application(ADDLINE)"/>
+        <invoker folderid="/menu/bp/txn" action="initRetire" caption="Business Application(RETIRE)"/>
+        <invoker folderid="/menu/bp/txn" action="initRetireline" caption="Business Application(RETIRE LINE)"/>
+        
+        <invoker type="formActions" action="next" caption="Next" mnemonic="n" icon="images/addnew24.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class BusinessApplication
+{
+    @Binding
+    def binding;
+    
+    @Service('BPEnum')
+    def enumSvc;
+    
+    @Service("BPApplicationService")
+    def svc;
+    
+    def application = [
+        docstate:'DRAFT',
+        info:[taxpayername:'',taxpayeraddress:'', lobs:[]],
+    ];
+    
+    def typeList;
+    def modeList;
+
+    void initCaptureNew(){
+        init();
+        application.txnmode = 'CAPTURE';
+        application.txntype = 'NEW';   
+    }
+    
+    void initCaptureRenew(){
+        init();
+        application.txnmode = 'CAPTURE';
+        application.txntype = 'NEW';   
+    }
+    
+    void initNew(){
+        init();
+        application.txnmode = 'ONLINE';
+        application.txntype = 'NEW';
+    }
+    
+    void initRenew(){
+        init();
+        application.txnmode = 'ONLINE';
+        application.txntype = 'RENEW';
+    }
+    
+    void init(){
+        def res = enumSvc.getTypes(['applicationTypes','applicationModes']);
+        typeList = res.applicationTypes;
+        modeList = res.applicationModes;
+    }
+    
+    def next(){
+        def res = svc.evaluateTxnType( application );
+        if( res.size() == 1 ) {
+            application.lobs = res[0].lobs;
+            return InvokerUtil.lookupOpener('bp:open', [application:application]);
+        }
+        
+        def lobs = null;
+        InvokerUtil.invokeOpener( InvokerUtil.lookupOpener( 'bp:business_list', [list: res, onselect:{ lobs = it.lobs; }] ) );
+        
+        if( lobs != null ){
+            application.lobs = lobs;
+            return InvokerUtil.lookupOpener('bp:open', [application:application]);
+        }
+
+        return null;
+    }
+    
+    def onselect = { entity ->
+        if( entity ){
+            application.info.taxpayername = entity.entityname;
+            application.info.taxpayeraddress = entity.entityaddress;
+            application.info.taxpayerid = entity.objid;
+            application.taxpayerid = entity.objid;
+        }
+        binding.refresh();
+    }
+
+    public def lookupPayer(){
+        return InvokerUtil.lookupOpener( 'entity:lookup', [onselect: onselect, searchText:application.info.taxpayername] );
+    }
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.bp.application.ApplicationInitialPage"/>
+    </pages>
+</workunit>

@@ -6,9 +6,12 @@
 		<field name="docstate" required="true" />
 		<field name="taxpayerid" required="true" />
 		<field name="txntype" required="true"/>
+		<field name="txndate" required="true"/>
+		<field name="txnno" required="true"/>
 		<field name="txnmode" required="true"/>
 		<field name="tradename" required="true" />
 		<field name="businessaddress" required="true" />
+		<field name="iyear" required="true"/>
 		<field name="businessid"/>
 		<complex name="info" ref="bpinfo" serializer="default"/>
 	</element>
@@ -23,23 +26,31 @@
 		<field name="bin"/>
 		<field name="pin"/>
 		<field name="officetype"/>
+		<field name="organization"/>
 		<field name="ctcno"/>
 		<field name="ctcplaceissued"/>
 		<field name="ctcdateissued"/>
 		<field name="administratorname"/>
 		<field name="administratoraddress"/>
-		<field name="lobs" ref="lob"/>
-		<field name="appinfos" ref="appinfo"/>
-		<field name="taxfees" ref="taxfee"/>
-		<complex name="applicationsignatories" ref="signatory" type="list"/>
-		<complex name="assessmentsignatories"  ref="signatory" type="list"/>
+		<complex name="barangay" ref="barangay"/>
+		<complex name="lobs" ref="lob" type="list"/>
+		<complex name="appinfos" ref="appinfo" type="list" required="false"/>
+		<complex name="taxfees" ref="taxfee" type="list" required="false"/>
+		<complex name="applicationsignatories" ref="signatory" type="list" required="false"/>
+		<complex name="assessmentsignatories"  ref="signatory" type="list" required="false"/>
+	</element>
+	
+	<element name="barangay">
+		<field name="barangayid"/>
+		<field name="barangayname"/>
 	</element>
 	
 	<element name="lob">
 		<field name="lobid"/>
 		<field name="name"/>
+		<field name="iyear"/>
 		<field name="assessmenttype"/>
-	<element>
+	</element>
 	
 	<element name="appinfo">
 		<field name="lobid"/>
@@ -62,7 +73,7 @@
 		<field name="requirement"/>
 		<field name="complied" type="boolean"/>
 		<field name="remarks"/>
-	</requirement>
+	</element>
 	
 	<element name="signatory">
 		<field name="name"/>

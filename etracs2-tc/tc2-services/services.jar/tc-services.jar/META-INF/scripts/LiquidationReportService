@@ -15,8 +15,6 @@ public class LiquidationReportServices{
 		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
 		def reportData = liquidation.info;
 		
-		print reportData.denominations;
-		
 		reportData.txndate = liquidation.dtposted;
 
 		reportData.otherpayments = em.sqlContext.createNamedQuery("liquidationreport:getOtherPaymentsByLiquidation")
@@ -42,7 +40,7 @@ public class LiquidationReportServices{
 		];
 		
 		def map = [liquidationid: liquidationid, fundid: fundid];
-		print map;
+
 		reportData.list = em.sqlContext.createNamedQuery("liquidationreport:getRemittanceFundTotalByLiquidationAndFund")
 		                    .setParameters([liquidationid: liquidationid, fundid: fundid])
 							.resultList;

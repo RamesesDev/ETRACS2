@@ -471,6 +471,7 @@ class IRAFService
 				iraf.rcvitems.add( rcvitem );
 			}
 		}
+		
 	}
 	
 	private void addCancelledSeriesInAFControl(def afinventory, def afcontrol){
@@ -479,17 +480,20 @@ class IRAFService
 		if( !rc ) throw new Exception("There is no received items for iraf $iraf.txnno with series $afinventory.startseries - $afinventory.endseries");
 		if( !rc.cancelledseries ) rc.cancelledseries = [];
 		rc.cancelledseries.each{
-			if( it.afid == afcontrol.afid ){
-				for( int series = it.fromseries; series <= it.toseries; series++ ){
-					if( checkIFSeriesWithinTheStartAndEnd( afcontrol.startseries, afcontrol.endseries , it ) ){
-						if( !afcontrol.cancelledseries ) afcontrol.cancelledseries = [];
-						afcontrol.cancelledseries.add( [series: series, remarks: it.remarks] );
-						afcontrol.balance = afcontrol.balance - 1;
-						afcontrol.currentseries = getNextCurrentSeries( afcontrol );
+			if( rc.afid == afcontrol.afid ){
+				if( checkIFSeriesWithinTheStartAndEnd ( afcontrol.starseries, afcontrol.endseries, it ) ){
+					for( int series = it.fromseries; series <= it.toseries; series++ ){
+						if( isBeetween( afcontrol.startseries, afcontrol.endseries, series ) ){
+							if( !afcontrol.cancelledseries ) afcontrol.cancelledseries = [];
+							afcontrol.cancelledseries.add( [series: series, remarks: it.remarks] );
+							afcontrol.balance = afcontrol.balance - 1;
+							afcontrol.currentseries = getNextCurrentSeries( afcontrol );
+						}
 					}
 				}
 			}
 		}
+		
 	}
 	
 	private def getNextCurrentSeries( def afcontrol ){

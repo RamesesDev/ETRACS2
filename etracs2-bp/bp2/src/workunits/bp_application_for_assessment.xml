@@ -1,0 +1,72 @@
+<workunit>
+    <invokers>
+        <invoker type="bp:assessment" caption="Business Application"/>
+        <invoker type="bp:FOR_ASSESSMENT" caption="Business Application" target="window"/>
+        <invoker type="bp:FOR_APPROVAL" caption="Business Application" target="window"/>
+        
+        <invoker type="formActions" action="submit" caption="Submit For Apprroval"/>
+        <invoker type="formActions" action="assess" caption="Assess" visibleWhen="#{application.docstate == 'FOR_ASSESSMENT'}"/>
+        <invoker type="formActions" action="reassess" caption="Re-Assess" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}"/>
+        <invoker type="formAction" action="cancelAssessment" caption="Cancel Assessment"/>
+    </invokers>
+    
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class BusinessApplicationForAssessment
+{
+    @Service('BPApplicationService')
+    def svc;
+    
+    def application;
+    
+    public void submit(){ throw new Exception("Assess not yet implemented."); }
+    public void assess() {;}
+    public void reassess();
+    public def cancelAssessment(){ throw new Exception("Cancel Assessment not yet implemented"); }
+    public def submit(){ throw new Exception("Submit for approval not yet implemented."); }
+    
+    appinfoHandler =[
+        getRows: { return 20; },
+        getColumns: { 
+            return [ 
+                new Column(name:"lobname", caption:"LOB"),
+                new Column(name:"varname", caption:"Variable Name"),
+                new Column(name:"vartype", caption:"Variable Type"),
+                new Column(name:"value", caption:"Value"),
+                new Column(name:"arrayvalue", caption:"Array Value")
+            ];
+        },
+        
+        fetchList: {
+            return application.info.appinfos;
+        }
+    ] as SubListModel;
+    
+    taxfeeinfoHandler = [
+        getRows: { return 20; },
+        getColumns: { 
+            return [ 
+                new Column(name:"acctno", caption:"Acct. No"),
+                new Column(name:"accttitle", caption:"Acct. Title"),
+                new Column(name:"assessedvalue", caption:"Assessed Value"),
+                new Column(name:"amountdue", caption:"Amount Due", type="decimal", editable:true)
+            ];
+        },
+
+        fetchList: { return application.info.appinfos; }
+    ] as SubListModel;
+
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.bp.application.ApplicationAssessmentPage"/>
+    </pages>
+</workunit>

@@ -1,0 +1,57 @@
+<workunit>
+    <invokers>
+        <invoker type="lob:lookup" caption="LOB Classification Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+
+class LOBClassificationLookupController 
+{
+    @Service("LobService")
+    def svc;
+    
+    def onselect;
+    def searchText;
+    def selected;
+    
+    def ok() {
+        if( onselect ) {
+            onselect( selected );
+        }
+        return "_close";
+    }
+    
+    def listHandler = [
+        getRows    : { return 50; },
+        getColumns : {
+            return [
+                new Column(name:"name", caption:"Name"),
+                new Column(name:"classification", caption:"Classfication")
+            ]
+        },
+        fetchList : { 
+                def list = svc.getList(searchText, null);
+                if( list ) return list;
+                throw new Exception("Record not found.");
+	},
+    ] as SubListModel;
+    
+    void search(){
+        listHandler.load();
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.bp.LookupPage"/>
+    </pages>
+</workunit>

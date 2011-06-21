@@ -1,0 +1,55 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class TreasuryReportService
+{
+	@PersistenceContext('main')
+	def em
+	
+	def parsetime = { year, qtr, month ->
+		def sb = new StringBuffer();
+		sb.append(year);
+		if( qtr ) sb.append( qtr );
+		if( month ){
+			if( !qtr ){
+				if( month <= 3 )  sb.append( 1 );
+				if( month <= 6 )  sb.append( 2 );
+				if( month <= 9 )  sb.append( 3 );
+				if( month <= 12 ) sb.append( 4 );
+			}
+			sb.append( month );
+		}
+		sb.append("%");
+		return sb;
+	}
+	
+	@ProxyMethod
+	public def generateStatementOfRevenue( def year, def qtr, def month, def fundid ){
+		def dtime = parsetime( year, qtr, month );
+		def list = [];
+		em.sqlContext.createNamedQuery("treasuryreport:getChartList").resultList.each{
+            list.addAll( em.sqlContext.createNamedQuery("treasuryreport:getRevenueByGLAccount$it.acctcode")
+			               .setParameter("fundid", fundid)
+					       .resultList );
+		};
+		return list;
+	}
+	
+	@ProxyMethod
+	public def generateStatementOfRevenueExpanded( def year, def qtr, def month, def fundid ){
+		def dtime = parsetime( year, qtr, month );
+		def list = [];
+		em.sqlContext.createNamedQuery("treasuryreport:getChartList").resultList.each{
+			list.addAll( em.sqlContext.createNamedQuery("treasuryreport:getRevenueByIncomeAccount$it.acctcode")
+  						   .setParameter("fundid", fundid)
+						   .resultList );
+		};
+		return list;
+	}
+	
+	@ProxyMethod
+	public def getFundList(){
+		return em.sqlContext.createNamedQuery("treasuryreport:getFundList").resultList;
+	}
+	
+}
