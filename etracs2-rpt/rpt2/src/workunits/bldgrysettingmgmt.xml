@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="rysettingmgmt.type" caption="Building" />
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null }" immediate="true" caption="Open" mnemonic="e" icon="images/edit24.png" />
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{selectedItem != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[        
+
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+public class BldgRYSettingMgmtController
+{
+    @Binding
+    def binding
+    
+    @Service('BldgRYSettingService')
+    def svc 
+    
+    def searchText
+    def selectedItem
+    
+    def create() {
+        return InvokerUtil.lookupOpener('bldgrysetting.create', null)
+    }
+    
+    def open() {
+        return InvokerUtil.lookupOpener('bldgrysetting.open', [entity:selectedItem])
+    }
+    
+    void delete() {
+        if( selectedItem && MsgBox.confirm('Delete setting?') ) {
+            svc.remove( selectedItem.objid )
+            search()
+        }
+    }
+    
+    void search() {
+        listHandler.load()
+    }
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'ry', caption:'Revision Year', maxWidth:150),
+            new Column(name:'predominant', caption:'Predominant', type:'boolean'),
+            new Column(name:'computedepreciationbasedonschedule', caption:'Depreciate Based on Schedule', type:'boolean'),
+        ]},
+        fetchList  : { return svc.getList( searchText ) },
+    ] as SubListModel
+}
+
+]]>
+    </code>    
+    
+    <pages>
+        <page template="etracs2.rpt.ry.RYListMgmtPage" />
+    </pages>
+</workunit>

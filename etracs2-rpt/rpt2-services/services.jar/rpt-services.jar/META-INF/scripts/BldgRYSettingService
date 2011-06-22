@@ -1,0 +1,139 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import com.rameses.eserver.*;
+import java.rmi.server.UID;
+
+public class BldgRYSettingService
+{
+	@PersistenceContext('main')
+	def em
+    
+	@Service('LogService')
+    def logSvc
+    
+    
+    @ProxyMethod
+    public boolean settingExists() {
+        def setting = em.sqlContext.createNamedQuery('bldgrysetting:getList').setMaxResults(1).singleResult 
+        return setting != null
+    }
+    
+    @ProxyMethod 
+    public List getList( searchText ) {
+        if( ! searchText ) return em.sqlContext.createNamedQuery('bldgrysetting:getList').resultList
+        return em.sqlContext.createNamedQuery('bldgrysetting:getListByRy').setParameter('ry', searchText).resultList
+    }
+    
+    @ProxyMethod
+    public def create( entity ) {
+        entity.schemaname = 'bldgrysetting'
+        entity.schemaversion = '1.0'
+        validate( entity )
+        em.create( entity.schemaname, entity )
+        logSvc.log('CREATE', 'BldgRYSetting', entity.objid )
+        return entity 
+    }
+    
+    @ProxyMethod
+    public def update( entity ) {
+        validate( entity )
+        em.update( entity.schemaname, entity, { diff ->
+            logSvc.logB( 'UPDATE', 'BldgRYSetting', entity.objid, '', diff )
+        } as UpdateChangeHandler )
+        return entity 
+    }
+    
+    @ProxyMethod 
+    public Map open( objid ) {
+        def data = [:]
+        def entity = em.read('bldgrysetting', [objid:objid])
+        if( !entity ) throw new Exception('Unable to load Revision Setting.\nVerify that the record still exists.' )
+        entity.predominant = entity.predominant as boolean 
+        entity.depreciatecoreanditemseparately = entity.depreciatecoreanditemseparately as boolean 
+        entity.computedepreciationbasedonschedule = entity.computedepreciationbasedonschedule as boolean 
+        data.entity = entity 
+        data.assessLevels = loadAssessLevels( objid )
+        //data.bldgTypes = loadBldgTypes( objid )
+        //data.bldgAdjustments = loadBldgAdjustments( objid ) 
+        return data 
+    }
+    
+    @ProxyMethod
+    public void remove( objid ) {
+        checkRemoveAllowed( objid ) 
+        removeAssessLevels( objid )
+        removeBldgAdditionalItems( objid )
+        removeBldgTypes( objid )
+    }
+    
+    /*----------------------------------------------------------
+    * AssessLevel Methods
+    ----------------------------------------------------------*/
+    @ProxyMethod
+    public void saveAssessLevel( assessLevel ) {
+        def schemaname = 'bldgrysetting:assesslevel'
+        em.validate(schemaname, assessLevel )
+        
+        def old = em.read(schemaname, assessLevel )
+        if( old ) {
+            if( assessLevel.fixrate ) {
+                assessLevel.ranges.clear()
+            }
+            em.update('bldgrysetting:assesslevel', assessLevel )
+        }
+        else {
+            em.create('bldgrysetting:assesslevel', assessLevel )
+        }
+    }
+    
+    @ProxyMethod
+    public void removeAssessLevel( assessLevel ) {
+        def schemaname = 'bldgrysetting:assesslevel'
+        em.delete(schemaname, assessLevel )
+    }
+    
+    
+    
+    /*----------------------------------------------------------
+    * Support Methods
+    ----------------------------------------------------------*/
+    List loadAssessLevels( objid )  {
+        def list = em.sqlContext.createNamedQuery('bldgrysetting:getAssessLevel').setParameter('bldgrysettingid', objid).resultList
+        list.each {
+            it.ranges = em.serializer.read( it.ranges )
+            it.fixrate = it.fixrate as boolean 
+        }
+        return list 
+    }
+    
+    
+    void validate( entity ) {
+        if( entity.ry <= 0 ) throw new Exception('Revision Year must be greater than zero.')
+        checkDuplicateSetting( entity )
+        em.validate(entity.schemaname, entity )
+    }
+    
+    void checkDuplicateSetting( entity ) {
+        def data = em.sqlContext.createNamedQuery('bldgrysetting:checkDuplicate').setParameters( entity ).singleResult
+        if( data ) throw new Exception('Setting for year ' + entity.ry + ' already exists.')
+    }
+    
+    void checkRemoveAllowed( objid ) {
+        //TODO: allow remove if not referenced by bldgrpu
+    }
+    
+    void removeAssessLevels( objid ) {
+        em.sqlContext.createNamedExecutor('bldgrysetting:deleteAssessLevel').setParameter('objid', objid ).execute()
+    }
+    
+    void removeBldgAdditionalItems( objid ) {
+        em.sqlContext.createNamedExecutor('bldgrysetting:deleteAdditionalItem').setParameter('objid', objid ).execute()
+    }
+    
+    void removeBldgTypes( objid ) {
+        em.sqlContext.createNamedExecutor('bldgrysetting:deleteBldgKindBucc').setParameter('objid', objid ).execute()
+        em.sqlContext.createNamedExecutor('bldgrysetting:deleteBldgType').setParameter('objid', objid ).execute()
+    }
+    
+	
+}
