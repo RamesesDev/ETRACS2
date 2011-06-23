@@ -1,0 +1,38 @@
+<schema>
+	<element name="machrysetting" tablename="machrysetting">
+		<field name="objid" primary="true"/>
+		<field name="schemaname" required="true"/>
+		<field name="schemaversion" required="true"/>
+		<field name="ry" required="true" type="integer" />
+        <field name="previd"  />
+	</element>
+	
+    <!-- AssessLevels -->
+	<element name="assesslevel" tablename="machassesslevel">
+		<field name="objid" primary="true"/>
+		<field name="machrysettingid" required="true"/>
+		<field name="code" required="true"/>
+		<field name="name" required="true" />
+		<field name="fixrate" required="true" type="boolean" />
+		<field name="rate" required="true" type="decimal" />
+        <field name="previd"  />
+		<complex name="ranges" ref="range" type="list" required="false" serializer="default" />
+	</element>
+    
+    <element name="range" >
+		<field name="mvfrom" required="true" type="decimal"/>
+		<field name="mvto" required="true" type="decimal"/>
+		<field name="rate" required="true" type="decimal" />
+	</element>
+    
+	
+    <!-- Forex -->
+	<element name="forex" tablename="machforex">
+		<field name="objid" primary="true"/>
+		<field name="machrysettingid" required="true"/>
+		<field name="iyear" required="true" type="integer" />
+		<field name="forex" required="true" type="decimal"/>
+        <field name="previd"  />
+	</element>
+    	
+</schema>

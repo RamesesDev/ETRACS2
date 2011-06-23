@@ -190,7 +190,9 @@ public class BldgRYSettingController
         if( selectedAssessLevel.ranges ) {
             lastRange = selectedAssessLevel.ranges.get( selectedAssessLevel.ranges.size() - 1 )
         }
-        range.mvfrom = (lastRange ? lastRange.mvto : 0.0)
+        if( ! range.mvfrom ) {
+            range.mvfrom = (lastRange ? lastRange.mvto : 0.0)
+        }
         
         assessLevelMsg = null
         try {
@@ -556,7 +558,12 @@ public class BldgRYSettingController
     }
     
     def isLastItem( list, item ) {
-        return list.size() == list.indexOf( item ) + 1
+        def index = list.indexOf( item )
+        if( index < 0 ) 
+            index = list.size()
+        else
+            index += 1 
+        return list.size() == index 
     }
 }
 

@@ -1,0 +1,156 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import com.rameses.eserver.*;
+import java.rmi.server.UID;
+
+public class MachRYSettingService
+{
+	@PersistenceContext('main')
+	def em
+    
+	@Service('LogService')
+    def logSvc
+    
+    
+    @ProxyMethod
+    public boolean settingExists() {
+        def setting = em.sqlContext.createNamedQuery('machrysetting:getList').setMaxResults(1).singleResult 
+        return setting != null
+    }
+    
+    @ProxyMethod 
+    public List getList( searchText ) {
+        def list = []
+        if( ! searchText ) 
+            return em.sqlContext.createNamedQuery('machrysetting:getList').resultList
+        return em.sqlContext.createNamedQuery('machrysetting:getListByRy').setParameter('ry', searchText).resultList
+    }
+    
+    @ProxyMethod
+    public def create( entity ) {
+        entity.schemaname = 'machrysetting'
+        entity.schemaversion = '1.0'
+        validate( entity )
+        em.create( entity.schemaname, entity )
+        logSvc.log('CREATE', 'MachRYSetting', entity.objid )
+        return entity 
+    }
+    
+    @ProxyMethod
+    public def update( entity ) {
+        validate( entity )
+        em.update( entity.schemaname, entity, { diff ->
+            logSvc.logB( 'UPDATE', 'MachRYSetting', entity.objid, '', diff )
+        } as UpdateChangeHandler )
+        return entity 
+    }
+    
+    @ProxyMethod 
+    public Map open( objid ) {
+        def entity = em.read('machrysetting', [objid:objid])
+        if( !entity ) throw new Exception('Unable to load Revision Setting.\nVerify that the record still exists.' )
+        entity.assessLevels = getAssessLevels( entity.objid )
+        entity.forexes = getForexes( entity.objid )
+        return entity 
+    }
+    
+    @ProxyMethod
+    public void remove( objid ) {
+        checkRemoveAllowed( objid ) 
+        removeAssessLevels( objid )
+        removeForexes( objid )
+        em.delete('machrysetting', [objid:objid])
+    }
+    
+    /*----------------------------------------------------------
+    * AssessLevel Methods
+    ----------------------------------------------------------*/
+    @ProxyMethod
+    public void saveAssessLevel( assessLevel ) {
+        def schemaname = 'machrysetting:assesslevel'
+        em.validate(schemaname, assessLevel )
+        
+        def old = em.read(schemaname, assessLevel )
+        if( old ) {
+            if( assessLevel.fixrate ) {
+                assessLevel.ranges.clear()
+            }
+            em.update(schemaname, assessLevel )
+        }
+        else {
+            em.create(schemaname, assessLevel )
+        }
+    }
+    
+    @ProxyMethod
+    public void removeAssessLevel( assessLevel ) {
+        def schemaname = 'machrysetting:assesslevel'
+        em.delete(schemaname, assessLevel )
+    }
+    
+    @ProxyMethod
+    public List getAssessLevels( machrysettingid )  {
+        def list = em.sqlContext.createNamedQuery('machrysetting:getAssessLevel').setParameter('machrysettingid', machrysettingid).resultList
+        list.each {
+            it.ranges = em.serializer.read( it.ranges )
+            it.fixrate = it.fixrate as boolean 
+        }
+        return list 
+    }
+    
+    /*----------------------------------------------------------
+    * Forex Methods
+    ----------------------------------------------------------*/
+    @ProxyMethod
+    public void saveForex( forex ) {
+        def schemaname = 'machrysetting:forex'
+        em.validate(schemaname, forex )
+        
+        def old = em.read(schemaname, forex )
+        if( old )
+            em.update(schemaname, forex )
+        else 
+            em.create(schemaname, forex )
+    }
+    
+    @ProxyMethod
+    public void removeForex( forex ) {
+        def schemaname = 'machrysetting:forex'
+        em.delete(schemaname, forex )
+    }
+    
+    @ProxyMethod
+    public List getForexes( machrysettingid )  {
+        return  em.sqlContext.createNamedQuery('machrysetting:getForex').setParameter('machrysettingid', machrysettingid).resultList
+    }
+    
+    
+    /*----------------------------------------------------------
+    * Support Methods
+    ----------------------------------------------------------*/
+    void checkRemoveAllowed( machrysettingid ) {
+        //TODO: allow remove if not referenced by bldgrpu
+    }
+    
+    void removeAssessLevels( machrysettingid ) {
+        em.sqlContext.createNamedExecutor('machrysetting:deleteAssessLevel').setParameter('machrysettingid', machrysettingid ).execute()
+    }
+    
+    void removeForexes( machrysettingid ) {
+        em.sqlContext.createNamedExecutor('machrysetting:deleteForex').setParameter('machrysettingid', machrysettingid ).execute()
+    }
+    
+    
+    void validate( entity ) {
+        if( entity.ry <= 0 ) throw new Exception('Revision Year must be greater than zero.')
+        checkDuplicateSetting( entity )
+        em.validate(entity.schemaname, entity )
+    }
+    
+    void checkDuplicateSetting( entity ) {
+        def data = em.sqlContext.createNamedQuery('machrysetting:checkDuplicate').setParameters( entity ).singleResult
+        if( data ) throw new Exception('Setting for year ' + entity.ry + ' already exists.')
+    }
+    
+    	
+}
