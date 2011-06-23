@@ -39,6 +39,7 @@ public class BldgRYSettingController
     * FormAction Support
     ---------------------------------------------------------------------*/
     def create() {
+        mode = 'create' 
         entity = createEntity()
         if( svc.settingExists() ) {
             settingType = 'copySetting'
@@ -51,9 +52,18 @@ public class BldgRYSettingController
     }
     
     void open() {
+        mode = 'view' 
         def data = svc.open( entity.objid )
         entity = data.entity
         assessLevels = data.assessLevels 
+        additionalItems = data.additionalItems
+        selectedAssessLevel = ( assessLevels ? assessLevels[0] : null )
+        bldgTypes  = data.bldgTypes
+        
+        if( bldgTypes ) {
+            selectedBldgType = bldgTypes[0]
+            setBaseValueType( selectedBldgType.basevaluetype )
+        }
     }
     
     def createSetting() {
@@ -77,6 +87,8 @@ public class BldgRYSettingController
         }
         return 'default'
     }
+    
+    
 
     /*---------------------------------------------------------------------
     *
@@ -98,10 +110,7 @@ public class BldgRYSettingController
             new Column(name:'rate', caption:'Rate*', type:'decimal', editable:true ),
         ]},
         validate       : { li -> doValidateAssessLevel( li.item ) },
-        onRemoveItem   : { item -> 
-            doRemoveItem( assessLevels, item) 
-            svc.removeAssessLevel( selectedAssessLevel )
-        },
+        onRemoveItem   : { item -> removeAssessLevel( item ) },
         onAddItem      : { item -> assessLevels.add( item ) },
         onColumnUpdate : { item, colName -> 
             if( colName == 'fixrate' && item.fixrate == true ) {
@@ -156,8 +165,17 @@ public class BldgRYSettingController
     }
     
     void checkDuplicateAssessLevel( al ) {
-        def item = assessLevels.find{ it.objid != al.objid && (it.code == al.code || it.name == al.name )  }
-        if( item ) throw new Exception('Duplicate item is not allowed.')    
+        def item = assessLevels.find{ it.objid != al.objid && it.code == al.code  }
+        if( item ) throw new Exception('Duplicate code is not allowed.')    
+        item = assessLevels.find{ it.objid != al.objid && it.name == al.name  }
+        if( item ) throw new Exception('Duplicate name is not allowed.')    
+    }
+    
+    void removeAssessLevel( item ) {
+        if( MsgBox.confirm('Remove item?' ) ) {
+            svc.removeAssessLevel( selectedAssessLevel )
+            assessLevels.remove( item )
+        }
     }
     
     void doRemoveRangeItem( item ) {
@@ -189,50 +207,63 @@ public class BldgRYSettingController
     }
     
     
-    
-    
+        
     /*---------------------------------------------------------------------
     *
-    * BldgAdjustment Support
+    * BldgAdditionalItem Support
     *
     ---------------------------------------------------------------------*/
-    def selectedAdjustment
+    def additionalItems = []
+    def selectedAdditionalItem
     
-    def adjustmentListHandler = [
-        createItem : { return createAssessLevel() },
+    
+    def additionalItemListHandler = [
         getRows    : { return 50 },
         getColumns : { return [
-            new Column(name:'code', caption:'Code*', maxWidth:60, editable:true ),
-            new Column(name:'name', caption:'Name*', editable:true ),
-            new Column(name:'fixrate', caption:'Fix?*', type:'boolean', maxWidth:40, editable:true ),
-            new Column(name:'rate', caption:'Rate*', type:'decimal', editable:true ),
+            new Column(name:'code', caption:'Code', maxWidth:60),
+            new Column(name:'name', caption:'Name'),
+            new Column(name:'unit', caption:'Unit', maxWidth:100 ),
+            new Column(name:'expr', caption:'Expression'),
         ]},
-        validate       : { li -> doValidateAssessLevel( li.item ) },
-        onRemoveItem   : { item -> 
-            doRemoveItem( assessLevels, item) 
-            svc.removeAssessLevel( selectedAssessLevel )
-        },
-        onAddItem      : { item -> assessLevels.add( item ) },
-        onColumnUpdate : { item, colName -> 
-            if( colName == 'fixrate' && item.fixrate == true ) {
-                selectedAssessLevel?.ranges?.clear()
-                rangeLevelListHandler.load()
-            }
-        },
-        fetchList      : { return assessLevels },
+        onRemoveItem   : { item -> doRemoveAdditionalItem( item ) },
+        fetchList      : { return additionalItems },
     ] as SubListModel 
     
     
-    def createAdjustment() {
     
+    def addAdditionalItemHandler = { item -> 
+        item.bldgrysettingid = entity.objid
+        svc.saveAdditionalItem( item ) 
+        additionalItems.add( item )
+        additionalItemListHandler.load()
     }
     
-    def openAdjustment() {
-    
+    def updateAdditionalItemHandler = { item -> 
+        svc.saveAdditionalItem( item ) 
+        additionalItems.set( additionalItems.indexOf( selectedAdditionalItem), item )
+        binding.refresh('selectedAdditionalItem')
     }
     
-    void removeAdjustment() {
+    def createAdditionalItem() {
+        return InvokerUtil.lookupOpener('bldgadditionalitem.create', [addHandler:addAdditionalItemHandler] )
+    }
     
+    def openAdditionalItem() {
+        return InvokerUtil.lookupOpener('bldgadditionalitem.open', [entity:selectedAdditionalItem, updateHandler:updateAdditionalItemHandler] )
+    }
+    
+    void removeAdditionalItem() {
+        if( selectedAdditionalItem ) {
+            doRemoveAdditionalItem( selectedAdditionalItem )
+        }
+    }
+    
+    
+    void doRemoveAdditionalItem( item ) {
+        if( MsgBox.confirm('Remove item?') ) {
+            svc.removeAdditionalItem( selectedAdditionalItem )
+            additionalItems.remove( item )
+        }
     }
     
     
@@ -240,7 +271,222 @@ public class BldgRYSettingController
     
     
     /*---------------------------------------------------------------------
+    *
+    * BldgType Support
+    *
+    ---------------------------------------------------------------------*/
+    def bldgTypeMsg
+    def bldgTypes = [] 
+    def selectedBldgType = [multistoreyadjustments:[], depreciations:[]]
+    
+    void setSelectedBldgType( selectedBldgType ) {
+        this.selectedBldgType = selectedBldgType
+        baseValueType = selectedBldgType?.basevaluetype
+        initBaseValueHandler()
+        binding.refresh('baseValueType') 
+    }
+    
+    def bldgTypeListHandler = [
+        createItem : { return createBldgType() },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'code', caption:'Code*', maxWidth:60, editable:true ),
+            new Column(name:'name', caption:'Building Type*', editable:true ),
+        ]},
+        validate       : { li -> validateBldgType( li.item ) },
+        onRemoveItem   : { item -> removeBldgType( item ) },
+        onAddItem      : { item -> bldgTypes.add( item ) },
+        fetchList      : { return bldgTypes },
+    ] as SubListModel
+    
+    void validateBldgType( bldgType ) {
+        try {
+            bldgTypeMsg = null
+            required( bldgType.code, 'Code' )
+            required( bldgType.name, 'Bldg Type' )
+            checkDuplicateBldgType( bldgType )
+            svc.saveBldgType( bldgType )
+            binding.refresh('bldgTypeMsg')
+        }
+        catch ( e ) {
+            bldgTypeMsg = e.message
+            binding.refresh('bldgTypeMsg')
+            throw e 
+        }
+    }
+    
+    void removeBldgType( bldgType ) {
+        if( MsgBox.confirm('Remove item?') ) {
+            svc.removeBldgType( bldgType )
+            bldgTypes.remove( bldgType )
+        }
+    }
+    
+    void checkDuplicateBldgType( bldgType ) {
+        def item = bldgTypes.find{ it.objid != bldgType.objid && it.code == bldgType.code  }
+        if( item ) throw new Exception('Duplicate code is not allowed.')    
+        item = bldgTypes.find{ it.objid != bldgType.objid && it.name == bldgType.name }
+        if( item ) throw new Exception('Duplicate name is not allowed.')    
+    }
+    
+
+    /*---------------------------------------------------------------------
+    *
+    * Multi-Storey Adjustment Support
+    *
+    ---------------------------------------------------------------------*/
+    def multiStoreyListHandler = [
+        createItem : { return createMultiStoreyAdjustment() },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'floorno', caption:'Floor No.', type:'integer'),
+            new Column(name:'rate', caption:'Rate*', type:'decimal', editable:true, editableWhen:'#{root.allowStoreyColumnEdit[item]}' ),
+        ]},
+        validate     : { li -> validateMultiStoreyItem( li.item ) },
+        onAddItem    : { item -> 
+            selectedBldgType.multistoreyadjustments.add( item ) 
+            svc.saveBldgType( selectedBldgType )
+        },
+        onRemoveItem : { item -> removeMultiStoreyItem( item ) },
+        fetchList    : { return selectedBldgType?.multistoreyadjustments  },
+    ] as SubListModel
+    
+    
+    def allowStoreyColumnEdit = { item ->
+        if( ! selectedBldgType ) return false
+        if( ! selectedBldgType.code ) return false
+        if( isFirstItem( selectedBldgType.multistoreyadjustments ) ) return true
+        if( isNewEntry( item.floorno ) ) return true
+        return isLastItem( selectedBldgType.multistoreyadjustments, item )
+    } as Map
+    
+    void removeMultiStoreyItem( item ) {
+        if( isLastItem( selectedBldgType.multistoreyadjustments, item ) ) {
+            selectedBldgType.multistoreyadjustments.remove( item )
+            svc.saveBldgType( selectedBldgType )
+        }
+    }
+    
+    void validateMultiStoreyItem( item ) {
+        def lastItem = null 
+        if( selectedBldgType.multistoreyadjustments ) {
+            lastItem = selectedBldgType.multistoreyadjustments.get( selectedBldgType.multistoreyadjustments.size() - 1 )
+        }
+        if( ! item.floorno ) item.floorno = (lastItem ? lastItem.floorno + 1 : 1)
+        try {
+            bldgTypeMsg = null 
+            validateRate( item.rate )
+            svc.saveBldgType( selectedBldgType )
+        }
+        catch( e ) {
+            bldgTypeMsg = e.message 
+            binding.refresh('bldgTypeMsg') 
+            throw e 
+        }
+    }
+    
+    
+    /*---------------------------------------------------------------------
+    *
+    * Depreciation Support
+    *
+    ---------------------------------------------------------------------*/
+    def depreciationListHandler = [
+        createItem : { return [:] },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'agefrom', caption:'Age From', type:'integer'),
+            new Column(name:'ageto', caption:'Age To', type:'integer', editable:true, editableWhen:'#{root.allowDepreciationColumnEdit[item]}' ),
+            new Column(name:'rate', caption:'Rate*', type:'decimal', editable:true, editableWhen:'#{root.allowDepreciationColumnEdit[item]}' ),
+        ]},
+        validate     : { li -> validateDepreciationItem( li.item ) },
+        onAddItem    : { item -> 
+            selectedBldgType.depreciations.add( item ) 
+            svc.saveBldgType( selectedBldgType )
+        },
+        onRemoveItem   : { item -> removeDepreciationItem( item ) },
+        fetchList    : { return selectedBldgType?.depreciations  },
+    ] as SubListModel
+    
+    
+    def allowDepreciationColumnEdit = { item ->
+        if( ! selectedBldgType ) return false
+        if( ! selectedBldgType.code ) return false 
+        if( isFirstItem( selectedBldgType.depreciations ) ) return true
+        if( isNewEntry( item.agefrom ) ) return true
+        return isLastItem( selectedBldgType.depreciations, item )
+    } as Map
+    
+    void removeDepreciationItem( item ) {
+        if( isLastItem( selectedBldgType.depreciations, item ) ) {
+            selectedBldgType.depreciations.remove( item )
+            svc.saveBldgType( selectedBldgType )
+        }
+    }
+    
+    void validateDepreciationItem( item ) {
+        def lastItem = null 
+        if( selectedBldgType.depreciations ) {
+            lastItem = selectedBldgType.depreciations.get( selectedBldgType.depreciations.size() - 1 )
+        }
+        if( ! item.agefrom ) {
+            item.agefrom = (lastItem ? lastItem.ageto + 1 : 1)
+        }
+                
+        try {
+            if( item.ageto < item.agefrom && item.ageto != 0  ) throw new Exception('Age To must be greater than Age From.')
+            validateRate( item.rate )
+            svc.saveBldgType( selectedBldgType )
+        }
+        catch( e ) {
+            e.printStackTrace()
+            bldgTypeMsg = e.message 
+            binding.refresh('bldgTypeMsg') 
+            throw e 
+        }
+    }
+    
+    
+    
+    /*---------------------------------------------------------------------
+    *
+    * BldgKind Support
+    *
+    ---------------------------------------------------------------------*/
+    def baseValueType
+    def baseValueHandler
+    
+    void setBaseValueType( baseValueType ) {
+        this.baseValueType = baseValueType
+        if( selectedBldgType && selectedBldgType.code ) {
+            selectedBldgType.basevaluetype = baseValueType
+            svc.saveBldgType( selectedBldgType )
+            initBaseValueHandler()
+        }
+    }
+    
+    void initBaseValueHandler() {
+        baseValueHandler = null
+        if( baseValueType ) {
+            def openerType = 'basevaluetype.' + baseValueType
+            baseValueHandler = InvokerUtil.lookupOpener(openerType, [bldgType:selectedBldgType] )
+        }
+    }
+    
+    
+    List getBaseValueTypes() {
+        return ['fix','range','gap']
+    }
+    
+    
+    
+    
+    
+    
+    /*---------------------------------------------------------------------
+    *
     * Create Records Support
+    *
     ---------------------------------------------------------------------*/
     Map createEntity() {
         return [
@@ -270,17 +516,30 @@ public class BldgRYSettingController
         ]
     }
     
+    Map createBldgType() {
+        return [
+            objid           : 'BT' + new UID(),
+            code            : null,
+            name            : null,
+            bldgrysettingid : entity.objid,
+            basevaluetype   : 'fix', 
+            residualrate    : 0.0,
+            multistoreyadjustments : [],
+            depreciations : [],
+        ]
+    }
+    
+    Map createMultiStoreyAdjustment(){
+        return [floorno:null, rate:null]
+    }
+    
     /*---------------------------------------------------------------------
+    *
     * Common Methods 
+    *
     ---------------------------------------------------------------------*/
     void required( value, caption ) {
         if( ! value ) throw new Exception(caption + ' is required.') 
-    }
-    
-    void doRemoveItem( list, item ) {
-        if( MsgBox.confirm('Remove item?') ) {
-            list.remove( item )
-        }
     }
     
     void validateRate( rate ) {

@@ -5,7 +5,16 @@ SELECT * FROM bldgrysetting
 SELECT * FROM bldgrysetting WHERE ry = $P{ry}
 
 [getAssessLevel]
-SELECT * FROM bldgassesslevel WHERE bldgrysettingid = $P{bldgrysettingid} 
+SELECT * FROM bldgassesslevel WHERE bldgrysettingid = $P{bldgrysettingid} ORDER BY code 
+
+[getAdditionalItem]
+SELECT * FROM bldgadditionalitem WHERE bldgrysettingid = $P{bldgrysettingid} ORDER BY code 
+
+[getBldgType]
+SELECT * FROM bldgtype WHERE bldgrysettingid = $P{bldgrysettingid} ORDER BY code 
+
+[getBldgKindBucc]
+SELECT * FROM bldgkindbucc WHERE bldgtypeid = $P{bldgtypeid} ORDER BY bldgkindcode 
 
 [checkDuplicate]
 SELECT objid 

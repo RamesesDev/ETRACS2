@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
+<workunit>
+    <invokers>
+        <invoker type="basevaluetype.gap" action="init" caption="Range Base Value" />
+    </invokers>
+    
+    <code lang="groovy">
+<![CDATA[
+        
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+import java.rmi.server.UID
+
+public class BldgBaseValueTypeGapController {
+    @Binding
+    def binding
+    
+    @Service('BldgRYSettingService')
+    def svc 
+    
+    def bldgType
+    def list = [] 
+    def errorMsg
+    
+    void init() {
+        list = svc.getBldgKindBuccList( bldgType.objid ) 
+    }
+    
+    /*---------------------------------------------------------------------------------
+    *
+    * List Support
+    *
+    *---------------------------------------------------------------------------------*/
+    
+    def bldgKindLookup = InvokerUtil.lookupOpener( 'bldgkind.lookup', [:] )
+    
+    def listHandler = [
+        createItem : { return createEntity() },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'bldgkind', caption:'Bldg Code*', editable:true, type:'lookup', expression:'#{bldgcode}', handler:bldgKindLookup, maxWidth:80),
+            new Column(name:'bldgkindname', caption:'Kind of Building' ),
+            new Column(name:'minarea', caption:'Min Area*', type:'decimal', editable:true, maxWidth:100 ),
+            new Column(name:'maxarea', caption:'Max Area*', type:'decimal', editable:true, maxWidth:100 ),
+            new Column(name:'gapvalue', caption:'Gap*', type:'integer', editable:true, maxWidth:100),
+            new Column(name:'minbasevalue', caption:'Min Base Value', type:'decimal', editable:true, maxWidth:100 ),
+            new Column(name:'maxbasevalue', caption:'Max Base Value', type:'decimal', editable:true, maxWidth:100 ),
+        ]},
+        validate     : { li -> validateItem( li.item ) },
+        onRemoveItem : { item -> removeItem( item ) },
+        onAddItem    : { item -> 
+            list.add( item ) 
+            svc.saveBldgKindBucc( item )
+        },
+        onColumnUpdate : { item, colName -> 
+            if( colName == 'bldgkind') {
+                updateBldgKindInfo( item )
+            }
+        },
+        fetchList : { return list }
+    ] as SubListModel
+    
+    void removeItem( item ) {
+        if( MsgBox.confirm('Remove item?' ) ) {
+            svc.removeBldgKindBucc( item )
+            list.remove( item )
+        }
+    }
+    
+    void validateItem( item ) {       
+        try {
+            errorMsg = null
+            required(item.bldgkind, 'Code')
+            checkDuplicate( item )
+            
+            if( item.minarea == null ) throw new Exception('Minimum Area is required.')
+            if( item.maxarea == null ) throw new Exception('Maximum Area is required.')
+            if( item.maxarea < item.minarea ) throw new Exception('Maximum Area must be greater than or equal to Minimum Area.')
+            
+            if( item.gapvalue == null ) throw new Exception('Gap is required.')
+            if( item.gapvalue == 0 ) throw new Exception('Gap must be greater than zero.')
+            
+            if( item.minbasevalue == null ) throw new Exception('Minimum Base Value is required.')
+            if( item.maxbasevalue == null ) throw new Exception('Maximum Base Value is required.')
+            if( item.maxbasevalue < item.minbasevalue ) throw new Exception('Maximum Base Value must be greater than or equal to Minimum Base Value.')
+            
+            
+            svc.saveBldgKindBucc( item ) 
+        }
+        catch( e ) {
+            println e.message 
+            errorMsg = e.message
+            throw e 
+        }
+    }
+    
+    void updateBldgKindInfo( item ) {
+        item.bldgkindid = item.bldgkind.objid
+        item.bldgkindcode = item.bldgkind.bldgcode
+        item.bldgkindname = item.bldgkind.bldgkind 
+    }
+    
+    void checkDuplicate( item ) {
+        def data = list.find{ it.objid != item.objid && it.bldgkindid == item.bldgkindid  }
+        if( data ) throw new Exception('Duplicate ' + data.bldgkindname  + ' is not allowed.')    
+    }
+    
+    void required( value, caption ) {
+        if( ! value ) throw new Exception(caption + ' is required.') 
+    }
+    
+    Map createEntity() {
+        return [
+            objid           : 'BU' + new UID(),
+            bldgrysettingid : bldgType.bldgrysettingid,
+            bldgtypeid      : bldgType.objid,
+            basevaluetype   : 'range',
+            basevalue       : 0.0,
+            minbasevalue    : 0.0,
+            maxbasevalue    : 0.0,
+            gapvalue        : 0,
+            minarea         : 0.0,
+            maxarea         : 0.0,
+        ]
+    }
+}
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.ry.bldg.BaseValueTypePage"/>
+    </pages>
+</workunit>

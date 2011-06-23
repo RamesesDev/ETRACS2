@@ -20,8 +20,19 @@ public class BldgRYSettingService
     
     @ProxyMethod 
     public List getList( searchText ) {
-        if( ! searchText ) return em.sqlContext.createNamedQuery('bldgrysetting:getList').resultList
-        return em.sqlContext.createNamedQuery('bldgrysetting:getListByRy').setParameter('ry', searchText).resultList
+        def list = []
+        if( ! searchText ) {
+            list = em.sqlContext.createNamedQuery('bldgrysetting:getList').resultList
+        }
+        else {
+            list = em.sqlContext.createNamedQuery('bldgrysetting:getListByRy').setParameter('ry', searchText).resultList
+        }
+        list.each {
+            it.predominant = it.predominant as boolean 
+            it.depreciatecoreanditemseparately = it.depreciatecoreanditemseparately as boolean 
+            it.computedepreciationbasedonschedule = it.computedepreciationbasedonschedule as boolean 
+        }
+        return list 
     }
     
     @ProxyMethod
@@ -53,8 +64,8 @@ public class BldgRYSettingService
         entity.computedepreciationbasedonschedule = entity.computedepreciationbasedonschedule as boolean 
         data.entity = entity 
         data.assessLevels = loadAssessLevels( objid )
-        //data.bldgTypes = loadBldgTypes( objid )
-        //data.bldgAdjustments = loadBldgAdjustments( objid ) 
+        data.additionalItems = loadBldgAdjustments( objid ) 
+        data.bldgTypes = loadBldgTypes( objid )
         return data 
     }
     
@@ -79,10 +90,10 @@ public class BldgRYSettingService
             if( assessLevel.fixrate ) {
                 assessLevel.ranges.clear()
             }
-            em.update('bldgrysetting:assesslevel', assessLevel )
+            em.update(schemaname, assessLevel )
         }
         else {
-            em.create('bldgrysetting:assesslevel', assessLevel )
+            em.create(schemaname, assessLevel )
         }
     }
     
@@ -92,6 +103,83 @@ public class BldgRYSettingService
         em.delete(schemaname, assessLevel )
     }
     
+    /*----------------------------------------------------------
+    * AdditionalItem Methods
+    ----------------------------------------------------------*/
+    @ProxyMethod
+    public void saveAdditionalItem( item ) {
+        def schemaname = 'bldgrysetting:bldgadditionalitem'
+        em.validate(schemaname, item )
+        
+        def old = em.read(schemaname, item )
+        if( old )
+            em.update(schemaname, item )
+        else 
+            em.create(schemaname, item )
+    }
+    
+    @ProxyMethod
+    public void removeAdditionalItem( item ) {
+        def schemaname = 'bldgrysetting:bldgadditionalitem'
+        em.delete(schemaname, item )
+    }
+    
+    
+    /*----------------------------------------------------------
+    * BldgType Methods
+    ----------------------------------------------------------*/
+    @ProxyMethod
+    public void saveBldgType( bldgtype ) {
+        def schemaname = 'bldgrysetting:bldgtype'
+        em.validate(schemaname, bldgtype )
+        
+        def old = em.read(schemaname, bldgtype )
+        if( old )
+            em.update(schemaname, bldgtype )
+        else 
+            em.create(schemaname, bldgtype )
+    }
+    
+    @ProxyMethod
+    public void removeBldgType( bldgtype ) {
+        //TODO: check that bldgtype is not referenced 
+        def schemaname = 'bldgrysetting:bldgtype'
+        em.delete(schemaname, bldgtype )
+    }
+    
+    
+    /*----------------------------------------------------------
+    * BldgKindBucc Methods
+    ----------------------------------------------------------*/
+    @ProxyMethod
+    public void saveBldgKindBucc( bldgkindbucc ) {
+        def schemaname = 'bldgrysetting:bldgkindbucc'
+        em.validate(schemaname, bldgkindbucc )
+        
+        def old = em.read(schemaname, bldgkindbucc )
+        if( old )
+            em.update(schemaname, bldgkindbucc )
+        else 
+            em.create(schemaname, bldgkindbucc )
+    }
+    
+    @ProxyMethod
+    public void removeBldgKindBucc( bldgkindbucc ) {
+        //TODO: check that bldgtype is not referenced 
+        def schemaname = 'bldgrysetting:bldgkindbucc'
+        em.delete(schemaname, bldgkindbucc )
+    }
+    
+    @ProxyMethod
+    public List getBldgKindBuccList( bldgtypeid ) {
+        def list = em.sqlContext.createNamedQuery('bldgrysetting:getBldgKindBucc').setParameter('bldgtypeid', bldgtypeid).resultList
+        list.each {
+            def extended = em.serializer.read( it.extended) 
+            it.putAll( extended )
+            
+        }
+        return list 
+    }
     
     
     /*----------------------------------------------------------
@@ -102,6 +190,23 @@ public class BldgRYSettingService
         list.each {
             it.ranges = em.serializer.read( it.ranges )
             it.fixrate = it.fixrate as boolean 
+        }
+        return list 
+    }
+    
+    List loadBldgAdjustments( objid ) {
+        return em.sqlContext.createNamedQuery('bldgrysetting:getAdditionalItem').setParameter('bldgrysettingid', objid).resultList
+    }
+    
+    List loadBldgTypes( objid ) {
+        def list = em.sqlContext.createNamedQuery('bldgrysetting:getBldgType').setParameter('bldgrysettingid', objid).resultList
+        list.each {
+            if( it.multistoreyadjustments ) {
+                it.multistoreyadjustments = em.serializer.read( it.multistoreyadjustments )
+            }
+            if( it.depreciations ) {
+                it.depreciations = em.serializer.read( it.depreciations )
+            }
         }
         return list 
     }

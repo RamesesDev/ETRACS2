@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
+<workunit>
+    <invokers>
+        <invoker type="bldgadditionalitem.create" action="create" caption="Create Building Additional Item" mnemonic="b" icon="images/addnew24.png" target="popup"/>
+        <invoker type="bldgadditionalitem.open" action="open" caption="Open Building Additional Item" mnemonic="b" icon="images/addnew24.png" target="popup"/>
+        
+        <invoker type="formActions" action="saveAndCreate" shortcut="ctrl R" visibleWhen="#{mode == 'create'}" caption="Save and Create" mnemonic="r" icon="images/save24.png" default="true" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" caption="Save" visibleWhen="#{mode == 'create'}" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="update" shortcut="ctrl U" caption="Update" visibleWhen="#{mode != 'create'}" mnemonic="u" icon="images/save24.png"/>
+        <invoker type="formActions" action="_close" caption="Cancel" mnemonic="c"  immediate="true" />
+        
+    </invokers>
+    <code lang="groovy">
+
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+import java.rmi.server.UID
+
+public class BldgAdditionalItemController 
+{
+    @Binding 
+    def binding
+    
+    def addHandler
+    def updateHandler
+    
+    def mode 
+    def entity
+        
+    void create() {
+        mode = 'create'
+        entity = createEntity()
+    }
+    
+    void open() {
+        mode = 'open'
+    }
+    
+    def save() {
+        invokeAddHandler()
+        return '_close' 
+    }
+    
+    void saveAndCreate() {
+        invokeAddHandler()
+        entity = createEntity()
+        binding.refresh()
+        binding.focus('entity.code')
+    }
+    
+    def update() {
+        if( updateHandler ) updateHandler( entity )
+        return '_close' 
+    }
+    
+    void invokeAddHandler() {
+        if( addHandler ) addHandler( entity )
+    }
+    
+    def createEntity() {
+        return [ objid : 'BI' + new UID()]
+    }
+    
+}
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.ry.bldg.BldgAdditionalItemPage"/>
+    </pages>
+</workunit>
