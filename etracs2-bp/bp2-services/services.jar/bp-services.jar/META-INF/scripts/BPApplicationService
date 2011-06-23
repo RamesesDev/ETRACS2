@@ -4,6 +4,12 @@ import java.rmi.server.UID
 
 class BPApplicationService{
 	
+	@Service('DateService')
+	def dateService;
+	
+	@Service('BPRuleService')
+	def ruleSvc;
+	
 	def SCHEMANAME = 'bpapplication:bpapplication';
 	def SCHEMAVERSION = '1.0';
 	
@@ -28,12 +34,13 @@ class BPApplicationService{
 				application.info.lobs.each{ it.iyear = application.iyear; }
 			}
 		}
-		if( !application.objid ) return createBP( application );
+		
+		if( !application.objid ) return createBPApp( application );
 		else return update( application );
 	}
 	
 	@ProxyMethod
-	public def createBP( def application ){
+	public def createBPApp( def application ){
 		application.objid = 'BP'+new UID();
 		application.schemaname = SCHEMANAME;
 		application.schemaversion = SCHEMAVERSION;
@@ -44,6 +51,41 @@ class BPApplicationService{
 		em.validate( SCHEMANAME, application );
 		em.create( SCHEMANAME, application );
 		return application;
+	}
+	
+	private void insertForlateRenewal( def application ){
+		if( application.businessid ){
+			def currentyear = Integer.parse( format( dateService.serverDate, 'yyyy' ) );
+			def prevyear = currentyear - 1;
+			
+			def oldapp = em.createNamedQuery( 'bpapplication.getApplicationByBusinessId' )
+						   .setParameters([objid:application.businessid])
+						   .singleResult;
+
+			if( oldapp.iyear < prevyear ){
+				for( int i=oldapp.iyear; i <= prevyear; i++){
+					def app = createMapCopy( oldapp );
+					app.txxno = application.txnno + '-' + i;
+					app.iyear = i;
+					app.taxfees = [];
+				}
+			}
+		}
+	}
+	
+	private def createMapCopy( def obj ){
+		if( obj instanceof Map ){
+			def copy = [:];
+			obj.each{ k, v -> copy.put( k, createMapCopy( v ) ); }
+			return copy;
+		}
+		
+		if( obj instanceof List ){
+			def copy = [];
+			obj.each{ copy.add( createMapCopy( it ) ); }
+		}
+		
+		return obj;
 	}
 	
 	@ProxyMethod
@@ -77,8 +119,8 @@ class BPApplicationService{
 		if( application.txntype == 'NEW' || application.txnmode == 'CAPTURE' ) return [application];
 		def res = em.sqlContext.createNamedQuery("bpapplication:getBusinessFor"+application.txntype)
 				    .setParameters([taxpayerid: application.taxpayerid])
-				    .resultList.eac{ 
-						it.lobs = em.serializer.read( it.info ).lobs;
+				    .resultList.eac{  
+						it.lobs = em.serializer.read( it.info ).lobs; 
 					};
 		if( !res ) throw new Exception("There is no business to process this transaction.");
 		return res;
@@ -89,25 +131,51 @@ class BPApplicationService{
 		def app = open( applicationid );
 		if( app.docstate != 'DRAFT' ) throw new Exception("Only DRAFT application can be submit for assessment.");
 		
-		evaluateApplicationInfo( application );
+		evaluateApplicationInfo( app );
 		
 		app.docstate = 'FOR_ASSESSMENT';
 		em.update( SCHEMANAME, app );
 		return app;
 	}
 	
-	@ProxyMethod
 	public void evaluateApplicationInfo( def application ){
-		throw new Exeception("evalateApplicationInfo not yet supported.");
+		def app =  createAppEntity( application );
+		app = ruleSvc.buildInfos( app );
+		application.info.appinfos = app.infos;
 	}
 	
 	@ProxyMethod
-	public def evaluateAssessment( def application ){
+	public def assess( def application ){
 		def app = open( application.objid );
-		/*************************************************/
-		//insert code her for computing taxes and fees    
-		/*************************************************/
+		evaluateAssessment( app );
 		em.update( SCHEMANAME, app );
+		return app;
+	}
+	
+	private void evaluateAssessment( def application ){
+		def app = createAppEntity( application );
+		app.infos = application.infos.appinfos;
+		app = ruleSvc.buildTaxFees( app );
+		application.info.taxfees = app.taxfees;
+	}
+	
+	private def createAppEntity( def application ){
+		def app = [
+			organization: application.info.organization,
+			applicationtype: application.txntype,
+			officetype: application.officetype,
+			barangayid: application.info.barangay.barangayid,
+			lobs : [],
+			taxfees: [],
+			infos: []
+		];
+		
+		application.info.lobs.each{
+			app.lobs.add( [ lob: [classificationid: it.classificationid, objid: it.lobid, name: it.name],
+				assessmenttype: it.assessmenttype
+			]);
+		}
+		
 		return app;
 	}
 	
@@ -136,4 +204,128 @@ class BPApplicationService{
 	public List getOfficeTypes() {
 		return ['MAIN','BRANCH']
 	}
+	
+	@ProxyMethod
+	public def getApplicationList( def applicationid ){
+		def app = open( applicationid );
+		def applist = [];
+		applist.add( evaluateApplication( app ) );
+		
+		em.sqlContext.createNamedQuery( 'bpapplication:getApplicationByParentId' )
+		  .setParameters( [parentid: app.objid] )
+		  .resultList.each{ 
+			it.info = em.serializer.read( it.info );
+			applist.add( evaluateApplication( it ) ) ;
+		};
+		
+		return applist;
+	}
+	
+	private def evaluateApplication( def application ){
+		def app = [:];
+		app.objid = application.objid;
+		app.txnno = application.txnno;
+		app.iyear = application.iyear;
+		app.txntype = application.txntype;
+		app.infos = application.info.appinfos;
+		app.taxfees = application.info.taxfees;
+		app.assessedvalue = 0.0;
+		app.amountdue = 0.0;
+		
+		app.taxfees.each{
+			app.assessedvalue += it.assessedvalue;
+			app.amountdue += it.amountdue;
+		}
+		
+		return app;
+	}
+	
+	@ProxyMethod
+	public void evaluateTaxesAndFees( def parentid, def list ){
+		list.each{ it ->
+			def application = open( it.objid );
+			def app = createAppEntity( application );
+			
+			app.infos.clear();
+			app.infos.taxfees.clear();
+			
+			app.infos = it.infos;
+			app.taxfees = [];
+			
+			checkValueType( app.infos );
+			
+			def res = ruleSvc.buildTaxFees( app );
+			
+			application.info.appinfos = app.infos;
+			application.info.taxfees = app.taxfees;
+			
+			if( parentid == it.objid ){
+				if( application.docstate == 'FOR_ASSESSMENT' ) 
+					application.docstate = 'FOR_REVIEW';
+			}
+			
+			update( application );
+		}
+	}
+	
+	def checkValueType( def infos ){
+		infos.each{
+			if( it.vartype == 'integer' ) { 
+				try{ it.value = Integer.parseInt( it.value ); }catch(e){ throw new Exception( it.varname + ' value must be integer.' ) }
+			}
+			
+			if( it.vartype == 'decimal' ) { 
+				try{ it.value = Double.parseDouble( it.value ); }catch(e){ throw new Exception( it.varname + ' value must be decimal.' ) }
+			}
+		}
+	}
+	
+	@ProxyMethod
+	public List getAccountSummaryTypes() {
+		return [
+			[ objid:'BUSINESS_TAX', name:'TOTAL_BUSINESS_TAX' ],
+			[ objid:'REG_FEE', name:'TOTAL_REGULATORY_FEE' ],
+			[ objid:'OTHER_FEE', name:'TOTAL_OTHER_FEE' ],
+		]
+	}
+	
+	@ProxyMethod
+	public def disapproveApplication( def applicationid ){
+		def app = open( applicationid );
+		app.docstate = 'FOR_REVIEW';
+		em.update( SCHEMANAME, app ) ;
+		return app;
+	}
+	
+	@ProxyMethod
+	public def submitForReview( def appid, def applist ){
+		applist.each{
+			def app = open( it.objid );
+			app.info.taxfees = it.taxfees;
+			if( app.objid == appid ) app.docstate = 'FOR_APPROVAL';
+			em.update(  SCHEMANAME, app );
+		}
+		return open( appid );
+	}
+	
+	@ProxyMethod
+	public def cancelApplicationForAssessement( def appid ){
+		def app = open( appid );
+		em.sqlContext.createNamedExecutor('bpapplication:deleteReferenceApplication')
+		  .setParameters([parentid: appid])
+		  .execute();
+		
+		app.docstate = 'DRAFT';
+		app.info.appinfos = [];
+		app.info.taxfees = [];
+		
+		em.update( SCHEMANAME, app );
+		return app;
+	}
+	
+	@ProxyMethod
+	public def approveApplication( def appid, def applist ){
+		throw new Exception("Approve not yer implemented.");
+	}
+	
 }

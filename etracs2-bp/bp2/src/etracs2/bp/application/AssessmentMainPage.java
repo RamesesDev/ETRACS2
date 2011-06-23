@@ -7,16 +7,17 @@
 package etracs2.bp.application;
 
 import com.rameses.rcp.ui.annotations.StyleSheet;
+import java.math.BigDecimal;
 
 /**
  *
  * @author  MS
  */
 @StyleSheet("etracs2/bp/application/ApplicationInitialPage.style")
-public class ApplicationAssessmentPage extends javax.swing.JPanel {
+public class AssessmentMainPage extends javax.swing.JPanel {
     
     /** Creates new form ApplicationInitialPage */
-    public ApplicationAssessmentPage() {
+    public AssessmentMainPage() {
         initComponents();
     }
     
@@ -40,14 +41,11 @@ public class ApplicationAssessmentPage extends javax.swing.JPanel {
         formPanel3 = new com.rameses.rcp.util.FormPanel();
         xLabel6 = new com.rameses.rcp.control.XLabel();
         xLabel7 = new com.rameses.rcp.control.XLabel();
-        jPanel4 = new javax.swing.JPanel();
-        xDataTable1 = new com.rameses.rcp.control.XDataTable();
-        jPanel5 = new javax.swing.JPanel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
-        formPanel4 = new com.rameses.rcp.util.FormPanel();
-        xLabel8 = new com.rameses.rcp.control.XLabel();
-        xLabel9 = new com.rameses.rcp.control.XLabel();
-        xLabel10 = new com.rameses.rcp.control.XLabel();
+        xDataTable3 = new com.rameses.rcp.control.XDataTable();
+        jLabel1 = new javax.swing.JLabel();
+        xNumberField1 = new com.rameses.rcp.control.XNumberField();
+        xDataTable4 = new com.rameses.rcp.control.XDataTable();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -89,7 +87,7 @@ public class ApplicationAssessmentPage extends javax.swing.JPanel {
         xLabel3.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         xLabel3.setCaption("Date");
         xLabel3.setCaptionWidth(100);
-        xLabel3.setExpression("#{application.info.txndate}");
+        xLabel3.setExpression("#{application.txndate}");
         xLabel3.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel2.add(xLabel3);
 
@@ -99,7 +97,7 @@ public class ApplicationAssessmentPage extends javax.swing.JPanel {
         xLabel5.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
         xLabel5.setCaption("Applicable Year");
         xLabel5.setCaptionWidth(100);
-        xLabel5.setExpression("#{application.info.year}");
+        xLabel5.setExpression("#{application.iyear}");
         xLabel5.setName("application.year");
         xLabel5.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel2.add(xLabel5);
@@ -136,65 +134,50 @@ public class ApplicationAssessmentPage extends javax.swing.JPanel {
         jPanel2.add(jPanel3);
         jPanel3.setBounds(10, 0, 730, 140);
 
-        jPanel4.setLayout(null);
-
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder2.setTitle("Assessment Info");
-        jPanel4.setBorder(xTitledBorder2);
-        xDataTable1.setHandler("appinfoHandler");
-        xDataTable1.setName("appinfo");
-        jPanel4.add(xDataTable1);
-        xDataTable1.setBounds(5, 25, 710, 110);
-
-        jPanel2.add(jPanel4);
-        jPanel4.setBounds(10, 140, 730, 150);
-
-        jPanel5.setLayout(null);
+        xTitledBorder2.setTitle("Required Informations");
+        xDataTable2.setBorder(xTitledBorder2);
+        xDataTable2.setDepends(new String[] {"appdata"});
+        xDataTable2.setDynamic(true);
+        xDataTable2.setHandler("appinfoListHandler");
+        xDataTable2.setImmediate(true);
+        jPanel2.add(xDataTable2);
+        xDataTable2.setBounds(10, 220, 730, 110);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder3.setTitle("Tax Fee Info");
-        jPanel5.setBorder(xTitledBorder3);
-        xDataTable2.setHandler("taxfeeinfoHandler");
-        xDataTable2.setName("taxinfo");
-        jPanel5.add(xDataTable2);
-        xDataTable2.setBounds(5, 25, 710, 120);
+        xTitledBorder3.setTitle("Taxes and Fees");
+        xDataTable3.setBorder(xTitledBorder3);
+        xDataTable3.setDepends(new String[] {"appdata"});
+        xDataTable3.setDynamic(true);
+        xDataTable3.setHandler("taxfeeListHandler");
+        xDataTable3.setImmediate(true);
+        jPanel2.add(xDataTable3);
+        xDataTable3.setBounds(10, 330, 730, 110);
 
-        formPanel4.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
-        com.rameses.rcp.control.border.XLineBorder xLineBorder7 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder7.setLineColor(new java.awt.Color(204, 204, 204));
-        xLabel8.setBorder(xLineBorder7);
-        xLabel8.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        xLabel8.setCaption("Tax");
-        xLabel8.setCaptionWidth(30);
-        xLabel8.setExpression("#{totalTax}");
-        xLabel8.setPreferredSize(new java.awt.Dimension(90, 19));
-        formPanel4.add(xLabel8);
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
+        jLabel1.setText("Total Assessment :");
+        jLabel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 2, 1, 2));
+        jPanel2.add(jLabel1);
+        jLabel1.setBounds(450, 440, 111, 20);
 
-        com.rameses.rcp.control.border.XLineBorder xLineBorder8 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder8.setLineColor(new java.awt.Color(204, 204, 204));
-        xLabel9.setBorder(xLineBorder8);
-        xLabel9.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        xLabel9.setCaption("Regulatory");
-        xLabel9.setCaptionWidth(70);
-        xLabel9.setExpression("#{totalRegfee}");
-        xLabel9.setPreferredSize(new java.awt.Dimension(90, 19));
-        formPanel4.add(xLabel9);
+        xNumberField1.setEditable(false);
+        xNumberField1.setDepends(new String[] {"appdata"});
+        xNumberField1.setFieldType(BigDecimal.class);
+        xNumberField1.setFont(new java.awt.Font("Arial", 1, 12));
+        xNumberField1.setName("totalAssessment");
+        xNumberField1.setPattern("#,##0.00");
+        jPanel2.add(xNumberField1);
+        xNumberField1.setBounds(580, 440, 160, 20);
 
-        com.rameses.rcp.control.border.XLineBorder xLineBorder9 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder9.setLineColor(new java.awt.Color(204, 204, 204));
-        xLabel10.setBorder(xLineBorder9);
-        xLabel10.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        xLabel10.setCaption("Charge");
-        xLabel10.setCaptionWidth(50);
-        xLabel10.setExpression("#{totalRegfee}");
-        xLabel10.setPreferredSize(new java.awt.Dimension(90, 19));
-        formPanel4.add(xLabel10);
-
-        jPanel5.add(formPanel4);
-        formPanel4.setBounds(0, 150, 440, 30);
-
-        jPanel2.add(jPanel5);
-        jPanel5.setBounds(10, 290, 730, 190);
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder4.setTitle("Application List");
+        xDataTable4.setBorder(xTitledBorder4);
+        xDataTable4.setDynamic(true);
+        xDataTable4.setHandler("applistHandler");
+        xDataTable4.setImmediate(true);
+        xDataTable4.setName("appdata");
+        jPanel2.add(xDataTable4);
+        xDataTable4.setBounds(10, 140, 730, 80);
 
         add(jPanel2, java.awt.BorderLayout.CENTER);
 
@@ -205,24 +188,21 @@ public class ApplicationAssessmentPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel1;
     private com.rameses.rcp.util.FormPanel formPanel2;
     private com.rameses.rcp.util.FormPanel formPanel3;
-    private com.rameses.rcp.util.FormPanel formPanel4;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
-    private javax.swing.JPanel jPanel4;
-    private javax.swing.JPanel jPanel5;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XDataTable xDataTable2;
+    private com.rameses.rcp.control.XDataTable xDataTable3;
+    private com.rameses.rcp.control.XDataTable xDataTable4;
     private com.rameses.rcp.control.XLabel xLabel1;
-    private com.rameses.rcp.control.XLabel xLabel10;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
     private com.rameses.rcp.control.XLabel xLabel4;
     private com.rameses.rcp.control.XLabel xLabel5;
     private com.rameses.rcp.control.XLabel xLabel6;
     private com.rameses.rcp.control.XLabel xLabel7;
-    private com.rameses.rcp.control.XLabel xLabel8;
-    private com.rameses.rcp.control.XLabel xLabel9;
+    private com.rameses.rcp.control.XNumberField xNumberField1;
     // End of variables declaration//GEN-END:variables
     
 }
