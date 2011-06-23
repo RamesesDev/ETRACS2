@@ -3,11 +3,14 @@
         <invoker type="bp:assessment" caption="Business Application"/>
         <invoker type="bp:FOR_ASSESSMENT" caption="Business Application" target="window"/>
         <invoker type="bp:FOR_APPROVAL" caption="Business Application" target="window"/>
+        <invoker type="bp:FOR_REVIEW" caption="Business Application" target="window"/>
         
-        <invoker type="formActions" action="submit" caption="Submit For Apprroval"/>
+        <invoker type="formActions" action="cancelAssessment" caption="Cancel Assessment"/>
         <invoker type="formActions" action="assess" caption="Assess" visibleWhen="#{application.docstate == 'FOR_ASSESSMENT'}"/>
-        <invoker type="formActions" action="reassess" caption="Re-Assess" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}"/>
-        <invoker type="formAction" action="cancelAssessment" caption="Cancel Assessment"/>
+        <invoker type="formActions" action="reassess" caption="Re-Assess" visibleWhen="#{application.docstate == 'FOR_REVIEW' and application.docstate == 'FOR_APPROVAL'}"/>
+        <invoker type="formActions" action="submit" caption="Submit For Approval" visibleWhen="#{application.docstate == 'FOR_REVIEW'}"/>
+        <invoker type="formActions" action="disapprove" caption="Disapprove" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}"/>
+        <invoker type="formActions" action="approve" caption="Approve" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}"/>
     </invokers>
     
     <code>
@@ -22,51 +25,98 @@ class BusinessApplicationForAssessment
     @Service('BPApplicationService')
     def svc;
     
+    @Binding
+    def binding;
+    
     def application;
     
-    public void submit(){ throw new Exception("Assess not yet implemented."); }
-    public void assess() {;}
-    public void reassess();
-    public def cancelAssessment(){ throw new Exception("Cancel Assessment not yet implemented"); }
-    public def submit(){ throw new Exception("Submit for approval not yet implemented."); }
+    def applist = [];
+    def appdata = [:];
     
-    appinfoHandler =[
-        getRows: { return 20; },
-        getColumns: { 
-            return [ 
-                new Column(name:"lobname", caption:"LOB"),
-                new Column(name:"varname", caption:"Variable Name"),
-                new Column(name:"vartype", caption:"Variable Type"),
-                new Column(name:"value", caption:"Value"),
-                new Column(name:"arrayvalue", caption:"Array Value")
-            ];
-        },
-        
-        fetchList: {
-            return application.info.appinfos;
+    def applistHandler = [
+        getRows : { return 2 },
+        getColumns : { return [
+            new Column( name:'txnno', caption:'App No.' ),
+            new Column( name:'txntype', caption:'Application Type' ),
+            new Column( name:'assessedvalue', caption:'Assessed Value' ),
+            new Column( name:'amountdue', caption:'Amount Due' ),
+            new Column( name:'iyear', caption:'Applicable Year', format:'####' )
+        ]},
+
+        fetchList : { 
+            if( !applist ) applist = svc.getApplicationList( application.objid ); 
+            return applist;
         }
     ] as SubListModel;
     
-    taxfeeinfoHandler = [
-        getRows: { return 20; },
-        getColumns: { 
-            return [ 
-                new Column(name:"acctno", caption:"Acct. No"),
-                new Column(name:"accttitle", caption:"Acct. Title"),
-                new Column(name:"assessedvalue", caption:"Assessed Value"),
-                new Column(name:"amountdue", caption:"Amount Due", type="decimal", editable:true)
-            ];
+    def appinfoListHandler = [
+        getRows    : { return 3 },
+        getColumns : { return [
+            new Column(name:'lobname', caption:'Line of Business'),
+            new Column(name:'varcaption', caption:'Variable'),
+            new Column(name:'value', caption:'Value'),
+        ]},
+
+        fetchList : { 
+            return appdata?.infos;
+        }
+    ] as SubListModel
+    
+    def taxfeeListHandler = [
+        getRows    : { return 3 },
+        getColumns : { return [
+            new Column(name:'lobname', caption:'Line of Business'),
+            new Column(name:'accttitle', caption:'Account'),
+            new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal'),
+            new Column(name:'amountdue', caption:'Amount Due', type:'decimal', editable:(application.txnmode == 'CAPTURE')),
+        ]},
+        
+        onColumnUpdate : { obj, name ->
+            if( name == 'amountdue' ) binding.refresh();
         },
+        
+        fetchList : { 
+            return appdata?.taxfees;
+        }
+    ] as SubListModel
+    
+    def assess() { 
+        return InvokerUtil.lookupOpener('bp:assessmentinfo', [applist:applist, svc:svc]);
+    }
+    
+    def reassess(){  assess(); }
+    
+    def cancelAssessment(){ 
+        def app = svc.cancelApplicationForAssessement( application.objid );
+        return InvokerUtil.lookupOpener('bp:open', [application:app] );
+    }
+    
+    void submit(){
+        application = svc.submitForReview( application.objid, applist );
+    }
+    
+    void approve(){
+        application = svc.approveApplication( application.objid, applist );
+    }
+    
+    void disapprove(){
+        application = svc.disapproveApplication( application.objid );
+    }
 
-        fetchList: { return application.info.appinfos; }
-    ] as SubListModel;
-
+    def getTotalAssessment(){
+        def total = 0.0;
+        if( appdata ){ 
+            appdata.taxfees.each{ total += it.amountdue; } 
+            appdata.amountdue = total;
+        }
+        return total;
+    }
 }
 
 ]]>        
         
     </code>
     <pages>
-        <page template="etracs2.bp.application.ApplicationAssessmentPage"/>
+        <page template="etracs2.bp.application.AssessmentMainPage"/>
     </pages>
 </workunit>

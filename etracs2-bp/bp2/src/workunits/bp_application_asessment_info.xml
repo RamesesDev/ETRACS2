@@ -1,0 +1,52 @@
+<workunit>
+    <invokers>
+        <invoker type="bp:assessmentinfo" action="" caption="Assessment Information" target="popup"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class BusinessApplicationAssessment
+{
+
+    @Caller
+    def caller;
+
+    def applist;
+    def app;
+    def svc;
+
+    def appinfoListHandler = [
+        getRows    : { return 3 },
+        getColumns : { return [
+            new Column(name:'lobname', caption:'Line of Business'),
+            new Column(name:'varcaption', caption:'Variable'),
+            new Column(name:'value', caption:'Value', editable:true)
+        ]},
+
+        fetchList : { 
+            return app?.infos;
+        }
+
+    ] as SubListModel
+    
+    public def evaluateTaxesAndFees(){
+        svc.evaluateTaxesAndFees( caller.application.objid, applist );
+        caller.application = svc.open( caller.application.objid );
+        caller.applist = [];
+        caller.applistHandler.load();
+        caller.binding.refresh();
+        return '_close';
+    }
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.bp.application.AssessmentInfoPage"/>
+    </pages>
+</workunit>

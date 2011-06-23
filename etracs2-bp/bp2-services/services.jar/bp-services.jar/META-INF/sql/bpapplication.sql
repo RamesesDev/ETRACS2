@@ -30,3 +30,16 @@ SELECT b.iyear, bpa.info FROM business b
 INNER JOIN bpapplication bpa on bpa.businessid = b.objid 
 WHERE b.taxpayerid = $P{taxpayerid} 
 AND   bpa.docstate = 'ACTIVE' 
+
+[getApplicationByBusinessId] 
+SELECT bpa.* FROM business b  
+INNER JOIN bpapplication bpa on bpa.objid = b.applicationid 
+WHERE b.objid = $P{objid} 
+
+[getApplicationByParentId] 
+SELECT bpa.* FROM bpapplication bpa 
+WHERE bpa.parentid = $P{parentid} 
+
+[deleteReferenceApplication] 
+DELETE FROM bpapplication 
+WHERE parentid = $P{parentid}  
