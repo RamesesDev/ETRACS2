@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+// date      : 06-24-2011
+-->
+<workunit>
+    <invokers>
+        <invoker type="planttreerysetting.create" action="create" caption="Create Plant and Tree RY Settting" mnemonic="b" icon="images/addnew24.png" target="window"/>
+        <invoker type="planttreerysetting.open" action="open" caption="Edit Plant and Tree RY Settting" mnemonic="b" icon="images/addnew24.png" target="window"/>
+        
+        <invoker type="formActions" action="_close" caption="Close" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="remove" shortcut="ctrl D" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
+    </invokers>
+    <code lang="groovy">
+
+<![CDATA[
+
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+import java.rmi.server.UID
+
+public class PlantTreeRYSettingController 
+{
+    @Binding 
+    def binding
+    
+    @Service('PlantTreeRYSettingService')
+    def svc
+    
+    def entity
+    def copyYear
+    def settingType
+    def mode
+    def errorMsg 
+    
+    /*---------------------------------------------------------------------
+    * FormAction Support
+    ---------------------------------------------------------------------*/
+    def create() {
+        mode = 'create' 
+        entity = createEntity()
+        if( svc.settingExists() ) {
+            settingType = 'copySetting'
+            return 'copy'
+        }
+        else {
+            settingType = 'newSetting'
+            return 'new' 
+        }
+    }
+    
+    void open() {
+        mode = 'view' 
+        entity = svc.open( entity.objid )
+    }
+    
+    def createSetting() {
+        if( settingType == 'newSetting' ) {
+            entity = svc.create( entity )
+        }
+        else {
+            entity = svc.copySetting( ry )
+        }
+        return 'default'
+    }
+    
+    void save() {
+        entity = svc.update( entity )
+    }
+    
+    def remove() {
+        if( MsgBox.confirm('Delete setting?') ) {
+            svc.remove( entity.objid )
+            return '_close'
+        }
+        return 'default'
+    }
+    
+    
+
+    /*---------------------------------------------------------------------
+    *
+    * AssessLevel Support
+    *
+    ---------------------------------------------------------------------*/
+    def assessLevelListHandler = [
+        createItem : { return createAssessLevel() },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'code', caption:'Code*', maxWidth:60, editable:true ),
+            new Column(name:'name', caption:'Name*', editable:true ),
+            new Column(name:'rate', caption:'Rate*', type:'decimal', editable:true ),
+        ]},
+        validate       : { li -> validateAssessLevel( li.item ) },
+        onRemoveItem   : { item -> removeAssessLevel( item ) },
+        onAddItem      : { item -> 
+            entity.assesslevels.add( item ) 
+            svc.update( entity ) 
+        },
+        fetchList      : { return entity.assesslevels },
+    ] as SubListModel
+    
+    void validateAssessLevel( al ) {
+        try {
+            errorMsg = null 
+            required(al.code, 'Code')
+            required(al.name, 'Name')
+            validateRate( al.rate )
+            checkDuplicateAssessLevel( al )
+            svc.update( entity ) 
+        }
+        catch( e ) {
+            println e.message 
+            errorMsg = e.message
+            binding.refresh('errorMsg') 
+            throw e 
+        }
+    }
+    
+    void checkDuplicateAssessLevel( al ) {
+        def item = entity.assesslevels.find{ it.objid != al.objid && it.code == al.code  }
+        if( item ) throw new Exception('Duplicate code is not allowed.')    
+        item = entity.assesslevels.find{ it.objid != al.objid && it.name == al.name  }
+        if( item ) throw new Exception('Duplicate name is not allowed.')    
+    }
+    
+    void removeAssessLevel( item ) {
+        if( MsgBox.confirm('Remove item?' ) ) {
+            entity.assesslevels.remove( item )
+            svc.update( entity )
+        }
+    }
+    
+    
+    /*---------------------------------------------------------------------
+    *
+    * PlantTreeUnit Support
+    *
+    ---------------------------------------------------------------------*/
+    def selectedPlantTree
+    def unitValueTitle 
+    
+    void setSelectedPlantTree( selectedPlantTree ) {
+        this.selectedPlantTree = selectedPlantTree
+        unitValues = []
+        unitValueTitle = 'Please select a Plant or Tree.'
+        if( selectedPlantTree ) {
+            unitValues = svc.getUnitValues( selectedPlantTree.planttreeid )
+            unitValueTitle = selectedPlantTree.planttreename 
+        }
+    }
+    
+    void loadPlantTree() {
+        List planttreeunits = svc.getPlantTreeUnits( entity.objid )
+        entity.planttreeunits.addAll( planttreeunits - entity.planttreeunits )
+        svc.update( entity )
+        planttreeListHandler.load()
+    }
+    
+    def planttreeListHandler  = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column( name:'planttreecode', caption:'Code', maxWidth:80 ),
+            new Column( name:'planttreename', caption:'Plant/Tree' ),
+        ]},
+        fetchList    : { return entity.planttreeunits },
+    ] as SubListModel
+    
+    
+    /*---------------------------------------------------------------------
+    *
+    * PlantTreeUnitValue Support
+    *
+    ---------------------------------------------------------------------*/
+    List unitValues = []
+    
+    def unitvalueListHandler = [
+        createItem : { return createUnitValue() },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'code', caption:'Code*', maxWidth:60, editable:true ),
+            new Column(name:'name', caption:'Name*', editable:true ),
+            new Column(name:'unitvalue', caption:'Unit Value*', type:'decimal', editable:true, maxWidth:120 ),
+        ]},
+        validate       : { li -> validateUnitValue( li.item ) },
+        onRemoveItem   : { item -> removeUnitValue( item ) },
+        onAddItem      : { item -> unitValues.add( item ) },
+        fetchList      : { return unitValues },
+    ] as SubListModel
+    
+    void validateUnitValue( uv ) {
+        try {
+            errorMsg = null 
+            required(uv.code, 'Code')
+            required(uv.name, 'Name')
+            checkDuplicateUnitValue( uv )
+            svc.update( entity ) 
+        }
+        catch( e ) {
+            println e.message 
+            errorMsg = e.message
+            binding.refresh('errorMsg') 
+            throw e 
+        }
+    }
+    
+    void checkDuplicateUnitValue( uv ) {
+        def item = unitValues.find{ it.objid != uv.objid && it.code == uv.code  }
+        if( item ) throw new Exception('Duplicate code is not allowed.')    
+        item = unitValues.find{ it.objid != uv.objid && it.name == uv.name  }
+        if( item ) throw new Exception('Duplicate name is not allowed.')    
+    }
+    
+    void removeUnitValue( uv ) {
+        if( MsgBox.confirm('Remove item?' ) ) {
+            svc.removeUnitValue( uv ) 
+            unitValues.remove( uv )
+        }
+    }
+    
+    
+    /*---------------------------------------------------------------------
+    *
+    * Create Records Support
+    *
+    ---------------------------------------------------------------------*/
+    Map createEntity() {
+        return [
+            objid       : 'TRY' + new UID(),
+            ry          : null,
+            applyagriadjustment : true,
+            assesslevels    : [],
+            planttreeunits  : [],
+        ]
+    }
+    
+    Map createAssessLevel() {
+        return [ 
+            objid     : 'AL' + new UID(),
+            code      : null,
+            name      : null,
+            rate      : 0.0,
+        ]
+    }
+    
+    Map createUnitValue() {
+        return [
+            objid                   : 'BT' + new UID(),
+            planttreerysettingid    : entity.objid, 
+            planttreeid             : selectedPlantTree?.planttreeid ,
+            planttreecode           : selectedPlantTree?.planttreecode,
+            planttreename           : selectedPlantTree?.planttreename,
+            code                    : null,
+            name                    : null,
+            unitvalue               : null,
+        ]
+    }
+    
+    /*---------------------------------------------------------------------
+    *
+    * Common Methods 
+    *
+    ---------------------------------------------------------------------*/
+    void required( value, caption ) {
+        if( ! value ) throw new Exception(caption + ' is required.') 
+    }
+    
+    void validateRate( rate ) {
+        if( rate < 0.0 ) throw new Exception('Rate must be greater than or equal to zero.')
+        if( rate > 100) throw new Exception('Rate must not exceed 100.00')
+    }
+}
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.ry.planttree.PlantTreeRYSettingPage"/>
+        <page name="new" template="etracs2.rpt.ry.bldg.RYSettingNewPage"/>
+        <page name="copy" template="etracs2.rpt.ry.bldg.RYSettingCopyPage"/>
+    </pages>
+</workunit>
