@@ -5,8 +5,8 @@
 -->
 <workunit>
     <invokers>
-        <invoker type="machrysetting.create" action="create" caption="Create Machine RY Settting" mnemonic="b" icon="images/addnew24.png" target="window"/>
-        <invoker type="machrysetting.open" action="open" caption="Edit Machine RY Settting" mnemonic="b" icon="images/addnew24.png" target="window"/>
+        <invoker type="miscrysetting.create" action="create" caption="Create Miscellaneous RY Settting" target="window"/>
+        <invoker type="miscrysetting.open" action="open" caption="Edit Miscellaneous RY Settting" target="window"/>
         
         <invoker type="formActions" action="_close" caption="Close" />
         <invoker type="formActions" action="save" shortcut="ctrl S" caption="Save" mnemonic="s" icon="images/save24.png"/>
@@ -21,12 +21,12 @@ import com.rameses.rcp.common.*
 import com.rameses.osiris2.client.*
 import java.rmi.server.UID
 
-public class MachRYSettingController 
+public class MiscRYSettingController 
 {
     @Binding 
     def binding
     
-    @Service('MachRYSettingService')
+    @Service('MiscRYSettingService')
     def svc
     
     def entity
@@ -55,10 +55,10 @@ public class MachRYSettingController
     void open() {
         mode = 'view' 
         entity = svc.open( entity.objid )
-        assessLevels = entity.assessLevels 
-        forexes = entity.forexes
-        entity.remove( 'assessLevels') 
-        entity.remove( 'forexes' ) 
+        assessLevels = entity.assesslevels
+        miscItemValues = entity.miscitemvalues
+        entity.remove( 'assesslevels' )
+        entity.remove( 'miscitemvalues' )
     }
     
     def createSetting() {
@@ -103,7 +103,7 @@ public class MachRYSettingController
             new Column(name:'fixrate', caption:'Fix?*', type:'boolean', maxWidth:40, editable:true ),
             new Column(name:'rate', caption:'Rate*', type:'decimal', editable:true ),
         ]},
-        validate       : { li -> doValidateAssessLevel( li.item ) },
+        validate       : { li -> validateAssessLevel( li.item ) },
         onRemoveItem   : { item -> removeAssessLevel( item ) },
         onAddItem      : { item -> assessLevels.add( item ) },
         onColumnUpdate : { item, colName -> 
@@ -124,12 +124,12 @@ public class MachRYSettingController
             new Column(name:'mvto', caption:'Market Value To', type:'decimal', editable:true, editableWhen:'#{root.allowRangeColumnEdit[item]}' ),
             new Column(name:'rate', caption:'Rate*', type:'decimal', editable:true, editableWhen:'#{root.allowRangeColumnEdit[item]}' ),
         ]},
-        validate     : { li -> doValidateAssessLevelRange( li.item ) },
+        validate     : { li -> validateAssessLevelRange( li.item ) },
         onAddItem    : { item -> 
             selectedAssessLevel.ranges.add( item ) 
             svc.saveAssessLevel( selectedAssessLevel )
         },
-        onRemoveItem   : { item -> doRemoveRangeItem( item ) },
+        onRemoveItem   : { item -> removeRangeItem( item ) },
         fetchList    : { return selectedAssessLevel.ranges  },
     ] as SubListModel
     
@@ -141,9 +141,9 @@ public class MachRYSettingController
         return isLastItem( selectedAssessLevel.ranges, item )
     } as Map
     
-    void doValidateAssessLevel( al ) {
+    void validateAssessLevel( al ) {
         try {
-            errorMsg = null 
+            errorMsg = null
             required(al.code, 'Code')
             required(al.name, 'Name')
             validateRate( al.rate )
@@ -172,14 +172,14 @@ public class MachRYSettingController
         }
     }
     
-    void doRemoveRangeItem( item ) {
+    void removeRangeItem( item ) {
         if( isLastItem( selectedAssessLevel.ranges, item ) ) {
             selectedAssessLevel.ranges.remove( item )
             svc.saveAssessLevel( selectedAssessLevel )
         }
     }
     
-    void doValidateAssessLevelRange( range ) {
+    void validateAssessLevelRange( range ) {
         def lastRange = null 
         if( selectedAssessLevel.ranges ) {
             lastRange = selectedAssessLevel.ranges.get( selectedAssessLevel.ranges.size() - 1 )
@@ -196,7 +196,7 @@ public class MachRYSettingController
             binding.refresh('errorMsg') 
         }
         catch( e ) {
-            errorMsg = e.message 
+            errorMsg = e.message
             binding.refresh('errorMsg') 
             throw e 
         }
@@ -205,56 +205,44 @@ public class MachRYSettingController
     
     /*---------------------------------------------------------------------
     *
-    * Forex Support
+    * MiscItemValue Support
     *
     ---------------------------------------------------------------------*/
-    def forexes = []
+    def miscItemValues = []
     
-    def forexListHandler  = [
-        createItem : { return createForex() },
-        getRows    : { return 50 },
-        getColumns : { return [
-            new Column(name:'iyear', caption:'Year*', type:'integer', editableWhen:'#{root.allowYearColumnEdit[item]}' ),
-            new Column(name:'forex', caption:'Rate*', type:'decimal', editableWhen:'#{root.allowRateColumnEdit[item]}' ),
-        ]},
-        validate     : { li -> validateForex( li.item ) },
-        onAddItem    : { item -> 
-            forexes.add( item )
-            svc.saveForex( item )
-        },
-        onRemoveItem : { item -> removeForex( item ) },
-        fetchList    : { return forexes },
-    ] as SubListModel
-    
-    
-    def allowYearColumnEdit = { item ->
-        if( isFirstItem( forexes ) ) return true
-        return false 
-    } as Map
-    
-    def allowRateColumnEdit = { item ->
-        if( isFirstItem( forexes ) ) return true
-        if( isNewEntry( item.iyear ) ) return true
-        return isLastItem( forexes, item )
-    } as Map
-    
-    void removeForex( forex ) {
-        if( isLastItem( forexes, forex ) ) {
-            forexes.remove( forex )
-            svc.removeForex( forex ) 
+    void loadItems() {
+        List items = svc.getMiscItems( entity.objid )
+        List diff = determineDifference( items )
+        if( diff ) {
+            svc.saveMiscItemValues( diff )
+            miscItemValues.addAll( diff )
+            miscItemValueListHandler.load()
         }
+    } 
+    
+    List determineDifference( items ) {
+        miscItemValues.each { miv -> 
+            items.remove( items.find{ it.miscitemid == miv.miscitemid }  ) 
+        }
+        return items
     }
     
-    void validateForex( forex ) {
-        def lastItem = null 
-        if( forexes ) {
-            lastItem = forexes.get( forexes.size() - 1 )
-        }
-        if( ! forex.iyear ) forex.iyear = (lastItem ? lastItem.iyear + 1 : 1)
+    def miscItemValueListHandler = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'miscitemcode', caption:'Code', maxWidth:80),
+            new Column(name:'miscitemname', caption:'Name'),
+            new Column(name:'expr', caption:'Computation Expression', editable:true  ),
+        ]},
+        validate     : { li -> validateMiscItemValue( li.item ) },
+        fetchList    : { return miscItemValues },
+    ] as SubListModel
+    
+    void validateMiscItemValue( miv ) {
         try {
             errorMsg = null
-            validateRate( forex.forex )
-            svc.saveForex( forex )
+            required( miv.expr, 'Computation Expression')
+            svc.saveMiscItemValue( miv )
         }
         catch( e ) {
             println e.message 
@@ -281,7 +269,7 @@ public class MachRYSettingController
     Map createAssessLevel() {
         return [ 
             objid           : 'AL' + new UID(),
-            machrysettingid : entity.objid,
+            miscrysettingid : entity.objid,
             fixrate         : true,
             rate            : 0.0,
             ranges          : [],
@@ -296,13 +284,6 @@ public class MachRYSettingController
         ]
     }
     
-    Map createForex() {
-        return [
-            objid           : 'BT' + new UID(),
-            iyear           : null, 
-            machrysettingid : entity.objid,
-        ]
-    }
     
     /*---------------------------------------------------------------------
     *
@@ -334,6 +315,7 @@ public class MachRYSettingController
             index += 1 
         return list.size() == index 
     }
+    
 }
 
 
@@ -342,7 +324,7 @@ public class MachRYSettingController
     </code>
     
     <pages>
-        <page template="etracs2.rpt.ry.mach.MachRYSettingPage"/>
+        <page template="etracs2.rpt.ry.misc.MiscRYSettingPage"/>
         <page name="new" template="etracs2.rpt.ry.bldg.RYSettingNewPage"/>
         <page name="copy" template="etracs2.rpt.ry.bldg.RYSettingCopyPage"/>
     </pages>
