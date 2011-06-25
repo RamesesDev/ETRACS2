@@ -29,6 +29,18 @@ class PropertyClassificationService{
 	}
 	
 	@ProxyMethod
+	public def getLookup( searchText, params ){
+		if( !searchText ) return getListByQuery( 'propertyclassification:lookupList', [:], params );
+		
+		def result = [];
+		
+		if((result = getListByQuery( 'propertyclassification:lookupByCode', [propertycode:searchText+"%"], params ))) return result;
+		if((result = getListByQuery( 'propertyclassification:lookupByDescription', [propertydesc:searchText+"%"], params ))) return result;
+		
+		return result;
+	}
+	
+	@ProxyMethod
 	public def open( objid ){
 		return em.sqlContext.createNamedQuery( 'propertyclassification:getById' ).setParameter( 'objid', objid ).singleResult;
 	}
