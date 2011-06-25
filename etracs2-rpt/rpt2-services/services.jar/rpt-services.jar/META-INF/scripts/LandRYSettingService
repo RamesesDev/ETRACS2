@@ -1,0 +1,329 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import com.rameses.eserver.*;
+import java.rmi.server.UID;
+
+public class LandRYSettingService
+{
+	@PersistenceContext('main')
+	def em
+     
+	@Service('LogService')
+    def logSvc
+    
+    
+    @ProxyMethod
+    public boolean settingExists() {
+        def setting = em.sqlContext.createNamedQuery('landrysetting:getList').setMaxResults(1).singleResult 
+        return setting != null
+    }
+    
+    @ProxyMethod 
+    public List getList( searchText ) {
+        if( ! searchText ) return em.sqlContext.createNamedQuery('landrysetting:getList').resultList
+        return em.sqlContext.createNamedQuery('landrysetting:getListByRy').setParameter('ry', searchText).resultList
+    }
+    
+    @ProxyMethod
+    public List getPropertyClassifications() {
+        return em.sqlContext.createNamedQuery('landrysetting:getPropertyClassification').resultList
+    }
+    
+    @ProxyMethod
+    public def create( entity ) {
+        entity.schemaname = 'landrysetting:landrysetting'
+        entity.schemaversion = '1.0'
+        validate( entity )
+        em.create( entity.schemaname, entity )
+	entity.lcuv = createLCUV( entity );
+        logSvc.log('CREATE', 'LandRYSetting', entity.objid )
+        return entity 
+    }
+    
+    @ProxyMethod
+    public def update( entity ) {
+        validate( entity )
+        em.update( entity.schemaname, entity, { diff ->
+            logSvc.logB( 'UPDATE', 'LandRYSetting', entity.objid, '', diff )
+        } as UpdateChangeHandler )
+        return entity 
+    }
+    
+    @ProxyMethod 
+    public Map open( objid ) {
+        def data = [:]
+        def entity = em.read('landrysetting', [objid:objid])
+        if( !entity ) throw new Exception('Unable to load Revision Setting.\nVerify that the record still exists.' )
+        data.entity = entity 
+        data.assessLevels = loadAssessLevels( objid );
+        data.lcuv = loadLCUV( objid );
+        data.landadjustments = loadLandAdjustments( objid );
+        data.landactualuseadjustments = loadLandActualUseAdjustments( objid );
+        
+        return data;
+    }
+    
+    @ProxyMethod
+    public void remove( objid ) {
+        checkRemoveAllowed( objid );
+        removeLandAdjustments( objid );
+        removeLandActualUseAdjustments( objid );
+        removeLCUVStrippings( objid );
+        removeLCUVSubClasses( objid );
+        removeLCUVSpecificClasses( objid );
+        removeLCUVs( objid );
+        removeAssessLevels( objid );
+        removeRYSetting( objid );
+    }
+    
+    /*----------------------------------------------------------
+    * AssessLevel Methods
+    ----------------------------------------------------------*/
+    @ProxyMethod
+    public void saveAssessLevel( assessLevel ) {
+        def schemaname = 'landrysetting:assesslevel'
+        em.validate(schemaname, assessLevel )
+        
+        def old = em.read(schemaname, assessLevel )
+        if( old ) {
+            if( assessLevel.fixrate ) {
+                assessLevel.ranges.clear()
+            }
+            em.update('landrysetting:assesslevel', assessLevel )
+        }
+        else {
+            em.create('landrysetting:assesslevel', assessLevel )
+        }
+    }
+    
+    @ProxyMethod
+    public void removeAssessLevel( assessLevel ) {
+        def schemaname = 'landrysetting:assesslevel'
+        em.delete(schemaname, assessLevel );
+    }
+    
+    /*----------------------------------------------------------
+    * LCUV Methods
+    ----------------------------------------------------------*/
+    private def createLCUV( entity ){
+	return em.sqlContext.createNamedQuery( 'landrysetting:getPropertyClassification' ).resultList.each{
+		it.objid = 'LCUV' + new UID();
+		it.landrysettingid = entity.objid;
+		it.previd = null;
+		saveLCUV( it );
+	};
+    }
+    @ProxyMethod
+    public void saveLCUV( lcuv ) {
+        def schemaname = 'landrysetting:lcuv';
+        em.validate(schemaname, lcuv );
+        
+        def old = em.read(schemaname, lcuv )
+        if( old ) em.update('landrysetting:lcuv', lcuv );
+        else em.create('landrysetting:lcuv', lcuv );
+    }
+    
+    @ProxyMethod
+    public void removeLCUV( lcuv ) {
+        def schemaname = 'landrysetting:lcuv';
+        em.delete(schemaname, lcuv );
+    }
+    
+    @ProxyMethod
+    public def openSpecificClass( lcuvid ){
+    	def data = em.sqlContext.createNamedQuery( 'landrysetting:getLCUVSpecificClass' ).setParameter( 'lcuvid', lcuvid ).resultList;
+    	if( data ) return data;
+    	
+    	return null;
+    }
+    
+    @ProxyMethod
+    public void saveLCUVSpecificClass( specificclass ) {
+        def schemaname = 'landrysetting:specificclass';
+        em.validate(schemaname, specificclass );
+        
+        def old = em.read(schemaname, specificclass )
+        if( old ) em.update('landrysetting:specificclass', specificclass );
+        else em.create('landrysetting:specificclass', specificclass );
+    }
+    
+    @ProxyMethod
+    public void removeLCUVSpecificClass( specificclass ) {
+        def schemaname = 'landrysetting:specificclass';
+        em.delete(schemaname, specificclass );
+    }
+    
+    @ProxyMethod
+    public def openSubClass( specificclassid ){
+    	def data = em.sqlContext.createNamedQuery( 'landrysetting:getLCUVSubClass' ).setParameter( 'specificclassid', specificclassid ).resultList;
+    	if( data ) return data;
+    	
+    	return null;
+    }
+    
+    @ProxyMethod
+    public void saveLCUVSubClass( subclass ) {
+        def schemaname = 'landrysetting:subclass';
+        em.validate(schemaname, subclass );
+        
+        def old = em.read(schemaname, subclass )
+        if( old ) em.update('landrysetting:subclass', subclass );
+        else em.create('landrysetting:subclass', subclass );
+    }
+    
+    @ProxyMethod
+    public void removeLCUVSubClass( subclass ) {
+        def schemaname = 'landrysetting:subclass';
+        em.delete(schemaname, subclass );
+    }
+    
+    @ProxyMethod
+    public def openStripping( lcuvid ){
+    	def data = em.sqlContext.createNamedQuery( 'landrysetting:getLCUVStripping' ).setParameter( 'lcuvid', lcuvid ).resultList;
+    	if( data ) return data;
+    	
+    	return null;
+    }
+    
+    @ProxyMethod
+    public void saveLCUVStripping( stripping ) {
+        def schemaname = 'landrysetting:stripping';
+        em.validate(schemaname, stripping );
+        
+        def old = em.read(schemaname, stripping )
+        if( old ) em.update('landrysetting:stripping', stripping );
+        else em.create('landrysetting:stripping', stripping );
+    }
+    
+    @ProxyMethod
+    public void removeLCUVStripping( stripping ) {
+        def schemaname = 'landrysetting:stripping';
+        em.delete(schemaname, stripping );
+    }
+    
+    
+    /*----------------------------------------------------------
+    * LandAdjustment Methods
+    ----------------------------------------------------------*/
+    @ProxyMethod
+    public void saveLandAdjustment( landadjustment ) {
+        def schemaname = 'landrysetting:landadjustment'
+        em.validate(schemaname, landadjustment )
+        
+        def old = em.read(schemaname, landadjustment )
+        if( old ) em.update('landrysetting:landadjustment', landadjustment );
+        else  em.create('landrysetting:landadjustment', landadjustment );
+    }
+    
+    @ProxyMethod
+    public void removeLandAdjustment( landadjustment ) {
+        def schemaname = 'landrysetting:landadjustment';
+        em.delete(schemaname, landadjustment );
+    }
+
+    /*----------------------------------------------------------
+    * LandActualUseAdjustment Methods
+    ----------------------------------------------------------*/
+    @ProxyMethod
+    public void saveLandActualUseAdjustment( landactualuseadjustment ) {
+        def schemaname = 'landrysetting:landactualuseadjustment'
+        em.validate(schemaname, landactualuseadjustment )
+        
+        def old = em.read(schemaname, landactualuseadjustment )
+        if( old ) em.update('landrysetting:landactualuseadjustment', landactualuseadjustment );
+        else  em.create('landrysetting:landactualuseadjustment', landactualuseadjustment );
+    }
+    
+    @ProxyMethod
+    public void removeActualUseLandAdjustment( landactualuseadjustment ) {
+        def schemaname = 'landrysetting:landactualuseadjustment';
+        em.delete(schemaname, landactualuseadjustment );
+    }
+    
+    /*----------------------------------------------------------
+    * Support Methods
+    ----------------------------------------------------------*/
+    List loadAssessLevels( objid )  {
+        def list = em.sqlContext.createNamedQuery('landrysetting:getAssessLevel').setParameter('landrysettingid', objid).resultList
+        list.each {
+            it.ranges = em.serializer.read( it.ranges )
+            it.fixrate = it.fixrate as boolean 
+        }
+        return list 
+    }
+    
+    List loadLCUV( objid )  {
+        def list = em.sqlContext.createNamedQuery('landrysetting:getLCUV').setParameter('landrysettingid', objid).resultList
+
+        return list;
+    }
+    
+    List loadLandAdjustments( objid )  {
+        def list = em.sqlContext.createNamedQuery('landrysetting:getLandAdjustment').setParameter('landrysettingid', objid).resultList
+		
+		list.each{
+			it.classifications = em.serializer.read( it.classifications );
+		}
+		
+        return list;
+    }
+
+    List loadLandActualUseAdjustments( objid )  {
+        def list = em.sqlContext.createNamedQuery('landrysetting:getLandActualUseAdjustment').setParameter('landrysettingid', objid).resultList
+		
+		list.each{
+			it.classifications = em.serializer.read( it.classifications );
+		}
+		
+        return list;
+    }
+
+    
+    void validate( entity ) {
+        if( entity.ry <= 0 ) throw new Exception('Revision Year must be greater than zero.')
+        checkDuplicateSetting( entity )
+        em.validate(entity.schemaname, entity )
+    }
+    
+    void checkDuplicateSetting( entity ) {
+        def data = em.sqlContext.createNamedQuery('landrysetting:checkDuplicate').setParameters( entity ).singleResult
+        if( data ) throw new Exception('Setting for year ' + entity.ry + ' already exists.')
+    }
+    
+    void checkRemoveAllowed( objid ) {
+        //TODO: allow remove if not referenced by landrpu
+    }
+    
+    void removeRYSetting( objid ){
+        em.sqlContext.createNamedExecutor('landrysetting:deleteRYSetting').setParameter('objid', objid ).execute();
+    }
+    
+    void removeAssessLevels( objid ) {
+        em.sqlContext.createNamedExecutor('landrysetting:deleteAssessLevel').setParameter('objid', objid ).execute()
+    }
+	
+	void removeLCUVs( objid ) {
+        em.sqlContext.createNamedExecutor('landrysetting:deleteLCUV').setParameter('objid', objid ).execute();
+    }
+
+	void removeLCUVSpecificClasses( objid ) {
+        em.sqlContext.createNamedExecutor('landrysetting:deleteLCUVSpecificClass').setParameter('objid', objid ).execute();
+    }
+
+	void removeLCUVSubClasses( objid ) {
+        em.sqlContext.createNamedExecutor('landrysetting:deleteLCUVSubClass').setParameter('objid', objid ).execute();
+    }
+
+	void removeLCUVStrippings( objid ) {
+        em.sqlContext.createNamedExecutor('landrysetting:deleteLCUVStripping').setParameter('objid', objid ).execute();
+    }
+
+	void removeLandAdjustments( objid ) {
+        em.sqlContext.createNamedExecutor('landrysetting:deleteLandAdjustment').setParameter('objid', objid ).execute();
+    }
+
+	void removeLandActualUseAdjustments( objid ) {
+        em.sqlContext.createNamedExecutor('landrysetting:deleteLandActualUseAdjustment').setParameter('objid', objid ).execute();
+    }
+	
+}

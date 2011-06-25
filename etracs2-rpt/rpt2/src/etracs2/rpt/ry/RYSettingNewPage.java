@@ -4,16 +4,16 @@
  * Created on June 22, 2011, 10:16 AM
  */
 
-package etracs2.rpt.ry.bldg;
+package etracs2.rpt.ry;
 
 /**
  *
  * @author  jzamora
  */
-public class RYSettingCopyPage extends javax.swing.JPanel {
+public class RYSettingNewPage extends javax.swing.JPanel {
     
     /** Creates new form RYInitPage */
-    public RYSettingCopyPage() {
+    public RYSettingNewPage() {
         initComponents();
     }
     
@@ -28,7 +28,6 @@ public class RYSettingCopyPage extends javax.swing.JPanel {
         xButton2 = new com.rameses.rcp.control.XButton();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
-        xNumberField2 = new com.rameses.rcp.control.XNumberField();
         jLabel1 = new javax.swing.JLabel();
 
         setPreferredSize(new java.awt.Dimension(307, 212));
@@ -48,16 +47,8 @@ public class RYSettingCopyPage extends javax.swing.JPanel {
         xNumberField1.setRequired(true);
         formPanel1.add(xNumberField1);
 
-        xNumberField2.setCaption("Year to Copy");
-        xNumberField2.setCaptionWidth(100);
-        xNumberField2.setFieldType(Integer.class);
-        xNumberField2.setName("copyYear");
-        xNumberField2.setPreferredSize(new java.awt.Dimension(80, 19));
-        xNumberField2.setRequired(true);
-        formPanel1.add(xNumberField2);
-
         jLabel1.setFont(new java.awt.Font("Tahoma", 1, 14));
-        jLabel1.setText("Copy existing Revision Setting:");
+        jLabel1.setText("New Revision Setting:");
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
@@ -100,7 +91,6 @@ public class RYSettingCopyPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
     private com.rameses.rcp.control.XNumberField xNumberField1;
-    private com.rameses.rcp.control.XNumberField xNumberField2;
     // End of variables declaration//GEN-END:variables
     
 }
