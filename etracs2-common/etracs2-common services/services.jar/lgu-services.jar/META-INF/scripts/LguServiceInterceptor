@@ -1,0 +1,17 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+
+class LguServiceInterceptor
+{
+	@PersistenceContext("etracs")
+	def em;
+	
+	@Service("LogService")
+	def logService;
+	
+	@After(pattern="LguService.create")
+	public void interceptCreateLgu( evt ) {	
+		logService.log("CREATE", "LGU", evt.result.objid);
+	}
+	
+}
