@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
+<workunit>
+    <invokers>
+        <invoker type="machrysetting.create" action="create" caption="Create Machine RY Settting" mnemonic="b" icon="images/addnew24.png" target="window"/>
+        <invoker type="machrysetting.open" action="open" caption="Edit Machine RY Settting" mnemonic="b" icon="images/addnew24.png" target="window"/>
+        
+        <invoker type="formActions" action="_close" caption="Close" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="remove" shortcut="ctrl D" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
+    </invokers>
+    <code lang="groovy">
+
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+import java.rmi.server.UID
+
+public class MachRYSettingController 
+{
+    @Binding 
+    def binding
+    
+    @Service('MachRYSettingService')
+    def svc
+    
+    def entity
+    def copyYear
+    def settingType
+    def mode
+    def errorMsg
+   
+    
+    /*---------------------------------------------------------------------
+    * FormAction Support
+    ---------------------------------------------------------------------*/
+    def create() {
+        mode = 'create' 
+        entity = createEntity()
+        if( svc.settingExists() ) {
+            settingType = 'copySetting'
+            return 'copy'
+        }
+        else {
+            settingType = 'newSetting'
+            return 'new' 
+        }
+    }
+    
+    void open() {
+        mode = 'view' 
+        entity = svc.open( entity.objid )
+        assessLevels = entity.assessLevels 
+        forexes = entity.forexes
+        entity.remove( 'assessLevels') 
+        entity.remove( 'forexes' ) 
+    }
+    
+    def createSetting() {
+        if( settingType == 'newSetting' ) {
+            entity = svc.create( entity )
+        }
+        else {
+            entity = svc.copySetting( ry )
+        }
+        return 'default'
+    }
+    
+    void save() {
+        entity = svc.update( entity )
+    }
+    
+    def remove() {
+        if( MsgBox.confirm('Delete setting?') ) {
+            svc.remove( entity.objid )
+            return '_close'
+        }
+        return 'default'
+    }
+    
+    
+
+    /*---------------------------------------------------------------------
+    *
+    * AssessLevel Support
+    *
+    ---------------------------------------------------------------------*/
+    def selectedAssessLevel
+    def selectedRangeLevel
+    def assessLevels = [] 
+    
+    def assessLevelListHandler = [
+        createItem : { return createAssessLevel() },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'code', caption:'Code*', maxWidth:60, editable:true ),
+            new Column(name:'name', caption:'Name*', editable:true ),
+            new Column(name:'fixrate', caption:'Fix?*', type:'boolean', maxWidth:40, editable:true ),
+            new Column(name:'rate', caption:'Rate*', type:'decimal', editable:true ),
+        ]},
+        validate       : { li -> doValidateAssessLevel( li.item ) },
+        onRemoveItem   : { item -> removeAssessLevel( item ) },
+        onAddItem      : { item -> assessLevels.add( item ) },
+        onColumnUpdate : { item, colName -> 
+            if( colName == 'fixrate' && item.fixrate == true ) {
+                selectedAssessLevel?.ranges?.clear()
+                rangeLevelListHandler.load()
+            }
+        },
+        fetchList      : { return assessLevels },
+    ] as SubListModel
+    
+    
+    def rangeLevelListHandler = [
+        createItem : { return createRangeAssessLevel() },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'mvfrom', caption:'Market Value From', type:'decimal'),
+            new Column(name:'mvto', caption:'Market Value To', type:'decimal', editable:true, editableWhen:'#{root.allowRangeColumnEdit[item]}' ),
+            new Column(name:'rate', caption:'Rate*', type:'decimal', editable:true, editableWhen:'#{root.allowRangeColumnEdit[item]}' ),
+        ]},
+        validate     : { li -> doValidateAssessLevelRange( li.item ) },
+        onAddItem    : { item -> 
+            selectedAssessLevel.ranges.add( item ) 
+            svc.saveAssessLevel( selectedAssessLevel )
+        },
+        onRemoveItem   : { item -> doRemoveRangeItem( item ) },
+        fetchList    : { return selectedAssessLevel.ranges  },
+    ] as SubListModel
+    
+    def allowRangeColumnEdit = { item ->
+        if( ! selectedAssessLevel ) return false
+        if( selectedAssessLevel.fixrate == true ) return false
+        if( isFirstItem( selectedAssessLevel.ranges ) ) return true
+        if( isNewEntry( item.mvfrom ) ) return true
+        return isLastItem( selectedAssessLevel.ranges, item )
+    } as Map
+    
+    void doValidateAssessLevel( al ) {
+        try {
+            errorMsg = null 
+            required(al.code, 'Code')
+            required(al.name, 'Name')
+            validateRate( al.rate )
+            checkDuplicateAssessLevel( al )
+            svc.saveAssessLevel( al ) 
+            binding.refresh('errorMsg') 
+        }
+        catch( e ) {
+            errorMsg = e.message
+            binding.refresh('errorMsg') 
+            throw e 
+        }
+    }
+    
+    void checkDuplicateAssessLevel( al ) {
+        def item = assessLevels.find{ it.objid != al.objid && it.code == al.code  }
+        if( item ) throw new Exception('Duplicate code is not allowed.')    
+        item = assessLevels.find{ it.objid != al.objid && it.name == al.name  }
+        if( item ) throw new Exception('Duplicate name is not allowed.')    
+    }
+    
+    void removeAssessLevel( item ) {
+        if( MsgBox.confirm('Remove item?' ) ) {
+            svc.removeAssessLevel( selectedAssessLevel )
+            assessLevels.remove( item )
+        }
+    }
+    
+    void doRemoveRangeItem( item ) {
+        if( isLastItem( selectedAssessLevel.ranges, item ) ) {
+            selectedAssessLevel.ranges.remove( item )
+            svc.saveAssessLevel( selectedAssessLevel )
+        }
+    }
+    
+    void doValidateAssessLevelRange( range ) {
+        def lastRange = null 
+        if( selectedAssessLevel.ranges ) {
+            lastRange = selectedAssessLevel.ranges.get( selectedAssessLevel.ranges.size() - 1 )
+        }
+        if( ! range.mvfrom ) {
+            range.mvfrom = (lastRange ? lastRange.mvto : 0.0)
+        }
+        
+        try {
+            errorMsg = null
+            if( range.mvto < range.mvfrom && range.mvto != 0  ) throw new Exception('MV To must be greater than MV From')
+            validateRate( range.rate )
+            svc.saveAssessLevel( selectedAssessLevel )
+            binding.refresh('errorMsg') 
+        }
+        catch( e ) {
+            errorMsg = e.message 
+            binding.refresh('errorMsg') 
+            throw e 
+        }
+    }
+    
+    
+    /*---------------------------------------------------------------------
+    *
+    * Forex Support
+    *
+    ---------------------------------------------------------------------*/
+    def forexes = []
+    
+    def forexListHandler  = [
+        createItem : { return createForex() },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'iyear', caption:'Year*', type:'integer', editableWhen:'#{root.allowYearColumnEdit[item]}' ),
+            new Column(name:'forex', caption:'Rate*', type:'decimal', editableWhen:'#{root.allowRateColumnEdit[item]}' ),
+        ]},
+        validate     : { li -> validateForex( li.item ) },
+        onAddItem    : { item -> 
+            forexes.add( item )
+            svc.saveForex( item )
+        },
+        onRemoveItem : { item -> removeForex( item ) },
+        fetchList    : { return forexes },
+    ] as SubListModel
+    
+    
+    def allowYearColumnEdit = { item ->
+        if( isFirstItem( forexes ) ) return true
+        return false 
+    } as Map
+    
+    def allowRateColumnEdit = { item ->
+        if( isFirstItem( forexes ) ) return true
+        if( isNewEntry( item.iyear ) ) return true
+        return isLastItem( forexes, item )
+    } as Map
+    
+    void removeForex( forex ) {
+        if( isLastItem( forexes, forex ) ) {
+            forexes.remove( forex )
+            svc.removeForex( forex ) 
+        }
+    }
+    
+    void validateForex( forex ) {
+        def lastItem = null 
+        if( forexes ) {
+            lastItem = forexes.get( forexes.size() - 1 )
+        }
+        if( ! forex.iyear ) forex.iyear = (lastItem ? lastItem.iyear + 1 : 1)
+        try {
+            errorMsg = null
+            validateRate( forex.forex )
+            svc.saveForex( forex )
+        }
+        catch( e ) {
+            println e.message 
+            errorMsg = e.message 
+            binding.refresh('errorMsg') 
+            throw e 
+        }
+    }
+    
+    
+    
+    /*---------------------------------------------------------------------
+    *
+    * Create Records Support
+    *
+    ---------------------------------------------------------------------*/
+    Map createEntity() {
+        return [
+            objid       : 'MRY' + new UID(),
+            ry          : null,
+        ]
+    }
+    
+    Map createAssessLevel() {
+        return [ 
+            objid           : 'AL' + new UID(),
+            machrysettingid : entity.objid,
+            fixrate         : true,
+            rate            : 0.0,
+            ranges          : [],
+        ]
+    }
+    
+    Map createRangeAssessLevel() {
+        return [ 
+            mvfrom  : null,
+            mvto    : null,
+            rate    : 0.0,
+        ]
+    }
+    
+    Map createForex() {
+        return [
+            objid           : 'BT' + new UID(),
+            iyear           : null, 
+            machrysettingid : entity.objid,
+        ]
+    }
+    
+    /*---------------------------------------------------------------------
+    *
+    * Common Methods 
+    *
+    ---------------------------------------------------------------------*/
+    void required( value, caption ) {
+        if( ! value ) throw new Exception(caption + ' is required.') 
+    }
+    
+    void validateRate( rate ) {
+        if( rate < 0.0 ) throw new Exception('Rate must be greater than or equal to zero.')
+        if( rate > 100) throw new Exception('Rate must not exceed 100.00')
+    }
+    
+    def isFirstItem( list ) {
+        return list.size() == 0
+    }
+    
+    def isNewEntry( value ) {
+        return value == null 
+    }
+    
+    def isLastItem( list, item ) {
+        def index = list.indexOf( item )
+        if( index < 0 ) 
+            index = list.size()
+        else
+            index += 1 
+        return list.size() == index 
+    }
+}
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.ry.mach.MachRYSettingPage"/>
+        <page name="new" template="etracs2.rpt.ry.bldg.RYSettingNewPage"/>
+        <page name="copy" template="etracs2.rpt.ry.bldg.RYSettingCopyPage"/>
+    </pages>
+</workunit>

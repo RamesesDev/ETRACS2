@@ -35,15 +35,15 @@ class LookupPropertyClassificationController extends LookupModel
     
     Column[] getColumns() {
         return [
-            new Column(name:"propertycode", caption:"Code", width:70),
-            new Column(name:"propertydesc", caption:"Description", width:250),
+            new Column(name:"classcode", caption:"Code", width:70),
+            new Column(name:"classname", caption:"Description", width:250),
         ]
     }
     
     List fetchList( Map params ) { 
         def s = search
         if( !s ) s = searchText 
-        def list = svc.getList( s, params);
+        def list = svc.getLookup( s, params);
         if( list ) return list;
         throw new Exception("Record not found.");
     }

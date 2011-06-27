@@ -1,0 +1,45 @@
+<schema>
+	<element name="planttreerysetting" tablename="planttreerysetting">
+		<field name="objid" primary="true"/>
+		<field name="schemaname" required="true"/>
+		<field name="schemaversion" required="true"/>
+		<field name="ry" required="true" type="integer" />
+		<field name="applyagriadjustment" required="true" type="boolean" />
+        <field name="previd"  />
+        <complex name="assesslevels" ref="assesslevel" type="list" serializer="default" />
+        <complex name="planttreeunits" ref="planttreeunit" type="list" serializer="default" />
+	</element>
+	
+    <!-- AssessLevels -->
+	<element name="assesslevel">
+        <field name="objid" required="true" />
+		<field name="code" required="true"/>
+		<field name="name" required="true" />
+		<field name="rate" required="true" type="decimal" />
+        <field name="previd"  />
+	</element>
+    
+    <!-- planttreeunit -->
+	<element name="planttreeunit">
+        <field name="planttreerysettingid" required="true"/>
+        <field name="planttreeid" required="true"/>
+        <field name="planttreecode" required="true"/>
+        <field name="planttreename" required="true"/>
+	</element>
+    
+    <!-- planttreeunitvalue -->
+	<element name="planttreeunitvalue" tablename="planttreeunitvalue" >
+        <field name="objid" primary="true" />
+        <field name="planttreerysettingid" required="true"/>
+        <field name="planttreeid" required="true"/>
+        <field name="planttreecode" required="true"/>
+        <field name="planttreename" required="true"/>
+        <field name="code" required="true"/>
+        <field name="name" required="true"/>
+        <field name="unitvalue" type="decimal" required="true"/>
+        <field name="previd" />
+	</element>
+    
+	
+	
+</schema>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
+<workunit>
+    <invokers>
+        <invoker type="rysettingmgmt.type" caption="Machinery" index="30" />
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null }" immediate="true" caption="Open" mnemonic="e" icon="images/edit24.png" />
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{selectedItem != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[        
+
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+public class MachRYSettingMgmtController
+{
+    @Binding
+    def binding
+    
+    @Service('MachRYSettingService')
+    def svc 
+    
+    def searchText
+    def selectedItem
+    
+    def create() {
+        return InvokerUtil.lookupOpener('machrysetting.create', null)
+    }
+    
+    def open() {
+        return InvokerUtil.lookupOpener('machrysetting.open', [entity:selectedItem])
+    }
+    
+    void delete() {
+        if( selectedItem && MsgBox.confirm('Delete setting?') ) {
+            svc.remove( selectedItem.objid )
+            search()
+        }
+    }
+    
+    void search() {
+        listHandler.load()
+    }
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'ry', caption:'Revision Year', maxWidth:150),
+        ]},
+        fetchList  : { return svc.getList( searchText ) },
+    ] as SubListModel
+}
+
+]]>
+    </code>    
+    
+    <pages>
+        <page template="etracs2.rpt.ry.RYListMgmtPage" />
+    </pages>
+</workunit>

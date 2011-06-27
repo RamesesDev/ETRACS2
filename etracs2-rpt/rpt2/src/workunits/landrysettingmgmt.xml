@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="rysettingmgmt.type" caption="Land" />
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null }" immediate="true" caption="Open" mnemonic="e" icon="images/edit24.png" />
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{selectedItem != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[        
+
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+public class LandRYSettingMgmtController
+{
+    @Binding
+    def binding
+    
+    @Service('LandRYSettingService')
+    def svc 
+    
+    def searchText
+    def selectedItem
+    
+    def create() {
+        return InvokerUtil.lookupOpener('landrysetting.create', null)
+    }
+    
+    def open() {
+        return InvokerUtil.lookupOpener('landrysetting.open', [entity:selectedItem])
+    }
+    
+    void delete() {
+        if( selectedItem && MsgBox.confirm('Delete setting?') ) {
+            svc.remove( selectedItem.objid )
+            search()
+        }
+    }
+    
+    void search() {
+        listHandler.load()
+    }
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'ry', caption:'Revision Year', alignment:'left'),
+        ]},
+        fetchList  : { return svc.getList( searchText ) },
+    ] as SubListModel
+}
+
+]]>
+    </code>    
+    
+    <pages>
+        <page template="etracs2.rpt.ry.RYListMgmtPage" />
+    </pages>
+</workunit>

@@ -56,17 +56,15 @@ public class BldgRYSettingService
     
     @ProxyMethod 
     public Map open( objid ) {
-        def data = [:]
         def entity = em.read('bldgrysetting', [objid:objid])
         if( !entity ) throw new Exception('Unable to load Revision Setting.\nVerify that the record still exists.' )
         entity.predominant = entity.predominant as boolean 
         entity.depreciatecoreanditemseparately = entity.depreciatecoreanditemseparately as boolean 
         entity.computedepreciationbasedonschedule = entity.computedepreciationbasedonschedule as boolean 
-        data.entity = entity 
-        data.assessLevels = loadAssessLevels( objid )
-        data.additionalItems = loadBldgAdjustments( objid ) 
-        data.bldgTypes = loadBldgTypes( objid )
-        return data 
+        entity.assessLevels = loadAssessLevels( objid )
+        entity.additionalItems = loadBldgAdjustments( objid ) 
+        entity.bldgTypes = loadBldgTypes( objid )
+        return entity 
     }
     
     @ProxyMethod

@@ -1,0 +1,606 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="landrysetting.create" action="create" caption="Create Land" mnemonic="b" icon="images/addnew24.png" target="window"/>
+        <invoker type="landrysetting.open" action="open" caption="Edit Land" mnemonic="b" icon="images/addnew24.png" target="window"/>
+        
+        <invoker type="formActions" action="_close" caption="Close" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="remove" shortcut="ctrl D" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
+        
+    </invokers>
+    <code lang="groovy">
+
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+import java.rmi.server.UID
+
+public class LandRYSettingController 
+{
+    @Binding 
+    def binding
+    
+    @Service('LandRYSettingService')
+    def svc
+    
+    def entity;
+    def copyYear;
+    def settingType;
+    def mode;
+    
+    def landadjustments = [];
+    def landactualuseadjustments = [];
+
+    
+    def create() {
+        entity = createEntity();
+        if( svc.settingExists() ) {
+            settingType = 'copySetting';
+            return 'copy';
+        }
+        else {
+            settingType = 'newSetting';
+            return 'new';
+        }
+    }
+    
+    void open() {
+        def data = svc.open( entity.objid );
+        entity = data.entity;
+        assessLevels = data.assessLevels;
+        lcuv = data.lcuv;
+        landadjustments = data.landadjustments;
+        landactualuseadjustments = data.landactualuseadjustments;
+    }
+    
+    def createSetting() {
+        if( settingType == 'newSetting' ) {
+            entity = svc.create( entity );
+            lcuv = entity.lcuv;
+            entity.remove( "lcuv" );
+        }
+        else {
+            entity = svc.copySetting( ry )
+        }
+        return 'default'
+    }
+    
+    void save() {
+        entity = svc.update( entity );
+    }
+    
+    def remove() {
+        if( MsgBox.confirm('Delete setting?') ) {
+            svc.remove( entity.objid )
+            return '_close'
+        }
+        return 'default'
+    }
+
+    /*---------------------------------------------------------------------
+    *
+    * AssessLevel Support
+    *
+    ---------------------------------------------------------------------*/
+    def selectedAssessLevel
+    def selectedRangeLevel
+    def assessLevelMsg 
+    def assessLevels = [] 
+    
+    def assessLevelListHandler = [
+        createItem : { return createAssessLevel() },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'classcode', caption:'Code*', maxWidth:60, editable:true ),
+            new Column(name:'classname', caption:'Name*', editable:true ),
+            new Column(name:'fixrate', caption:'Fix?*', type:'boolean', maxWidth:40, editable:true ),
+            new Column(name:'rate', caption:'Rate (%)*', type:'decimal', editable:true ),
+        ]},
+        validate       : { li -> doValidateAssessLevel( li.item ) },
+        onRemoveItem   : { item -> 
+            doRemoveItem( assessLevels, item) 
+            svc.removeAssessLevel( selectedAssessLevel )
+        },
+        onAddItem      : { item -> assessLevels.add( item ) },
+        onColumnUpdate : { item, colName -> 
+            if( colName == 'fixrate' && item.fixrate == true ) {
+                selectedAssessLevel?.ranges?.clear()
+                rangeLevelListHandler.load()
+            }
+        },
+        fetchList      : { return assessLevels },
+    ] as SubListModel
+    
+    
+    def rangeLevelListHandler = [
+        createItem : { return createRangeAssessLevel() },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'mvfrom', caption:'Market Value From', type:'decimal'),
+            new Column(name:'mvto', caption:'Market Value To', type:'decimal', editable:true, editableWhen:'#{root.allowRangeColumnEdit[item]}' ),
+            new Column(name:'rate', caption:'Rate (%)*', type:'decimal', editable:true, editableWhen:'#{root.allowRangeColumnEdit[item]}' ),
+        ]},
+        validate     : { li -> doValidateAssessLevelRange( li.item ) },
+        onAddItem    : { item -> 
+            selectedAssessLevel.ranges.add( item ) 
+            svc.saveAssessLevel( selectedAssessLevel )
+        },
+        onRemoveItem   : { item -> doRemoveRangeItem( item ) },
+        fetchList    : { return selectedAssessLevel.ranges  },
+    ] as SubListModel
+    
+    def allowRangeColumnEdit = { item ->
+        if( ! selectedAssessLevel ) return false
+        if( selectedAssessLevel.fixrate == true ) return false
+        if( isFirstItem( selectedAssessLevel.ranges ) ) return true
+        if( isNewEntry( item.mvfrom ) ) return true
+        return isLastItem( selectedAssessLevel.ranges, item )
+    } as Map
+    
+    void doValidateAssessLevel( al ) {
+        assessLevelMsg = null 
+        try {
+            required(al.classcode, 'Code')
+            required(al.classname, 'Name')
+            validateRate( al.rate )
+            checkDuplicateAssessLevel( al )
+            svc.saveAssessLevel( al ) 
+        }
+        catch( e ) {
+            assessLevelMsg = e.message
+            binding.refresh('assessLevelMsg') 
+            throw e 
+        }
+    }
+    
+    void checkDuplicateAssessLevel( al ) {
+        def item = assessLevels.find{ it.objid != al.objid && (it.classcode == al.classcode || it.classname == al.classname )  }
+        if( item ) throw new Exception('Duplicate item is not allowed.')    
+    }
+    
+    void doRemoveRangeItem( item ) {
+        if( isLastItem( selectedAssessLevel.ranges, item ) ) {
+            selectedAssessLevel.ranges.remove( item )
+            svc.saveAssessLevel( selectedAssessLevel )
+        }
+    }
+    
+    void doValidateAssessLevelRange( range ) {
+        def lastRange = null 
+        if( selectedAssessLevel.ranges ) {
+            lastRange = selectedAssessLevel.ranges.get( selectedAssessLevel.ranges.size() - 1 )
+        }
+        range.mvfrom = (lastRange ? lastRange.mvto : 0.0)
+        
+        assessLevelMsg = null
+        try {
+            if( range.mvto < range.mvfrom && range.mvto != 0  ) throw new Exception('MV To must be greater than MV From')
+            validateRate( range.rate )
+            svc.saveAssessLevel( selectedAssessLevel )
+        }
+        catch( e ) {
+            assessLevelMsg = e.message 
+            binding.refresh('assessLevelMsg') 
+            throw e 
+        }
+    }
+    
+    /*---------------------------------------------------------------------
+    *
+    * LCUV Support
+    *
+    ---------------------------------------------------------------------*/
+    def selectedLCUV;
+    def selectedSpecificClass;
+    def selectedSubClass;
+    def selectedStripping;
+    def lcuvMsg;
+    def lcuv = [];
+
+    
+    def lcuvListHandler = [
+        createItem : { return createLCUV() },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'classname', caption:'Classification', editable:true ),
+        ]},
+        validate       : { li -> doValidateLCUV( li.item) },
+        onRemoveItem   : { item -> 
+            doRemoveItem( lcuv, item) 
+            svc.removeLCUV( selectedLCUV )
+        },
+        onAddItem      : { item -> lcuv.add( item ); },
+        fetchList      : { return lcuv; },
+    ] as SubListModel
+    
+    
+    def specificClassListHandler = [
+        createItem : { return createSpecificClass(); },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'classcode', caption:'Code', maxWidth:60, editable:true, editableWhen:'#{root.allowColumnEdit[item]}' ),
+            new Column(name:'classname', caption:'Name', editable:true, editableWhen:'#{root.allowColumnEdit[item]}' ),
+            new Column(name:'areatype', caption:'Area Type', editable:true, editableWhen:'#{root.allowColumnEdit[item]}' ),
+        ]},
+        validate     : { li -> doValidateSpecificClass( li.item ) },
+        onAddItem    : { item -> 
+            selectedSpecificClass = item;
+            svc.saveLCUVSpecificClass( selectedSpecificClass );
+        },
+        onRemoveItem   : { item -> doRemoveSpecificClassItem( item ) },
+        fetchList    : { 
+            if( !selectedLCUV ) return [];
+            selectedSpecificClass = svc.openSpecificClass( selectedLCUV.objid );
+            if( selectedSpecificClass == null ) selectedSpecificClass = [];
+            
+            return selectedSpecificClass;  
+        },
+    ] as SubListModel
+    
+    def subClassListHandler = [
+        createItem : { return createSubClass(); },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'subclasscode', caption:'Code', maxWidth:60, editable:true, editableWhen:'#{root.allowSubClassColumnEdit[item]}' ),
+            new Column(name:'subclassname', caption:'Name', editable:true, editableWhen:'#{root.allowSubClassColumnEdit[item]}' ),
+            new Column(name:'unitvalue', caption:'Unit Value', type:'decimal', editable:true, editableWhen:'#{root.allowSubClassColumnEdit[item]}' ),
+        ]},
+        validate     : { li -> doValidateSubClass( li.item ) },
+        onAddItem    : { item -> 
+            item.specificclassid = selectedSpecificClass.objid;
+            selectedSubClass = item;
+            svc.saveLCUVSubClass( selectedSubClass );
+        },
+        onRemoveItem   : { item -> doRemoveSubClassItem( item ) },
+        fetchList    : { 
+            if( !selectedSpecificClass ) return [];
+            selectedSubClass = svc.openSubClass( selectedSpecificClass.objid );
+            if( selectedSubClass == null ) selectedSubClass = [];
+            
+            return selectedSubClass; 
+        },
+    ] as SubListModel
+    
+    def strippingListHandler = [
+        createItem : { return createStripping(); },
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'striplevel', caption:'Stripping Level', type:'integer', editable:true, editableWhen:'#{root.allowColumnEdit[item]}' ),
+            new Column(name:'rate', caption:'Rate (%)', type:'decimal', editable:true, editableWhen:'#{root.allowColumnEdit[item]}' ),
+        ]},
+        validate     : { li -> doValidateStripping( li.item ) },
+        onAddItem    : { item -> 
+            selectedStripping = item;
+            svc.saveLCUVStripping( selectedStripping );
+        },
+        onRemoveItem   : { item -> doRemoveStrippingItem( item ) },
+        fetchList    : { 
+            if( !selectedLCUV ) return [];
+            selectedStripping = svc.openStripping( selectedLCUV.objid );
+            if( selectedStripping == null ) selectedStripping = [];
+            
+            return selectedStripping;  
+        },
+    ] as SubListModel
+    
+    def allowColumnEdit = { item ->
+        if( !selectedLCUV.classid ) return false;
+        return true;
+    } as Map
+    
+    def allowSubClassColumnEdit = { item ->
+        if( !selectedLCUV.classid ) return false;
+        if( !selectedSpecificClass.classcode ) return false;
+        return true;
+    } as Map
+    
+    void doValidateLCUV( al ) {
+        lcuvMsg = null 
+        try {
+            required(al.classname, 'Classification')
+            checkDuplicateLCUV( al );
+            svc.saveLCUV( al ); 
+        }
+        catch( e ) {
+            lcuvMsg = e.message
+            binding.refresh('lcuvMsg') 
+            throw e 
+        }
+    }
+    
+    void checkDuplicateLCUV( al ) {
+        def item = lcuv.find{ it.objid != al.objid && ( it.classname == al.classname )  }
+        if( item ) throw new Exception('Duplicate item is not allowed.')    
+    }
+    
+    void doRemoveSpecificClassItem( item ) {
+        selectedSpecificClass.remove( item );
+        svc.removeLCUVSpecificClass( item );
+    }
+    
+    void doValidateSpecificClass( sc ) {
+        lcuvMsg = null
+        try {
+            required( sc.classcode, 'Code' );
+            required( sc.classname, 'Name' );
+            required( sc.areatype, 'Area Type' );
+        }
+        catch( e ) {
+            lcuvMsg = e.message 
+            binding.refresh('lcuvMsg') 
+            throw e 
+        }
+    }
+    
+    void doRemoveSubClassItem( item ) {
+        selectedSubClass.remove( item );
+        svc.removeLCUVSubClass( item );
+    }
+    
+    void doValidateSubClass( sc ) {
+        lcuvMsg = null
+        try {
+            required( sc.subclasscode, 'Code' );
+            required( sc.subclassname, 'Name' );
+            required( sc.unitvalue, 'unitvalue' );
+        }
+        catch( e ) {
+            lcuvMsg = e.message 
+            binding.refresh('lcuvMsg') 
+            throw e 
+        }
+    }
+    
+    void doRemoveStrippingItem( item ) {
+        selectedStripping.remove( item );
+        svc.removeLCUVStripping( item );
+    }
+    
+    void doValidateStripping( st ) {
+        lcuvMsg = null
+        try {
+            required( st.striplevel, 'Stripping Level' );
+            validateRate( st.rate );
+        }
+        catch( e ) {
+            lcuvMsg = e.message 
+            binding.refresh('lcuvMsg') 
+            throw e 
+        }
+    }
+    
+    void setSelectedLCUV( item ){
+        selectedLCUV = item;
+    }
+    
+    void setSelectedSpecificClass( item ){
+        selectedSpecificClass = item;
+    }
+    
+    
+    /*---------------------------------------------------------------------
+    *
+    * LandAdjustment Support
+    *
+    ---------------------------------------------------------------------*/
+    def selectedLandAdjustment;
+    
+    
+    def landAdjustmentListHandler = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'adjustmentcode', caption:'Code', maxWidth:60),
+            new Column(name:'adjustmentname', caption:'Name'),
+            new Column(name:'appliedto', caption:'Applied To', maxWidth:150 ),
+            new Column(name:'expression', caption:'Expression'),
+        ]},
+        onRemoveItem   : { item -> doRemoveLandAdjustmentItem( item ) },
+        fetchList      : { return landadjustments; },
+    ] as SubListModel 
+
+    
+    def addLandAdjustmentHandler = { item -> 
+        item.appliedto = item.classifications.propertycode.join(',');
+        item.landrysettingid = entity.objid
+        svc.saveLandAdjustment( item ) 
+        landadjustments.add( item )
+        landAdjustmentListHandler.load()
+    }
+    
+    def updateLandAdjustmentHandler = { item -> 
+        item.appliedto = item.classifications.propertycode.join(',');
+        svc.saveLandAdjustment( item ) 
+        landadjustments.set( landadjustments.indexOf( selectedLandAdjustment ), item )
+        binding.refresh('selectedLandAdjustment')
+    }
+    
+    def createLandAdjustment() {
+        return InvokerUtil.lookupOpener('landadjustment.create', [addHandler:addLandAdjustmentHandler] )
+    }
+    
+    def openLandAdjustment() {
+        return InvokerUtil.lookupOpener('landadjustment.open', [entity:selectedLandAdjustment, updateHandler:updateLandAdjustmentHandler] )
+    }
+    
+    void removeLandAdjustment() {
+        if( selectedLandAdjustment ) {
+            doRemoveLandAdjustmentItem( selectedLandAdjustment )
+        }
+    }
+    
+    
+    void doRemoveLandAdjustmentItem( item ) {
+        if( MsgBox.confirm('Remove item?') ) {
+            svc.removeLandAdjustment( selectedLandAdjustment )
+            landadjustments.remove( item )
+        }
+    }
+    
+    
+    /*---------------------------------------------------------------------
+    *
+    * LandActualUseAdjustment Support
+    *
+    ---------------------------------------------------------------------*/
+    def selectedLandActualUseAdjustment;
+    
+    
+    def landActualUseAdjustmentListHandler = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'adjustmentcode', caption:'Code', maxWidth:60),
+            new Column(name:'adjustmentname', caption:'Name'),
+            new Column(name:'unit', caption:'Unit', maxWidth:180),
+            new Column(name:'appliedto', caption:'Applied To' ),
+            new Column(name:'computation', caption:'Expression'),
+        ]},
+        onRemoveItem   : { item -> doRemoveLandActualUseAdjustmentItem( item ) },
+        fetchList      : { return landactualuseadjustments; },
+    ] as SubListModel 
+
+    
+    def addLandActualUseAdjustmentHandler = { item -> 
+        item.appliedto = item.classifications.propertycode.join(',');
+        item.landrysettingid = entity.objid
+        svc.saveLandActualUseAdjustment( item ) 
+        landactualuseadjustments.add( item )
+        landActualUseAdjustmentListHandler.load()
+    }
+    
+    def updateLandActualUseAdjustmentHandler = { item -> 
+        item.appliedto = item.classifications.propertycode.join(',');
+        svc.saveLandActualUseAdjustment( item ) 
+        landactualuseadjustments.set( landactualuseadjustments.indexOf( selectedLandActualUseAdjustment ), item )
+        binding.refresh('selectedLandActualUseAdjustment')
+    }
+    
+    def createLandActualUseAdjustment() {
+        return InvokerUtil.lookupOpener('landactualuseadjustment.create', [addHandler:addLandActualUseAdjustmentHandler] )
+    }
+    
+    def openLandActualUseAdjustment() {
+        return InvokerUtil.lookupOpener('landadjustment.open', [entity:selectedLandActualUseAdjustment, updateHandler:updateLandActualUseAdjustmentHandler] )
+    }
+    
+    void removeLandActualUseAdjustment() {
+        if( selectedLandActualUseAdjustment ) {
+            doRemoveLandActualUseAdjustmentItem( selectedLandActualUseAdjustment )
+        }
+    }
+    
+    
+    void doRemoveLandActualUseAdjustmentItem( item ) {
+        if( MsgBox.confirm('Remove item?') ) {
+            svc.removeLandActualUseAdjustment( selectedLandActualUseAdjustment )
+            landactualuseadjustments.remove( item )
+        }
+    }
+    
+    
+    
+    /*---------------------------------------------------------------------
+    * Create Records Support
+    ---------------------------------------------------------------------*/
+    Map createEntity() {
+        return [
+            objid       : 'LRY' + new UID(),
+            ry          : null
+        ]
+    }
+    
+    Map createAssessLevel() {
+        return [ 
+            objid           : 'AL' + new UID(),
+            landrysettingid : entity.objid,
+            fixrate         : true,
+            rate            : 0.0,
+            ranges          : [],
+        ]
+    }
+    
+    Map createRangeAssessLevel() {
+        return [ 
+            mvfrom  : null,
+            mvto    : null,
+            rate    : 0.0,
+        ]
+    }
+    
+    Map createLCUV() {
+        return [ 
+            objid           : 'AL' + new UID(),
+            landrysettingid : entity.objid,
+        ]
+    }
+    
+    Map createSpecificClass() {
+        return [ 
+            objid           : 'SC' + new UID(),
+            areatype        : 'SQM',
+            lcuvid          : selectedLCUV.objid,
+            landrysettingid : entity.objid
+        ]
+    }
+    
+    Map createSubClass() {
+        return [ 
+            objid           : 'SC' + new UID(),
+            unitvalue       : 0.0,
+            landrysettingid : entity.objid,
+        ]
+    }
+    
+    Map createStripping() {
+        return [ 
+            objid           : 'ST' + new UID(),
+            rate            : 0.0,
+            lcuvid          : selectedLCUV.objid,
+            landrysettingid : entity.objid,
+        ]
+    }
+    
+    /*---------------------------------------------------------------------
+    * Common Methods 
+    ---------------------------------------------------------------------*/
+    void required( value, caption ) {
+        if( ! value ) throw new Exception(caption + ' is required.') 
+    }
+    
+    void doRemoveItem( list, item ) {
+        if( MsgBox.confirm('Remove item?') ) {
+            list.remove( item )
+        }
+    }
+    
+    void validateRate( rate ) {
+        if( rate < 0.0 ) throw new Exception('Rate must be greater than or equal to zero.')
+        if( rate > 100) throw new Exception('Rate must not exceed 100.00')
+    }
+    
+    def isFirstItem( list ) {
+        return list.size() == 0
+    }
+    
+    def isNewEntry( value ) {
+        return value == null 
+    }
+    
+    def isLastItem( list, item ) {
+        return list.size() == list.indexOf( item ) + 1
+    }
+}
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.ry.land.LandRYSettingPage"/>
+        <page name="new" template="etracs2.rpt.ry.RYSettingNewPage"/>
+        <page name="copy" template="etracs2.rpt.ry.RYSettingCopyPage"/>
+    </pages>
+</workunit>

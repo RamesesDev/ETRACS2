@@ -33,6 +33,7 @@ public class BldgRYSettingController
     def copyYear
     def settingType
     def mode
+    def errorMsg 
    
     
     /*---------------------------------------------------------------------
@@ -53,17 +54,21 @@ public class BldgRYSettingController
     
     void open() {
         mode = 'view' 
-        def data = svc.open( entity.objid )
-        entity = data.entity
-        assessLevels = data.assessLevels 
-        additionalItems = data.additionalItems
+        entity = svc.open( entity.objid )
+        assessLevels = entity.assessLevels 
+        additionalItems = entity.additionalItems
         selectedAssessLevel = ( assessLevels ? assessLevels[0] : null )
-        bldgTypes  = data.bldgTypes
+        bldgTypes  = entity.bldgTypes
         
         if( bldgTypes ) {
             selectedBldgType = bldgTypes[0]
             setBaseValueType( selectedBldgType.basevaluetype )
         }
+        
+        entity.remove('assessLevels')
+        entity.remove('additionalItems')
+        entity.remove('bldgTypes')
+        
     }
     
     def createSetting() {
@@ -148,18 +153,19 @@ public class BldgRYSettingController
     } as Map
     
     void doValidateAssessLevel( al ) {
-        assessLevelMsg = null 
         try {
+            errorMsg = null 
             required(al.code, 'Code')
             required(al.name, 'Name')
             validateRate( al.rate )
             checkDuplicateAssessLevel( al )
             svc.saveAssessLevel( al ) 
-            binding.refresh('assessLevelMsg') 
+            binding.refresh('errorMsg') 
         }
         catch( e ) {
-            assessLevelMsg = e.message
-            binding.refresh('assessLevelMsg') 
+            println e.message
+            errorMsg = e.message
+            binding.refresh('errorMsg') 
             throw e 
         }
     }
@@ -190,18 +196,21 @@ public class BldgRYSettingController
         if( selectedAssessLevel.ranges ) {
             lastRange = selectedAssessLevel.ranges.get( selectedAssessLevel.ranges.size() - 1 )
         }
-        range.mvfrom = (lastRange ? lastRange.mvto : 0.0)
+        if( ! range.mvfrom ) {
+            range.mvfrom = (lastRange ? lastRange.mvto : 0.0)
+        }
         
-        assessLevelMsg = null
         try {
+            errorMsg = null
             if( range.mvto < range.mvfrom && range.mvto != 0  ) throw new Exception('MV To must be greater than MV From')
             validateRate( range.rate )
             svc.saveAssessLevel( selectedAssessLevel )
-            binding.refresh('assessLevelMsg') 
+            binding.refresh('errorMsg') 
         }
         catch( e ) {
-            assessLevelMsg = e.message 
-            binding.refresh('assessLevelMsg') 
+            println e.message 
+            errorMsg = e.message 
+            binding.refresh('errorMsg') 
             throw e 
         }
     }
@@ -275,7 +284,6 @@ public class BldgRYSettingController
     * BldgType Support
     *
     ---------------------------------------------------------------------*/
-    def bldgTypeMsg
     def bldgTypes = [] 
     def selectedBldgType = [multistoreyadjustments:[], depreciations:[]]
     
@@ -301,16 +309,15 @@ public class BldgRYSettingController
     
     void validateBldgType( bldgType ) {
         try {
-            bldgTypeMsg = null
+            errorMsg = null
             required( bldgType.code, 'Code' )
             required( bldgType.name, 'Bldg Type' )
             checkDuplicateBldgType( bldgType )
             svc.saveBldgType( bldgType )
-            binding.refresh('bldgTypeMsg')
         }
         catch ( e ) {
-            bldgTypeMsg = e.message
-            binding.refresh('bldgTypeMsg')
+            errorMsg = e.message
+            binding.refresh('errorMsg')
             throw e 
         }
     }
@@ -374,13 +381,13 @@ public class BldgRYSettingController
         }
         if( ! item.floorno ) item.floorno = (lastItem ? lastItem.floorno + 1 : 1)
         try {
-            bldgTypeMsg = null 
+            errorMsg = null 
             validateRate( item.rate )
             svc.saveBldgType( selectedBldgType )
         }
         catch( e ) {
-            bldgTypeMsg = e.message 
-            binding.refresh('bldgTypeMsg') 
+            errorMsg = e.message 
+            binding.refresh('errorMsg') 
             throw e 
         }
     }
@@ -439,9 +446,9 @@ public class BldgRYSettingController
             svc.saveBldgType( selectedBldgType )
         }
         catch( e ) {
-            e.printStackTrace()
-            bldgTypeMsg = e.message 
-            binding.refresh('bldgTypeMsg') 
+            println e.message 
+            errorMsg = e.message 
+            binding.refresh('errorMsg') 
             throw e 
         }
     }
@@ -556,7 +563,12 @@ public class BldgRYSettingController
     }
     
     def isLastItem( list, item ) {
-        return list.size() == list.indexOf( item ) + 1
+        def index = list.indexOf( item )
+        if( index < 0 ) 
+            index = list.size()
+        else
+            index += 1 
+        return list.size() == index 
     }
 }
 

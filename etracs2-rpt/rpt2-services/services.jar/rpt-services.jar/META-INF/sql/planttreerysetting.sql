@@ -1,0 +1,24 @@
+[getList]
+SELECT * FROM planttreerysetting ORDER BY ry 
+
+[getListByRy]
+SELECT * FROM planttreerysetting WHERE ry = $P{ry} 
+
+[geUnitValue]
+SELECT * FROM planttreeunitvalue WHERE planttreeid = $P{planttreeid} ORDER BY code 
+
+[getPlantTree]
+SELECT objid AS planttreeid, planttreecode, planttreedesc AS planttreename FROM plantsandtrees ORDER BY planttreecode 
+
+[checkDuplicate]
+SELECT objid 
+FROM planttreerysetting 
+WHERE objid <> $P{objid} AND ry = $P{ry} 
+
+[deleteUnitValues]
+DELETE FROM planttreeunitvalue WHERE planttreerysettingid = $P{planttreerysettingid} 
+
+
+
+
+
