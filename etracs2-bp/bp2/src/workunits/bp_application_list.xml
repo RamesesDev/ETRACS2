@@ -1,8 +1,6 @@
 <workunit>
     <invokers>
         <invoker folderid="/menu/bp/txn" caption="Business Application List"/>
-        
-        <invoker type="formActions" action="newApp" caption="New" mnemonic="n" icon="images/new24.png"/>
         <invoker type="formActions" action="openApp" caption="Open" mnemonic="n" icon="images/open24.png"/>
     </invokers>
     <code>
@@ -20,8 +18,10 @@ class BusinessApplicationListController
     @Service("BPApplicationService")
     def svc;
     
+    @Service("BPHtmlService")
+    def htmlSvc;
+    
     def searchText;
-    def html;
     
     def selectedItem;
     def listHandler = [
@@ -41,8 +41,17 @@ class BusinessApplicationListController
     ] as PageListModel;
     
     public def getHtml(){
-        if( selectedItem ) return 'APP No: ' + ( (selectedItem.txnno) ? selectedItem.txnno : '' );
-        return 'No item selected.';
+        def html = "";
+        if( selectedItem ) {
+            if( !selectedItem.html ){
+                try{ selectedItem.html = htmlSvc.getHtml( selectedItem.objid );
+                }catch(e){ e.printStackTrace(); }
+            }
+            html = selectedItem.html;
+        }
+        
+        if( html ) return html;
+        return 'No selected item';
     }
     
     def newApp(){

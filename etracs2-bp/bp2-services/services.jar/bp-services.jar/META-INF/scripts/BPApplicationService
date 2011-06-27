@@ -10,6 +10,8 @@ class BPApplicationService{
 	@Service('BPRuleService')
 	def ruleSvc;
 	
+	def BUSINESS_SCHEMA = 'business:business';
+	
 	def SCHEMANAME = 'bpapplication:bpapplication';
 	def SCHEMAVERSION = '1.0';
 	
@@ -39,8 +41,7 @@ class BPApplicationService{
 		else return update( application );
 	}
 	
-	@ProxyMethod
-	public def createBPApp( def application ){
+	def createBPApp( def application ){
 		application.objid = 'BP'+new UID();
 		application.schemaname = SCHEMANAME;
 		application.schemaversion = SCHEMAVERSION;
@@ -119,7 +120,7 @@ class BPApplicationService{
 		if( application.txntype == 'NEW' || application.txnmode == 'CAPTURE' ) return [application];
 		def res = em.sqlContext.createNamedQuery("bpapplication:getBusinessFor"+application.txntype)
 				    .setParameters([taxpayerid: application.taxpayerid])
-				    .resultList.eac{  
+				    .resultList.each{  
 						it.lobs = em.serializer.read( it.info ).lobs; 
 					};
 		if( !res ) throw new Exception("There is no business to process this transaction.");
@@ -130,63 +131,50 @@ class BPApplicationService{
 	public def submitForAssessment( def applicationid ) {
 		def app = open( applicationid );
 		if( app.docstate != 'DRAFT' ) throw new Exception("Only DRAFT application can be submit for assessment.");
-		
-		evaluateApplicationInfo( app );
+
+		app.info.appinfos = ruleSvc.buildInfos( createAppEntity( app ) ).infos;
+		em.sqlContext.createNamedQuery('bpapplication:getApplicationByParentId')
+		.setParameters([parentid: applicationid])
+
+		.resultList.each{
+			it.info = em.serializer.read( it.info );
+			it.info.appinfos = ruleSvc.buildInfos( createAppEntity( it ) ).infos;
+			em.update( SCHEMANAME, it );
+		}
 		
 		app.docstate = 'FOR_ASSESSMENT';
 		em.update( SCHEMANAME, app );
+		
 		return app;
-	}
-	
-	public void evaluateApplicationInfo( def application ){
-		def app =  createAppEntity( application );
-		app = ruleSvc.buildInfos( app );
-		application.info.appinfos = app.infos;
 	}
 	
 	@ProxyMethod
-	public def assess( def application ){
-		def app = open( application.objid );
-		evaluateAssessment( app );
-		em.update( SCHEMANAME, app );
-		return app;
-	}
-	
-	private void evaluateAssessment( def application ){
-		def app = createAppEntity( application );
-		app.infos = application.infos.appinfos;
-		app = ruleSvc.buildTaxFees( app );
-		application.info.taxfees = app.taxfees;
+	public def evaluateApplicationInfo( def application ){
+		def app = createAppEntity( open( application.objid ) );
+		app.infos = application.infos;
+		checkValueType( app.infos );
+		application.infos = ruleSvc.buildInfos( app ).infos;
+
+		return application;
 	}
 	
 	private def createAppEntity( def application ){
 		def app = [
+			objid: application.objid,
 			organization: application.info.organization,
 			applicationtype: application.txntype,
-			officetype: application.officetype,
+			officetype: application.info.officetype,
 			barangayid: application.info.barangay.barangayid,
 			lobs : [],
 			taxfees: [],
-			infos: []
+			infos:[]
 		];
-		
+
 		application.info.lobs.each{
 			app.lobs.add( [ lob: [classificationid: it.classificationid, objid: it.lobid, name: it.name],
 				assessmenttype: it.assessmenttype
 			]);
 		}
-		
-		return app;
-	}
-	
-	@ProxyMethod
-	public def approve( def applicationid ) {
-		def app = open( applicationid );
-		if( app.docstate != 'FOR_ASSESSMENT' ) throw new Exception('ONLY FOR_ASSESSMENT document can be approved.');
-		app.docstate = 'APPROVED';
-		/** add code here for approving application */
-		
-		em.update( SCHEMANAME, app );
 		return app;
 	}
 	
@@ -241,7 +229,7 @@ class BPApplicationService{
 	}
 	
 	@ProxyMethod
-	public void evaluateTaxesAndFees( def parentid, def list ){
+	public def evaluateTaxesAndFees( def parentid, def list ){
 		list.each{ it ->
 			def application = open( it.objid );
 			def app = createAppEntity( application );
@@ -266,6 +254,8 @@ class BPApplicationService{
 			
 			update( application );
 		}
+		
+		return open( parentid );
 	}
 	
 	def checkValueType( def infos ){
@@ -325,7 +315,74 @@ class BPApplicationService{
 	
 	@ProxyMethod
 	public def approveApplication( def appid, def applist ){
-		throw new Exception("Approve not yer implemented.");
+		def app = open( appid );
+		if( app.docstate == 'APPROVED' ) throw new Exception('Application is already APPROVED.');
+		submitForReview( appid, applist );
+		app.docstate = 'APPROVED';
+		
+		def business = getBusiness( app );
+		business.applicationid = app.objid;
+		business.docstate = 'FOR_RELEASE';
+		createBPReceivable( business , applist );
+		
+		em.update( BUSINESS_SCHEMA, business );
+		em.update( SCHEMANAME, app );
+		
+		return app;
+	}
+	
+	void createBPReceivable( def business, def applist ){
+		def BP_RECIVABLE_SCHAMENAME = 'business:bpreceivable';
+		applist.each{
+			def app = open( it.objid );
+			app.info.taxfees.each{
+				def brc = [
+					objid: 'BPRC' + new UID(),
+					businessid: business.objid,
+					applicationid: app.objid,
+					applicationtype: app.txntype,
+					appno: app.txnno,
+					iyear: app.iyear,
+					lobid: it.lobid,
+					lobname: it.lobname,
+					acctid: it.acctid,
+					acctno: it.acctno,
+					accttitle: it.accttitle,
+					amount: it.amountdue,
+					amtpaid: 0.0
+				];
+				em.create( BP_RECIVABLE_SCHAMENAME, brc );
+			}
+		}
+	}
+	
+	def getBusiness( def app){
+		if( app.businessid ) return em.read( BUSINESS_SCHEMA, [objid:app.businessid] );
+		def business = [
+			objid: 'BUS'+ new UID(),
+			schemaname: BUSINESS_SCHEMA,
+			schemaversion: '1.0',
+			docstate: 'ACTIVE',
+			taxpayerid: app.info.taxpayerid,
+			taxpayername: app.info.taxpayername,
+			taxpayeraddress: app.info.taxpayeraddress,
+			yearstated: app.iyear,
+			dtregistered: app.txndate,
+			sec: app.info.sec,
+			dti: app.info.dti,
+			sss: app.info.sss,
+			tin: app.info.tin,
+			pin: app.info.pin,
+			applicationid: app.objid,
+			tradename: app.info.tradename,
+			businessaddress: app.info.businessaddress,
+			adminname: app.info.administratorname,
+			adminaddress: app.info.administratoraddress,
+			organization: app.info.organization,
+			officetype: app.info.officetype
+		];
+		em.create( BUSINESS_SCHEMA,  business );
+		return business;
 	}
 	
 }
