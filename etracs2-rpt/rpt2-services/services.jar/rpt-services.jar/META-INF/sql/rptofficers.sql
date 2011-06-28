@@ -19,3 +19,16 @@ SELECT * FROM rptofficers WHERE objid = $P{objid}
 [checkDuplicateName]
 SELECT COUNT(*) AS count FROM rptofficers WHERE fullname = $P{fullname}
 
+
+#------------------------------------------------------
+# lookup support
+#------------------------------------------------------
+[lookupList]
+SELECT objid, fullname AS name, position AS title FROM rptofficers WHERE officertype = $P{officertype} ORDER BY lastname, firstname, middlename
+
+[lookupListByLastName]
+SELECT objid, fullname AS name, position AS title FROM rptofficers WHERE lastname LIKE $P{lastname} AND officertype = $P{officertype} ORDER BY lastname, firstname, middlename
+
+[lookupListByFirstName]
+SELECT objid, fullname AS name, position AS title FROM rptofficers WHERE firstname LIKE $P{firstname} AND officertype = $P{officertype} ORDER BY lastname, firstname, middlename
+

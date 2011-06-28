@@ -181,7 +181,7 @@ abstract class AbstractCollectionController
     }
         
     def lookupEntity() {
-        return InvokerUtil.lookupOpener('entity:lookup', [onselect:onselectEntity, searchText:entity.info.payorname])
+        return InvokerUtil.lookupOpener('entity.lookup', [onselect:onselectEntity, searchText:entity.info.payorname])
     }
             
     void resetItemIncomeAcctInfo() {

@@ -28,6 +28,20 @@ class RPTOfficersService{
 		
 		return result;
 	}
+    
+    @ProxyMethod
+    public List lookup( searchText, officerType, params ) {
+        if( !searchText ) return getListByQuery( 'rptofficers:lookupList', [officertype:officerType], params );
+		def result = [];
+        def criteria = [
+            officertype : officerType,
+            lastname   : searchText+ '%',
+            firstname  : searchText+ '%',
+        ]
+        if((result = getListByQuery( 'rptofficers:lookupListByLastName', criteria, params ))) return result;
+		if((result = getListByQuery( 'rptofficers:lookupListByFirstName', criteria, params ))) return result;
+		return result;
+    }
 	
 	@ProxyMethod
 	public def open( objid ){

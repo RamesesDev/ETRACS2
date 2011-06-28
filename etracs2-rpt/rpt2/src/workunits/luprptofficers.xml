@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="rptofficers:lookup" action="init" caption="RPT Officers Lookup" target="popup" />
+        <invoker type="rptofficers.lookup" action="init" caption="RPT Officers Lookup" target="popup" />
     </invokers>
     
     <code>
@@ -17,6 +17,7 @@ class LookupRPTOfficersController extends LookupModel
     
     def onselect;
     def searchText;
+    def officerType = 'APPRAISER'
     def selected;
     
     void init() {;}
@@ -35,15 +36,15 @@ class LookupRPTOfficersController extends LookupModel
     
     Column[] getColumns() {
         return [
-            new Column(name:"fullname", caption:"Name", width:250),
-            new Column(name:"position", caption:"Position", width:50)
+            new Column(name:"name", caption:"Name", width:250),
+            new Column(name:"title", caption:"Job Title", width:50)
         ]
     }
     
     List fetchList( Map params ) { 
         def s = search
         if( !s ) s = searchText 
-        def list = svc.getList( s, params);
+        def list = svc.lookup( searchText, officerType, params )
         if( list ) return list;
         throw new Exception("Record not found.");
     }
