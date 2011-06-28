@@ -1,6 +1,9 @@
 <workunit>
     <invokers>
-        <invoker type="bp:assessmentinfo" action="" caption="Assessment Information" target="popup"/>
+    <invoker type="bp:assessmentinfo" action="init" caption="Assessment Information"/>
+        
+        <invoker type="formActions" action="back" caption="Back"/>
+        <invoker type="formActions" action="next" caption="Next"/>
     </invokers>
     <code>
 <![CDATA[
@@ -14,11 +17,21 @@ class BusinessApplicationAssessment
 
     @Caller
     def caller;
-
+    
+    def application;
     def applist;
+    def index = 0;
     def app;
     def svc;
 
+    def inputtedApps;
+    
+    void init(){
+        app = applist[index];
+        inputtedApps = [];
+        evaluateInfo();
+    }
+    
     def appinfoListHandler = [
         getRows    : { return 3 },
         getColumns : { return [
@@ -26,19 +39,62 @@ class BusinessApplicationAssessment
             new Column(name:'varcaption', caption:'Variable'),
             new Column(name:'value', caption:'Value', editable:true)
         ]},
-
+        
         fetchList : { 
-            return app?.infos;
+            return getInfos();
         }
-
     ] as SubListModel
+
+    def requiredbeforeprintinfo = [];
+    def requiredforprintinfo = [];
     
-    public def evaluateTaxesAndFees(){
-        svc.evaluateTaxesAndFees( caller.application.objid, applist );
-        caller.application = svc.open( caller.application.objid );
+    void evaluateInfo(){
+        app.infos = [];
+        app.infos = svc.evaluateApplicationInfo( app ).infos;
+        requiredbeforeprintinfo = app.infos.findAll{ it.requiredbeforeprint == true };
+        requiredforprintinfo = app.infos.findAll{ it.requiredbeforeprint != true };
+        
+        app.infos = requiredbeforeprintinfo;
+        appinfoListHandler.load();
+    }
+    
+    public def getInfos(){
+        if( app.infos ) return app.infos;
+        return requiredforprintinfo;
+    }
+    
+    public def next(){
+        if( app.infos ){
+            app = svc.evaluateApplicationInfo( app );
+            requiredforprintinfo += app.infos.findAll{ it.requiredbeforeprint != true };
+            app.infos = [];
+            
+            appinfoListHandler.load();
+            return '_default';
+        }
+        
+        if( requiredforprintinfo ){
+            app.infos = requiredforprintinfo;
+            requiredforprintinfo = [];
+            inputtedApps.add( app );
+            index += 1;
+        }
+        
+        if( index < applist.size() ) {
+            app = applist[index];
+            evaluateInfo();
+            return '_default';
+        }
+        
+        app = [ infos:[] ];
+        
+        caller.application = svc.evaluateTaxesAndFees( application.objid, inputtedApps );
         caller.applist = [];
         caller.applistHandler.load();
-        caller.binding.refresh();
+        return '_close';
+    }
+    
+    def back(){
         return '_close';
     }
 }

@@ -24,62 +24,154 @@ public class AssessmentInfoPage extends javax.swing.JPanel {
      */
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
-        xDataTable2 = new com.rameses.rcp.control.XDataTable();
-        xButton2 = new com.rameses.rcp.control.XButton();
+        xActionBar1 = new com.rameses.rcp.control.XActionBar();
+        jPanel1 = new javax.swing.JPanel();
+        jPanel2 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xComboBox1 = new com.rameses.rcp.control.XComboBox();
+        xLabel1 = new com.rameses.rcp.control.XLabel();
+        xLabel2 = new com.rameses.rcp.control.XLabel();
+        formPanel3 = new com.rameses.rcp.util.FormPanel();
+        xLabel6 = new com.rameses.rcp.control.XLabel();
+        xLabel7 = new com.rameses.rcp.control.XLabel();
+        formPanel2 = new com.rameses.rcp.util.FormPanel();
+        xLabel3 = new com.rameses.rcp.control.XLabel();
+        xLabel5 = new com.rameses.rcp.control.XLabel();
+        jPanel3 = new javax.swing.JPanel();
+        xLabel4 = new com.rameses.rcp.control.XLabel();
+        jLabel1 = new javax.swing.JLabel();
+        xDataTable2 = new com.rameses.rcp.control.XDataTable();
+
+        setLayout(new java.awt.BorderLayout());
+
+        xActionBar1.setName("formActions");
+        add(xActionBar1, java.awt.BorderLayout.NORTH);
+
+        jPanel1.setLayout(null);
+
+        jPanel2.setLayout(null);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("Required Information");
-        xDataTable2.setBorder(xTitledBorder1);
-        xDataTable2.setDepends(new String[] {"app"});
+        xTitledBorder1.setTitle("Application Info");
+        jPanel2.setBorder(xTitledBorder1);
+
+        com.rameses.rcp.control.border.XLineBorder xLineBorder1 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder1.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel1.setBorder(xLineBorder1);
+        xLabel1.setCaption("Permittee");
+        xLabel1.setExpression("#{application.info.taxpayername}");
+        xLabel1.setPreferredSize(new java.awt.Dimension(0, 18));
+        formPanel1.add(xLabel1);
+
+        com.rameses.rcp.control.border.XLineBorder xLineBorder2 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder2.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel2.setBorder(xLineBorder2);
+        xLabel2.setCaption("Address");
+        xLabel2.setExpression("#{application.info.taxpayeraddress}");
+        xLabel2.setName("application.info.taxpayeraddress");
+        xLabel2.setPreferredSize(new java.awt.Dimension(0, 18));
+        formPanel1.add(xLabel2);
+
+        jPanel2.add(formPanel1);
+        formPanel1.setBounds(0, 20, 410, 50);
+
+        com.rameses.rcp.control.border.XLineBorder xLineBorder3 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder3.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel6.setBorder(xLineBorder3);
+        xLabel6.setCaption("Trade Name");
+        xLabel6.setExpression("#{application.info.tradename}");
+        xLabel6.setPreferredSize(new java.awt.Dimension(0, 18));
+        formPanel3.add(xLabel6);
+
+        com.rameses.rcp.control.border.XLineBorder xLineBorder4 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder4.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel7.setBorder(xLineBorder4);
+        xLabel7.setCaption("Address");
+        xLabel7.setExpression("#{application.info.businessaddress}");
+        xLabel7.setName("application.info.taxpayeraddress");
+        xLabel7.setPreferredSize(new java.awt.Dimension(0, 18));
+        formPanel3.add(xLabel7);
+
+        jPanel2.add(formPanel3);
+        formPanel3.setBounds(0, 70, 720, 60);
+
+        com.rameses.rcp.control.border.XLineBorder xLineBorder5 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder5.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel3.setBorder(xLineBorder5);
+        xLabel3.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        xLabel3.setCaption("Date");
+        xLabel3.setCaptionWidth(100);
+        xLabel3.setExpression("#{application.txndate}");
+        xLabel3.setPreferredSize(new java.awt.Dimension(0, 18));
+        formPanel2.add(xLabel3);
+
+        com.rameses.rcp.control.border.XLineBorder xLineBorder6 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder6.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel5.setBorder(xLineBorder6);
+        xLabel5.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+        xLabel5.setCaption("Applicable Year");
+        xLabel5.setCaptionWidth(100);
+        xLabel5.setExpression("#{application.iyear}");
+        xLabel5.setName("application.year");
+        xLabel5.setPreferredSize(new java.awt.Dimension(0, 18));
+        formPanel2.add(xLabel5);
+
+        jPanel2.add(formPanel2);
+        formPanel2.setBounds(410, 20, 310, 50);
+
+        jPanel1.add(jPanel2);
+        jPanel2.setBounds(10, 10, 720, 140);
+
+        jPanel3.setLayout(null);
+
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder2.setTitle("Required Information");
+        jPanel3.setBorder(xTitledBorder2);
+        xLabel4.setForeground(new java.awt.Color(0, 0, 102));
+        xLabel4.setExpression("#{app.txnno}");
+        xLabel4.setFont(new java.awt.Font("Tahoma", 1, 13));
+        jPanel3.add(xLabel4);
+        xLabel4.setBounds(350, 0, 360, 20);
+
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 13));
+        jLabel1.setText("Information For Application No:");
+        jPanel3.add(jLabel1);
+        jLabel1.setBounds(140, 0, 210, 20);
+
+        com.rameses.rcp.control.border.XLineBorder xLineBorder7 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder7.setLineColor(new java.awt.Color(153, 153, 153));
+        xDataTable2.setBorder(xLineBorder7);
+        xDataTable2.setDepends(new String[] {"appdata"});
         xDataTable2.setDynamic(true);
         xDataTable2.setHandler("appinfoListHandler");
         xDataTable2.setImmediate(true);
+        jPanel3.add(xDataTable2);
+        xDataTable2.setBounds(10, 30, 700, 230);
 
-        xButton2.setText("Evaluate Taxes and Fees");
-        xButton2.setName("evaluateTaxesAndFees");
+        jPanel1.add(jPanel3);
+        jPanel3.setBounds(10, 160, 720, 270);
 
-        xComboBox1.setAllowNull(false);
-        xComboBox1.setCaption("Application");
-        xComboBox1.setDynamic(true);
-        xComboBox1.setExpression("#{txnno}");
-        xComboBox1.setImmediate(true);
-        xComboBox1.setItems("applist");
-        xComboBox1.setName("app");
-        xComboBox1.setPreferredSize(new java.awt.Dimension(200, 22));
-        formPanel1.add(xComboBox1);
+        add(jPanel1, java.awt.BorderLayout.CENTER);
 
-        org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                .addContainerGap()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 371, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 371, Short.MAX_VALUE)
-                    .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 29, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 353, Short.MAX_VALUE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-        );
     }// </editor-fold>//GEN-END:initComponents
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.rameses.rcp.util.FormPanel formPanel1;
-    private com.rameses.rcp.control.XButton xButton2;
-    private com.rameses.rcp.control.XComboBox xComboBox1;
+    private com.rameses.rcp.util.FormPanel formPanel2;
+    private com.rameses.rcp.util.FormPanel formPanel3;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XDataTable xDataTable2;
+    private com.rameses.rcp.control.XLabel xLabel1;
+    private com.rameses.rcp.control.XLabel xLabel2;
+    private com.rameses.rcp.control.XLabel xLabel3;
+    private com.rameses.rcp.control.XLabel xLabel4;
+    private com.rameses.rcp.control.XLabel xLabel5;
+    private com.rameses.rcp.control.XLabel xLabel6;
+    private com.rameses.rcp.control.XLabel xLabel7;
     // End of variables declaration//GEN-END:variables
     
 }

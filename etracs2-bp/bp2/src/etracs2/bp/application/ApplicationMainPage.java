@@ -63,9 +63,9 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         jPanel4 = new javax.swing.JPanel();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         jPanel5 = new javax.swing.JPanel();
-        xButton1 = new com.rameses.rcp.control.XButton();
         xButton2 = new com.rameses.rcp.control.XButton();
         xButton3 = new com.rameses.rcp.control.XButton();
+        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -261,15 +261,9 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xDataTable1.setHandler("lobHandler");
         xDataTable1.setName("lob");
         jPanel4.add(xDataTable1);
-        xDataTable1.setBounds(5, 30, 370, 60);
+        xDataTable1.setBounds(5, 50, 370, 50);
 
         jPanel5.setOpaque(false);
-        xButton1.setText("Add LOB");
-        xButton1.setDepends(new String[] {"lob"});
-        xButton1.setName("addLob");
-        xButton1.setVisibleWhen("#{mode != 'view'}");
-        jPanel5.add(xButton1);
-
         xButton2.setText("Retire Line");
         xButton2.setDepends(new String[] {"lob"});
         xButton2.setName("retireLob");
@@ -283,7 +277,16 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         jPanel5.add(xButton3);
 
         jPanel4.add(jPanel5);
-        jPanel5.setBounds(5, 90, 370, 33);
+        jPanel5.setBounds(0, 100, 380, 33);
+
+        xActionTextField1.setActionName("getLookupLob");
+        xActionTextField1.setCaption("Permittee");
+        xActionTextField1.setHint("NAME");
+        xActionTextField1.setIndex(-1);
+        xActionTextField1.setName("lobSearch");
+        xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        jPanel4.add(xActionTextField1);
+        xActionTextField1.setBounds(5, 30, 370, 19);
 
         jPanel1.add(jPanel4);
         jPanel4.setBounds(10, 350, 380, 140);
@@ -308,7 +311,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel5;
     private javax.swing.JScrollPane jScrollPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XButton xButton1;
+    private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XButton xButton2;
     private com.rameses.rcp.control.XButton xButton3;
     private com.rameses.rcp.control.XComboBox xComboBox1;

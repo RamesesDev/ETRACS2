@@ -67,26 +67,9 @@ class BusinessApplication
         modeList = res.applicationModes;
     }
     
-    def next(){
-        def res = svc.evaluateTxnType( application );
-        if( res.size() == 1 ) {
-            application.lobs = res[0].lobs;
-            return InvokerUtil.lookupOpener('bp:open', [application:application]);
-        }
-        
-        def lobs = null;
-        InvokerUtil.invokeOpener( InvokerUtil.lookupOpener( 'bp:business_list', [list: res, onselect:{ lobs = it.lobs; }] ) );
-        
-        if( lobs != null ){
-            application.lobs = lobs;
-            return InvokerUtil.lookupOpener('bp:open', [application:application]);
-        }
-
-        return null;
-    }
-    
     def onselect = { entity ->
         if( entity ){
+            application.businessid = entity.objid;
             application.info.taxpayername = entity.entityname;
             application.info.taxpayeraddress = entity.entityaddress;
             application.info.taxpayerid = entity.objid;
@@ -94,7 +77,26 @@ class BusinessApplication
         }
         binding.refresh();
     }
+    
+    def next(){
+        def res = svc.evaluateTxnType( application );
+        if( res.size() == 1 ) {
+            application.businessid = res[0].objid;
+            application.info.lobs = res[0].info.lobs;
+            return InvokerUtil.lookupOpener('bp:open', [application:application]);
+        }
+        
+        def lobs = null;
+        InvokerUtil.invokeOpener( InvokerUtil.lookupOpener( 'bp:business_list', [list: res, onselect:{ lobs = it.lobs; }] ) );
+        
+        if( lobs != null ){
+            application.info.lobs = lobs;
+            return InvokerUtil.lookupOpener('bp:open', [application:application]);
+        }
 
+        return null;
+    }
+    
     public def lookupPayer(){
         return InvokerUtil.lookupOpener( 'entity:lookup', [onselect: onselect, searchText:application.info.taxpayername] );
     }

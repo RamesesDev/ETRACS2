@@ -1,0 +1,99 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class BPHtmlService
+{
+	@Service("BPApplicationService")
+	def svc;
+	
+	def style = """
+		<style type="text/css">
+			td { background-color:white; }
+			th { background-color : #CCCCCC; }
+			.data { font-weight:bold; }
+			.numeric { text-align:right; }
+			.caption {}
+			
+			.title {
+				background-color:#CCCCFF;
+				font-weight:bold;
+			}
+			
+			body, td, th { 
+				font-family: tahoma; 
+				font-size  : 12pt;
+			}
+			
+			.header {
+				font-family : tahoma;
+				font-size   : 18pt;
+				width       : 120
+			}
+		</style>
+	""";
+	
+	def data = { def caption, def val ->
+		return """
+			<tr>
+				<td class='caption' valign='top'>$caption</td>
+				<td class='data' valign='top'>$val</td>
+			 </tr>
+		""";
+	}
+	
+	@ProxyMethod
+	public def getHtml(def applicationid){
+		def template = [:];
+		def application = svc.open( applicationid );
+		
+		template.header = new StringBuffer();
+		template.detail = new StringBuffer();
+		
+		template.header.append("<table>");
+		template.header.append( "<tr>" );
+		template.header.append( "<td class='caption'>State</td>" );
+		template.header.append( "<td class='data'><h3>$application.docstate</h3></td>" );
+		template.header.append( "</tr>" );
+		template.header.append( data("Date", application.txndate) );
+		template.header.append( data("Trade Name", application.tradename) );
+		template.header.append( data("Business Address", application.businessaddress) );
+		template.header.append( data("Taxpayer Name", application.info.taxpayername) );
+		template.header.append( data("Taxpayer Address", application.info.taxpayeraddress) );
+		template.header.append("</table>");
+		
+		template.detail.append("<div style='background:silver' width='100%'>");
+		template.detail.append("<table cellspacing='1' width='100%'>");
+		template.detail.append("<tr><td colspan='3' class='header'>Line Of Business</td></tr>");
+		template.detail.append("<tr>");
+		template.detail.append("<th>Classification</th>");
+		template.detail.append("<th>Assessment Type</th>");
+		template.detail.append("<th>Year</th>");
+		template.detail.append("</tr>");
+		
+		application.info.lobs.each{
+			template.detail.append("<tr>");
+			template.detail.append("<td valign='top'>$it.name</td>");
+			template.detail.append("<td valign='top'>$it.assessmenttype</td>");
+			template.detail.append("<td align='right' valign='top' width='20'>$it.iyear</td>");
+			template.detail.append("</tr");
+		}
+		template.detail.append("</table>");
+		template.detail.append("</div>");
+		return parse( template );
+	}
+	
+	public def parse( def template ){
+		return """
+			<html>
+				<head> $style; </head>
+				<body>
+					<table width="100%">
+						<tr> <td>$template.header</td> </tr>
+						<tr> <td>$template.detail</td> </tr>
+					<table>
+				</body>
+			</html>
+		""";
+	}
+}

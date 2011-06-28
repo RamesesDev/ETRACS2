@@ -35,44 +35,17 @@ public class RPTSettingPage extends javax.swing.JPanel {
         xDateField1 = new com.rameses.rcp.control.XDateField();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xDateField2 = new com.rameses.rcp.control.XDateField();
-        jPanel4 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
-        jLabel5 = new javax.swing.JLabel();
+        jPanel12 = new javax.swing.JPanel();
+        formPanel8 = new com.rameses.rcp.util.FormPanel();
+        xCheckBox12 = new com.rameses.rcp.control.XCheckBox();
+        xCheckBox13 = new com.rameses.rcp.control.XCheckBox();
+        jPanel13 = new javax.swing.JPanel();
+        formPanel9 = new com.rameses.rcp.util.FormPanel();
         xNumberField2 = new com.rameses.rcp.control.XNumberField();
-        xNumberField3 = new com.rameses.rcp.control.XNumberField();
-        xNumberField4 = new com.rameses.rcp.control.XNumberField();
-        xNumberField5 = new com.rameses.rcp.control.XNumberField();
-        xNumberField6 = new com.rameses.rcp.control.XNumberField();
-        jPanel5 = new javax.swing.JPanel();
-        formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xTextField7 = new com.rameses.rcp.control.XTextField();
-        xTextField8 = new com.rameses.rcp.control.XTextField();
-        xTextField9 = new com.rameses.rcp.control.XTextField();
-        xTextField10 = new com.rameses.rcp.control.XTextField();
-        jPanel3 = new javax.swing.JPanel();
-        jPanel7 = new javax.swing.JPanel();
-        formPanel3 = new com.rameses.rcp.util.FormPanel();
-        xCheckBox1 = new com.rameses.rcp.control.XCheckBox();
-        xCheckBox2 = new com.rameses.rcp.control.XCheckBox();
-        jPanel8 = new javax.swing.JPanel();
-        formPanel4 = new com.rameses.rcp.util.FormPanel();
-        xNumberField1 = new com.rameses.rcp.control.XNumberField();
-        jPanel9 = new javax.swing.JPanel();
-        formPanel5 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
-        xCheckBox3 = new com.rameses.rcp.control.XCheckBox();
-        jPanel6 = new javax.swing.JPanel();
-        formPanel6 = new com.rameses.rcp.util.FormPanel();
-        xCheckBox4 = new com.rameses.rcp.control.XCheckBox();
-        xCheckBox5 = new com.rameses.rcp.control.XCheckBox();
-        xCheckBox6 = new com.rameses.rcp.control.XCheckBox();
-        xCheckBox7 = new com.rameses.rcp.control.XCheckBox();
-        xCheckBox8 = new com.rameses.rcp.control.XCheckBox();
-        xCheckBox9 = new com.rameses.rcp.control.XCheckBox();
-        xCheckBox10 = new com.rameses.rcp.control.XCheckBox();
+        jPanel14 = new javax.swing.JPanel();
+        formPanel10 = new com.rameses.rcp.util.FormPanel();
+        xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
+        xCheckBox14 = new com.rameses.rcp.control.XCheckBox();
         jPanel10 = new javax.swing.JPanel();
         jPanel11 = new javax.swing.JPanel();
         formPanel7 = new com.rameses.rcp.util.FormPanel();
@@ -118,150 +91,96 @@ public class RPTSettingPage extends javax.swing.JPanel {
         formPanel2.add(xDateField2);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder2.setTitle("PIN Length Setting");
-        jPanel4.setBorder(xTitledBorder2);
-        jLabel1.setFont(new java.awt.Font("Arial", 0, 11));
-        jLabel1.setText("Length Definition : *");
+        xTitledBorder2.setTitle("Assessment Computation");
+        jPanel12.setBorder(xTitledBorder2);
 
-        jLabel2.setFont(new java.awt.Font("Arial", 0, 11));
-        jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel2.setText("-");
-        jLabel2.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        xCheckBox12.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        xCheckBox12.setText("Include Land RPU in Tax Declaration Cancellation");
+        xCheckBox12.setCheckValue(1);
+        xCheckBox12.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        xCheckBox12.setName("entity.allowlandcancellation");
+        xCheckBox12.setShowCaption(false);
+        formPanel8.add(xCheckBox12);
 
-        jLabel3.setFont(new java.awt.Font("Arial", 0, 11));
-        jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel3.setText("-");
-        jLabel3.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        xCheckBox13.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        xCheckBox13.setText("Round-off Adjusted Market Value as Whole Number");
+        xCheckBox13.setCheckValue(1);
+        xCheckBox13.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        xCheckBox13.setName("entity.roundadjmarketvalue");
+        xCheckBox13.setShowCaption(false);
+        formPanel8.add(xCheckBox13);
 
-        jLabel4.setFont(new java.awt.Font("Arial", 0, 11));
-        jLabel4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel4.setText("-");
-        jLabel4.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-
-        jLabel5.setFont(new java.awt.Font("Arial", 0, 11));
-        jLabel5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel5.setText("-");
-        jLabel5.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-
-        xNumberField2.setFieldType(int.class);
-        xNumberField2.setName("entity.provinceindexlength");
-        xNumberField2.setPattern("##0");
-        xNumberField2.setPreferredSize(new java.awt.Dimension(50, 18));
-        xNumberField2.setRequired(true);
-
-        xNumberField3.setFieldType(int.class);
-        xNumberField3.setName("entity.municipalityindexlength");
-        xNumberField3.setPattern("##0");
-        xNumberField3.setPreferredSize(new java.awt.Dimension(50, 18));
-        xNumberField3.setRequired(true);
-
-        xNumberField4.setFieldType(int.class);
-        xNumberField4.setName("entity.barangayindexlength");
-        xNumberField4.setPattern("##0");
-        xNumberField4.setPreferredSize(new java.awt.Dimension(50, 18));
-        xNumberField4.setRequired(true);
-
-        xNumberField5.setFieldType(int.class);
-        xNumberField5.setName("entity.sectionlength");
-        xNumberField5.setPattern("##0");
-        xNumberField5.setPreferredSize(new java.awt.Dimension(50, 18));
-        xNumberField5.setRequired(true);
-
-        xNumberField6.setFieldType(int.class);
-        xNumberField6.setName("entity.parcellength");
-        xNumberField6.setPattern("##0");
-        xNumberField6.setPreferredSize(new java.awt.Dimension(50, 18));
-        xNumberField6.setRequired(true);
-
-        org.jdesktop.layout.GroupLayout jPanel4Layout = new org.jdesktop.layout.GroupLayout(jPanel4);
-        jPanel4.setLayout(jPanel4Layout);
-        jPanel4Layout.setHorizontalGroup(
-            jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel4Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(jLabel1)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xNumberField2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(4, 4, 4)
-                .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(3, 3, 3)
-                .add(xNumberField3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(1, 1, 1)
-                .add(jLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(3, 3, 3)
-                .add(xNumberField4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(3, 3, 3)
-                .add(jLabel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(4, 4, 4)
-                .add(xNumberField5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(1, 1, 1)
-                .add(jLabel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(2, 2, 2)
-                .add(xNumberField6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(26, Short.MAX_VALUE))
+        org.jdesktop.layout.GroupLayout jPanel12Layout = new org.jdesktop.layout.GroupLayout(jPanel12);
+        jPanel12.setLayout(jPanel12Layout);
+        jPanel12Layout.setHorizontalGroup(
+            jPanel12Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel12Layout.createSequentialGroup()
+                .add(49, 49, 49)
+                .add(formPanel8, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 390, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(35, Short.MAX_VALUE))
         );
-        jPanel4Layout.setVerticalGroup(
-            jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel4Layout.createSequentialGroup()
-                .add(21, 21, 21)
-                .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel1)
-                    .add(jLabel2)
-                    .add(jLabel3)
-                    .add(jLabel4)
-                    .add(jLabel5)
-                    .add(xNumberField2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(xNumberField3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(xNumberField4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(xNumberField5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(xNumberField6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(39, Short.MAX_VALUE))
+        jPanel12Layout.setVerticalGroup(
+            jPanel12Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(formPanel8, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 54, Short.MAX_VALUE)
         );
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder3.setTitle("Approving and Recommending Officer");
-        jPanel5.setBorder(xTitledBorder3);
+        xTitledBorder3.setTitle("Market Value Approved By Recommending Officer");
+        jPanel13.setBorder(xTitledBorder3);
 
-        formPanel1.setCaptionWidth(130);
-        xTextField7.setCaption("Approving Officer");
-        xTextField7.setName("entity.approvingofficer");
-        xTextField7.setPreferredSize(new java.awt.Dimension(0, 18));
-        xTextField7.setRequired(true);
-        formPanel1.add(xTextField7);
+        formPanel9.setCaptionWidth(170);
+        xNumberField2.setCaption("Approved Market Value below");
+        xNumberField2.setFieldType(java.math.BigDecimal.class);
+        xNumberField2.setName("entity.approvedmvbelow");
+        xNumberField2.setPattern("#,##0.00");
+        xNumberField2.setPreferredSize(new java.awt.Dimension(150, 18));
+        formPanel9.add(xNumberField2);
 
-        xTextField8.setCaption("Job Title");
-        xTextField8.setName("entity.approvingofficertitle");
-        xTextField8.setPreferredSize(new java.awt.Dimension(0, 18));
-        xTextField8.setRequired(true);
-        formPanel1.add(xTextField8);
-
-        xTextField9.setCaption("Recommending Officer");
-        xTextField9.setName("entity.recommendingofficer");
-        xTextField9.setPreferredSize(new java.awt.Dimension(0, 18));
-        xTextField9.setRequired(true);
-        formPanel1.add(xTextField9);
-
-        xTextField10.setCaption("Job Title");
-        xTextField10.setName("entity.recommendingofficertitle");
-        xTextField10.setPreferredSize(new java.awt.Dimension(0, 18));
-        xTextField10.setRequired(true);
-        formPanel1.add(xTextField10);
-
-        org.jdesktop.layout.GroupLayout jPanel5Layout = new org.jdesktop.layout.GroupLayout(jPanel5);
-        jPanel5.setLayout(jPanel5Layout);
-        jPanel5Layout.setHorizontalGroup(
-            jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel5Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 446, Short.MAX_VALUE)
-                .addContainerGap())
+        org.jdesktop.layout.GroupLayout jPanel13Layout = new org.jdesktop.layout.GroupLayout(jPanel13);
+        jPanel13.setLayout(jPanel13Layout);
+        jPanel13Layout.setHorizontalGroup(
+            jPanel13Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel13Layout.createSequentialGroup()
+                .add(49, 49, 49)
+                .add(formPanel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 390, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(35, Short.MAX_VALUE))
         );
-        jPanel5Layout.setVerticalGroup(
-            jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel5Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 96, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        jPanel13Layout.setVerticalGroup(
+            jPanel13Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(formPanel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 36, Short.MAX_VALUE)
+        );
+
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder4.setTitle("Agricultural Reference");
+        jPanel14.setBorder(xTitledBorder4);
+
+        formPanel10.setCaptionWidth(170);
+        xActionTextField2.setActionName("lookupAgricultural");
+        xActionTextField2.setCaption("Agricultural Classification");
+        xActionTextField2.setName("entity.agriculturaltitle");
+        xActionTextField2.setPreferredSize(new java.awt.Dimension(150, 18));
+        formPanel10.add(xActionTextField2);
+
+        xCheckBox14.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        xCheckBox14.setText("Apply Agricultural Adjustment Rate to Plant/Tree Improvements");
+        xCheckBox14.setCheckValue(1);
+        xCheckBox14.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        xCheckBox14.setName("entity.adjustplanttree");
+        xCheckBox14.setShowCaption(false);
+        formPanel10.add(xCheckBox14);
+
+        org.jdesktop.layout.GroupLayout jPanel14Layout = new org.jdesktop.layout.GroupLayout(jPanel14);
+        jPanel14.setLayout(jPanel14Layout);
+        jPanel14Layout.setHorizontalGroup(
+            jPanel14Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel14Layout.createSequentialGroup()
+                .add(49, 49, 49)
+                .add(formPanel10, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 390, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(35, Short.MAX_VALUE))
+        );
+        jPanel14Layout.setVerticalGroup(
+            jPanel14Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(formPanel10, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 56, Short.MAX_VALUE)
         );
 
         org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
@@ -269,13 +188,20 @@ public class RPTSettingPage extends javax.swing.JPanel {
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel2Layout.createSequentialGroup()
-                .add(20, 20, 20)
-                .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                        .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 440, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(jPanel2Layout.createSequentialGroup()
+                        .add(20, 20, 20)
+                        .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 440, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jPanel2Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(jPanel14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jPanel2Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(jPanel13, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jPanel2Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(jPanel12, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(16, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -283,208 +209,18 @@ public class RPTSettingPage extends javax.swing.JPanel {
                 .addContainerGap()
                 .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 77, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(jPanel12, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .add(jPanel13, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jPanel14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(25, 25, 25))
         );
         jTabbedPane1.addTab("General", jPanel2);
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder4.setTitle("Assessment Computation");
-        jPanel7.setBorder(xTitledBorder4);
-
-        xCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xCheckBox1.setText("Include Land RPU in Tax Declaration Cancellation");
-        xCheckBox1.setCheckValue(1);
-        xCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox1.setName("entity.allowlandcancellation");
-        xCheckBox1.setShowCaption(false);
-        formPanel3.add(xCheckBox1);
-
-        xCheckBox2.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xCheckBox2.setText("Round-off Adjusted Market Value as Whole Number");
-        xCheckBox2.setCheckValue(1);
-        xCheckBox2.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox2.setName("entity.roundadjmarketvalue");
-        xCheckBox2.setShowCaption(false);
-        formPanel3.add(xCheckBox2);
-
-        org.jdesktop.layout.GroupLayout jPanel7Layout = new org.jdesktop.layout.GroupLayout(jPanel7);
-        jPanel7.setLayout(jPanel7Layout);
-        jPanel7Layout.setHorizontalGroup(
-            jPanel7Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel7Layout.createSequentialGroup()
-                .add(49, 49, 49)
-                .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 390, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(35, Short.MAX_VALUE))
-        );
-        jPanel7Layout.setVerticalGroup(
-            jPanel7Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 56, Short.MAX_VALUE)
-        );
-
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder5 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder5.setTitle("Market Value Approved By Recommending Officer");
-        jPanel8.setBorder(xTitledBorder5);
-
-        formPanel4.setCaptionWidth(170);
-        xNumberField1.setCaption("Approved Market Value below");
-        xNumberField1.setFieldType(java.math.BigDecimal.class);
-        xNumberField1.setName("entity.approvedmvbelow");
-        xNumberField1.setPattern("#,##0.00");
-        xNumberField1.setPreferredSize(new java.awt.Dimension(150, 18));
-        formPanel4.add(xNumberField1);
-
-        org.jdesktop.layout.GroupLayout jPanel8Layout = new org.jdesktop.layout.GroupLayout(jPanel8);
-        jPanel8.setLayout(jPanel8Layout);
-        jPanel8Layout.setHorizontalGroup(
-            jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel8Layout.createSequentialGroup()
-                .add(49, 49, 49)
-                .add(formPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 390, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(35, Short.MAX_VALUE))
-        );
-        jPanel8Layout.setVerticalGroup(
-            jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(formPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
-        );
-
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder6 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder6.setTitle("Agricultural Reference");
-        jPanel9.setBorder(xTitledBorder6);
-
-        formPanel5.setCaptionWidth(170);
-        xActionTextField1.setActionName("lookupAgricultural");
-        xActionTextField1.setCaption("Agricultural Classification");
-        xActionTextField1.setName("entity.agriculturaltitle");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(150, 18));
-        formPanel5.add(xActionTextField1);
-
-        xCheckBox3.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xCheckBox3.setText("Apply Agricultural Adjustment Rate to Plant/Tree Improvements");
-        xCheckBox3.setCheckValue(1);
-        xCheckBox3.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox3.setName("entity.adjustplanttree");
-        xCheckBox3.setShowCaption(false);
-        formPanel5.add(xCheckBox3);
-
-        org.jdesktop.layout.GroupLayout jPanel9Layout = new org.jdesktop.layout.GroupLayout(jPanel9);
-        jPanel9.setLayout(jPanel9Layout);
-        jPanel9Layout.setHorizontalGroup(
-            jPanel9Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel9Layout.createSequentialGroup()
-                .add(49, 49, 49)
-                .add(formPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 390, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(35, Short.MAX_VALUE))
-        );
-        jPanel9Layout.setVerticalGroup(
-            jPanel9Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(formPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 70, Short.MAX_VALUE)
-        );
-
-        org.jdesktop.layout.GroupLayout jPanel3Layout = new org.jdesktop.layout.GroupLayout(jPanel3);
-        jPanel3.setLayout(jPanel3Layout);
-        jPanel3Layout.setHorizontalGroup(
-            jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel3Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jPanel8, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jPanel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(16, Short.MAX_VALUE))
-        );
-        jPanel3Layout.setVerticalGroup(
-            jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel3Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(jPanel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(21, 21, 21)
-                .add(jPanel8, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(14, 14, 14)
-                .add(jPanel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(53, Short.MAX_VALUE))
-        );
-        jTabbedPane1.addTab("Assessment", jPanel3);
-
-        xCheckBox4.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xCheckBox4.setText("Allow Transfer for properties with Balance");
-        xCheckBox4.setCheckValue(1);
-        xCheckBox4.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox4.setName("entity.allowtransferwithbalance");
-        xCheckBox4.setShowCaption(false);
-        formPanel6.add(xCheckBox4);
-
-        xCheckBox5.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xCheckBox5.setText("Allow Correction of Entry for properties with Balance");
-        xCheckBox5.setCheckValue(1);
-        xCheckBox5.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox5.setName("entity.allowcorrectionwithbalance");
-        xCheckBox5.setShowCaption(false);
-        formPanel6.add(xCheckBox5);
-
-        xCheckBox6.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xCheckBox6.setText("Allow Depreciation for properties with Balance");
-        xCheckBox6.setCheckValue(1);
-        xCheckBox6.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox6.setName("entity.allowdepreciationwithbalance");
-        xCheckBox6.setShowCaption(false);
-        formPanel6.add(xCheckBox6);
-
-        xCheckBox7.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xCheckBox7.setText("Allow Change Taxability for properties with Balance");
-        xCheckBox7.setCheckValue(1);
-        xCheckBox7.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox7.setName("entity.allowchangetaxabilitywithbalance");
-        xCheckBox7.setShowCaption(false);
-        formPanel6.add(xCheckBox7);
-
-        xCheckBox8.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xCheckBox8.setText("Allow Subdivision for properties with Balance");
-        xCheckBox8.setCheckValue(1);
-        xCheckBox8.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox8.setName("entity.allowsubdivisionwithbalance");
-        xCheckBox8.setShowCaption(false);
-        formPanel6.add(xCheckBox8);
-
-        xCheckBox9.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xCheckBox9.setText("Allow Amalagamation / Consolidation for properties with Balance");
-        xCheckBox9.setCheckValue(1);
-        xCheckBox9.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox9.setName("entity.allowconsolidationwithbalance");
-        xCheckBox9.setShowCaption(false);
-        formPanel6.add(xCheckBox9);
-
-        xCheckBox10.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xCheckBox10.setText("Allow Reclassification for properties with Balance");
-        xCheckBox10.setCheckValue(1);
-        xCheckBox10.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox10.setName("entity.allowreclasswithbalance");
-        xCheckBox10.setShowCaption(false);
-        formPanel6.add(xCheckBox10);
-
-        org.jdesktop.layout.GroupLayout jPanel6Layout = new org.jdesktop.layout.GroupLayout(jPanel6);
-        jPanel6.setLayout(jPanel6Layout);
-        jPanel6Layout.setHorizontalGroup(
-            jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel6Layout.createSequentialGroup()
-                .add(40, 40, 40)
-                .add(formPanel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 439, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(27, Short.MAX_VALUE))
-        );
-        jPanel6Layout.setVerticalGroup(
-            jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel6Layout.createSequentialGroup()
-                .add(28, 28, 28)
-                .add(formPanel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 242, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(80, Short.MAX_VALUE))
-        );
-        jTabbedPane1.addTab("Transaction Control", jPanel6);
-
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder7 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder7.setTitle("Tax Declaration Report Format");
-        jPanel11.setBorder(xTitledBorder7);
+        xTitledBorder5.setTitle("Tax Declaration Report Format");
+        jPanel11.setBorder(xTitledBorder5);
 
         formPanel7.setCaptionWidth(40);
         xRadio1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
@@ -610,63 +346,36 @@ public class RPTSettingPage extends javax.swing.JPanel {
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private com.rameses.rcp.util.FormPanel formPanel1;
+    private com.rameses.rcp.util.FormPanel formPanel10;
     private com.rameses.rcp.util.FormPanel formPanel2;
-    private com.rameses.rcp.util.FormPanel formPanel3;
-    private com.rameses.rcp.util.FormPanel formPanel4;
-    private com.rameses.rcp.util.FormPanel formPanel5;
-    private com.rameses.rcp.util.FormPanel formPanel6;
     private com.rameses.rcp.util.FormPanel formPanel7;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
+    private com.rameses.rcp.util.FormPanel formPanel8;
+    private com.rameses.rcp.util.FormPanel formPanel9;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel10;
     private javax.swing.JPanel jPanel11;
+    private javax.swing.JPanel jPanel12;
+    private javax.swing.JPanel jPanel13;
+    private javax.swing.JPanel jPanel14;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
-    private javax.swing.JPanel jPanel4;
-    private javax.swing.JPanel jPanel5;
-    private javax.swing.JPanel jPanel6;
-    private javax.swing.JPanel jPanel7;
-    private javax.swing.JPanel jPanel8;
-    private javax.swing.JPanel jPanel9;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTabbedPane jTabbedPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
+    private com.rameses.rcp.control.XActionTextField xActionTextField2;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
-    private com.rameses.rcp.control.XCheckBox xCheckBox1;
-    private com.rameses.rcp.control.XCheckBox xCheckBox10;
     private com.rameses.rcp.control.XCheckBox xCheckBox11;
-    private com.rameses.rcp.control.XCheckBox xCheckBox2;
-    private com.rameses.rcp.control.XCheckBox xCheckBox3;
-    private com.rameses.rcp.control.XCheckBox xCheckBox4;
-    private com.rameses.rcp.control.XCheckBox xCheckBox5;
-    private com.rameses.rcp.control.XCheckBox xCheckBox6;
-    private com.rameses.rcp.control.XCheckBox xCheckBox7;
-    private com.rameses.rcp.control.XCheckBox xCheckBox8;
-    private com.rameses.rcp.control.XCheckBox xCheckBox9;
+    private com.rameses.rcp.control.XCheckBox xCheckBox12;
+    private com.rameses.rcp.control.XCheckBox xCheckBox13;
+    private com.rameses.rcp.control.XCheckBox xCheckBox14;
     private com.rameses.rcp.control.XDateField xDateField1;
     private com.rameses.rcp.control.XDateField xDateField2;
     private com.rameses.rcp.control.XList xList1;
-    private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField2;
-    private com.rameses.rcp.control.XNumberField xNumberField3;
-    private com.rameses.rcp.control.XNumberField xNumberField4;
-    private com.rameses.rcp.control.XNumberField xNumberField5;
-    private com.rameses.rcp.control.XNumberField xNumberField6;
     private com.rameses.rcp.control.XRadio xRadio1;
     private com.rameses.rcp.control.XRadio xRadio2;
     private com.rameses.rcp.control.XTextField xTextField1;
-    private com.rameses.rcp.control.XTextField xTextField10;
-    private com.rameses.rcp.control.XTextField xTextField7;
-    private com.rameses.rcp.control.XTextField xTextField8;
-    private com.rameses.rcp.control.XTextField xTextField9;
     // End of variables declaration//GEN-END:variables
     
 }

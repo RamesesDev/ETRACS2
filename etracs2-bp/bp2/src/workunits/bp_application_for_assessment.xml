@@ -4,13 +4,17 @@
         <invoker type="bp:FOR_ASSESSMENT" caption="Business Application" target="window"/>
         <invoker type="bp:FOR_APPROVAL" caption="Business Application" target="window"/>
         <invoker type="bp:FOR_REVIEW" caption="Business Application" target="window"/>
+        <invoker type="bp:APPROVED" caption="Business Application" target="window"/>
         
-        <invoker type="formActions" action="cancelAssessment" caption="Cancel Assessment"/>
+        <invoker type="formActions" action="cancelAssessment" caption="Cancel Assessment" visibleWhen="#{application.docstate != 'APPROVED'}"/>
         <invoker type="formActions" action="assess" caption="Assess" visibleWhen="#{application.docstate == 'FOR_ASSESSMENT'}"/>
-        <invoker type="formActions" action="reassess" caption="Re-Assess" visibleWhen="#{application.docstate == 'FOR_REVIEW' and application.docstate == 'FOR_APPROVAL'}"/>
+        <invoker type="formActions" action="reassess" caption="Re-Assess" visibleWhen="#{application.docstate == 'FOR_REVIEW' or application.docstate == 'FOR_APPROVAL'}"/>
         <invoker type="formActions" action="submit" caption="Submit For Approval" visibleWhen="#{application.docstate == 'FOR_REVIEW'}"/>
         <invoker type="formActions" action="disapprove" caption="Disapprove" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}"/>
         <invoker type="formActions" action="approve" caption="Approve" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}"/>
+        
+        <invoker type="formActions" action="viewAssessment" caption="View Assessment" visibleWhen="#{application.docstate == 'APPROVED'}"/>
+        <invoker type="formActions" action="printAssessment" caption="Print Assessment" visibleWhen="#{application.docstate == 'APPROVED'}"/>
     </invokers>
     
     <code>
@@ -68,7 +72,7 @@ class BusinessApplicationForAssessment
             new Column(name:'lobname', caption:'Line of Business'),
             new Column(name:'accttitle', caption:'Account'),
             new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal'),
-            new Column(name:'amountdue', caption:'Amount Due', type:'decimal', editable:(application.txnmode == 'CAPTURE')),
+            new Column(name:'amountdue', caption:'Amount Due', type:'decimal', editable:(application.txnmode == 'CAPTURE' && application.docstate != 'APPROVED')),
         ]},
         
         onColumnUpdate : { obj, name ->
@@ -81,10 +85,13 @@ class BusinessApplicationForAssessment
     ] as SubListModel
     
     def assess() { 
-        return InvokerUtil.lookupOpener('bp:assessmentinfo', [applist:applist, svc:svc]);
+        return InvokerUtil.lookupOpener('bp:assessmentinfo', [application:application, applist:applist, svc:svc]);
     }
     
-    def reassess(){  assess(); }
+    def reassess(){
+        def list = (appdata) ? [appdata] : applist;
+        return InvokerUtil.lookupOpener('bp:assessmentinfo', [application:application, applist:list, svc:svc]);
+    }
     
     def cancelAssessment(){ 
         def app = svc.cancelApplicationForAssessement( application.objid );
@@ -95,8 +102,9 @@ class BusinessApplicationForAssessment
         application = svc.submitForReview( application.objid, applist );
     }
     
-    void approve(){
+    def approve(){
         application = svc.approveApplication( application.objid, applist );
+        return InvokerUtil.lookupOpener('bp:assessment', [application:application]);
     }
     
     void disapprove(){
