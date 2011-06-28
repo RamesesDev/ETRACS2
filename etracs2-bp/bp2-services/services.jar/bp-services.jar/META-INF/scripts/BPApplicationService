@@ -52,6 +52,8 @@ class BPApplicationService{
 		application.tradename = application.info.tradename;
 		application.businessaddress = application.info.businessaddress;
 		application.txnno = getNextSeries();
+		if( application.txnmode == 'ONLINE' ) 
+			application.txndate = dateService.serverDate;
 		
 		em.validate( SCHEMANAME, application );
 		em.create( SCHEMANAME, application );
@@ -327,6 +329,10 @@ class BPApplicationService{
 		business.docstate = 'FOR_RELEASE';
 		createBPReceivable( business , applist );
 		
+		if( app.txnmode == 'ONLINE' && app.txntype.matches( 'RENEW|LATE_RENEWAL' ) ){
+			updatePreviousApplication( business.objid );
+		}
+		
 		em.update( BUSINESS_SCHEMA, business );
 		em.update( SCHEMANAME, app );
 		
@@ -399,4 +405,10 @@ class BPApplicationService{
 		return business;
 	}
 	
+	void updatePreviousApplication( def bussineid ){
+		def b = em.read( BUSINESS_SCHEMA, [objid:businessid] );
+		def app = em.read( SCHEMANAME, b.applicationid );
+		app.docstate = 'RENEWED';
+		em.update( SCHEMANAME, app );
+	}
 }

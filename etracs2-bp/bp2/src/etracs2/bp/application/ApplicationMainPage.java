@@ -38,6 +38,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         formPanel2 = new com.rameses.rcp.util.FormPanel();
         xDateField1 = new com.rameses.rcp.control.XDateField();
         xLabel3 = new com.rameses.rcp.control.XLabel();
+        xLabel5 = new com.rameses.rcp.control.XLabel();
         xLabel4 = new com.rameses.rcp.control.XLabel();
         jPanel3 = new javax.swing.JPanel();
         formPanel3 = new com.rameses.rcp.util.FormPanel();
@@ -123,11 +124,16 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         jPanel2.add(formPanel2);
         formPanel2.setBounds(350, 20, 240, 50);
 
+        xLabel5.setExpression("<html><font color='red'>#{application.txnmode}</font></html>");
+        xLabel5.setFont(new java.awt.Font("Tahoma", 1, 12));
+        jPanel2.add(xLabel5);
+        xLabel5.setBounds(120, 0, 150, 17);
+
         xLabel4.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        xLabel4.setExpression("<html><font color='blue'>#{application.txnno}</font>(<font color='red'>#{application.docstate}</font>)</html>");
+        xLabel4.setExpression("<html>#{application.txnno}(<font color='blue''>#{application.docstate}</font>)</html>");
         xLabel4.setFont(new java.awt.Font("Tahoma", 1, 12));
         jPanel2.add(xLabel4);
-        xLabel4.setBounds(122, 0, 460, 17);
+        xLabel4.setBounds(290, 0, 300, 17);
 
         jPanel1.add(jPanel2);
         jPanel2.setBounds(10, 0, 600, 90);
@@ -251,7 +257,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         formPanel7.add(jScrollPane1);
 
         jPanel1.add(formPanel7);
-        formPanel7.setBounds(390, 350, 220, 140);
+        formPanel7.setBounds(390, 350, 220, 150);
 
         jPanel4.setLayout(null);
 
@@ -261,7 +267,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xDataTable1.setHandler("lobHandler");
         xDataTable1.setName("lob");
         jPanel4.add(xDataTable1);
-        xDataTable1.setBounds(5, 50, 370, 50);
+        xDataTable1.setBounds(5, 50, 370, 60);
 
         jPanel5.setOpaque(false);
         xButton2.setText("Retire Line");
@@ -277,7 +283,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         jPanel5.add(xButton3);
 
         jPanel4.add(jPanel5);
-        jPanel5.setBounds(0, 100, 380, 33);
+        jPanel5.setBounds(0, 110, 380, 30);
 
         xActionTextField1.setActionName("getLookupLob");
         xActionTextField1.setCaption("Permittee");
@@ -289,7 +295,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xActionTextField1.setBounds(5, 30, 370, 19);
 
         jPanel1.add(jPanel4);
-        jPanel4.setBounds(10, 350, 380, 140);
+        jPanel4.setBounds(10, 350, 380, 150);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -324,6 +330,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
     private com.rameses.rcp.control.XLabel xLabel4;
+    private com.rameses.rcp.control.XLabel xLabel5;
     private com.rameses.rcp.control.XTextArea xTextArea1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
