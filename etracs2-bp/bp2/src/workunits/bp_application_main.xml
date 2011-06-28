@@ -62,7 +62,7 @@ class BPApplication
             return [
                 new Column(name:"name", caption:"Classification"),
                 new Column(name:"assessmenttype", caption:"Assessment Type"),
-                new Column(name:"iyear", caption:"Year"),
+                new Column(name:"iyear", caption:"Year")
             ];
         },
         
@@ -71,22 +71,23 @@ class BPApplication
                 application.info.lobs.remove( it );
             }
         },
-        
         fetchList : { return application.info.lobs; },
     ] as SubListModel;
     
     def onselect = { selected ->
         if(selected){
-            def o = application.info.lobs.find{ it.lobid = selected.objid };
+            def o = application.info.lobs.find{ it.lobid == selected.objid };
             if( o ) throw new Exception("LOB '$selected.name' is already in application list.");
+            
             application.info.lobs.add( [lobid:selected.objid, name:selected.name, assessmenttype:'NEW'] );
+            lobSearch = '';
+            
             binding.refresh();
         }
     }
     
-    def addLob(){
-        return InvokerUtil.lookupOpener('lob.lookup', [onselect:onselect]);
-    }
+    def lobSearch;
+    def lookupLob = InvokerUtil.lookupOpener('lob.lookup', [onselect:onselect]);
     
     void retireLob(){
         lob.assessmenttype = 'RETIRE';

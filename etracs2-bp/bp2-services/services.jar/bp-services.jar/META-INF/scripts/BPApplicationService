@@ -10,6 +10,7 @@ class BPApplicationService{
 	@Service('BPRuleService')
 	def ruleSvc;
 	
+	def BP_RECIVABLE_SCHAMENAME = 'bpledger:bpreceivable';
 	def BUSINESS_SCHEMA = 'business:business';
 	
 	def SCHEMANAME = 'bpapplication:bpapplication';
@@ -29,6 +30,9 @@ class BPApplicationService{
 	
 	@ProxyMethod
 	public def save( def application ){
+	
+		if( !application.info.lobs ) throw new Exception("There must be at least 1 line of business.");
+	
 		if( application.txndate ){
 			def txndate = format( application.txndate, 'yyyy-MM-dd');
 			application.iyear = format( txndate, 'yyyy' );
@@ -236,22 +240,20 @@ class BPApplicationService{
 			
 			app.infos.clear();
 			app.infos.taxfees.clear();
-			
-			app.infos = it.infos;
+
+			app.infos = it.infos.findAll{ it.requiredbeforeprint == false };
 			app.taxfees = [];
 			
 			checkValueType( app.infos );
-			
 			def res = ruleSvc.buildTaxFees( app );
 			
-			application.info.appinfos = app.infos;
-			application.info.taxfees = app.taxfees;
+			application.info.taxfees = res.taxfees;
 			
 			if( parentid == it.objid ){
 				if( application.docstate == 'FOR_ASSESSMENT' ) 
 					application.docstate = 'FOR_REVIEW';
 			}
-			
+
 			update( application );
 		}
 		
@@ -331,27 +333,39 @@ class BPApplicationService{
 		return app;
 	}
 	
+	def getAmount( def a, def b, def amount ){
+		def val = amount / b;
+		if( a == b ) return amount - (val * (b - 1)) ;
+		return val;
+	}
+
+	void saveReceivable( def qtr, def businessid, def app, def it ){
+		def brc = [
+			objid: 'BPRC' + new UID(),
+			businessid: businessid,
+			applicationid: app.objid,
+			applicationtype: app.txntype,
+			appno: app.txnno,
+			iyear: app.iyear,
+			iqtr: qtr,
+			lobid: it.lobid,
+			lobname: it.lobname,
+			acctid: it.acctid,
+			acctno: it.acctno,
+			accttitle: it.accttitle,
+			amount: getAmount( qtr , 4 , it.amountdue ),
+			amtpaid: 0.0
+		];
+		em.create( BP_RECIVABLE_SCHAMENAME, brc );
+	}
+	
 	void createBPReceivable( def business, def applist ){
-		def BP_RECIVABLE_SCHAMENAME = 'business:bpreceivable';
-		applist.each{
-			def app = open( it.objid );
+		applist.each{ a ->
+			def app = open( a.objid );
 			app.info.taxfees.each{
-				def brc = [
-					objid: 'BPRC' + new UID(),
-					businessid: business.objid,
-					applicationid: app.objid,
-					applicationtype: app.txntype,
-					appno: app.txnno,
-					iyear: app.iyear,
-					lobid: it.lobid,
-					lobname: it.lobname,
-					acctid: it.acctid,
-					acctno: it.acctno,
-					accttitle: it.accttitle,
-					amount: it.amountdue,
-					amtpaid: 0.0
-				];
-				em.create( BP_RECIVABLE_SCHAMENAME, brc );
+				for( int i=1; i <= 4; i++ ){
+					saveReceivable( i, business.objid, app, it );
+				}
 			}
 		}
 	}
