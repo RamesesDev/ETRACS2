@@ -143,18 +143,15 @@ public class MachRYSettingController
     
     void doValidateAssessLevel( al ) {
         try {
-            errorMsg = null 
             required(al.code, 'Code')
             required(al.name, 'Name')
             validateRate( al.rate )
             checkDuplicateAssessLevel( al )
             svc.saveAssessLevel( al ) 
-            binding.refresh('errorMsg') 
+            clearError()
         }
         catch( e ) {
-            errorMsg = e.message
-            binding.refresh('errorMsg') 
-            throw e 
+            showError( e )
         }
     }
     
@@ -189,16 +186,13 @@ public class MachRYSettingController
         }
         
         try {
-            errorMsg = null
             if( range.mvto < range.mvfrom && range.mvto != 0  ) throw new Exception('MV To must be greater than MV From')
             validateRate( range.rate )
             svc.saveAssessLevel( selectedAssessLevel )
-            binding.refresh('errorMsg') 
+            clearError()
         }
         catch( e ) {
-            errorMsg = e.message 
-            binding.refresh('errorMsg') 
-            throw e 
+            showError( e )
         }
     }
     
@@ -252,15 +246,11 @@ public class MachRYSettingController
         }
         if( ! forex.iyear ) forex.iyear = (lastItem ? lastItem.iyear + 1 : 1)
         try {
-            errorMsg = null
             validateRate( forex.forex )
             svc.saveForex( forex )
         }
         catch( e ) {
-            println e.message 
-            errorMsg = e.message 
-            binding.refresh('errorMsg') 
-            throw e 
+            showError( e )
         }
     }
     
@@ -333,6 +323,18 @@ public class MachRYSettingController
         else
             index += 1 
         return list.size() == index 
+    }
+    
+    void showError( e ) {
+        println e.message
+        errorMsg = e.message
+        binding.refresh('errorMsg')
+        throw e
+    }   
+    
+    void clearError() {
+        errorMsg = null
+        binding.refresh('errorMsg') 
     }
 }
 

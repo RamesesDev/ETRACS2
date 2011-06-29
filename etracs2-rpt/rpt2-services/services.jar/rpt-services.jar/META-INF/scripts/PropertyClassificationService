@@ -27,18 +27,17 @@ class PropertyClassificationService{
 		
 		return result;
 	}
-	
-	@ProxyMethod
-	public def getLookup( searchText, params ){
-		if( !searchText ) return getListByQuery( 'propertyclassification:lookupList', [:], params );
+    
+    @ProxyMethod
+    public List lookup( searchText, params ) {
+        if( !searchText ) return getListByQuery( 'propertyclassification:lookupList', [:], params );
 		
-		def result = [];
-		
-		if((result = getListByQuery( 'propertyclassification:lookupByCode', [propertycode:searchText+"%"], params ))) return result;
-		if((result = getListByQuery( 'propertyclassification:lookupByDescription', [propertydesc:searchText+"%"], params ))) return result;
-		
+        def result = [];
+		def criteria = [propertycode: searchText+'%',propertydesc:searchText+'%']
+		if((result = getListByQuery( 'propertyclassification:lookupByCode', criteria, params ))) return result;
+		if((result = getListByQuery( 'propertyclassification:lookupByDescription', criteria, params ))) return result;
 		return result;
-	}
+    }
 	
 	@ProxyMethod
 	public def open( objid ){

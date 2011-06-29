@@ -22,9 +22,20 @@ class ExemptionTypesService{
 		
 		def result = [];
 		
-		if((result = getListByQuery( 'exemptiontype:getListByCode', [propertycode:searchText+"%"], params ))) return result;
-		if((result = getListByQuery( 'exemptiontype:getListByDescription', [propertydesc:searchText+"%"], params ))) return result;
+		if((result = getListByQuery( 'exemptiontype:getListByCode', [exemptcode:searchText+"%"], params ))) return result;
+		if((result = getListByQuery( 'exemptiontype:getListByDescription', [exemptdesc:searchText+"%"], params ))) return result;
 		
+		return result;
+	}
+    
+    @ProxyMethod
+	public def lookup( searchText, params ){
+		if( !searchText ) return getListByQuery( 'exemptiontype:lookupList', [:], params );
+		
+		def result = [];
+		Map criteria = [exemptcode:searchText+'%', exemptdesc:searchText+'%']
+		if((result = getListByQuery( 'exemptiontype:lookupByCode', criteria, params ))) return result;
+		if((result = getListByQuery( 'exemptiontype:lookupByDescription', criteria, params ))) return result;
 		return result;
 	}
 	

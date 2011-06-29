@@ -7,6 +7,7 @@ SELECT * FROM propertyclassification WHERE propertycode LIKE $P{propertycode} OR
 [getListByDescription]
 SELECT * FROM propertyclassification WHERE propertydesc LIKE $P{propertydesc} ORDER BY orderno
 
+
 [lookupList]
 SELECT objid as classid, propertycode as classcode, propertydesc as classname FROM propertyclassification ORDER BY orderno
 
@@ -15,6 +16,9 @@ SELECT objid as classid, propertycode as classcode, propertydesc as classname FR
 
 [lookupByDescription]
 SELECT objid as classid, propertycode as classcode, propertydesc as classname FROM propertyclassification WHERE propertydesc LIKE $P{propertydesc} ORDER BY orderno
+
+
+
 
 [getById]
 SELECT * FROM propertyclassification WHERE objid = $P{objid}

@@ -1,0 +1,53 @@
+<schema>
+	<element name="rpu">
+		<field name="rputype" required="true" /> <!-- land, bldg, mach, misc, planttree -->
+        <link ref="rpu:rpuinfo"/>
+		<!-- links to outside rpu schema for land, bldg, mach, tree and misc -->
+		<complex name="info" ref="${rputype}" serializer="default"/>
+	</element>
+    
+	<element name="rpuinfo">
+		<field name="ry" required="true" type="integer" />
+		<field name="fullpin"  />
+		<field name="suffix" required="true" type="integer" />
+		<field name="subsuffix"  />
+		<field name="taxable" required="true" type="boolean" />
+		<field name="totalbmv" required="true" type="decimal" />
+		<field name="totalmv" required="true" type="decimal" />
+		<field name="totalav" required="true" type="decimal" />
+		<field name="totalareasqm" required="true" type="decimal" />
+		<field name="totalareaha" required="true" type="decimal" />
+		<field name="useswornamount"  required="true" type="boolean" />
+		<!-- classification -->
+        <field name="classid" required="true"/>
+		<field name="classcode"    required="true"/>
+		<field name="classname"    required="true"/>
+        <!-- exemption -->
+        <field name="exemptid"  />
+		<field name="exemptcode"  />
+		<field name="exemptname"  />
+        <!-- cancelinfo  -->
+        <field name="cancelreason"  />
+		<field name="canceldate" />
+		<field name="cancelledbytdnos"  />
+	</element>
+    
+    <!-- landrpu -->
+    <element name="land">
+		<field name="idleland" required="true" />
+        <field name="landvalueadjustment" required="true" type="decimal" />
+		<complex name="landdetails" ref="rpuland:landdetail" type="list" required="true" serializer="default" />
+        <complex name="landtotal" ref="rpuland:landtotal" required="true" serializer="default" />
+        <complex name="planttrees" ref="rpuplanttree:planttree" type="list" required="false" serializer="default" />
+		<complex name="planttotal" ref="rpuland:planttotal" required="false" serializer="default" />
+		<complex name="adjustments" ref="rpuland:adjustment" type="list" required="false" serializer="default" />
+	</element>
+    
+    <!-- planttreerpu -->
+    <element name="planttree">
+		<field name="totalbearing" required="true" type="integer" />
+		<field name="totalnonbearing" type="integer" />
+		<complex name="planttreedetails" ref="rpuplanttree:planttreedetail" type="list" min="1" serializer="default" />
+	</element>
+	
+</schema>

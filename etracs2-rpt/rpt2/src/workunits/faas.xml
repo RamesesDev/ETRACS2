@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="faas.create" action="initCreate" caption="New" mnemonic="n" shortcut="ctrl N" target="window"/>
+        <invoker type="faas.open" action="open" caption="Open" mnemonic="o" shortcut="ctrl O" target="window"/>
+        
+        <invoker type="formActions" action="_close" caption="Close" mnemonic="c" immediate="true" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{faas.docstate == 'INTERIM'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="submit" shortcut="ctrl M" visibleWhen="#{faas.docstate == 'INTERIM'}" caption="Submit For Approval" mnemonic="m" />
+        <invoker type="formActions" action="remove" shortcut="ctrl D" visibleWhen="#{faas.docstate == 'INTERIM'}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+import java.text.DecimalFormat;
+
+public class FAASController 
+{
+    @Binding
+    def binding
+    
+    @Service('FAASService')
+    def svc
+    
+    def faas 
+    def mode
+    def tdno 
+    
+    def initCreate() {
+        mode = 'create' 
+        faas = svc.createFaas( )
+        return 'new'
+    }
+    
+    void open() {
+        mode = 'view' 
+        faas = svc.open( faas.objid )
+        initFormFields( faas )
+    }
+    
+    void save() {
+        if( mode == 'create' )
+            faas = svc.create( faas )
+        else
+            faas = svc.update( faas )
+        mode = 'view'
+    }
+    
+    def remove() {
+        if( MsgBox.confirm('Delete FAAS?') ) {
+            svc.remove( faas.objid )
+            return '_close' 
+        }
+    }
+    
+    
+    void initFormFields( faas ) {
+        tdno = faas.info.tdno 
+        appraiser = faas.info.appraisedby
+        recommender = faas.info.recommendedby
+        approver = faas.info.approvedby
+        taxpayername = faas.info.taxpayername
+        administratorname = faas.info.administratorname
+    }
+    
+    /*-----------------------------------------------------------------------------
+    *
+    * MainPage Support 
+    *
+    -----------------------------------------------------------------------------*/
+    def onupdateRpu = { rpu ->
+        binding.refresh('faas.rpu.*|totalmv|totalav')
+    }
+    
+    def viewAssessment() {
+        def openerType =  'rpu.' + faas.rpu.rputype 
+        return InvokerUtil.lookupOpener(openerType, [onupdate:onupdateRpu, faas:faas, rpu:faas.rpu])
+    }
+    
+    void setTdno( tdno ){
+        this.tdno = tdno
+    }
+    
+    
+    /*-----------------------------------------------------------------------------
+    *
+    * MainPage:Lookup Support 
+    *
+    -----------------------------------------------------------------------------*/
+    def appraiser
+    def recommender
+    def approver
+    def ownername
+    def taxpayername
+    def administratorname 
+    
+    def onselectAppraiser = { officer ->
+        faas.info.appraisedbyid = officer.objid
+        faas.info.appraisedby = officer.name
+        faas.info.appraisedbytitle = officer.title 
+        appraiser = officer.name 
+        binding.refresh('appraiser')
+    }
+    
+    def onselectRecommender = { officer ->
+        faas.info.recommendedbyid = officer.objid
+        faas.info.recommendedby = officer.name
+        faas.info.recommendedbytitle = officer.title 
+        recommender = officer.name 
+        binding.refresh('recommender')
+    }
+    
+    def onselectApprover = { officer ->
+        faas.info.approvedbyid = officer.objid
+        faas.info.approvedby = officer.name
+        faas.info.approvedbytitle = officer.title 
+        approver = officer.name 
+        binding.refresh('approver')
+    }
+    
+    def onselectTaxpayer = { entity ->
+        faas.info.taxpayerid = entity.objid
+        faas.info.taxpayerno = entity.entityno
+        faas.info.taxpayername = entity.entityname
+        faas.info.taxpayeraddress = entity.entityaddress
+        taxpayername = entity.entityname 
+        binding.refresh('taxpayer.*|faas.info.taxpayer.*')
+    }
+    
+    def onselectAdministrator = { entity ->
+        faas.info.administratorid = entity.objid 
+        faas.info.administratorno = entity.entityno
+        faas.info.administratorname = entity.entityname
+        faas.info.administratoraddress = entity.entityaddress
+        administratorname = entity.entityname 
+        binding.refresh('administrator.*|faas.info.administrator.*')
+    }
+    
+    def lookupAppraiser() { 
+        return InvokerUtil.lookupOpener('rptofficers.lookup',[onselect:onselectAppraiser, searchText:appraiser, officerType:'APPRAISER'])
+    }
+    
+    def lookupRecommender() {
+        return InvokerUtil.lookupOpener('rptofficers.lookup',[onselect:onselectRecommender, searchText:recommender, officerType:'RECOMMENDER'])
+    }
+
+    def lookupApprover() {
+        return InvokerUtil.lookupOpener('rptofficers.lookup',[onselect:onselectApprover, searchText:approver, officerType:'APPROVER'])
+    }
+    
+    def lookupTaxpayer() {
+        return InvokerUtil.lookupOpener('entity.lookup',[onselect:onselectTaxpayer, searchText:taxpayername])
+    }
+    def lookupAdministrator() {
+        return InvokerUtil.lookupOpener('entity.lookup',[onselect:onselectAdministrator, searchText:administratorname])
+    }
+    
+    List getTitleTypes()   { return ['OCT','TCT','CLOA','EP'] }
+    List getRestrictions() { return ['CARP','UNDER_LITIGATION','OTHER'] }
+    
+    
+    /*-----------------------------------------------------------------------------
+    *
+    * NewPage Support (Initial Screen)
+    *
+    -----------------------------------------------------------------------------*/
+    boolean iscondo = false 
+    def barangay
+    int section
+    int parcel
+    
+    def create() {
+        faas.rp.barangayid = barangay.objid
+        faas.rp.barangay = barangay.lguname
+        faas.rp.barangayindex = barangay.indexno 
+        faas.rp.munidistrictid = barangay.parentid 
+        setSectionInfo()
+        setParcelInfo()
+        faas = svc.validateCreate( faas )
+        return 'default'
+    } 
+    
+    
+    void setSectionInfo() {
+        String ssection = section+''
+        if( ! ssection ) throw new Exception('Section is required.')
+        def sectionlength = ( faas.rp.pintype == 'new' ? 3 : 2 )
+        if( ssection.length() > sectionlength ) throw new Exception('Section must be ' +  sectionlength +' digits long.')
+        faas.rp.section = ssection.padLeft( sectionlength, '0' )
+    }
+    
+    void setParcelInfo() {
+        String sparcel = parcel+''
+        if( ! sparcel ) throw new Exception('Parcel is required.')
+        def parcellength = ( faas.rp.pintype == 'new' ? 2 : 3 )
+        if( sparcel.length() > parcellength ) throw new Exception('Parcel must be ' +  sectionlength +' digits long.')
+        faas.rp.parcel = sparcel.padLeft( parcellength, '0' )
+    }
+    
+    String getTotalmv() {
+        return moneyFormat( faas.rpu.totalmv )
+    }
+    
+    String getTotalav() {
+        return moneyFormat( faas.rpu.totalav )
+    }
+    
+    String moneyFormat( value ) {
+        return new DecimalFormat('#,##0.00').format( value )
+    }
+    
+    List getTxnTypes() { return svc.getTxnTypes() }
+    List getPinTypes() { return ['new', 'old'] }
+    List getBarangays(){ return svc.getBarangays() }
+    List getQuarters() { return [1,2,3,4] }
+}
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.FAASPage"/>
+        <page name="new" template="etracs2.rpt.faas.FAASNewPage"/>
+    </pages>
+</workunit>

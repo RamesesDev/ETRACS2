@@ -1,0 +1,164 @@
+<schema>
+	<!-- faas database storage -->
+	<element name="faas" tablename="faas">
+		<field name="objid" primary="true"/>
+		<field name="schemaname" required="true"/>
+		<field name="schemaversion" required="true"/>
+		<field name="docstate" required="true"/>
+		<complex name="info" ref="faasinfo" serializer="default"/>
+        <complex name="rp" ref="realproperty" serializer="default"/>
+		<complex name="rpu" ref="rpu:rpu" serializer="default" />
+		<complex name="previousfaases" ref="previousfaas" required="false" type="list" serializer="default" />
+		<complex name="extended" merge="true" serializer="default" required="false"/>
+	</element>
+    
+    <!-- realprperty "rp" info -->
+    <element name="realproperty">
+        <!-- location infos -->
+        <field name="provcity" required="true" />
+		<field name="munidistrict" required="true" />
+        <field name="barangay" required="true" />
+        <field name="barangayid" required="true"  />
+        <!-- pin infos -->
+        <field name="pintype" required="true" /> <!-- valid values: new = (3,2,4,3,2), old = (3,2,3,2,3) -->
+		<field name="pin" required="true" />
+        <field name="provcityindex" required="true"  />
+		<field name="munidistrictindex" required="true"  />
+		<field name="barangayindex" required="true"  />
+		<field name="section" required="true"  />
+		<field name="parcel" required="true"  />
+		<!-- general info -->
+		<field name="cadastrallotno" required="true"  />
+		<field name="blockno"  />
+		<field name="surveyno"  />
+		<field name="houseno"  />
+		<field name="street"  />
+		<field name="purok"  />
+		<complex name="attributes" type="list" serializer="default"  />
+        <!-- boundary -->
+		<field name="north" required="true"  />
+		<field name="south" required="true"  />
+		<field name="east" required="true"  />
+		<field name="west" required="true"  />
+    </element>
+	
+	<!-- faas info -->
+	<element name="faasinfo" >
+        <field name="datacapture" type="boolean" />
+        <field name="claimno" />
+        <field name="landfaasid" />
+        <field name="landfaastaxpayerid"/>
+        
+        <field name="tdno" />
+        <field name="arpno" />
+        <field name="txntype" required="true" />
+		<field name="issuedate" />
+		<field name="effectivityyear" type="integer" />
+		<field name="effectivityqtr" type="integer" />
+		<field name="titleno"  />
+		<field name="titledate" />
+		<field name="titletype"  />
+		<field name="memoranda" required="true" />
+        <field name="restriction" />
+        <field name="backtaxyrs" type="integer"/>
+        <field name="newdiscoveryinfo" />
+        
+		<!-- taxpayer info : links to entity -->
+		<field name="taxpayerid" required="true" />
+		<field name="taxpayerno" required="true" />
+		<field name="taxpayername" required="true"  />
+		<field name="taxpayeraddress" required="true" />
+        <!-- administrator info -->        
+		<field name="administratorid" />
+        <field name="administratorno" />
+		<field name="administratorname" />
+		<field name="administratoraddress" />
+        <!-- administrator info -->
+		<field name="beneficiaryid" />
+		<field name="beneficiaryname" />
+		<field name="beneficiaryaddress" />
+        <!-- titleowner name -->
+        <field name="ownername" required="true" />
+		<field name="owneraddress" required="true" />
+		<!-- previnfo name -->
+		<field name="prevtdno"  />
+		<field name="prevpin"  />
+		<field name="prevowner" />
+		<field name="prevav" required="true" type="decimal" />
+		<field name="prevmv" required="true" type="decimal" />
+		<!-- signatories --> 
+		<field name="appraisedby" required="true"  />
+		<field name="appraisedbytitle" required="true" />
+		<field name="dtappraised" required="true" />
+        <field name="taxmappedby" />
+		<field name="taxmappedbytitle" />
+		<field name="dttaxmapped" />
+		<field name="recommendedby" required="true"  />
+		<field name="recommendedbytitle" required="true" />
+		<field name="dtrecommended" required="true" />
+		<field name="reviewedby"  />
+		<field name="reviewedtitle" />
+		<field name="dtreviewed" />
+		<field name="approvedby" required="true"  />
+		<field name="approvedbytitle" required="true" />
+		<field name="dtapproved" required="true" />		
+        <!-- cancel info --> 
+        <field name="cancelreason"  />
+		<field name="canceldate" />
+		<field name="cancelledbytdnos"  />
+	</element>	
+    
+    <element name="faaslist" tablename="faaslist" >
+		<field name="objid" primary="true" />
+		<field name="docstate" required="true"  />
+        <field name="landfaasid" mapfield="info.landfaasid" />
+        <field name="landfaastaxpayerid" mapfield="info.landfaastaxpayerid"  />
+		<field name="txntype" mapfield="info.txntype" required="true"  />
+		<field name="tdno"  mapfield="info.tdno" />
+		<field name="issuedate" mapfield="info.issuedate" required="true" />
+		<field name="effectivityyear" mapfield="info.effectivityyear" required="true" type="integer" />
+		<field name="effectivityqtr" mapfield="info.effectivityqtr" required="true" type="integer" />
+		<field name="titleno"  mapfield="info.titleno" />
+		<field name="titletype"  mapfield="info.titletype" />
+		<field name="titledate" mapfield="info.titledate" />
+		<field name="taxpayerid"  mapfield="info.taxpayerid" />
+        <field name="taxpayerno" required="true"  mapfield="info.taxpayerno" />
+		<field name="taxpayername" required="true"  mapfield="info.taxpayername" />
+		<field name="taxpayeraddress" required="true"  mapfield="info.taxpayeraddress" />
+        <field name="administratorid"  mapfield="info.administratorid" />
+        <field name="administratorno"  mapfield="info.administratorno" />
+		<field name="administratorname"  mapfield="info.administratorname" />
+		<field name="administratoraddress"  mapfield="info.administratoraddress" />
+        <!-- signatories -->
+		<field name="appraisedby" required="true"  mapfield="info.appraisedby" />
+		<field name="appraisedbytitle" required="true"  mapfield="info.appraisedbytitle" />
+        <field name="recommendedby"  mapfield="info.recommendedby" />
+		<field name="recommendedbytitle"  mapfield="info.recommendedbytitle" />
+		<field name="approvedby" required="true"  mapfield="info.approvedby" />
+		<field name="approvedbytitle" required="true"  mapfield="info.approvedbytitle" />
+		<!-- rpu info -->
+		<field name="ry" required="true"  type="integer" mapfield="rpu.ry" />
+        <field name="rputype" required="true"  mapfield="rpu.rputype" />
+        <field name="fullpin" required="true"  mapfield="rpu.fullpin" />
+        <field name="classcode" mapfield="rpu.classcode" />
+        <field name="taxable" required="true"  mapfield="rpu.taxable" />
+        <field name="totalareasqm" required="true" type="decimal" mapfield="rpu.totalareasqm"/>
+        <field name="totalareaha" required="true" type="decimal" mapfield="rpu.totalareaha"/>
+		<field name="totalmv" required="true" type="decimal" mapfield="rpu.totalmv"/>
+		<field name="totalav" required="true" type="decimal" mapfield="rpu.totalav"/>
+		<!-- real property info -->
+		<field name="pintype" required="true" mapfield="rp.pintype"/>
+        <field name="pin" required="true"  mapfield="rp.pin" />
+        <field name="provcity" required="true"  mapfield="rp.provcity"/>
+        <field name="munidistrict" required="true"  mapfield="rp.munidistrict"/>
+		<field name="barangay" required="true"  mapfield="rp.barangay"/>
+		<field name="cadastrallotno" required="true"  mapfield="rp.cadastrallotno" />
+		<field name="blockno" mapfield="rp.blockno" />
+		<field name="surveyno" mapfield="rp.surveyno" />
+	</element>
+    
+	<element name="previousfaas">
+		<field name="faasid" required="true" />
+		<field name="tdno" required="true" />
+	</element>
+</schema>
