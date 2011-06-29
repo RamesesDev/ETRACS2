@@ -34,8 +34,10 @@ class BPApplicationService{
 		if( !application.info.lobs ) throw new Exception("There must be at least 1 line of business.");
 	
 		if( application.txndate ){
-			def txndate = format( application.txndate, 'yyyy-MM-dd');
-			application.iyear = format( txndate, 'yyyy' );
+			if( application.txnmode == 'CAPTURE' ) application.txndate = format( application.txndate, 'yyyy-MM-dd');
+			else application.txndate = dateService.serverDate;
+			application.iyear = format( application.txndate, 'yyyy' );
+
 			if( application.info.lobs ){
 				application.info.lobs.each{ it.iyear = application.iyear; }
 			}
@@ -52,8 +54,6 @@ class BPApplicationService{
 		application.tradename = application.info.tradename;
 		application.businessaddress = application.info.businessaddress;
 		application.txnno = getNextSeries();
-		if( application.txnmode == 'ONLINE' ) 
-			application.txndate = dateService.serverDate;
 		
 		em.validate( SCHEMANAME, application );
 		em.create( SCHEMANAME, application );
@@ -442,20 +442,14 @@ class BPApplicationService{
 	}
 	
 	def evaluateRetire( def application ){
-		def list = [];
-		em.sqlContext.createNamedQuery('bpapplication:getBusinessForRETIRE')
-		.setParameters([taxpayerid: application.taxpayerid])
-		.resultList.each{
-			it.info = em.serializer.read( it.info );
-			def item = [objid:it.objid, tradename:it.info.tradename, businessaddress:it.info.businessaddress, lobs:[]];
-			it.info.lobs.each{ l ->
-				l.assessmenttype = 'RETIRE';
-				item.lobs.add( l );
-			}
-			list.add( item );
-		}
-		application.info.lobs = list;
-		if( !list ) throw new Exception("There is no registered business for this taxpayer.");
+		def lobs = [];
+		def bp = em.read( 'business:business', application.businessid );
+		def prevapp = open( bp.applicationid );
+		
+		application.info = prevapp.info;
+		application.info.taxfees = [];
+		application.info.appinfos = [];
+		application.info.lobs.each{ it.assessmentype = 'RETIRE'; }
 		return application;
 	}
 	
