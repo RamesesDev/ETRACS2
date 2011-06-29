@@ -106,12 +106,12 @@ public class LandRYSettingService
     * LCUV Methods
     ----------------------------------------------------------*/
     private def createLCUV( entity ){
-	return em.sqlContext.createNamedQuery( 'landrysetting:getPropertyClassification' ).resultList.each{
-		it.objid = 'LCUV' + new UID();
-		it.landrysettingid = entity.objid;
-		it.previd = null;
-		saveLCUV( it );
-	};
+		return em.sqlContext.createNamedQuery( 'landrysetting:getPropertyClassification' ).resultList.each{
+			it.objid = it.classid;
+			it.landrysettingid = entity.objid;
+			it.previd = null;
+			saveLCUV( it );
+		};
     }
     @ProxyMethod
     public void saveLCUV( lcuv ) {
