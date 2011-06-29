@@ -13,10 +13,10 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  * @author  MS
  */
 @StyleSheet("etracs2/bp/application/ApplicationInitialPage.style")
-public class ApplicationInitialPage extends javax.swing.JPanel {
+public class ApplicationInitialPageA extends javax.swing.JPanel {
     
     /** Creates new form ApplicationInitialPage */
-    public ApplicationInitialPage() {
+    public ApplicationInitialPageA() {
         initComponents();
     }
     

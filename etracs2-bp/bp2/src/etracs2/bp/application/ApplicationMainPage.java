@@ -7,7 +7,6 @@
 package etracs2.bp.application;
 
 import com.rameses.rcp.ui.annotations.StyleSheet;
-import java.awt.FlowLayout;
 
 /**
  *
@@ -19,7 +18,6 @@ public class ApplicationMainPage extends javax.swing.JPanel {
     /** Creates new form ApplicationInitialPage */
     public ApplicationMainPage() {
         initComponents();
-        ((FlowLayout)jPanel5.getLayout()).setAlignment( FlowLayout.LEFT );
     }
     
     /** This method is called from within the constructor to
@@ -58,14 +56,8 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         formPanel6 = new com.rameses.rcp.util.FormPanel();
         xTextField8 = new com.rameses.rcp.control.XTextField();
         xTextField9 = new com.rameses.rcp.control.XTextField();
-        formPanel7 = new com.rameses.rcp.util.FormPanel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        xTextArea1 = new com.rameses.rcp.control.XTextArea();
         jPanel4 = new javax.swing.JPanel();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
-        jPanel5 = new javax.swing.JPanel();
-        xButton2 = new com.rameses.rcp.control.XButton();
-        xButton3 = new com.rameses.rcp.control.XButton();
         xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
 
         setLayout(new java.awt.BorderLayout());
@@ -124,10 +116,10 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         jPanel2.add(formPanel2);
         formPanel2.setBounds(350, 20, 240, 50);
 
-        xLabel5.setExpression("<html><font color='red'>#{application.txnmode}</font></html>");
+        xLabel5.setExpression("<html><font color='red'>#{application.txnmode} #{application.txntype}</font></html>");
         xLabel5.setFont(new java.awt.Font("Tahoma", 1, 12));
         jPanel2.add(xLabel5);
-        xLabel5.setBounds(120, 0, 150, 17);
+        xLabel5.setBounds(120, 0, 180, 20);
 
         xLabel4.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         xLabel4.setExpression("<html>#{application.txnno}(<font color='blue''>#{application.docstate}</font>)</html>");
@@ -136,7 +128,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xLabel4.setBounds(290, 0, 300, 17);
 
         jPanel1.add(jPanel2);
-        jPanel2.setBounds(10, 0, 600, 90);
+        jPanel2.setBounds(10, 0, 600, 80);
 
         jPanel3.setLayout(null);
 
@@ -241,49 +233,17 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         formPanel6.setBounds(0, 190, 590, 50);
 
         jPanel1.add(jPanel3);
-        jPanel3.setBounds(10, 90, 600, 260);
-
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder3.setTitle("Remarks");
-        formPanel7.setBorder(xTitledBorder3);
-        jScrollPane1.setPreferredSize(new java.awt.Dimension(0, 90));
-        xTextArea1.setColumns(20);
-        xTextArea1.setRows(5);
-        xTextArea1.setName("application.remarks");
-        xTextArea1.setPreferredSize(new java.awt.Dimension(0, 0));
-        xTextArea1.setShowCaption(false);
-        jScrollPane1.setViewportView(xTextArea1);
-
-        formPanel7.add(jScrollPane1);
-
-        jPanel1.add(formPanel7);
-        formPanel7.setBounds(390, 350, 220, 150);
+        jPanel3.setBounds(10, 80, 600, 250);
 
         jPanel4.setLayout(null);
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder4.setTitle("Line(s) Of Business");
-        jPanel4.setBorder(xTitledBorder4);
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder3.setTitle("Line(s) Of Business");
+        jPanel4.setBorder(xTitledBorder3);
         xDataTable1.setHandler("lobHandler");
         xDataTable1.setName("lob");
         jPanel4.add(xDataTable1);
-        xDataTable1.setBounds(5, 50, 370, 60);
-
-        jPanel5.setOpaque(false);
-        xButton2.setText("Retire Line");
-        xButton2.setDepends(new String[] {"lob"});
-        xButton2.setName("retireLob");
-        xButton2.setVisibleWhen("#{mode != 'view' and lob != null and lob.assessmenttype == 'RENEW'}");
-        jPanel5.add(xButton2);
-
-        xButton3.setText("Renew Line");
-        xButton3.setDepends(new String[] {"lob"});
-        xButton3.setName("renewLine");
-        xButton3.setVisibleWhen("#{mode != 'view' && lob != null and lob.assessmenttype == 'RETIRE LINE'}");
-        jPanel5.add(xButton3);
-
-        jPanel4.add(jPanel5);
-        jPanel5.setBounds(0, 110, 380, 30);
+        xDataTable1.setBounds(5, 50, 580, 110);
 
         xActionTextField1.setActionName("getLookupLob");
         xActionTextField1.setCaption("Permittee");
@@ -292,10 +252,10 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xActionTextField1.setName("lobSearch");
         xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
         jPanel4.add(xActionTextField1);
-        xActionTextField1.setBounds(5, 30, 370, 19);
+        xActionTextField1.setBounds(5, 30, 580, 19);
 
         jPanel1.add(jPanel4);
-        jPanel4.setBounds(10, 350, 380, 150);
+        jPanel4.setBounds(10, 330, 600, 170);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -309,17 +269,12 @@ public class ApplicationMainPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel4;
     private com.rameses.rcp.util.FormPanel formPanel5;
     private com.rameses.rcp.util.FormPanel formPanel6;
-    private com.rameses.rcp.util.FormPanel formPanel7;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
-    private javax.swing.JPanel jPanel5;
-    private javax.swing.JScrollPane jScrollPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
-    private com.rameses.rcp.control.XButton xButton2;
-    private com.rameses.rcp.control.XButton xButton3;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XComboBox xComboBox3;
@@ -331,7 +286,6 @@ public class ApplicationMainPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel3;
     private com.rameses.rcp.control.XLabel xLabel4;
     private com.rameses.rcp.control.XLabel xLabel5;
-    private com.rameses.rcp.control.XTextArea xTextArea1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;

@@ -123,14 +123,13 @@ class BPApplicationService{
 	
 	@ProxyMethod
 	public def evaluateTxnType(def application){
-		if( application.txntype == 'NEW' || application.txnmode == 'CAPTURE' ) return [application];
-		def res = em.sqlContext.createNamedQuery("bpapplication:getBusinessFor"+application.txntype)
-				    .setParameters([taxpayerid: application.taxpayerid])
-				    .resultList.each{  
-						it.lobs = em.serializer.read( it.info ).lobs; 
-					};
-		if( !res ) throw new Exception("There is no business to process this transaction.");
-		return res;
+		if( application.txntype == 'NEW' || application.txnmode == 'CAPTURE' ) return application;
+		if( application.txntype == 'ADDLOB' ) return evaluateAddLob( application );
+		if( application.txntype == 'RENEW' ) return evaluateRenew( application );
+		if( application.txntype == 'LATE_RENEWAL' ) return evaluateRenew( application );
+		if( application.txntype == 'RETIRE' ) return evaluateRetire( application );
+		if( application.txntype == 'RETIRELINE') return evaluateRetire( application );
+		throw new Exception( 'Transaction for '+ application.txnno +' not supported.');
 	}
 	
 	@ProxyMethod
@@ -250,6 +249,7 @@ class BPApplicationService{
 			def res = ruleSvc.buildTaxFees( app );
 			
 			application.info.taxfees = res.taxfees;
+			application.info.appinfos = it.infos;
 			
 			if( parentid == it.objid ){
 				if( application.docstate == 'FOR_ASSESSMENT' ) 
@@ -333,6 +333,7 @@ class BPApplicationService{
 			updatePreviousApplication( business.objid );
 		}
 		
+		app.business
 		em.update( BUSINESS_SCHEMA, business );
 		em.update( SCHEMANAME, app );
 		
@@ -340,8 +341,8 @@ class BPApplicationService{
 	}
 	
 	def getAmount( def a, def b, def amount ){
-		def val = amount.divide( new BigDecimal(b), 2, BigDecimal.ROUND_HALF_UP)
-		if( a == b ) return amount - (val * (b - 1)) ;
+		def val = new BigDecimal(amount).divide( new BigDecimal(b), 2, BigDecimal.ROUND_HALF_UP)
+		if( a == b ) return new BigDecimal(amount) - (val * ( new BigDecimal(b) - 1)) ;
 		return val;
 	}
 
@@ -405,10 +406,80 @@ class BPApplicationService{
 		return business;
 	}
 	
-	void updatePreviousApplication( def bussineid ){
+	void updatePreviousApplication( def busineid ){
 		def b = em.read( BUSINESS_SCHEMA, [objid:businessid] );
 		def app = em.read( SCHEMANAME, b.applicationid );
 		app.docstate = 'RENEWED';
 		em.update( SCHEMANAME, app );
 	}
+	
+	def evaluateAddLob( def application ){
+		def list = em.sqlContext.createNamedQuery('bpapplication:getBusinessForADDLOB')
+		             .setParameters([taxpayerid: application.taxpayerid])
+				     .resultList;
+		if( !list ) throw new Exception("There is no active business for this taxpayer.");
+		list.each{ it.lobs = [];}
+		application.info.lobs = list;
+		return application;
+	}
+	
+	def evaluateRenew( def application ){
+		def list = [];
+		em.sqlContext.createNamedQuery('bpapplication:getBusinessForRENEW')
+		.setParameters([taxpayerid: application.taxpayerid])
+		.resultList.each{
+			def item = [objid:it.objid, tradename:it.tradename, businessaddress:it.businessaddress, lobs:[]];
+			it.info.lobs.each{ l ->
+				l.assessmenttype = 'RENEW';
+				l.iyear = null;
+				item.add( l );
+			}
+			list.add( item );
+		};
+		application.info.lobs = list;
+		if( list ) throw new Exception('There is no expired business registered for this taxpayer.');
+		return application;
+	}
+	
+	def evaluateRetire( def application ){
+		def list = [];
+		em.sqlContext.createNamedQuery('bpapplication:getBusinessForRETIRE')
+		.setParameters([taxpayerid: application.taxpayerid])
+		.resultList.each{
+			it.info = em.serializer.read( it.info );
+			def item = [objid:it.objid, tradename:it.info.tradename, businessaddress:it.info.businessaddress, lobs:[]];
+			it.info.lobs.each{ l ->
+				l.assessmenttype = 'RETIRE';
+				item.lobs.add( l );
+			}
+			list.add( item );
+		}
+		application.info.lobs = list;
+		if( !list ) throw new Exception("There is no registered business for this taxpayer.");
+		return application;
+	}
+	
+	@ProxyMethod
+	public def lookupBusiness( def searchText ){
+	
+		def fetch = { list, qry, param ->
+			list.clear();
+			def q = em.sqlContext.createNamedQuery(qry);
+			if( param ) q.setParameter('searchText', param );
+			list.addAll( q.setMaxResults(10).resultList );
+			return list;
+		}
+		
+		def list = [];
+		if( !searchText ) return fetch(list, 'lookupbp:lookupBusiness', '' );
+		if( fetch( list, 'lookupbp:lookupBusinessByBIN', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupBusinessByAppNo', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupBusinessByPermitNo', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupBusinessByTradeName' , searchText + '%') ) return list;
+		if( fetch( list, 'lookupbp:lookupBusinessByTaxpayerName',searchText + '%') ) return list;
+		if( fetch( list, 'lookupbp:lookupBusinessAdminstratorName', searchText  + '%') ) return list;
+		if( fetch( list, 'lookupbp:lookupBusinessBusinessAddress', searchText +'%' ) ) return list;
+		return list;
+	}
+	
 }

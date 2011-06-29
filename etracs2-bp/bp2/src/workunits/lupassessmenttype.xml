@@ -1,0 +1,51 @@
+<workunit>
+    <invokers>
+        <invoker type="bp:assessmenttype" caption="Assessment Type" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+
+class AssessmentTypeLookupController extends LookupModel 
+{
+    def searchText;
+    def selected;
+    def items
+    def onselect;
+
+    def ok() {
+        onselect( selectedValue );
+        return '_close';
+    }
+    
+    def getListHandler() {
+        return this;
+    }
+    
+    int getRows() { return 5; }
+    
+    Column[] getColumns() {
+        return [ new Column(name:"name", caption:"Assessment Type") ];
+    }
+    
+    List fetchList( Map params ) {
+        def types = [];
+        items().each { 
+            types.add( [name:it] );
+        };
+        return types;
+    }
+}  
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.common.LookupPage"/>
+    </pages>
+</workunit>

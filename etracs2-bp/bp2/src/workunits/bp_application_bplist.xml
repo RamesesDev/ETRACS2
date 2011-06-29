@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="'bp:business_list'" caption="Business List" target="popup" modal="true"/>
+        <invoker type="bp:business_list" caption="Business Lookup" target="popup"/>
     </invokers>
     
     <code>
@@ -9,37 +9,43 @@
 
 import com.rameses.rcp.common.*;
 import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
 
 class LookupBusinessListController 
 {
-    def onselect;
-    def searchText;
-    def list;
+    @Service('BPApplicationService')
+    def svc;
     def selected;
+    def searchText;
     
-    def ok() {
-        if( onselect ) onselect( selected );
-        return "_close";
-    }
+    def onselect;
     
     def listHandler = [
         getRows    : { return 50; },
         getColumns : {
             return [
-                new Column(name:"txnno", caption:"Business No."),
-                new Column(name:"info.tradename", caption:"Trade Name"),
-                new Column(name:"info.businessaddress", caption:"Business Address")
+                new Column(name:"appno", caption:"App No."),
+                new Column(name:"taxpayername", caption:"Taxpayer Name"),
+                new Column(name:"tradename", caption:"Trade Name"),
+                new Column(name:"businessaddress", caption:"Business Address")
             ]
         },
 
         fetchList : { 
+            def list = svc.lookupBusiness( searchText );
+            if( !list ) throw new Exception( 'There are no records found.' );
             return list;
-	},
+	}
     ] as SubListModel;
     
-    void search(){
-        list.load();
+    def ok(){
+        if( selected ) onselect( selected );
+        return '_close';
     }
+    
+    def cancel(){ return '_close' };
+    void search(){ listHandler.load(); }
+    
 }  
 
 
