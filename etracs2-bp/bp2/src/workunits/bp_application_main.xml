@@ -6,7 +6,7 @@
         <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c" icon="images/cancel24.png" immediate="true"/>
         <invoker type="formActions" action="edit"   caption="Edit"   mnemonic="s" icon="images/edit24.png"   immediate="true"  shortcut="ctrl S" visibleWhen="#{mode == 'view'}"/>
         <invoker type="formActions" action="save"   caption="Save"   mnemonic="s" icon="images/save24.png"   shortcut="ctrl S"  visibleWhen="#{mode != 'view'}"/>
-        <invoker type="formActions" action="delete" caption="Delete" mnemonic="d" icon="images/delete24.png"   immediate="true" shortcut="ctrl X" visibleWhen="#{application.txxno != null and application.docstate != 'APPROVED' }"/>
+        <invoker type="formActions" action="delete" caption="Delete" mnemonic="d" icon="images/delete24.png"   immediate="true" shortcut="ctrl X" visibleWhen="#{application.txnno != null and application.docstate != 'APPROVED' }"/>
         
         <invoker type="formActions" action="submit"   caption="Submit" 
                  visibleWhen="#{application.docstate == 'DRAFT' and mode == 'view'}"/>
@@ -56,21 +56,47 @@ class BPApplication
     }
     
     def lob;
+    
+    def allowedDelete( def lob ){
+        if( mode != 'VIEW' ){
+            if( lob.assessmenttype == 'NEW' ) return true;
+            if( lob.assessmenttype == 'RENEW' && application.txntype == 'CAPTURE' ) return true;
+            if( application.txntype == 'RETIRE_LINE' ) return true;
+        }
+        return false;
+    }
+    
+    def onselecttype = { lob.assessmenttype = it.name; }
+    def typeList = {
+        def list = [];
+        if( lob?.assessmenttype == 'NEW' ) list.add( 'NEW' );
+        if( lob?.assessmenttype == 'RENEW' ) list.add( 'RETIRE' );
+        if( lob?.assessmenttype == 'RETIRE' ) list.add( 'RENEW' );
+        return list;
+    }
+    
+    def isTypeEditable = {
+        if( application.txntype == 'RETIRE' ) return false;
+        if( mode == 'view' ) return false;
+        return true;
+    }
+    def lookupType = InvokerUtil.lookupOpener('bp:assessmenttype', [items:typeList, onselect:onselecttype] );
     def lobHandler = [
         getRows    : { return 5; },
         getColumns : {
             return [
                 new Column(name:"name", caption:"Classification"),
-                new Column(name:"assessmenttype", caption:"Assessment Type"),
+                new Column(name:"assessmenttype", caption:"Assessment Type", type:'lookup', handler:lookupType, editable:isTypeEditable()),
                 new Column(name:"iyear", caption:"Year")
             ];
         },
         
         onRemoveItem : {
-            if( it.assessmenttype == 'NEW' ){
+            if( allowedDelete( it ) ) {
                 application.info.lobs.remove( it );
             }
         },
+        
         fetchList : { return application.info.lobs; },
     ] as SubListModel;
     
@@ -78,8 +104,9 @@ class BPApplication
         if(selected){
             def o = application.info.lobs.find{ it.lobid == selected.objid };
             if( o ) throw new Exception("LOB '$selected.name' is already in application list.");
-            
-            application.info.lobs.add( [lobid:selected.objid, name:selected.name, assessmenttype:'NEW'] );
+            def l = [lobid:selected.objid, name:selected.name, assessmenttype:'NEW'];
+            if( application.txnmode == 'CAPTURE' && application.txntype == 'RENEW' ) l.assessmenttype = 'RENEW';
+            application.info.lobs.add( l );
             lobSearch = '';
             
             binding.refresh();
@@ -88,16 +115,6 @@ class BPApplication
     
     def lobSearch;
     def lookupLob = InvokerUtil.lookupOpener('lob.lookup', [onselect:onselect]);
-    
-    void retireLob(){
-        lob.assessmenttype = 'RETIRE';
-        binding.refresh();
-    }
-    
-    void renewLob(){
-        lob.assessmenttype = 'RENEW';
-        binding.refresh();
-    }
     
     def cancel() {
         if( mode != 'edit' ) return '_close';

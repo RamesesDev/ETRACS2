@@ -1,17 +1,17 @@
-"application.*" [ mode != 'view' ] {
+"application.*" [ mode != 'view' && application.txntype != 'RETIRE'] {
     readonly:false;
 }
 
-"application.*" [ mode == 'view'  ] {
+"application.*" [ mode == 'view' || application.txntype == 'RETIRE' ] {
     readonly:true;
 }
 
-"lobSearch" [ mode == 'view' ]{
-    readonly:true;
-}
-
-"lobSearch" [ mode != 'view' ]{
+"lobSearch" [ mode != 'view' && application.txntype != 'RETIRE']{
     readonly:false;
+}
+
+"lobSearch" [ mode == 'view' || application.txntype == 'RETIRE']{
+    readonly:true;
 }
 
 "application.txndate" [application.txnmode == 'ONLINE' && mode != 'view']{
@@ -20,4 +20,12 @@
 
 "application.txndate" [application.txnmode == 'CAPTURE' && mode != 'view']{
     readonly:false;
+}
+
+"lob" [ mode != 'view' ] {
+    enabled:true;
+}
+
+"lob" [ mode == 'view' ] {
+    enabled:false;
 }
