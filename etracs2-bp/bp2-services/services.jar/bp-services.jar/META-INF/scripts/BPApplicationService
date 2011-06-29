@@ -371,7 +371,9 @@ class BPApplicationService{
 			def app = open( a.objid );
 			app.info.taxfees.each{
 				for( int i=1; i <= 4; i++ ){
-					saveReceivable( i, business.objid, app, it );
+					if( it.amount > 0 ){
+						saveReceivable( i, business.objid, app, it );
+					}
 				}
 			}
 		}
