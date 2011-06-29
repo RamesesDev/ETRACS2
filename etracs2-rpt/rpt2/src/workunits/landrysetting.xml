@@ -216,14 +216,14 @@ public class LandRYSettingController
         fetchList      : { return lcuv; },
     ] as SubListModel
     
-    
+    def areatypes = ['SQM', 'HA'];
     def specificClassListHandler = [
         createItem : { return createSpecificClass(); },
         getRows    : { return 50 },
         getColumns : { return [
             new Column(name:'classcode', caption:'Code', maxWidth:60, editable:true, editableWhen:'#{root.allowColumnEdit[item]}' ),
             new Column(name:'classname', caption:'Name', editable:true, editableWhen:'#{root.allowColumnEdit[item]}' ),
-            new Column(name:'areatype', caption:'Area Type', editable:true, editableWhen:'#{root.allowColumnEdit[item]}' ),
+            new Column(name:'areatype', caption:'Area Type', type:'combo', items:areatypes , editableWhen:'#{root.allowColumnEdit[item]}' ),
         ]},
         validate     : { li -> doValidateSpecificClass( li.item ) },
         onAddItem    : { item -> 
@@ -287,12 +287,12 @@ public class LandRYSettingController
     ] as SubListModel
     
     def allowColumnEdit = { item ->
-        if( !selectedLCUV.classid ) return false;
+        if( !selectedLCUV.classcode ) return false;
         return true;
     } as Map
     
     def allowSubClassColumnEdit = { item ->
-        if( !selectedLCUV.classid ) return false;
+        if( !selectedLCUV.classcode ) return false;
         if( !selectedSpecificClass.classcode ) return false;
         return true;
     } as Map
