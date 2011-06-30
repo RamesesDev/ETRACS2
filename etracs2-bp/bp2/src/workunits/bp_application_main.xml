@@ -2,6 +2,7 @@
     <invokers>
         <invoker type="bp:DRAFT" action="initView" caption="BP Application" target="window"/>
         <invoker type="bp:open" action="init" caption="BP Application"/>
+        <invoker type="bp:view" caption="BP Application"/>
 
         <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c" icon="images/cancel24.png" immediate="true"/>
         <invoker type="formActions" action="edit"   caption="Edit"   mnemonic="s" icon="images/edit24.png"   immediate="true"  shortcut="ctrl S" visibleWhen="#{mode == 'view'}"/>
@@ -66,29 +67,31 @@ class BPApplication
         return false;
     }
     
-    def onselecttype = { lob.assessmenttype = it.name; }
-    def typeList = {
-        def list = [];
-        if( lob?.assessmenttype == 'NEW' ) list.add( 'NEW' );
-        if( lob?.assessmenttype == 'RENEW' ) list.add( 'RETIRE' );
-        if( lob?.assessmenttype == 'RETIRE' ) list.add( 'RENEW' );
-        return list;
+    def getTypes = {
+        if( application.txntype.matches('RETIRE|RETIRE_LINE')) return ['ACTIVE','RETIRE_LINE'];
+        if( lob?.assessmenttype == 'RENEW' ) return ['RETIRE_LINE','RENEW'];
     }
     
     def isTypeEditable = {
-        if( application.txntype == 'RETIRE' ) return false;
-        if( mode == 'view' ) return false;
+        if( mode == 'VIEW' ) return false;
+        if( application.txntype == 'NEW' ) return false;
+        if( application.txnmode == 'CAPTURE' ) return false;
+        if( lob?.assessmenttype == 'ADDLOB' ) return false;
         return true;
     }
-    def lookupType = InvokerUtil.lookupOpener('bp:assessmenttype', [items:typeList, onselect:onselecttype] );
+    
     def lobHandler = [
         getRows    : { return 5; },
         getColumns : {
             return [
                 new Column(name:"name", caption:"Classification"),
-                new Column(name:"assessmenttype", caption:"Assessment Type", type:'lookup', handler:lookupType, editable:isTypeEditable()),
+                new Column(name:"assessmenttype", caption:"Assessment Type", type:'combo', items:getTypes(), editable: isTypeEditable(), required:true),
                 new Column(name:"iyear", caption:"Year")
             ];
+        },
+        
+        onColumndUpdate: { val, name ->
+            if( val ) lob.put(name, name);
         },
         
         onRemoveItem : {
@@ -140,6 +143,11 @@ class BPApplication
     def submit(){
        application = svc.submitForAssessment( application.objid );
        return InvokerUtil.lookupOpener('bp:assessment',[application:application]);
+    }
+    
+    def delete(){
+       svc.delete( application.objid );
+       return '_close';
     }
 }
 
