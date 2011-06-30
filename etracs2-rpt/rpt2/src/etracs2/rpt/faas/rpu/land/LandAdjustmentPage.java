@@ -70,6 +70,7 @@ public class LandAdjustmentPage extends javax.swing.JPanel {
         jPanel1.setLayout(new java.awt.BorderLayout());
 
         jPanel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setName("formActions");
         xActionBar1.setPadding(new java.awt.Insets(3, 0, 3, 0));
         xActionBar1.setUseToolBar(false);

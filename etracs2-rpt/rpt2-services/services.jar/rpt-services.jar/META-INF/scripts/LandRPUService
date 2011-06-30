@@ -60,10 +60,15 @@ class LandRPUService
     public def calculateLandAdjustment( landdetails, adjustment ) {
         def result = [landvalueadjustment:0.0]
         landdetails.each {
+            // evaluate the expr
             def binding = buildFieldBindings( it ) 
             binding += buildParamBindings( adjustment )
             def adjamout = numberSvc.round( evaluateExpr( adjustment.expr, binding ) )
             result.landvalueadjustment += adjamout
+            //remove existing adjustment
+            def oldadj = it.landadjustments.find{ it.adjtypeid == adjustment.adjtypeid }
+            if( oldadj ) it.landadjustments.remove( oldadj )
+            //add the adjustment 
             it.landadjustments.add( createAdjustment( adjustment, adjamout ) )
             calculateLandDetailAssessment( it )
         }

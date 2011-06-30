@@ -10,7 +10,7 @@ class FAASService
 	
 	@PersistenceContext('main')
 	def em
-	
+    
 	@Env
 	def env
 	
@@ -25,11 +25,14 @@ class FAASService
     
     @Service('LogService')
     def logSvc
+    
+    @Service('RPTLedgerService')
+    def ledgerSvc 
 
     def INTERIM_STATE = 'INTERIM'
     def FORAPPROVAL_STATE = 'FORAPPROVAL'
     def FORTAXMAP_STATE = 'FORTAXMAP'
-    def PROVAPPROVAL_STATE = 'FORPROVAPPROVAL'
+    def FORPROVAPPROVAL_STATE = 'FORPROVAPPROVAL'
 	def CURRENT_STATE = 'CURRENT'
 	def CANCELLED_STATE = 'CANCELLED'
     
@@ -79,6 +82,7 @@ class FAASService
             rp            : [attributes:[]],
             rpu           : [ry:ry, classid:'RES', classcode:'RES', classname:'RES',suffix:0,info:[:]],
             previousfaases: [],
+            lgutype       : var.lgu_type,
         ]
     }
     
@@ -111,9 +115,14 @@ class FAASService
         em.validate( faas.schemaname, faas )
         em.validate( LISTSCHEMA_NAME, faas )
         
-        em.update( faas.schemaname, faas, { diff ->
-            logSvc.logB('UPDATE', 'FAAS', faas.objid, '', diff )
-        } as UpdateChangeHandler )
+        if( faas.docstate == INTERIM_STATE ) {
+            em.update( faas.schemaname, faas )
+        }
+        else {
+            em.update( faas.schemaname, faas, { diff ->
+                logSvc.logB('UPDATE', 'FAAS', faas.objid, '', diff )
+            } as UpdateChangeHandler )
+        }
         em.update( LISTSCHEMA_NAME, faas )
         return faas 
     }    
@@ -128,6 +137,68 @@ class FAASService
         initOpenRpuInfo( faas.rpu )
         return faas 
     }
+    
+    @ProxyMethod
+    public Map submit( faasid ) {
+        def faasinfo = getFaasInfo( faasid )
+        validateSubmit( faasinfo )
+        def faas = open( faasinfo.objid )
+        updateFaasState( faas, FORAPPROVAL_STATE )
+        logSvc.log('SUBMIT','FAAS', faasid)
+        return faas 
+    }
+    
+    @ProxyMethod
+    public Map submitToProvince( faasid ) {
+        def faasinfo = getFaasInfo( faasid )
+        validateSubmitToProvince( faasinfo )
+        def faas = open( faasinfo.objid )
+        updateFaasState( faas, FORPROVAPPROVAL_STATE )
+        logSvc.log('SUBMIT_TO_PROVINCE','FAAS', faasid)
+        return faas 
+    }
+    
+    @ProxyMethod
+    public Map approve( faasid ) {
+        def faasinfo = getFaasInfo( faasid )
+        validateApprove( faasinfo )
+        def faas = open( faasinfo.objid )
+        validateRPUInfo( faas )
+        updateFaasState( faas, CURRENT_STATE )
+        ledgerSvc.post( faasid )
+        logSvc.log('APPROVE','FAAS', faasid)
+        return faas 
+    }
+    
+    @ProxyMethod
+    public Map approveByProvince( faasid ) {
+        def faasinfo = getFaasInfo( faasid )
+        validateProvinceApproval( faasinfo )
+        def faas = open( faasinfo.objid )
+        validateRPUInfo( faas )
+        updateFaasState( faas, CURRENT_STATE )
+        ledgerSvc.post( faasid  )
+        logSvc.log('PROVINCE_APPROVE','FAAS', faasid)
+        return faas 
+    }
+    
+    
+    @ProxyMethod
+    public void delete( faasid ) {
+        def faasinfo = getFaasInfo( faasid )
+        
+        //validate delete 
+        if( faasinfo.docstate != INTERIM_STATE ) throw new Exception('Delete not allowed for ' + faasinfo.docstate + ' record.' )
+        checkFaasTxnReference( faasid )
+        
+        //delete record
+        if( faasinfo.datacapture ) {
+            deletePin( faasinfo )
+        }
+        em.delete(LISTSCHEMA_NAME, [objid:faasid] )
+        em.delete(SCHEMA_NAME, [objid:faasid ] )
+    }
+    
     
     @ProxyMethod
     public void checkDuplicateTdNo( faasid, tdno ) {
@@ -154,7 +225,7 @@ class FAASService
     ** Support Methods
     -----------------------------------------------------------------------*/
     void createPIN( faas ) {
-        def pin = [pin:faas.rp.pin, claimno:faas.info.claimno, docstate:faas.docstate]
+        def pin = [pin:faas.rpu.fullpin, claimno:faas.info.claimno, docstate:faas.docstate]
         em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
     }
     void buildPinInfo( faas ) {
@@ -173,7 +244,7 @@ class FAASService
     
     void validateRpu( faas ) {
         validateRY( faas )
-        checkDuplicatePin( faas )
+        checkDuplicatePin( faas.rpu.rputype, faas.rpu.info.fullpin, faas.info.claimno )
         validateSuffix( faas )
     }
     
@@ -184,20 +255,18 @@ class FAASService
         if( ! data ) throw new Exception('Revision Setting ' + faas.rpu.ry + ' does not exist.')
     }
     
-    void checkDuplicatePin( faas ) {
-        if( faas.rpu.rputype != LAND_TYPE ) return 
+    void checkDuplicatePin( rputype, fullpin, claimno ) {
+        if( rputype != LAND_TYPE ) return 
         
-        String pin = faas.rp.pin 
-        if( faas.info.claimno == null ) {
+        if( claimno == null ) {
             //check for unique pin only
-            def data = em.sqlContext.createNamedQuery('faas:getPin').setParameter('pin', pin).singleResult
-            if( data ) throw new Exception('Duplicate PIN ' + faas.rp.pin + ' not allowed.')
+            def data = em.sqlContext.createNamedQuery('faas:getPin').setParameter('pin', fullpin).singleResult
+            if( data ) throw new Exception('Duplicate PIN ' + fullpin + ' not allowed.')
         }
         else {
             //check for unique pin and claimno  only
-            String claimno = faas.info.claimno
-            def data = em.sqlContext.createNamedQuery('faas:getPinClaimno').setParameters([pin:pin, claimno:claimno]).singleResult
-            if( data ) throw new Exception('Duplicate PIN ' + faas.rp.pin + ' with Claim No. ' + claimno + ' not allowed.')
+            def data = em.sqlContext.createNamedQuery('faas:getPinClaimno').setParameters([pin:fullpin, claimno:claimno]).singleResult
+            if( data ) throw new Exception('Duplicate PIN ' + fullpin + ' with Claim No. ' + claimno + ' not allowed.')
         }
     }
     
@@ -344,7 +413,90 @@ class FAASService
         return data.ry 
     }
     
+    def getFaasInfo( faasid ){
+        def faasinfo = em.read(LISTSCHEMA_NAME, [objid:faasid])
+        faasinfo.datacapture = faasinfo.datacapture as boolean 
+        return faasinfo 
+    }
     
+    def checkFaasTxnReference( faasid ) {
+        def ref = em.sqlContext.createNamedQuery('faas:getTxnReference').setParameter('objid', faasid).singleResult
+        if( ref ) {
+            throw new Exception(ref.message)
+        }
+    }
+    
+    void deletePin( faasinfo ) {
+        em.sqlContext.createNamedExecutor('faas:deletePin').setParameter('pin', faasinfo.fullpin).execute()
+    }
+    
+    void validateSubmit( faasinfo ) {
+        if( faasinfo.docstate == FORAPPROVAL_STATE ) throw new Exception('FAAS has already been submitted.')
+        if( faasinfo.docstate == FORPROVAPPROVAL_STATE ) throw new Exception('FAAS has already been submitted to province.')
+        if( faasinfo.docstate == CURRENT_STATE) throw new Exception('FAAS is already current.')
+        if( faasinfo.docstate == CANCELLED_STATE ) throw new Exception('FAAS has already been cancelled.')
+        checkDuplicateTdNo( faasinfo.objid, faasinfo.tdno )
+    }
+    
+    void validateSubmitToProvince( faasinfo ) {
+        if( faasinfo.docstate == INTERIM_STATE ) throw new Exception('FAAS is still interim.')
+        if( faasinfo.docstate == FORPROVAPPROVAL_STATE ) throw new Exception('FAAS has already been submitted to province.')
+        if( faasinfo.docstate == CURRENT_STATE) throw new Exception('FAAS is already current.')
+        if( faasinfo.docstate == CANCELLED_STATE ) throw new Exception('FAAS has already been cancelled.')
+        checkDuplicateTdNo( faasinfo.objid, faasinfo.tdno )
+    }
+    
+    void validateApprove( faasinfo ) {
+        if( faasinfo.docstate == INTERIM_STATE ) throw new Exception('FAAS is still interim.')
+        if( faasinfo.docstate == CURRENT_STATE) throw new Exception('FAAS is already current.')
+        if( faasinfo.docstate == CANCELLED_STATE ) throw new Exception('FAAS has already been cancelled.')
+        checkDuplicateTdNo( faasinfo.objid, faasinfo.tdno )
+        checkCurrentLand( faasinfo )
+    }
+    
+    //valida rpu specific information here
+    void validateRPUInfo( faas ) {
+        if( faas.rpu.rputype == LAND_TYPE ) {
+            //TODO:validate LandRPU 
+            println 'FAASService.validateRPUInfo -> LAND not yet implemented.'
+        }
+    }
+    
+    void validateProvinceApproval( faasinfo ) {
+        if( faasinfo.docstate == INTERIM_STATE ) throw new Exception('FAAS is still interim.')
+        if( faasinfo.docstate == FORAPPROVAL_STATE ) throw new Exception('FAAS must not be FORAPPROVAL state.')
+        if( faasinfo.docstate == CURRENT_STATE) throw new Exception('FAAS is already current.')
+        if( faasinfo.docstate == CANCELLED_STATE ) throw new Exception('FAAS has already been cancelled.')
+        checkDuplicateTdNo( faasinfo.objid, faasinfo.tdno )
+        checkCurrentLand( faasinfo )
+    }
+    
+    void checkCurrentLand( faasinfo ) {
+        // this validation is applied for land improvements.
+        // approve improvements only when the land is current 
+        if( faasinfo.rputype != 'land' ) {
+            def landfaas = getFaasInfo( faasinfo.landfaasid )
+            if( landfaas.docstate == CANCELLED_STATE ) throw new Exception('Land FAAS with TD No. ' + landfaas.tdno + ' has already been cancelled.')
+            if( landfaas.docstate != CURRENT_STATE) throw new Exception('Land FAAS with TD No. ' + landfaas.tdno + ' is not yet current.\nApprove the land before approving this record.')
+        }
+    }
 	
+    Map updateFaasState( faas, state ) {
+        faas.docstate = state
+        em.sqlContext.createNamedExecutor('faas:updateState').setParameters( faas ).execute()
+        em.sqlContext.createNamedExecutor('faas:updateListState').setParameters( faas ).execute()
+        updatePinState( faas.rpu.fullpin, faas.info.claimno, faas.docstate )
+        return faas 
+    }
+    
+    void updatePinState( fullpin, claimno, docstate ) {
+        def pincriteria = [pin:fullpin, claimno:claimno, docstate:docstate]
+        if( claimno ) {
+            em.sqlContext.createNamedExecutor('faas:updatePinStateWithClaimno').setParameters( pincriteria ).execute()
+        }
+        else {
+            em.sqlContext.createNamedExecutor('faas:updatePinState').setParameters( pincriteria ).execute()
+        }
+    }
 }
 

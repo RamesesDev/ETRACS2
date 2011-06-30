@@ -1,6 +1,10 @@
 #----------------------------------------------------------------
 # GETTERS
 #----------------------------------------------------------------
+
+[getTxnReference]
+SELECT * FROM txnreference WHERE objid = $P{objid}
+
 [getState]
 SELECT state FROM faas WHERE objid = $P{objid}
 
@@ -54,7 +58,23 @@ SELECT ry FROM rptsetting
 #----------------------------------------------------------------
 [insertPin]
 INSERT INTO pin ( pin, claimno, docstate ) VALUES( $P{pin}, $P{claimno}, $P{docstate} )
+
+#----------------------------------------------------------------
+# UPDATE
+#----------------------------------------------------------------
+[updateState]    
+UPDATE faas SET docstate = $P{docstate} WHERE objid = $P{objid} 
     
+[updateListState]    
+UPDATE faaslist SET docstate = $P{docstate} WHERE objid = $P{objid} 
+
+[updatePinState]    
+UPDATE pin SET docstate = $P{docstate} WHERE pin = $P{pin} 
+
+[updatePinStateWithClaimno]    
+UPDATE pin SET docstate = $P{docstate} WHERE pin = $P{pin} AND claimno = $P{claimno}
+
+
 
 #----------------------------------------------------------------
 # CHECKS
@@ -65,7 +85,8 @@ SELECT tdno FROM faaslist WHERE objid <> $P{objid} AND tdno = $P{tdno}
 #----------------------------------------------------------------
 # DELETES
 #----------------------------------------------------------------
-		
+[deletePin]		
+DELETE FROM pin WHERE pin = $P{pin}
 		
 		
 #----------------------------------------------------------------

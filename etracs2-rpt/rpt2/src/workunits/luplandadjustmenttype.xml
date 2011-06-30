@@ -5,6 +5,7 @@
 <workunit>
     <invokers>
         <invoker type="landadjustmenttype.lookup" action="init" caption="Land Adjustment Lookup" target="popup" />
+        <invoker type="landadjustmenttype.view" action="open" caption="Edit Adjustment Parameter" target="popup" />
     </invokers>
     
     <code>
@@ -14,7 +15,7 @@
 import com.rameses.rcp.common.*
 import com.rameses.rcp.annotations.*
 
-class LandAdjustmentLookupController extends LookupModel 
+class LandAdjustmentTypeLookupController extends LookupModel 
 {
     @Service("LandRPUService")
     def svc
@@ -34,13 +35,19 @@ class LandAdjustmentLookupController extends LookupModel
     void init(){
     }
     
+    def open () {
+        return 'info'
+    }
+    
     def okInfo() {
-        selectedItem.item.params = []
+        selectedItem.item.params.clear()
         params.each{
             selectedItem.item.params.add([
                 paramid     : it.paramid,
                 paramname   : it.paramname,
-                paramvalue  : convertParamValue( it )
+                paramcaption : it.paramcaption, 
+                datatype    : it.datatype,
+                paramvalue  : convertParamValue( it ),
             ])
         }
         if( onselect ) onselect( selected)
@@ -52,15 +59,15 @@ class LandAdjustmentLookupController extends LookupModel
             return Double.parseDouble( param.paramvalue )
         }
         else if( param.datatype == 'range_decimal' ) {
-            def decvalue = Double.parseDouble( param.paramvalue )
+            def decvalue = parseDouble( param.paramvalue )
             if( decvalue < param.minvalue || decvalue > param.maxvalue ) throw new Exception("Value must be between $param.minvalue and $param.maxvalue." )
             return decvalue
         }
         else if( param.datatype == 'integer' ) {
-            return Integer.parseInt( param.paramvalue )
+            return parseInt( param.paramvalue )
         }
         else if( param.datatype == 'range_integer' ) {
-            def intvalue = Integer.parseInt( param.paramvalue )
+            def intvalue = parseInt( param.parmvalue )
             if( intvalue < param.minvalue || intvalue > param.maxvalue ) throw new Exception("Value must be between $param.minvalue and $param.maxvalue.")
             return intvalue 
         }
@@ -114,6 +121,24 @@ class LandAdjustmentLookupController extends LookupModel
         fetchList  : { return params }
     ] as PageListModel
 
+    
+    def parseDouble( value ) {
+        try {
+            return Double.parseDouble( value )
+        }
+        catch( e ) {
+            throw new Exception('Invalid parameter value.')
+        }
+    }
+    
+    def parseInt( value ) {
+        try {
+            return Integer.parseInt( value )
+        }
+        catch( e ) {
+            throw new Exception('Invalid parameter value.')
+        }
+    }
 }  
 
 
