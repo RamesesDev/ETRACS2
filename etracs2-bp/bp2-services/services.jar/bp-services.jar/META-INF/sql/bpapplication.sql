@@ -8,32 +8,30 @@ SELECT
 FROM bpapplication o ORDER BY o.txnno 
 
 [getBusinessForRENEW] 
-SELECT b.objid, b.txnno, b.iyear, bpa.info FROM business b 
-INNER JOIN bpapplication bpa on bpa.businessid = b.objid 
+SELECT b.objid, b.tradename, b.businessaddress, bpa.info FROM business b 
+INNER JOIN bpapplication bpa ON bpa.businessid = b.objid 
 WHERE b.taxpayerid = $P{taxpayerid} 
-AND   bpa.docstate = 'EXPIRED' 
+AND   b.docstate = 'EXPIRED' 
 
 [getBusinessForRETIRE] 
-SELECT b.objid, b.txnno, b.iyear, bpa.info FROM business b 
-INNER JOIN bpapplication bpa on bpa.businessid = b.objid 
+SELECT b.objid, bpa.txnno, b.yearstated, bpa.info FROM business b 
+INNER JOIN bpapplication bpa ON bpa.businessid = b.objid 
 WHERE b.taxpayerid = $P{taxpayerid} 
-AND   bpa.docstate IN 'ACTIVE|EXPIRED' 
+AND   b.docstate NOT IN ('RETIRE') 
 
 [getBusinessForRETIRELINE] 
-SELECT b.objid, b.txnno, b.iyear, bpa.info FROM business b 
-INNER JOIN bpapplication bpa on bpa.businessid = b.objid 
+SELECT b.objid, bpa.txnno, b.yearstated, bpa.info FROM business b 
+INNER JOIN bpapplication bpa ON bpa.businessid = b.objid 
 WHERE b.taxpayerid = $P{taxpayerid} 
-AND   bpa.docstate IN 'ACTIVE|EXPIRED'
 
 [getBusinessForADDLOB] 
-SELECT b.objid, b.txnno, b.iyear, bpa.info FROM business b 
-INNER JOIN bpapplication bpa on bpa.businessid = b.objid 
+SELECT b.objid, b.tradename, b.businessaddress FROM business b 
 WHERE b.taxpayerid = $P{taxpayerid} 
-AND   bpa.docstate = 'ACTIVE' 
+AND   b.docstate = 'ACTIVE' 
 
 [getApplicationByBusinessId] 
 SELECT bpa.* FROM business b  
-INNER JOIN bpapplication bpa on bpa.objid = b.applicationid 
+INNER JOIN bpapplication bpa ON bpa.objid = b.applicationid 
 WHERE b.objid = $P{objid} 
 
 [getApplicationByParentId] 

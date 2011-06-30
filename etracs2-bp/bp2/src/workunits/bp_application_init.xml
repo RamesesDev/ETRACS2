@@ -1,11 +1,10 @@
 <workunit>
     <invokers>
-        <invoker type="bp:new" action="init"             caption="Business Application" target="window"/>
+        <invoker type="bp:new" action="init" caption="Business Application" target="window"/>
         <invoker folderid="/menu/bp/txn" action="initNew" caption="New Business"/>
         <invoker folderid="/menu/bp/txn" action="initRenew" caption="Renew Business"/>
         <invoker folderid="/menu/bp/txn" action="initAddline" caption="Add Line Of Business"/>
         <invoker folderid="/menu/bp/txn" action="initRetire" caption="Retire Busines"/>
-        <invoker folderid="/menu/bp/txn" action="initRetireline" caption="Retire Line of Business"/>
         <invoker folderid="/menu/bp/txn" action="initCaptureRenew" caption="Renew Business (CAPTURE)"/>
         <invoker folderid="/menu/bp/txn" action="initCaptureNew"   caption="New Busiess (Capture)"/>
         
@@ -29,6 +28,7 @@ class BusinessApplication
     @Service("BPApplicationService")
     def svc;
     
+    def business = [:];
     def application = [
         docstate:'DRAFT',
         info:[taxpayername:'',taxpayeraddress:'', lobs:[]],
@@ -37,28 +37,57 @@ class BusinessApplication
     def typeList;
     def modeList;
 
-    void initCaptureNew(){
+    def initAddline(){
+        init();
+        application.txnmode = 'ONLINE';
+        application.txntype = 'ADDLOB';
+        return 'pageB';
+    }
+    
+    def initRetire(){
+        init();
+        application.txnmode = 'ONLINE';
+        application.txntype = 'RETIRE';
+        application.txndate = new Date();
+        return 'pageB';
+    }
+    
+    def initRetireline(){
+        init();
+        application.txnmode = 'ONLINE';
+        application.txntype = 'RETIRE_LINE';
+        application.txndate = new Date();
+        return 'pageB';
+    }
+    
+    def initCaptureNew(){
         init();
         application.txnmode = 'CAPTURE';
         application.txntype = 'NEW';   
+        return 'default';
     }
     
-    void initCaptureRenew(){
+    def initCaptureRenew(){
         init();
         application.txnmode = 'CAPTURE';
         application.txntype = 'NEW';   
+        return 'default';
     }
     
-    void initNew(){
+    def initNew(){
         init();
         application.txnmode = 'ONLINE';
         application.txntype = 'NEW';
+        application.txndate = new Date();
+        return 'default';
     }
     
-    void initRenew(){
+    def initRenew(){
         init();
         application.txnmode = 'ONLINE';
         application.txntype = 'RENEW';
+        application.txndate = new Date();
+        return 'pageB';
     }
     
     void init(){
@@ -69,7 +98,6 @@ class BusinessApplication
     
     def onselect = { entity ->
         if( entity ){
-            application.businessid = entity.objid;
             application.info.taxpayername = entity.entityname;
             application.info.taxpayeraddress = entity.entityaddress;
             application.info.taxpayerid = entity.objid;
@@ -78,23 +106,24 @@ class BusinessApplication
         binding.refresh();
     }
     
+    def onbpselect = { entity ->
+        if( entity ){
+            business.appno = entity.appno;
+            business.objid = entity.objid;
+            business.tradename = entity.tradename;
+            business.businessaddress = entity.businessaddress;
+        }
+        binding.refresh();
+    }
+    
     def next(){
-        def res = svc.evaluateTxnType( application );
-        if( res.size() == 1 ) {
-            application.businessid = res[0].objid;
-            application.info.lobs = res[0].info.lobs;
-            return InvokerUtil.lookupOpener('bp:open', [application:application]);
-        }
-        
-        def lobs = null;
-        InvokerUtil.invokeOpener( InvokerUtil.lookupOpener( 'bp:business_list', [list: res, onselect:{ lobs = it.lobs; }] ) );
-        
-        if( lobs != null ){
-            application.info.lobs = lobs;
-            return InvokerUtil.lookupOpener('bp:open', [application:application]);
-        }
-
-        return null;
+        application.businessid = business.objid;
+        application = svc.evaluateTxnType( application );
+        return InvokerUtil.lookupOpener('bp:open', [application:application]);
+    }
+    
+    public def lookupBusiness(){
+        return InvokerUtil.lookupOpener( 'bp:business_list', [onselect: onbpselect, searchText:business.appno] );
     }
     
     public def lookupPayer(){
@@ -106,6 +135,7 @@ class BusinessApplication
         
     </code>
     <pages>
-        <page template="etracs2.bp.application.ApplicationInitialPage"/>
+        <page template="etracs2.bp.application.ApplicationInitialPageA"/>
+        <page template="etracs2.bp.application.ApplicationInitialPageB" name='pageB'/>
     </pages>
 </workunit>
