@@ -32,6 +32,7 @@ public class MiscRPUPage extends javax.swing.JPanel {
         jLabel2 = new javax.swing.JLabel();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         xComboBox3 = new com.rameses.rcp.control.XComboBox();
+        xLabel6 = new com.rameses.rcp.control.XLabel();
         formPanel3 = new com.rameses.rcp.util.FormPanel();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
         xNumberField2 = new com.rameses.rcp.control.XNumberField();
@@ -71,6 +72,11 @@ public class MiscRPUPage extends javax.swing.JPanel {
         xComboBox3.setItems("classifications");
         xComboBox3.setName("rpu.classcode");
 
+        xLabel6.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        xLabel6.setForeground(new java.awt.Color(153, 0, 0));
+        xLabel6.setFont(new java.awt.Font("Arial", 1, 11));
+        xLabel6.setName("errorMsg");
+
         org.jdesktop.layout.GroupLayout jPanel3Layout = new org.jdesktop.layout.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
@@ -84,7 +90,10 @@ public class MiscRPUPage extends javax.swing.JPanel {
                         .add(xComboBox3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                     .add(jPanel3Layout.createSequentialGroup()
                         .addContainerGap()
-                        .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 780, Short.MAX_VALUE)))
+                        .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 780, Short.MAX_VALUE))
+                    .add(jPanel3Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(xLabel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 780, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
@@ -95,8 +104,9 @@ public class MiscRPUPage extends javax.swing.JPanel {
                     .add(jLabel2)
                     .add(xComboBox3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 179, Short.MAX_VALUE)
-                .addContainerGap())
+                .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 165, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(xLabel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
         );
         jPanel2.add(jPanel3, java.awt.BorderLayout.CENTER);
 
@@ -228,6 +238,7 @@ public class MiscRPUPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel2;
+    private com.rameses.rcp.control.XLabel xLabel6;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField2;
     private com.rameses.rcp.control.XNumberField xNumberField3;
