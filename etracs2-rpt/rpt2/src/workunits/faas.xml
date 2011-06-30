@@ -5,9 +5,12 @@
         <invoker type="faas.open" action="open" caption="Open" mnemonic="o" shortcut="ctrl O" target="window"/>
         
         <invoker type="formActions" action="_close" caption="Close" mnemonic="c" immediate="true" />
-        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{faas.docstate == 'INTERIM'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{showSaveAction == true}" caption="Save" mnemonic="s" icon="images/save24.png"/>
         <invoker type="formActions" action="submit" shortcut="ctrl M" visibleWhen="#{faas.docstate == 'INTERIM'}" caption="Submit For Approval" mnemonic="m" />
-        <invoker type="formActions" action="remove" shortcut="ctrl D" visibleWhen="#{faas.docstate == 'INTERIM'}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
+        <invoker type="formActions" action="remove" shortcut="ctrl D" visibleWhen="#{faas.docstate == 'INTERIM'}" immediate="true" caption="Delete" mnemonic="d" />
+        <invoker type="formActions" action="approve" shortcut="ctrl A" visibleWhen="#{showApproveAction == true}" caption="Approve" mnemonic="a" icon="images/save24.png"/>
+        <invoker type="formActions" action="submitToProvince" shortcut="ctrl M" visibleWhen="#{showSubmitToProvinceAction == true}" caption="Submit To Province" mnemonic="m" />
+        <invoker type="formActions" action="approveByProvince" shortcut="ctrl A" visibleWhen="#{showApprovedByProvinceAction == true}" caption="Approve" mnemonic="a" />
     </invokers>
     <code lang="groovy">
 <![CDATA[
@@ -50,10 +53,39 @@ public class FAASController
     
     def remove() {
         if( MsgBox.confirm('Delete FAAS?') ) {
-            svc.remove( faas.objid )
+            svc.delete( faas.objid )
             return '_close' 
         }
     }
+    
+    void submit() {
+        if( MsgBox.confirm('Submit FAAS?') ) {
+            save()
+            faas = svc.submit( faas.objid )
+        }
+    }
+    
+    void approve() {
+        if( MsgBox.confirm('Approve FAAS?') ) {
+            save()
+            faas = svc.approve( faas.objid )
+        }
+    }
+    
+    void submitToProvince() {
+        if( MsgBox.confirm('Submit to Province?') ) {
+            save()
+            faas = svc.submitToProvince( faas.objid )
+        }
+    }
+    
+    void approveByProvince() {
+        if( MsgBox.confirm('Approve FAAS?') ) {
+            faas = svc.approveByProvince( faas.objid )
+        }
+    }    
+    
+    
     
     
     void initFormFields( faas ) {
@@ -215,6 +247,31 @@ public class FAASController
     List getPinTypes() { return ['new', 'old'] }
     List getBarangays(){ return svc.getBarangays() }
     List getQuarters() { return [1,2,3,4] }
+    
+    
+    boolean getShowSaveAction() {
+        if( faas.docstate == 'INTERIM' ) return true
+        if( faas.docstate == 'FORAPPROVAL' ) return true
+        return false 
+    }
+    
+    boolean getShowApproveAction() {
+        if( faas.lgutype != 'city'  ) return false
+        if( faas.docstate != 'FORAPPROVAL' ) return false
+        return true
+    }
+    
+    boolean getShowSubmitToProvinceAction() {
+        if( faas.lgutype != 'municipality'  ) return false
+        if( faas.docstate != 'FORAPPROVAL' ) return false
+        return true 
+    }
+    
+    boolean getShowApprovedByProvinceAction() {
+        if( faas.lgutype != 'municipality'  ) return false
+        if( faas.docstate != 'FORPROVAPPROVAL' ) return false
+        return true
+    }
 }
 
 ]]>

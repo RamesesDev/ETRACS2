@@ -3,6 +3,7 @@
     <invokers>
         <invoker type="landrpuadjustment.open" action="init" caption="Open" target="popup" />
         
+        <invoker type="formActions" action="viewParams" caption="View Parameters" mnemonic="v" visibleWhen="#{allowViewParams == true}" default="true" />
         <invoker type="formActions" action="ok" caption="OK" mnemonic="o" default="true" />
         <invoker type="formActions" action="_close" caption="Cancel" mnemonic="c" immediate="true"  />
         
@@ -31,6 +32,14 @@ public class LandRPUAdjustmentController
     def errorMsg 
     
     void init() {
+    }
+    
+    def onupdateHandler = { la ->
+        calculateAdjustment( selectedItem )
+    }
+    
+    def viewParams() {
+        return InvokerUtil.lookupOpener('landadjustmenparam.view', [landAdjustment:selectedItem, onupdate:onupdateHandler] )
     }
     
     def ok() {
@@ -130,6 +139,11 @@ public class LandRPUAdjustmentController
     void clearError() {
         errorMsg = null
         binding.refresh('errorMsg') 
+    }
+    
+    boolean getAllowViewParams() {
+        if( ! selectedItem  ) return false
+        return selectedItem.params.size() > 0 
     }
 }
 
