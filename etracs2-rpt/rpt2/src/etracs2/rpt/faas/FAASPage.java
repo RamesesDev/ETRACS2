@@ -301,6 +301,7 @@ public class FAASPage extends javax.swing.JPanel {
         xTextField6.setCaption("TD No.");
         xTextField6.setDepends(new String[] {"faas.info.titletype"});
         xTextField6.setName("faas.info.claimno");
+        xTextField6.setReadonly(true);
         jPanel5.add(xTextField6);
         xTextField6.setBounds(216, 114, 76, 19);
 

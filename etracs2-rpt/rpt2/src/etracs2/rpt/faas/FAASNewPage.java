@@ -35,6 +35,7 @@ public class FAASNewPage extends javax.swing.JPanel {
         xNumberField3 = new com.rameses.rcp.control.XNumberField();
         xNumberField4 = new com.rameses.rcp.control.XNumberField();
         xNumberField5 = new com.rameses.rcp.control.XNumberField();
+        xTextField2 = new com.rameses.rcp.control.XTextField();
         jPanel1 = new javax.swing.JPanel();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
@@ -107,6 +108,19 @@ public class FAASNewPage extends javax.swing.JPanel {
         xNumberField5.setRequired(true);
         formPanel1.add(xNumberField5);
 
+        xTextField2.setCaption("Claim No.");
+        xTextField2.setCaptionWidth(100);
+        xTextField2.setDepends(new String[] {"faas.info.txn"});
+        xTextField2.setName("faas.info.claimno");
+        xTextField2.setPreferredSize(new java.awt.Dimension(100, 19));
+        xTextField2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                xTextField2ActionPerformed(evt);
+            }
+        });
+
+        formPanel1.add(xTextField2);
+
         jPanel1.setLayout(null);
 
         jPanel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(204, 204, 204)));
@@ -161,7 +175,7 @@ public class FAASNewPage extends javax.swing.JPanel {
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 198, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 219, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 62, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
@@ -171,6 +185,10 @@ public class FAASNewPage extends javax.swing.JPanel {
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
+
+    private void xTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_xTextField2ActionPerformed
+// TODO add your handling code here:
+    }//GEN-LAST:event_xTextField2ActionPerformed
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -188,6 +206,7 @@ public class FAASNewPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XNumberField xNumberField4;
     private com.rameses.rcp.control.XNumberField xNumberField5;
     private com.rameses.rcp.control.XTextField xTextField1;
+    private com.rameses.rcp.control.XTextField xTextField2;
     // End of variables declaration//GEN-END:variables
     
 }

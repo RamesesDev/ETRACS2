@@ -93,13 +93,32 @@ class FAASService
             schemaversion : SCHEMA_VERSION,
             docstate      : INTERIM_STATE,
             transmitted   : false,
-            info          : [datacapture:true, prevmv:0.0, prevav:0.0, effectivityqtr:1, memoranda:'REVISED PURSUANT TO R.A. 7160', autonumber:false, backtaxyrs:0],
+            info          : [datacapture:true, claimno:'-',prevmv:0.0, prevav:0.0, effectivityqtr:1, memoranda:'REVISED PURSUANT TO R.A. 7160', autonumber:false, backtaxyrs:0],
             rp            : [attributes:[]],
             rpu           : [ry:ry, classid:'RES', classcode:'RES', classname:'RES',suffix:0,info:[:]],
             previousfaases: [],
             lgutype       : var.lgu_type,
         ]
     }
+    
+    @ProxyMethod
+    public Map createNewDiscovery(){
+        def faas = createFaas()
+        faas.info.txn = resolveTxnType('ND')
+        faas.info.txntype = faas.info.txn.txntype 
+        faas.info.datacapture = false 
+        return faas 
+    }
+    
+    @ProxyMethod
+    public Map createMultipleClaim(){
+        def faas = createFaas()
+        faas.info.txn = resolveTxnType('MC')
+        faas.info.txntype = faas.info.txn.txntype 
+        faas.info.datacapture = false 
+        return faas 
+    }
+    
     
     @ProxyMethod
     public Map validateCreate( faas ) {
@@ -222,17 +241,21 @@ class FAASService
     ** Transaction Support Methods
     -----------------------------------------------------------------------*/
     @ProxyMethod
-    public Map initTransaction( txntype, prevtdno, autonumber) {
+    public Map initTransaction( txntype, prevtdno, autonumber, claimno) {
         def faas = em.sqlContext.createNamedQuery('faas:getInfoByTdno').setParameter('tdno', prevtdno).singleResult
         if( ! faas ) throw new Exception('FAAS ' + prevtdno + ' does not exists.')
         if( faas.docstate == CANCELLED_STATE ) throw new Exception('FAAS ' +  prevtdno + ' has already been cancelled.')
         if( faas.docstate != CURRENT_STATE ) throw new Exception('FAAS ' +  prevtdno + ' is not current.')
         checkFaasTxnReference( faas.objid )
-        checkLedgerBalance( faas.ledgerid )
+        if( txntype != 'MC' ) {
+            //multiple claim has separate ledgers 
+            checkLedgerBalance( faas.ledgerid )
+        }
         faas = open( faas.objid )
         if( txntype == 'TR' ) return initTransfer( faas, txntype, autonumber )
         else if( txntype == 'RE' ) return initReassessment( faas, txntype, autonumber )
         else if( txntype == 'CE' ) return initCorrection( faas, txntype, autonumber )
+        else if( txntype == 'MC' ) return initMultipleClaim( faas, txntype, autonumber, claimno )
         else throw new Exception('FAASService.initTransaction: TxnType ' + txntype + ' not yet supported.')
     }
     
@@ -298,7 +321,7 @@ class FAASService
     
     void createPIN( faas ) {
         def validTxnTypes = ['DC','ND','SD','CS']
-        if( validTxnTypes.contains( faas.info.txntype ) ) {
+        if(  faas.info.datacapture || validTxnTypes.contains( faas.info.txntype ) ) {
             def pin = [pin:faas.rpu.fullpin, claimno:faas.info.claimno, docstate:faas.docstate]
             em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
         }
@@ -314,12 +337,15 @@ class FAASService
         faas.rp.munidistrict = lgu.lguname 
         faas.rp.munidistrictindex = lgu.indexno 
         faas.rp.pin = faas.rp.provcityindex + '-' + faas.rp.munidistrictindex + '-' + faas.rp.barangayindex + '-' + faas.rp.section + '-' + faas.rp.parcel 
-        
+        faas.rpu.fullpin = faas.rp.pin 
+        if( faas.rpu.rputype != LAND_TYPE ) {
+            faas.rpu.fullpin += '-' + faas.rpu.suffix 
+        }
     }
     
     void validateRpu( faas ) {
         validateRY( faas )
-        checkDuplicatePin( faas.rpu.rputype, faas.rpu.info.fullpin, faas.info.claimno )
+        checkDuplicatePin( faas.rpu.rputype, faas.rpu.fullpin, faas.info.claimno )
         validateSuffix( faas )
     }
     
@@ -333,15 +359,15 @@ class FAASService
     void checkDuplicatePin( rputype, fullpin, claimno ) {
         if( rputype != LAND_TYPE ) return 
         
-        if( claimno == null ) {
-            //check for unique pin only
-            def data = em.sqlContext.createNamedQuery('faas:getPin').setParameter('pin', fullpin).singleResult
-            if( data ) throw new Exception('Duplicate PIN ' + fullpin + ' not allowed.')
-        }
-        else {
+        if( claimno ) {
             //check for unique pin and claimno  only
             def data = em.sqlContext.createNamedQuery('faas:getPinClaimno').setParameters([pin:fullpin, claimno:claimno]).singleResult
             if( data ) throw new Exception('Duplicate PIN ' + fullpin + ' with Claim No. ' + claimno + ' not allowed.')
+        }
+        else {
+            //check for unique pin only
+            def data = em.sqlContext.createNamedQuery('faas:getPin').setParameter('pin', fullpin).singleResult
+            if( data ) throw new Exception('Duplicate PIN ' + fullpin + ' not allowed.')
         }
     }
         
@@ -464,6 +490,7 @@ class FAASService
         if( faasinfo.docstate == CURRENT_STATE) throw new Exception('FAAS is already current.')
         if( faasinfo.docstate == CANCELLED_STATE ) throw new Exception('FAAS has already been cancelled.')
         checkDuplicateTdNo( faasinfo.objid, faasinfo.tdno )
+        if( faasinfo.totalmv <= 0 ) throw new Exception('RPU must be assessed.')
         validateTransactionInfo( faasinfo )
     }
     
@@ -495,6 +522,9 @@ class FAASService
     
     //valida rpu specific information here
     void validateRPUInfo( faas ) {
+        if( faas.info.txntype == 'MC' && !faas.info.claimno ) {
+            throw new Exception('Claim No. is required.')
+        }
         if( faas.rpu.rputype == LAND_TYPE ) {
             //TODO:validate LandRPU 
             println 'TODO:FAASService.validateRPUInfo -> LAND not yet implemented.'
@@ -581,6 +611,24 @@ class FAASService
         //clear info 
         faas.info.tdno        = null 
         faas.info.memoranda   = null 
+        return faas 
+    }
+    
+    Map initMultipleClaim( faas, txntype, autonumber, claimno ) {
+        updateFaasCommonTxnInfo( faas, txntype, autonumber ) 
+        faas.info.claimno = claimno 
+        faas.info.tdno          = null 
+        faas.info.ownername     = null 
+        faas.info.owneraddress  = null
+        faas.info.taxpayerid    = null
+        faas.info.taxpayername  = null
+        faas.info.taxpayeraddress      = null 
+        faas.info.administratorid      = null 
+        faas.info.administratorname    = null 
+        faas.info.administratoraddress = null 
+        faas.info.memoranda            = null 
+        faas.info.titleno              = null
+        faas.info.titledate            = null 
         return faas 
     }
     

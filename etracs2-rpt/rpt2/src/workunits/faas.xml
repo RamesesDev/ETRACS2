@@ -9,6 +9,8 @@
         <invoker folderid="/menu/rpt/txn" action="transfer" caption="Transfer of Ownership" mnemonic="t"  target="window"/>
         <invoker folderid="/menu/rpt/txn" action="reassessment" caption="Re-Assessment" mnemonic="r" target="window"/>
         <invoker folderid="/menu/rpt/txn" action="correction" caption="Correction of Entry" mnemonic="e" target="window"/>
+        <invoker folderid="/menu/rpt/txn" action="newdiscovery" caption="New Discovery" mnemonic="d" target="window"/>
+        <invoker folderid="/menu/rpt/txn" action="multipleclaim" caption="Multiple Claim" mnemonic="m" target="window"/>
         
         <invoker type="formActions" action="_close" caption="Close" mnemonic="c" immediate="true" />
         <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{showSaveAction == true}" caption="Save" mnemonic="s" icon="images/save24.png"/>
@@ -284,20 +286,28 @@ public class FAASController
     boolean autonumber = false
     def txntitle
     def txntype
+    def claimno
     
-    def transfer()      { initTxn( 'create', 'TR', 'Transfer of Ownership Transaction' ) }
-    def reassessment()  { initTxn( 'create', 'RE', 'Re-Assessment Transaction' ) }
-    def correction()      { initTxn( 'create', 'CE', 'Correction of Entry Transaction' ) }
+    def newdiscovery()  { 
+        mode = 'create' 
+        faas = svc.createNewDiscovery()
+        return 'new' 
+    }
     
-    def initTxn( mode, txntype, txntitle ) {
-        this.mode = mode
+    def transfer()      { initTxn( 'TR', 'Transfer of Ownership Transaction' ) }
+    def reassessment()  { initTxn( 'RE', 'Re-Assessment Transaction' ) }
+    def correction()    { initTxn( 'CE', 'Correction of Entry Transaction' ) }
+    def multipleclaim() { initTxn( 'MC', 'Multiple Claim Transaction' ) }
+    
+    def initTxn( txntype, txntitle ) {
+        this.mode = 'create'
         this.txntype = txntype
         this.txntitle = txntitle 
         return 'txninit'
     }
     
     def initTransaction() {
-        faas = svc.initTransaction( txntype, prevtdno, autonumber)
+        faas = svc.initTransaction( txntype, prevtdno, autonumber, claimno)
         initFormFields( faas )
         return 'default'
     }
@@ -317,7 +327,7 @@ public class FAASController
     
     boolean getAllowEditPinInfo() {
         if( faas.info.datacapture == true ) return true
-        if( faas.info.txntype == 'CE' ) return true 
+        if( 'CE/ND/MC'.indexOf( faas.info.txntype ) >= 0 ) return true
         return false
     }
 }

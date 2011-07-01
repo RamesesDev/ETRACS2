@@ -35,13 +35,15 @@ class RPTLedgerService
 	@ProxyMethod
     public void post( faasid ) {
         def faas = openFaas( faasid )
-        if( faas.datacapture == true ) postDataCapture( faas )
-        else if( 'TR/RE/CE'.indexOf( faas.txntype ) >= 0 ) postTransaction( faas ) 
+        if( faas.datacapture == true ) postNewLedger( faas, PENDING_STATE )
+        else if( 'TR/RE/CE'.indexOf( faas.txntype ) >= 0 ) postLedgerItem( faas ) 
+        else if( 'ND/MC'.indexOf( faas.txntype ) >= 0 ) postNewLedger( faas, APPROVED_STATE )
         else throw new Exception('RPTLedgerService.post: Posting of TxnType ' + faas.txntype + ' is not yet supported.')        
     }
     
-    void postDataCapture( faas ) {
-        def ledger = createLedger( faas, PENDING_STATE )
+    void postNewLedger( faas, state ) {
+        println 'postnewledger'
+        def ledger = createLedger( faas, state)
         def ledgeritem = createLedgerItem( ledger )
         em.validate( ledger.schemaname, ledger ) 
         em.validate( ledgeritem.schemaname, ledgeritem ) 
@@ -49,7 +51,7 @@ class RPTLedgerService
         em.create( ledgeritem.schemaname, ledgeritem )
     }
     
-    void postTransaction( faas ) {
+    void postLedgerItem( faas ) {
         def ledger = updateLedger( faas  )
         def ledgeritem = createLedgerItem( ledger ) 
         closePreviousLedgerItemToYear( ledger, faas )
@@ -63,7 +65,8 @@ class RPTLedgerService
     Map createLedger( faas, state ) {
         def ledger = [:]
         ledger.putAll( faas )
-        ledger.objid            = faas.fullpin 
+        ledger.objid            = faas.fullpin + '-' + faas.claimno
+        ledger.claimno          = faas.claimno 
         ledger.schemaname       = LEDGER_SCHEMA
         ledger.schemaversion    = SCHEMA_VERSION
         ledger.faasid           = faas.objid 
