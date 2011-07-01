@@ -7,6 +7,11 @@ class RPUService
     @PersistenceContext('main')
     def em
     
+    def LAND_TYPE = 'land' 
+    def BLDG_TYPE = 'bldg'
+    def MACH_TYPE = 'mach'
+    def PLANTTREE_TYPE = 'planttree'
+    def MISC_TYPE = 'misc' 
     
     @ProxyMethod
     public List getFieldList() {
@@ -34,5 +39,32 @@ class RPUService
         }
         return list 
     }
+    
+    @ProxyMethod
+    public void buildCommonRpuInfo( faas  ) {
+        def rpuinfo = faas.rpu 
+        rpuinfo.fullpin         = buildFullPin( faas )
+        rpuinfo.taxable         = true 
+        rpuinfo.totalbmv        = 0.0
+        rpuinfo.totalmv         = 0.0
+        rpuinfo.totalav         = 0.0
+        rpuinfo.totalareasqm    = 0.0
+        rpuinfo.totalareaha     = 0.0
+        rpuinfo.useswornamount  = false
+    }
+    
+    
+    
 
+    String buildFullPin( faas ) {
+        String fullpin = faas.rp.pin 
+        if( faas.rpu.rputype != LAND_TYPE ) {
+            fullpin += '-' + faas.rpu.suffix 
+        }
+        if( faas.rpu.rputype == BLDG_TYPE && faas.rpu.info.iscondo ) {
+            fullpin += '-' + faas.rpu.info.subsuffix
+        }
+        return fullpin 
+    }
+    
 }

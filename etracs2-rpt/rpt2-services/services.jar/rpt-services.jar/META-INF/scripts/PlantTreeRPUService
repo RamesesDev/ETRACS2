@@ -8,9 +8,22 @@ class PlantTreeRPUService
     
     @Service('NumberService')
 	def numberSvc
+    
+    @Service('RPUService')
+    def rpuSvc 
 
 	@Env
 	def env
+    
+    @ProxyMethod
+    public Map initPlantTreeRpu( faas ) {
+        rpuSvc.buildCommonRpuInfo( faas )
+        def rpuinfo = faas.rpu.info 
+        //
+        //set plant/tree specific info below
+        
+        return faas 
+    }
 	
     @ProxyMethod
     public Map calculatePlantTreeAssessment( planttree ) {

@@ -1,6 +1,9 @@
 #----------------------------------------------------------------
 # GETTERS
 #----------------------------------------------------------------
+[getInfoByTdno]
+SELECT objid, docstate, schemaname, fullpin, fullpin AS ledgerid FROM faaslist WHERE tdno = $P{tdno} 
+
 
 [getTxnReference]
 SELECT * FROM txnreference WHERE objid = $P{objid}
@@ -53,11 +56,18 @@ SELECT * FROM pin WHERE pin = $P{pin} AND claimno = $P{claimno}
 [getCurrentRY]
 SELECT ry FROM rptsetting  
 
+
+[getLedgerInfo]
+SELECT objid, docstate, lastyearpaid, lastqtrpaid FROM rptledger where objid = $P{objid} 
 #----------------------------------------------------------------
 # INSERT
 #----------------------------------------------------------------
 [insertPin]
 INSERT INTO pin ( pin, claimno, docstate ) VALUES( $P{pin}, $P{claimno}, $P{docstate} )
+
+[insertTxnReference]
+INSERT INTO txnreference (objid, refid, refname, message, txndate )  
+VALUES( $P{objid}, $P{refid}, $P{refname}, $P{message}, $P{txndate} ) 
 
 #----------------------------------------------------------------
 # UPDATE
@@ -74,7 +84,13 @@ UPDATE pin SET docstate = $P{docstate} WHERE pin = $P{pin}
 [updatePinStateWithClaimno]    
 UPDATE pin SET docstate = $P{docstate} WHERE pin = $P{pin} AND claimno = $P{claimno}
 
-
+[updateListCancelInfo]
+UPDATE faaslist SET 
+    docstate     = $P{docstate}, 
+    cancelreason = $P{cancelreason},  
+    canceldate  = $P{canceldate}, 
+    cancelledbytdnos = $P{cancelledbytdnos} 
+WHERE objid = $P{objid}    
 
 #----------------------------------------------------------------
 # CHECKS
@@ -93,28 +109,28 @@ DELETE FROM pin WHERE pin = $P{pin}
 # FINDERS
 #----------------------------------------------------------------
 [findByState]
-SELECT objid, docstate, tdno, fullpin, rputype FROM faaslist ORDER BY pin
+SELECT objid, docstate, tdno, fullpin, rputype, txntype FROM faaslist ORDER BY pin
 
 [findByTdNo]
-SELECT objid, docstate, tdno, fullpin, rputype FROM faaslist WHERE tdno = $P{tdno} ORDER BY pin
+SELECT objid, docstate, tdno, fullpin, rputype, txntype FROM faaslist WHERE tdno = $P{tdno} ORDER BY pin
 
 [findByTaxpayerName]
-SELECT objid, docstate, tdno, fullpin, rputype FROM faaslist WHERE taxpayername LIKE $P{taxpayername} ORDER BY pin
+SELECT objid, docstate, tdno, fullpin, rputype, txntype FROM faaslist WHERE taxpayername LIKE $P{taxpayername} ORDER BY pin
 
 [findByPin]
-SELECT objid, docstate, tdno, fullpin, rputype FROM faaslist WHERE pin LIKE $P{pin} ORDER BY pin
+SELECT objid, docstate, tdno, fullpin, rputype, txntype FROM faaslist WHERE pin LIKE $P{pin} ORDER BY pin
 
 [findByBarangay]
-SELECT objid, docstate, tdno, fullpin, rputype FROM faaslist WHERE barangay = $P{barangay} ORDER BY pin
+SELECT objid, docstate, tdno, fullpin, rputype, txntype FROM faaslist WHERE barangay = $P{barangay} ORDER BY pin
 
 [findByCadastralLotNo]
-SELECT objid, docstate, tdno, fullpin, rputype FROM faaslist WHERE cadastrallotno = $P{cadastrallotno} ORDER BY pin
+SELECT objid, docstate, tdno, fullpin, rputype, txntype FROM faaslist WHERE cadastrallotno = $P{cadastrallotno} ORDER BY pin
 
 [findBySurveyNo]
-SELECT objid, docstate, tdno, fullpin, rputype FROM faaslist WHERE surveyno = $P{surveyno} ORDER BY pin
+SELECT objid, docstate, tdno, fullpin, rputype, txntype FROM faaslist WHERE surveyno = $P{surveyno} ORDER BY pin
 
 [findByBlockNo]
-SELECT objid, docstate, tdno, fullpin, rputype FROM faaslist WHERE blockno = $P{blockno} ORDER BY pin
+SELECT objid, docstate, tdno, fullpin, rputype, txntype FROM faaslist WHERE blockno = $P{blockno} ORDER BY pin
 
 
 

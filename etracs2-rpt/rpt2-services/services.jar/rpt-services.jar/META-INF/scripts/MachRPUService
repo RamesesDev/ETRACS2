@@ -1,0 +1,31 @@
+import com.rameses.annotations.*
+import java.rmi.server.UID
+
+class MachRPUService
+{
+	@PersistenceContext('main')
+	def em
+    
+    @Service('NumberService')
+	def numberSvc
+    
+    @Service('RPUService')
+	def rpuSvc
+
+	@Env
+	def env
+    
+    
+    
+    
+    @ProxyMethod
+    public Map initMachRpu( faas ) {
+        rpuSvc.buildCommonRpuInfo( faas )
+        def rpuinfo = faas.rpu.info 
+        //
+        //set machine specific info below
+        
+        return faas 
+    }
+    
+}

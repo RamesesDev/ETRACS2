@@ -1,0 +1,31 @@
+import com.rameses.annotations.*
+import java.rmi.server.UID
+
+class BldgRPUService
+{
+	@PersistenceContext('main')
+	def em
+    
+    @Service('NumberService')
+	def numberSvc
+    
+    @Service('RPUService')
+	def rpuSvc
+
+	@Env
+	def env
+    
+    
+    
+    
+    @ProxyMethod
+    public Map initBldgRpu( faas ) {
+        rpuSvc.buildCommonRpuInfo( faas )
+        def rpuinfo = faas.rpu.info 
+        //
+        //set bldg specific info below
+        
+        return faas 
+    }
+    
+}
