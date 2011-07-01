@@ -196,6 +196,7 @@ class FAASService
         validateRPUInfo( faas )
         updateFaasState( faas, CURRENT_STATE )
         cancelPreviousFaas( faas )
+        deleteTxnReference( faas )
         ledgerSvc.post( faas.objid )
         logSvc.log('APPROVE','FAAS', faas.objid)
     }
@@ -229,8 +230,9 @@ class FAASService
         checkFaasTxnReference( faas.objid )
         checkLedgerBalance( faas.ledgerid )
         faas = open( faas.objid )
-        if( txntype == 'TR' ) return initTransfer( faas, txntype, prevtdno, autonumber )
-        throw new Exception('TxnType ' + txntype + ' not yet supported.')
+        if( txntype == 'TR' ) return initTransfer( faas, txntype, autonumber )
+        if( txntype == 'RE' ) return initReassessment( faas, txntype, autonumber )
+        throw new Exception('FAASService.initTransaction: TxnType ' + txntype + ' not yet supported.')
     }
     
     
@@ -447,6 +449,10 @@ class FAASService
         }
     }
     
+    void deleteTxnReference( faas ) {
+        em.sqlContext.createNamedExecutor('faas:deleteTxnReference').setParameter('refid', faas.objid).execute()
+    }
+    
     void deletePin( faasinfo ) {
         em.sqlContext.createNamedExecutor('faas:deletePin').setParameter('pin', faasinfo.fullpin).execute()
     }
@@ -546,36 +552,9 @@ class FAASService
         }
     }
     
-    Map initTransfer( faas, txntype, prevtdno, autonumber ) {
-        //
-        //set transfer related info 
-        def parseddate = dateSvc.parseCurrentDate()
-        def txn = resolveTxnType( txntype ) 
-        def currdate = dateSvc.format( 'yyyy-MM-dd', new Date()) 
-        //
-        //set previous info 
-        faas.info.prevtdno      = faas.info.tdno 
-        faas.info.prevpin       = faas.rpu.fullpin
-        faas.info.prevtaxpayerid = faas.info.taxpayerid 
-        faas.info.prevowner     = faas.info.ownername 
-        faas.info.prevmv        = faas.rpu.totalmv
-        faas.info.prevav        = faas.rpu.totalav 
-        def prevfaas            = [ faasid:faas.objid, tdno:faas.info.tdno ]
-        faas.previousfaases.add( prevfaas )
-        //
-        //set default values
-        faas.objid              = 'F' + new UID()
-        faas.docstate           = INTERIM_STATE
-        faas.info.datacapture   = false 
-        faas.info.txntype       = txn.txntype 
-        faas.info.txn           = txn 
-        faas.info.autonumber    = autonumber
-        faas.info.issuedate     = currdate
-        faas.info.effectivityyear = parseddate.year 
-        faas.info.effectivityqtr  = 1 
-        faas.info.dtappraised   = currdate 
-        faas.info.dtrecommended = currdate 
-        faas.info.dtapproved    = currdate 
+    Map initTransfer( faas, txntype, autonumber ) {
+        updateFaasPreviousInfo( faas )
+        updateFaasCommonTxnInfo( faas, txntype, autonumber ) 
         faas.info.titletype     = 'TCT'
         //
         //clear info 
@@ -592,6 +571,46 @@ class FAASService
         faas.info.titleno              = null
         faas.info.titledate            = null 
         return faas 
+    }
+    
+    Map initReassessment( faas, txntype, autonumber ) {
+        updateFaasPreviousInfo( faas )
+        updateFaasCommonTxnInfo( faas, txntype, autonumber ) 
+        //
+        //clear info 
+        faas.info.tdno        = null 
+        faas.info.memoranda   = null 
+        return faas 
+    }
+    
+    void updateFaasCommonTxnInfo( faas, txntype, autonumber ) {
+        def parseddate = dateSvc.parseCurrentDate()
+        def txn = resolveTxnType( txntype ) 
+        def currdate = dateSvc.format( 'yyyy-MM-dd', new Date()) 
+        
+        faas.objid              = txn.txntype + new UID()
+        faas.docstate           = INTERIM_STATE
+        faas.info.datacapture   = false 
+        faas.info.txntype       = txn.txntype 
+        faas.info.txn           = txn 
+        faas.info.autonumber    = autonumber
+        faas.info.issuedate     = currdate
+        faas.info.effectivityyear = parseddate.year 
+        faas.info.effectivityqtr  = 1 
+        faas.info.dtappraised   = currdate 
+        faas.info.dtrecommended = currdate 
+        faas.info.dtapproved    = currdate 
+    }
+    
+    void updateFaasPreviousInfo( faas ) {
+        faas.info.prevtdno      = faas.info.tdno 
+        faas.info.prevpin       = faas.rpu.fullpin
+        faas.info.prevtaxpayerid = faas.info.taxpayerid 
+        faas.info.prevowner     = faas.info.ownername 
+        faas.info.prevmv        = faas.rpu.totalmv
+        faas.info.prevav        = faas.rpu.totalav 
+        def prevfaas            = [ faasid:faas.objid, tdno:faas.info.tdno ]
+        faas.previousfaases.add( prevfaas )
     }
     
     def resolveTxnType( txntype ) {

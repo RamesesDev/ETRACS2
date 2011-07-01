@@ -461,9 +461,11 @@ public class LandRPUController
     }
     
     boolean getAllowEdit() {
-        if( faas.docstate == 'INTERIM' ) return true
-        if( faas.docstate == 'FORAPPROVAL' ) return true
-        return false 
+        if( faas.docstate == 'FORPROVAPPROVAL' ) return false
+        if( faas.docstate == 'CURRENT' ) return false
+        if( faas.docstate == 'CANCELLED' ) return false
+        if( faas.info.txntype == 'TR') return false
+        return true
     }
 }
 

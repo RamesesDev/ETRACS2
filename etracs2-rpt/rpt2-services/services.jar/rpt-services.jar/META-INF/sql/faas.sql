@@ -103,6 +103,9 @@ SELECT tdno FROM faaslist WHERE objid <> $P{objid} AND tdno = $P{tdno}
 #----------------------------------------------------------------
 [deletePin]		
 DELETE FROM pin WHERE pin = $P{pin}
+
+[deleteTxnReference]
+DELETE FROM txnreference WHERE refid = $P{refid}
 		
 		
 #----------------------------------------------------------------

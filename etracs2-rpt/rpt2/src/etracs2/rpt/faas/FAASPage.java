@@ -433,7 +433,7 @@ public class FAASPage extends javax.swing.JPanel {
         xActionTextField1.setName("taxpayername");
         xActionTextField1.setRequired(true);
         jPanel7.add(xActionTextField1);
-        xActionTextField1.setBounds(90, 43, 362, 19);
+        xActionTextField1.setBounds(90, 24, 362, 19);
 
         xActionTextField2.setActionName("lookupAdministrator");
         xActionTextField2.setName("administratorname");
@@ -443,7 +443,7 @@ public class FAASPage extends javax.swing.JPanel {
         jLabel22.setText("Taxpayer * :");
         jLabel22.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel22);
-        jLabel22.setBounds(10, 43, 80, 18);
+        jLabel22.setBounds(10, 24, 80, 18);
 
         jLabel23.setText("Administrator :");
         jLabel23.setPreferredSize(new java.awt.Dimension(40, 19));
@@ -454,7 +454,7 @@ public class FAASPage extends javax.swing.JPanel {
         xLabel3.setName("faas.info.taxpayeraddress");
         xLabel3.setPreferredSize(new java.awt.Dimension(42, 19));
         jPanel7.add(xLabel3);
-        xLabel3.setBounds(520, 43, 274, 19);
+        xLabel3.setBounds(520, 24, 274, 19);
 
         xLabel4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel4.setName("faas.info.administratoraddress");
@@ -465,18 +465,18 @@ public class FAASPage extends javax.swing.JPanel {
         jLabel24.setText("Owner * :");
         jLabel24.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel24);
-        jLabel24.setBounds(10, 24, 80, 18);
+        jLabel24.setBounds(10, 43, 80, 18);
 
         xTextField7.setCaption("Owner");
         xTextField7.setName("faas.info.ownername");
         xTextField7.setRequired(true);
         jPanel7.add(xTextField7);
-        xTextField7.setBounds(90, 24, 362, 19);
+        xTextField7.setBounds(90, 43, 362, 19);
 
         jLabel25.setText("Address :");
         jLabel25.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel25);
-        jLabel25.setBounds(458, 43, 62, 18);
+        jLabel25.setBounds(458, 24, 62, 18);
 
         jLabel26.setText("Address :");
         jLabel26.setPreferredSize(new java.awt.Dimension(40, 19));
@@ -486,13 +486,13 @@ public class FAASPage extends javax.swing.JPanel {
         jLabel27.setText("Address * :");
         jLabel27.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel27);
-        jLabel27.setBounds(458, 24, 62, 18);
+        jLabel27.setBounds(458, 43, 62, 18);
 
         xTextField8.setCaption("Owner Address");
         xTextField8.setName("faas.info.owneraddress");
         xTextField8.setRequired(true);
         jPanel7.add(xTextField8);
-        xTextField8.setBounds(520, 24, 274, 19);
+        xTextField8.setBounds(520, 43, 274, 19);
 
         jPanel3.add(jPanel7);
         jPanel7.setBounds(8, 172, 802, 90);
@@ -632,6 +632,7 @@ public class FAASPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder4.setTitle("Assessment Information");
         jPanel9.setBorder(xTitledBorder4);
+        xButton1.setMnemonic('d');
         xButton1.setText("Assessment Detail");
         xButton1.setName("viewAssessment");
         jPanel9.add(xButton1);

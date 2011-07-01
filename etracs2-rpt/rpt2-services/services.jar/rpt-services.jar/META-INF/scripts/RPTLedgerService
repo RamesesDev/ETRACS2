@@ -36,8 +36,9 @@ class RPTLedgerService
     public void post( faasid ) {
         def faas = openFaas( faasid )
         if( faas.datacapture == true ) postDataCapture( faas )
-        else if( faas.txntype == 'TR' ) postTransfer( faas )
-        else throw new Exception('Posting of TxnType ' + faas.txntype + ' is not yet supported.')        
+        else if( faas.txntype == 'TR' ) postTransfer( faas ) 
+        else if( faas.txntype == 'RE' ) postReassessment( faas ) 
+        else throw new Exception('RPTLedgerService.post: Posting of TxnType ' + faas.txntype + ' is not yet supported.')        
     }
     
     void postDataCapture( faas ) {
@@ -50,13 +51,22 @@ class RPTLedgerService
     }
     
     void postTransfer( faas ) {
-        println 'posting transfer...'
         def ledger = createLedger( faas, APPROVED_STATE )
         ledger.firstqtrpaidontime = true 
         def ledgeritem = createLedgerItem( ledger ) 
         //
         //update ledger related info
-        closeToYearPreviousLedgerItem( ledger, faas )
+        closePreviousLedgerItemToYear( ledger, faas )
+        em.update( ledger.schemaname, ledger )
+        em.create( ledgeritem.schemaname, ledgeritem )
+    }
+    
+    void postReassessment( faas ) {
+        def ledger = createLedger( faas, APPROVED_STATE )
+        def ledgeritem = createLedgerItem( ledger ) 
+        //
+        //update ledger related info
+        closePreviousLedgerItemToYear( ledger, faas )
         em.update( ledger.schemaname, ledger )
         em.create( ledgeritem.schemaname, ledgeritem )
     }
@@ -114,7 +124,7 @@ class RPTLedgerService
         return faas 
     }
     
-    void closeToYearPreviousLedgerItem( ledger, faas ) {
+    void closePreviousLedgerItemToYear( ledger, faas ) {
         //previous item is the lastest entry in the ledger
         //and is denoted by the toyear = 0
         def item = em.sqlContext.createNamedQuery('rptledger:getLatestItem').setParameter('parentid', ledger.objid ).singleResult

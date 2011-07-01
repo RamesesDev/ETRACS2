@@ -6,11 +6,12 @@
         
         <!-- transactions -->
         <invoker folderid="/menu/rpt/txn" action="transfer" caption="Transfer of Ownership" mnemonic="t" shortcut="ctrl T" target="window"/>
+        <invoker folderid="/menu/rpt/txn" action="reassessment" caption="Re-Assessment" mnemonic="r" shortcut="ctrl R" target="window"/>
         
         <invoker type="formActions" action="_close" caption="Close" mnemonic="c" immediate="true" />
         <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{showSaveAction == true}" caption="Save" mnemonic="s" icon="images/save24.png"/>
         <invoker type="formActions" action="submit" shortcut="ctrl M" visibleWhen="#{faas.docstate == 'INTERIM' and mode != 'create'}" caption="Submit For Approval" mnemonic="m" />
-        <invoker type="formActions" action="remove" shortcut="ctrl D" visibleWhen="#{faas.docstate == 'INTERIM'}" immediate="true" caption="Delete" mnemonic="d" />
+        <invoker type="formActions" action="remove" shortcut="ctrl D" visibleWhen="#{faas.docstate == 'INTERIM' and mode != 'create'}" immediate="true" caption="Delete" mnemonic="d" />
         <invoker type="formActions" action="approve" shortcut="ctrl A" visibleWhen="#{showApproveAction == true}" caption="Approve" mnemonic="a" icon="images/save24.png"/>
         <invoker type="formActions" action="submitToProvince" shortcut="ctrl M" visibleWhen="#{showSubmitToProvinceAction == true}" caption="Submit To Province" mnemonic="m" />
         <invoker type="formActions" action="approveByProvince" shortcut="ctrl A" visibleWhen="#{showApprovedByProvinceAction == true}" caption="Approve" mnemonic="a" />
@@ -153,8 +154,10 @@ public class FAASController
         faas.info.taxpayerno = entity.entityno
         faas.info.taxpayername = entity.entityname
         faas.info.taxpayeraddress = entity.entityaddress
+        faas.info.ownername = entity.entityname
+        faas.info.owneraddress = entity.entityaddress
         taxpayername = entity.entityname 
-        binding.refresh('taxpayer.*|faas.info.taxpayer.*')
+        binding.refresh('taxpayer.*|faas.info.taxpayer.*|faas.info.owner.*')
     }
     
     def onselectAdministrator = { entity ->
@@ -287,6 +290,13 @@ public class FAASController
         return 'txninit'
     }
     
+    def reassessment() {
+        mode = 'create'
+        txntype = 'RE'
+        txntitle = 'Re-Assessment Transaction'
+        return 'txninit'
+    }
+    
     def initTransaction() {
         faas = svc.initTransaction( txntype, prevtdno, autonumber)
         initFormFields( faas )
@@ -300,9 +310,10 @@ public class FAASController
     }
     
     boolean getAllowEdit() {
-        if( faas.docstate == 'INTERIM' ) return true
-        if( faas.docstate == 'FORAPPROVAL' ) return true
-        return false 
+        if( faas.docstate == 'FORPROVAPPROVAL' ) return false
+        if( faas.docstate == 'CURRENT' ) return false
+        if( faas.docstate == 'CANCELLED' ) return false
+        return true
     }
 }
 
