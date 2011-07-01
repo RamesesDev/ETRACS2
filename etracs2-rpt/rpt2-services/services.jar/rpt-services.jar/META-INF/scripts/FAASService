@@ -231,8 +231,9 @@ class FAASService
         checkLedgerBalance( faas.ledgerid )
         faas = open( faas.objid )
         if( txntype == 'TR' ) return initTransfer( faas, txntype, autonumber )
-        if( txntype == 'RE' ) return initReassessment( faas, txntype, autonumber )
-        throw new Exception('FAASService.initTransaction: TxnType ' + txntype + ' not yet supported.')
+        else if( txntype == 'RE' ) return initReassessment( faas, txntype, autonumber )
+        else if( txntype == 'CE' ) return initCorrection( faas, txntype, autonumber )
+        else throw new Exception('FAASService.initTransaction: TxnType ' + txntype + ' not yet supported.')
     }
     
     
@@ -580,6 +581,13 @@ class FAASService
         //clear info 
         faas.info.tdno        = null 
         faas.info.memoranda   = null 
+        return faas 
+    }
+    
+    Map initCorrection( faas, txntype, autonumber ) {
+        updateFaasPreviousInfo( faas )
+        updateFaasCommonTxnInfo( faas, txntype, autonumber ) 
+        faas.info.tdno        = null 
         return faas 
     }
     

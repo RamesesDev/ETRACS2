@@ -5,8 +5,10 @@
         <invoker type="faas.open" action="open" caption="Open" mnemonic="o" shortcut="ctrl O" target="window"/>
         
         <!-- transactions -->
-        <invoker folderid="/menu/rpt/txn" action="transfer" caption="Transfer of Ownership" mnemonic="t" shortcut="ctrl T" target="window"/>
-        <invoker folderid="/menu/rpt/txn" action="reassessment" caption="Re-Assessment" mnemonic="r" shortcut="ctrl R" target="window"/>
+        <invoker folderid="/menu/rpt/txn" action="initCapture" caption="Data Capture" mnemonic="c" target="window"/>
+        <invoker folderid="/menu/rpt/txn" action="transfer" caption="Transfer of Ownership" mnemonic="t"  target="window"/>
+        <invoker folderid="/menu/rpt/txn" action="reassessment" caption="Re-Assessment" mnemonic="r" target="window"/>
+        <invoker folderid="/menu/rpt/txn" action="correction" caption="Correction of Entry" mnemonic="e" target="window"/>
         
         <invoker type="formActions" action="_close" caption="Close" mnemonic="c" immediate="true" />
         <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{showSaveAction == true}" caption="Save" mnemonic="s" icon="images/save24.png"/>
@@ -283,17 +285,14 @@ public class FAASController
     def txntitle
     def txntype
     
-    def transfer() {
-        mode = 'create'
-        txntype = 'TR'
-        txntitle = 'Transfer of Ownership Transaction'
-        return 'txninit'
-    }
+    def transfer()      { initTxn( 'create', 'TR', 'Transfer of Ownership Transaction' ) }
+    def reassessment()  { initTxn( 'create', 'RE', 'Re-Assessment Transaction' ) }
+    def correction()      { initTxn( 'create', 'CE', 'Correction of Entry Transaction' ) }
     
-    def reassessment() {
-        mode = 'create'
-        txntype = 'RE'
-        txntitle = 'Re-Assessment Transaction'
+    def initTxn( mode, txntype, txntitle ) {
+        this.mode = mode
+        this.txntype = txntype
+        this.txntitle = txntitle 
         return 'txninit'
     }
     
@@ -314,6 +313,12 @@ public class FAASController
         if( faas.docstate == 'CURRENT' ) return false
         if( faas.docstate == 'CANCELLED' ) return false
         return true
+    }
+    
+    boolean getAllowEditPinInfo() {
+        if( faas.info.datacapture == true ) return true
+        if( faas.info.txntype == 'CE' ) return true 
+        return false
     }
 }
 

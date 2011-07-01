@@ -36,8 +36,7 @@ class RPTLedgerService
     public void post( faasid ) {
         def faas = openFaas( faasid )
         if( faas.datacapture == true ) postDataCapture( faas )
-        else if( faas.txntype == 'TR' ) postTransfer( faas ) 
-        else if( faas.txntype == 'RE' ) postReassessment( faas ) 
+        else if( 'TR/RE/CE'.indexOf( faas.txntype ) >= 0 ) postTransaction( faas ) 
         else throw new Exception('RPTLedgerService.post: Posting of TxnType ' + faas.txntype + ' is not yet supported.')        
     }
     
@@ -50,27 +49,13 @@ class RPTLedgerService
         em.create( ledgeritem.schemaname, ledgeritem )
     }
     
-    void postTransfer( faas ) {
-        def ledger = createLedger( faas, APPROVED_STATE )
-        ledger.firstqtrpaidontime = true 
+    void postTransaction( faas ) {
+        def ledger = updateLedger( faas  )
         def ledgeritem = createLedgerItem( ledger ) 
-        //
-        //update ledger related info
         closePreviousLedgerItemToYear( ledger, faas )
         em.update( ledger.schemaname, ledger )
         em.create( ledgeritem.schemaname, ledgeritem )
     }
-    
-    void postReassessment( faas ) {
-        def ledger = createLedger( faas, APPROVED_STATE )
-        def ledgeritem = createLedgerItem( ledger ) 
-        //
-        //update ledger related info
-        closePreviousLedgerItemToYear( ledger, faas )
-        em.update( ledger.schemaname, ledger )
-        em.create( ledgeritem.schemaname, ledgeritem )
-    }
-    
     
     /* ------------------------------------------------------------------------
     * Support Methods 
@@ -93,6 +78,20 @@ class RPTLedgerService
         return ledger
     }
     
+    Map updateLedger( faas ) {
+        def oldledger = openLedger( faas )
+        def ledgerid = oldledger.objid 
+        def oldstate = oldledger.docstate 
+        oldledger.putAll( faas )
+        oldledger.objid            = ledgerid
+        oldledger.docstate         = oldstate 
+        oldledger.schemaname       = LEDGER_SCHEMA
+        oldledger.schemaversion    = SCHEMA_VERSION
+        oldledger.assessedvalue    = faas.totalav 
+        updateActualUseInfo( faas )
+        return oldledger
+    }
+    
     Map createLedgerItem( ledger  ) {
         def ledgeritem = [:]
         ledgeritem.putAll( ledger )
@@ -110,7 +109,7 @@ class RPTLedgerService
         return ledgeritem 
     }
     
-    void updateActualUseInfo( ledger) {
+    void updateActualUseInfo( ledger  ) {
         //TODO: how to identify actualuse for split assessments? 
         //by default set it to the largest area
         ledger.actualuseid = ledger.classid 
@@ -122,6 +121,12 @@ class RPTLedgerService
         faas.datacapture    = faas.datacapture as boolean 
         faas.taxable        = faas.taxable as boolean 
         return faas 
+    }
+    
+    Map openLedger( faas ) {
+        def ledger = em.read(LEDGER_SCHEMA, [ objid:faas.fullpin] )
+        if( ! ledger ) throw new Exception('Ledger for FAAS ' + faas.tdno  + ' does not exists.\nKindly ask assistance from Land Tax.')
+        return ledger 
     }
     
     void closePreviousLedgerItemToYear( ledger, faas ) {
