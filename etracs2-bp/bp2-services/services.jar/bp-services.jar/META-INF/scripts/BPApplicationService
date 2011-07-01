@@ -357,8 +357,13 @@ class BPApplicationService{
 		
 		txnSvc.remove( em, business.objid );
 		txnSvc.insert( em, business.objid, application.objid, 'BPApplication', 'Unable to process transaction. \n business is currently reference by a ' + application.txntype +' transaction' );
-		
 		app.businessid = business.objid;
+		
+		if( app.txnmode == 'CAPTURE' || app.txntype == 'RENEW' ){
+			business.lastqtrpaid = 4;
+			business.lastyearpaid = app.iyear - 1;
+		}
+		
 		em.update( BUSINESS_SCHEMA, business );
 		em.update( SCHEMANAME, app );
 		
@@ -414,7 +419,7 @@ class BPApplicationService{
 			taxpayerid: app.info.taxpayerid,
 			taxpayername: app.info.taxpayername,
 			taxpayeraddress: app.info.taxpayeraddress,
-			yearstated: app.iyear,
+			yearstarted: app.iyear,
 			dtregistered: app.txndate,
 			sec: app.info.sec,
 			dti: app.info.dti,
@@ -427,6 +432,8 @@ class BPApplicationService{
 			adminname: app.info.administratorname,
 			adminaddress: app.info.administratoraddress,
 			organization: app.info.organization,
+			lastqtrpaid: 0,
+			lastyearpaid: 0,
 			officetype: app.info.officetype
 		];
 		em.create( BUSINESS_SCHEMA,  business );
