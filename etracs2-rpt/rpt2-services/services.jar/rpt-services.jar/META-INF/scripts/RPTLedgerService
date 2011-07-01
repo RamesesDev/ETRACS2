@@ -34,7 +34,14 @@ class RPTLedgerService
     
 	@ProxyMethod
     public void post( faasid ) {
-        def ledger = createLedger( faasid )
+        def faas = openFaas( faasid )
+        if( faas.datacapture == true ) postDataCapture( faas )
+        else if( faas.txntype == 'TR' ) postTransfer( faas )
+        else throw new Exception('Posting of TxnType ' + faas.txntype + ' is not yet supported.')        
+    }
+    
+    void postDataCapture( faas ) {
+        def ledger = createLedger( faas, PENDING_STATE )
         def ledgeritem = createLedgerItem( ledger )
         em.validate( ledger.schemaname, ledger ) 
         em.validate( ledgeritem.schemaname, ledgeritem ) 
@@ -42,49 +49,82 @@ class RPTLedgerService
         em.create( ledgeritem.schemaname, ledgeritem )
     }
     
-    Map createLedger( faasid ) {
-        def faas = em.read( FAASLISTSCHEMA_NAME, [objid:faasid] )
-        faas.objid = faas.fullpin 
-        faas.schemaname = LEDGER_SCHEMA
-        faas.schemaversion = SCHEMA_VERSION
-        faas.faasid = faasid 
-        faas.datacapture = faas.datacapture as boolean 
-        faas.docstate = PENDING_STATE
-        faas.lastyearpaid = 0
-        faas.lastqtrpaid = 0
-        faas.partialbasic = 0.0
-        faas.partialsef = 0.0
-        faas.firstqtrpaidontime = false 
-        faas.assessedvalue = faas.totalav 
-        faas.taxable = faas.taxable as boolean 
-        updateActualUseInfo( faas )
-        if( ! faas.datacapture ) {
-            //set lastyearpaid and lastqtrpaid based on effectivity
-            faas.lastyearpaid = ( faas.effectivityqtr == 1 ? faas.effectivityyear - 1 : faas.effectivityyear)
-            faas.lastqtrpaid = ( faas.effectivityqtr == 1 ? 4 : faas.effectivityqtr - 1 )
-        }
-        return faas
+    void postTransfer( faas ) {
+        println 'posting transfer...'
+        def ledger = createLedger( faas, APPROVED_STATE )
+        ledger.firstqtrpaidontime = true 
+        def ledgeritem = createLedgerItem( ledger ) 
+        //
+        //update ledger related info
+        closeToYearPreviousLedgerItem( ledger, faas )
+        em.update( ledger.schemaname, ledger )
+        em.create( ledgeritem.schemaname, ledgeritem )
     }
     
-    Map createLedgerItem( ledger ) {
+    
+    /* ------------------------------------------------------------------------
+    * Support Methods 
+    ------------------------------------------------------------------------ */
+    Map createLedger( faas, state ) {
+        def ledger = [:]
+        ledger.putAll( faas )
+        ledger.objid            = faas.fullpin 
+        ledger.schemaname       = LEDGER_SCHEMA
+        ledger.schemaversion    = SCHEMA_VERSION
+        ledger.faasid           = faas.objid 
+        ledger.docstate         = state
+        ledger.assessedvalue    = faas.totalav 
+        ledger.lastyearpaid     = ( faas.effectivityqtr == 1 ? faas.effectivityyear - 1 : faas.effectivityyear)
+        ledger.lastqtrpaid      = ( faas.effectivityqtr == 1 ? 4 : faas.effectivityqtr - 1 )
+        ledger.partialbasic     = 0.0
+        ledger.partialsef       = 0.0
+        ledger.firstqtrpaidontime = false 
+        updateActualUseInfo( ledger )
+        return ledger
+    }
+    
+    Map createLedgerItem( ledger  ) {
         def ledgeritem = [:]
         ledgeritem.putAll( ledger )
         ledgeritem.objid            = 'LI' + new UID()
         ledgeritem.schemaname       = LEDGERITEM_SCHEMA
         ledgeritem.schemaversion    = SCHEMA_VERSION
+        ledgeritem.docstate         = APPROVED_STATE
         ledgeritem.parentid         = ledger.objid 
+        ledgeritem.faasid           = ledger.faasid 
         ledgeritem.fromyear         = ledger.effectivityyear
         ledgeritem.toyear           = 0
-        ledgeritem.backtax          = ledger.backtaxyrs > 0
+        ledgeritem.assessedvalue    = ledger.assessedvalue 
+        ledgeritem.backtax          = (ledger.backtaxyrs > 0)
         ledgeritem.systemcreated    = true 
         return ledgeritem 
     }
     
-    void updateActualUseInfo( faas ) {
+    void updateActualUseInfo( ledger) {
         //TODO: how to identify actualuse for split assessments? 
         //by default set it to the largest area
-        faas.actualuseid = faas.classid 
-        faas.actualusecode = faas.classcode 
+        ledger.actualuseid = ledger.classid 
+        ledger.actualusecode = ledger.classcode 
+    }
+    
+    Map openFaas( faasid )  {
+        def faas = em.read( FAASLISTSCHEMA_NAME, [objid:faasid] )
+        faas.datacapture    = faas.datacapture as boolean 
+        faas.taxable        = faas.taxable as boolean 
+        return faas 
+    }
+    
+    void closeToYearPreviousLedgerItem( ledger, faas ) {
+        //previous item is the lastest entry in the ledger
+        //and is denoted by the toyear = 0
+        def item = em.sqlContext.createNamedQuery('rptledger:getLatestItem').setParameter('parentid', ledger.objid ).singleResult
+        if( ! item ) throw new Exception('Cannot locate the last ledger entry.\nPlease verify that it has not been deleted.')
+        item.toyear  = faas.effectivityyear - 1
+        if( item.fromyear == faas.effectivityyear ) {
+            item.toyear   = faas.effectivityyear
+            item.docstate = CANCELLED_STATE 
+        }
+        em.update( item.schemaname, item )
     }
 }
 

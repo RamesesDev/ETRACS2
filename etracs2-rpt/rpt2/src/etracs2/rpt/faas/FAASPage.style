@@ -1,7 +1,16 @@
-"faas.*|appraiser|recommender|approver|taxpayername|administratorname" [faas.docstate=='FORPROVAPPROVAL' || faas.docstate=='CURRENT' || faas.docstate=='CANCELLED'] {
-    readonly:true;
+"faas.*|appraiser|recommender|approver|taxpayername|administratorname" [allowEdit == true] {
+    enabled:true;
 }
 
-"faas.*|appraiser|recommender|approver|taxpayername|administratorname" [faas.docstate=='INTERIM' || faas.docstate=='FORAPPROVAL' ] {
-    readonly:false;
+"faas.info.prev.*|faas.rp.*" [ faas.info.datacapture == false  ] {
+    enabled:false;
+}
+
+"faas.info.tdno" [ faas.info.autonumber == true] {
+    enabled:false;
+}
+
+
+"faas.*|appraiser|recommender|approver|taxpayername|administratorname" [allowEdit == false] {
+    enabled:false;
 }

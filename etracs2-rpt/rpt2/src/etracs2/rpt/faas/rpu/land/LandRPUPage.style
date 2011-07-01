@@ -1,3 +1,7 @@
+"rpu.*|classification|exemption|selectedLand|selectedPlantTree"  [allowEdit == true] {
+    enabled:true;
+}
+
 "exemption" [ rpu.taxable == true ] {
     enabled:false;
 }
@@ -14,10 +18,11 @@
     enabled:true;
 }
 
-"rpu.*|classification|exemption|selectedLand|selectedPlantTree" [faas.docstate=='FORPROVAPPROVAL' || faas.docstate=='CURRENT' || faas.docstate=='CANCELLED'] {
+"rpu.*|classification|exemption|selectedLand|selectedPlantTree" [ faas.info.txntype == 'TR' ] {
     readonly:true;
 }
 
-"rpu.*|classification|exemption|selectedLand|selectedPlantTree" [faas.docstate=='INTERIM' || faas.docstate=='FORAPPROVAL' ] {
-    readonly:false
+"rpu.*|classification|exemption|selectedLand|selectedPlantTree"  [allowEdit == false] {
+    enabled:false;
 }
+

@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
     <invokers>
-        <invoker type="faas.create" action="initCreate" caption="New" mnemonic="n" shortcut="ctrl N" target="window"/>
+        <invoker type="faas.create" action="initCapture" caption="New" mnemonic="n" shortcut="ctrl N" target="window"/>
         <invoker type="faas.open" action="open" caption="Open" mnemonic="o" shortcut="ctrl O" target="window"/>
+        
+        <!-- transactions -->
+        <invoker folderid="/menu/rpt/txn" action="transfer" caption="Transfer of Ownership" mnemonic="t" shortcut="ctrl T" target="window"/>
         
         <invoker type="formActions" action="_close" caption="Close" mnemonic="c" immediate="true" />
         <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{showSaveAction == true}" caption="Save" mnemonic="s" icon="images/save24.png"/>
-        <invoker type="formActions" action="submit" shortcut="ctrl M" visibleWhen="#{faas.docstate == 'INTERIM'}" caption="Submit For Approval" mnemonic="m" />
+        <invoker type="formActions" action="submit" shortcut="ctrl M" visibleWhen="#{faas.docstate == 'INTERIM' and mode != 'create'}" caption="Submit For Approval" mnemonic="m" />
         <invoker type="formActions" action="remove" shortcut="ctrl D" visibleWhen="#{faas.docstate == 'INTERIM'}" immediate="true" caption="Delete" mnemonic="d" />
         <invoker type="formActions" action="approve" shortcut="ctrl A" visibleWhen="#{showApproveAction == true}" caption="Approve" mnemonic="a" icon="images/save24.png"/>
         <invoker type="formActions" action="submitToProvince" shortcut="ctrl M" visibleWhen="#{showSubmitToProvinceAction == true}" caption="Submit To Province" mnemonic="m" />
@@ -27,11 +30,17 @@ public class FAASController
     @Service('FAASService')
     def svc
     
+    
     def faas 
     def mode
-    def tdno 
     
-    def initCreate() {
+    
+    /*-----------------------------------------------------------------------------
+    *
+    * MainPage Support 
+    *
+    -----------------------------------------------------------------------------*/
+    def initCapture() {
         mode = 'create' 
         faas = svc.createFaas( )
         return 'new'
@@ -85,23 +94,6 @@ public class FAASController
         }
     }    
     
-    
-    
-    
-    void initFormFields( faas ) {
-        tdno = faas.info.tdno 
-        appraiser = faas.info.appraisedby
-        recommender = faas.info.recommendedby
-        approver = faas.info.approvedby
-        taxpayername = faas.info.taxpayername
-        administratorname = faas.info.administratorname
-    }
-    
-    /*-----------------------------------------------------------------------------
-    *
-    * MainPage Support 
-    *
-    -----------------------------------------------------------------------------*/
     def onupdateRpu = { rpu ->
         binding.refresh('faas.rpu.*|totalmv|totalav')
     }
@@ -111,8 +103,12 @@ public class FAASController
         return InvokerUtil.lookupOpener(openerType, [onupdate:onupdateRpu, faas:faas, rpu:faas.rpu])
     }
     
-    void setTdno( tdno ){
-        this.tdno = tdno
+    void initFormFields( faas ) {
+        appraiser = faas.info.appraisedby
+        recommender = faas.info.recommendedby
+        approver = faas.info.approvedby
+        taxpayername = faas.info.taxpayername
+        administratorname = faas.info.administratorname
     }
     
     
@@ -272,6 +268,42 @@ public class FAASController
         if( faas.docstate != 'FORPROVAPPROVAL' ) return false
         return true
     }
+    
+    
+    /*-----------------------------------------------------------------------------
+    *
+    * Transaction Support 
+    *
+    -----------------------------------------------------------------------------*/
+    def prevtdno
+    boolean autonumber = false
+    def txntitle
+    def txntype
+    
+    def transfer() {
+        mode = 'create'
+        txntype = 'TR'
+        txntitle = 'Transfer of Ownership Transaction'
+        return 'txninit'
+    }
+    
+    def initTransaction() {
+        faas = svc.initTransaction( txntype, prevtdno, autonumber)
+        initFormFields( faas )
+        return 'default'
+    }
+    
+    boolean getAllowAutoNumber() {
+        println 'TODO: faas.xml:getAllowAutoNumber -> check domain code and value'
+        if( OsirisContext.env.DOMAIN == 'city' ) return true
+        return false 
+    }
+    
+    boolean getAllowEdit() {
+        if( faas.docstate == 'INTERIM' ) return true
+        if( faas.docstate == 'FORAPPROVAL' ) return true
+        return false 
+    }
 }
 
 ]]>
@@ -280,5 +312,6 @@ public class FAASController
     <pages>
         <page template="etracs2.rpt.faas.FAASPage"/>
         <page name="new" template="etracs2.rpt.faas.FAASNewPage"/>
+        <page name="txninit" template="etracs2.rpt.faas.FAASTxnInitPage"/>
     </pages>
 </workunit>

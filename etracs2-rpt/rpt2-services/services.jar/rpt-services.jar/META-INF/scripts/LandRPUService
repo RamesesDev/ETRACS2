@@ -8,10 +8,46 @@ class LandRPUService
     
     @Service('NumberService')
 	def numberSvc
+    
+    @Service('RPUService')
+	def rpuSvc
 
 	@Env
 	def env
-	
+    
+    
+    
+    
+    @ProxyMethod
+    public Map initLandRpu( faas ) {
+        rpuSvc.buildCommonRpuInfo( faas )
+        def rpuinfo = faas.rpu.info 
+        //
+        //land specific info
+        rpuinfo.idleland = false 
+        rpuinfo.landvalueadjustment = 0.0
+        rpuinfo.landdetails = []
+        rpuinfo.landtotal = [ 
+            areasqm         : 0.0,
+            areaha          : 0.0,
+            basemarketvalue : 0.0,
+            adjustment      : 0.0,
+            marketvalue     : 0.0,
+            assessedvalue   : 0.0,
+        ]
+        rpuinfo.planttrees = []
+        rpuinfo.planttotal = [
+            bearing         : 0,
+            nonbearing      : 0,
+            basemarketvalue : 0.0,
+            adjustment      : 0.0,
+            marketvalue     : 0.0,
+            assessedvalue   : 0.0,
+        ]
+        rpuinfo.adjustments = []
+        return faas 
+    }
+    
     
     @ProxyMethod
     public Map calculateLandDetailAssessment( landdetail ) {
