@@ -1,0 +1,23 @@
+"exemption" [ rpu.taxable == true ] {
+    enabled:false;
+}
+
+"exemption" [ rpu.taxable == false ] {
+    enabled:true;
+}
+
+"openActualUseAdjustment" [selectedLand == null || selectedLand.subclassid == null] {
+    enabled:false;
+}
+
+"openActualUseAdjustment" [selectedLand != null && selectedLand.subclassid != null] {
+    enabled:true;
+}
+
+"rpu.*|classification|exemption|selectedLand|selectedPlantTree" [faas.docstate=='FORPROVAPPROVAL' || faas.docstate=='CURRENT' || faas.docstate=='CANCELLED'] {
+    readonly:true;
+}
+
+"rpu.*|classification|exemption|selectedLand|selectedPlantTree" [faas.docstate=='INTERIM' || faas.docstate=='FORAPPROVAL' ] {
+    readonly:false
+}

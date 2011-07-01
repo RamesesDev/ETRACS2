@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker folderid="menu/rpt/txn" caption="FAAS Management" mnemonic="f" />
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null and selectedItem.objid != null}" immediate="true" caption="Open" mnemonic="o" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+public class FAASMgmtController 
+{
+    @Binding 
+    def binding
+    
+    @Service('FAASService')
+    def svc 
+    
+    @Service('FAASHtmlService')
+    def htmlSvc 
+    
+    String searchText
+    def selectedItem
+    List list
+    
+    
+    
+    
+    def create() {
+        return InvokerUtil.lookupOpener('faas.create', [faas:selectedItem])
+    }
+    
+    def open() {
+        return InvokerUtil.lookupOpener('faas.open', [faas:selectedItem])
+    }
+    
+    
+    void search() {
+        list = null
+        listHandler.load()
+        binding.refresh('html')
+    }
+    
+    def listHandler =[
+        getRows    : { return 25 },
+        getColumns : { return [
+            new Column( name:'docstate', caption:'State', maxWidth:100 ),
+            new Column( name:'tdno', caption:'tdno', maxWidth:150 ),
+            new Column( name:'rputype', caption:'Type', maxWidth:50 ),
+            new Column( name:'fullpin', caption:'PIN' ),
+        ]},
+        fetchList  : {
+            if( ! list  ) {
+                list = svc.getList( searchText, it )
+            }
+            return list 
+        }
+    ] as PageListModel
+    
+    
+    String getHtml() {
+        return htmlSvc.getHtml( selectedItem?.objid ) 
+    }
+    
+
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.FAASMgmtPage"/>
+    </pages>
+</workunit>

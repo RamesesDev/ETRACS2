@@ -39,14 +39,12 @@ public class AssessmentInfoPage extends javax.swing.JPanel {
         jPanel3 = new javax.swing.JPanel();
         xLabel4 = new com.rameses.rcp.control.XLabel();
         jLabel1 = new javax.swing.JLabel();
-        xDataTable2 = new com.rameses.rcp.control.XDataTable();
+        xSubFormPanel1 = new com.rameses.rcp.control.XSubFormPanel();
 
         setLayout(new java.awt.BorderLayout());
 
         xActionBar1.setName("formActions");
         add(xActionBar1, java.awt.BorderLayout.NORTH);
-
-        jPanel1.setLayout(null);
 
         jPanel2.setLayout(null);
 
@@ -118,9 +116,6 @@ public class AssessmentInfoPage extends javax.swing.JPanel {
         jPanel2.add(formPanel2);
         formPanel2.setBounds(410, 20, 310, 50);
 
-        jPanel1.add(jPanel2);
-        jPanel2.setBounds(10, 10, 720, 140);
-
         jPanel3.setLayout(null);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -137,19 +132,34 @@ public class AssessmentInfoPage extends javax.swing.JPanel {
         jPanel3.add(jLabel1);
         jLabel1.setBounds(140, 0, 210, 20);
 
-        com.rameses.rcp.control.border.XLineBorder xLineBorder7 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder7.setLineColor(new java.awt.Color(153, 153, 153));
-        xDataTable2.setBorder(xLineBorder7);
-        xDataTable2.setDepends(new String[] {"appdata"});
-        xDataTable2.setDynamic(true);
-        xDataTable2.setHandler("appinfoListHandler");
-        xDataTable2.setImmediate(true);
-        jPanel3.add(xDataTable2);
-        xDataTable2.setBounds(10, 30, 700, 230);
+        xSubFormPanel1.setDynamic(true);
+        xSubFormPanel1.setHandler("infoHandler");
+        jPanel3.add(xSubFormPanel1);
+        xSubFormPanel1.setBounds(10, 30, 480, 230);
 
-        jPanel1.add(jPanel3);
-        jPanel3.setBounds(10, 160, 720, 270);
-
+        org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel1Layout.createSequentialGroup()
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(jPanel1Layout.createSequentialGroup()
+                        .add(10, 10, 10)
+                        .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 720, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jPanel1Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 720, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(65, Short.MAX_VALUE))
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel1Layout.createSequentialGroup()
+                .add(11, 11, 11)
+                .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 140, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(10, 10, 10)
+                .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 273, Short.MAX_VALUE)
+                .addContainerGap())
+        );
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
     }// </editor-fold>//GEN-END:initComponents
@@ -164,7 +174,6 @@ public class AssessmentInfoPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XDataTable xDataTable2;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
@@ -172,6 +181,7 @@ public class AssessmentInfoPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel5;
     private com.rameses.rcp.control.XLabel xLabel6;
     private com.rameses.rcp.control.XLabel xLabel7;
+    private com.rameses.rcp.control.XSubFormPanel xSubFormPanel1;
     // End of variables declaration//GEN-END:variables
     
 }

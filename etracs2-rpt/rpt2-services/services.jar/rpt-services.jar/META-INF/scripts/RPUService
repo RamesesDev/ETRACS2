@@ -1,0 +1,38 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class RPUService
+{
+    @PersistenceContext('main')
+    def em
+    
+    
+    @ProxyMethod
+    public List getFieldList() {
+        return [
+            [objid:'BASE_MARKET_VALUE', name:'BASE_MARKET_VALUE'],
+            [objid:'MARKET_VALUE', name:'MARKET_VALUE'],
+            [objid:'BASE_VALUE', name:'BASE_VALUE'],
+            [objid:'UNIT_VALUE', name:'UNIT_VALUE'],
+            [objid:'AREA', name:'AREA'],
+            [objid:'ASSESSED_VALUE', name:'ASSESSED_VALUE'],
+        ]
+    }
+    
+    @ProxyMethod
+    public List getVariables( expr ) {
+        def pattern = ~/[A-Z_]+/ 
+        def matcher = pattern.matcher( expr )
+        List tokens = matcher.collect{ it }
+        List vars = tokens - getFieldList().objid 
+        List list = []
+        if( vars ) {
+            vars.each {
+                list += em.sqlContext.createNamedQuery('rpu:getRPTParameter').setParameter('name', it).singleResult 
+            }
+        }
+        return list 
+    }
+
+}

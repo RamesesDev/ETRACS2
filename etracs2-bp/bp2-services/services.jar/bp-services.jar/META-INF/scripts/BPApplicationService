@@ -4,6 +4,9 @@ import java.rmi.server.UID
 
 class BPApplicationService{
 	
+	@Service("TxnReference")
+	def txnSvc;
+	
 	@Service('DateService')
 	def dateService;
 	
@@ -30,16 +33,28 @@ class BPApplicationService{
 	
 	@ProxyMethod
 	public def save( def application ){
+		if( application.txndate && application.txnmode == 'CAPTURE' ){
+			application.txndate = format( application.txndate, 'yyyy-MM-dd');
+			application.iyear = format( application.txndate, 'yyyy' );
+		}
+		
+		if( application.txnmode == 'ONLINE' ){
+			application.txndate = dateService.serverDate;
+			application.iyear = format( application.txndate, 'yyyy' );
+		}
 	
 		if( !application.info.lobs ) throw new Exception("There must be at least 1 line of business.");
-	
-		if( application.txndate ){
-			if( application.txnmode == 'CAPTURE' ) application.txndate = format( application.txndate, 'yyyy-MM-dd');
-			else application.txndate = dateService.serverDate;
-			application.iyear = format( application.txndate, 'yyyy' );
-
-			if( application.info.lobs ){
-				application.info.lobs.each{ it.iyear = application.iyear; }
+		if( application.txnmode == 'ONLINE' ){
+			if( application.txntype == 'RENEW' ) {
+				if( !application.info.lobs.findAll{ it.assessmenttype == 'RENEW'; } ) throw new Exception("There must be at least 1 line of business that is RENEW.");
+			}
+			
+			if( application.txntype == 'RETIRE' ){
+				if( !application.info.lobs.findAll{ it.assessmenttype == 'RETIRE_LINE'; } ) throw new Exception("There must be at least 1 line of business that is RETIRE_LINE.");
+			}
+			
+			if( application.txntype == 'ADDLOB' ){
+				if( !application.info.lobs.findAll{ it.assessmenttype == 'NEW'; } ) throw new Exception("There must be at least 1 line of business that is NEW.");
 			}
 		}
 		
@@ -54,6 +69,10 @@ class BPApplicationService{
 		application.tradename = application.info.tradename;
 		application.businessaddress = application.info.businessaddress;
 		application.txnno = getNextSeries();
+		
+		if( application.businesid ) {
+			txnSvc.insert( em, businesid, application.objid, 'BPApplication', 'Unable to process transaction. \n business is currently reference by a ' + application.txntype + ' transaction');
+		}
 		
 		em.validate( SCHEMANAME, application );
 		em.create( SCHEMANAME, application );
@@ -71,7 +90,7 @@ class BPApplicationService{
 
 			if( oldapp.iyear < prevyear ){
 				for( int i=oldapp.iyear; i <= prevyear; i++){
-					def app = createMapCopy( oldapp );
+					def app = clone( oldapp );
 					app.txxno = application.txnno + '-' + i;
 					app.iyear = i;
 					app.taxfees = [];
@@ -80,18 +99,17 @@ class BPApplicationService{
 		}
 	}
 	
-	private def createMapCopy( def obj ){
+	private def clone( def obj ){
 		if( obj instanceof Map ){
 			def copy = [:];
-			obj.each{ k, v -> copy.put( k, createMapCopy( v ) ); }
+			obj.each{ k, v -> copy.put( k, clone( v ) ); }
 			return copy;
 		}
 		
 		if( obj instanceof List ){
 			def copy = [];
-			obj.each{ copy.add( createMapCopy( it ) ); }
+			obj.each{ copy.add( clone( it ) ); }
 		}
-		
 		return obj;
 	}
 	
@@ -123,12 +141,18 @@ class BPApplicationService{
 	
 	@ProxyMethod
 	public def evaluateTxnType(def application){
+
+		def txndate = dateService.serverDate;
+		application.txndate = format( txndate, 'yyyy-MM-dd' );
+		application.iyear = format( txndate, 'yyyy' );
+		
 		if( application.txntype == 'NEW' || application.txnmode == 'CAPTURE' ) return application;
 		if( application.txntype == 'ADDLOB' ) return evaluateAddLob( application );
 		if( application.txntype == 'RENEW' ) return evaluateRenew( application );
 		if( application.txntype == 'LATE_RENEWAL' ) return evaluateRenew( application );
 		if( application.txntype == 'RETIRE' ) return evaluateRetire( application );
 		if( application.txntype == 'RETIRELINE') return evaluateRetire( application );
+		
 		throw new Exception( 'Transaction for '+ application.txnno +' not supported.');
 	}
 	
@@ -159,7 +183,6 @@ class BPApplicationService{
 		app.infos = application.infos;
 		checkValueType( app.infos );
 		application.infos = ruleSvc.buildInfos( app ).infos;
-
 		return application;
 	}
 	
@@ -176,9 +199,11 @@ class BPApplicationService{
 		];
 
 		application.info.lobs.each{
-			app.lobs.add( [ lob: [classificationid: it.classificationid, objid: it.lobid, name: it.name],
-				assessmenttype: it.assessmenttype
-			]);
+			if( it.assessmenttype != 'ACTIVE' ){
+				app.lobs.add( [ lob: [classificationid: it.classificationid, objid: it.lobid, name: it.name],
+					assessmenttype: it.assessmenttype
+				]);
+			}
 		}
 		return app;
 	}
@@ -262,17 +287,7 @@ class BPApplicationService{
 		return open( parentid );
 	}
 	
-	def checkValueType( def infos ){
-		infos.each{
-			if( it.vartype == 'integer' ) { 
-				try{ it.value = Integer.parseInt( it.value ); }catch(e){ throw new Exception( it.varname + ' value must be integer.' ) }
-			}
-			
-			if( it.vartype == 'decimal' ) { 
-				try{ it.value = Double.parseDouble( it.value ); }catch(e){ throw new Exception( it.varname + ' value must be decimal.' ) }
-			}
-		}
-	}
+	void checkValueType( def infos ){;}
 	
 	@ProxyMethod
 	public List getAccountSummaryTypes() {
@@ -296,6 +311,7 @@ class BPApplicationService{
 		applist.each{
 			def app = open( it.objid );
 			app.info.taxfees = it.taxfees;
+			println app.info.taxfees;
 			if( app.objid == appid ) app.docstate = 'FOR_APPROVAL';
 			em.update(  SCHEMANAME, app );
 		}
@@ -333,7 +349,16 @@ class BPApplicationService{
 			updatePreviousApplication( business.objid );
 		}
 		
-		app.business
+		if( app.txntype.matches('RETIRE') ){
+			def lobs = app.info.lobs.findAll{ it.assessmenttype == 'RETIRE_LINE' };
+			if( lobs.size() == app.info.lobs.size() ) business.docstate = 'RETIRED';
+			else app.docstate = 'RETIRE_LINE';
+		}
+		
+		txnSvc.remove( em, business.objid );
+		txnSvc.insert( em, business.objid, application.objid, 'BPApplication', 'Unable to process transaction. \n business is currently reference by a ' + application.txntype +' transaction' );
+		
+		app.businessid = business.objid;
 		em.update( BUSINESS_SCHEMA, business );
 		em.update( SCHEMANAME, app );
 		
@@ -371,7 +396,9 @@ class BPApplicationService{
 			def app = open( a.objid );
 			app.info.taxfees.each{
 				for( int i=1; i <= 4; i++ ){
-					saveReceivable( i, business.objid, app, it );
+					if( it.amountdue > 0 ){
+						saveReceivable( i, business.objid, app, it );
+					}
 				}
 			}
 		}
@@ -414,42 +441,60 @@ class BPApplicationService{
 	}
 	
 	def evaluateAddLob( def application ){
-		def list = em.sqlContext.createNamedQuery('bpapplication:getBusinessForADDLOB')
-		             .setParameters([taxpayerid: application.taxpayerid])
-				     .resultList;
-		if( !list ) throw new Exception("There is no active business for this taxpayer.");
-		list.each{ it.lobs = [];}
-		application.info.lobs = list;
-		return application;
-	}
-	
-	def evaluateRenew( def application ){
-		def list = [];
-		em.sqlContext.createNamedQuery('bpapplication:getBusinessForRENEW')
-		.setParameters([taxpayerid: application.taxpayerid])
-		.resultList.each{
-			def item = [objid:it.objid, tradename:it.tradename, businessaddress:it.businessaddress, lobs:[]];
-			it.info.lobs.each{ l ->
-				l.assessmenttype = 'RENEW';
-				l.iyear = null;
-				item.add( l );
-			}
-			list.add( item );
-		};
-		application.info.lobs = list;
-		if( list ) throw new Exception('There is no expired business registered for this taxpayer.');
-		return application;
-	}
-	
-	def evaluateRetire( def application ){
-		def lobs = [];
-		def bp = em.read( 'business:business', application.businessid );
+		def bp = em.read( 'business:business', [objid:application.businessid] );
+		
+		if( bp.docstate != 'ACTIVE' ) throw new Exception('Only active business can add line.');
+		
 		def prevapp = open( bp.applicationid );
+
+		application.taxpayerid = prevapp.taxpayerid;
+		application.taxpayername = prevapp.taxpayername;
+		application.tradename = prevapp.tradename;
+		application.businessaddress = prevapp.businessaddress;
+		application.parentid = prevapp.objid;
 		
 		application.info = prevapp.info;
 		application.info.taxfees = [];
 		application.info.appinfos = [];
-		application.info.lobs.each{ it.assessmentype = 'RETIRE'; }
+		application.info.lobs.each{ it.assessmenttype = 'ACTIVE'; }
+		
+		return application;
+	}
+	
+	def evaluateRenew( def application ){
+		def bp = em.read( 'business:business', [objid:application.businessid] );
+		if( bp.docstate != 'EXPIRED' ) throw new Exception('Only expired business can be renewed.');
+		def prevapp = open( bp.applicationid );
+		
+		application.taxpayerid = prevapp.taxpayerid;
+		application.taxpayername = prevapp.taxpayername;
+		application.tradename = prevapp.tradename;
+		application.businessaddress = prevapp.businessaddress;
+		application.parentid = prevapp.objid;
+		
+		application.info = prevapp.info;
+		application.info.taxfees = [];
+		application.info.appinfos = [];
+		application.info.lobs.each{ it.assessmenttype = 'RENEW'; }
+		
+		return application;
+	}
+	
+	def evaluateRetire( def application ){
+		def bp = em.read( 'business:business', [objid:application.businessid] );
+		def prevapp = open( bp.applicationid );
+		
+		application.taxpayerid = prevapp.taxpayerid;
+		application.taxpayername = prevapp.taxpayername;
+		application.tradename = prevapp.tradename;
+		application.businessaddress = prevapp.businessaddress;
+		application.parentid = prevapp.objid;
+		
+		application.info = prevapp.info;
+		application.info.taxfees = [];
+		application.info.appinfos = [];
+		application.info.lobs.each{ it.assessmenttype = 'ACTIVE';}
+		
 		return application;
 	}
 	
@@ -474,6 +519,13 @@ class BPApplicationService{
 		if( fetch( list, 'lookupbp:lookupBusinessAdminstratorName', searchText  + '%') ) return list;
 		if( fetch( list, 'lookupbp:lookupBusinessBusinessAddress', searchText +'%' ) ) return list;
 		return list;
+	}
+	
+	@ProxyMethod
+	public void delete( def applicationid ){
+		def app = open( applicationid );
+		if( app.businessid ) txnSvc.delete( em, app.businessid );
+		em.delete( SCHEMANAME, app );
 	}
 	
 }

@@ -1,8 +1,7 @@
 <workunit>
     <invokers>
     <invoker type="bp:assessmentinfo" action="init" caption="Assessment Information"/>
-        
-        <invoker type="formActions" action="back" caption="Back"/>
+        <invoker type="formActions" action="back" caption="Back" immediate="true"/>
         <invoker type="formActions" action="next" caption="Next"/>
     </invokers>
     <code>
@@ -32,19 +31,6 @@ class BusinessApplicationAssessment
         evaluateInfo();
     }
     
-    def appinfoListHandler = [
-        getRows    : { return 10 },
-        getColumns : { return [
-            new Column(name:'lobname', caption:'Line of Business'),
-            new Column(name:'varcaption', caption:'Variable'),
-            new Column(name:'value', caption:'Value', editable:true)
-        ]},
-        
-        fetchList : { 
-            return getInfos();
-        }
-    ] as SubListModel
-
     def requiredbeforeprintinfo = [];
     def requiredforprintinfo = [];
     
@@ -53,41 +39,63 @@ class BusinessApplicationAssessment
         app.infos = svc.evaluateApplicationInfo( app ).infos;
         requiredbeforeprintinfo = app.infos.findAll{ it.requiredbeforeprint == true };
         requiredforprintinfo = app.infos.findAll{ it.requiredbeforeprint != true };
-        
-        app.infos = requiredbeforeprintinfo;
-        appinfoListHandler.load();
+        if( !requiredbeforeprintinfo ) {
+            app.infos = requiredforprintinfo;
+            requiredforprintinfo = [];
+        }else{
+            app.infos = requiredbeforeprintinfo;
+        }
     }
     
-    public def getInfos(){
-        if( app.infos ) return app.infos;
-        return requiredforprintinfo;
+    def getFields(){
+        if( app.infos ){
+            app.infos.each{
+                it.datatype = it.vartype;
+                it.category = it.lobname;
+                it.caption = it.varname;
+                it.items = it.arrayvalues;
+            }
+            
+            app.infos.sort{ a, b -> 
+                def atext = (a.lobname ? a.lobname : '-') + a.name 
+                def btext = (b.lobname ? b.lobname : '-') + b.name 
+                return atext <=> btext 
+            }
+            return app.infos;
+        }
+        return [];
+    }
+    
+    public def getInfoHandler(){
+        return InvokerUtil.lookupOpener('input_fields', [fields: getFields()]);
     }
     
     public def next(){
-        if( app.infos ){
+        if( requiredbeforeprintinfo ){
             app = svc.evaluateApplicationInfo( app );
-            requiredforprintinfo += app.infos.findAll{ it.requiredbeforeprint != true };
-            app.infos = [];
-            
-            appinfoListHandler.load();
+            app.infos.each{ a->
+                def o = requiredforprintinfo.find{ it.varname == a.varname };
+                if( o ) requiredforprintinfo.remove( o );
+                requiredforprintinfo << a;
+            }
+            app.infos = app.infos.findAll{ it.requiredbeforeprint != true };
+            requiredbeforeprintinfo = [];
             return '_default';
         }
         
-        if( requiredforprintinfo ){
-            app.infos = requiredforprintinfo;
-            requiredforprintinfo = [];
-            inputtedApps.add( app );
-            index += 1;
-        }
+        app.infos = requiredforprintinfo;
+        inputtedApps.add( app );
         
-        if( index < applist.size() ) {
-            app = applist[index];
-            evaluateInfo();
-            return '_default';
+        if( applist ){
+            if( (index+1) < applist.size() ) {
+                app = applist[index];
+                evaluateInfo();
+                index += 1;
+                return '_default';
+            }
         }
         
         app = [ infos:[] ];
-        
         caller.application = svc.evaluateTaxesAndFees( application.objid, inputtedApps );
         caller.applist = [];
         caller.applistHandler.load();

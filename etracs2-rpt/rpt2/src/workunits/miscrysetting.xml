@@ -143,18 +143,15 @@ public class MiscRYSettingController
     
     void validateAssessLevel( al ) {
         try {
-            errorMsg = null
             required(al.code, 'Code')
             required(al.name, 'Name')
             validateRate( al.rate )
             checkDuplicateAssessLevel( al )
             svc.saveAssessLevel( al ) 
-            binding.refresh('errorMsg') 
+            clearError()
         }
         catch( e ) {
-            errorMsg = e.message
-            binding.refresh('errorMsg') 
-            throw e 
+            showError( e )
         }
     }
     
@@ -189,16 +186,13 @@ public class MiscRYSettingController
         }
         
         try {
-            errorMsg = null
             if( range.mvto < range.mvfrom && range.mvto != 0  ) throw new Exception('MV To must be greater than MV From')
             validateRate( range.rate )
             svc.saveAssessLevel( selectedAssessLevel )
-            binding.refresh('errorMsg') 
+            clearError()
         }
         catch( e ) {
-            errorMsg = e.message
-            binding.refresh('errorMsg') 
-            throw e 
+            showError( e )
         }
     }
     
@@ -240,15 +234,11 @@ public class MiscRYSettingController
     
     void validateMiscItemValue( miv ) {
         try {
-            errorMsg = null
             required( miv.expr, 'Computation Expression')
             svc.saveMiscItemValue( miv )
         }
         catch( e ) {
-            println e.message 
-            errorMsg = e.message 
-            binding.refresh('errorMsg') 
-            throw e 
+            showError( e )
         }
     }
     
@@ -314,6 +304,18 @@ public class MiscRYSettingController
         else
             index += 1 
         return list.size() == index 
+    }
+    
+    void showError( e ) {
+        println e.message
+        errorMsg = e.message
+        binding.refresh('errorMsg')
+        throw e
+    }   
+    
+    void clearError() {
+        errorMsg = null
+        binding.refresh('errorMsg') 
     }
     
 }

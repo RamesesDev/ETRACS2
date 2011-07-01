@@ -1,0 +1,153 @@
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
+<workunit>
+    <invokers>
+        <invoker type="landadjustmenttype.lookup" action="init" caption="Land Adjustment Lookup" target="popup" />
+        <invoker type="landadjustmenttype.view" action="open" caption="Edit Adjustment Parameter" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+
+class LandAdjustmentTypeLookupController extends LookupModel 
+{
+    @Service("LandRPUService")
+    def svc
+    
+    @Service('RPUService')
+    def rpuSvc
+    
+    def onselect
+    
+    def searchText
+    def ry
+    def classid 
+    def selected
+    def params 
+    def selectedInfo
+    
+    void init(){
+    }
+    
+    def open () {
+        return 'info'
+    }
+    
+    def okInfo() {
+        selectedItem.item.params.clear()
+        params.each{
+            selectedItem.item.params.add([
+                paramid     : it.paramid,
+                paramname   : it.paramname,
+                paramcaption : it.paramcaption, 
+                datatype    : it.datatype,
+                paramvalue  : convertParamValue( it ),
+            ])
+        }
+        if( onselect ) onselect( selected)
+        return select() 
+    }
+    
+    def convertParamValue( param ) {
+        if( param.datatype == 'decimal' ) {
+            return Double.parseDouble( param.paramvalue )
+        }
+        else if( param.datatype == 'range_decimal' ) {
+            def decvalue = parseDouble( param.paramvalue )
+            if( decvalue < param.minvalue || decvalue > param.maxvalue ) throw new Exception("Value must be between $param.minvalue and $param.maxvalue." )
+            return decvalue
+        }
+        else if( param.datatype == 'integer' ) {
+            return parseInt( param.paramvalue )
+        }
+        else if( param.datatype == 'range_integer' ) {
+            def intvalue = parseInt( param.parmvalue )
+            if( intvalue < param.minvalue || intvalue > param.maxvalue ) throw new Exception("Value must be between $param.minvalue and $param.maxvalue.")
+            return intvalue 
+        }
+        return param.paramvalue 
+    }
+    
+    def ok() {
+        search = null
+        selectedItem.item.params = []
+        params = rpuSvc.getVariables( selected.expr )
+        if( params ) {
+            return 'info'
+        }
+        else {
+            if( onselect ) onselect( selected )
+            return select()
+        }
+    }
+    
+    def getListHandler() {
+        return this
+    }
+    
+    int getRows() { return 25 }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"adjtypecode", caption:"Code", maxWidth:80),
+            new Column(name:"adjtypename", caption:"Adjustment Type", maxWidth:200),
+            new Column(name:"expr", caption:"Expression"),
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.lookupLandAdjustments( ry, classid, s, params)
+        if( list ) return list
+        throw new Exception("Record not found.")
+    }
+    
+    /* ----------------------------------------------
+    * Info Support 
+    -----------------------------------------------*/
+    def infoListHandler =[
+        getRows    : { return 25 },
+        getColumns : { return [
+            new Column( name:'paramcaption', caption:'Parameter' ),
+            new Column( name:'paramvalue', caption:'Value', editable:true, maxWidth:150 ),
+        ]},
+        fetchList  : { return params }
+    ] as PageListModel
+
+    
+    def parseDouble( value ) {
+        try {
+            return Double.parseDouble( value )
+        }
+        catch( e ) {
+            throw new Exception('Invalid parameter value.')
+        }
+    }
+    
+    def parseInt( value ) {
+        try {
+            return Integer.parseInt( value )
+        }
+        catch( e ) {
+            throw new Exception('Invalid parameter value.')
+        }
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.common.LookupPage"/>
+        <page name="info" template="etracs2.rpt.VariableInfoPage" />
+    </pages>
+</workunit>

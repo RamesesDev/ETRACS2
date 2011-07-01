@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="landrpuadjustment.open" action="init" caption="Open" target="popup" />
+        
+        <invoker type="formActions" action="viewParams" caption="View Parameters" mnemonic="v" visibleWhen="#{allowViewParams == true}" default="true" />
+        <invoker type="formActions" action="ok" caption="OK" mnemonic="o" default="true" />
+        <invoker type="formActions" action="_close" caption="Cancel" mnemonic="c" immediate="true"  />
+        
+    </invokers>
+    <code lang="groovy">
+        
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+import java.rmi.server.UID
+
+public class LandRPUAdjustmentController 
+{
+    @Binding
+    def binding
+    
+    @Service('LandRPUService')
+    def svc
+    
+    //handler 
+    def onupdate
+    
+    def rpu
+    def selectedItem 
+    def errorMsg 
+    
+    void init() {
+    }
+    
+    def onupdateHandler = { la ->
+        calculateAdjustment( selectedItem )
+    }
+    
+    def viewParams() {
+        return InvokerUtil.lookupOpener('landadjustmenparam.view', [landAdjustment:selectedItem, onupdate:onupdateHandler] )
+    }
+    
+    def ok() {
+        if( onupdate ) onupdate( rpu )
+        return '_close'
+    }
+    
+    def getLookupAdjustment() {
+        return InvokerUtil.lookupOpener('landadjustmenttype.lookup', [classid:rpu.classid, ry:rpu.ry] )
+    }
+    
+    def listHandler = [
+        createItem : { return createAdjustment() },
+        getColumns : { return [
+            new Column(name:'adj', caption:'Code*', type:'lookup', handler:lookupAdjustment,  expression:'#{adjtypecode}', maxWidth:60, editable:true ),
+            new Column(name:'adjtypename', caption:'Name'),
+            new Column(name:'expr', caption:'Computation'),
+            new Column(name:'adjustment', caption:'Adjustment', type:'decimal', maxWidth:120 ),
+        ]},
+        validate       : { li -> validateAdjustment( li.item ) },
+        onRemoveItem   : { item -> removeAdjustment( item ) },
+        onAddItem      : { item -> 
+            rpu.info.adjustments.add( item ) 
+        },
+        onColumnUpdate : { item, colName -> 
+            if( colName == 'adj' ) updateAdjustmentInfo( item )
+        },
+        fetchList      : { return rpu.info.adjustments  },
+    ] as SubListModel
+    
+    void validateAdjustment( item ) {
+        try {
+            required( 'Code', item.adjtypeid )
+            checkDuplicate( item )
+            calculateAdjustment( item )
+            clearError()
+        } 
+        catch(  e ) {
+            showError( e )
+        }
+    }
+    
+    void removeAdjustment( item ) {
+        if( MsgBox.confirm( 'Delete selected item?' ) ) {
+            def landdetails = svc.removeLandAdjustment( rpu.info.landdetails, item )
+            rpu.info.adjustments.remove( item )
+            rpu.info.landdetails.clear()
+            rpu.info.landdetails.addAll( landdetails )
+        }
+    }
+    
+    void updateAdjustmentInfo( item ) {
+        item.adjtypeid =  item.adj?.adjtypeid 
+        item.adjtypecode =  item.adj?.adjtypecode 
+        item.adjtypename =  item.adj?.adjtypename 
+        item.expr =  item.adj?.expr 
+        item.params.addAll(item.adj?.params)
+        item.adj?.remove('params') 
+    }
+    
+    void calculateAdjustment( item ) {
+        def data = svc.calculateLandAdjustment( rpu.info.landdetails, item)
+        rpu.info.landdetails.clear()
+        rpu.info.landdetails.addAll( data.landdetails )
+        item.adjustment = data.landvalueadjustment
+    }
+    
+    void checkDuplicate( item ) {
+        def data = rpu.info.adjustments.find{ it.adjtypeid == item.adjtypeid }
+        if( data ) throw new Exception('Duplicate Adjustment is not allowed.')    
+    }
+    
+    /*---------------------------------------------------------------
+    *
+    * MIscellaneous Support
+    *
+    ---------------------------------------------------------------*/
+    Map createAdjustment() {
+        return [
+            objid           : 'A' + new UID(),
+            adjustment      : 0.0,
+            params          : [],
+        ]
+    }
+    
+    void required( caption, value ) {
+        if( !value ) throw new Exception( caption + ' is required.')
+    }
+    
+    void showError( e ) {
+        println e.message
+        errorMsg = e.message
+        binding.refresh('errorMsg')
+        throw e
+    }   
+    
+    void clearError() {
+        errorMsg = null
+        binding.refresh('errorMsg') 
+    }
+    
+    boolean getAllowViewParams() {
+        if( ! selectedItem  ) return false
+        return selectedItem.params.size() > 0 
+    }
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.rpu.land.LandAdjustmentPage"/>
+    </pages>
+</workunit>

@@ -12,7 +12,7 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  *
  * @author  jzamora
  */
-@StyleSheet("etracs2.rpt.faas.FAASNewPage.style")
+@StyleSheet("etracs2/rpt/faas/FAASNewPage.style")
 public class FAASNewPage extends javax.swing.JPanel {
     
     /** Creates new form FAASNewPage */
@@ -30,9 +30,11 @@ public class FAASNewPage extends javax.swing.JPanel {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
-        xComboBox3 = new com.rameses.rcp.control.XComboBox();
-        xNumberField1 = new com.rameses.rcp.control.XNumberField();
         xNumberField2 = new com.rameses.rcp.control.XNumberField();
+        xComboBox3 = new com.rameses.rcp.control.XComboBox();
+        xNumberField3 = new com.rameses.rcp.control.XNumberField();
+        xNumberField4 = new com.rameses.rcp.control.XNumberField();
+        xNumberField5 = new com.rameses.rcp.control.XNumberField();
         jPanel1 = new javax.swing.JPanel();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
@@ -43,10 +45,12 @@ public class FAASNewPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("New FAAS Initial Information");
         formPanel1.setBorder(xTitledBorder1);
+        xComboBox2.setAllowNull(false);
         xComboBox2.setCaption("PIN Type");
         xComboBox2.setCaptionWidth(100);
-        xComboBox2.setItems("pintypes");
-        xComboBox2.setName("pintype");
+        xComboBox2.setImmediate(true);
+        xComboBox2.setItems("pinTypes");
+        xComboBox2.setName("faas.rp.pintype");
         xComboBox2.setPreferredSize(new java.awt.Dimension(100, 22));
         xComboBox2.setRequired(true);
         formPanel1.add(xComboBox2);
@@ -54,35 +58,53 @@ public class FAASNewPage extends javax.swing.JPanel {
         xComboBox1.setCaption("Transaction");
         xComboBox1.setCaptionWidth(100);
         xComboBox1.setIndex(-10);
-        xComboBox1.setItems("txntypes");
-        xComboBox1.setName("txntype");
+        xComboBox1.setItems("txnTypes");
+        xComboBox1.setName("faas.info.txntype");
         xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));
         xComboBox1.setRequired(true);
         formPanel1.add(xComboBox1);
 
+        xNumberField2.setCaption("Revision Year");
+        xNumberField2.setCaptionWidth(100);
+        xNumberField2.setFieldType(Integer.class);
+        xNumberField2.setName("faas.rpu.ry");
+        xNumberField2.setPreferredSize(new java.awt.Dimension(100, 19));
+        xNumberField2.setRequired(true);
+        formPanel1.add(xNumberField2);
+
         xComboBox3.setCaption("Barangay");
         xComboBox3.setCaptionWidth(100);
+        xComboBox3.setExpression("#{lguname}");
+        xComboBox3.setIndex(-10);
         xComboBox3.setItems("barangays");
         xComboBox3.setName("barangay");
         xComboBox3.setPreferredSize(new java.awt.Dimension(0, 22));
         xComboBox3.setRequired(true);
         formPanel1.add(xComboBox3);
 
-        xNumberField1.setCaption("Suffix");
-        xNumberField1.setCaptionWidth(100);
-        xNumberField1.setFieldType(Integer.class);
-        xNumberField1.setImmediate(true);
-        xNumberField1.setName("suffix");
-        xNumberField1.setPreferredSize(new java.awt.Dimension(100, 19));
-        xNumberField1.setRequired(true);
-        formPanel1.add(xNumberField1);
+        xNumberField3.setCaption("Section");
+        xNumberField3.setCaptionWidth(100);
+        xNumberField3.setFieldType(Integer.class);
+        xNumberField3.setName("section");
+        xNumberField3.setPreferredSize(new java.awt.Dimension(100, 19));
+        xNumberField3.setRequired(true);
+        formPanel1.add(xNumberField3);
 
-        xNumberField2.setCaption("Revision Year");
-        xNumberField2.setCaptionWidth(100);
-        xNumberField2.setName("ry");
-        xNumberField2.setPreferredSize(new java.awt.Dimension(100, 19));
-        xNumberField2.setRequired(true);
-        formPanel1.add(xNumberField2);
+        xNumberField4.setCaption("Parcel");
+        xNumberField4.setCaptionWidth(100);
+        xNumberField4.setFieldType(Integer.class);
+        xNumberField4.setName("parcel");
+        xNumberField4.setPreferredSize(new java.awt.Dimension(100, 19));
+        xNumberField4.setRequired(true);
+        formPanel1.add(xNumberField4);
+
+        xNumberField5.setCaption("Suffix");
+        xNumberField5.setCaptionWidth(100);
+        xNumberField5.setFieldType(Integer.class);
+        xNumberField5.setName("faas.rpu.suffix");
+        xNumberField5.setPreferredSize(new java.awt.Dimension(100, 19));
+        xNumberField5.setRequired(true);
+        formPanel1.add(xNumberField5);
 
         jPanel1.setLayout(null);
 
@@ -91,8 +113,8 @@ public class FAASNewPage extends javax.swing.JPanel {
         formPanel2.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
         formPanel2.setPreferredSize(new java.awt.Dimension(0, 29));
         xTextField1.setCaption("Sub-Suffix");
-        xTextField1.setDepends(new String[] {"iscondo"});
-        xTextField1.setName("subsuffix");
+        xTextField1.setDepends(new String[] {"iscondo", "faas.rpu.suffix"});
+        xTextField1.setName("faas.rpu.subsuffix");
         xTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xTextField1);
 
@@ -101,7 +123,7 @@ public class FAASNewPage extends javax.swing.JPanel {
 
         xCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
         xCheckBox1.setText("Is Condominium ?");
-        xCheckBox1.setDepends(new String[] {"suffix"});
+        xCheckBox1.setDepends(new String[] {"faas.rpu.suffix"});
         xCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
         xCheckBox1.setName("iscondo");
         xCheckBox1.setPreferredSize(new java.awt.Dimension(101, 19));
@@ -110,7 +132,7 @@ public class FAASNewPage extends javax.swing.JPanel {
 
         xButton1.setText("Next");
         xButton1.setDefaultCommand(true);
-        xButton1.setName("doNext");
+        xButton1.setName("create");
 
         xButton2.setText("Cancel");
         xButton2.setImmediate(true);
@@ -123,26 +145,27 @@ public class FAASNewPage extends javax.swing.JPanel {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 344, Short.MAX_VALUE)
-                    .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 344, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                        .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(32, Short.MAX_VALUE))
+                    .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 344, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                        .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 344, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                            .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                            .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
+                .add(136, 136, 136))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 168, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 198, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 62, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(40, Short.MAX_VALUE))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
     
@@ -157,8 +180,10 @@ public class FAASNewPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XComboBox xComboBox3;
-    private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField2;
+    private com.rameses.rcp.control.XNumberField xNumberField3;
+    private com.rameses.rcp.control.XNumberField xNumberField4;
+    private com.rameses.rcp.control.XNumberField xNumberField5;
     private com.rameses.rcp.control.XTextField xTextField1;
     // End of variables declaration//GEN-END:variables
     

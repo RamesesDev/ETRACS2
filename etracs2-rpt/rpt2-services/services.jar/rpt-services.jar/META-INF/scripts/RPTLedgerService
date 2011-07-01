@@ -1,0 +1,90 @@
+import com.rameses.annotations.*
+import java.rmi.server.UID
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class RPTLedgerService
+{
+	@PersistenceContext('main')
+	def em
+    
+	@Service('DateService')
+	def dateSvc
+
+    @Service('Var')
+	def var
+
+	@Service('LogService')
+    def logSvc
+    
+    def PENDING_STATE = 'PENDING'
+    def APPROVED_STATE = 'APPROVED'
+    def CANCELLED_STATE = 'CANCELLED'
+    
+    def LAND_TYPE = 'land' 
+    def BLDG_TYPE = 'bldg'
+    def MACH_TYPE = 'mach'
+    def PLANTTREE_TYPE = 'planttree'
+    def MISC_TYPE = 'misc' 
+    
+    def FAASLISTSCHEMA_NAME = 'faas:faaslist'
+    def LEDGER_SCHEMA = 'rptledger' 
+    def LEDGERITEM_SCHEMA = 'rptledger:rptledgeritem' 
+    def SCHEMA_VERSION = '1.0'
+    
+	@ProxyMethod
+    public void post( faasid ) {
+        def ledger = createLedger( faasid )
+        def ledgeritem = createLedgerItem( ledger )
+        em.validate( ledger.schemaname, ledger ) 
+        em.validate( ledgeritem.schemaname, ledgeritem ) 
+        em.create( ledger.schemaname, ledger )
+        em.create( ledgeritem.schemaname, ledgeritem )
+    }
+    
+    Map createLedger( faasid ) {
+        def faas = em.read( FAASLISTSCHEMA_NAME, [objid:faasid] )
+        faas.objid = faas.fullpin 
+        faas.schemaname = LEDGER_SCHEMA
+        faas.schemaversion = SCHEMA_VERSION
+        faas.faasid = faasid 
+        faas.datacapture = faas.datacapture as boolean 
+        faas.docstate = PENDING_STATE
+        faas.lastyearpaid = 0
+        faas.lastqtrpaid = 0
+        faas.partialbasic = 0.0
+        faas.partialsef = 0.0
+        faas.firstqtrpaidontime = false 
+        faas.assessedvalue = faas.totalav 
+        faas.taxable = faas.taxable as boolean 
+        updateActualUseInfo( faas )
+        if( ! faas.datacapture ) {
+            //set lastyearpaid and lastqtrpaid based on effectivity
+            faas.lastyearpaid = ( faas.effectivityqtr == 1 ? faas.effectivityyear - 1 : faas.effectivityyear)
+            faas.lastqtrpaid = ( faas.effectivityqtr == 1 ? 4 : faas.effectivityqtr - 1 )
+        }
+        return faas
+    }
+    
+    Map createLedgerItem( ledger ) {
+        def ledgeritem = [:]
+        ledgeritem.putAll( ledger )
+        ledgeritem.objid            = 'LI' + new UID()
+        ledgeritem.schemaname       = LEDGERITEM_SCHEMA
+        ledgeritem.schemaversion    = SCHEMA_VERSION
+        ledgeritem.parentid         = ledger.objid 
+        ledgeritem.fromyear         = ledger.effectivityyear
+        ledgeritem.toyear           = 0
+        ledgeritem.backtax          = ledger.backtaxyrs > 0
+        ledgeritem.systemcreated    = true 
+        return ledgeritem 
+    }
+    
+    void updateActualUseInfo( faas ) {
+        //TODO: how to identify actualuse for split assessments? 
+        //by default set it to the largest area
+        faas.actualuseid = faas.classid 
+        faas.actualusecode = faas.classcode 
+    }
+}
+

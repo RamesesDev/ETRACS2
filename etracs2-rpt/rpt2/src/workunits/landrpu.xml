@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="rpu.land" action="init" caption="Open" target="popup" />
+        
+        <invoker type="formActions" action="ok" caption="OK" mnemonic="o" />
+        <invoker type="formActions" action="_close" caption="Cancel" mnemonic="c" immediate="true" />
+        
+    </invokers>
+    <code lang="groovy">
+        
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+import java.rmi.server.UID
+
+public class LandRPUController
+{
+    @Binding
+    def binding
+    
+    @Service('LandRPUService')
+    def svc
+    
+    @Service('PlantTreeRPUService')
+    def plantTreeSvc
+    
+    @Service('PropertyClassificationService')
+    def classSvc
+    
+    @Service('ExemptionTypesService')
+    def exemptSvc
+    
+    
+    def onupdate
+    def faas
+    def rpu
+    
+    def exemption
+    def classification
+    def errorMsg 
+    
+    void init() {
+        classificationList = classSvc.lookup( null, null) 
+        exemptionList = exemptSvc.lookup(null, null) 
+        classification = classificationList.find{ it.classid == rpu.classid }
+        exemption = exemptionList.find{ it.exemptid == rpu.exemptid }
+    }
+    
+    def ok() {
+        if( onupdate ) onupdate( rpu )
+        return '_close'
+    }
+    
+    /*---------------------------------------------------------------
+    *
+    * MainForm Support
+    *
+    ---------------------------------------------------------------*/
+    def onupdateLandAdjustment = { 
+        calculateTotals()
+        binding.refresh('selectedLand')
+    }
+    
+    def openLandValueAdjustments() {
+        return InvokerUtil.lookupOpener('landrpuadjustment.open', [ rpu:rpu, onupdate:onupdateLandAdjustment ])
+    }
+    
+    def onupdateActualUseAdjustment = { 
+        recalcLandDetails()
+        calculateTotals()        
+        binding.refresh('selectedLand')
+    }
+    
+    def openActualUseAdjustment() {
+        return InvokerUtil.lookupOpener('landrpuactualuseadjustment.open', [ rpu:rpu, landDetail:selectedLand, onupdate:onupdateActualUseAdjustment  ])
+    }
+    
+    void recalcLandDetails() {
+        def lds = svc.recalcLandDetails( rpu.info.landdetails )
+        rpu.info.landdetails.clear()
+        rpu.info.landdetails.addAll( lds )
+    }
+    
+    /*---------------------------------------------------------------
+    *
+    * LandDetail Support
+    *
+    ---------------------------------------------------------------*/
+    def selectedLand 
+    
+    def getLookupSubclass() {
+        return InvokerUtil.lookupOpener('lcuvsubclass.lookup', [ry:rpu.ry] )
+    }
+    
+    def getLookupAssessLevel() {
+        return InvokerUtil.lookupOpener('landassesslevel.lookup', [ry:rpu.ry] )
+    }
+    
+    def getLookupStripping() {
+        return  InvokerUtil.lookupOpener('lcuvstripping.lookup', [ry:rpu.ry, actualuseid:selectedLand?.actualuseid] )
+    }
+    
+    def landListHandler = [
+        createItem : { return createLandDetail() },
+        getColumns : { return [
+            new Column(name:'subclass', caption:'SubClass*', type:'lookup', handler:lookupSubclass,  expression:'#{subclasscode}', maxWidth:100, editable:true ),
+            new Column(name:'specificclassname', caption:'Specific Class', maxWidth:100 ),
+            new Column(name:'actualusename', caption:'Actual Use', maxWidth:100 ),
+            new Column(name:'taxable', caption:'Tax?', type:'boolean', maxWidth:50 ),
+            new Column(name:'al', caption:'Assess Level*', type:'lookup', handler:lookupAssessLevel, expression:'#{assesslevelcode}', maxWidth:100, editable:true ),
+            new Column(name:'stripping', caption:'Strip', type:'lookup', handler:lookupStripping, editable:true, maxWidth:50 ),
+            new Column(name:'area', caption:'Area*', type:'decimal', format:'#,##0.0000',editable:true, maxWidth:100 ),
+            new Column(name:'unitvalue', caption:'Unit Value', type:'decimal', maxWidth:100),
+            new Column(name:'basemarketvalue', caption:'Base Market Value', type:'decimal', maxWidth:100),
+            new Column(name:'adjustment', caption:'Adjustment', type:'decimal', maxWidth:100),
+            new Column(name:'marketvalue', caption:'Market Value', type:'decimal', maxWidth:100),
+            new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal', maxWidth:100),
+        ]},
+        validate       : { li -> validateLandDetail( li.item ) },
+        onRemoveItem   : { item -> removeLandDetail( item ) },
+        onAddItem      : { item -> 
+            applyLandAdjustments( item )
+            rpu.info.landdetails.add( item ) 
+            calculateTotals()
+        },
+        onColumnUpdate : { item, colName -> 
+            if( colName == 'subclass' ) updateSubClassInfo( item )
+            else if( colName == 'al' ) updateAssessLevelInfo( item )
+            else if( colName == 'stripping') updateStrippingInfo( item )
+        },
+        fetchList      : { return rpu.info.landdetails  },
+    ] as SubListModel
+    
+    void validateLandDetail( item ) {
+        try {
+            required( 'Subclass', item.subclassid )
+            required( 'Assess Level', item.assesslevelid )
+            required( 'Area', item.area )
+            calculateLandDetailAssessment( item )
+            if( ! newLandItem(item )  ) {
+                calculateTotals()
+            }
+            clearError()
+        } 
+        catch( Throwable e ) {
+            showError( e )
+        }
+    }
+    
+    void removeLandDetail( item ) {
+        if( MsgBox.confirm( 'Delete selected item?' ) ) {
+            rpu.info.landdetails.remove( item )
+            recalcLandAdjustments( item )
+            calculateTotals()
+        }
+    }
+    
+    void recalcLandAdjustments( item ) {
+        item.landadjustments.each {
+            def adj = rpu.info.adjustments.find{ it.adjtypeid == it.adjtypeid }
+            if( adj ) adj.adjustment += ( it.adjustment * -1)
+        }
+    }
+    
+    void updateSubClassInfo( item ) {
+        item.subclassid = item.subclass?.subclassid 
+        item.subclasscode = item.subclass?.subclasscode
+        item.subclassname = item.subclass?.subclassname 
+        item.basevalue    = ( item.subclass ? item.subclass.basevalue : 0.0)
+        item.unitvalue    = item.basevalue 
+        
+        item.specificclassid = item.subclass?.specificclassid 
+        item.specificclasscode = item.subclass?.specificclasscode 
+        item.specificclassname = item.subclass?.specificclassname        
+        item.areatype = item.subclass?.areatype 
+        
+        item.actualuseid = item.subclass?.actualuseid 
+        item.actualusecode = item.subclass?.actualusecode 
+        item.actualusename = item.subclass?.actualusename 
+    }
+    
+    void updateAssessLevelInfo( item ) {
+        item.assesslevelid = item.al?.assesslevelid
+        item.assesslevelcode = item.al?.assesslevelcode 
+        item.assesslevelname = item.al?.assesslevelname 
+    }
+    
+    void updateStrippingInfo( item ) {
+        item.strippingid = item.stripping?.stripid 
+        item.striplevel = item.stripping?.striplevel  
+        item.striprate = item.stripping?.striprate 
+    }
+    
+    void applyLandAdjustments( landdetail ) {
+        def data = svc.applyLandAdjustments( landdetail, rpu.info.adjustments )
+        landdetail.clear()
+        landdetail.putAll( data.landdetail )
+        rpu.info.adjustments.clear()
+        rpu.info.adjustments.addAll( data.adjustments )
+    }
+    
+    void calculateLandDetailAssessment( item ) {
+        def data = svc.calculateLandDetailAssessment( item  )
+        item.clear()
+        item.putAll( data )
+    }
+    
+    void calculateTotals() {
+        clearRpuTotals()
+        clearLandTotals()
+        clearPlantTotals()
+        
+        rpu.info.landdetails.each {
+            rpu.totalbmv     += it.basemarketvalue 
+            rpu.totalmv      += it.marketvalue 
+            rpu.totalav      += it.assessedvalue
+
+            rpu.info.landtotal.basemarketvalue  += it.basemarketvalue
+            rpu.info.landtotal.adjustment       += it.adjustment
+            rpu.info.landtotal.adjustment       += it.adjustment
+            rpu.info.landtotal.marketvalue      += it.marketvalue
+            rpu.info.landtotal.assessedvalue    += it.assessedvalue
+            rpu.info.landtotal.areasqm          += it.areasqm
+            rpu.info.landtotal.areaha           += it.areaha
+
+            rpu.totalareasqm += it.areasqm
+            rpu.totalareaha  += it.areaha 
+        }
+        
+        rpu.info.planttrees?.each {
+            rpu.totalbmv     += it.basemarketvalue 
+            rpu.totalmv      += it.marketvalue 
+            rpu.totalav      += it.assessedvalue
+            
+            rpu.info.planttotal.bearing         += it.bearing 
+            rpu.info.planttotal.nonbearing      += it.nonbearing
+            rpu.info.planttotal.basemarketvalue += it.basemarketvalue
+            rpu.info.planttotal.adjustment      += it.adjustment
+            rpu.info.planttotal.marketvalue     += it.marketvalue 
+            rpu.info.planttotal.assessedvalue   += it.assessedvalue
+        }
+        
+        rpu.info.landvalueadjustment = 0.0
+        if( rpu.info.adjustments ) {
+            rpu.info.landvalueadjustment = rpu.info.adjustments.adjustment.sum()
+        }
+        
+        binding.refresh('rpu.total.*|rpu.info.landtotal.*|rpu.info.planttotal.*|rpu.info.landvalueadjustment')
+    }
+    
+    void clearRpuTotals() {
+        rpu.totalbmv     = 0.0
+        rpu.totalmv      = 0.0
+        rpu.totalav      = 0.0
+        rpu.totalareasqm = 0.0
+        rpu.totalareaha  = 0.0
+    }
+    
+    void clearLandTotals() {
+        rpu.info.landvalueadjustment        = 0.0
+        rpu.info.landtotal.basemarketvalue  = 0.0
+        rpu.info.landtotal.adjustment       = 0.0
+        rpu.info.landtotal.marketvalue      = 0.0
+        rpu.info.landtotal.assessedvalue    = 0.0
+        rpu.info.landtotal.areasqm          = 0.0
+        rpu.info.landtotal.areaha           = 0.0
+    }
+    
+    void clearPlantTotals() {
+        rpu.info.planttotal.bearing         = 0
+        rpu.info.planttotal.nonbearing      = 0
+        rpu.info.planttotal.basemarketvalue = 0.0
+        rpu.info.planttotal.adjustment      = 0.0
+        rpu.info.planttotal.marketvalue     = 0.0
+        rpu.info.planttotal.assessedvalue   = 0.0
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * PlantTree Support
+    *
+    ---------------------------------------------------------------*/
+    def selectedPlantTree
+    
+    def getLookupTreeUnitValue() {
+        return InvokerUtil.lookupOpener('planttreeunitvalue.lookup', [ry:rpu.ry] )
+    }
+    
+    def getLookupPlantTreeAssessLevel() {
+        return InvokerUtil.lookupOpener('planttreeassesslevel.lookup', [ry:rpu.ry] )
+    }
+    
+    def planttreeListHandler = [
+        createItem   : { return createPlantTree() },
+        getColumns   : { return [
+            new Column(name:'ptuv', caption:'Code*', type:'lookup', handler:lookupTreeUnitValue, expression:'#{unitvaluecode}', editable:true, maxWidth:80),
+            new Column(name:'planttreename', caption:'Plant/Tree', maxWidth:120),
+            new Column(name:'unitvalue', caption:'Unit Value', maxWidth:100, type:'decimal'),
+            new Column(name:'al', caption:'Assess Level*', maxWidth:100, type:'lookup', handler:lookupPlantTreeAssessLevel, expression:'#{assesslevelcode}', editable:true, maxWidth:80),
+            new Column(name:'bearing', caption:'Bearing*', maxWidth:100, type:'integer', editable:true),
+            new Column(name:'nonbearing', caption:'NonBearing*', maxWidth:100, type:'integer', editable:true ),
+            new Column(name:'basemarketvalue', caption:'Base Market Value', type:'decimal'),
+            new Column(name:'adjustment', caption:'Adjustment', type:'decimal'),
+            new Column(name:'marketvalue', caption:'Market Value', type:'decimal'),
+            new Column(name:'assessedvalue', caption:'Assesed Value', type:'decimal'),
+        ]},
+        validate       : { li -> validatePlantTree( li.item ) },
+        onRemoveItem   : { item -> removePlantTree( item ) },
+        onAddItem      : { item -> 
+            rpu.info.planttrees.add( item ) 
+            calculateTotals()
+        },
+        onColumnUpdate : { item, colName -> 
+            if( colName == 'ptuv' ) updatePlantTreeUnitValue( item )
+            else if( colName == 'al' ) updatePlantTreeAssessLevelInfo( item )
+        },
+        fetchList    : { return rpu.info.planttrees },
+    ] as SubListModel
+    
+    
+    void validatePlantTree( item ) {
+        try {
+            required('Code', item.planttreeid )
+            required('Assess Level', item.assesslevelid )
+            if( item.bearing == null ) throw new Exception('Bearing must not be empty.')
+            if( item.nonbearing == null ) throw new Exception('Non-Bearing must not be empty.')
+            calculatePlantTreeAssessment( item )
+            if( ! newPlantTreeItem(item) ) {
+                calculateTotals()
+            }
+            clearError()
+        }
+        catch( e ) {
+            showError( e )
+        }
+    }
+    
+    void calculatePlantTreeAssessment( item ) {
+        def data = plantTreeSvc.calculatePlantTreeAssessment( item )
+        item.putAll( data ) 
+    }
+    
+    void removePlantTree( item ) {
+        if( MsgBox.confirm('Delete selected item?') ) {
+            rpu.info.planttrees.remove( item )
+            calculateTotals()
+        }
+    }
+    
+    void updatePlantTreeUnitValue( item ) {
+        item.unitvalueid = item.ptuv?.unitvalueid
+        item.unitvaluecode = item.ptuv?.unitvaluecode
+        item.unitvaluename = item.ptuv?.unitvaluename 
+        item.unitvalue = item.ptuv?.unitvalue 
+        item.planttreeid = item.ptuv?.planttreeid
+        item.planttreecode = item.ptuv?.planttreecode 
+        item.planttreename = item.ptuv?.planttreename 
+    }
+    
+    void updatePlantTreeAssessLevelInfo( item ) {
+        item.assesslevelid = item.al?.assesslevelid 
+        item.assesslevelcode = item.al?.assesslevelcode 
+        item.assesslevelname = item.al?.assesslevelname  
+        item.assesslevel = item.al?.assesslevel
+    }
+    
+    /*---------------------------------------------------------------
+    *
+    * ComboBox Support
+    *
+    ---------------------------------------------------------------*/
+    void setExemption( exemption ) {
+        this.exemption = exemption
+        rpu.exemptid = exemption?.exemptid
+        rpu.exemptcode = exemption?.exemptcode
+        rpu.exemptname = exemption?.exemptname
+    }
+    
+    void setClassification( classification ) {
+        this.classification = classification
+        rpu.classid = classification?.classid 
+        rpu.classcode = classification?.classcode
+        rpu.classname = classification?.classname 
+    }
+    
+    def classificationList
+    def exemptionList
+    
+    List getClassifications() { 
+        return classificationList 
+    }
+    
+    List getExemptions() { 
+        return exemptionList 
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * MIscellaneous Support
+    *
+    ---------------------------------------------------------------*/
+    Map createLandDetail() {
+        return [
+            objid           : 'LD' + new UID(),
+            basevalue       : 0.0,
+            unitvalue       : 0.0,
+            taxable         : true,
+            basemarketvalue : 0.0,
+            marketvalue     : 0.0,
+            adjustment      : 0.0,
+            landvalueadjustment : rpu.info.landvalueadjustment,
+            actualuseadjustment : 0.0,
+            assesslevel     : 0.0,
+            assessedvalue   : 0.0,
+            areasqm         : 0.0,
+            areaha          : 0.0,
+            landadjustments : [],
+            adjustments : [],
+        ]
+    }
+    
+    Map createPlantTree() {
+        return [
+            objid           : 'TP' + new UID(),
+            bearing         : 0.0,
+            nonbearing      : 0.0, 
+            basemarketvalue : 0.0,
+            adjustment      : 0.0,
+            marketvalue     : 0.0,
+            assesslevel     : 0.0,
+            assessedvalue   : 0.0,
+        ]   
+    }
+    
+    void required( caption, value ) {
+        if( !value ) throw new Exception( caption + ' is required.')
+    }
+    
+    boolean newLandItem( item ) {
+        return ( rpu.info.landdetails.find{ it.objid == item.objid } == null ) 
+    }
+    
+    boolean newPlantTreeItem( item ) {
+        return ( rpu.info.planttrees.find{ it.objid == item.objid } == null ) 
+    }
+    
+    void showError( e ) {
+        println e.message
+        errorMsg = e.message
+        binding.refresh('errorMsg')
+        throw e
+    }   
+    
+    void clearError() {
+        errorMsg = null
+        binding.refresh('errorMsg') 
+    }
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.rpu.land.LandRPUPage"/>
+    </pages>
+</workunit>

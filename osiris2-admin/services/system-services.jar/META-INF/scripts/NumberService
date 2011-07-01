@@ -1,12 +1,46 @@
 
-import com.rameses.annotations.*;
-import java.text.DecimalFormat;
+import com.rameses.annotations.*
+    import java.math.BigDecimal
+    import java.math.RoundingMode
+    import java.text.DecimalFormat
+    import java.math.MathContext;
+
 
 class NumberService {
 
+    int DEFAULT_SCALE = 2
+    
     @ProxyMethod(local=true)
 	public def format( pattern, value ) {
-		def df = new DecimalFormat( pattern );
-		return df.format( value );
+		def df = new DecimalFormat( pattern )
+		return df.format( value )
 	}
+    
+    @ProxyMethod
+    public def round( amount ) {
+        return roundA(amount, DEFAULT_SCALE)
+    }
+    
+    @ProxyMethod
+    public def roundA( amount, int scale ) {
+        def bd = new BigDecimal(amount+'')
+        return bd.setScale(scale, RoundingMode.HALF_UP)
+    }
+    
+    @ProxyMethod    
+    public def roundToTen( value ) {
+        BigDecimal bd = new BigDecimal(value+'')
+        if( bd < 5 ) {
+            return 0.0
+        }
+        else if( bd  < 10 )
+            return 10.0
+        else {
+            String snum = bd.doubleValue()+''
+            int i = snum.indexOf('.')
+            i = (i == 1 ? 2 : i)
+            MathContext mc = new MathContext(i-1, RoundingMode.HALF_UP)
+            return bd.round(mc)
+        }
+    }
 }

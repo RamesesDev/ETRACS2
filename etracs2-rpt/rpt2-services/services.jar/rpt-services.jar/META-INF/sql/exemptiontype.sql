@@ -7,6 +7,18 @@ SELECT * FROM exemptiontype WHERE exemptcode LIKE $P{exemptcode} ORDER BY ordern
 [getListByDescription]
 SELECT * FROM exemptiontype WHERE exemptdesc LIKE $P{exemptdesc} ORDER BY orderno
 
+
+[lookupList]
+SELECT objid AS exemptid, exemptcode AS exemptcode, exemptdesc AS exemptname FROM exemptiontype ORDER BY orderno
+
+[lookupListByCode]
+SELECT objid AS exemptid, exemptcode AS exemptcode, exemptdesc AS exemptname FROM exemptiontype WHERE exemptcode LIKE $P{exemptcode} ORDER BY orderno
+
+[lookupListByDescription]
+SELECT objid AS exemptid, exemptcode AS exemptcode, exemptdesc AS exemptname FROM exemptiontype WHERE exemptdesc LIKE $P{exemptdesc} ORDER BY orderno
+
+
+
 [getById]
 SELECT * FROM exemptiontype WHERE objid = $P{objid}
 
