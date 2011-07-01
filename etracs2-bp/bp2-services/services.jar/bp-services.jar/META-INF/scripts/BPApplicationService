@@ -71,7 +71,7 @@ class BPApplicationService{
 		application.txnno = getNextSeries();
 		
 		if( application.businesid ) {
-			txnSvc.insert( em, businesid, application.objid, 'BPApplication', 'Unable to process transaction. \n business is currently reference by other transaction.' );
+			txnSvc.insert( em, businesid, application.objid, 'BPApplication', 'Unable to process transaction. \n business is currently reference by a ' + application.txntype + ' transaction');
 		}
 		
 		em.validate( SCHEMANAME, application );
@@ -354,6 +354,9 @@ class BPApplicationService{
 			if( lobs.size() == app.info.lobs.size() ) business.docstate = 'RETIRED';
 			else app.docstate = 'RETIRE_LINE';
 		}
+		
+		txnSvc.remove( em, business.objid );
+		txnSvc.insert( em, business.objid, application.objid, 'BPApplication', 'Unable to process transaction. \n business is currently reference by a ' + application.txntype +' transaction' );
 		
 		app.businessid = business.objid;
 		em.update( BUSINESS_SCHEMA, business );
