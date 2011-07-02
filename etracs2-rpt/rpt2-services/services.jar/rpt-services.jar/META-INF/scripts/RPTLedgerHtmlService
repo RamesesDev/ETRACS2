@@ -1,0 +1,51 @@
+import com.rameses.annotations.*
+import groovy.text.SimpleTemplateEngine
+
+class RPTLedgerHtmlService
+{
+
+	@PersistenceContext('main')
+	def em
+    
+    def LEDGER_SCHEMA = 'rptledger' 
+    def LEDGERITEM_SCHEMA = 'rptledger:rptledgeritem' 
+    def SCHEMA_VERSION = '1.0'
+    
+	
+	@ProxyMethod
+	public def getHtml( ledgerid ) {
+        if( ! ledgerid ) {
+            return buildEmptyHtml()
+        }
+		def ledger = em.read( LEDGER_SCHEMA, [objid:ledgerid])
+        if( !ledger ) throw new Exception('Ledger does not exists.')
+        return buildHtml(ledger )
+	}
+    
+    
+	
+	String buildHtml( ledger ) {
+		String html = ''
+        html += '<html>'
+        html += '<head></head>'
+        html += '<body>'
+        html += '<h1>Taxpayer: ' +  ledger.taxpayername + '</h1>'
+        html += '<h1>TD No.: ' +  ledger.tdno + '</h1>'
+        html += '<h3>PIN: ' +  ledger.fullpin + '</h3>'
+        html += '<h3>Last Year Paid: ' +  ledger.lastyearpaid + '</h3>'
+        html += '<h3>Last Qtr Paid: ' +  ledger.lastqtrpaid + '</h3>'
+        html += '</body>'
+        html += '</html>'
+        return html 
+	}
+    
+    String buildEmptyHtml() {
+        String html = ''
+        html += '<html>'
+        html += '<head></head>'
+        html += '<body><h3>Ledger does not exists.</h3></body>'
+        html += '</html>'
+        return html 
+    }
+		
+}

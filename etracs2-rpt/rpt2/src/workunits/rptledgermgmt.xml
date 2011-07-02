@@ -5,9 +5,7 @@
 -->
 <workunit>
     <invokers>
-        <invoker folderid="menu/rpt/txn" caption="FAAS Management" mnemonic="f" />
-        
-        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker folderid="menu/rpt/txn" caption="RPT Ledger Management" mnemonic="f" />
         <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null and selectedItem.objid != null}" immediate="true" caption="Open" mnemonic="o" />
     </invokers>
     <code lang="groovy">
@@ -17,32 +15,34 @@ import com.rameses.rcp.annotations.*
 import com.rameses.rcp.common.*
 import com.rameses.osiris2.client.*
 
-public class FAASMgmtController 
+public class LedgerMgmtController 
 {
     @Binding 
     def binding
     
-    @Service('FAASService')
+    @Service('RPTLedgerService')
     def svc 
     
-    @Service('FAASHtmlService')
+    @Service('RPTLedgerHtmlService')
     def htmlSvc 
     
+    def actionList 
     String searchText
+    
+    def docstate 
     def selectedItem
     List list
     
+    
     def getFormActions() {
-        return InvokerUtil.lookupActions('faasmgmt.actions',[faasid:selectedItem?.objid])
-    }
-    
-    
-    def create() {
-        return InvokerUtil.lookupOpener('faas.create', [faas:selectedItem])
+        if( !actionList ) {
+            actionList = InvokerUtil.lookupActions('rptledgermgmt.actions',[faasid:selectedItem?.objid])
+        }
+        return actionList 
     }
     
     def open() {
-        return InvokerUtil.lookupOpener('faas.open', [faas:selectedItem])
+        return InvokerUtil.lookupOpener('rptledger.open', [ledger:selectedItem])
     }
     
     
@@ -56,14 +56,13 @@ public class FAASMgmtController
         getRows    : { return 25 },
         getColumns : { return [
             new Column( name:'docstate', caption:'State', maxWidth:100 ),
-            new Column( name:'txntype', caption:'Txn', maxWidth:50 ),
             new Column( name:'tdno', caption:'tdno', maxWidth:150 ),
-            new Column( name:'rputype', caption:'Type', maxWidth:50 ),
-            new Column( name:'fullpin', caption:'PIN' ),
+            new Column( name:'fullpin', caption:'PIN', maxWidth:150 ),
+            new Column( name:'taxpayername', caption:'Taxpayer' ),
         ]},
         fetchList  : {
             if( ! list  ) {
-                list = svc.getList( searchText, it )
+                list = svc.getList( docstate, searchText, it )
             }
             return list 
         }
@@ -74,14 +73,25 @@ public class FAASMgmtController
         return htmlSvc.getHtml( selectedItem?.objid ) 
     }
     
-
+    List states 
+    List getStates(){
+        if( ! states ) {
+            states = svc.getStates()
+        }
+        return states 
+    }   
+    
+    void setDocstate( docstate ) {
+        this.docstate = docstate
+        search()
+    }
+    
 }
-
 
 ]]>
     </code>
     
     <pages>
-        <page template="etracs2.rpt.faas.FAASMgmtPage"/>
+        <page template="etracs2.rpt.ledger.RPTLedgerMgmtPage"/>
     </pages>
 </workunit>

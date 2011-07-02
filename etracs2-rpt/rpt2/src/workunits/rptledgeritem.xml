@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="rptledgeritem.create" action="create" caption="New" target="popup" />
+        <invoker type="rptledgeritem.open" action="open" caption="New"  target="popup"/>
+    </invokers>
+    
+    <code lang="groovy">
+<![CDATA[
+        
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import java.rmi.server.UID;
+
+public class RPTLedgerItemController  {
+    @Service('RPTLedgerService')
+    def svc;
+    
+    @Service('FAASService')
+    def faasSvc
+    
+    @Service('PropertyClassificationService')
+    def propSvc
+
+    def onaddHandler
+    def onupdateHandler
+    
+    def ledger 
+    def ledgeritem
+    def toyear
+    
+    def txn
+    def classification
+    def mode
+    
+    
+    void create() {
+        ledgeritem = [
+            objid           : 'LI' + new UID(),
+            docstate        : 'APPROVED',
+            parentid        : ledger.objid,
+            toyear          : toyear,
+            taxable         : true,
+            backtax         : false,
+            systemcreated   : false,
+        ]
+        mode = 'create'
+    }
+    
+    void open() {
+        classification = getClassifications().find{ it.classid = ledgeritem.classid }
+        txn = getTxntypes().find{ it.txntype == ledgeritem.txntype }
+        mode = 'open' 
+    }
+    
+    def ok() {
+        if( ledgeritem.fromyear > ledgeritem.toyear )
+            throw new Exception('From Year must be less than or equal to To Year.')
+        if( ledgeritem.assessedvalue == null )
+            throw new Exception('Assessed Value is required.')
+        
+        if( mode == 'create' && onaddHandler ) onaddHandler( ledgeritem )
+        else if( mode == 'open' && onupdateHandler) onupdateHandler( ledgeritem )
+        return '_close' 
+    }
+    
+    void setTxn( txn ) {
+        this.txn = txn 
+        ledgeritem.txntype = txn?.txntype 
+    }
+    
+    void setClassification( classification ) {
+        this.classification = classification
+        ledgeritem.classid = classification?.classid 
+        ledgeritem.classcode = classification?.classcode 
+        ledgeritem.actualuseid = classification?.classid 
+        ledgeritem.actualusecode = classification?.classcode 
+    }
+     
+    
+    
+    def txntypes 
+    List getTxntypes() {
+        if( ! txntypes ) {
+            txntypes = faasSvc.getTxnTypes()
+        }
+        return txntypes 
+    }
+    
+    def classifications 
+    List getClassifications() {
+        if( ! classifications ) {
+            classifications =  propSvc.lookup(null, null )
+        }
+        return classifications
+    }
+    
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.ledger.RPTLedgerItemPage" />
+    </pages>
+</workunit>

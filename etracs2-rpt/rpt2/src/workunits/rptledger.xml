@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
+<workunit>
+    <invokers>
+        <invoker type="rptledger.open" action="open" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+
+        <invoker type="formActions" action="approve" caption="Approve" shortcut="ctrl A" visibleWhen="#{ledger.docstate == 'PENDING'}" mnemonic="a" icon="images/addnew24.png" />
+        <invoker type="formActions" action="capturePayment" caption="Capture Payment" shortcut="ctrl m" visibleWhen="#{ledger.docstate == 'APPROVED'}" mnemonic="M" />        
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import java.rmi.server.UID;
+
+
+public class RPTLedgerController  {
+    @Binding
+    def binding
+    
+    @Service("RPTLedgerService")
+    def svc;
+
+    def ledger 
+    def selectedItem
+    def ledgerItems
+    
+    void open() {
+        ledger = svc.open( ledger.objid )
+        ledgerItems = ledger.ledgerItems 
+        ledger.remove('ledgerItems')
+    }
+    
+    void approve() {
+        if( MsgBox.confirm('Approve ledger?') ) {
+            ledger = svc.approve( ledger.objid )
+        }
+    }
+    
+    def capturePayment() {
+    }
+    
+    
+    
+    
+    /*----------------------------------------------------------------------
+    *
+    *  FAAS History Support 
+    *
+    ----------------------------------------------------------------------*/
+    def onaddHandler = { item ->
+        svc.insertLedgerItem( item )
+        ledgerItems.add( item )
+        listHandler.load() 
+    }
+    
+    def addFaas() {
+        def toyear = ledgerItems.fromyear.min() - 1
+        return InvokerUtil.lookupOpener('rptledgeritem.create',[onaddHandler:onaddHandler, ledger:ledger, ledgeritem:selectedItem, toyear:toyear] )
+    }
+    
+    def onupdateHandler = { item ->
+        svc.updateLedgerItem( item )
+        binding.refresh('selectedItem')
+    }
+    
+    def editFaas() {
+        return InvokerUtil.lookupOpener('rptledgeritem.open',[onupdateHandler:onupdateHandler, ledger:ledger, ledgeritem:selectedItem])
+    }
+    
+    void removeFaas() {
+        if( MsgBox.confirm( 'Remove last entry?' )) {
+            svc.removeLedgerItem( selectedItem.objid )
+            listHandler.load()
+        }
+    }
+    
+    def listHandler = [
+        getRows     : { return 25 },
+        getColumns  : { return [
+            new Column(name:'tdno', caption:'TD No.'),
+            new Column(name:'txntype', caption:'Txn Type', maxWidth:50),
+            new Column(name:'classcode', caption:'Class', maxWidth:50),
+            new Column(name:'taxable', caption:'Tax?', type:'boolean', maxWidth:60),
+            new Column(name:'backtax', caption:'Backtax?', type:'boolean', maxWidth:80),
+            new Column(name:'fromyear', caption:'From Year'),
+            new Column(name:'toyear', caption:'To Year'),
+            new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal'),
+        ]},
+        fetchList   : { return ledgerItems }
+    ] as SubListModel
+    
+    
+    def getPartialpayment() {
+        return ledger.partialbasic + ledger.partialsef
+    }
+    
+    
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.ledger.RPTLedgerPage" />
+    </pages>
+</workunit>
