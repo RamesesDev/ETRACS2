@@ -1,6 +1,9 @@
 [getList]
 SELECT * FROM miscrysetting ORDER BY ry 
 
+[getIdByRy]
+SELECT objid FROM miscrysetting WHERE ry = $P{ry} 
+
 [getListByRy]
 SELECT * FROM miscrysetting WHERE ry = $P{ry}
 

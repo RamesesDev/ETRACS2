@@ -54,6 +54,9 @@ public class LandRYSettingController
         lcuv = data.lcuv;
         landadjustments = data.landadjustments;
         landactualuseadjustments = data.landactualuseadjustments;
+        entity.remove('lcuv');
+        entity.remove('landadjustments');
+        entity.remove('landactualuseadjustments');
     }
     
     def createSetting() {
@@ -63,9 +66,27 @@ public class LandRYSettingController
             entity.remove( "lcuv" );
         }
         else {
-            entity = svc.copySetting( ry )
+            entity = svc.copySetting( entity.ry, copyYear );
+            initVariables();
         }
         return 'default'
+    }
+    
+    void initVariables() {
+        assessLevels = entity.assessLevels;
+        selectedAssessLevel = ( assessLevels ? assessLevels[0] : null )
+        lcuv = enity.lcuv;
+        selectedLCUV = ( lcuv ? lcuv[0] : null );
+        selectedSpecificClass = ( selectedSpecificClass ? selectedSpecificClass[0] : null );
+        selectedSubClass = ( selectedSubClass ? selectedSubClass[0] : null );
+        selectedStripping = ( selectedStripping ? selectedStripping[0] : null );
+        landadjustments = entity.landadjustments;
+        landactualuseadjustments = entity.landactualuseadjustments;
+        
+        entity.remove('assessLevels');
+        entity.remove('lcuv');
+        entity.remove('landadjustments');
+        entity.remove('landactualuseadjustments');
     }
     
     void save() {

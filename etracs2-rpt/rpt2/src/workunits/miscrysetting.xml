@@ -66,9 +66,19 @@ public class MiscRYSettingController
             entity = svc.create( entity )
         }
         else {
-            entity = svc.copySetting( ry )
+            entity = svc.copySetting( entity.ry, copyYear );
+            initVariables();
         }
         return 'default'
+    }
+    
+    void initVariables() {
+        assessLevels = entity.assessLevels;
+        selectedAssessLevel = ( assessLevels ? assessLevels[0] : null )
+        miscItemValues = entity.miscitemvalues;
+        
+        entity.remove('assesslevels');
+        entity.remove('miscitemvalues');
     }
     
     void save() {
