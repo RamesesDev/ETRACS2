@@ -1,6 +1,9 @@
 [getList]
 SELECT * FROM bldgrysetting
 
+[getIdByRy]
+SELECT objid FROM bldgrysetting WHERE ry = $P{ry} 
+
 [getListByRy]
 SELECT * FROM bldgrysetting WHERE ry = $P{ry}
 

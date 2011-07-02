@@ -11,6 +11,10 @@ public class BldgRYSettingService
 	@Service('LogService')
     def logSvc
     
+    def SCHEMA_NAME = 'bldgrysetting'
+    def SCHEMA_VERSION = '1.0'
+    
+    
     
     @ProxyMethod
     public boolean settingExists() {
@@ -37,12 +41,63 @@ public class BldgRYSettingService
     
     @ProxyMethod
     public def create( entity ) {
-        entity.schemaname = 'bldgrysetting'
-        entity.schemaversion = '1.0'
+        entity.schemaname = SCHEMA_NAME
+        entity.schemaversion = SCHEMA_VERSION
         validate( entity )
         em.create( entity.schemaname, entity )
         logSvc.log('CREATE', 'BldgRYSetting', entity.objid )
         return entity 
+    }
+    @ProxyMethod
+    public Map copySetting( newry, copyYear ) {
+        required('Copy Year', copyYear )
+        if( newry <= copyYear ) throw new Exception('New Revision Year must be greater than copy year.')
+        def setting = em.sqlContext.createNamedQuery('bldgrysetting:getIdByRy').setParameter('ry', copyYear).singleResult
+        if( !setting ) throw new Exception('Revision Year ' + copyYear  + ' setting is not defined.')
+        
+        //create setting 
+        def settingoldid = setting.objid 
+        setting = em.read( SCHEMA_NAME, [objid:settingoldid] )
+        setting.previd = setting.objid 
+        setting.objid = 'BS' + new UID()
+        setting.ry = newry  
+        checkDuplicateSetting( setting )
+        em.create( setting.schemaname, setting )
+        
+        def assesslevels = loadAssessLevels( settingoldid )
+        assesslevels.each {
+            it.previd = it.objid 
+            it.objid = 'AL' + new UID()
+            it.bldgrysettingid = setting.objid 
+            saveAssessLevel( it )
+        }
+        
+        def additionalitems  = loadAdditionalItems( settingoldid )
+        additionalitems.each {
+            it.previd = it.objid 
+            it.objid = 'BA' + new UID()
+            it.bldgrysettingid = setting.objid 
+            saveAdditionalItem( it )
+        }
+        
+        def bldgtypes = loadBldgTypes( settingoldid )
+        bldgtypes.each { bt ->
+            bt.previd = bt.objid 
+            bt.objid = 'BA' + new UID()
+            bt.bldgrysettingid = setting.objid 
+            saveBldgType( bt )
+            
+            def buccs = getBldgKindBuccList( bt.previd )
+            buccs.each { bucc ->
+                bucc.previd = bucc.objid 
+                bucc.objid = 'BU' + new UID()
+                bucc.bldgrysettingid = setting.objid 
+                bucc.bldgtypeid = bt.objid 
+                saveBldgKindBucc( bucc )
+            }
+       }
+        
+        return open( setting.objid )
     }
     
     @ProxyMethod
@@ -62,7 +117,7 @@ public class BldgRYSettingService
         entity.depreciatecoreanditemseparately = entity.depreciatecoreanditemseparately as boolean 
         entity.computedepreciationbasedonschedule = entity.computedepreciationbasedonschedule as boolean 
         entity.assessLevels = loadAssessLevels( objid )
-        entity.additionalItems = loadBldgAdjustments( objid ) 
+        entity.additionalItems = loadAdditionalItems( objid ) 
         entity.bldgTypes = loadBldgTypes( objid )
         return entity 
     }
@@ -73,6 +128,7 @@ public class BldgRYSettingService
         removeAssessLevels( objid )
         removeBldgAdditionalItems( objid )
         removeBldgTypes( objid )
+        em.delete( SCHEMA_NAME, [objid:objid])
     }
     
     /*----------------------------------------------------------
@@ -192,7 +248,7 @@ public class BldgRYSettingService
         return list 
     }
     
-    List loadBldgAdjustments( objid ) {
+    List loadAdditionalItems( objid ) {
         return em.sqlContext.createNamedQuery('bldgrysetting:getAdditionalItem').setParameter('bldgrysettingid', objid).resultList
     }
     
@@ -238,5 +294,9 @@ public class BldgRYSettingService
         em.sqlContext.createNamedExecutor('bldgrysetting:deleteBldgType').setParameter('objid', objid ).execute()
     }
     
-	
+	void required( caption, value ) {
+        if( ! value ) throw new Exception( caption + ' is required.' )
+    }
+    
+    
 }

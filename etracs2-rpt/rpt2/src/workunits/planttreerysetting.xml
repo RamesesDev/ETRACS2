@@ -63,10 +63,16 @@ public class PlantTreeRYSettingController
             entity = svc.create( entity )
         }
         else {
-            entity = svc.copySetting( ry )
+            entity = svc.copySetting( entity.ry, copyYear );
+            initVariables();
         }
         return 'default'
     }
+    
+    void initVariables() {
+        selectedPlantTree = ( selectedPlantTree ? selectedPlantTree[0] : null );
+    }
+    
     
     void save() {
         entity = svc.update( entity )
@@ -285,7 +291,7 @@ public class PlantTreeRYSettingController
     
     <pages>
         <page template="etracs2.rpt.ry.planttree.PlantTreeRYSettingPage"/>
-        <page name="new" template="etracs2.rpt.ry.bldg.RYSettingNewPage"/>
-        <page name="copy" template="etracs2.rpt.ry.bldg.RYSettingCopyPage"/>
+        <page name="new" template="etracs2.rpt.ry.RYSettingNewPage"/>
+        <page name="copy" template="etracs2.rpt.ry.RYSettingCopyPage"/>
     </pages>
 </workunit>

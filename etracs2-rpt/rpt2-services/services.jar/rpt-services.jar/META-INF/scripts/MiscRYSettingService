@@ -36,6 +36,42 @@ public class MiscRYSettingService
     }
     
     @ProxyMethod
+    public Map copySetting( newry, copyYear ) {
+        required('Copy Year', copyYear )
+        if( newry <= copyYear ) throw new Exception('New Revision Year must be greater than copy year.')
+        def setting = em.sqlContext.createNamedQuery('miscrysetting:getIdByRy').setParameter('ry', copyYear).singleResult
+        if( !setting ) throw new Exception('Revision Year ' + copyYear  + ' setting is not defined.')
+        
+        //create setting 
+        def settingoldid = setting.objid 
+        setting = em.read( SCHEMA_NAME, [objid:settingoldid] )
+        setting.previd = setting.objid 
+        setting.objid = 'MS' + new UID()
+        setting.ry = newry  
+        checkDuplicateSetting( setting )
+        em.create( setting.schemaname, setting )
+        
+        def assesslevels = getAssessLevels( settingoldid )
+        assesslevels.each {
+            it.previd = it.objid 
+            it.objid = 'AL' + new UID()
+            it.miscrysettingid = setting.objid 
+            saveAssessLevel( it )
+        }
+        
+        def miscitemvalues = getMiscItemValues( settingoldid );
+        miscitemvalues.each {
+        	it.previd = it.objid;
+        	it.objid = 'MI' + new UID();
+        	it.miscrysettingid = setting.objid;
+        	
+        	saveMiscItemValue( it );
+        }
+        
+        return open( setting.objid )
+    }
+    
+    @ProxyMethod
     public def update( entity ) {
         validate( entity )
         em.update( entity.schemaname, entity, { diff ->
@@ -129,7 +165,7 @@ public class MiscRYSettingService
     }
     
     @ProxyMethod
-    public List getMiscItems( miscrysettingid) {
+    public List getMiscItems( miscrysettingid ) {
         return em.sqlContext.createNamedQuery('miscrysetting:getMiscItem').resultList.each {
             it.objid = 'MI' + new UID()
             it.miscrysettingid = miscrysettingid

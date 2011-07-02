@@ -66,9 +66,19 @@ public class MiscRYSettingController
             entity = svc.create( entity )
         }
         else {
-            entity = svc.copySetting( ry )
+            entity = svc.copySetting( entity.ry, copyYear );
+            initVariables();
         }
         return 'default'
+    }
+    
+    void initVariables() {
+        assessLevels = entity.assessLevels;
+        selectedAssessLevel = ( assessLevels ? assessLevels[0] : null )
+        miscItemValues = entity.miscitemvalues;
+        
+        entity.remove('assesslevels');
+        entity.remove('miscitemvalues');
     }
     
     void save() {
@@ -327,7 +337,7 @@ public class MiscRYSettingController
     
     <pages>
         <page template="etracs2.rpt.ry.misc.MiscRYSettingPage"/>
-        <page name="new" template="etracs2.rpt.ry.bldg.RYSettingNewPage"/>
-        <page name="copy" template="etracs2.rpt.ry.bldg.RYSettingCopyPage"/>
+        <page name="new" template="etracs2.rpt.ry.RYSettingNewPage"/>
+        <page name="copy" template="etracs2.rpt.ry.RYSettingCopyPage"/>
     </pages>
 </workunit>

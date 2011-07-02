@@ -1,6 +1,9 @@
 [getList]
 SELECT * FROM planttreerysetting ORDER BY ry 
 
+[getIdByRy]
+SELECT objid FROM planttreerysetting WHERE ry = $P{ry} 
+
 [getListByRy]
 SELECT * FROM planttreerysetting WHERE ry = $P{ry} 
 
