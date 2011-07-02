@@ -37,6 +37,41 @@ public class MachRYSettingService
     }
     
     @ProxyMethod
+    public Map copySetting( newry, copyYear ) {
+        required('Copy Year', copyYear )
+        if( newry <= copyYear ) throw new Exception('New Revision Year must be greater than copy year.')
+        def setting = em.sqlContext.createNamedQuery('machrysetting:getIdByRy').setParameter('ry', copyYear).singleResult
+        if( !setting ) throw new Exception('Revision Year ' + copyYear  + ' setting is not defined.')
+        
+        //create setting 
+        def settingoldid = setting.objid 
+        setting = em.read( SCHEMA_NAME, [objid:settingoldid] )
+        setting.previd = setting.objid 
+        setting.objid = 'MS' + new UID()
+        setting.ry = newry  
+        checkDuplicateSetting( setting )
+        em.create( setting.schemaname, setting )
+        
+        def assesslevels = getAssessLevels( settingoldid )
+        assesslevels.each {
+            it.previd = it.objid 
+            it.objid = 'AL' + new UID()
+            it.machrysettingid = setting.objid 
+            saveAssessLevel( it )
+        }
+        
+        def forexes = getForexes( settingoldid );
+        forexes.each{
+        	it.previd = it.objid;
+        	it.objid = 'MF' + new UID();
+        	it.machrysettingid = setting.objid;
+        	saveForex( it );
+        }
+        
+        return open( setting.objid )
+    }
+    
+    @ProxyMethod
     public def update( entity ) {
         validate( entity )
         em.update( entity.schemaname, entity, { diff ->

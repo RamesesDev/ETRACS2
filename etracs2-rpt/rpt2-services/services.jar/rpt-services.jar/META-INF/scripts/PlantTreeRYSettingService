@@ -41,6 +41,38 @@ public class PlantTreeRYSettingService
     }
     
     @ProxyMethod
+    public Map copySetting( newry, copyYear ) {
+        required('Copy Year', copyYear )
+        if( newry <= copyYear ) throw new Exception('New Revision Year must be greater than copy year.')
+        def setting = em.sqlContext.createNamedQuery('planttreerysetting:getIdByRy').setParameter('ry', copyYear).singleResult
+        if( !setting ) throw new Exception('Revision Year ' + copyYear  + ' setting is not defined.')
+        
+        //create setting 
+        def settingoldid = setting.objid 
+        setting = em.read( SCHEMA_NAME, [objid:settingoldid] )
+        setting.previd = setting.objid 
+        setting.objid = 'PS' + new UID()
+        setting.ry = newry  
+        checkDuplicateSetting( setting )
+        em.create( setting.schemaname, setting )
+        
+        
+        def planttreeunits = getPlantTreeUnits( settingoldid );
+        planttreeunits.each { pt ->
+        	def unitvalue = getUnitValues( pt.objid );
+        	unitvalue.each {
+        		it.previd = it.objid;
+        		it.objid = 'PV' + new UID();
+        		it.planttreerysettingid = setting.objid;
+        		saveUnitValue( it );
+        	}
+        }
+        
+        
+        return open( setting.objid )
+    }
+    
+    @ProxyMethod
     public List getPlantTreeUnits( planttreerysettingid ) {
         return em.sqlContext.createNamedQuery('planttreerysetting:getPlantTree').resultList.each {
             it.planttreerysettingid = planttreerysettingid

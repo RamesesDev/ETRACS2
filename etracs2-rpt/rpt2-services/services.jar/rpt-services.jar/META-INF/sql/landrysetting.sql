@@ -1,6 +1,9 @@
 [getList]
 SELECT * FROM landrysetting
 
+[getIdByRy]
+SELECT objid FROM landrysetting WHERE ry = $P{ry} 
+
 [getListByRy]
 SELECT * FROM landrysetting WHERE ry = $P{ry}
 

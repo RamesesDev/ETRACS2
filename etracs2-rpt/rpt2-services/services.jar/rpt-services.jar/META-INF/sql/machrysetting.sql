@@ -1,6 +1,9 @@
 [getList]
 SELECT * FROM machrysetting ORDER BY ry 
 
+[getIdByRy]
+SELECT objid FROM machrysetting WHERE ry = $P{ry} 
+
 [getListByRy]
 SELECT * FROM machrysetting WHERE ry = $P{ry}
 
