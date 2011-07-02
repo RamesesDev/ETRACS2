@@ -55,6 +55,21 @@ public class BldgRYSettingController
     void open() {
         mode = 'view' 
         entity = svc.open( entity.objid )
+        initVariables()
+    }
+    
+    def createSetting() {
+        if( settingType == 'newSetting' ) {
+            entity = svc.create( entity )
+        }
+        else {
+            entity = svc.copySetting( entity.ry, copyYear )
+            initVariables()
+        }
+        return 'default'
+    }
+    
+    void initVariables() {
         assessLevels = entity.assessLevels 
         additionalItems = entity.additionalItems
         selectedAssessLevel = ( assessLevels ? assessLevels[0] : null )
@@ -68,17 +83,6 @@ public class BldgRYSettingController
         entity.remove('assessLevels')
         entity.remove('additionalItems')
         entity.remove('bldgTypes')
-        
-    }
-    
-    def createSetting() {
-        if( settingType == 'newSetting' ) {
-            entity = svc.create( entity )
-        }
-        else {
-            entity = svc.copySetting( ry )
-        }
-        return 'default'
     }
     
     void save() {
@@ -574,7 +578,7 @@ public class BldgRYSettingController
     
     <pages>
         <page template="etracs2.rpt.ry.bldg.BldgRYSettingPage"/>
-        <page name="new" template="etracs2.rpt.ry.bldg.RYSettingNewPage"/>
-        <page name="copy" template="etracs2.rpt.ry.bldg.RYSettingCopyPage"/>
+        <page name="new" template="etracs2.rpt.ry.RYSettingNewPage"/>
+        <page name="copy" template="etracs2.rpt.ry.RYSettingCopyPage"/>
     </pages>
 </workunit>
