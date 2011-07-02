@@ -15,6 +15,11 @@
                  visibleWhen="#{application.docstate == 'FOR_ASSESSMENT' and mode == 'view'}"/>
         <invoker type="formActions" action="reassess" caption="Re-Assess"
                  visibleWhen="#{application.docstate == 'FOR_APPROVAL' and mode == 'view'}"/>
+                 
+        <invoker type="formActions" 
+                 action="previewApplication" 
+                 caption="Preview Application" 
+                 visibleWhen="#{application.docstate != 'DRAFT' and mode == 'view'}"/>
     </invokers>
     <code>
 <![CDATA[
@@ -108,6 +113,7 @@ class BPApplication
             def o = application.info.lobs.find{ it.lobid == selected.objid };
             if( o ) throw new Exception("LOB '$selected.name' is already in application list.");
             def l = [lobid:selected.objid, name:selected.name, assessmenttype:'NEW'];
+            if( application.txntype == 'ADDLOB' ) l.assessmentype = 'ADLOB';
             if( application.txnmode == 'CAPTURE' && application.txntype == 'RENEW' ) l.assessmenttype = 'RENEW';
             application.info.lobs.add( l );
             lobSearch = '';
@@ -148,6 +154,10 @@ class BPApplication
     def delete(){
        svc.delete( application.objid );
        return '_close';
+    }
+    
+    def previewApplication(){
+        return InvokerUtil.lookupOpener('bp.applicationreport', [applicationid:application.objid]);
     }
 }
 

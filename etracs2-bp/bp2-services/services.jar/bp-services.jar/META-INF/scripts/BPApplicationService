@@ -44,6 +44,7 @@ class BPApplicationService{
 		}
 	
 		if( !application.info.lobs ) throw new Exception("There must be at least 1 line of business.");
+		
 		if( application.txnmode == 'ONLINE' ){
 			if( application.txntype == 'RENEW' ) {
 				if( !application.info.lobs.findAll{ it.assessmenttype == 'RENEW'; } ) throw new Exception("There must be at least 1 line of business that is RENEW.");
@@ -65,6 +66,7 @@ class BPApplicationService{
 	def createBPApp( def application ){
 		application.objid = 'BP'+new UID();
 		application.schemaname = SCHEMANAME;
+		application.barcode = 'BP_51_'+application.objid;
 		application.schemaversion = SCHEMAVERSION;
 		application.tradename = application.info.tradename;
 		application.businessaddress = application.info.businessaddress;
