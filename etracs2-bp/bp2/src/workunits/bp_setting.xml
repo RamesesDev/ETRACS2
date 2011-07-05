@@ -1,0 +1,83 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/bp/txn" action="init" caption="BP Settings"/>
+        <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c" shortcut="ctrl C" immediate="true"/>
+        <invoker type="formActions" action="save" caption="Save" mnemonic="s" shortcut="ctrl S"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPSettingController 
+{
+    @Binding
+    def binding;
+    
+    @Service('BPSettingService')
+    def svc;
+    
+    def setting;
+
+    def applicationsigngatory;
+    def assessmentsignatory;
+    def requirement;
+    
+    void init() {
+        setting = svc.setting;
+    }
+    
+    def applicationHandler = [
+        getRows: {return 50;},
+        getColumns: {
+            return [
+                new Column(name:'index', caption:'Index', editable:false, width:5),
+                new Column(name:'name', caption:'Name', required:true, editable:true),
+                new Column(name:'department', caption:'Department', required:true, editable:true),
+                new Column(name:'title', caption:'Title', required:true, editable:true)
+            ];
+        },
+        createItem: { return [index: setting.applicationsignatories.size(); ] }
+        onAddItem :{ setting.applicationsignatories.add( it ); }
+        fetchList : { return setting.applicationsignatories; }
+        
+    ] as SubListModel;
+    
+    def assessmentHandler = [
+        getRows: {return 50;},
+        getColumns: {
+            return [
+                new Column(name:'index', caption:'Index', editable:false, width:5),
+                new Column(name:'name', caption:'Name', required:true, editable:true),
+                new Column(name:'department', caption:'Department', required:true, editable:true),
+                new Column(name:'title', caption:'Title', required:true, editable:true)
+            ];
+        },
+        createItem: { return [index: setting.assessmentsignatories.size(); ] }
+        onAddItem : { setting.assessmentsignatories.add( it ); }
+        fetchList : { return setting.assessmentsignatories; }
+    ] as SubListModel;
+    
+    def requirementHandler = [
+        getRows: {return 50;},
+        getColumns: {
+            return [
+                new Column(name:'index', caption:'Index', editable:false, width:5),
+                new Column(name:'requirement', caption:'Requirement', editable:false, editable:true)
+            ];
+        },
+        
+        createItem: { return [index: setting.requirements.size(); ] }
+        onAddItem : { setting.requirements.add( it ); }
+        fetchList : { return setting.requirements; }
+    ] as SubListModel;
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.application.BPSettingPage" />
+    </pages>
+</workunit>

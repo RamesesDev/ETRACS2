@@ -1,0 +1,33 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class BPSettingService
+{	
+	@PersistenceContext('main')
+	def em
+		
+	def SCHEMANAME = 'bpsetting:bpsetting';
+		
+	@ProxyMethod
+	public def getSetting(){
+		def setting = em.read( SCHEMANAME, [objid:'DEFAULT'] );
+		if( !setting ){
+			setting = [objid:'DEFAULT'];
+			setting.assessmentsignatories = [];
+			setting.applicationsignatories = [];
+			setting.requirements = [];
+			println "INSERTING......";
+			em.create(SCHEMANAME, setting);
+			println "DONE INSERTING......";
+		}
+		
+		println em.read( SCHEMANAME, [objid:'DEFAULT'] );
+		return setting;
+	}
+	
+	@ProxyMethod
+	public def save( def setting ){
+		return em.update( SCHEMANAME, setting );
+	}
+}
