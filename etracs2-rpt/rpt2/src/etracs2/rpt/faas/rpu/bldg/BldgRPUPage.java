@@ -41,23 +41,22 @@ public class BldgRPUPage extends javax.swing.JPanel {
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jPanel2 = new javax.swing.JPanel();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
-        jPanel3 = new javax.swing.JPanel();
         formPanel4 = new com.rameses.rcp.util.FormPanel();
+        formPanel12 = new com.rameses.rcp.util.FormPanel();
         xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
-        xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
-        formPanel5 = new com.rameses.rcp.util.FormPanel();
         xLabel3 = new com.rameses.rcp.control.XLabel();
+        formPanel13 = new com.rameses.rcp.util.FormPanel();
+        xActionTextField3 = new com.rameses.rcp.control.XActionTextField();
         xLabel4 = new com.rameses.rcp.control.XLabel();
-        formPanel6 = new com.rameses.rcp.util.FormPanel();
+        xSeparator1 = new com.rameses.rcp.control.XSeparator();
         xNumberField4 = new com.rameses.rcp.control.XNumberField();
         xComboBox3 = new com.rameses.rcp.control.XComboBox();
-        formPanel7 = new com.rameses.rcp.util.FormPanel();
+        xSeparator2 = new com.rameses.rcp.control.XSeparator();
         xCheckBox1 = new com.rameses.rcp.control.XCheckBox();
-        formPanel8 = new com.rameses.rcp.util.FormPanel();
+        formPanel14 = new com.rameses.rcp.util.FormPanel();
         xNumberField5 = new com.rameses.rcp.control.XNumberField();
-        formPanel9 = new com.rameses.rcp.util.FormPanel();
         xCheckBox2 = new com.rameses.rcp.control.XCheckBox();
-        formPanel10 = new com.rameses.rcp.util.FormPanel();
+        xSeparator3 = new com.rameses.rcp.control.XSeparator();
         jScrollPane1 = new javax.swing.JScrollPane();
         xTextArea1 = new com.rameses.rcp.control.XTextArea();
         jPanel6 = new javax.swing.JPanel();
@@ -92,9 +91,10 @@ public class BldgRPUPage extends javax.swing.JPanel {
 
         add(jPanel7, java.awt.BorderLayout.SOUTH);
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("General Information");
-        formPanel1.setBorder(xTitledBorder1);
+        jPanel1.setLayout(new java.awt.BorderLayout());
+
+        formPanel1.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 5), null));
+        formPanel1.setPreferredSize(new java.awt.Dimension(200, 74));
         xLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel1.setCaption("Revision Year");
         xLabel1.setName("rpu.ry");
@@ -107,9 +107,12 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xLabel2.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xLabel2);
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder2.setTitle("Taxability");
-        formPanel2.setBorder(xTitledBorder2);
+        jPanel1.add(formPanel1, java.awt.BorderLayout.CENTER);
+
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder1.setTitle("Taxability");
+        formPanel2.setBorder(xTitledBorder1);
+        formPanel2.setPreferredSize(new java.awt.Dimension(220, 80));
         xComboBox1.setCaption("Taxability");
         xComboBox1.setCaptionWidth(90);
         xComboBox1.setImmediate(true);
@@ -128,24 +131,11 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xComboBox2.setPreferredSize(new java.awt.Dimension(0, 22));
         formPanel2.add(xComboBox2);
 
-        org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel1Layout.createSequentialGroup()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 594, Short.MAX_VALUE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 208, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 80, Short.MAX_VALUE)
-            .add(formPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-        );
+        jPanel1.add(formPanel2, java.awt.BorderLayout.EAST);
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder3.setTitle("Assessment Summary");
-        formPanel3.setBorder(xTitledBorder3);
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder2.setTitle("Assessment Summary");
+        formPanel3.setBorder(xTitledBorder2);
         formPanel3.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
         formPanel3.setCellpadding(new java.awt.Insets(0, 0, 0, 20));
         formPanel3.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
@@ -175,162 +165,187 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xNumberField3.setPreferredSize(new java.awt.Dimension(120, 19));
         formPanel3.add(xNumberField3);
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder4.setTitle("Structure Information");
-        xDataTable1.setBorder(xTitledBorder4);
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder3.setTitle("Structure Information");
+        xDataTable1.setBorder(xTitledBorder3);
         xDataTable1.setDynamic(true);
         xDataTable1.setHandler("structureListHandler");
+        xDataTable1.setShowRowHeader(true);
 
-        jPanel3.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-
+        formPanel4.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         formPanel4.setCaptionWidth(95);
+
+        formPanel12.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
+        formPanel12.setPadding(new java.awt.Insets(0, 0, 0, 0));
+        formPanel12.setShowCaption(false);
         xActionTextField1.setActionName("lookupBldgType");
         xActionTextField1.setCaption("Building Type");
+        xActionTextField1.setCaptionWidth(120);
+        xActionTextField1.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
         xActionTextField1.setName("bldgtype");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(55, 18));
+        xActionTextField1.setPreferredSize(new java.awt.Dimension(80, 18));
         xActionTextField1.setRequired(true);
-        formPanel4.add(xActionTextField1);
+        formPanel12.add(xActionTextField1);
 
-        xActionTextField2.setActionName("lookupKindBldg");
-        xActionTextField2.setCaption("Kind of Building");
-        xActionTextField2.setName("bldgkind");
-        xActionTextField2.setPreferredSize(new java.awt.Dimension(55, 18));
-        xActionTextField2.setRequired(true);
-        formPanel4.add(xActionTextField2);
-
-        formPanel5.setCaptionWidth(0);
         xLabel3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel3.setCaption("");
         xLabel3.setDepends(new String[] {"bldgtype"});
         xLabel3.setName("rpu.info.bldgtypetitle");
-        xLabel3.setPreferredSize(new java.awt.Dimension(0, 18));
-        formPanel5.add(xLabel3);
+        xLabel3.setPreferredSize(new java.awt.Dimension(250, 18));
+        xLabel3.setShowCaption(false);
+        formPanel12.add(xLabel3);
+
+        formPanel4.add(formPanel12);
+
+        formPanel13.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
+        formPanel13.setPadding(new java.awt.Insets(0, 0, 0, 0));
+        formPanel13.setShowCaption(false);
+        xActionTextField3.setActionName("lookupBldgType");
+        xActionTextField3.setCaption("Kind of Building");
+        xActionTextField3.setCaptionWidth(120);
+        xActionTextField3.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
+        xActionTextField3.setName("bldgkind");
+        xActionTextField3.setPreferredSize(new java.awt.Dimension(80, 18));
+        xActionTextField3.setRequired(true);
+        formPanel13.add(xActionTextField3);
 
         xLabel4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel4.setCaption("");
         xLabel4.setDepends(new String[] {"bldgkind"});
         xLabel4.setName("rpu.info.bldgkindtitle");
-        xLabel4.setPreferredSize(new java.awt.Dimension(0, 18));
-        formPanel5.add(xLabel4);
+        xLabel4.setPreferredSize(new java.awt.Dimension(250, 18));
+        xLabel4.setShowCaption(false);
+        formPanel13.add(xLabel4);
 
-        formPanel6.setCaptionWidth(95);
+        formPanel4.add(formPanel13);
+
+        xSeparator1.setPreferredSize(new java.awt.Dimension(0, 10));
+        org.jdesktop.layout.GroupLayout xSeparator1Layout = new org.jdesktop.layout.GroupLayout(xSeparator1);
+        xSeparator1.setLayout(xSeparator1Layout);
+        xSeparator1Layout.setHorizontalGroup(
+            xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 462, Short.MAX_VALUE)
+        );
+        xSeparator1Layout.setVerticalGroup(
+            xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 10, Short.MAX_VALUE)
+        );
+        formPanel4.add(xSeparator1);
+
         xNumberField4.setEditable(false);
         xNumberField4.setCaption("Base Value");
+        xNumberField4.setCaptionWidth(120);
+        xNumberField4.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
         xNumberField4.setDepends(new String[] {"rpu.info.kindbldg"});
         xNumberField4.setFieldType(java.math.BigDecimal.class);
         xNumberField4.setImmediate(true);
         xNumberField4.setName("rpu.info.basevalue");
         xNumberField4.setPattern("#,##0.00");
-        xNumberField4.setPreferredSize(new java.awt.Dimension(100, 18));
+        xNumberField4.setPreferredSize(new java.awt.Dimension(150, 19));
         xNumberField4.setRequired(true);
-        formPanel6.add(xNumberField4);
+        formPanel4.add(xNumberField4);
 
         xComboBox3.setCaption("Building Class");
+        xComboBox3.setCaptionWidth(120);
+        xComboBox3.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
         xComboBox3.setDynamic(true);
         xComboBox3.setEmptyText("- NA -");
         xComboBox3.setImmediate(true);
         xComboBox3.setItems("classList");
         xComboBox3.setName("rpu.info.bldgtypeclass");
-        xComboBox3.setPreferredSize(new java.awt.Dimension(100, 23));
-        formPanel6.add(xComboBox3);
+        xComboBox3.setPreferredSize(new java.awt.Dimension(150, 19));
+        formPanel4.add(xComboBox3);
 
-        formPanel7.setCaptionWidth(0);
+        xSeparator2.setPadding(new java.awt.Insets(10, 0, 0, 0));
+        xSeparator2.setPreferredSize(new java.awt.Dimension(0, 25));
+        org.jdesktop.layout.GroupLayout xSeparator2Layout = new org.jdesktop.layout.GroupLayout(xSeparator2);
+        xSeparator2.setLayout(xSeparator2Layout);
+        xSeparator2Layout.setHorizontalGroup(
+            xSeparator2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 462, Short.MAX_VALUE)
+        );
+        xSeparator2Layout.setVerticalGroup(
+            xSeparator2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 25, Short.MAX_VALUE)
+        );
+        formPanel4.add(xSeparator2);
+
         xCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         xCheckBox1.setText("Sworn Statement");
         xCheckBox1.setCaption("");
+        xCheckBox1.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
         xCheckBox1.setCheckValue(1);
-        xCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        xCheckBox1.setMargin(new java.awt.Insets(0, 0, 10, 0));
         xCheckBox1.setName("rpu.info.swornstatement");
+        xCheckBox1.setShowCaption(false);
         xCheckBox1.setUncheckValue(0);
         xCheckBox1.setValue(0);
-        formPanel7.add(xCheckBox1);
+        formPanel4.add(xCheckBox1);
 
-        formPanel8.setCaptionWidth(95);
+        formPanel14.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
+        formPanel14.setPadding(new java.awt.Insets(0, 0, 0, 10));
+        formPanel14.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel14.setShowCaption(false);
         xNumberField5.setCaption("Sworn Amount");
+        xNumberField5.setCaptionWidth(90);
+        xNumberField5.setCellPadding(new java.awt.Insets(0, 40, 0, 20));
         xNumberField5.setDepends(new String[] {"rpu.info.swornstatement"});
         xNumberField5.setFieldType(java.math.BigDecimal.class);
         xNumberField5.setImmediate(true);
         xNumberField5.setName("rpu.info.swornamount");
         xNumberField5.setPattern("#,##0.00");
-        xNumberField5.setPreferredSize(new java.awt.Dimension(90, 18));
-        formPanel8.add(xNumberField5);
+        xNumberField5.setPreferredSize(new java.awt.Dimension(100, 18));
+        formPanel14.add(xNumberField5);
 
-        formPanel9.setCaptionWidth(0);
         xCheckBox2.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         xCheckBox2.setText("Use Sworn Amount?");
         xCheckBox2.setCaption("");
         xCheckBox2.setCheckValue(1);
         xCheckBox2.setDepends(new String[] {"rpu.info.swornstatement"});
-        xCheckBox2.setMargin(new java.awt.Insets(0, 0, 0, 0));
         xCheckBox2.setName("rpu.info.useswornamount");
+        xCheckBox2.setPreferredSize(new java.awt.Dimension(200, 19));
+        xCheckBox2.setShowCaption(false);
         xCheckBox2.setUncheckValue(0);
         xCheckBox2.setValue(0);
-        formPanel9.add(xCheckBox2);
+        formPanel14.add(xCheckBox2);
 
-        formPanel10.setCaptionWidth(120);
-        jScrollPane1.setPreferredSize(new java.awt.Dimension(0, 77));
+        formPanel4.add(formPanel14);
+
+        xSeparator3.setPadding(new java.awt.Insets(10, 0, 0, 0));
+        xSeparator3.setPreferredSize(new java.awt.Dimension(0, 25));
+        org.jdesktop.layout.GroupLayout xSeparator3Layout = new org.jdesktop.layout.GroupLayout(xSeparator3);
+        xSeparator3.setLayout(xSeparator3Layout);
+        xSeparator3Layout.setHorizontalGroup(
+            xSeparator3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 462, Short.MAX_VALUE)
+        );
+        xSeparator3Layout.setVerticalGroup(
+            xSeparator3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 25, Short.MAX_VALUE)
+        );
+        formPanel4.add(xSeparator3);
+
+        jScrollPane1.setPreferredSize(new java.awt.Dimension(0, 50));
         xTextArea1.setColumns(20);
         xTextArea1.setRows(5);
         xTextArea1.setCaption("Additional Information");
+        xTextArea1.setCaptionWidth(120);
+        xTextArea1.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
         xTextArea1.setName("rpu.info.additionalinfo");
+        xTextArea1.setPreferredSize(new java.awt.Dimension(164, 30));
         jScrollPane1.setViewportView(xTextArea1);
 
-        formPanel10.add(jScrollPane1);
-
-        org.jdesktop.layout.GroupLayout jPanel3Layout = new org.jdesktop.layout.GroupLayout(jPanel3);
-        jPanel3.setLayout(jPanel3Layout);
-        jPanel3Layout.setHorizontalGroup(
-            jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel3Layout.createSequentialGroup()
-                .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel3Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(formPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 453, Short.MAX_VALUE)
-                            .add(formPanel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(jPanel3Layout.createSequentialGroup()
-                                .add(formPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(formPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 287, Short.MAX_VALUE))))
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel3Layout.createSequentialGroup()
-                        .add(40, 40, 40)
-                        .add(formPanel8, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(formPanel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                    .add(jPanel3Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(formPanel10, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 453, Short.MAX_VALUE)))
-                .addContainerGap())
-        );
-        jPanel3Layout.setVerticalGroup(
-            jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel3Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(formPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(formPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(formPanel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 62, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(25, 25, 25)
-                .add(formPanel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(formPanel8, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(formPanel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .add(17, 17, 17)
-                .add(formPanel10, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
-        );
+        formPanel4.add(jScrollPane1);
 
         org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel2Layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(xDataTable1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 292, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 301, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .add(formPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 476, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
@@ -338,8 +353,8 @@ public class BldgRPUPage extends javax.swing.JPanel {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 331, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 271, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 271, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jTabbedPane1.addTab("Building Characteristic", jPanel2);
@@ -405,9 +420,9 @@ public class BldgRPUPage extends javax.swing.JPanel {
 
         jPanel4.setLayout(new java.awt.BorderLayout());
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder5 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder5.setTitle("Building Classification");
-        jPanel4.setBorder(xTitledBorder5);
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder4.setTitle("Building Classification");
+        jPanel4.setBorder(xTitledBorder4);
         xComboBox4.setItems("classifications");
         xComboBox4.setName("rpu.classcode");
 
@@ -415,6 +430,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xDataTable2.setHandler("classificationListHandler");
         xDataTable2.setImmediate(true);
         xDataTable2.setName("selectedClassification");
+        xDataTable2.setShowRowHeader(true);
 
         jLabel2.setText("Classification * :");
 
@@ -433,33 +449,31 @@ public class BldgRPUPage extends javax.swing.JPanel {
             .add(jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel5Layout.createSequentialGroup()
-                        .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jPanel5Layout.createSequentialGroup()
-                                .add(jLabel2)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(xComboBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                            .add(xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 486, Short.MAX_VALUE)
-                            .add(xLabel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 486, Short.MAX_VALUE))
-                        .addContainerGap())
+                    .add(xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel5Layout.createSequentialGroup()
-                        .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(28, 28, 28))))
+                        .add(xLabel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 341, Short.MAX_VALUE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jPanel5Layout.createSequentialGroup()
+                        .add(jLabel2)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(xComboBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap())
         );
         jPanel5Layout.setVerticalGroup(
             jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel2)
-                    .add(xComboBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(xComboBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 20, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xDataTable2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 115, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 168, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xLabel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(13, Short.MAX_VALUE))
+                .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(xLabel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 22, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
         );
         jPanel4.add(jPanel5, java.awt.BorderLayout.CENTER);
 
@@ -471,17 +485,17 @@ public class BldgRPUPage extends javax.swing.JPanel {
                 .addContainerGap()
                 .add(formPanel11, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 259, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 514, Short.MAX_VALUE)
+                .add(jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 518, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel6Layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel6Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel11, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 250, Short.MAX_VALUE))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .add(jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 271, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel11, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 271, Short.MAX_VALUE))
+                .addContainerGap())
         );
         jTabbedPane1.addTab("Building Information", jPanel6);
 
@@ -489,24 +503,24 @@ public class BldgRPUPage extends javax.swing.JPanel {
         jPanel8.setLayout(jPanel8Layout);
         jPanel8Layout.setHorizontalGroup(
             jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel8Layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel8Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jTabbedPane1)
-                    .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(formPanel3, 0, 0, Short.MAX_VALUE))
+                .add(jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 808, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jTabbedPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 808, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel3, 0, 0, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel8Layout.setVerticalGroup(
             jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel8Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 80, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jTabbedPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 295, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(jTabbedPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 321, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
         add(jPanel8, java.awt.BorderLayout.CENTER);
 
@@ -515,20 +529,16 @@ public class BldgRPUPage extends javax.swing.JPanel {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.rameses.rcp.util.FormPanel formPanel1;
-    private com.rameses.rcp.util.FormPanel formPanel10;
     private com.rameses.rcp.util.FormPanel formPanel11;
+    private com.rameses.rcp.util.FormPanel formPanel12;
+    private com.rameses.rcp.util.FormPanel formPanel13;
+    private com.rameses.rcp.util.FormPanel formPanel14;
     private com.rameses.rcp.util.FormPanel formPanel2;
     private com.rameses.rcp.util.FormPanel formPanel3;
     private com.rameses.rcp.util.FormPanel formPanel4;
-    private com.rameses.rcp.util.FormPanel formPanel5;
-    private com.rameses.rcp.util.FormPanel formPanel6;
-    private com.rameses.rcp.util.FormPanel formPanel7;
-    private com.rameses.rcp.util.FormPanel formPanel8;
-    private com.rameses.rcp.util.FormPanel formPanel9;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
@@ -538,7 +548,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
     private javax.swing.JTabbedPane jTabbedPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField2;
+    private com.rameses.rcp.control.XActionTextField xActionTextField3;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XCheckBox xCheckBox1;
     private com.rameses.rcp.control.XCheckBox xCheckBox2;
@@ -564,6 +574,9 @@ public class BldgRPUPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XNumberField xNumberField6;
     private com.rameses.rcp.control.XNumberField xNumberField7;
     private com.rameses.rcp.control.XNumberField xNumberField8;
+    private com.rameses.rcp.control.XSeparator xSeparator1;
+    private com.rameses.rcp.control.XSeparator xSeparator2;
+    private com.rameses.rcp.control.XSeparator xSeparator3;
     private com.rameses.rcp.control.XTextArea xTextArea1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
