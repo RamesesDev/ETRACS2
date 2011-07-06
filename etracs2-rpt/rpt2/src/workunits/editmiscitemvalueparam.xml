@@ -1,0 +1,92 @@
+<workunit>
+    <invokers>
+        <invoker type="miscitemvalueparam.view" action="init" caption="Misc Item Parameters" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+
+class EditMiscItemValueParamController
+{
+    def onupdate //handler
+    
+    def miscitemvalue
+    def selectedInfo
+    
+    void init(){
+        
+    }
+    
+    def okInfo() {
+        miscitemvalue.params.each{
+            it.paramvalue = convertParamValue( it )
+        }
+        if( onupdate ) onupdate( miscitemvalue )
+        return '_close' 
+    }
+    
+    /* ----------------------------------------------
+    * Info Support 
+    -----------------------------------------------*/
+    def infoListHandler =[
+        getRows    : { return 25 },
+        getColumns : { return [
+            new Column( name:'paramcaption', caption:'Parameter' ),
+            new Column( name:'paramvalue', caption:'Value', editable:true, maxWidth:150 ),
+        ]},
+        fetchList  : { return miscrpuitems.params }
+    ] as PageListModel
+
+    def convertParamValue( param ) {
+        if( param.datatype == 'decimal' ) {
+            return Double.parseDouble( param.paramvalue )
+        }
+        else if( param.datatype == 'range_decimal' ) {
+            def decvalue = parseDouble( param.paramvalue )
+            if( decvalue < param.minvalue || decvalue > param.maxvalue ) throw new Exception("Value must be between $param.minvalue and $param.maxvalue." )
+            return decvalue
+        }
+        else if( param.datatype == 'integer' ) {
+            return parseInt( param.paramvalue )
+        }
+        else if( param.datatype == 'range_integer' ) {
+            def intvalue = parseInt( param.parmvalue )
+            if( intvalue < param.minvalue || intvalue > param.maxvalue ) throw new Exception("Value must be between $param.minvalue and $param.maxvalue.")
+            return intvalue 
+        }
+        return param.paramvalue 
+    }
+    
+    
+    def parseDouble( value ) {
+        try {
+            return Double.parseDouble( value )
+        }
+        catch( e ) {
+            throw new Exception('Invalid parameter value.')
+        }
+    }
+    
+    def parseInt( value ) {
+        try {
+            return Integer.parseInt( value )
+        }
+        catch( e ) {
+            throw new Exception('Invalid parameter value.')
+        }
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.VariableInfoPage" />
+    </pages>
+</workunit>
