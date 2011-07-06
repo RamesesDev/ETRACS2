@@ -1,0 +1,41 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/rule" action="init" caption="Rules Management" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class AbstractRulesetMgmtController 
+{
+    def selectedItem
+    def opener
+    
+    void init() {
+    }
+    
+    /*------------------------------------------------------------------
+    * RuleSet Handlers
+    ------------------------------------------------------------------*/
+    void setSelectedItem( selectedItem ) {
+        this.selectedItem = selectedItem
+        opener = null
+        if( selectedItem ) {
+            opener = selectedItem
+        }
+    }
+    
+    def getRulesets() {
+        return InvokerUtil.lookupOpeners('rulesets', null)
+    }
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.common.rule.AbstractRulesetMgmtPage" />
+    </pages>
+</workunit>

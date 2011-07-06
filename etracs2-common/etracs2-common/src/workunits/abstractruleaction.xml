@@ -1,0 +1,76 @@
+<workunit>
+    <invokers>
+        <invoker type="abstractruleaction.create" action="create" caption="Rule Action" target="popup" />
+        <invoker type="abstractruleaction.open" action="open" caption="Rule Action" target="popup" />
+        
+        <invoker type="mainActions" action="ok" caption="OK" mnemonic="o" />
+        <invoker type="mainActions" action="_close" caption="Cancel" mnemonic="c" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class AbstractRuleActionController 
+{
+    //passed by caller
+    def abstractRuleSvc
+    def ruleSvc
+    def openerName
+    
+    
+    def addHandler
+    def updateHandler
+    def action
+    def opener 
+    def mode 
+    def rule 
+    def svc
+    
+    void create() {
+        mode = 'create' 
+    }
+    
+    def open() {
+        mode = 'open' 
+        return 'main'
+    }
+    
+    def next() {   
+        if( !opener ) throw new Exception('Select an action.')
+        return 'main' 
+    }
+    
+    def ok() {
+        opener.handle.accept()
+        action = opener.handle.action
+        if( mode == 'create') 
+            invokeAddHandler()
+        else 
+            invokeUpdateHandler()
+        return '_close' 
+    }
+    
+    void invokeAddHandler() {
+        if( addHandler ) addHandler( action )
+    }
+    
+    void invokeUpdateHandler() {
+        if( updateHandler ) updateHandler( action )
+    }
+    
+    def getOpeners() {
+        return InvokerUtil.lookupOpeners(openerName + '_action.type', [action:action, varlist:rule.varlist])
+    }
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.common.rule.AbstractRuleActionInitPage" />
+        <page name="main" template="etracs2.common.rule.AbstractRuleActionPage" />
+    </pages>
+</workunit>

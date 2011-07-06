@@ -1,7 +1,7 @@
 <workunit>
     <invokers>
-        <invoker type="bpbillingrule.create" action="create" caption="New Rule" target="popup" />
-        <invoker type="bpbillingrule.open" action="open" caption="Rule Information" target="popup" />
+        <invoker type="rptbillingrule.create" action="create" caption="RPT Billing Rule"  target="popup" />
+        <invoker type="rptbillingrule.open" action="open" caption="RPT Billing Rule" target="popup"  />
         
         <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' }" />
         <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c" shortcut="ctrl C" visibleWhen="#{mode == 'edit' }"/>
@@ -11,14 +11,16 @@
         <invoker type="formActions" action="undeploy" caption="Undeploy" mnemonic="u" shortcut="ctrl U" visibleWhen="#{mode == 'view'  and rule.docstate == 'DEPLOYED'}"/>
         <invoker type="formActions" action="debug" caption="Debug" mnemonic="g" shortcut="ctrl G" />
         <invoker type="formActions" action="remove" caption="Delete" mnemonic="d" shortcut="ctrl D" visibleWhen="#{rule.docstate == 'DRAFT'}" />
+        
     </invokers>
     <code>
 <![CDATA[
+
 import com.rameses.rcp.annotations.*
 import com.rameses.rcp.common.*
 import com.rameses.osiris2.client.*
 
-class BPBillingRuleController  extends etracs2.common.groovy.AbstractRuleController
+class RPTBillingRuleController  extends etracs2.common.groovy.AbstractRuleController
 {
     @Binding
     def binding
@@ -26,7 +28,7 @@ class BPBillingRuleController  extends etracs2.common.groovy.AbstractRuleControl
     @Service('AbstractRuleService')
     def abstractSvc 
     
-    @Service('BPBillingRuleService')
+    @Service('RPTBillingRuleService')
     def billingSvc
     
     /*--------------------------------------------------------------
@@ -35,15 +37,14 @@ class BPBillingRuleController  extends etracs2.common.groovy.AbstractRuleControl
     def getBinding()             { return binding }
     def getAbstractRuleService() { return abstractSvc }
     def getRuleService()         { return billingSvc }
-    String getOpenerName()       { return 'bpbillingrule' }
-    String getPackagename()      { return 'etracs2.bp.billing.rules' }
-    String getRuleset()          { return 'bpbilling' }
+    String getOpenerName()       { return 'rptbillingrule' }
+    String getPackagename()      { return 'etracs2.rpt.billing.rules' }
+    String getRuleset()          { return 'rptbilling' }
     
     /*--------------------------------------------------------------*/
     
 
 }
-
 
 ]]>
     </code>

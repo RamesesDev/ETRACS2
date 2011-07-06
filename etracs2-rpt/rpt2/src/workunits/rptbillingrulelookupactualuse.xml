@@ -1,0 +1,67 @@
+<workunit>
+    <invokers>
+        <invoker type="rptbilling_lookup.actualuse" caption="Actual Use Criteria" target="popup"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class RPTBillingLookupActualUseController
+{
+    @Binding
+    def binding
+    
+    def searchText
+    def selectedItem
+    def actualuseList = []
+    def finishHandler
+    
+    def ok() {
+        if( finishHandler ) finishHandler( actualuseList )
+        return '_close' 
+    }
+    
+    def remove() {
+        if( selectedItem ) {
+            actualuseList.remove( selectedItem )
+        }
+    }
+    
+    def getItems() {
+        return actualuseList
+    }
+    
+    def onselectHandler = { actualuse ->
+        if( ! contains( actualuse ) ) {
+            actualuseList.add([
+                objid : actualuse.classid,
+                name  : actualuse.classname
+            ])
+        }
+        searchText = null
+        binding.refresh( 'searchText' )
+        binding.refresh('selectedItem')
+    }
+    
+    def lookup() {
+        return InvokerUtil.lookupOpener('propertyclass.lookup', [searchText:searchText, onselect:onselectHandler])
+    }
+    
+    boolean contains( actualuse ) {
+        def item = actualuseList.find{ it.actualuseid == actualuse.actualuseid}
+        return item != null
+    }
+    
+    
+}
+
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.common.rule.LookupValuePage"/>
+    </pages>
+</workunit>

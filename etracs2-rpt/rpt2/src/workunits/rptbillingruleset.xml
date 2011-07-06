@@ -1,0 +1,40 @@
+<workunit>
+    <invokers>
+        <invoker type="rulesets" action="init" caption="RPT Billing Rules"  />
+        <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" />
+        <invoker type="formActions" action="open" caption="Open" mnemonic="o" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" />
+        <invoker type="formActions" action="remove" caption="Delete" mnemonic="d" shortcut="ctrl D" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'DRAFT'}" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class RPTBillingRulesetController extends etracs2.common.groovy.AbstractRulesetController 
+{
+    @Binding
+    def binding
+    
+    @Service('AbstractRuleService')
+    def svc 
+    
+    /*------------------------------------------------------
+    * Abstract methods to be implemented
+    ------------------------------------------------------*/
+    def getBinding()            { return binding }
+    def getAbstractRuleService(){ return svc }
+    String getRuleset()         { return 'rptbilling' }
+    String getOpenerName()          { return 'rptbillingrule' }
+    
+    /*------------------------------------------------------*/
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.common.rule.AbstractRulesetPage" />
+    </pages>
+</workunit>

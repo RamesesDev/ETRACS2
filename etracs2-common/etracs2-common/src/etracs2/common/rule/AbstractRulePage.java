@@ -4,7 +4,7 @@
  * Created on May 27, 2011, 11:16 AM
  */
 
-package etracs2.rule;
+package etracs2.common.rule;
 
 import com.rameses.rcp.ui.annotations.StyleSheet;
 
@@ -12,11 +12,11 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  *
  * @author  jzamora
  */
-@StyleSheet("etracs2/rule/RulePage.style")
-public class RulePage extends javax.swing.JPanel {
+@StyleSheet("etracs2/common/rule/AbstractRulePage.style")
+public class AbstractRulePage extends javax.swing.JPanel {
     
     /** Creates new form RulePage */
-    public RulePage() {
+    public AbstractRulePage() {
         initComponents();
     }
     

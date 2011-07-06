@@ -1,0 +1,71 @@
+<workunit>
+    <invokers>
+        <invoker type="rptbillingrule_action.type" action="create" caption="Calculate Basic Discount" index="3" />        
+        <invoker type="rptbillingrule_action_basicdisc.open" action="open" caption="Calculate Basic Discount" />        
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class RPTBillingActionBasicDiscController
+{
+    @Binding
+    def binding
+    
+    @Service('RPTBillingRuleService')
+    def svc 
+    
+    def action
+    def varlist 
+    def selectedVariable
+    def title = 'Calculate Basic Discount'
+    def accttitle 
+    def rule
+    
+    void create() {
+        action = [
+            opener    : 'rptbillingrule_action_basicdisc',
+            acctid    : null,
+            accttitle : null, 
+            expr      : null,
+        ]
+    }
+    
+    void open() {
+       accttitle = action?.accttitle
+    }
+    
+    //must be implemented by a handler
+    void accept() {
+        if( ! action.expr ) throw new Exception('Tax Computation Expression is required.')
+        action.displaytext = buildDisplayText()
+        action.actiontype = 'calcBasicDisc' 
+    }
+    
+    def buildDisplayText() {
+        return 'Calculate Basic Discount using the formula: ' + action.expr 
+    }
+    
+    def selectAcctHandler = { acct ->
+        action.acctid = acct.objid 
+        action.accttitle = acct.accttitle
+        accttitle = acct.accttitle 
+        binding.refresh('accttitle')
+    }
+    
+    def lookupAccount() {
+        return InvokerUtil.lookupOpener('rptincomeacct_basic:lookup', [searchText:accttitle, onselect:selectAcctHandler])
+    }
+    
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.common.rule.FormulaActionPage" />
+    </pages>
+</workunit>
