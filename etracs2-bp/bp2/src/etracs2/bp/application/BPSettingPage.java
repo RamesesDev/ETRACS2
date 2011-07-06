@@ -27,19 +27,10 @@ public class BPSettingPage extends javax.swing.JPanel {
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jPanel3 = new javax.swing.JPanel();
-        jPanel6 = new javax.swing.JPanel();
-        xButton1 = new com.rameses.rcp.control.XButton();
-        xButton4 = new com.rameses.rcp.control.XButton();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         jPanel4 = new javax.swing.JPanel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
-        jPanel7 = new javax.swing.JPanel();
-        xButton5 = new com.rameses.rcp.control.XButton();
-        xButton6 = new com.rameses.rcp.control.XButton();
         jPanel5 = new javax.swing.JPanel();
-        jPanel8 = new javax.swing.JPanel();
-        xButton2 = new com.rameses.rcp.control.XButton();
-        xButton7 = new com.rameses.rcp.control.XButton();
         xDataTable3 = new com.rameses.rcp.control.XDataTable();
 
         setLayout(new java.awt.BorderLayout());
@@ -51,14 +42,6 @@ public class BPSettingPage extends javax.swing.JPanel {
         add(xActionBar1, java.awt.BorderLayout.NORTH);
 
         jPanel3.setLayout(new java.awt.BorderLayout());
-
-        xButton1.setText("+");
-        jPanel6.add(xButton1);
-
-        xButton4.setText("-");
-        jPanel6.add(xButton4);
-
-        jPanel3.add(jPanel6, java.awt.BorderLayout.SOUTH);
 
         xDataTable1.setDynamic(true);
         xDataTable1.setHandler("applicationHandler");
@@ -76,25 +59,9 @@ public class BPSettingPage extends javax.swing.JPanel {
         xDataTable2.setName("assessmentsignatory");
         jPanel4.add(xDataTable2, java.awt.BorderLayout.CENTER);
 
-        xButton5.setText("+");
-        jPanel7.add(xButton5);
-
-        xButton6.setText("-");
-        jPanel7.add(xButton6);
-
-        jPanel4.add(jPanel7, java.awt.BorderLayout.SOUTH);
-
         jTabbedPane1.addTab("Assessment Signatories", jPanel4);
 
         jPanel5.setLayout(new java.awt.BorderLayout());
-
-        xButton2.setText("+");
-        jPanel8.add(xButton2);
-
-        xButton7.setText("-");
-        jPanel8.add(xButton7);
-
-        jPanel5.add(jPanel8, java.awt.BorderLayout.SOUTH);
 
         xDataTable3.setDynamic(true);
         xDataTable3.setHandler("requirementHandler");
@@ -110,22 +77,11 @@ public class BPSettingPage extends javax.swing.JPanel {
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
-    private javax.swing.JPanel jPanel6;
-    private javax.swing.JPanel jPanel7;
-    private javax.swing.JPanel jPanel8;
     private javax.swing.JTabbedPane jTabbedPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XButton xButton1;
-    private com.rameses.rcp.control.XButton xButton2;
-    private com.rameses.rcp.control.XButton xButton4;
-    private com.rameses.rcp.control.XButton xButton5;
-    private com.rameses.rcp.control.XButton xButton6;
-    private com.rameses.rcp.control.XButton xButton7;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XDataTable xDataTable2;
     private com.rameses.rcp.control.XDataTable xDataTable3;

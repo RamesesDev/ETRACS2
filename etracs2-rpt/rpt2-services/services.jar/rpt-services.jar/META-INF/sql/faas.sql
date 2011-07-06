@@ -4,6 +4,8 @@
 [getInfoByTdno]
 SELECT objid, docstate, schemaname, fullpin, fullpin AS ledgerid FROM faaslist WHERE tdno = $P{tdno} 
 
+[getInfoByPin]
+SELECT objid, docstate, schemaname, fullpin, fullpin AS ledgerid FROM faaslist WHERE pin = $P{pin} 
 
 [getTxnReference]
 SELECT * FROM txnreference WHERE objid = $P{objid}
@@ -103,9 +105,6 @@ SELECT tdno FROM faaslist WHERE objid <> $P{objid} AND tdno = $P{tdno}
 #----------------------------------------------------------------
 [deletePin]		
 DELETE FROM pin WHERE pin = $P{pin}
-
-[deleteTxnReference]
-DELETE FROM txnreference WHERE refid = $P{refid}
 		
 		
 #----------------------------------------------------------------
