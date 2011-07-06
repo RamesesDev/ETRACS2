@@ -1,0 +1,63 @@
+<workunit>
+    <invokers>
+        <invoker type="bpbilling_lookup.taxfee" caption="TaxFee Account Criteria" target="popup"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPBillingRuleLookupTaxFeeController
+{
+    @Binding
+    def binding
+    
+    def searchText
+    def selectedItem
+    def accounts = []
+    def finishHandler
+    
+    def ok() {
+        if( finishHandler ) finishHandler( accounts )
+        return '_close' 
+    }
+    
+    def remove() {
+        if( selectedItem ) {
+            accounts.remove( selectedItem )
+        }
+    }
+    
+    def selectAcctHandler = { acct ->
+        if( ! contains( acct ) ) {
+            accounts.add([
+                objid: acct.objid,
+                name : acct.accttitle
+            ])
+        }
+        searchText = null
+        binding.refresh( 'searchText' )
+        binding.refresh('selectedItem')
+    }
+    
+    def lookupAccount() {
+        return InvokerUtil.lookupOpener('incomeacct:lookup', [searchText:searchText, onselect:selectAcctHandler])
+    }
+    
+    boolean contains( acct ) {
+        def v = accounts.find{ it.objid == acct.objid }
+        return v != null
+    }
+    
+    
+}
+
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.billing.rule.TaxFeeCriteriaPage"/>
+    </pages>
+</workunit>

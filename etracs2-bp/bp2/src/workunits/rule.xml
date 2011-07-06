@@ -5,12 +5,12 @@
         
         <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' }"/>
         <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c" shortcut="ctrl C" visibleWhen="#{mode == 'edit' }"/>
-        <invoker type="formActions" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.docstate != 'DEPLOYED'}"/>
+        <invoker type="formActions" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" visibleWhen="#{mode == 'view' and rule.docstate != 'DEPLOYED'}"/>
         <invoker type="formActions" action="save" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode != 'view' }"/>
-        <invoker type="formActions" action="deploy" caption="Deploy" mnemonic="d" shortcut="ctrl D" visibleWhen="#{mode == 'view'  and entity.docstate != 'DEPLOYED'}"/>
-        <invoker type="formActions" action="undeploy" caption="Undeploy" mnemonic="u" shortcut="ctrl U" visibleWhen="#{mode == 'view'  and entity.docstate == 'DEPLOYED'}"/>
+        <invoker type="formActions" action="deploy" caption="Deploy" mnemonic="d" shortcut="ctrl D" visibleWhen="#{mode == 'view'  and rule.docstate != 'DEPLOYED'}"/>
+        <invoker type="formActions" action="undeploy" caption="Undeploy" mnemonic="u" shortcut="ctrl U" visibleWhen="#{mode == 'view'  and rule.docstate == 'DEPLOYED'}"/>
         <invoker type="formActions" action="debug" caption="Debug" mnemonic="g" shortcut="ctrl G" />
-        <invoker type="formActions" action="remove" caption="Delete" mnemonic="d" shortcut="ctrl D" visibleWhen="#{entity.docstate == 'DRAFT'}" />
+        <invoker type="formActions" action="remove" caption="Delete" mnemonic="d" shortcut="ctrl D" visibleWhen="#{rule.docstate == 'DRAFT'}" />
     </invokers>
     <code>
 <![CDATA[
@@ -28,7 +28,7 @@ class RuleController
     def svc 
     
     def mode
-    def entity
+    def rule
     def selectedCondition
     def selectedAction
     def agendagroup
@@ -48,7 +48,7 @@ class RuleController
         createEntity()
         agendagroup = null
         mode = 'create' 
-        binding?.focus('entity.rulename')
+        binding?.focus('rule.rulename')
     }
     
     void edit() {
@@ -56,7 +56,7 @@ class RuleController
     }
     
     void cancel() {
-        entity = svc.open( entity.objid )
+        rule = svc.open( rule.objid )
         mode = 'view' 
     }
     
@@ -67,38 +67,38 @@ class RuleController
     
     void save() {
         if( mode == 'create' ) 
-            entity = svc.create( entity )
+            rule = svc.create( rule )
         else 
-            entity = svc.update( entity )
+            rule = svc.update( rule )
         mode = 'view'
         invokeUpdateHandler()
     }
     
     void deploy() {
         if( MsgBox.confirm('Deploy rule?') ) {
-            entity = svc.deploy( entity.objid )
+            rule = svc.deploy( rule.objid )
         }
     }
     
     void undeploy() {
         if( MsgBox.confirm('Undeploy rule?') ) {
-            entity = svc.undeploy( entity.objid )
+            rule = svc.undeploy( rule.objid )
         }
     }
     
     def remove() {
         if( MsgBox.confirm('Delete rule?') ) {
-            svc.remove( entity.objid )
+            svc.remove( rule.objid )
             return '_close' 
         }
     }
     
     def debug() {
-        return InvokerUtil.lookupOpener('rule.debug',[rule:entity] )
+        return InvokerUtil.lookupOpener('rule.debug',[rule:rule] )
     }
     
     def addConditionHandler = { condition ->
-        entity.conditions.add( condition )
+        rule.conditions.add( condition )
         conditionListHandler.load()
     }
     
@@ -108,13 +108,13 @@ class RuleController
     }
 
     def updateConditionHandler = { condition ->
-        entity.conditions.set(conditionIndex, condition )
+        rule.conditions.set(conditionIndex, condition )
         selectedCondition = condition
         binding.refresh('selectedCondition') 
     }
     
     def openCondition() {
-        conditionIndex = entity.conditions.indexOf( selectedCondition )
+        conditionIndex = rule.conditions.indexOf( selectedCondition )
         if( conditionIndex < 0 ) conditionIndex = 0
         def conditionOpener = selectedCondition.opener + '.open'
         def opener = InvokerUtil.lookupOpener(conditionOpener, [condition:selectedCondition])
@@ -123,7 +123,7 @@ class RuleController
     
     void removeCondition() {
         if( ! selectedCondition ) return 
-        entity.conditions.remove( selectedCondition )
+        rule.conditions.remove( selectedCondition )
     }
     
     
@@ -133,38 +133,38 @@ class RuleController
     * ----------------------------------------------------------- */
     
     def addActionHandler = { action ->
-        entity.actions.add( action )
+        rule.actions.add( action )
         actionListHandler.load()
     }
     
     def addAction() {
         fixRuleName()
-        return InvokerUtil.lookupOpener('ruleaction.create',[rule:entity, addHandler:addActionHandler])
+        return InvokerUtil.lookupOpener('ruleaction.create',[rule:rule, addHandler:addActionHandler])
     }
     
     
     
     def updateActionHandler = { action -> 
-        entity.actions.set(actionIndex, action )
+        rule.actions.set(actionIndex, action )
         selectedAction = action 
         binding.refresh('selectedCondition') 
     }
     
     def openAction() {
-        actionIndex = entity.actions.indexOf( selectedAction )
+        actionIndex = rule.actions.indexOf( selectedAction )
         if( actionIndex < 0 ) actionIndex = 0
         def actionOpener = selectedAction.opener + '.open'
-        def opener = InvokerUtil.lookupOpener(actionOpener, [rule:entity, action:selectedAction])
-        return InvokerUtil.lookupOpener('ruleaction.open', [rule:entity, opener:opener, action:selectedAction, updateHandler:updateActionHandler])        
+        def opener = InvokerUtil.lookupOpener(actionOpener, [rule:rule, action:selectedAction])
+        return InvokerUtil.lookupOpener('ruleaction.open', [rule:rule, opener:opener, action:selectedAction, updateHandler:updateActionHandler])        
     }
     
     void removeAction() {
         if( ! selectedAction ) return 
-        entity.actions.remove( selectedAction )
+        rule.actions.remove( selectedAction )
     }
     
     void createEntity() {
-        entity = [
+        rule = [
             salience   : 50000,
             version    : '1.0',
             author     : getAuthor(),
@@ -177,8 +177,8 @@ class RuleController
     
     void setAgendagroup( agendagroup )  {
         this.agendagroup = agendagroup
-        entity.agendagroupid = agendagroup?.objid 
-        entity.agendagroup = agendagroup?.name
+        rule.agendagroupid = agendagroup?.objid 
+        rule.agendagroup = agendagroup?.name
     }
     
     def getAuthor() {
@@ -193,7 +193,7 @@ class RuleController
     }
     
     def findAgendaGroup() {
-        return agendaGroups.find{ it.objid == entity.agendagroupid }
+        return agendaGroups.find{ it.objid == rule.agendagroupid }
     }
     
     
@@ -202,7 +202,7 @@ class RuleController
         getColumns  : { 
             return [ new Column(name:'displaytext', caption:'') ]
         },
-        fetchList   : { return entity.conditions },
+        fetchList   : { return rule.conditions },
         onOpenItem  : { item, colname ->  openCondition() },
     ] as SubListModel
     
@@ -211,7 +211,7 @@ class RuleController
         getColumns  : { 
             return [ new Column(name:'displaytext', caption:'') ]
         },
-        fetchList   : { return entity.actions },
+        fetchList   : { return rule.actions },
         onOpenItem  : { item, colname ->  openAction() },
         
     ] as SubListModel
@@ -221,8 +221,8 @@ class RuleController
     }
     
     def fixRuleName( ) {
-        entity.rulename = entity.rulename.replaceAll('\\W', '_')
-        binding.refresh('entity.rulename')
+        rule.rulename = rule.rulename.replaceAll('\\W', '_')
+        binding.refresh('rule.rulename')
     }
 }
 

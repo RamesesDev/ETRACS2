@@ -1,0 +1,85 @@
+<workunit>
+    <invokers>
+        <invoker type="datatype.integer" action="initInteger" caption="Integer Value Handler"/>
+        <invoker type="datatype.decimal" action="initDecimal" caption="Decimal Value Handler"/>
+        <invoker type="datatype.boolean" action="initBoolean" caption="Booelan Value Handler"/>
+        <invoker type="datatype.variable" action="initVariable" caption="Variable Value Handler"/>
+        <invoker type="datatype.string" action="initString" caption="String Value Handler"/>
+    </invokers>
+    <code>
+
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+public class DataTypeHandlerController
+{
+    @Binding 
+    def binding
+    
+    def lookupHandler 
+    def varlist
+    def usevar
+    
+    def value
+    def arrayvalue = []
+    
+    def initInteger() {
+        if( usevar ) return "variable"
+        return "integer"
+    }
+    
+    def initDecimal() {
+        if( usevar ) return "variable"
+        return "decimal"
+    }
+    
+    def initBoolean() {
+        if( usevar ) return "variable"
+        return "boolean"
+    }
+    
+    def initVariable() {
+        if( usevar ) return "variable"
+        return "variable" 
+    }
+    
+    def initString() {
+        if( usevar ) return "variable"
+        return "string" 
+    }
+    
+    List getBooleans() {
+        return [true, false]
+    }
+    
+    /*-------------------------------------------------------------------
+    * lookup handler support
+    -------------------------------------------------------------------*/
+    def finishHandler = { values ->
+        arrayvalue.addAll( values ) 
+        value = arrayvalue.name.join(',')
+        binding.refresh('value')
+    }
+    
+    def lookup() {
+        if( !lookupHandler ) throw new Exception('Lookup Handler not defined in the field.')
+        return InvokerUtil.lookupOpener( lookupHandler, [finishHandler:finishHandler]) 
+    }
+}
+
+
+
+]]>
+
+    </code>
+    <pages>
+        <page name="integer" template="etracs2.common.rule.IntegerValuePage"/>
+        <page name="decimal" template="etracs2.common.rule.DecimalValuePage"/>
+        <page name="boolean" template="etracs2.common.rule.BooleanValuePage"/>
+        <page name="variable" template="etracs2.common.rule.VariableValuePage"/>
+        <page name="string" template="etracs2.common.rule.StringValuePage"/>
+    </pages>
+</workunit>

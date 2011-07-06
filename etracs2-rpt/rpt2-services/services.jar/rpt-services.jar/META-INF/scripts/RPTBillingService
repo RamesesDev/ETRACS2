@@ -1,0 +1,422 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : july 4, 2011
+*/
+
+import com.rameses.annotations.*
+import com.rameses.rules.common.*
+import java.math.BigDecimal
+import java.math.RoundingMode
+import java.math.MathContext
+import etracs2.rpt.billing.facts.*
+
+public class RPTBillingService
+{
+	@PersistenceContext('main')
+	def em 
+	
+	@Resource("RuleService/local")
+	def ruleService;
+    
+    @Service('DateService')
+    def dateSvc 
+    
+	
+    def RULESET = 'rptbilling'
+    def FACTS_PACKAGE = 'etracs2.rpt.billing.facts'
+    
+	@ProxyMethod
+	public def buildBill( bill ) {
+        createBillItems( bill )
+        def facts = createFacts( bill  )
+        def actionList = ruleService.createRuleAction()
+		buildActionCommands( bill, facts, actionList )
+		ruleService.execute( RULESET, facts, [actionList:actionList], 'TAX' )
+        ruleService.execute( RULESET, facts, [actionList:actionList], 'PENALTY' )
+        ruleService.execute( RULESET, facts, [actionList:actionList], 'DISCOUNT' )
+        ruleService.execute( RULESET, facts, [actionList:actionList], 'SUMMARY' )
+        return bill
+        
+	}	
+    
+    @ProxyMethod
+    public List getOpenLedgersByTaxpayerId( taxpayerid ) {
+        def dt = dateSvc.parseCurrentDate()
+        def params = [ taxpayerid:taxpayerid, currentyr:dt.year ]
+        return em.sqlContext.createNamedQuery('rptbill:getOpenLedgersByTaxpayerId').setParameters( params ).resultList
+    }
+    
+    
+    /*-------------------------------------------------------------------------------
+	* Rule Support Methods
+    -------------------------------------------------------------------------------*/
+    void buildActionCommands( bill, facts, actionList ) {
+		actionList.addCommand( 'calcBasic', new CalcBasicHandler( em:em, bill:bill, facts:facts ) )		
+        actionList.addCommand( 'calcBasicInt', new CalcBasicInterestHandler( em:em, bill:bill, facts:facts ) )		
+        actionList.addCommand( 'calcBasicDisc', new CalcBasicDiscountHandler( em:em, bill:bill, facts:facts ) )		
+        actionList.addCommand( 'calcSef', new CalcSefHandler( em:em, bill:bill, facts:facts ) )		
+        actionList.addCommand( 'calcSefInt', new CalcSefInterestHandler( em:em, bill:bill, facts:facts ) )		
+        actionList.addCommand( 'calcSefDisc', new CalcSefDiscountHandler( em:em, bill:bill, facts:facts ) )		
+	}
+    
+    /*-------------------------------------------------------------------------------
+	* CreateFacts Support Methods
+    -------------------------------------------------------------------------------*/
+    def createFacts( bill ) {
+        def facts = []
+        def cyfact = createCYFact()
+		facts += cyfact
+        facts += createLedgerFacts( bill, cyfact )
+		return facts 
+	}
+    
+    def createLedgerFacts( bill, cyfact ) {
+        def facts = []
+        bill.items.each { item -> 
+            item.details.each { detail ->
+                def lfact = ruleService.createFact(RULESET, FACTS_PACKAGE + '.RPTLedgerFact')
+                detail.keySet().each {
+                    try { lfact."$it" = detail[it] } catch( e ) {;}
+                }
+                lfact.factname               = 'RPTLedgerFact'
+                lfact.rputype                = item.rputype
+                lfact.numberofmonthsfromqtr  = calculateNoOfMonthsFromQtr( cyfact, lfact.year, lfact.qtr )
+                lfact.numberofmonthsfromjan  = calculateNoOfMonthsFromJan( cyfact, lfact.year, lfact.qtr )
+                lfact.firstqtrpaidontime     = determineFirstQtrPaidOnTime( bill, item )
+                lfact.qtrlypaymentavailed    = determineQtrlyPaymentAvailed( bill, item )
+                lfact.fullpayment            = bill.fullpayment
+                lfact.advancepayment         = bill.advancepayment 
+                lfact.lastyearpaid           = item.lastyearpaid 
+                lfact.lastqtrpaid            = item.lastqtrpaid 
+                facts += lfact 
+            }
+        }
+        return facts 
+    }
+    
+    def createCYFact( ) {
+		def cyfact = ruleService.createFact(RULESET, FACTS_PACKAGE + '.CurrentYearFact')
+        def dt = dateSvc.parseCurrentDate()
+        cyfact.factname     = 'CurrentYearFact'
+		cyfact.year         = dt.year 
+		cyfact.qtr          = dt.qtr 
+		cyfact.month        = dt.month 
+		cyfact.day          = dt.day 
+		return cyfact
+	}
+    
+    boolean determineFirstQtrPaidOnTime( bill, billitem ) {
+        def currdate = dateSvc.parseCurrentDate()
+        if( billitem.lastyearpaid < currdate.year ) return false
+        if( billitem.lastqtrpaid == 1 && currdate.qtr == 1 ) return false 
+        return billitem.firstqtrpaidontime
+    }
+    
+    boolean determineQtrlyPaymentAvailed( bill, billitem ) {
+        if( bill.billtoqtr != 4 ) return true 
+        if( bill.billtoqtr == 4 && billitem.lastqtrpaid != 4 ) return true 
+        return false 
+    }
+    
+    
+    int calculateNoOfMonthsFromQtr(currentFact, year, qtr) {
+		int currYear = currentFact.year
+		int currMonth = currentFact.month
+		if(year < currYear) {
+			return ((currYear - year) * 12 - (3 * (qtr-1))) + currMonth 
+		}
+		else {
+			int nm = currMonth - (3 * (qtr-1))
+			return nm < 0 ? 0 : nm
+		}
+	}
+	
+	int calculateNoOfMonthsFromJan(currentFact, year, qtr) {
+		int currYear = currentFact.year
+		int currMonth = currentFact.month
+		if(year < currYear) {
+			return ( currYear - year ) * 12 + currMonth
+		}
+		else {
+			return currMonth
+		}
+	}
+    
+    /*-------------------------------------------------------------------------------
+	* createBillItems Support Methods
+    -------------------------------------------------------------------------------*/
+    void createBillItems( bill ) {
+        initBillToYearQtrInfo( bill )
+        def openLedgers = getOpenLedgersByTaxpayerId( bill.taxpayerid )
+        if( !openLedgers ) throw new Exception('There are no open ledgers for this taxpayer.')
+        bill.items = openLedgers 
+        bill.items.each { billitem ->
+            //set toyear and toqtr 
+            billitem.toyear = bill.billtoyear
+            billitem.toqtr  = bill.billtoqtr
+            createBillItemDetailList( bill, billitem)
+        }
+    }
+    
+    void createBillItemDetailList( bill, billitem ) {
+        def util = new Util()
+        def currdate = dateSvc.parseCurrentDate()
+        def params = [ parentid:billitem.objid, currentyr:currdate.year ]
+        def ledgeritems = em.sqlContext.createNamedQuery('rptbill:getOpenLedgerItems').setParameters( params ).resultList 
+        def firstitem = true  
+        billitem.details = []
+        for( int yr = billitem.fromyear; yr <= billitem.toyear; yr++) {
+            def ledgeritem = findLedgerItemForYear( ledgeritems, yr )
+            if( ledgeritem ) { //possible null if there is a gap in the ledgeritems due to nontaxability
+                if( yr < currdate.year ) {
+                    def av = adjustAssessedValue( bill, billitem, ledgeritem, firstitem, yr )
+                    billitem.details.add( createBillItemDetail( bill, billitem, ledgeritem, av, yr, 0, firstitem ) )
+                    firstitem = false 
+                }
+                else {
+                    billitem.details.addAll( createQtrlyItemDetails( bill, billitem, ledgeritem, yr, firstitem) )
+                    firstitem = false 
+                }
+            }
+        }
+    }
+    
+    def adjustAssessedValue(bill, billitem, ledgeritem, firstitem, yr ) {
+        //
+        // adjust av according to this rules:
+        // 1. if firstitem and yr < billtoyear, adjust based on last qtr paid
+        // 2. if firstitem and yr == billtoyear, adjust based on last qtr paid and billtoqtr
+        // 3. if yr == bill.billtoyear, adjust according to billtoqtr 
+        // 4. else original av 
+        def util = new Util()
+        def av = ledgeritem.assessedvalue
+        if( firstitem && yr < bill.billtoyear ) {
+            av = util.round( ledgeritem.assessedvalue / 4 ) * (4 - billitem.lastqtrpaid)
+        }
+        else if( firstitem && yr == bill.billtoyear ) {
+            av = util.round( ledgeritem.assessedvalue / 4 ) * (bill.billtoqtr - billitem.lastqtrpaid)
+        }
+        else if( yr == bill.billtoyear ) {
+            av = util.round( ledgeritem.assessedvalue / 4 ) * bill.billtoqtr
+        }
+        return av 
+    }
+    
+    def createQtrlyItemDetails( bill, billitem, ledgeritem, yr, firstitem  ) {
+        def util = new Util()
+        def details = []
+        def qtrlyav = util.round( ledgeritem.assessedvalue / 4 )
+        def _4thqtrav = ledgeritem.assessedvalue - ( qtrlyav * 3 )
+        
+        for( int qtr = 1; qtr <= bill.billtoqtr; qtr++) {
+            def av = ( qtr == 4 ? _4thqtrav : qtrlyav )
+            details += createBillItemDetail( bill, billitem, ledgeritem, av, yr, qtr, firstitem )
+            firstitem = false 
+        }
+        return details
+    }
+    
+    
+    def createBillItemDetail( bill, billitem, ledgeritem, av, yr, qtr, firstitem  ) {
+        def detail = [:]
+        detail.putAll( ledgeritem )
+        detail.ledgerid      = detail.objid + '-' + yr + '-' + qtr
+        detail.firstitem     = firstitem 
+        detail.year          = yr
+        detail.qtr           = qtr 
+        detail.assessedvalue = av
+        detail.originalav    = ledgeritem.assessedvalue
+        detail.lastyearpaid  = billitem.lastyearpaid
+        detail.lastqtrpaid   = billitem.lastqtrpaid 
+        detail.partialbasic  = billitem.partialbasic
+        detail.partialsef    = billitem.partialsef
+        return detail 
+    }
+    
+    def findLedgerItemForYear( ledgeritems, yr ) {
+        def item = ledgeritems.find{ yr >= it.fromyear && yr <= it.toyear }
+        if( !item ) {
+            //Two possible cases this could happen: 
+            //   1. the bill is advance payment ( yr > lastitem.toyear )
+            //   2. there is a gap between fromyear-toyear of the ledgeritems, possible if some ledgeritems are not taxable 
+            def lastitem = ledgeritems.get( ledgeritems.size() - 1)
+            if( yr > lastitem.toyear ) {
+                //advance payment: yr > toyear of last item 
+                item = lastitem 
+            }
+            else {
+                //a gap happens possible due to non-taxability 
+                item = null 
+            }
+        }
+        return item 
+    }
+    
+    void initBillToYearQtrInfo( bill ) {
+        def dt = dateSvc.parseCurrentDate()
+        if( ! bill.billtoyear || bill.billtoyear == 0 ) bill.billtoyear = dt.year 
+        if( ! bill.billtoqtr || bill.billtoqtr == 0 ) bill.billtoqtr = dt.qtr 
+    }
+}
+    
+    
+    
+    
+
+
+/*-----------------------------------------------------------------------
+*
+* Computation Handlers
+*
+-----------------------------------------------------------------------*/
+class CalcBasicHandler implements RuleActionHandler 
+{
+	def em
+	def bill 
+    def facts 
+	
+	public void execute( drools, ruleledger) {	
+        def util = new Util()
+        def detail = util.findDetail( bill, ruleledger ) 
+        if( detail) {
+            def expr            = util.getFunctionExpressions() + ruleledger.expr 
+			detail.basic        = util.round( util.evaluate( expr, ruleledger.varlist ) )
+            detail.basicacctid  = ruleledger.basicacctid 
+            def fact            = util.findRPTLedgerFact( facts, ruleledger.ledgerid )
+            fact.basic          = detail.basic 
+		}
+	}
+}
+
+class CalcBasicInterestHandler implements RuleActionHandler 
+{
+	def em
+	def bill 
+    def facts 
+	
+	public void execute( drools, ruleledger) {	
+        def util = new Util()
+        def detail = util.findDetail( bill, ruleledger ) 
+        if( detail) {
+            def expr               = util.getFunctionExpressions() + ruleledger.expr 
+			detail.basicint        = util.round( util.evaluate( expr, ruleledger.varlist ) )
+            detail.basicintacctid  = ruleledger.basicintacctid 
+            def fact               = util.findRPTLedgerFact( facts, ruleledger.ledgerid )
+            fact.basicint          = detail.basicint
+		}
+	}
+}
+
+class CalcBasicDiscountHandler implements RuleActionHandler 
+{
+	def em
+	def bill 
+    def facts 
+	
+	public void execute( drools, ruleledger) {	
+        def util = new Util()
+        def detail = util.findDetail( bill, ruleledger ) 
+        if( detail) {
+            def expr          = util.getFunctionExpressions() + ruleledger.expr 
+			detail.basicdisc  = util.round( util.evaluate( expr, ruleledger.varlist ) )
+            def fact          = util.findRPTLedgerFact( facts, ruleledger.ledgerid )
+            fact.basicdisc    = detail.basicdisc
+		}
+	}
+}
+
+class CalcSefHandler implements RuleActionHandler 
+{
+	def em
+	def bill 
+	def facts 
+    
+	public void execute( drools, ruleledger) {	
+        def util = new Util()
+        def detail = util.findDetail( bill, ruleledger ) 
+        if( detail) {
+            def expr          = util.getFunctionExpressions() + ruleledger.expr 
+			detail.sef        = util.round( util.evaluate( expr, ruleledger.varlist ) )
+            detail.sefacctid  = ruleledger.sefacctid  
+            def fact          = util.findRPTLedgerFact( facts, ruleledger.ledgerid )
+            fact.sef          = detail.sef
+		}
+	}
+}
+
+class CalcSefInterestHandler implements RuleActionHandler 
+{
+	def em
+	def bill 
+    def facts 
+	
+	public void execute( drools, ruleledger) {	
+        def util = new Util()
+        def detail = util.findDetail( bill, ruleledger ) 
+        if( detail) {
+            def expr             = util.getFunctionExpressions() + ruleledger.expr 
+			detail.sefint        = util.round( util.evaluate( expr, ruleledger.varlist ) )
+            detail.sefintacctid  = ruleledger.sefintacctid  
+            def fact             = util.findRPTLedgerFact( facts, ruleledger.ledgerid )
+            fact.sefint          = detail.sefint
+		}
+	}
+}
+
+class CalcSefDiscountHandler implements RuleActionHandler 
+{
+	def em
+	def bill 
+    def facts 
+	
+	public void execute( drools, ruleledger) {	
+        def util = new Util()
+        def detail = util.findDetail( bill, ruleledger ) 
+        if( detail) {
+            def expr            = util.getFunctionExpressions() + ruleledger.expr 
+			detail.sefdisc      = util.round( util.evaluate( expr, ruleledger.varlist ) )
+            def fact            = util.findRPTLedgerFact( facts, ruleledger.ledgerid )
+            fact.sefdisc        = detail.sefdisc 
+		}
+	}
+}
+
+class Util {
+
+   int DEFAULT_SCALE = 2
+	
+	public def evaluate( expr, params ) {
+		return (new GroovyShell( new Binding( params) )).evaluate( expr )
+	}
+    
+    public def findDetail( bill, ruleledger ) {
+        def detail 
+        bill.items.each { item ->
+            detail = item.details.find{ it.ledgerid == ruleledger.ledgerid }
+        }
+        return detail 
+    }
+    
+    public def findRPTLedgerFact( facts, ledgerid ) {
+         return facts.find{ it.factname == 'RPTLedgerFact' &&  it.ledgerid == ledgerid }
+    }
+    
+    public def getFunctionExpressions(){
+        return '''
+            def IIF( cond, trueval, falseval ) {
+                return ( cond ? trueval : falseval )
+            }
+            
+        '''
+    }
+    
+    public def round( amount ) {
+        return roundA(amount, DEFAULT_SCALE)
+    }
+    
+    public def roundA( amount, int scale ) {
+        def bd = new BigDecimal(amount+'')
+        return bd.setScale(scale, RoundingMode.HALF_UP)
+    }
+}
