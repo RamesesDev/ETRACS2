@@ -11,23 +11,30 @@ class BPSettingService
 		
 	@ProxyMethod
 	public def getSetting(){
-		def setting = em.read( SCHEMANAME, [objid:'DEFAULT'] );
+		def setting = em.read( SCHEMANAME, [objid:'BPSETTING'] );
 		if( !setting ){
-			setting = [objid:'DEFAULT'];
-			setting.assessmentsignatories = [];
-			setting.applicationsignatories = [];
-			setting.requirements = [];
-			println "INSERTING......";
-			em.create(SCHEMANAME, setting);
-			println "DONE INSERTING......";
+			setting = [
+				objid: 'BPSETTING',
+				assessmentsignatories : [],
+				applicationsignatories : [],
+				requirements : []
+			];
+			
+			em.validate( SCHEMANAME, setting );
+			em.create( SCHEMANAME, setting );
 		}
 		
-		println em.read( SCHEMANAME, [objid:'DEFAULT'] );
+		setting.assessmentsignatories?.sort{ it.index };
+		setting.applicationsignatories?.sort{ it.index };
+		setting.requirements?.sort{ it.index };
+		
 		return setting;
 	}
 	
 	@ProxyMethod
 	public def save( def setting ){
-		return em.update( SCHEMANAME, setting );
+		println setting;
+		em.update( SCHEMANAME, setting );
+		return getSetting();
 	}
 }

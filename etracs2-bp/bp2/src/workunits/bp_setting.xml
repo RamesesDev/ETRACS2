@@ -27,36 +27,40 @@ class BPSettingController
     
     void init() {
         setting = svc.setting;
+        if( !setting.applicationsignatories ) setting.applicationsignatories = [];
+        if( !setting.assessmentsignatories ) setting.assessmentsignatories = [];
+        if( !setting.requirements ) setting.requirements = [];
     }
     
     def applicationHandler = [
         getRows: {return 50;},
         getColumns: {
             return [
-                new Column(name:'index', caption:'Index', editable:false, width:5),
+                new Column(name:'index', caption:'Index', editable:true),
                 new Column(name:'name', caption:'Name', required:true, editable:true),
                 new Column(name:'department', caption:'Department', required:true, editable:true),
                 new Column(name:'title', caption:'Title', required:true, editable:true)
             ];
         },
-        createItem: { return [index: setting.applicationsignatories.size(); ] }
-        onAddItem :{ setting.applicationsignatories.add( it ); }
+        validate:{ validateSignatory( it.item ); },
+        createItem: { return [:]; },
+        onAddItem :{ if( it ) setting.applicationsignatories.add( it ); },
         fetchList : { return setting.applicationsignatories; }
-        
     ] as SubListModel;
     
     def assessmentHandler = [
         getRows: {return 50;},
         getColumns: {
             return [
-                new Column(name:'index', caption:'Index', editable:false, width:5),
+                new Column(name:'index', caption:'Index', editable:true),
                 new Column(name:'name', caption:'Name', required:true, editable:true),
                 new Column(name:'department', caption:'Department', required:true, editable:true),
                 new Column(name:'title', caption:'Title', required:true, editable:true)
             ];
         },
-        createItem: { return [index: setting.assessmentsignatories.size(); ] }
-        onAddItem : { setting.assessmentsignatories.add( it ); }
+        validate: { validateSignatory(it.item); },
+        createItem: { return [:]; },
+        onAddItem : { if( it ) setting.assessmentsignatories.add( it ); },
         fetchList : { return setting.assessmentsignatories; }
     ] as SubListModel;
     
@@ -64,15 +68,38 @@ class BPSettingController
         getRows: {return 50;},
         getColumns: {
             return [
-                new Column(name:'index', caption:'Index', editable:false, width:5),
+                new Column(name:'index', caption:'Index', editable:true, width:5),
                 new Column(name:'requirement', caption:'Requirement', editable:false, editable:true)
             ];
         },
-        
-        createItem: { return [index: setting.requirements.size(); ] }
-        onAddItem : { setting.requirements.add( it ); }
+        validate : { validateRequirement( it.item ); },
+        createItem: { return [:]; },
+        onAddItem : { if( it ) setting.requirements.add( it ); },
         fetchList : { return setting.requirements; }
     ] as SubListModel;
+    
+    void validateSignatory( def item ){
+        def sb = new StringBuffer();
+        if( !item.index ) sb << "Index is required. \n";
+        if( !item.name )  sb << "Name is required. \n";
+        if( !item.department ) sb << "Department is required. \n";
+        if( !item.title ) sb << "Title is title. \n";
+        if( sb ) throw new Exception( sb.toString );
+    }
+    
+    void validateRequirement( def item ){
+        def sb = new StringBuffer();
+        if( !item.index ) sb << "Index is required. \n";
+        if( !item.requirement ) sb << "Requirement is required.";
+        if( sb ) throw new Exception( sb.toString() );
+    }
+    
+    void save(){
+        setting = svc.save( setting );
+        requirementHandler.load();
+        applicationHandler.load();
+        assessmentHandler.load();
+    }
 }
 
 ]]>
