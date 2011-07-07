@@ -1,0 +1,63 @@
+<workunit>
+    <invokers>
+        <invoker type="miscassesslevel.lookup" action="init" caption="Misc Assess Level Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+
+class MiscAssessLevelLookupController extends LookupModel 
+{
+    @Service("MiscRPUService")
+    def svc
+    
+    def onselect
+    def searchText
+    def ry
+    def selected
+    
+    void init(){
+    }
+    
+    
+    def ok() {
+        search = null
+        if( onselect ) onselect( selected )
+        return select()
+    }
+    
+    def getListHandler() {
+        return this
+    }
+    
+    int getRows() { return 25 }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"assesslevelcode", caption:"Code", maxWidth:80),
+            new Column(name:"assesslevelname", caption:"Assess Level"),
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.lookupAssessLevel( ry, s, params)
+        if( list ) return list
+        throw new Exception("Record not found.")
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.common.LookupPage"/>
+    </pages>
+</workunit>

@@ -1,0 +1,149 @@
+<workunit>
+    <invokers>
+        <invoker type="miscitemvalue.lookup" action="init" caption="Misc Item Lookup" target="popup" />
+        <invoker type="miscitemvalue.view" action="open" caption="Edit Misc Item Parameter" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+
+class MiscItemValueLookupController extends LookupModel 
+{
+    @Service("MiscRPUService")
+    def svc
+    
+    @Service('RPUService')
+    def rpuSvc
+    
+    def onselect
+    
+    def searchText
+    def ry
+    def classid 
+    def selected
+    def params 
+    def selectedInfo
+    
+    void init(){
+    }
+    
+    def open () {
+        return 'info'
+    }
+    
+    def okInfo() {
+        selected.params.clear();
+        params.each{
+            selected.params.add([
+                paramid     : it.paramid,
+                paramname   : it.paramname,
+                paramcaption : it.paramcaption, 
+                datatype    : it.datatype,
+                paramvalue  : convertParamValue( it ),
+            ]);
+        }
+        if( onselect ) onselect( selected)
+        return select() 
+    }
+    
+    def convertParamValue( param ) {
+        if( param.datatype == 'decimal' ) {
+            return Double.parseDouble( param.paramvalue )
+        }
+        else if( param.datatype == 'range_decimal' ) {
+            def decvalue = parseDouble( param.paramvalue )
+            if( decvalue < param.minvalue || decvalue > param.maxvalue ) throw new Exception("Value must be between $param.minvalue and $param.maxvalue." )
+            return decvalue
+        }
+        else if( param.datatype == 'integer' ) {
+            return parseInt( param.paramvalue )
+        }
+        else if( param.datatype == 'range_integer' ) {
+            def intvalue = parseInt( param.parmvalue )
+            if( intvalue < param.minvalue || intvalue > param.maxvalue ) throw new Exception("Value must be between $param.minvalue and $param.maxvalue.")
+            return intvalue 
+        }
+        return param.paramvalue 
+    }
+    
+    def ok() {
+        search = null
+        selected.params = []
+        params = rpuSvc.getVariables( selected.expr );
+        if( params ) {
+            return 'info'
+        }
+        else {
+            if( onselect ) onselect( selected )
+            return select()
+        }
+    }
+    
+    def getListHandler() {
+        return this
+    }
+    
+    int getRows() { return 25 }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"miscitemcode", caption:"Code", maxWidth:80),
+            new Column(name:"miscitemname", caption:"Name"),
+            new Column(name:"expr", caption:"Expression"),
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getLookupMiscItems( ry, s, params)
+        if( list ) return list
+        throw new Exception("Record not found.")
+    }
+    
+    /* ----------------------------------------------
+    * Info Support 
+    -----------------------------------------------*/
+    def infoListHandler =[
+        getRows    : { return 25 },
+        getColumns : { return [
+            new Column( name:'paramcaption', caption:'Parameter' ),
+            new Column( name:'paramvalue', caption:'Value', editable:true, maxWidth:150 ),
+        ]},
+        fetchList  : { return params }
+    ] as PageListModel
+
+    
+    def parseDouble( value ) {
+        try {
+            return Double.parseDouble( value )
+        }
+        catch( e ) {
+            throw new Exception('Invalid parameter value.')
+        }
+    }
+    
+    def parseInt( value ) {
+        try {
+            return Integer.parseInt( value )
+        }
+        catch( e ) {
+            throw new Exception('Invalid parameter value.')
+        }
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.common.LookupPage"/>
+        <page name="info" template="etracs2.rpt.VariableInfoPage" />
+    </pages>
+</workunit>

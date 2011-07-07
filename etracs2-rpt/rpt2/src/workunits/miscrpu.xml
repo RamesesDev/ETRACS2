@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="rpu.misc" action="init" caption="Open" target="popup" />
+        
+        <invoker type="formActions" action="ok" caption="OK" mnemonic="o" />
+        <invoker type="formActions" action="_close" caption="Cancel" mnemonic="c" immediate="true" />
+        
+    </invokers>
+    <code lang="groovy">
+        
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+import java.rmi.server.UID
+
+public class MiscRPUController
+{
+    @Binding
+    def binding
+    
+    @Service('MiscRPUService')
+    def svc
+    
+    @Service('PropertyClassificationService')
+    def classSvc
+    
+    @Service('ExemptionTypesService')
+    def exemptSvc
+    
+    
+    def onupdate
+    def faas
+    def rpu
+    
+    def exemption
+    def classification
+    def actualuse
+    def errorMsg 
+    
+    void init() {
+        classificationList = classSvc.lookup( null, null) 
+        exemptionList = exemptSvc.lookup(null, null) 
+        actualuseList = svc.lookupAssessLevel( rpu.ry )
+        classification = classificationList.find{ it.classid == rpu.classid }
+        exemption = exemptionList.find{ it.exemptid == rpu.exemptid }
+        actualuse = actualuseList.find{ it.assesslevelid == rpu.info.actualuseid }
+    }
+    
+    def ok() {
+        if( onupdate ) onupdate( rpu )
+        return '_close'
+    }
+
+    /*---------------------------------------------------------------
+    *
+    * MiscItem Support
+    *
+    ---------------------------------------------------------------*/
+    def selectedMisc;
+    def rate = 0.0;
+    
+    def getLookupMisc() {
+        return InvokerUtil.lookupOpener('miscitemvalue.lookup', [ry:rpu.ry] )
+    }
+
+    def miscListHandler = [
+        createItem : { return createMiscItem() },
+        getColumns : { return [
+            new Column(name:'misc', caption:'Code*', type:'lookup', handler:lookupMisc,  expression:'#{miscitemcode}', maxWidth:100, editable:true ),
+            new Column(name:'miscitemname', caption:'Item Name' ),
+            new Column(name:'basemarketvalue', caption:'Base Market Value', type:'decimal'),
+            new Column(name:'depreciation', caption:'Depreciation', editable:true, type:'decimal'),
+            new Column(name:'depreciatedvalue', caption:'Depreciated Value', type:'decimal'),
+            new Column(name:'marketvalue', caption:'Market Value', type:'decimal'),
+        ]},
+        validate       : { li -> validateMiscItem( li.item ) },
+        onRemoveItem   : { item -> removeMiscItem( item ) },
+        onAddItem      : { item -> 
+            if( rpu.info.miscrpuitems == null ) rpu.info.miscrpuitems = [];
+            rpu.info.miscrpuitems.add( item );
+            calculateTotals();
+        },
+        onColumnUpdate : { item, colName -> 
+            if( colName == 'misc' ) updateMiscItemInfo( item )
+        },
+        fetchList      : { return rpu.info.miscrpuitems  },
+    ] as SubListModel
+    
+    void validateMiscItem( item ) {
+        try {
+            required( 'Item Name', item.miscitemname );
+            validateRate( item.depreciation );
+            calculateMiscItemAssessment( item )
+            if( ! newMiscItem( item )  ) {
+                calculateTotals();
+            }
+            clearError()
+        } 
+        catch( Throwable e ) {
+            showError( e )
+        }
+    }
+    
+    void removeMiscItem( item ) {
+        if( MsgBox.confirm( 'Delete selected item?' ) ) {
+            rpu.info.miscrpuitems.remove( item )
+            calculateTotals();
+        }
+    }
+    
+    void updateMiscItemInfo( item ) {
+        item.miscitemvalueid = item.misc.objid;
+        item.miscitemid = item.misc.miscitemid;
+        item.miscitemcode = item.misc.miscitemcode;
+        item.miscitemname = item.misc.miscitemname;
+        item.expr = item.misc.expr;
+        if( item.misc.params != null ) {
+            item.params.addAll( item.misc?.params );
+            item.misc?.remove( 'params' );
+        }
+    }
+    
+    void calculateMiscItemAssessment( item ) {
+        item.actualuse = actualuse;
+        def data = svc.calculateMiscItemAssessment( item );
+        item.clear()
+        item.putAll( data )
+    }
+    
+    void calculateTotals() {
+        clearRpuTotals();
+        
+        rpu.info.miscrpuitems.each {
+            rpu.totalbmv     += it.basemarketvalue 
+            rpu.totalmv      += it.marketvalue 
+            rpu.totalav      += it.assessedvalue
+        }
+        
+        binding.refresh('rpu.total.*');
+    }
+    
+    void clearRpuTotals() {
+        rpu.totalbmv     = 0.0
+        rpu.totalmv      = 0.0
+        rpu.totalav      = 0.0
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * ComboBox Support
+    *
+    ---------------------------------------------------------------*/
+    void setExemption( exemption ) {
+        this.exemption = exemption
+        rpu.exemptid = exemption?.exemptid
+        rpu.exemptcode = exemption?.exemptcode
+        rpu.exemptname = exemption?.exemptname
+    }
+    
+    void setClassification( classification ) {
+        this.classification = classification
+        rpu.classid = classification?.classid 
+        rpu.classcode = classification?.classcode
+        rpu.classname = classification?.classname 
+    }
+    
+    void setActualuse( actualuse ){
+        this.actualuse = actualuse;
+        rpu.info.actualuseid = actualuse?.assesslevelid;
+        rpu.info.actualusecode = actualuse?.assesslevelcode;
+        rpu.info.actualusename = actualuse?.assesslevelname;
+    }
+    
+    def classificationList
+    def exemptionList
+    def actualuseList
+    
+    List getClassifications() { 
+        return classificationList 
+    }
+    
+    List getExemptions() { 
+        return exemptionList 
+    }
+    
+    List getActualuseList() {
+        return actualuseList;
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * Miscellaneous Support
+    *
+    ---------------------------------------------------------------*/
+    Map createMiscItem() {
+        return [
+            objid           : 'MC' + new UID(),
+            basemarketvalue : 0.0,
+            depreciation    : 0.0,
+            depreciatedvalue : 0.0,
+            marketvalue     : 0.0,
+            params          : [],
+        ]
+    }
+    
+    void required( caption, value ) {
+        if( !value ) throw new Exception( caption + ' is required.')
+    }
+    
+    boolean newMiscItem( item ) {
+        return ( rpu.info.miscrpuitems.find{ it.objid == item.objid } == null ) 
+    }
+    
+    void validateRate( rate ) {
+        if( rate < 0.0 ) throw new Exception('Rate must be greater than or equal to zero.')
+        if( rate > 100) throw new Exception('Rate must not exceed 100.00')
+    }
+    
+    void showError( e ) {
+        println e.message
+        errorMsg = e.message
+        binding.refresh('errorMsg')
+        throw e
+    }   
+    
+    void clearError() {
+        errorMsg = null
+        binding.refresh('errorMsg') 
+    }
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.rpu.misc.MiscRPUPage"/>
+    </pages>
+</workunit>

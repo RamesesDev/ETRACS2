@@ -330,9 +330,11 @@ public class FAASController
     }
     
     boolean getAllowEditPinInfo() {
-        if( faas.info.datacapture == true ) return true
-        if( 'CE/ND/MC'.indexOf( faas.info.txntype ) >= 0 ) return true
-        return false
+        def edit = false;
+        if( faas.rpu.rputype == 'land' ) edit = true
+        if( faas.info.datacapture == true ) edit = true
+        if( 'CE/ND/MC'.indexOf( faas.info.txntype ) >= 0 ) edit = true
+        return edit
     }
 }
 
