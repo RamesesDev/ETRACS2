@@ -93,7 +93,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
 
         jPanel1.setLayout(new java.awt.BorderLayout());
 
-        formPanel1.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 5), null));
+        formPanel1.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 5), new com.rameses.rcp.control.border.XTitledBorder()));
         formPanel1.setPreferredSize(new java.awt.Dimension(200, 74));
         xLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel1.setCaption("Revision Year");
@@ -126,7 +126,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xComboBox2.setCaptionWidth(90);
         xComboBox2.setDepends(new String[] {"rpu.info.taxable"});
         xComboBox2.setExpression("#{exemptcode}");
-        xComboBox2.setItems("exemptions");
+        xComboBox2.setItems("exemptionList");
         xComboBox2.setName("exemption");
         xComboBox2.setPreferredSize(new java.awt.Dimension(0, 22));
         formPanel2.add(xComboBox2);
@@ -170,6 +170,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xDataTable1.setBorder(xTitledBorder3);
         xDataTable1.setDynamic(true);
         xDataTable1.setHandler("structureListHandler");
+        xDataTable1.setName("selectedStructure");
         xDataTable1.setShowRowHeader(true);
 
         formPanel4.setBorder(javax.swing.BorderFactory.createEtchedBorder());
@@ -423,8 +424,8 @@ public class BldgRPUPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder4.setTitle("Building Classification");
         jPanel4.setBorder(xTitledBorder4);
-        xComboBox4.setItems("classifications");
-        xComboBox4.setName("rpu.classcode");
+        xComboBox4.setItems("classificationList");
+        xComboBox4.setName("classification");
 
         xDataTable2.setDynamic(true);
         xDataTable2.setHandler("classificationListHandler");
