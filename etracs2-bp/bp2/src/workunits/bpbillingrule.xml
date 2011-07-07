@@ -3,239 +3,51 @@
         <invoker type="bpbillingrule.create" action="create" caption="New Rule" target="popup" />
         <invoker type="bpbillingrule.open" action="open" caption="Rule Information" target="popup" />
         
-        <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' }"/>
+        <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' }" />
         <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c" shortcut="ctrl C" visibleWhen="#{mode == 'edit' }"/>
-        <invoker type="formActions" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.docstate != 'DEPLOYED'}"/>
+        <invoker type="formActions" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" visibleWhen="#{mode == 'view' and rule.docstate != 'DEPLOYED'}"/>
         <invoker type="formActions" action="save" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode != 'view' }"/>
-        <invoker type="formActions" action="deploy" caption="Deploy" mnemonic="d" shortcut="ctrl D" visibleWhen="#{mode == 'view'  and entity.docstate != 'DEPLOYED'}"/>
-        <invoker type="formActions" action="undeploy" caption="Undeploy" mnemonic="u" shortcut="ctrl U" visibleWhen="#{mode == 'view'  and entity.docstate == 'DEPLOYED'}"/>
+        <invoker type="formActions" action="deploy" caption="Deploy" mnemonic="d" shortcut="ctrl D" visibleWhen="#{mode == 'view'  and rule.docstate != 'DEPLOYED'}"/>
+        <invoker type="formActions" action="undeploy" caption="Undeploy" mnemonic="u" shortcut="ctrl U" visibleWhen="#{mode == 'view'  and rule.docstate == 'DEPLOYED'}"/>
         <invoker type="formActions" action="debug" caption="Debug" mnemonic="g" shortcut="ctrl G" />
-        <invoker type="formActions" action="remove" caption="Delete" mnemonic="d" shortcut="ctrl D" visibleWhen="#{entity.docstate == 'DRAFT'}" />
+        <invoker type="formActions" action="remove" caption="Delete" mnemonic="d" shortcut="ctrl D" visibleWhen="#{rule.docstate == 'DRAFT'}" />
     </invokers>
     <code>
 <![CDATA[
-
 import com.rameses.rcp.annotations.*
 import com.rameses.rcp.common.*
 import com.rameses.osiris2.client.*
 
-class BPBillingRuleController 
+class BPBillingRuleController  extends etracs2.common.groovy.AbstractRuleController
 {
     @Binding
     def binding
     
+    @Service('AbstractRuleService')
+    def abstractSvc 
+    
     @Service('BPBillingRuleService')
-    def svc 
+    def billingSvc
     
-    def mode
-    def entity
-    def selectedCondition
-    def selectedAction
-    def agendagroup
-    def agendalist 
-    int editedIndex
-    def ruleset 
+    /*--------------------------------------------------------------
+    * Abstrct Methods to be implemented
+    --------------------------------------------------------------*/
+    def getBinding()             { return binding }
+    def getAbstractRuleService() { return abstractSvc }
+    def getRuleService()         { return billingSvc }
+    String getOpenerName()       { return 'bpbillingrule' }
+    String getPackagename()      { return 'etracs2.bp.billing.rules' }
+    String getRuleset()          { return 'bpbilling' }
     
-    def updateHandler 
+    /*--------------------------------------------------------------*/
     
-    void init() {
-        mode = 'view' 
-        entity = svc.createRule()
-    }
-    
-    void create() {
-        entity = svc.createRule()
-        agendagroup = null
-        mode = 'create' 
-        binding?.focus('entity.rulename')
-    }
-    
-    void edit() {
-        mode = 'edit' 
-    }
-    
-    void cancel() {
-        entity = svc.open( entity.objid )
-        mode = 'view' 
-    }
-    
-    void open() {
-        agendagroup = findAgendaGroup()
-        mode = 'view'
-    }
-    
-    void save() {
-        if( mode == 'create' ) 
-            entity = svc.create( entity )
-        else 
-            entity = svc.update( entity )
-        mode = 'view'
-        invokeUpdateHandler()
-    }
-    
-    void deploy() {
-        if( MsgBox.confirm('Deploy rule?') ) {
-            entity = svc.deploy( entity.objid )
-        }
-    }
-    
-    void undeploy() {
-        if( MsgBox.confirm('Undeploy rule?') ) {
-            entity = svc.undeploy( entity.objid )
-        }
-    }
-    
-    def remove() {
-        if( MsgBox.confirm('Delete rule?') ) {
-            svc.remove( entity.objid )
-            return '_close' 
-        }
-    }
-    
-    def debug() {
-        return InvokerUtil.lookupOpener('rule.debug',[rule:entity])
-    }
-    
-    
-    /* -----------------------------------------------------------
-    * Condition Support
-    * ----------------------------------------------------------- */
-    
-    def addConditionHandler = { condition ->
-        entity.conditions.add( condition )
-        buildVarList().each {
-            if( ! entity.varlist.contains( it ) ) {
-                entity.varlist.add( it )
-            }
-        }
-        conditionListHandler.load()
-    }
-    
-    def addCondition() {
-        fixRuleName()
-        return InvokerUtil.lookupOpener('bpbillingrule_condition.create',[addHandler:addConditionHandler, varlist:entity.varlist])
-    }
 
-    def updateConditionHandler = { condition ->
-        entity.conditions.set(editedIndex, condition )
-        selectedCondition = condition
-        binding.refresh('selectedCondition') 
-    }
-    
-    def openCondition() {
-        editedIndex = entity.conditions.indexOf( selectedCondition )
-        def conditionOpener = selectedCondition.opener + '.open'
-        def opener = InvokerUtil.lookupOpener(conditionOpener, [condition:selectedCondition])
-        return InvokerUtil.lookupOpener('bpbillingrule_condition.open', [opener:opener, rule:entity, condition:selectedCondition, updateHandler:updateConditionHandler])        
-    }
-    
-    void removeCondition() {
-        if( ! selectedCondition ) return 
-        entity.conditions.remove( selectedCondition )
-    }
-    
-    def conditionListHandler = [
-        getRows     : { return 50 },
-        getColumns  : { 
-            return [ new Column(name:'displaytext', caption:'') ]
-        },
-        fetchList   : { return entity.conditions },
-        onOpenItem  : { item, colname ->  openCondition() },
-    ] as SubListModel
-    
-    List buildVarList() {
-        def varlist = []
-        entity.conditions.each {cond ->
-            if( cond.factvar ) varlist.add( cond.factvar )
-            cond.constraints.each { 
-                if( it.fieldvar ) varlist.add( it.fieldvar )
-            }
-        }
-        return varlist
-    }
-    
-    /* -----------------------------------------------------------
-    * Action Support
-    * ----------------------------------------------------------- */
-    
-    def addActionHandler = { action ->
-        entity.actions.add( action )
-        actionListHandler.load()
-    }
-    
-    def addAction() {
-        println 'varlist -> ' + entity.varlist 
-        fixRuleName()
-        return InvokerUtil.lookupOpener('bpbillingrule_action.create',[rule:entity, addHandler:addActionHandler])
-    }
-    
-    def updateActionHandler = { action -> 
-        entity.actions.set(editedIndex, action )
-        selectedAction = action 
-        binding.refresh('selectedCondition') 
-    }
-    
-    def openAction() {
-        editedIndex = entity.actions.indexOf( selectedAction )
-        def actionOpener = selectedAction.opener + '.open'
-        def opener = InvokerUtil.lookupOpener(actionOpener, [rule:entity, action:selectedAction])
-        return InvokerUtil.lookupOpener('bpbillingrule_action.open', [rule:entity, opener:opener, action:selectedAction, updateHandler:updateActionHandler])        
-    }
-    
-    void removeAction() {
-        if( ! selectedAction ) return 
-        entity.actions.remove( selectedAction )
-    }
-    
-    def actionListHandler = [
-        getRows     : { return 50 },
-        getColumns  : { 
-            return [ new Column(name:'displaytext', caption:'') ]
-        },
-        fetchList   : { return entity.actions },
-        onOpenItem  : { item, colname ->  openAction() },
-        
-    ] as SubListModel
-    
-    
-    /* -----------------------------------------------------------
-    * Miscellaneous Support
-    * ----------------------------------------------------------- */
-    
-    void setAgendagroup( agendagroup )  {
-        this.agendagroup = agendagroup
-        entity.agendagroupid = agendagroup?.objid 
-        entity.agendagroup = agendagroup?.name
-    }
-    
-    def getAuthor() {
-        def author = OsirisContext?.env?.USERNAME
-        return (author ? author : 'SYSTEM')
-    }
-    
-    def getAgendaGroups() {
-        if( ! agendalist  )
-            agendalist = svc.getAgendaGroups()
-        return agendalist
-    }
-    
-    def findAgendaGroup() {
-        return agendaGroups.find{ it.objid == entity.agendagroupid }
-    }
-    
-    void invokeUpdateHandler() {
-        if( updateHandler ) updateHandler()
-    }
-    
-    def fixRuleName( ) {
-        entity.rulename = entity.rulename.replaceAll('\\W', '_')
-        binding.refresh('entity.rulename')
-    }
 }
+
 
 ]]>
     </code>
     <pages>
-        <page template="etracs2.rule.RulePage" />
+        <page template="etracs2.common.rule.AbstractRulePage" />
     </pages>
 </workunit>

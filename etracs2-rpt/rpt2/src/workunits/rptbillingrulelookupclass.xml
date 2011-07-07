@@ -1,0 +1,67 @@
+<workunit>
+    <invokers>
+        <invoker type="rptbilling_lookup.class" caption="Classification Criteria" target="popup"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class RPTBillingLookupClassController
+{
+    @Binding
+    def binding
+    
+    def searchText
+    def selectedItem
+    def classifications = []
+    def finishHandler
+    
+    def ok() {
+        if( finishHandler ) finishHandler( classifications )
+        return '_close' 
+    }
+    
+    def remove() {
+        if( selectedItem ) {
+            classifications.remove( selectedItem )
+        }
+    }
+    
+    def getItems() {
+        return classifications
+    }
+    
+    def onselectHandler = { classification ->
+        if( ! contains( classification ) ) {
+            classifications.add([
+                objid : classification.classid,
+                name  : classification.classname
+            ])
+        }
+        searchText = null
+        binding.refresh( 'searchText' )
+        binding.refresh('selectedItem')
+    }
+    
+    def lookup() {
+        return InvokerUtil.lookupOpener('propertyclass.lookup', [searchText:searchText, onselect:onselectHandler])
+    }
+    
+    boolean contains( classification ) {
+        def item = classifications.find{ it.classid == classification.classid}
+        return item != null
+    }
+    
+    
+}
+
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.common.rule.LookupValuePage"/>
+    </pages>
+</workunit>

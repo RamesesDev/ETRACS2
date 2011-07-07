@@ -1,0 +1,57 @@
+<workunit>
+    <invokers>
+        <invoker type="rptbilling_lookup.rputype" caption="Property Type Criteria" target="popup"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class RPTBillingLookupRPUTypeController
+{
+    @Binding
+    def binding
+    
+    def searchText
+    def selectedItems
+    def rputypeList = []
+    def finishHandler
+    
+    def ok() {
+        if( ! selectedItems ) throw new Exception('At least one item is required.')
+        selectedItems.each{
+            rputypeList.add( it  )
+        }
+        if( finishHandler ) finishHandler( rputypeList )
+        return '_close' 
+    }
+    
+    def remove() {
+        if( selectedItems ) {
+            selectedItems.each {
+                rputypeList.remove( it )
+            }
+        }
+    }
+    
+    def getItems() {
+        return [
+            [objid:'land', name:'LAND'],
+            [objid:'bldg', name:'BUILDING'],
+            [objid:'mach', name:'MACHINERY'],
+            [objid:'planttree', name:'PLANT/TREE'],
+            [objid:'misc', name:'MISCELLANEOUS'],
+        ]
+    }
+    
+}
+
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.common.rule.ListValuePage"/>
+    </pages>
+</workunit>

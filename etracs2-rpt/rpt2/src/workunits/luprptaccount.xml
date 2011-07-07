@@ -1,0 +1,79 @@
+<workunit>
+    <invokers>
+        <invoker type="rptincomeacct_basic:lookup" action="initBasic" caption="Real Property Income Account Lookup" target="popup" />
+        <invoker type="rptincomeacct_basicint:lookup" action="initBasicInt" caption="Real Property Income Account Lookup" target="popup" />
+        <invoker type="rptincomeacct_sef:lookup" action="initSef" caption="Real Property Income Account Lookup" target="popup" />
+        <invoker type="rptincomeacct_sefint:lookup" action="initSefInt" caption="Real Property Income Account Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+
+class IncomeAcctLookupController extends LookupModel 
+{
+    @Service("RPTBillingRuleService")
+    def svc
+    
+    def onselect
+    def searchText
+    def selected
+    def systype
+    
+    void initBasic(){ 
+        systype = 'RPT_BASIC'
+    }
+    
+    void initBasicInt(){ 
+        systype = 'RPT_BASICINT'
+    }
+    
+    void initSef(){ 
+        systype = 'RPT_SEF'
+    }
+    
+    void initSefInt(){ 
+        systype = 'RPT_SEFINT'
+    }
+    
+    
+    def ok() {
+        search = null
+        if( onselect ) onselect( selected )
+        return select()
+    }
+    
+    def getListHandler() {
+        return this
+    }
+    
+    int getRows() { return 20 }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"acctno", caption:"Acct No", width:70),
+            new Column(name:"accttitle", caption:"Title", width:250),
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.lookupIncomeAccount( systype,  s, params)
+        if( list ) return list
+        throw new Exception("Record not found.")
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.common.LookupPage"/>
+    </pages>
+</workunit>

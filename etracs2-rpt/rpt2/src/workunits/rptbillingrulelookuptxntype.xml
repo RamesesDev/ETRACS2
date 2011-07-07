@@ -1,0 +1,58 @@
+<workunit>
+    <invokers>
+        <invoker type="rptbilling_lookup.txntype" caption="Transaction Type Criteria" target="popup"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class RPTBillingLookupTxnTypeController
+{
+    @Binding
+    def binding
+    
+    @Service('FAASService')
+    def faasSvc 
+    
+    def searchText
+    def selectedItems
+    def txntypeList = []
+    def finishHandler
+    
+    def ok() {
+        if( ! selectedItems ) throw new Exception('At least one item is required.')
+        selectedItems.each{
+            txntypeList.add( it  )
+        }
+        if( finishHandler ) finishHandler( txntypeList )
+        return '_close' 
+    }
+    
+    def remove() {
+        if( selectedItems ) {
+            selectedItems.each {
+                txntypeList.remove( it )
+            }
+        }
+    }
+    
+    
+    def getItems() {
+        def list = faasSvc.getTxnTypes()
+        return list.collect {
+            [objid:it.txntype, name:it.caption]
+        }
+    }
+    
+}
+
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.common.rule.ListValuePage"/>
+    </pages>
+</workunit>

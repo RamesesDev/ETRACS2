@@ -1,0 +1,54 @@
+<workunit>
+    <invokers>
+        <invoker type="rptbillingrule.create" action="create" caption="RPT Billing Rule"  target="popup" />
+        <invoker type="rptbillingrule.open" action="open" caption="RPT Billing Rule" target="popup"  />
+        
+        <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' }" />
+        <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c" shortcut="ctrl C" visibleWhen="#{mode == 'edit' }"/>
+        <invoker type="formActions" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" visibleWhen="#{mode == 'view' and rule.docstate != 'DEPLOYED'}"/>
+        <invoker type="formActions" action="save" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode != 'view' }"/>
+        <invoker type="formActions" action="deploy" caption="Deploy" mnemonic="d" shortcut="ctrl D" visibleWhen="#{mode == 'view'  and rule.docstate != 'DEPLOYED'}"/>
+        <invoker type="formActions" action="undeploy" caption="Undeploy" mnemonic="u" shortcut="ctrl U" visibleWhen="#{mode == 'view'  and rule.docstate == 'DEPLOYED'}"/>
+        <invoker type="formActions" action="debug" caption="Debug" mnemonic="g" shortcut="ctrl G" />
+        <invoker type="formActions" action="remove" caption="Delete" mnemonic="d" shortcut="ctrl D" visibleWhen="#{rule.docstate == 'DRAFT'}" />
+        
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class RPTBillingRuleController  extends etracs2.common.groovy.AbstractRuleController
+{
+    @Binding
+    def binding
+    
+    @Service('AbstractRuleService')
+    def abstractSvc 
+    
+    @Service('RPTBillingRuleService')
+    def billingSvc
+    
+    /*--------------------------------------------------------------
+    * Abstrct Methods to be implemented
+    --------------------------------------------------------------*/
+    def getBinding()             { return binding }
+    def getAbstractRuleService() { return abstractSvc }
+    def getRuleService()         { return billingSvc }
+    String getOpenerName()       { return 'rptbillingrule' }
+    String getPackagename()      { return 'etracs2.rpt.billing.rules' }
+    String getRuleset()          { return 'rptbilling' }
+    
+    /*--------------------------------------------------------------*/
+    
+
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.common.rule.AbstractRulePage" />
+    </pages>
+</workunit>

@@ -1,0 +1,68 @@
+<workunit>
+    <invokers>
+        <invoker type="rptbillingrule_action.type" action="create" caption="Calculate SEF Discount" index="23" />        
+        <invoker type="rptbillingrule_action_sefdisc.open" action="open" caption="Calculate SEF Discount" />        
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class RPTBillingActionSefDiscController
+{
+    @Binding
+    def binding
+    
+    @Service('RPTBillingRuleService')
+    def svc 
+    
+    def action
+    def varlist 
+    def selectedVariable
+    def title = 'Calculate SEF Tax'
+    def accttitle 
+    def rule
+    
+    void create() {
+        action = [
+            opener    : 'rptbillingrule_action_sef',
+            acctid    : null,
+            accttitle : null, 
+            expr      : null,
+        ]
+    }
+    
+    void open() {
+       accttitle = action?.accttitle
+    }
+    
+    //must be implemented by a handler
+    void accept() {
+        if( ! action.expr ) throw new Exception('Tax Computation Expression is required.')
+        action.displaytext = buildDisplayText()
+        action.actiontype = 'calcSefDisc' 
+    }
+    
+    def buildDisplayText() {
+        return 'Calculate SEF Discount using the formula: ' + action.expr 
+    }
+    
+    def selectAcctHandler = { acct ->
+        action.acctid = acct.objid 
+        action.accttitle = acct.accttitle
+        accttitle = acct.accttitle 
+        binding.refresh('accttitle')
+    }
+    
+    
+    
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.common.rule.FormulaActionPage" />
+    </pages>
+</workunit>

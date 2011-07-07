@@ -57,13 +57,13 @@ public class RulePage extends javax.swing.JPanel {
         formPanel1.setIndex(-100);
         xTextField1.setCaption("Rule Name");
         xTextField1.setIndex(-50);
-        xTextField1.setName("entity.rulename");
+        xTextField1.setName("rule.rulename");
         xTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField1.setRequired(true);
         formPanel1.add(xTextField1);
 
         xTextField2.setCaption("Description");
-        xTextField2.setName("entity.description");
+        xTextField2.setName("rule.description");
         xTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField2.setRequired(true);
         formPanel1.add(xTextField2);
@@ -78,7 +78,7 @@ public class RulePage extends javax.swing.JPanel {
 
         xNumberField2.setCaption("Salience");
         xNumberField2.setCaptionWidth(90);
-        xNumberField2.setName("entity.salience");
+        xNumberField2.setName("rule.salience");
         xNumberField2.setPreferredSize(new java.awt.Dimension(0, 19));
         xNumberField2.setRequired(true);
         formPanel2.add(xNumberField2);
@@ -86,7 +86,7 @@ public class RulePage extends javax.swing.JPanel {
         xDateField1.setCaption("Effective From ");
         xDateField1.setCaptionWidth(90);
         xDateField1.setInputFormat("MM-dd-yyyy");
-        xDateField1.setName("entity.effectivefrom");
+        xDateField1.setName("rule.effectivefrom");
         xDateField1.setOutputFormat("MM-dd-yyyy");
         xDateField1.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xDateField1);
@@ -94,7 +94,7 @@ public class RulePage extends javax.swing.JPanel {
         xDateField2.setCaption("Effective To");
         xDateField2.setCaptionWidth(90);
         xDateField2.setInputFormat("MM-dd-yyyy");
-        xDateField2.setName("entity.effectiveto");
+        xDateField2.setName("rule.effectiveto");
         xDateField2.setOutputFormat("MM-dd-yyyy");
         xDateField2.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xDateField2);
