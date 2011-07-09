@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+// date      : july 07, 2011
+-->
+<workunit>
+    <invokers>
+        <invoker type="machuse.open" action="open" caption="Open" target="popup" />
+        <invoker type="formActions" action="ok" caption="OK" mnemonic="o" />
+    </invokers>
+    <code lang="groovy">
+        
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+import java.rmi.server.UID
+
+public class MachRPUUseController
+{
+    @Binding
+    def binding
+    
+    //handler
+    def onupdate 
+    
+    def faas
+    def rpu
+    def machuse
+    
+    void open() {
+    }
+    
+    def ok() {
+        if( onupdate ) onupdate( rpu )
+        return '_close'
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * MachDetail Support
+    *
+    ---------------------------------------------------------------*/
+    def onupdateHandler = {
+        listHandler.load()
+    }
+    
+    def addMachine() {
+        return InvokerUtil.lookupOpener('machdetail.create', [onupdate:onupdateHandler, faas:faas, rpu:rpu, machuse:machuse ] )
+    }
+    
+    def editMachine() {
+        if( selectedItem && selectedItem.machineid )  {
+            return InvokerUtil.lookupOpener('machdetail.open', [onupdate:onupdateHandler, faas:faas, rpu:rpu, machuse:machuse, machdetail:selectedItem ] )
+        }
+        return null
+    }
+    
+    /*---------------------------------------------------------------
+    *
+    * List Support
+    *
+    ---------------------------------------------------------------*/
+    def selectedItem
+    
+    def listHandler = [
+        getColumns     : { return [
+            new Column(name:'machinecode', caption:'Code', maxWidth:50),
+            new Column(name:'machinename', caption:'Machine'),
+            new Column(name:'operationyear', caption:'Year of Operation'),
+            new Column(name:'replacementcost', caption:'Replacement Cost', type:'decimal', maxWidth:150),
+            new Column(name:'depreciationvaue', caption:'Depreciation', type:'decimal', maxWidth:150),
+            new Column(name:'marketvalue', caption:'Market Value', type:'decimal', maxWidth:150),
+            new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal', maxWidth:150),
+        ]},
+        onRemoveItem   : { item -> removeItem( item ) },
+        fetchList      : { return machuse.machdetails },
+    ] as SubListModel
+    
+    void removeItem( item ) {
+        if( MsgBox.confirm('Delete selected item?') ) {
+            machuse.machdetails.remove( item )
+        }
+    }
+    
+    boolean getAllowEdit() {
+        if( faas.docstate == 'FORPROVAPPROVAL' ) return false
+        if( faas.docstate == 'CURRENT' ) return false
+        if( faas.docstate == 'CANCELLED' ) return false
+        if( faas.info.txntype == 'TR') return false
+        return true
+    }
+    
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.rpu.mach.MachUsePage"/>
+    </pages>
+</workunit>

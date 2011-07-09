@@ -12,11 +12,11 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  *
  * @author  rameses
  */
-@StyleSheet("etracs2.rpt.faas.rpu.mach.MachInformationPage.style")
-public class MachInfoPage extends javax.swing.JPanel {
+@StyleSheet("etracs2/rpt/faas/rpu/mach/MachDetailPage.style")
+public class MachDetailPage extends javax.swing.JPanel {
     
     /** Creates new form MachInformation */
-    public MachInfoPage() {
+    public MachDetailPage() {
         initComponents();
     }
     
@@ -42,7 +42,7 @@ public class MachInfoPage extends javax.swing.JPanel {
         xTextField3 = new com.rameses.rcp.control.XTextField();
         xTextField4 = new com.rameses.rcp.control.XTextField();
         xTextField5 = new com.rameses.rcp.control.XTextField();
-        formPanel4 = new com.rameses.rcp.util.FormPanel();
+        xSeparator1 = new com.rameses.rcp.control.XSeparator();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
         xNumberField2 = new com.rameses.rcp.control.XNumberField();
         xNumberField3 = new com.rameses.rcp.control.XNumberField();
@@ -63,6 +63,7 @@ public class MachInfoPage extends javax.swing.JPanel {
         xNumberField17 = new com.rameses.rcp.control.XNumberField();
         xNumberField18 = new com.rameses.rcp.control.XNumberField();
         xNumberField19 = new com.rameses.rcp.control.XNumberField();
+        xNumberField21 = new com.rameses.rcp.control.XNumberField();
         jPanel3 = new javax.swing.JPanel();
         xCheckBox4 = new com.rameses.rcp.control.XCheckBox();
         formPanel6 = new com.rameses.rcp.util.FormPanel();
@@ -72,12 +73,14 @@ public class MachInfoPage extends javax.swing.JPanel {
 
         setLayout(new java.awt.BorderLayout());
 
-        setPreferredSize(new java.awt.Dimension(578, 486));
+        setPreferredSize(new java.awt.Dimension(596, 500));
 
         formPanel1.setCaptionWidth(90);
+        formPanel1.setPadding(new java.awt.Insets(0, 0, 0, 0));
         xActionTextField1.setActionName("lookupMachine");
         xActionTextField1.setCaption("Machine Code");
-        xActionTextField1.setName("machine");
+        xActionTextField1.setIndex(-100);
+        xActionTextField1.setName("machcode");
         xActionTextField1.setPreferredSize(new java.awt.Dimension(100, 18));
         xActionTextField1.setRequired(true);
         formPanel1.add(xActionTextField1);
@@ -85,7 +88,7 @@ public class MachInfoPage extends javax.swing.JPanel {
         xLabel2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel2.setCaption("Machine Name");
         xLabel2.setDepends(new String[] {"machine"});
-        xLabel2.setName("entity.machinedetails.machinetitle");
+        xLabel2.setName("machdetail.machinename");
         xLabel2.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xLabel2);
 
@@ -95,96 +98,126 @@ public class MachInfoPage extends javax.swing.JPanel {
         xCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         xCheckBox1.setText("Newly Installed?");
         xCheckBox1.setCheckValue(1);
+        xCheckBox1.setIndex(-10);
         xCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox1.setName("entity.newlyinstalled");
+        xCheckBox1.setName("newlyinstalled");
+        xCheckBox1.setOpaque(false);
         xCheckBox1.setUncheckValue(0);
 
         xCheckBox2.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         xCheckBox2.setText("Is Imported?");
         xCheckBox2.setCheckValue(1);
         xCheckBox2.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox2.setName("entity.imported");
+        xCheckBox2.setName("imported");
+        xCheckBox2.setOpaque(false);
         xCheckBox2.setUncheckValue(0);
 
         formPanel2.setCaptionWidth(110);
         xNumberField11.setCaption("Conversion Factor");
-        xNumberField11.setDepends(new String[] {"entity.imported"});
+        xNumberField11.setDepends(new String[] {"machdetail.imported"});
         xNumberField11.setFieldType(java.math.BigDecimal.class);
-        xNumberField11.setName("entity.conversionfactor");
+        xNumberField11.setName("conversionfactor");
         xNumberField11.setPattern("#,##0.00");
         xNumberField11.setPreferredSize(new java.awt.Dimension(160, 18));
         formPanel2.add(xNumberField11);
 
         xTextField1.setCaption("Brand");
-        xTextField1.setName("entity.brand");
+        xTextField1.setCaptionWidth(100);
+        xTextField1.setName("machdetail.brand");
         xTextField1.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel3.add(xTextField1);
 
         xTextField2.setCaption("Model");
-        xTextField2.setName("entity.model");
+        xTextField2.setCaptionWidth(100);
+        xTextField2.setName("machdetail.model");
         xTextField2.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel3.add(xTextField2);
 
         xTextField3.setCaption("Capacity");
-        xTextField3.setName("entity.capacity");
+        xTextField3.setCaptionWidth(100);
+        xTextField3.setName("machdetail.capacity");
         xTextField3.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel3.add(xTextField3);
 
         xTextField4.setCaption("Serial No.");
-        xTextField4.setName("entity.serialno");
+        xTextField4.setCaptionWidth(100);
+        xTextField4.setName("machdetail.serialno");
         xTextField4.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel3.add(xTextField4);
 
         xTextField5.setCaption("Status");
-        xTextField5.setName("entity.status");
+        xTextField5.setCaptionWidth(100);
+        xTextField5.setName("machdetail.status");
         xTextField5.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel3.add(xTextField5);
 
-        formPanel4.setCaptionWidth(95);
+        xSeparator1.setPreferredSize(new java.awt.Dimension(0, 20));
+        org.jdesktop.layout.GroupLayout xSeparator1Layout = new org.jdesktop.layout.GroupLayout(xSeparator1);
+        xSeparator1.setLayout(xSeparator1Layout);
+        xSeparator1Layout.setHorizontalGroup(
+            xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 256, Short.MAX_VALUE)
+        );
+        xSeparator1Layout.setVerticalGroup(
+            xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 20, Short.MAX_VALUE)
+        );
+        formPanel3.add(xSeparator1);
+
         xNumberField1.setCaption("Year Acquired");
+        xNumberField1.setCaptionWidth(100);
         xNumberField1.setFieldType(int.class);
-        xNumberField1.setName("entity.yearacquired");
+        xNumberField1.setName("yearacquired");
         xNumberField1.setPreferredSize(new java.awt.Dimension(0, 18));
         xNumberField1.setRequired(true);
-        formPanel4.add(xNumberField1);
+        formPanel3.add(xNumberField1);
 
         xNumberField2.setCaption("Year Installed");
+        xNumberField2.setCaptionWidth(100);
         xNumberField2.setFieldType(int.class);
-        xNumberField2.setName("entity.yearinstalled");
+        xNumberField2.setName("yearinstalled");
         xNumberField2.setPreferredSize(new java.awt.Dimension(0, 18));
-        formPanel4.add(xNumberField2);
+        formPanel3.add(xNumberField2);
 
         xNumberField3.setCaption("Opeartion Year");
+        xNumberField3.setCaptionWidth(100);
         xNumberField3.setFieldType(int.class);
-        xNumberField3.setName("entity.operationyear");
+        xNumberField3.setName("operationyear");
         xNumberField3.setPreferredSize(new java.awt.Dimension(0, 18));
         xNumberField3.setRequired(true);
-        formPanel4.add(xNumberField3);
+        formPanel3.add(xNumberField3);
 
         xNumberField4.setCaption("Years Used");
+        xNumberField4.setCaptionWidth(100);
+        xNumberField4.setDepends(new String[] {"yearacquired", "yearinstalled", "operationyear"});
+        xNumberField4.setEnabled(false);
         xNumberField4.setFieldType(int.class);
-        xNumberField4.setName("entity.yearused");
+        xNumberField4.setName("machdetail.yearsused");
         xNumberField4.setPreferredSize(new java.awt.Dimension(0, 18));
         xNumberField4.setRequired(true);
-        formPanel4.add(xNumberField4);
+        formPanel3.add(xNumberField4);
 
         xNumberField5.setCaption("Estimated Life");
+        xNumberField5.setCaptionWidth(100);
         xNumberField5.setFieldType(int.class);
-        xNumberField5.setName("entity.estimatedlife");
+        xNumberField5.setName("estimatedlife");
         xNumberField5.setPreferredSize(new java.awt.Dimension(0, 18));
-        formPanel4.add(xNumberField5);
+        formPanel3.add(xNumberField5);
 
         xNumberField6.setCaption("Remaining Life");
+        xNumberField6.setCaptionWidth(100);
+        xNumberField6.setDepends(new String[] {"machdetail.estimatedlife", "machdetail.yearsused", "machdetail.operationyear", "machdetail.yearacquired", "machdetail.yearinstalled"});
+        xNumberField6.setEnabled(false);
         xNumberField6.setFieldType(int.class);
-        xNumberField6.setName("entity.remaininglife");
+        xNumberField6.setName("machdetail.remaininglife");
         xNumberField6.setPreferredSize(new java.awt.Dimension(0, 18));
-        formPanel4.add(xNumberField6);
+        formPanel3.add(xNumberField6);
 
         xCheckBox3.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         xCheckBox3.setText("Auto Depreciate?");
         xCheckBox3.setCheckValue(1);
         xCheckBox3.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox3.setName("entity.autodepreciate");
+        xCheckBox3.setName("machdetail.autodepreciate");
         xCheckBox3.setUncheckValue(0);
 
         org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
@@ -192,25 +225,25 @@ public class MachInfoPage extends javax.swing.JPanel {
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
-                .addContainerGap(116, Short.MAX_VALUE)
+                .addContainerGap(120, Short.MAX_VALUE)
                 .add(xCheckBox3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(69, 69, 69))
+                .add(65, 65, 65))
+            .add(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .add(xCheckBox1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 176, Short.MAX_VALUE)
+                .add(100, 100, 100))
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
                 .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
                     .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 266, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2Layout.createSequentialGroup()
                         .add(26, 26, 26)
-                        .add(formPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 248, Short.MAX_VALUE))
+                        .add(formPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 250, Short.MAX_VALUE))
                     .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2Layout.createSequentialGroup()
                         .addContainerGap()
-                        .add(formPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 262, Short.MAX_VALUE))
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 262, Short.MAX_VALUE))
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(xCheckBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(xCheckBox2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
+                        .add(xCheckBox2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .add(90, 90, 90)))
                 .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
@@ -223,12 +256,10 @@ public class MachInfoPage extends javax.swing.JPanel {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 117, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(formPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 250, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(xCheckBox3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(18, Short.MAX_VALUE))
         );
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -236,96 +267,133 @@ public class MachInfoPage extends javax.swing.JPanel {
         formPanel5.setBorder(xTitledBorder2);
         formPanel5.setCaptionWidth(100);
         xNumberField7.setCaption("Original Cost");
+        xNumberField7.setCaptionWidth(110);
         xNumberField7.setFieldType(java.math.BigDecimal.class);
-        xNumberField7.setName("entity.originalcost");
+        xNumberField7.setName("originalcost");
         xNumberField7.setPattern("#,##0.00");
-        xNumberField7.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField7.setPreferredSize(new java.awt.Dimension(0, 18));
+        xNumberField7.setRequired(true);
         formPanel5.add(xNumberField7);
 
         xNumberField8.setCaption("Freight Cost");
-        xNumberField8.setDepends(new String[] {"entity.newlyinstalled"});
+        xNumberField8.setCaptionWidth(110);
+        xNumberField8.setDepends(new String[] {"newlyinstalled"});
+        xNumberField8.setEnabled(false);
         xNumberField8.setFieldType(java.math.BigDecimal.class);
-        xNumberField8.setName("entity.freightcost");
+        xNumberField8.setName("freightcost");
         xNumberField8.setPattern("#,##0.00");
-        xNumberField8.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField8.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xNumberField8);
 
         xNumberField9.setCaption("Installation Cost");
-        xNumberField9.setDepends(new String[] {"entity.newlyinstalled"});
+        xNumberField9.setCaptionWidth(110);
+        xNumberField9.setDepends(new String[] {"newlyinstalled"});
+        xNumberField9.setEnabled(false);
         xNumberField9.setFieldType(java.math.BigDecimal.class);
-        xNumberField9.setName("entity.installationcost");
+        xNumberField9.setName("installationcost");
         xNumberField9.setPattern("#,##0.00");
-        xNumberField9.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField9.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xNumberField9);
 
         xNumberField10.setCaption("Insurance Cost");
-        xNumberField10.setDepends(new String[] {"entity.newlyinstalled"});
+        xNumberField10.setCaptionWidth(110);
+        xNumberField10.setDepends(new String[] {"newlyinstalled"});
+        xNumberField10.setEnabled(false);
         xNumberField10.setFieldType(java.math.BigDecimal.class);
-        xNumberField10.setName("entity.insurancecost");
+        xNumberField10.setName("insurancecost");
         xNumberField10.setPattern("#,##0.00");
-        xNumberField10.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField10.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xNumberField10);
 
         xNumberField12.setCaption("Brokerage Cost");
-        xNumberField12.setDepends(new String[] {"entity.newlyinstalled"});
+        xNumberField12.setCaptionWidth(110);
+        xNumberField12.setDepends(new String[] {"newlyinstalled"});
+        xNumberField12.setEnabled(false);
         xNumberField12.setFieldType(java.math.BigDecimal.class);
-        xNumberField12.setName("entity.brokeragecost");
+        xNumberField12.setName("brokeragecost");
         xNumberField12.setPattern("#,##0.00");
-        xNumberField12.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField12.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xNumberField12);
 
         xNumberField13.setCaption("Arrastre/Handling");
-        xNumberField13.setDepends(new String[] {"entity.newlyinstalled"});
+        xNumberField13.setCaptionWidth(110);
+        xNumberField13.setDepends(new String[] {"newlyinstalled"});
+        xNumberField13.setEnabled(false);
         xNumberField13.setFieldType(java.math.BigDecimal.class);
-        xNumberField13.setName("entity.arrastrecost");
+        xNumberField13.setName("arrastrecost");
         xNumberField13.setPattern("#,##0.00");
-        xNumberField13.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField13.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xNumberField13);
 
         xNumberField14.setCaption("Other Cost");
-        xNumberField14.setDepends(new String[] {"entity.newlyinstalled"});
+        xNumberField14.setCaptionWidth(110);
+        xNumberField14.setDepends(new String[] {"newlyinstalled"});
+        xNumberField14.setEnabled(false);
         xNumberField14.setFieldType(java.math.BigDecimal.class);
-        xNumberField14.setName("entity.othercost");
+        xNumberField14.setName("othercost");
         xNumberField14.setPattern("#,##0.00");
-        xNumberField14.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField14.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xNumberField14);
 
         xNumberField15.setCaption("FERAC");
-        xNumberField15.setDepends(new String[] {"entity.newlyinstalled"});
+        xNumberField15.setCaptionWidth(110);
+        xNumberField15.setDepends(new String[] {"machdetail.newlyinstalled", "machdetail.imported"});
+        xNumberField15.setEnabled(false);
         xNumberField15.setFieldType(java.math.BigDecimal.class);
-        xNumberField15.setName("entity.ferac");
+        xNumberField15.setName("machdetail.ferac");
         xNumberField15.setPattern("#,##0.00");
-        xNumberField15.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField15.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xNumberField15);
 
         xNumberField16.setCaption("Current Forex");
-        xNumberField16.setDepends(new String[] {"entity.newlyinstalled"});
+        xNumberField16.setCaptionWidth(110);
+        xNumberField16.setDepends(new String[] {"machdetail.newlyinstalled", "machdetail.imported"});
+        xNumberField16.setEnabled(false);
         xNumberField16.setFieldType(java.math.BigDecimal.class);
-        xNumberField16.setName("entity.forex");
+        xNumberField16.setName("machdetail.forex");
         xNumberField16.setPattern("#,##0.00");
-        xNumberField16.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField16.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xNumberField16);
 
         xNumberField17.setCaption("Acquisition Cost");
+        xNumberField17.setCaptionWidth(110);
+        xNumberField17.setDepends(new String[] {"machdetail.newlyinstalled", "machdetail.imported"});
+        xNumberField17.setEnabled(false);
         xNumberField17.setFieldType(java.math.BigDecimal.class);
-        xNumberField17.setName("entity.acquisitioncost");
+        xNumberField17.setName("machdetail.acquisitioncost");
         xNumberField17.setPattern("#,##0.00");
-        xNumberField17.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField17.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xNumberField17);
 
         xNumberField18.setCaption("Replacement Cost");
+        xNumberField18.setCaptionWidth(110);
+        xNumberField18.setDepends(new String[] {"machdetail.newlyinstalled", "machdetail.imported"});
+        xNumberField18.setEnabled(false);
         xNumberField18.setFieldType(java.math.BigDecimal.class);
-        xNumberField18.setName("entity.replacementcost");
+        xNumberField18.setName("machdetail.replacementcost");
         xNumberField18.setPattern("#,##0.00");
-        xNumberField18.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField18.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xNumberField18);
 
         xNumberField19.setCaption("Depreciation ( % )");
+        xNumberField19.setCaptionWidth(110);
+        xNumberField19.setDepends(new String[] {"machdetail.autodepreciate"});
+        xNumberField19.setEnabled(false);
         xNumberField19.setFieldType(java.math.BigDecimal.class);
-        xNumberField19.setName("entity.depreciation");
+        xNumberField19.setName("depreciation");
         xNumberField19.setPattern("#,##0.00");
-        xNumberField19.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField19.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xNumberField19);
+
+        xNumberField21.setCaption("Depreciation Value");
+        xNumberField21.setCaptionWidth(110);
+        xNumberField21.setDepends(new String[] {"machdetail.newlyinstalled", "machdetail.imported"});
+        xNumberField21.setEnabled(false);
+        xNumberField21.setFieldType(java.math.BigDecimal.class);
+        xNumberField21.setName("machdetail.depreciationvalue");
+        xNumberField21.setPattern("#,##0.00");
+        xNumberField21.setPreferredSize(new java.awt.Dimension(0, 18));
+        formPanel5.add(xNumberField21);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder3.setTitle("Sworn Statement");
@@ -333,18 +401,17 @@ public class MachInfoPage extends javax.swing.JPanel {
         xCheckBox4.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         xCheckBox4.setText("Use Sworn Amount?");
         xCheckBox4.setCheckValue(1);
-        xCheckBox4.setDepends(new String[] {"selectedMachine"});
         xCheckBox4.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox4.setName("entity.useswornamount");
+        xCheckBox4.setName("machdetail.useswornamount");
         xCheckBox4.setUncheckValue(0);
 
         formPanel6.setCaptionWidth(95);
         xNumberField20.setCaption("Sworn Amount");
-        xNumberField20.setDepends(new String[] {"entity.useswornamount"});
+        xNumberField20.setDepends(new String[] {"machdetail.useswornamount"});
         xNumberField20.setFieldType(java.math.BigDecimal.class);
-        xNumberField20.setName("entity.swornamount");
+        xNumberField20.setName("machdetail.swornamount");
         xNumberField20.setPattern("#,##0.00");
-        xNumberField20.setPreferredSize(new java.awt.Dimension(150, 18));
+        xNumberField20.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel6.add(xNumberField20);
 
         org.jdesktop.layout.GroupLayout jPanel3Layout = new org.jdesktop.layout.GroupLayout(jPanel3);
@@ -354,8 +421,8 @@ public class MachInfoPage extends javax.swing.JPanel {
             .add(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(xCheckBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(110, Short.MAX_VALUE))
-            .add(formPanel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 240, Short.MAX_VALUE)
+                .addContainerGap(147, Short.MAX_VALUE))
+            .add(formPanel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 276, Short.MAX_VALUE)
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -363,7 +430,7 @@ public class MachInfoPage extends javax.swing.JPanel {
                 .add(xCheckBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(formPanel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(19, Short.MAX_VALUE))
         );
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
@@ -375,16 +442,17 @@ public class MachInfoPage extends javax.swing.JPanel {
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(jPanel1Layout.createSequentialGroup()
                         .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(15, 15, 15)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(formPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 245, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                    .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 554, Short.MAX_VALUE))
+                            .add(formPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 280, Short.MAX_VALUE)
+                            .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 576, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
                 .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -392,7 +460,7 @@ public class MachInfoPage extends javax.swing.JPanel {
                     .add(jPanel1Layout.createSequentialGroup()
                         .add(formPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 302, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                        .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         add(jPanel1, java.awt.BorderLayout.CENTER);
@@ -414,7 +482,6 @@ public class MachInfoPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel1;
     private com.rameses.rcp.util.FormPanel formPanel2;
     private com.rameses.rcp.util.FormPanel formPanel3;
-    private com.rameses.rcp.util.FormPanel formPanel4;
     private com.rameses.rcp.util.FormPanel formPanel5;
     private com.rameses.rcp.util.FormPanel formPanel6;
     private javax.swing.JPanel jPanel1;
@@ -441,6 +508,7 @@ public class MachInfoPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XNumberField xNumberField19;
     private com.rameses.rcp.control.XNumberField xNumberField2;
     private com.rameses.rcp.control.XNumberField xNumberField20;
+    private com.rameses.rcp.control.XNumberField xNumberField21;
     private com.rameses.rcp.control.XNumberField xNumberField3;
     private com.rameses.rcp.control.XNumberField xNumberField4;
     private com.rameses.rcp.control.XNumberField xNumberField5;
@@ -448,6 +516,7 @@ public class MachInfoPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XNumberField xNumberField7;
     private com.rameses.rcp.control.XNumberField xNumberField8;
     private com.rameses.rcp.control.XNumberField xNumberField9;
+    private com.rameses.rcp.control.XSeparator xSeparator1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;

@@ -11,10 +11,10 @@ package etracs2.rpt.faas.rpu.bldg;
  * @author  rameses
  */
 
-public class BldgUsePage extends javax.swing.JPanel {
+public class BldgFloorPage extends javax.swing.JPanel {
     
     /** Creates new form BldgUsePage */
-    public BldgUsePage() {
+    public BldgFloorPage() {
         initComponents();
     }
     
@@ -42,9 +42,9 @@ public class BldgUsePage extends javax.swing.JPanel {
         xTitledBorder1.setTitle("Building Floors");
         jPanel1.setBorder(xTitledBorder1);
         xDataTable1.setDynamic(true);
-        xDataTable1.setHandler("bldgFloorListHandler");
+        xDataTable1.setHandler("listHandler");
         xDataTable1.setImmediate(true);
-        xDataTable1.setName("selectedBldgFloor");
+        xDataTable1.setName("selectedFloor");
         xDataTable1.setShowRowHeader(true);
 
         formPanel2.setPadding(new java.awt.Insets(0, 0, 0, 0));
@@ -52,16 +52,18 @@ public class BldgUsePage extends javax.swing.JPanel {
         xNumberField9.setCaption("Total Area");
         xNumberField9.setCaptionWidth(150);
         xNumberField9.setFont(new java.awt.Font("Arial", 1, 11));
-        xNumberField9.setName("entity.totalarea");
+        xNumberField9.setName("totalarea");
         xNumberField9.setPreferredSize(new java.awt.Dimension(0, 19));
+        xNumberField9.setReadonly(true);
         formPanel2.add(xNumberField9);
 
         xNumberField10.setEditable(false);
         xNumberField10.setCaption("Total Additional");
         xNumberField10.setCaptionWidth(150);
         xNumberField10.setFont(new java.awt.Font("Arial", 1, 11));
-        xNumberField10.setName("entity.totaladditional");
+        xNumberField10.setName("totaladjustment");
         xNumberField10.setPreferredSize(new java.awt.Dimension(0, 19));
+        xNumberField10.setReadonly(true);
         formPanel2.add(xNumberField10);
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
@@ -105,6 +107,7 @@ public class BldgUsePage extends javax.swing.JPanel {
         jPanel3.setLayout(new java.awt.BorderLayout());
 
         jPanel3.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        xActionBar1.setDepends(new String[] {"selectedFloor"});
         xActionBar1.setName("formActions");
         xActionBar1.setPadding(new java.awt.Insets(3, 0, 3, 0));
         xActionBar1.setUseToolBar(false);

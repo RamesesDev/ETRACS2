@@ -4,7 +4,7 @@
 -->
 <workunit>
     <invokers>
-        <invoker type="bldgkind.lookup" action="init" caption="Kind of Building Lookup" target="popup" />
+        <invoker type="bldgtype.lookup" action="init" caption="Type of Building Lookup" target="popup" />
     </invokers>
     
     <code>
@@ -14,14 +14,14 @@
 import com.rameses.rcp.common.*
 import com.rameses.rcp.annotations.*
 
-class BldgKindLookupController extends LookupModel 
+class BldgTypeLookupController extends LookupModel 
 {
     @Service("BldgRPUService")
     def svc
     
     def onselect
     def searchText
-    def bldgtypeid 
+    def ry
     def selected
     
     void init(){
@@ -42,15 +42,15 @@ class BldgKindLookupController extends LookupModel
     
     Column[] getColumns() {
         return [
-            new Column(name:"bldgkindcode", caption:"Code", maxWidth:80),
-            new Column(name:"bldgkindname", caption:"Kind of Building"),
+            new Column(name:"bldgtypecode", caption:"Code", maxWidth:80),
+            new Column(name:"bldgtypename", caption:"Building Type"),
         ]
     }
     
     List fetchList( Map params ) { 
         def s = search
         if( !s ) s = searchText 
-        def list = svc.lookupBldgKind( bldgtypeid , s, params)
+        def list = svc.lookupBldgType( ry, s, params)
         if( list ) return list
         throw new Exception("Record not found.")
     }

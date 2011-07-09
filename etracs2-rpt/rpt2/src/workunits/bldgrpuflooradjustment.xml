@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+// date      : july 07, 2011
+-->
+<workunit>
+    <invokers>
+        <invoker type="bldgrpuflooradjustment.open" action="open" caption="Open" target="popup" />
+        
+        <invoker type="formActions" action="ok" caption="OK" mnemonic="o" default="true" />
+        
+    </invokers>
+    <code lang="groovy">
+        
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+import java.rmi.server.UID
+
+public class BldgRPUFloorAdjustmentController
+{
+    @Binding
+    def binding
+    
+    @Service('BldgRPUService')
+    def svc
+    
+    def onupdate //handler 
+    def rpu 
+    def bldgFloor
+    def errorMsg 
+
+
+    void open() {
+    
+    }
+    
+    def ok() {
+        if( onupdate) onupdate( bldgFloor )
+        return '_close' 
+    }
+    
+    
+    /*-----------------------------------------------------------------
+    * List Support 
+    -----------------------------------------------------------------*/
+    def selectedItem
+    
+    def getLookupAdditionalItem() {
+        return InvokerUtil.lookupOpener('bldgadditionalitem.lookup', [ ry:rpu.ry ])
+    }
+    
+    def listHandler = [
+        createItem    : { return createAdditionalItem() },
+        getColumns    : { return [
+            new Column(name:'addlitem', caption:'Code*', type:'lookup', handler:lookupAdditionalItem, editable:true, maxWidth:80, expression:'#{addlitemcode}' ),
+            new Column(name:'addlitemname', caption:'Additional Item' ),
+            new Column(name:'expr', caption:'Computation' ),
+            new Column(name:'amount', caption:'Amount', maxWidth:130),
+        ]},
+        onAddItem    : { item -> 
+            item.objid          = 'BA' + new UID()
+            item.addlitemid     = item.addlitem.addlitemid
+            item.addlitemcode   = item.addlitem.addlitemcode
+            item.addlitemname   = item.addlitem.addlitemname
+            item.addlitemunit   = item.addlitem.addlitemunit
+            item.expr           = item.addlitem.expr
+            item.params.addAll( item.addlitem.params )
+            recalcAdditionalItemAmount( item )
+            bldgFloor.additionalitems.add( item )  
+        },
+        validate     : { li -> validateItem( li.item ) },
+        onRemoveItem : { item -> removeItem( item ) },
+        fetchList    : { return bldgFloor.additionalitems },
+    ] as SubListModel 
+    
+    void recalcAdditionalItemAmount( item ) {
+        item.amount = svc.recalcAdditionalItemAmount( bldgFloor, item )
+        binding.refresh('selectedItem')
+    }
+    
+    void removeItem( item )  {
+        if( MsgBox.confirm('Delete selected item?') ) {
+            bldgFloor.additionalitems.remove( item )
+        }
+    }
+    
+    void validateItem( item ) {
+        try  {
+            println 'item -> ' + item  
+            //required('Code', item.addlitem )
+            checkDuplicate( item )
+        }
+        catch( e ) {
+            showError( e )
+        }
+    }
+    
+    void checkDuplicate( item ) {
+        def items = bldgFloor.additionalitems.findAll{ it.addlitemid == item.addlitem.addlitemid  }
+        if( items && items.size() == 1 && item.objid == null) throw new Exception('Duplicate item is not allowed.')    
+        if( items && items.size() > 1 && item.objid != null) throw new Exception('Duplicate item is not allowed.')    
+    }
+    
+    
+    Map createAdditionalItem() {
+        return [
+            amount      : 0.0,
+            params      : [],
+        ]
+    }
+    
+    void required( caption, value ) {
+        if( !value ) throw new Exception( caption + ' is required.')
+    }
+    
+    
+    void showError( e ) {
+        println e.message
+        errorMsg = e.message
+        binding.refresh('errorMsg')
+        throw e
+    }   
+    
+    void clearError() {
+        errorMsg = null
+        binding.refresh('errorMsg') 
+    }
+    
+    
+    /*--------------------------------------------------------------------
+    * Parameter List Support
+    --------------------------------------------------------------------*/
+    def selectedParam
+    
+    def paramListHandler = [
+        getColumns    : { return [
+            new Column(name:'paramcaption', caption:'Parameter' ),
+            new Column(name:'paramvalue', caption:'Value', editable:true  ),
+        ]},
+        validate  : { li -> validateParameter( li.item ) },
+        fetchList : { return selectedItem?.params },
+    ] as SubListModel
+    
+    void validateParameter( item ) {
+        try {
+            item.paramvalue = convertParamValue( item ) 
+            recalcAdditionalItemAmount( selectedItem )
+        }
+        catch( e ) {
+            showError(e)
+        }
+    }
+    
+    def convertParamValue( param ) {
+        if( param.datatype == 'decimal' ) {
+            return Double.parseDouble( param.paramvalue )
+        }
+        else if( param.datatype == 'range_decimal' ) {
+            def decvalue = parseDouble( param.paramvalue )
+            if( decvalue < param.minvalue || decvalue > param.maxvalue ) throw new Exception("Value must be between $param.minvalue and $param.maxvalue." )
+            return decvalue
+        }
+        else if( param.datatype == 'integer' ) {
+            return parseInt( param.paramvalue )
+        }
+        else if( param.datatype == 'range_integer' ) {
+            def intvalue = parseInt( param.parmvalue )
+            if( intvalue < param.minvalue || intvalue > param.maxvalue ) throw new Exception("Value must be between $param.minvalue and $param.maxvalue.")
+            return intvalue 
+        }
+        return param.paramvalue 
+    }
+    
+    def parseDouble( value ) {
+        try {
+            return Double.parseDouble( value )
+        }
+        catch( e ) {
+            throw new Exception('Invalid parameter value.')
+        }
+    }
+    
+    def parseInt( value ) {
+        try {
+            return Integer.parseInt( value+'' )
+        }
+        catch( e ) {
+            throw new Exception('Invalid parameter value.')
+        }
+    }
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.rpu.bldg.BldgFloorAdjustmentPage"/>
+    </pages>
+</workunit>

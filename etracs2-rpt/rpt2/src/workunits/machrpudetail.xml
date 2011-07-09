@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+// date      : july 07, 2011
+-->
+<workunit>
+    <invokers>
+        <invoker type="machdetail.create" action="create" caption="Open" target="popup" />
+        <invoker type="machdetail.open" action="open" caption="Open" target="popup" />
+        
+        <invoker type="formActions" action="ok" caption="OK" mnemonic="o" />
+    </invokers>
+    <code lang="groovy">
+        
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+import java.rmi.server.UID
+
+public class MachRPUDetailController
+{
+    @Binding
+    def binding
+    
+    @Service('MachRPUService')
+    def svc 
+    
+    
+    //handler
+    def onupdate 
+    
+    
+    def faas
+    def rpu
+    def machuse 
+    def machdetail
+    def mode
+    
+    void create() {
+        mode = 'create' 
+        machdetail = createMachDetail()
+    }
+    
+    void open() {
+        mode                = 'view'
+        yearacquired        = machdetail.yearacquired
+        yearinstalled       = machdetail.yearinstalled
+        operationyear       = machdetail.operationyear
+        estimatedlife       = machdetail.estimatedlife 
+        conversionfactor    = machdetail.conversionfactor 
+        
+        newlyinstalled      = machdetail.newlyinstalled
+        imported            = machdetail.imported
+        originalcost        = machdetail.originalcost
+        freightcost         = machdetail.freightcost
+        installationcost    = machdetail.installationcost
+        insurancecost       = machdetail.insurancecost
+        brokeragecost       = machdetail.brokeragecost
+        arrastrecost        = machdetail.arrastrecost
+        othercost           = machdetail.othercost
+        depreciation        = machdetail.depreciation
+    }
+    
+    def ok() {
+        if( mode == 'create' ) {
+            machuse.machdetails.add( machdetail )
+        }
+        if( onupdate ) onupdate( rpu )
+        return '_close'
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * MachDetail Support
+    *
+    ---------------------------------------------------------------*/
+    def conversionfactor = 1
+    
+    void setConversionfactor( conversionfactor ) {
+        this.conversionfactor = conversionfactor
+        if( machdetail.imported == 1 ) {
+            recalc()
+        }
+    }
+    
+    def yearacquired
+    def yearinstalled
+    def operationyear 
+    def estimatedlife
+    
+    void setYearacquired( yearacquired ) {
+        this.yearacquired = yearacquired
+        yearinstalled = yearacquired
+        operationyear = yearacquired
+        
+        machdetail.yearacquired = yearacquired
+        machdetail.yearinstalled = yearacquired
+        machdetail.operationyear = yearacquired
+        recalc()
+    }
+    
+    void setYearinstalled( yearinstalled ) {
+        this.yearinstalled = yearinstalled
+        machdetail.yearinstalled = yearinstalled
+        recalc()
+    }
+    
+    void setOperationyear( operationyear ) {
+        this.operationyear = operationyear
+        machdetail.operationyear = operationyear 
+        recalc()
+    }
+    
+    void setEstimatedlife( estimatedlife ) {
+        this.estimatedlife = estimatedlife
+        machdetail.estimatedlife = estimatedlife 
+        recalc()
+    }
+    
+    
+    def imported        = 0
+    def newlyinstalled  = 0
+    def originalcost    = 0.0
+    def freightcost     = 0.0
+    def installationcost = 0.0
+    def insurancecost   = 0.0
+    def brokeragecost   = 0.0
+    def arrastrecost    = 0.0
+    def othercost       = 0.0
+    def depreciation    = 0.0
+    
+    void setNewlyinstalled( newlyinstalled ) {
+        this.newlyinstalled = newlyinstalled
+        machdetail.newlyinstalled = newlyinstalled
+        recalc()
+    }
+    
+    void setImported( imported ) {
+        this.imported = imported
+        machdetail.imported = imported
+        recalc()
+    }   
+    
+    void setOthercost( othercost )  {
+        this.othercost  = othercost
+        machdetail.othercost = othercost
+        recalc()
+    }
+    
+    void setArrastrecost( arrastrecost ) {
+        this.arrastrecost = arrastrecost
+        machdetail.arrastrecost = arrastrecost
+        recalc()
+    }
+    
+    void setBrokeragecost( brokeragecost ) {
+        this.brokeragecost = brokeragecost 
+        machdetail.brokeragecost = brokeragecost
+        recalc()
+    }
+    
+    void setInsurancecost( insurancecost ) {
+        this.insurancecost = insurancecost
+        machdetail.insurancecost = insurancecost
+        recalc()
+    }
+    
+    void setInstallationcost( installationcost ) {
+        this.installationcost = installationcost 
+        machdetail.installationcost = installationcost
+        recalc()
+    }
+    
+    void setFreightcost( freightcost ) {
+        this.freightcost = freightcost
+        machdetail.freightcost = freightcost
+        recalc()
+    }
+    
+    void setOriginalcost( originalcost) {
+        this.originalcost = originalcost
+        machdetail.originalcost = originalcost
+        recalc()
+    }
+    
+    void setDepreciation( depreciation ) {
+        this.depreciation = depreciation
+        machdetail.depreciation = depreciation
+        recalc()
+    }
+    
+    
+    
+    void recalc() {
+        def data = svc.assessMachDetail( machuse, machdetail, rpu.ry, rpu.issuedate )
+        machdetail.putAll( data )
+        depreciation = machdetail.depreciation 
+        binding.refresh('.*')
+    }
+    
+    
+    
+    
+    def machcode
+    
+    def onselectMachine = { mach -> 
+        machdetail.machineid    = mach.objid
+        machdetail.machinecode  = mach.machinecode
+        machdetail.machinename  = mach.machinedesc
+        machcode  = mach.machinecode 
+        binding.refresh( 'machcode|machdetail.machinename' )
+    }
+    
+    def lookupMachine() {
+        return InvokerUtil.lookupOpener('machine.lookup', [onselect:onselectMachine, searchText:machcode] )
+    }
+    
+    
+    Map createMachDetail() {
+        return machdetail = [
+            objid               : 'MD' + new UID(),
+            replacementcost     : 0.0,
+            depreciation        : 0.0,
+            depreciationvalue   : 0.0,
+            basemarketvalue     : 0.0, 
+            marketvalue         : 0.0, 
+            assesslevel         : 0.0,
+            assessedvalue       : 0.0,
+            originalcost        : 0.0,
+            freightcost         : 0.0,  
+            insurancecost       : 0.0,
+            installationcost    : 0.0,
+            brokeragecost       : 0.0,
+            arrastrecost        : 0.0,
+            othercost           : 0.0,
+            acquisitioncost     : 0.0,
+            ferac               : 0.0,
+            forex               : 0.0,
+            residualrate        : 0.0,
+            conversionfactor    : 0.0,
+            useswornamount      : 0,
+            swornamount         : 0.0,
+            imported            : 0,
+            newlyinstalled      : 0,
+            autodepreciate      : 1,
+        ]
+    }
+    
+    boolean getAllowEdit() {
+        if( faas.docstate == 'FORPROVAPPROVAL' ) return false
+        if( faas.docstate == 'CURRENT' ) return false
+        if( faas.docstate == 'CANCELLED' ) return false
+        if( faas.info.txntype == 'TR') return false
+        return true
+    }
+    
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.rpu.mach.MachDetailPage"/>
+    </pages>
+</workunit>

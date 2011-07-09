@@ -11,10 +11,10 @@ package etracs2.rpt.faas.rpu.bldg;
  * @author  rameses
  */
 
-public class BldgFloorDetailPage extends javax.swing.JPanel {
+public class BldgFloorAdjustmentPage extends javax.swing.JPanel {
     
     /** Creates new form BldgUsePage */
-    public BldgFloorDetailPage() {
+    public BldgFloorAdjustmentPage() {
         initComponents();
     }
     
@@ -30,20 +30,19 @@ public class BldgFloorDetailPage extends javax.swing.JPanel {
         xLabel1 = new com.rameses.rcp.control.XLabel();
         jPanel1 = new javax.swing.JPanel();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
-        formPanel2 = new com.rameses.rcp.util.FormPanel();
-        xNumberField10 = new com.rameses.rcp.control.XNumberField();
+        xDataTable2 = new com.rameses.rcp.control.XDataTable();
         jPanel3 = new javax.swing.JPanel();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
         xLabel6 = new com.rameses.rcp.control.XLabel();
 
         setLayout(new java.awt.BorderLayout());
 
-        setPreferredSize(new java.awt.Dimension(548, 378));
+        setPreferredSize(new java.awt.Dimension(544, 359));
 
         formPanel1.setPadding(new java.awt.Insets(0, 0, 0, 0));
         xLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel1.setCaption("Building Floor");
-        xLabel1.setName("floorno");
+        xLabel1.setName("bldgFloor.floorno");
         xLabel1.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xLabel1);
 
@@ -51,19 +50,16 @@ public class BldgFloorDetailPage extends javax.swing.JPanel {
         xTitledBorder1.setTitle("Adjustment");
         jPanel1.setBorder(xTitledBorder1);
         xDataTable1.setDynamic(true);
-        xDataTable1.setHandler("bldgAdjustmentListHandler");
+        xDataTable1.setHandler("listHandler");
         xDataTable1.setImmediate(true);
-        xDataTable1.setName("selectedBldgAdjustment");
+        xDataTable1.setName("selectedItem");
         xDataTable1.setShowRowHeader(true);
 
-        formPanel2.setPadding(new java.awt.Insets(0, 0, 0, 0));
-        xNumberField10.setEditable(false);
-        xNumberField10.setCaption("Total Adjustment");
-        xNumberField10.setCaptionWidth(150);
-        xNumberField10.setFont(new java.awt.Font("Arial", 1, 11));
-        xNumberField10.setName("entity.totaladjustment");
-        xNumberField10.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel2.add(xNumberField10);
+        xDataTable2.setDepends(new String[] {"selectedItem"});
+        xDataTable2.setDynamic(true);
+        xDataTable2.setHandler("paramListHandler");
+        xDataTable2.setName("selectedParam");
+        xDataTable2.setShowRowHeader(true);
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -72,16 +68,16 @@ public class BldgFloorDetailPage extends javax.swing.JPanel {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 504, Short.MAX_VALUE)
-                    .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 289, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 500, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 500, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
-                .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 179, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(xDataTable2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 119, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
@@ -110,6 +106,7 @@ public class BldgFloorDetailPage extends javax.swing.JPanel {
         jPanel3.setLayout(new java.awt.BorderLayout());
 
         jPanel3.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        xActionBar1.setDepends(new String[] {"selectedItem"});
         xActionBar1.setName("formActions");
         xActionBar1.setPadding(new java.awt.Insets(3, 0, 3, 0));
         xActionBar1.setUseToolBar(false);
@@ -127,15 +124,14 @@ public class BldgFloorDetailPage extends javax.swing.JPanel {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.rameses.rcp.util.FormPanel formPanel1;
-    private com.rameses.rcp.util.FormPanel formPanel2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
+    private com.rameses.rcp.control.XDataTable xDataTable2;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel6;
-    private com.rameses.rcp.control.XNumberField xNumberField10;
     // End of variables declaration//GEN-END:variables
     
 }

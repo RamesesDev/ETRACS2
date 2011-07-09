@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+// date      : july 07, 2011
+-->
+<workunit>
+    <invokers>
+        <invoker type="rpu.mach" action="init" caption="Open" target="popup" />
+        
+        <invoker type="formActions" action="ok" caption="OK" mnemonic="o" />
+        <invoker type="formActions" action="_close" caption="Cancel" mnemonic="c" immediate="true" />
+        
+    </invokers>
+    <code lang="groovy">
+        
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+import java.rmi.server.UID
+
+public class MachRPUController
+{
+    @Binding
+    def binding
+    
+    @Service('MachRPUService')
+    def svc
+    
+    @Service('PropertyClassificationService')
+    def classSvc
+    
+    @Service('ExemptionTypesService')
+    def exemptSvc
+    
+    
+    def onupdate
+    def faas
+    def rpu
+    
+    def exemption
+    def classification
+    def errorMsg 
+    
+    
+    void init() {
+        rpu.issuedate       = faas.info.issuedate 
+        classificationList  = classSvc.lookup( null, null) 
+        exemptionList       = exemptSvc.lookup(null, null) 
+        classification      = classificationList.find{ it.classid == rpu.classid }
+        exemption           = exemptionList.find{ it.exemptid == rpu.exemptid }
+    }
+    
+    def ok() {
+        if( onupdate ) onupdate( rpu )
+        return '_close'
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * MacUse Support
+    *
+    ---------------------------------------------------------------*/
+    def onupdateMachUse = {
+        recalc()
+    }
+    
+    def viewMachines() {
+        if( selectedItem.actualuseid == null ) {
+            return null 
+        }
+        return InvokerUtil.lookupOpener('machuse.open', [onupdate:onupdateMachUse, faas:faas, rpu:rpu, machuse:selectedItem] )
+    }
+    
+    /*---------------------------------------------------------------
+    *
+    * List Support
+    *
+    ---------------------------------------------------------------*/
+    def selectedItem
+    
+    def getLookupActualUse() {
+        return InvokerUtil.lookupOpener('machactualuse.lookup', [ry:rpu?.ry])
+    }
+    def listHandler = [
+        createItem     : { return createMachUse() },
+        getColumns     : { return [
+            new Column(name:'actualuse', caption:'Code*', maxWidth:150, editable:true, type:'lookup', handler:lookupActualUse, expression:'#{actualusecode}'),
+            new Column(name:'actualusename', caption:'Actual Use' ),
+            new Column(name:'basemarketvalue', caption:'Base Market Value', type:'decimal', maxWidth:160),
+            new Column(name:'marketvalue', caption:'Market Value', type:'decimal', maxWidth:160 ),
+            new Column(name:'assesslevel', caption:'Assess Level', type:'decimal', maxWidth:160 ),
+            new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal', maxWidth:160 ),
+        ]},
+        onAddItem      : { item -> rpu.info.machuses.add( item ) },
+        onRemoveItem   : { item -> removeItem( item ) },
+        validate       : { li -> validateItem( li.item) },
+        fetchList      : { return rpu.info.machuses },
+    ] as SubListModel
+    
+    void removeItem( item ) {
+        if( MsgBox.confirm('Delete selected item?') ) {
+            rpu.info.machuses.remove( item )
+            recalc()
+        }
+    }
+    
+    void validateItem( item ) {
+        try {
+            required( 'Actual Use', item.actualuse )
+            checkDuplicate( item )
+            item.actualuseid = item.actualuse.actualuseid 
+            item.actualusecode = item.actualuse.actualusecode 
+            item.actualusename = item.actualuse.actualusename
+            clearError()
+        }
+        catch ( e ) {
+            showError( e ) 
+        }
+    }
+    
+    void checkDuplicate( mu ) {
+        def item = rpu.info.machuses.find{ it.objid != mu.objid && it.actualuse.actualuseid == mu.actualuse.actualuseid  }
+        if( item ) throw new Exception('Duplicate actual use is not allowed.')    
+    }
+
+    void recalc() {
+        def data = svc.calculateTotals( rpu )
+        rpu = [:]
+        rpu.putAll(data)
+        faas.rpu.clear()
+        faas.rpu.putAll( data )
+        binding.refresh()
+    }
+    
+
+    
+    /*---------------------------------------------------------------
+    *
+    * ComboBox Support
+    *
+    ---------------------------------------------------------------*/
+    void setExemption( exemption ) {
+        this.exemption = exemption
+        rpu.exemptid = exemption?.exemptid
+        rpu.exemptcode = exemption?.exemptcode
+        rpu.exemptname = exemption?.exemptname
+    }
+    
+    void setClassification( classification ) {
+        this.classification = classification
+        rpu.classid = classification?.classid 
+        rpu.classcode = classification?.classcode
+        rpu.classname = classification?.classname 
+    }
+    
+    def classificationList
+    def exemptionList
+    
+    List getClassificationList() { 
+        return classificationList 
+    }
+    
+    List getExemptionList() { 
+        return exemptionList 
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * MIscellaneous Support
+    *
+    ---------------------------------------------------------------*/
+    Map createMachUse() {
+        return [
+            objid           : 'MU' + new UID(),
+            basemarketvalue : 0.0,
+            marketvalue     : 0.0,
+            assesslevel     : 0.0,
+            assessedvalue   : 0.0,
+            machdetails     : [],
+        ]
+    }
+    
+    void required( caption, value ) {
+        if( !value ) throw new Exception( caption + ' is required.')
+    }
+    
+    void showError( e ) {
+        println e.message
+        errorMsg = e.message
+        binding.refresh('errorMsg')
+        throw e
+    }   
+    
+    void clearError() {
+        errorMsg = null
+        binding.refresh('errorMsg') 
+    }
+    
+    boolean getAllowEdit() {
+        if( faas.docstate == 'FORPROVAPPROVAL' ) return false
+        if( faas.docstate == 'CURRENT' ) return false
+        if( faas.docstate == 'CANCELLED' ) return false
+        if( faas.info.txntype == 'TR') return false
+        return true
+    }
+    
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.rpu.mach.MachRPUPage"/>
+    </pages>
+</workunit>

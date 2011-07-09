@@ -30,7 +30,9 @@ class DateService {
 	}
 	
 	@ProxyMethod(local=true)
-	public def parse( String pattern, String d ) {
+	public def parse( pattern, d ) {
+		if (d instanceof Date)
+			return d;
 		return ( new java.text.SimpleDateFormat( pattern )).parse( d );
 	}
 	
@@ -38,6 +40,12 @@ class DateService {
 	public def parseCurrentDate( ) {
 		return parseDate( serverDate, null )
 	}
+    
+    @ProxyMethod
+    public int getYear( dt ) {
+        def pd = parseDate( dt, null )
+        return pd.year 
+    }
   
 	@ProxyMethod(local=true)
 	public def parseDate(def d, String timezone) {
@@ -54,12 +62,17 @@ class DateService {
 		map.second = cal.get( Calendar.SECOND );
 		map.millisecond = cal.get(Calendar.MILLISECOND);
 		
-		if( map.month >= 1 && map.month <= 3 ) map.qtr = 1
-		else if( map.month >= 4 && map.month <= 6 ) map.qtr = 2
-		else if( map.month >= 7 && map.month <= 9 ) map.qtr = 3
-		else map.qtr = 4
+		map.qtr = getQtrByMonth( map.month );
 		
 		return map;
+	}
+	
+	@ProxyMethod
+	public def getQtrByMonth( month ) {
+		if( month >= 1 && month <= 3 ) return 1;
+		else if( month >= 4 && month <= 6 ) return 2;
+		else if( month >= 7 && month <= 9 ) return 3;
+		else return 4;
 	}
 	
 	@ProxyMethod
@@ -91,6 +104,34 @@ class DateService {
 	@ProxyMethod(local=true)
 	public def findNextDate(String timeInterval) {
 		return DateUtil.add( serverDate, timeInterval );	
-	}	
+	}
+
+	@ProxyMethod
+	public def getMonths() {
+		return [
+			[index:1, name:"JAN", caption:"January"],
+			[index:2, name:"FEB", caption:"February"],
+			[index:3, name:"MAR", caption:"March"],
+			[index:4, name:"APR", caption:"April"],
+			[index:5, name:"MAY", caption:"May"],
+			[index:6, name:"JUN", caption:"June"],
+			[index:7, name:"JUL", caption:"July"],
+			[index:8, name:"AUG", caption:"August"],
+			[index:9, name:"SEP", caption:"September"],
+			[index:10, name:"OCT", caption:"October"],
+			[index:11, name:"NOV", caption:"November"],
+			[index:12, name:"DEC", caption:"December"]
+		];
+	}
+	
+	@ProxyMethod
+	public def getQtrs() {
+		return [
+			[index:1, name:"1ST", caption:"1st Quarter"],
+			[index:2, name:"2ND", caption:"2nd Quarter"],
+			[index:3, name:"3RD", caption:"3rd Quarter"],
+			[index:4, name:"4TH", caption:"4th Quarter"]
+		];
+	}
 
 }

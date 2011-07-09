@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+// date      : july 07, 2011
+-->
+<workunit>
+    <invokers>
+        <invoker type="bldgrpufloor.open" action="init" caption="Open" target="popup" />
+        
+        <invoker type="formActions" action="openFloorDetail" caption="Floor Detail" mnemonic="d" visibleWhen="#{selectedFloor!=null and selectedFloor.objid!=null}" />
+        <invoker type="formActions" action="ok" caption="OK" mnemonic="o" default="true" />
+        
+    </invokers>
+    <code lang="groovy">
+        
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+import java.rmi.server.UID
+
+public class BldgRPUFloorController
+{
+    @Binding
+    def binding
+    
+    @Service('BldgRPUService')
+    def svc
+    
+    def onupdate //handler 
+    def rpu 
+    def bldguse
+    def errorMsg 
+
+
+    void init() {
+    
+    }
+    
+    def ok() {
+        if( onupdate) onupdate()
+        return '_close' 
+    }
+    
+    
+    def onupdateFloorDetail = { floor ->
+        def amount = selectedFloor.additionalitems.amount.sum()
+        selectedFloor.adjustment = ( amount ? amount : 0.0 )
+        binding.refresh('selectedFloor|totalarea|totaladjustment') 
+    }
+    
+    def openFloorDetail() {
+        return InvokerUtil.lookupOpener('bldgrpuflooradjustment.open', [ rpu:rpu, bldgFloor:selectedFloor, onupdate:onupdateFloorDetail ])
+    }
+    
+    /*-----------------------------------------------------------------
+    * List Support 
+    -----------------------------------------------------------------*/
+    def selectedFloor
+    
+    def listHandler = [
+        createItem    : { return createBldgFloor() },
+        getColumns    : { return [
+            new Column(name:'floorno', caption:'Floor No.*', editable:true, type:'integer' ),
+            new Column(name:'area', caption:'Area*', editable:true, type:'decimal'),
+            new Column(name:'adjustment', caption:'Adjustment'),
+        ]},
+        onAddItem    : { item -> 
+            item.objid = 'BF' + new UID()
+            bldguse.floors.add(item ) 
+            binding.refresh('totalarea')
+        },
+        validate     : { li -> validateItem( li.item ) },
+        onRemoveItem : { item -> removeItem( item ) },
+        fetchList    : { return bldguse.floors },
+    ] as SubListModel 
+    
+    void removeItem( floor )  {
+        if( MsgBox.confirm('Delete selected floor?') ) {
+            bldguse.floors.remove( floor )
+        }
+    }
+    
+    void validateItem( floor ) {
+        try  {
+            required('Floor No.', floor.floorno )
+            required('Area', floor.area )
+            clearError()
+        }
+        catch( e ) {
+            showError( e )
+        }
+    }
+    
+    Map createBldgFloor() {
+        return [
+            storeyrate          : 0.0,
+            adjustment          : 0.0,
+            basevalue           : 0.0,
+            unitvalue           : 0.0,
+            basemarketvalue     : 0.0,
+            depreciationvalue   : 0.0,
+            marketvalue         : 0.0,
+            assesslevel         : 0.0,
+            assessedvalue       : 0.0,
+            additionalitems    : [],
+        ]
+    }
+    
+    void required( caption, value ) {
+        if( !value ) throw new Exception( caption + ' is required.')
+    }
+    
+    void showError( e ) {
+        println e.message
+        errorMsg = e.message
+        binding.refresh('errorMsg')
+        throw e
+    }   
+    
+    void clearError() {
+        errorMsg = null
+        binding.refresh('errorMsg') 
+    }
+    
+    
+    def getTotalarea() {
+        return bldguse.floors.area.sum()
+    }
+    
+    def getTotaladjustment() {
+        return bldguse.floors.adjustment.sum()
+    }
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.rpu.bldg.BldgFloorPage"/>
+    </pages>
+</workunit>

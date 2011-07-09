@@ -330,11 +330,18 @@ public class FAASController
     }
     
     boolean getAllowEditPinInfo() {
-        def edit = false;
-        if( faas.rpu.rputype == 'land' ) edit = true
-        if( faas.info.datacapture == true ) edit = true
-        if( 'CE/ND/MC'.indexOf( faas.info.txntype ) >= 0 ) edit = true
-        return edit
+        if( faas.rpu.rputype != 'land' ) return false
+        if( faas.info.datacapture == true ) return true 
+        if( 'CE/ND/MC'.indexOf( faas.info.txntype ) >= 0 ) return true 
+        return false
+    }
+    
+    boolean getAllowEditPrevInfo() {
+        if( faas.docstate == 'FORPROVAPPROVAL' ) return false
+        if( faas.docstate == 'CURRENT' ) return false
+        if( faas.docstate == 'CANCELLED' ) return false
+        if( faas.info.datacapture == false ) return false 
+        return true 
     }
 }
 

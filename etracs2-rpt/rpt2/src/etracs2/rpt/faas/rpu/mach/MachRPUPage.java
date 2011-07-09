@@ -26,13 +26,14 @@ public class MachRPUPage extends javax.swing.JPanel {
     private void initComponents() {
         jPanel4 = new javax.swing.JPanel();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
+        xLabel6 = new com.rameses.rcp.control.XLabel();
         jPanel5 = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xLabel1 = new com.rameses.rcp.control.XLabel();
         xLabel2 = new com.rameses.rcp.control.XLabel();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
-        xComboBox1 = new com.rameses.rcp.control.XComboBox();
+        xCheckBox3 = new com.rameses.rcp.control.XCheckBox();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
         formPanel3 = new com.rameses.rcp.util.FormPanel();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
@@ -43,7 +44,6 @@ public class MachRPUPage extends javax.swing.JPanel {
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         xComboBox4 = new com.rameses.rcp.control.XComboBox();
         jLabel2 = new javax.swing.JLabel();
-        xLabel6 = new com.rameses.rcp.control.XLabel();
         xButton1 = new com.rameses.rcp.control.XButton();
 
         setLayout(new java.awt.BorderLayout());
@@ -55,6 +55,11 @@ public class MachRPUPage extends javax.swing.JPanel {
         xActionBar1.setPadding(new java.awt.Insets(3, 0, 3, 0));
         xActionBar1.setUseToolBar(false);
         jPanel4.add(xActionBar1, java.awt.BorderLayout.EAST);
+
+        xLabel6.setForeground(new java.awt.Color(153, 0, 0));
+        xLabel6.setFont(new java.awt.Font("Arial", 1, 11));
+        xLabel6.setName("errorMsg");
+        jPanel4.add(xLabel6, java.awt.BorderLayout.CENTER);
 
         add(jPanel4, java.awt.BorderLayout.SOUTH);
 
@@ -76,20 +81,20 @@ public class MachRPUPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Taxability");
         formPanel2.setBorder(xTitledBorder2);
-        xComboBox1.setCaption("Taxability");
-        xComboBox1.setCaptionWidth(90);
-        xComboBox1.setImmediate(true);
-        xComboBox1.setItems("taxabilities");
-        xComboBox1.setName("rpu.taxable");
-        xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));
-        xComboBox1.setRequired(true);
-        formPanel2.add(xComboBox1);
+        xCheckBox3.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        xCheckBox3.setText("Taxable? ");
+        xCheckBox3.setCaption("Taxability");
+        xCheckBox3.setCaptionWidth(90);
+        xCheckBox3.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        xCheckBox3.setName("rpu.taxable");
+        xCheckBox3.setRequestFocus(false);
+        formPanel2.add(xCheckBox3);
 
         xComboBox2.setCaption("Exempt Reason");
         xComboBox2.setCaptionWidth(90);
         xComboBox2.setDepends(new String[] {"rpu.info.taxable"});
         xComboBox2.setExpression("#{exemptcode}");
-        xComboBox2.setItems("exemptions");
+        xComboBox2.setItems("exemptionList");
         xComboBox2.setName("exemption");
         xComboBox2.setPreferredSize(new java.awt.Dimension(0, 22));
         formPanel2.add(xComboBox2);
@@ -99,14 +104,14 @@ public class MachRPUPage extends javax.swing.JPanel {
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel1Layout.createSequentialGroup()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE)
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 566, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 208, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 80, Short.MAX_VALUE)
-            .add(formPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .add(formPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 80, Short.MAX_VALUE)
         );
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -115,30 +120,30 @@ public class MachRPUPage extends javax.swing.JPanel {
         formPanel3.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
         formPanel3.setCellpadding(new java.awt.Insets(0, 0, 0, 20));
         formPanel3.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
-        xNumberField1.setEditable(false);
         xNumberField1.setCaption("Base Market Value");
         xNumberField1.setCaptionWidth(110);
         xNumberField1.setCellPadding(new java.awt.Insets(0, 0, 0, 20));
         xNumberField1.setFont(new java.awt.Font("Arial", 1, 12));
         xNumberField1.setName("rpu.totalbmv");
         xNumberField1.setPreferredSize(new java.awt.Dimension(130, 19));
+        xNumberField1.setReadonly(true);
         formPanel3.add(xNumberField1);
 
-        xNumberField2.setEditable(false);
         xNumberField2.setCaption("Market Value");
         xNumberField2.setCellPadding(new java.awt.Insets(0, 0, 0, 20));
         xNumberField2.setFont(new java.awt.Font("Arial", 1, 12));
         xNumberField2.setName("rpu.totalmv");
         xNumberField2.setPreferredSize(new java.awt.Dimension(130, 19));
+        xNumberField2.setReadonly(true);
         formPanel3.add(xNumberField2);
 
-        xNumberField3.setEditable(false);
         xNumberField3.setCaption("Assessed Value");
         xNumberField3.setCaptionWidth(100);
         xNumberField3.setCellPadding(new java.awt.Insets(0, 0, 0, 20));
         xNumberField3.setFont(new java.awt.Font("Arial", 1, 12));
         xNumberField3.setName("rpu.totalav");
         xNumberField3.setPreferredSize(new java.awt.Dimension(120, 19));
+        xNumberField3.setReadonly(true);
         formPanel3.add(xNumberField3);
 
         jPanel2.setLayout(new java.awt.BorderLayout());
@@ -147,45 +152,36 @@ public class MachRPUPage extends javax.swing.JPanel {
         xTitledBorder4.setTitle("Machine Classifications");
         jPanel2.setBorder(xTitledBorder4);
         xDataTable1.setDynamic(true);
-        xDataTable1.setHandler("classificationListHandler");
+        xDataTable1.setHandler("listHandler");
         xDataTable1.setImmediate(true);
-        xDataTable1.setName("selectedClassification");
+        xDataTable1.setIndex(-10);
+        xDataTable1.setName("selectedItem");
 
-        xComboBox4.setItems("classifications");
-        xComboBox4.setName("rpu.classcode");
+        xComboBox4.setExpression("#{classcode}");
+        xComboBox4.setIndex(-100);
+        xComboBox4.setItems("classificationList");
+        xComboBox4.setName("classification");
 
         jLabel2.setText("Classification * :");
 
-        xLabel6.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        xLabel6.setForeground(new java.awt.Color(153, 0, 0));
-        xLabel6.setFont(new java.awt.Font("Arial", 1, 11));
-        xLabel6.setName("errorMsg");
-
+        xButton1.setMnemonic('d');
         xButton1.setText("Define Machine List");
-        xButton1.setName("defineMachine");
+        xButton1.setName("viewMachines");
 
         org.jdesktop.layout.GroupLayout jPanel3Layout = new org.jdesktop.layout.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel3Layout.createSequentialGroup()
-                .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel3Layout.createSequentialGroup()
-                        .add(45, 45, 45)
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel3Layout.createSequentialGroup()
+                .addContainerGap()
+                .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 756, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel3Layout.createSequentialGroup()
                         .add(jLabel2)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(xComboBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                    .add(jPanel3Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 748, Short.MAX_VALUE))
-                    .add(jPanel3Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(xLabel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 748, Short.MAX_VALUE)))
+                        .add(xComboBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 139, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel3Layout.createSequentialGroup()
-                .addContainerGap(591, Short.MAX_VALUE)
-                .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(24, 24, 24))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -195,12 +191,10 @@ public class MachRPUPage extends javax.swing.JPanel {
                     .add(jLabel2)
                     .add(xComboBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xDataTable1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 148, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xLabel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 188, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
         jPanel2.add(jPanel3, java.awt.BorderLayout.CENTER);
 
@@ -211,9 +205,9 @@ public class MachRPUPage extends javax.swing.JPanel {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 776, Short.MAX_VALUE)
-                    .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 776, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 780, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 780, Short.MAX_VALUE)
+                    .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel5Layout.setVerticalGroup(
@@ -222,10 +216,10 @@ public class MachRPUPage extends javax.swing.JPanel {
                 .addContainerGap()
                 .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 276, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(17, 17, 17)
+                .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 291, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
         add(jPanel5, java.awt.BorderLayout.CENTER);
 
@@ -244,7 +238,7 @@ public class MachRPUPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel5;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XButton xButton1;
-    private com.rameses.rcp.control.XComboBox xComboBox1;
+    private com.rameses.rcp.control.XCheckBox xCheckBox3;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XComboBox xComboBox4;
     private com.rameses.rcp.control.XDataTable xDataTable1;

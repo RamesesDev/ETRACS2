@@ -6,15 +6,17 @@
 
 package etracs2.rpt.faas.rpu.mach;
 
+import com.rameses.rcp.ui.annotations.StyleSheet;
+
 /**
  *
  * @author  rameses
  */
-
-public class MachListPage extends javax.swing.JPanel {
+@StyleSheet("etracs2/rpt/faas/rpu/mach.MachUsePage.style")
+public class MachUsePage extends javax.swing.JPanel {
     
     /** Creates new form BldgUsePage */
-    public MachListPage() {
+    public MachUsePage() {
         initComponents();
     }
     
@@ -25,8 +27,6 @@ public class MachListPage extends javax.swing.JPanel {
      */
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
-        formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xLabel1 = new com.rameses.rcp.control.XLabel();
         jPanel1 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
@@ -63,24 +63,20 @@ public class MachListPage extends javax.swing.JPanel {
         xCheckBox1 = new com.rameses.rcp.control.XCheckBox();
         formPanel5 = new com.rameses.rcp.util.FormPanel();
         xNumberField16 = new com.rameses.rcp.control.XNumberField();
-        xLabel13 = new com.rameses.rcp.control.XLabel();
+        xButton1 = new com.rameses.rcp.control.XButton();
+        xButton2 = new com.rameses.rcp.control.XButton();
         jPanel4 = new javax.swing.JPanel();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
 
-        xLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        xLabel1.setCaption("Machine Use");
-        xLabel1.setName("machineuse");
-        xLabel1.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel1.add(xLabel1);
-
+        setPreferredSize(new java.awt.Dimension(818, 542));
         jPanel1.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("Machine/s for this Classifications");
         jPanel1.setBorder(xTitledBorder1);
-        xDataTable1.setDynamic(true);
+        xDataTable1.setHandler("listHandler");
         xDataTable1.setImmediate(true);
-        xDataTable1.setName("selectedMachine");
+        xDataTable1.setName("selectedItem");
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Machine Information");
@@ -88,82 +84,82 @@ public class MachListPage extends javax.swing.JPanel {
         formPanel2.setCaptionWidth(90);
         xLabel2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel2.setCaption("Brand");
-        xLabel2.setDepends(new String[] {"selectedMachine"});
-        xLabel2.setName("entity.machinedetails.brand");
+        xLabel2.setDepends(new String[] {"selectedItem"});
+        xLabel2.setName("selectedItem.brand");
         xLabel2.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xLabel2);
 
         xLabel3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel3.setCaption("Model");
-        xLabel3.setDepends(new String[] {"selectedMachine"});
-        xLabel3.setName("entity.machinedetails.model");
+        xLabel3.setDepends(new String[] {"selectedItem"});
+        xLabel3.setName("selectedItem.model");
         xLabel3.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xLabel3);
 
         xLabel4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel4.setCaption("Capacity");
-        xLabel4.setDepends(new String[] {"selectedMachine"});
-        xLabel4.setName("entity.machinedetails.capacity");
+        xLabel4.setDepends(new String[] {"selectedItem"});
+        xLabel4.setName("selectedItem.capacity");
         xLabel4.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xLabel4);
 
         xLabel5.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel5.setCaption("Serial No.");
-        xLabel5.setDepends(new String[] {"selectedMachine"});
-        xLabel5.setName("entity.machinedetails.serialno");
+        xLabel5.setDepends(new String[] {"selectedItem"});
+        xLabel5.setName("selectedItem.serialno");
         xLabel5.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xLabel5);
 
         xLabel6.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel6.setCaption("Status");
-        xLabel6.setDepends(new String[] {"selectedMachine"});
-        xLabel6.setName("entity.machinedetails.status");
+        xLabel6.setDepends(new String[] {"selectedItem"});
+        xLabel6.setName("selectedItem.status");
         xLabel6.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xLabel6);
 
         xLabel7.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel7.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         xLabel7.setCaption("Year Acquired");
-        xLabel7.setDepends(new String[] {"selectedMachine"});
-        xLabel7.setName("entity.machinedetails.yearacquired");
+        xLabel7.setDepends(new String[] {"selectedItem"});
+        xLabel7.setName("selectedItem.yearacquired");
         xLabel7.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xLabel7);
 
         xLabel8.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel8.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         xLabel8.setCaption("Year Installed");
-        xLabel8.setDepends(new String[] {"selectedMachine"});
-        xLabel8.setName("entity.machinedetails.yearinstalled");
+        xLabel8.setDepends(new String[] {"selectedItem"});
+        xLabel8.setName("selectedItem.yearinstalled");
         xLabel8.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xLabel8);
 
         xLabel9.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel9.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         xLabel9.setCaption("Operation Year");
-        xLabel9.setDepends(new String[] {"selectedMachine"});
-        xLabel9.setName("entity.machinedetails.operationyear");
+        xLabel9.setDepends(new String[] {"selectedItem"});
+        xLabel9.setName("selectedItem.operationyear");
         xLabel9.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xLabel9);
 
         xLabel10.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel10.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         xLabel10.setCaption("Year Used");
-        xLabel10.setDepends(new String[] {"selectedMachine"});
-        xLabel10.setName("entity.machinedetails.yearused");
+        xLabel10.setDepends(new String[] {"selectedItem"});
+        xLabel10.setName("selectedItem.yearused");
         xLabel10.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xLabel10);
 
         xLabel11.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel11.setCaption("Estimated Life");
-        xLabel11.setDepends(new String[] {"selectedMachine"});
-        xLabel11.setName("entity.machinedetails.estimatedlife");
+        xLabel11.setDepends(new String[] {"selectedItem"});
+        xLabel11.setName("selectedItem.estimatedlife");
         xLabel11.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xLabel11);
 
         xLabel12.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel12.setCaption("Remaining Life");
-        xLabel12.setDepends(new String[] {"selectedMachine"});
-        xLabel12.setName("entity.machinedetails.remaininglife");
+        xLabel12.setDepends(new String[] {"selectedItem"});
+        xLabel12.setName("selectedItem.remaininglife");
         xLabel12.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xLabel12);
 
@@ -173,92 +169,112 @@ public class MachListPage extends javax.swing.JPanel {
         formPanel3.setCaptionWidth(100);
         xNumberField1.setEditable(false);
         xNumberField1.setCaption("Original Cost");
-        xNumberField1.setDepends(new String[] {"selectedMachine"});
+        xNumberField1.setDepends(new String[] {"selectedItem"});
+        xNumberField1.setEnabled(false);
         xNumberField1.setFieldType(java.math.BigDecimal.class);
-        xNumberField1.setName("entity.machinedetails.originalcost");
+        xNumberField1.setName("selectedItem.originalcost");
         xNumberField1.setPattern("#,##0.00");
         xNumberField1.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField1.setReadonly(true);
         formPanel3.add(xNumberField1);
 
         xNumberField2.setEditable(false);
         xNumberField2.setCaption("Freight Cost");
-        xNumberField2.setDepends(new String[] {"selectedMachine"});
+        xNumberField2.setDepends(new String[] {"selectedItem"});
+        xNumberField2.setEnabled(false);
         xNumberField2.setFieldType(java.math.BigDecimal.class);
-        xNumberField2.setName("entity.machinedetails.freightcost");
+        xNumberField2.setName("selectedItem.freightcost");
         xNumberField2.setPattern("#,##0.00");
         xNumberField2.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField2.setReadonly(true);
         formPanel3.add(xNumberField2);
 
         xNumberField3.setEditable(false);
         xNumberField3.setCaption("Installation Cost");
-        xNumberField3.setDepends(new String[] {"selectedMachine"});
+        xNumberField3.setDepends(new String[] {"selectedItem"});
+        xNumberField3.setEnabled(false);
         xNumberField3.setFieldType(java.math.BigDecimal.class);
-        xNumberField3.setName("entity.machinedetails.installationcost");
+        xNumberField3.setName("selectedItem.installationcost");
         xNumberField3.setPattern("#,##0.00");
         xNumberField3.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField3.setReadonly(true);
         formPanel3.add(xNumberField3);
 
         xNumberField4.setEditable(false);
         xNumberField4.setCaption("Insurance Cost");
-        xNumberField4.setDepends(new String[] {"selectedMachine"});
+        xNumberField4.setDepends(new String[] {"selectedItem"});
+        xNumberField4.setEnabled(false);
         xNumberField4.setFieldType(java.math.BigDecimal.class);
-        xNumberField4.setName("entity.machinedetails.insurancecost");
+        xNumberField4.setName("selectedItem.insurancecost");
         xNumberField4.setPattern("#,##0.00");
         xNumberField4.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField4.setReadonly(true);
         formPanel3.add(xNumberField4);
 
         xNumberField5.setEditable(false);
         xNumberField5.setCaption("Brokerage Cost");
-        xNumberField5.setDepends(new String[] {"selectedMachine"});
+        xNumberField5.setDepends(new String[] {"selectedItem"});
+        xNumberField5.setEnabled(false);
         xNumberField5.setFieldType(java.math.BigDecimal.class);
-        xNumberField5.setName("entity.machinedetails.brokeragecost");
+        xNumberField5.setName("selectedItem.brokeragecost");
         xNumberField5.setPattern("#,##0.00");
         xNumberField5.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField5.setReadonly(true);
         formPanel3.add(xNumberField5);
 
         xNumberField6.setEditable(false);
         xNumberField6.setCaption("Arrastre/Handling");
-        xNumberField6.setDepends(new String[] {"selectedMachine"});
+        xNumberField6.setDepends(new String[] {"selectedItem"});
+        xNumberField6.setEnabled(false);
         xNumberField6.setFieldType(java.math.BigDecimal.class);
-        xNumberField6.setName("entity.machinedetails.arrastrecost");
+        xNumberField6.setName("selectedItem.arrastrecost");
         xNumberField6.setPattern("#,##0.00");
         xNumberField6.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField6.setReadonly(true);
         formPanel3.add(xNumberField6);
 
         xNumberField7.setEditable(false);
         xNumberField7.setCaption("Other Cost");
-        xNumberField7.setDepends(new String[] {"selectedMachine"});
+        xNumberField7.setDepends(new String[] {"selectedItem"});
+        xNumberField7.setEnabled(false);
         xNumberField7.setFieldType(java.math.BigDecimal.class);
-        xNumberField7.setName("entity.machinedetails.othercost");
+        xNumberField7.setName("selectedItem.othercost");
         xNumberField7.setPattern("#,##0.00");
         xNumberField7.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField7.setReadonly(true);
         formPanel3.add(xNumberField7);
 
         xNumberField8.setEditable(false);
         xNumberField8.setCaption("FERAC");
-        xNumberField8.setDepends(new String[] {"selectedMachine"});
+        xNumberField8.setDepends(new String[] {"selectedItem"});
+        xNumberField8.setEnabled(false);
         xNumberField8.setFieldType(java.math.BigDecimal.class);
-        xNumberField8.setName("entity.machinedetails.ferac");
+        xNumberField8.setName("selectedItem.ferac");
         xNumberField8.setPattern("#,##0.00");
         xNumberField8.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField8.setReadonly(true);
         formPanel3.add(xNumberField8);
 
         xNumberField9.setEditable(false);
         xNumberField9.setCaption("Current Forex");
-        xNumberField9.setDepends(new String[] {"selectedMachine"});
+        xNumberField9.setDepends(new String[] {"selectedItem"});
+        xNumberField9.setEnabled(false);
         xNumberField9.setFieldType(java.math.BigDecimal.class);
-        xNumberField9.setName("entity.machinedetails.forex");
+        xNumberField9.setName("selectedItem.forex");
         xNumberField9.setPattern("#,##0.00");
         xNumberField9.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField9.setReadonly(true);
         formPanel3.add(xNumberField9);
 
         xNumberField10.setEditable(false);
         xNumberField10.setCaption("Acquisition Cost");
-        xNumberField10.setDepends(new String[] {"selectedMachine"});
+        xNumberField10.setDepends(new String[] {"selectedItem"});
+        xNumberField10.setEnabled(false);
         xNumberField10.setFieldType(java.math.BigDecimal.class);
-        xNumberField10.setName("entity.machinedetails.acquisitioncost");
+        xNumberField10.setName("selectedItem.acquisitioncost");
         xNumberField10.setPattern("#,##0.00");
         xNumberField10.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField10.setReadonly(true);
         formPanel3.add(xNumberField10);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -267,47 +283,57 @@ public class MachListPage extends javax.swing.JPanel {
         formPanel4.setCaptionWidth(105);
         xNumberField11.setEditable(false);
         xNumberField11.setCaption("Replacement Cost");
-        xNumberField11.setDepends(new String[] {"selectedMachine"});
+        xNumberField11.setDepends(new String[] {"selectedItem"});
+        xNumberField11.setEnabled(false);
         xNumberField11.setFieldType(java.math.BigDecimal.class);
-        xNumberField11.setName("entity.machinedetails.replacementcost");
+        xNumberField11.setName("selectedItem.replacementcost");
         xNumberField11.setPattern("#,##0.00");
         xNumberField11.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField11.setReadonly(true);
         formPanel4.add(xNumberField11);
 
         xNumberField12.setEditable(false);
         xNumberField12.setCaption("Depreciation ( % )");
-        xNumberField12.setDepends(new String[] {"selectedMachine"});
+        xNumberField12.setDepends(new String[] {"selectedItem"});
+        xNumberField12.setEnabled(false);
         xNumberField12.setFieldType(java.math.BigDecimal.class);
-        xNumberField12.setName("entity.machinedetails.depreciation");
+        xNumberField12.setName("selectedItem.depreciation");
         xNumberField12.setPattern("#,##0.00");
         xNumberField12.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField12.setReadonly(true);
         formPanel4.add(xNumberField12);
 
         xNumberField13.setEditable(false);
-        xNumberField13.setCaption("Market Value");
-        xNumberField13.setDepends(new String[] {"selectedMachine"});
+        xNumberField13.setCaption("Base Market Value");
+        xNumberField13.setDepends(new String[] {"selectedItem"});
+        xNumberField13.setEnabled(false);
         xNumberField13.setFieldType(java.math.BigDecimal.class);
-        xNumberField13.setName("entity.machinedetails.marketvalue");
+        xNumberField13.setName("selectedItem.basemarketvalue");
         xNumberField13.setPattern("#,##0.00");
         xNumberField13.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField13.setReadonly(true);
         formPanel4.add(xNumberField13);
 
         xNumberField14.setEditable(false);
         xNumberField14.setCaption("Depreciated Value");
-        xNumberField14.setDepends(new String[] {"selectedMachine"});
+        xNumberField14.setDepends(new String[] {"selectedItem"});
+        xNumberField14.setEnabled(false);
         xNumberField14.setFieldType(java.math.BigDecimal.class);
-        xNumberField14.setName("entity.machinedetails.depreciationvalue");
+        xNumberField14.setName("selectedItem.depreciationvalue");
         xNumberField14.setPattern("#,##0.00");
         xNumberField14.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField14.setReadonly(true);
         formPanel4.add(xNumberField14);
 
         xNumberField15.setEditable(false);
-        xNumberField15.setCaption("Adj. Market Value");
-        xNumberField15.setDepends(new String[] {"selectedMachine"});
+        xNumberField15.setCaption("Market Value");
+        xNumberField15.setDepends(new String[] {"selectedItem"});
+        xNumberField15.setEnabled(false);
         xNumberField15.setFieldType(java.math.BigDecimal.class);
-        xNumberField15.setName("entity.machinedetails.adjmarketvalue");
+        xNumberField15.setName("selectedItem.marketvalue");
         xNumberField15.setPattern("#,##0.00");
         xNumberField15.setPreferredSize(new java.awt.Dimension(160, 18));
+        xNumberField15.setReadonly(true);
         formPanel4.add(xNumberField15);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder5 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -316,20 +342,24 @@ public class MachListPage extends javax.swing.JPanel {
         xCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         xCheckBox1.setText("Use Sworn Amount?");
         xCheckBox1.setCheckValue(1);
-        xCheckBox1.setDepends(new String[] {"selectedMachine"});
+        xCheckBox1.setDepends(new String[] {"selectedItem"});
         xCheckBox1.setEnabled(false);
         xCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox1.setName("entity.machinedetails.useswornamount");
+        xCheckBox1.setName("selectedItem.useswornamount");
+        xCheckBox1.setOpaque(false);
+        xCheckBox1.setReadonly(true);
         xCheckBox1.setUncheckValue(0);
 
         formPanel5.setCaptionWidth(95);
         xNumberField16.setEditable(false);
         xNumberField16.setCaption("Sworn Amount");
-        xNumberField16.setDepends(new String[] {"selectedMachine", "entity.machinedetails.useswornamount"});
+        xNumberField16.setDepends(new String[] {"selectedItem"});
+        xNumberField16.setEnabled(false);
         xNumberField16.setFieldType(java.math.BigDecimal.class);
-        xNumberField16.setName("entity.machinedetails.swornamount");
+        xNumberField16.setName("selectedItem.swornamount");
         xNumberField16.setPattern("#,##0.00");
         xNumberField16.setPreferredSize(new java.awt.Dimension(150, 18));
+        xNumberField16.setReadonly(true);
         formPanel5.add(xNumberField16);
 
         org.jdesktop.layout.GroupLayout jPanel3Layout = new org.jdesktop.layout.GroupLayout(jPanel3);
@@ -339,8 +369,8 @@ public class MachListPage extends javax.swing.JPanel {
             .add(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(xCheckBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(110, Short.MAX_VALUE))
-            .add(formPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 240, Short.MAX_VALUE)
+                .addContainerGap(103, Short.MAX_VALUE))
+            .add(formPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 232, Short.MAX_VALUE)
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -351,46 +381,56 @@ public class MachListPage extends javax.swing.JPanel {
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        xLabel13.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        xLabel13.setForeground(new java.awt.Color(153, 0, 0));
-        xLabel13.setFont(new java.awt.Font("Arial", 1, 11));
-        xLabel13.setName("errorMsg");
+        xButton1.setMnemonic('a');
+        xButton1.setText("Add");
+        xButton1.setImmediate(true);
+        xButton1.setName("addMachine");
+
+        xButton2.setMnemonic('e');
+        xButton2.setText("Edit");
+        xButton2.setDepends(new String[] {"selectedItem"});
+        xButton2.setName("editMachine");
 
         org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel2Layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 782, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
+                .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 774, Short.MAX_VALUE)
+                    .add(jPanel2Layout.createSequentialGroup()
                         .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 281, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 245, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                            .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 244, Short.MAX_VALUE)))
-                    .add(xLabel13, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 782, Short.MAX_VALUE))
+                        .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(formPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
+                            .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2Layout.createSequentialGroup()
+                        .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel2Layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(xDataTable1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 133, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xLabel13, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(22, 22, 22)
+                .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 129, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 282, Short.MAX_VALUE)
-                    .add(formPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 282, Short.MAX_VALUE)
-                    .add(jPanel2Layout.createSequentialGroup()
+                    .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 282, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 282, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
                         .add(formPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 192, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                .add(76, 76, 76))
+                .addContainerGap())
         );
         jPanel1.add(jPanel2, java.awt.BorderLayout.CENTER);
 
@@ -406,29 +446,24 @@ public class MachListPage extends javax.swing.JPanel {
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 818, Short.MAX_VALUE)
             .add(layout.createSequentialGroup()
-                .addContainerGap()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 810, Short.MAX_VALUE)
-                    .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 236, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
-            .add(jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 834, Short.MAX_VALUE)
+                .add(10, 10, 10)
+                .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 798, Short.MAX_VALUE)
+                .add(10, 10, 10))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 492, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 518, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 12, Short.MAX_VALUE)
                 .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
         );
     }// </editor-fold>//GEN-END:initComponents
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private com.rameses.rcp.util.FormPanel formPanel1;
     private com.rameses.rcp.util.FormPanel formPanel2;
     private com.rameses.rcp.util.FormPanel formPanel3;
     private com.rameses.rcp.util.FormPanel formPanel4;
@@ -438,13 +473,13 @@ public class MachListPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private com.rameses.rcp.control.XActionBar xActionBar1;
+    private com.rameses.rcp.control.XButton xButton1;
+    private com.rameses.rcp.control.XButton xButton2;
     private com.rameses.rcp.control.XCheckBox xCheckBox1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
-    private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel10;
     private com.rameses.rcp.control.XLabel xLabel11;
     private com.rameses.rcp.control.XLabel xLabel12;
-    private com.rameses.rcp.control.XLabel xLabel13;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
     private com.rameses.rcp.control.XLabel xLabel4;

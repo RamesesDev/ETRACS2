@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+// date      : july 07, 2011
+-->
+<workunit>
+    <invokers>
+        <invoker type="rpu.bldg" action="init" caption="Open" target="popup" />
+        
+        <invoker type="formActions" action="ok" caption="OK" mnemonic="o" />
+        <invoker type="formActions" action="_close" caption="Cancel" mnemonic="c" immediate="true" />
+        
+    </invokers>
+    <code lang="groovy">
+        
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+import java.rmi.server.UID
+
+public class BldgRPUController
+{
+    @Binding
+    def binding
+    
+    @Service('BldgRPUService')
+    def svc
+    
+    @Service('PropertyClassificationService')
+    def classSvc
+    
+    @Service('ExemptionTypesService')
+    def exemptSvc
+    
+    
+    def onupdate
+    def faas
+    def rpu
+    
+    def exemption
+    def classification
+    def errorMsg 
+    
+    void init() {
+        rpu.issuedate       = faas.info.issuedate 
+        classificationList  = classSvc.lookup( null, null) 
+        exemptionList       = exemptSvc.lookup(null, null) 
+        classification      = classificationList.find{ it.classid == rpu.classid }
+        exemption           = exemptionList.find{ it.exemptid == rpu.exemptid }
+        bldgtype            = rpu.info.bldgtype?.bldgtypecode
+        bldgkind            = rpu.info.bldgkindbucc?.bldgkindcode 
+        dtcompleted         = rpu.info.dtcompleted
+        dtoccupied          = rpu.info.dtoccupied
+        bldgage             = rpu.info.bldgage
+        depreciation        = rpu.info.depreciation 
+        firstfloorbasevalue = rpu.info.firstfloorbasevalue 
+    }
+    
+    def ok() {
+        if( onupdate ) onupdate( rpu )
+        return '_close'
+    }
+    
+    /*---------------------------------------------------------------
+    *
+    * MainForm Support
+    *
+    ---------------------------------------------------------------*/
+    def bldgtype
+    def bldgkind 
+    def firstfloorbasevalue
+    
+    void setFirstfloorbasevalue( firstfloorbasevalue ) {
+        if( firstfloorbasevalue == null )  throw new Exception('Base value is required.')
+        if( rpu.info.bldgtype?.basevaluetype == 'range' ) {
+            def minvalue = rpu.info.bldgkindbucc.minbasevalue
+            def maxvalue = rpu.info.bldgkindbucc.maxbasevalue
+            if( firstfloorbasevalue <  minvalue || firstfloorbasevalue > maxvalue ) {
+                throw new Exception('Base value must be between ' + minvalue + ' and ' + maxvalue + '.')
+            }
+        }
+        this.firstfloorbasevalue = firstfloorbasevalue
+        rpu.info.firstfloorbasevalue = firstfloorbasevalue 
+        recalc()
+    }
+    
+    def onselectBldgType = { bt ->
+        rpu.info.bldgtype = bt 
+        bldgtype = bt.bldgtypecode 
+        clearBldgKindInfo()
+        binding.refresh('bldgtype|rpu.info.bldgtype.*')
+    }
+    
+    def lookupBldgType() {
+        return InvokerUtil.lookupOpener('bldgtype.lookup', [onselect:onselectBldgType, ry:rpu.ry, searchText:bldgtype])
+    }
+    
+    def onselectBldgKind = { bk ->
+        rpu.info.bldgkindbucc = bk
+        firstfloorbasevalue = bk.basevalue
+        if( rpu.info.bldgtype.basevaluetype == 'range' ) {
+            firstfloorbasevalue = bk.minbasevalue 
+        }
+        rpu.info.firstfloorbasevalue = firstfloorbasevalue
+        
+        bldgkind = bk.bldgkindcode 
+        binding.refresh('bldgkind|rpu.info.bldgkind.*|rpu.info.firstfloorbasevalue')
+    }
+    
+    def lookupBldgKind() {
+        required( 'Building Type', rpu.info.bldgtype )
+        return InvokerUtil.lookupOpener('bldgkind.lookup', [onselect:onselectBldgKind, bldgtypeid:rpu.info.bldgtype.bldgtypeid, searchText:bldgkind])
+    }
+    
+    void clearBldgKindInfo() {
+        bldgkind = null
+        rpu.info.bldgkind = null 
+        rpu.info.firstfloorbasevalue = 0.0
+        firstfloorbasevalue = 0.0
+        binding.refresh('bldgkind|rpu.info.bldgkind.*|firstfloorbasevalue')
+    }
+    
+    List getClassList() {
+        return svc.getClassList()
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * BldgInformation Tab Support
+    *
+    ---------------------------------------------------------------*/
+    def dtcompleted
+    def dtoccupied
+    def bldgage
+    def depreciation
+    def selectedBldgUse
+    
+    void setDtcompleted( dtcompleted ) {
+        this.dtcompleted = dtcompleted
+        rpu.info.dtcompleted = dtcompleted
+        calcBldgAge()
+        recalc()
+    }
+    
+    void setDtoccupied( dtoccupied ) {
+        this.dtoccupied = dtoccupied
+        rpu.info.dtoccupied = dtoccupied 
+        calcBldgAge()
+        recalc()
+        
+    }
+    
+    void calcBldgAge() {
+        rpu.info.bldgage = svc.calculateBldgAge( rpu.issuedate, rpu.info.dtcompleted, rpu.info.dtoccupied ) 
+        bldgage = rpu.info.bldgage 
+        binding.refresh('bldgage')
+    }
+    
+    void setBldgage( bldgage )  {
+        this.bldgage = bldgage 
+        rpu.info.bldgage = bldgage
+        recalc()
+    }
+    
+    void setDepreciation( depreciation) {
+        this.depreciation = depreciation
+        rpu.info.depreciation = depreciation
+        recalc()
+    }
+    
+    def getLookupActualUse() {
+        return InvokerUtil.lookupOpener('bldgactualuse.lookup', [ry:rpu?.ry])
+    }
+    
+    def bldguseListHandler = [
+        createItem     : { return createBldgUse() },
+        getColumns     : { return [
+            new Column(name:'actualuse', caption:'Actual Use*', maxWidth:150, editable:true, type:'lookup', handler:lookupActualUse, expression:'#{actualusename}'),
+            new Column(name:'area', caption:'Area', type:'decimal', maxWidth:80 ),
+            new Column(name:'basemarketvalue', caption:'Base Market Value', type:'decimal'),
+            new Column(name:'adjustment', caption:'Adjustment', type:'decimal', maxWidth:120 ),
+            new Column(name:'marketvalue', caption:'Market Value', type:'decimal', maxWidth:120 ),
+            new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal', maxWidth:120 ),
+        ]},
+        onAddItem      : { item -> rpu.info.bldguses.add( item ) },
+        onRemoveItem   : { item -> removeBldgUse( item ) },
+        validate       : { li -> validateBldgUse( li.item) },
+        fetchList      : { return rpu.info.bldguses },
+    ] as SubListModel
+    
+    void removeBldgUse( item ) {
+        if( MsgBox.confirm('Delete selected item?') ) {
+            rpu.info.bldguses.remove( item )
+            recalc()
+        }
+    }
+    
+    void validateBldgUse( item ) {
+        try {
+            required( 'Actual Use', item.actualuse )
+            checkDuplicateBldgUse( item )
+            clearError()
+        }
+        catch ( e ) {
+            showError( e ) 
+        }
+    }
+    
+    void checkDuplicateBldgUse( bu ) {
+        def item = rpu.info.bldguses.find{ it.objid != bu.objid && it.actualuse.actualuseid == bu.actualuse.actualuseid  }
+        if( item ) throw new Exception('Duplicate actual use is not allowed.')    
+    }
+
+    
+    /*----------------------------------------------------------------
+    *
+    * BldgFloor Support
+    *
+    ----------------------------------------------------------------*/
+    
+    def floorUpdateHandler = { 
+        recalc()
+    }
+    
+    def defineFloorInfo() {
+        if( ! selectedBldgUse ) return 
+        return InvokerUtil.lookupOpener('bldgrpufloor.open',[rpu:rpu, bldguse:selectedBldgUse, onupdate:floorUpdateHandler])
+    }
+    
+    void recalc() {
+        def data = svc.calculateAssessment( rpu );
+        rpu = [:]
+        rpu.putAll(data)
+        faas.rpu.clear()
+        faas.rpu.putAll( data )
+        depreciation = rpu.info.depreciation 
+        binding.refresh()
+    }
+    
+    
+    
+    
+    
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * BldgStructure Support
+    *
+    ---------------------------------------------------------------*/
+    def selectedStructure
+    def lookupMaterial
+    
+    def getLookupMaterial() {
+        return InvokerUtil.lookupOpener('structurematerial.lookup',[structureid:selectedStructure?.structureid])
+    }
+
+    def structureListHandler = [
+        getColumns   : { return [
+            new Column(name:'structurename', caption:'Structure' ),
+            new Column(name:'material', caption:'Material*', editable:true, type:'lookup', handler:lookupMaterial, expression:"#{materialname}" ),
+        ]},
+        onColumnUpdate : { item, colname  ->
+            item.materialid = item.material?.materialid 
+            item.materialcode = item.material?.materialcode  
+            item.materialname = item.material?.materialname
+        },
+        fetchList : { return rpu.bldgstructures },
+    ] as SubListModel
+    
+    /*---------------------------------------------------------------
+    *
+    * ComboBox Support
+    *
+    ---------------------------------------------------------------*/
+    void setExemption( exemption ) {
+        this.exemption = exemption
+        rpu.exemptid = exemption?.exemptid
+        rpu.exemptcode = exemption?.exemptcode
+        rpu.exemptname = exemption?.exemptname
+    }
+    
+    void setClassification( classification ) {
+        this.classification = classification
+        rpu.classid = classification?.classid 
+        rpu.classcode = classification?.classcode
+        rpu.classname = classification?.classname 
+    }
+    
+    def classificationList
+    def exemptionList
+    
+    List getClassificationList() { 
+        return classificationList 
+    }
+    
+    List getExemptionList() { 
+        return exemptionList 
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * MIscellaneous Support
+    *
+    ---------------------------------------------------------------*/
+    Map createBldgUse() {
+        return [
+            objid           : 'BU' + new UID(),
+            area            : 0.0,
+            basevalue       : 0.0,
+            basemarketvalue : 0.0,
+            adjustment      : 0.0,
+            depreciationvalue : 0.0,
+            marketvalue     : 0.0,
+            assesslevel     : 0.0,
+            assessedvalue   : 0.0,
+            floors          : [],
+        ]
+    }
+    
+    void required( caption, value ) {
+        if( !value ) throw new Exception( caption + ' is required.')
+    }
+    
+    void showError( e ) {
+        println e.message
+        errorMsg = e.message
+        binding.refresh('errorMsg')
+        throw e
+    }   
+    
+    void clearError() {
+        errorMsg = null
+        binding.refresh('errorMsg') 
+    }
+    
+    boolean getAllowEdit() {
+        if( faas.docstate == 'FORPROVAPPROVAL' ) return false
+        if( faas.docstate == 'CURRENT' ) return false
+        if( faas.docstate == 'CANCELLED' ) return false
+        if( faas.info.txntype == 'TR') return false
+        return true
+    }
+    
+    boolean getAutoDepreciation() {
+        return ( rpu.info.bldgtype.computedepreciationbasedonschedule == true) 
+    }
+    
+    boolean getEnableFirstFloorBaseValue() {
+        if( rpu.info.bldgtype == null ) return false
+        if( rpu.info.bldgkindbucc == null ) return false
+        if( rpu.info.bldgtype?.basevaluetype == 'fix' ) return false
+        if( rpu.info.bldgtype?.basevaluetype == 'gap' ) return false
+        return true 
+    }
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.rpu.bldg.BldgRPUPage"/>
+    </pages>
+</workunit>

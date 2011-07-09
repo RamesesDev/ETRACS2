@@ -1,7 +1,34 @@
-"defineMachine" [selectedClassification != null] {
+"rpu.*|classification|exemption" [ true == true ] {
     enabled:true;
 }
 
-"defineMachine" [selectedClassification == null] {
+"selectedItem" [ true == true ] {
+    readonly:false
+}
+
+"viewMachines" [selectedItem == null && selectedItem.actualuseid == null] {
+    enabled:false;
+}
+
+"viewMachines" [selectedItem != null && selectedItem.actualuseid != null] {
+    enabled:true;
+}
+
+
+
+"exemption" [ rpu.taxable == 1] {
+    enabled:false;
+}
+
+"exemption" [ rpu.taxable == 0 ] {
+    enabled:true;
+}
+
+
+
+
+
+
+".*" [ allowEdit == false] {
     enabled:false;
 }
