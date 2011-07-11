@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker type="formActions" action="close" immediate="true" caption="Close" />
+        <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" caption="Next" mnemonic="n" />
+        <invoker type="formActions" action="post" shortcut="ctrl P" visibleWhen="#{mode == 'main'}" caption="Post" mnemonic="p" />
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.osiris2.reports.*;
+        import java.text.DecimalFormat;
+        
+        public class BPLedgerCapturePaymentController {
+
+            @Service('BPLedgerService')
+            def svc;
+            
+            @Caller
+            def caller;
+            
+            @Binding
+            def binding;
+            
+            def mode = 'init';
+
+            def entity = [:];
+            
+            def selectedItem;
+            
+            def dcf = new DecimalFormat("#,##0.00");
+            
+            def close() {
+                return '_close';
+            }
+            
+            def init() {
+                mode = 'init';
+                return 'init';
+            }
+            
+            def next() {
+                entity = svc.buildCapturePayment( entity );
+                mode = 'main';
+                return 'main';
+            }
+            
+            def paymentItemHandler = [
+
+                getRows    : { return 50; },
+
+                getColumns : {
+                    return [
+                        new Column( name:"appno", caption:"App No."),
+                        new Column( name:"iyear", caption:"Year", format:"#0"),
+                        new Column( name:"iqtr", caption:"Qtr"), 
+                        new Column( name:"lobname", caption:"Line of Business" ),
+                        new Column( name:"accttitle", caption:"Account" ),
+                        new Column( name:"amount", caption:"Amount" ),
+                        new Column( name:"paymentAmt", caption:"Amount Paid", editable:true, type:"decimal"),
+                        new Column( name:"surcharge", caption:"Surcharge", editable:true, type:"decimal"), 
+                        new Column( name:"interest", caption:"Interest", editable:true, type:"decimal"),
+                        new Column( name:"discount", caption:"Discount", editable:true, type:"decimal")
+                    ];
+                },
+                
+                onColumnUpdate : { value, colname ->
+                    entity.total = 0.0;
+                    for (item in entity.items) {
+                        entity.total += item.paymentAmt + item.surcharge + item.interest - item.discount;
+                    }
+                    entity.formattedtotal = dcf.format( entity.total );
+                    binding.refresh();
+                },
+                
+                fetchList : { 
+                    return entity.items;
+                }
+
+            ] as PageListModel;
+            
+            def post() {
+                if ( !MsgBox.confirm("Are you sure you want to post this document?\nDocument cannot be editted once posted.") )
+                    return null;
+                
+                svc.postCapturePayment( entity );
+                caller.binding.refresh();
+                return '_close';
+            }
+
+        }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page name="init" template="etracs2.bp.ledger.CaptureBPPaymentInitPage" />
+        <page name="main" template="etracs2.bp.ledger.CaptureBPPaymentPage" />
+    </pages>
+</workunit>

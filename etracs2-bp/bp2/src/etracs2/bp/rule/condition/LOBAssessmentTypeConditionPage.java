@@ -10,10 +10,10 @@ package etracs2.bp.rule.condition;
  *
  * @author  jzamora
  */
-public class LobAssessmentTypeConditionPage extends javax.swing.JPanel {
+public class LOBAssessmentTypeConditionPage extends javax.swing.JPanel {
     
     /** Creates new form RuleConditionPage */
-    public LobAssessmentTypeConditionPage() {
+    public LOBAssessmentTypeConditionPage() {
         initComponents();
     }
     

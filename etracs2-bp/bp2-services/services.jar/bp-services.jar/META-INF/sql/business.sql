@@ -1,6 +1,6 @@
 [getList]
 SELECT * FROM business 
-WHERE docstate = 'ACTIVE' 
+WHERE docstate IN ( 'ACTIVE', 'FOR_RELEASE' ) 
 ORDER BY tradename
 
 [getListByTradename]

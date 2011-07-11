@@ -1,0 +1,105 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID;
+import java.text.DecimalFormat;
+
+class BPLedgerService {
+
+	@PersistenceContext('main')
+	def em;
+	
+	@Service("BPBillingService")
+	def bpbillingsvc;
+	
+	def dcf = new DecimalFormat("#,##0.00");
+	
+	@ProxyMethod
+	public def openLedger( ledger ) {
+		ledger.items = getBusinessLedgers( ledger.businessid );
+		ledger.balance = 0.0;
+		ledger.lastyrpaid = 0;
+		ledger.lastqtrpaid = 0;
+		for ( item in ledger.items ) {
+			ledger.balance += item.amount - item.amtpaid;
+		}
+		def lastpaymentinfo = em.sqlContext.createNamedQuery( "bpledger:getBPLastPaymentInfo" ).setParameters( [businessid:ledger.businessid] ).singleResult;
+		ledger.lastyrpaid = lastpaymentinfo.lastyrpaid;
+		ledger.lastqtrpaid = lastpaymentinfo.lastqtrpaid;
+		ledger.formattedbalance = dcf.format( ledger.balance );
+		
+		return ledger;
+	}
+	
+	private def getPrevQtr( currQtr ) {
+		if ( currQtr == 1 )
+			return 4;
+		return currQtr - 1;
+	}
+	
+	@ProxyMethod
+	public def openLedgerItem( ledgeritem ) {
+		ledgeritem.receivables = populateReceivables( getBPReceivablesByAppId( ledgeritem.applicationid ) )
+		return ledgeritem;
+	}
+	
+	private def getBusinessLedgers( businessid ) {
+		return em.sqlContext.createNamedQuery( "bpledger:getBusinessLedgers" ).setParameters( [businessid:businessid] ).resultList;
+	}
+	
+	private def getBPReceivablesByAppId( appid ) {
+		return em.sqlContext.createNamedQuery( "bpledger:getBPReceivablesByAppId" ).setParameters( [appid:appid] ).resultList;
+	}
+	
+	private def populateReceivables( receivables ) {
+		for (receivable in receivables) {
+			def params = [
+				appid			: receivable.applicationid,
+				lobid			: receivable.lobid,
+				acctid			: receivable.acctid
+			];
+			receivable.credits = em.sqlContext.createNamedQuery( "bpledger:getBPReceivableCredits" + ((receivable.lobid) ? '' : 'ForNullLOB') ).setParameters( params ).resultList;
+			println "CREDITS > " + receivable.credits;
+		}
+		
+		return receivables;
+	}
+	
+	
+	@ProxyMethod
+	public def buildCapturePayment( payment ) {
+		payment.formattedamtpaid = dcf.format( payment.amtpaid );
+		payment.total = 0.0;
+		payment.formattedtotal = dcf.format( payment.total );
+		payment.items = em.sqlContext.createNamedQuery( "bpledger:getBPReceivablesByBusinessId" ).setParameters( [businessid:payment.businessid] ).resultList;
+		return payment;
+	}
+	
+	@ProxyMethod
+	public def postCapturePayment( payment ) {
+		validateCapturePayment( payment );
+		for ( item in payment.items ) {
+			if (item.paymentAmt > 0) {
+				em.create( 'bpledger:bpreceivablecredit', [
+					objid			: 'BPRCR' + new UID(),
+					bpreceivableid	: item.objid, 
+					refid			: null,
+					reftype			: 'CAPTURE',
+					refno			: payment.refno,
+					refdate			: payment.refdate,
+					amount			: item.paymentAmt,
+					surcharge		: item.surcharge,
+					interest		: item.interest,
+					discount		: item.discount
+				]);
+				em.sqlContext.createNamedExecutor( "bpledger:updateReceivableWithCapturePayment" ).setParameters( [receivableid:item.objid, amtpaid:item.paymentAmt] ).execute();
+			}
+		}
+		return payment;
+	}
+	
+	private void validateCapturePayment( payment ) {
+		if ( payment.amtpaid != payment.total )
+			throw new IllegalStateException( "Total must be equal to Amount Paid." );
+	}
+	
+}

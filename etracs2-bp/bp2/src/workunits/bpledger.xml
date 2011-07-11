@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker folderid="/menu/bp" action="init" caption="Business Ledger" />
+        
+        <invoker type="formActions" action="close" immediate="true" caption="Close" />
+        <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" caption="Next" mnemonic="n" />
+        <invoker type="formActions" action="capturePayment" shortcut="ctrl P" visibleWhen="#{mode == 'main'}" caption="Capture Payment" mnemonic="p" />
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.osiris2.reports.*;
+        
+        public class BPLedgerController {
+
+            @Service('BPLedgerService')
+            def svc;
+            
+            @Caller
+            def caller;
+            
+            @Binding
+            def binding;
+            
+            def mode = 'init';
+            
+            def filter;
+            
+            def entity = [:];
+            
+            def selectedItem;
+            
+            def selectedReceivable;
+            
+            def init() {
+                return 'init';
+            }
+            
+            def next() {
+                entity = svc.openLedger( entity );
+                mode = 'main';
+                return 'main';
+            }
+            
+            def onselectBusiness = { sb ->
+                filter = "";
+                entity.businessid = sb.objid;
+                entity.business = [ 
+                    tradename       : sb.tradename,
+                    businessaddress : sb.businessaddress,
+                    taxpayerid      : sb.taxpayerid,
+                    taxpayername    : sb.taxpayername,
+                    taxpayeraddress : sb.taxpayeraddress,
+                    adminid         : sb.adminid,
+                    adminname       : sb.adminname,
+                    adminaddress    : sb.adminaddress,
+                    lastyrpaid      : sb.lastyrpaid,
+                    lastqtrpaid     : sb.lastqtrpaid
+                ];
+                binding.refresh();
+            }
+            
+            def lookupBusiness() {
+                return InvokerUtil.lookupOpener( 'business:lookup', [onselect:onselectBusiness, searchText:filter] );
+            }
+            
+            def itemHandler = [
+
+                getRows    : { return 50; },
+
+                getColumns : {
+                    return [
+                        new Column( name:"appyear", caption:"Year.", format:"#0"),
+                        new Column( name:"appno", caption:"App. No."),
+                        new Column( name:"applicationtype", caption:"Type"),
+                        new Column( name:"amount", caption:"Amount"), 
+                        new Column( name:"amtpaid", caption:"Amount Paid" )
+                    ];
+                },
+
+                fetchList : { 
+                    print "ENTITY > " + entity;
+                    return entity?.items;
+                }
+
+            ] as PageListModel;
+            
+            def viewInfo() {
+                print "SELECTED ITEM > " + selectedItem;
+                if (!selectedItem) return null;
+                selectedItem = svc.openLedgerItem( selectedItem );
+                
+                return new PopupOpener( outcome:'item' );
+            }
+            
+            def receivableHandler = [
+
+                getRows    : { return 50; },
+
+                getColumns : {
+                    return [
+                        new Column( name:"lobname", caption:"Line of Business"),
+                        new Column( name:"accttitle", caption:"Account"),
+                        new Column( name:"amount", caption:"Amount"), 
+                        new Column( name:"amtpaid", caption:"Amount Paid" )
+                    ];
+                },
+
+                fetchList : { 
+                    if ( !selectedItem ) return [];
+                    return selectedItem.receivables;
+                }
+
+            ] as PageListModel;
+            
+            def creditHandler = [
+
+                getRows    : { return 50; },
+
+                getColumns : {
+                    return [
+                        new Column( name:"reftype", caption:"Type"),
+                        new Column( name:"refno", caption:"Ref. No."),
+                        new Column( name:"amount", caption:"Amount"), 
+                        new Column( name:"amtpaid", caption:"Amount Paid" ),
+                        new Column( name:"surcharge", caption:"Surcharge"), 
+                        new Column( name:"interest", caption:"Interest"), 
+                        new Column( name:"discount", caption:"Discount")
+                    ];
+                },
+
+                fetchList : { 
+                    if ( !selectedReceivable ) return [];
+                    return selectedReceivable.credits;
+                }
+
+            ] as PageListModel;
+            
+            def capturePayment() {
+                def paymentInfo = [
+                    businessid  : entity.businessid,
+                    business    : entity.business,
+                    amtpaid     : 0.0,
+                    total       : 0.0
+                ];
+                return new PopupOpener( name:"bp2:bpledgercapturepayment", action:"init", params:[entity:paymentInfo]  );
+            }
+        }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page name="init" template="etracs2.bp.transaction.SelectBusinessPage" />
+        <page name="main" template="etracs2.bp.ledger.BPLedgerPage" />
+        <page name="item" template="etracs2.bp.ledger.BPLedgerItemPage" />
+    </pages>
+</workunit>
