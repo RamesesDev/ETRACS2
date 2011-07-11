@@ -215,6 +215,7 @@ public class FAASController
         faas.rp.barangay = barangay.lguname
         faas.rp.barangayindex = barangay.indexno 
         faas.rp.munidistrictid = barangay.parentid 
+        faas.rp.provcityindex = '-'
         setSectionInfo()
         setParcelInfo()
         faas = svc.validateCreate( faas )
@@ -330,11 +331,10 @@ public class FAASController
     }
     
     boolean getAllowEditPinInfo() {
-        def edit = false;
-        if( faas.rpu.rputype == 'land' ) edit = true
-        if( faas.info.datacapture == true ) edit = true
-        if( 'CE/ND/MC'.indexOf( faas.info.txntype ) >= 0 ) edit = true
-        return edit
+        if( faas.rpu.rputype != 'land' ) return false
+        if( faas.info.datacapture == true ) return true
+        if( 'CE/ND/MC'.indexOf( faas.info.txntype ) >= 0 ) return true
+        return false
     }
 }
 
