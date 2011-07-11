@@ -54,10 +54,10 @@ class BldgRPUService
     
     @ProxyMethod
 	public def calculateBldgDepreciation( bldgtype, issuedate, dtcompleted, dtoccupied) {
-		required( "Building Type", bldgtype)
-		required( "Issue Date", issuedate )
-		required( "Date Completed", dtcompleted )
-		required( "Date Occupied", dtoccupied )
+		if( ! bldgtype ) return 0.0 
+        if( ! issuedate) return 0.0 
+        if( ! dtcompleted ) return 0.0 
+        if( ! dtoccupied ) return 0.0 
         
         issuedate = dateSvc.parse( 'yyyy-MM-dd', issuedate )
         dtcompleted = dateSvc.parse( 'yyyy-MM-dd', dtcompleted)

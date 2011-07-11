@@ -290,7 +290,7 @@ public class FAASController
     boolean autonumber = false
     def txntitle
     def txntype
-    def claimno
+    def claimno = '-'
     
     def newdiscovery()  { 
         mode = 'create' 
@@ -303,12 +303,12 @@ public class FAASController
     def correction()    { initTxn( 'CE', 'Correction of Entry Transaction' ) }
     def multipleclaim() { initTxn( 'MC', 'Multiple Claim Transaction' ) }
     
-    def initTxn( txntype, txntitle ) {
-        this.mode = 'create'
-        this.txntype = txntype
+    def initTxn( txntype, txntitle ) { 
+        this.mode = 'create' 
+        this.txntype = txntype 
         this.txntitle = txntitle 
-        return 'txninit'
-    }
+        return 'txninit' 
+    } 
     
     def initTransaction() {
         faas = svc.initTransaction( txntype, prevtdno, autonumber, claimno)

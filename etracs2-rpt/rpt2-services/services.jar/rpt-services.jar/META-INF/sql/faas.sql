@@ -2,10 +2,13 @@
 # GETTERS
 #----------------------------------------------------------------
 [getInfoByTdno]
-SELECT objid, docstate, schemaname, fullpin, fullpin AS ledgerid FROM faaslist WHERE tdno = $P{tdno} 
+SELECT objid, docstate, schemaname, tdno, fullpin, claimno FROM faaslist WHERE tdno = $P{tdno} 
 
 [getInfoByPin]
-SELECT objid, docstate, schemaname, fullpin, fullpin AS ledgerid FROM faaslist WHERE pin = $P{pin} 
+SELECT objid, docstate, schemaname, tdno, fullpin, claimno FROM faaslist WHERE pin = $P{pin} 
+
+[getLandReferenceByPin]
+SELECT objid, schemaname, taxpayerid FROM faaslist WHERE fullpin = $P{pin} 
 
 [getTxnReference]
 SELECT * FROM txnreference WHERE objid = $P{objid}
@@ -61,6 +64,12 @@ SELECT ry FROM rptsetting
 
 [getLedgerInfo]
 SELECT objid, docstate, lastyearpaid, lastqtrpaid FROM rptledger where objid = $P{objid} 
+
+
+[getLandImprovementIds]
+SELECT objid FROM faaslist WHERE landfaasid = $P{landfaasid} AND docstate NOT IN ('CANCELLED') 
+
+
 #----------------------------------------------------------------
 # INSERT
 #----------------------------------------------------------------
@@ -94,6 +103,16 @@ UPDATE faaslist SET
     cancelledbytdnos = $P{cancelledbytdnos} 
 WHERE objid = $P{objid}    
 
+
+[updateListTdNo]
+UPDATE faaslist SET tdno = $P{tdno} WHERE objid = $P{objid} 
+
+
+[updateListLandReference]
+UPDATE faaslist SET landfaasid = $P{landfaasid}, landfaastaxpayerid = $P{landfaastaxpayerid} WHERE objid = $P{objid} 
+
+
+
 #----------------------------------------------------------------
 # CHECKS
 #----------------------------------------------------------------
@@ -105,6 +124,9 @@ SELECT tdno FROM faaslist WHERE objid <> $P{objid} AND tdno = $P{tdno}
 #----------------------------------------------------------------
 [deletePin]		
 DELETE FROM pin WHERE pin = $P{pin}
+
+[deleteTxnReference]
+DELETE FROM txnreference WHERE refid = $P{refid} 
 		
 		
 #----------------------------------------------------------------

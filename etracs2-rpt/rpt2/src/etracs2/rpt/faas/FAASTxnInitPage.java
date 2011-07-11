@@ -32,7 +32,6 @@ public class FAASTxnInitPage extends javax.swing.JPanel {
         xSeparator1 = new com.rameses.rcp.control.XSeparator();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xTextField2 = new com.rameses.rcp.control.XTextField();
-        xCheckBox1 = new com.rameses.rcp.control.XCheckBox();
         xButton1 = new com.rameses.rcp.control.XButton();
         xButton2 = new com.rameses.rcp.control.XButton();
 
@@ -70,16 +69,6 @@ public class FAASTxnInitPage extends javax.swing.JPanel {
         xTextField2.setName("claimno");
         xTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xTextField2);
-
-        xCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xCheckBox1.setText("Auto-number Tax Declaration");
-        xCheckBox1.setCaption("");
-        xCheckBox1.setCaptionWidth(120);
-        xCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox1.setName("autonumber");
-        xCheckBox1.setOpaque(false);
-        xCheckBox1.setPreferredSize(new java.awt.Dimension(159, 40));
-        formPanel1.add(xCheckBox1);
 
         xButton1.setMnemonic('n');
         xButton1.setText("Next");
@@ -123,7 +112,6 @@ public class FAASTxnInitPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel1;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
-    private com.rameses.rcp.control.XCheckBox xCheckBox1;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XSeparator xSeparator1;
     private com.rameses.rcp.control.XTextField xTextField1;

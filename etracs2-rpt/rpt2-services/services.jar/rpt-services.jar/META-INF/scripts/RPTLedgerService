@@ -200,7 +200,8 @@ class RPTLedgerService
     }
     
     Map openLedger( faas ) {
-        def ledger = em.read(LEDGER_SCHEMA, [ objid:faas.fullpin] )
+        def ledgerid = faas.fullpin + '-' + faas.claimno 
+        def ledger = em.read(LEDGER_SCHEMA, [ objid:ledgerid] )
         if( ! ledger ) throw new Exception('Ledger for FAAS ' + faas.tdno  + ' does not exists.\nKindly ask assistance from Land Tax.')
         return ledger 
     }
