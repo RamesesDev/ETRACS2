@@ -4,6 +4,7 @@ SELECT * FROM landassesslevel WHERE objid = $P{objid}
 [getRYSetting]
 SELECT * FROM planttreerysetting WHERE ry = $P{ry}
 
+
 #----------------------------------------------------------------
 # Lookups
 #----------------------------------------------------------------

@@ -1,0 +1,258 @@
+<workunit>
+    <invokers>
+        <invoker type="rpu.planttree" action="init" caption="Open" target="popup" />
+        
+        <invoker type="formActions" action="ok" caption="OK" mnemonic="o" />
+        <invoker type="formActions" action="_close" caption="Cancel" mnemonic="c" immediate="true" />
+        
+    </invokers>
+    <code lang="groovy">
+        
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+import java.rmi.server.UID
+
+public class PlantTreeRPUController
+{
+    @Binding
+    def binding
+    
+    @Service('PlantTreeRPUService')
+    def svc
+    
+    @Service('PropertyClassificationService')
+    def classSvc
+    
+    @Service('ExemptionTypesService')
+    def exemptSvc
+    
+    
+    def onupdate
+    def faas
+    def rpu
+    
+    def exemption
+    def classification
+    def errorMsg 
+    
+    void init() {
+        classificationList = classSvc.lookup( null, null) 
+        exemptionList = exemptSvc.lookup(null, null) 
+        classification = classificationList.find{ it.classid == rpu.classid }
+        exemption = exemptionList.find{ it.exemptid == rpu.exemptid }
+    }
+    
+    def ok() {
+        if( onupdate ) onupdate( rpu )
+        return '_close'
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * PlantTree Support
+    *
+    ---------------------------------------------------------------*/
+    def selectedPlantTree
+    
+    def getLookupTreeUnitValue() {
+        return InvokerUtil.lookupOpener('planttreeunitvalue.lookup', [ry:rpu.ry] )
+    }
+    
+    def getLookupPlantTreeAssessLevel() {
+        return InvokerUtil.lookupOpener('planttreeassesslevel.lookup', [ry:rpu.ry] )
+    }
+    
+    def planttreeListHandler = [
+        createItem   : { return createPlantTree() },
+        getColumns   : { return [
+            new Column(name:'ptuv', caption:'Code*', type:'lookup', handler:lookupTreeUnitValue, expression:'#{unitvaluecode}', editable:true, maxWidth:80),
+            new Column(name:'planttreename', caption:'Plant/Tree', maxWidth:120),
+            new Column(name:'unitvalue', caption:'Unit Value', maxWidth:100, type:'decimal'),
+            new Column(name:'al', caption:'Assess Level*', maxWidth:100, type:'lookup', handler:lookupPlantTreeAssessLevel, expression:'#{assesslevelcode}', editable:true, maxWidth:80),
+            new Column(name:'bearing', caption:'Bearing*', maxWidth:100, type:'integer', editable:true),
+            new Column(name:'nonbearing', caption:'NonBearing*', maxWidth:100, type:'integer', editable:true ),
+            new Column(name:'basemarketvalue', caption:'Base Market Value', type:'decimal'),
+            new Column(name:'adjustmentrate', caption:'Adj. Rate', type:'decimal'),
+            new Column(name:'adjustment', caption:'Adjustment', type:'decimal'),
+            new Column(name:'marketvalue', caption:'Market Value', type:'decimal'),
+            new Column(name:'assessedvalue', caption:'Assesed Value', type:'decimal'),
+        ]},
+        validate       : { li -> validatePlantTree( li.item ) },
+        onRemoveItem   : { item -> removePlantTree( item ) },
+        onAddItem      : { item -> 
+            if( rpu.info.planttreedetails == null ) rpu.info.planttreedetails = [];
+            rpu.info.planttreedetails.add( item ) 
+            calculateTotals()
+        },
+        onColumnUpdate : { item, colName -> 
+            if( colName == 'ptuv' ) updatePlantTreeUnitValue( item )
+            else if( colName == 'al' ) updatePlantTreeAssessLevelInfo( item )
+        },
+        fetchList    : { return rpu.info.planttreedetails },
+    ] as SubListModel
+    
+    
+    void validatePlantTree( item ) {
+        try {
+            required('Code', item.planttreeid )
+            required('Assess Level', item.assesslevelid )
+            if( item.bearing == null ) throw new Exception('Bearing must not be empty.')
+            if( item.nonbearing == null ) throw new Exception('Non-Bearing must not be empty.')
+            calculatePlantTreeAssessment( item )
+            if( ! newPlantTreeItem(item) ) {
+                calculateTotals()
+            }
+            clearError()
+        }
+        catch( e ) {
+            showError( e )
+        }
+    }
+    
+    void calculatePlantTreeAssessment( item ) {
+        item.landfaasid = faas.info.landfaasid;
+        def data = svc.calculatePlantTreeAssessment( item )
+        item.putAll( data ) 
+    }
+    
+    void removePlantTree( item ) {
+        if( MsgBox.confirm('Delete selected item?') ) {
+            rpu.info.planttreedetails.remove( item )
+            calculateTotals()
+        }
+    }
+    
+    void updatePlantTreeUnitValue( item ) {
+        item.unitvalueid = item.ptuv?.unitvalueid
+        item.unitvaluecode = item.ptuv?.unitvaluecode
+        item.unitvaluename = item.ptuv?.unitvaluename 
+        item.unitvalue = item.ptuv?.unitvalue 
+        item.planttreeid = item.ptuv?.planttreeid
+        item.planttreecode = item.ptuv?.planttreecode 
+        item.planttreename = item.ptuv?.planttreename 
+    }
+    
+    void updatePlantTreeAssessLevelInfo( item ) {
+        item.assesslevelid = item.al?.assesslevelid 
+        item.assesslevelcode = item.al?.assesslevelcode 
+        item.assesslevelname = item.al?.assesslevelname  
+        item.assesslevel = item.al?.assesslevel
+    }
+    
+    void calculateTotals() {
+        clearRpuTotals()
+        clearPlantTotals()
+        
+        rpu.info.planttreedetails.each {
+            rpu.totalbmv     += it.basemarketvalue 
+            rpu.totalmv      += it.marketvalue 
+            rpu.totalav      += it.assessedvalue
+            rpu.info.totalbearing   += it.bearing
+            rpu.info.totalnonbearing += it.nonbearing
+        }
+        
+        binding.refresh('rpu.total.*|rpu.info.*')
+    }
+    
+    void clearRpuTotals() {
+        rpu.totalbmv     = 0.0
+        rpu.totalmv      = 0.0
+        rpu.totalav      = 0.0
+    }
+    
+    void clearPlantTotals(){
+        rpu.info.totalbearing       = 0
+        rpu.info.totalnonbearing    = 0
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * ComboBox Support
+    *
+    ---------------------------------------------------------------*/
+    void setExemption( exemption ) {
+        this.exemption = exemption
+        rpu.exemptid = exemption?.exemptid
+        rpu.exemptcode = exemption?.exemptcode
+        rpu.exemptname = exemption?.exemptname
+    }
+    
+    void setClassification( classification ) {
+        this.classification = classification
+        rpu.classid = classification?.classid 
+        rpu.classcode = classification?.classcode
+        rpu.classname = classification?.classname 
+    }
+    
+    def classificationList
+    def exemptionList
+    
+    List getClassifications() { 
+        return classificationList 
+    }
+    
+    List getExemptions() { 
+        return exemptionList 
+    }
+    
+    
+    /*---------------------------------------------------------------
+    *
+    * MIscellaneous Support
+    *
+    ---------------------------------------------------------------*/
+  
+    Map createPlantTree() {
+        return [
+            objid           : 'TP' + new UID(),
+            bearing         : 0,
+            nonbearing      : 0, 
+            basemarketvalue : 0.0,
+            adjustment      : 0.0,
+            marketvalue     : 0.0,
+            assesslevel     : 0.0,
+            assessedvalue   : 0.0,
+        ]   
+    }
+    
+    void required( caption, value ) {
+        if( !value ) throw new Exception( caption + ' is required.')
+    }
+    
+    boolean newPlantTreeItem( item ) {
+        return ( rpu.info.planttreedetails.find{ it.objid == item.objid } == null ) 
+    }
+    
+    void showError( e ) {
+        println e.message
+        errorMsg = e.message
+        binding.refresh('errorMsg')
+        throw e
+    }   
+    
+    void clearError() {
+        errorMsg = null
+        binding.refresh('errorMsg') 
+    }
+    
+    boolean getAllowEdit() {
+        if( faas.docstate == 'FORPROVAPPROVAL' ) return false
+        if( faas.docstate == 'CURRENT' ) return false
+        if( faas.docstate == 'CANCELLED' ) return false
+        if( faas.info.txntype == 'TR') return false
+        return true
+    }
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.rpu.planttree.PlantTreeRPUPage"/>
+    </pages>
+</workunit>
