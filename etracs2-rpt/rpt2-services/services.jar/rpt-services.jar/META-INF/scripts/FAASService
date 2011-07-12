@@ -243,7 +243,7 @@ class FAASService
         faas = open( faas.objid )
         faas.info.claimno = claimno 
         if( txntype == 'TR' ) return initTransfer( faas, txntype, prevtdno, autonumber )
-        else if( txntype == 'RE' ) return initReassessment( faas, txntype, prevtdno, autonumber )
+        else if( txntype == 'RE' || txntype == 'CE' ) return initReassessment( faas, txntype, prevtdno, autonumber )
         else {
             throw new Exception('TxnType ' + txntype + ' not yet supported.')
         }
@@ -300,17 +300,18 @@ class FAASService
     void updateImprovementLandReference( faas ) {
         if( faas.info.datacapture == true ) return 
         if( faas.rpu.rputype != LAND_TYPE ) return 
+
+        //update improvement references 
         def prevfaasid = ( faas.previousfaases ? faas.previousfaases[0].faasid : null )
         def improvementIds = getLandImprovementIds( prevfaasid)
         improvementIds.each { 
             def improvementfaas = em.read( faas.schemaname, [objid:it.objid ] )
+            if( ! improvementfaas ) throw new Exception('Cannot open land improvement with ID ' + it.objid + '.\nPlease contact ETRACS Administrator.')
+            improvementfaas.rp.putAll( faas.rp )
             improvementfaas.info.landfaasid          = faas.objid 
             improvementfaas.info.landfaastaxpayerid  = faas.info.taxpayerid 
             em.update( improvementfaas.schemaname, improvementfaas )
-            
-            // update faaslist landref
-            def faaslist = [objid:it.objid, landfaasid:faas.objid, landfaastaxpayerid:faas.info.taxpayerid]
-            em.sqlContext.createNamedExecutor('faas:updateListLandReference').setParameters(faaslist).execute()
+            em.update( LISTSCHEMA_NAME, improvementfaas )
         }
     }
     

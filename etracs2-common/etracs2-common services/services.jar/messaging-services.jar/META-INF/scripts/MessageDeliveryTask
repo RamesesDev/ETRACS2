@@ -1,0 +1,71 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import com.rameses.invoker.client.*
+
+class MessageDeliveryTask
+{
+    @PersistenceContext('main')
+    def em 
+    
+    @Service('Var')
+    def var
+	
+	@ProxyMethod
+	public def deliverMessage( task ) {
+        def msg = getInboxMessage()
+        if( msg )  {
+            try {
+                println 'Sending message to remote...'
+                def retval = invokeRemoteService( 'InboxService', 'receive', [msg] as Object[])
+                msg.messages.add( createMessage( retval.msg ) )
+                if( retval.status == 'ok' ) {
+                    moveMessageToProcessedInbox( msg )
+                }
+                else {
+                    em.update( msg.schemaname, msg )
+                }
+            }
+            catch( e ) {
+                logMessage( msg, e.message )
+            }
+        }
+        else {
+            println 'No messages from inbox...'
+        }
+        return true
+	}
+    
+    def getInboxMessage() {
+        //return the first available msg from the inbox 
+        def msg = em.sqlContext.createNamedQuery('message:getId').setMaxResults(1).singleResult
+        if( msg ) {
+            return em.read( 'message:inbox', [objid:msg.objid] )
+        }
+        return null
+    }
+	
+    void moveMessageToProcessedInbox( msg ) {
+        em.create( 'message:processedinbox', msg )
+        em.delete( msg.schemaname, msg )
+    }
+    
+    void logMessage( msg, errorMsg ) {
+        msg.messages.add( createMessage(errorMsg))
+        em.update( msg.schemaname, msg )
+    }
+    
+    def createMessage( m ) {
+        return [ date:new Date(), msg:m ]
+    }
+    
+    
+    
+    def invokeRemoteService( servicename, methodname, params ) {
+        def remote = new DynamicHttpInvoker( var.remote_host, var.remote_context, false )
+        // remote.connectionTimeout = 10000 
+        // remote.readTimeout = 10000 
+        def svc = remote.create( servicename )
+        return svc.invoke( methodname, params )
+    }
+    		
+}
