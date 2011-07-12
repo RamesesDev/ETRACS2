@@ -1,0 +1,70 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class RPUService
+{
+    @PersistenceContext('main')
+    def em
+    
+    def LAND_TYPE = 'land' 
+    def BLDG_TYPE = 'bldg'
+    def MACH_TYPE = 'mach'
+    def PLANTTREE_TYPE = 'planttree'
+    def MISC_TYPE = 'misc' 
+    
+    @ProxyMethod
+    public List getFieldList() {
+        return [
+            [objid:'BASE_MARKET_VALUE', name:'BASE_MARKET_VALUE'],
+            [objid:'MARKET_VALUE', name:'MARKET_VALUE'],
+            [objid:'BASE_VALUE', name:'BASE_VALUE'],
+            [objid:'UNIT_VALUE', name:'UNIT_VALUE'],
+            [objid:'AREA', name:'AREA'],
+            [objid:'ASSESSED_VALUE', name:'ASSESSED_VALUE'],
+        ]
+    }
+    
+    @ProxyMethod
+    public List getVariables( expr ) {  
+        def pattern = ~/[A-Z_]+/ 
+        def matcher = pattern.matcher( expr )
+        List tokens = matcher.collect{ it }
+        List vars = tokens - getFieldList().objid 
+        List list = []
+        if( vars ) {
+            vars.each {
+                list += em.sqlContext.createNamedQuery('rpu:getRPTParameter').setParameter('name', it).singleResult 
+            }
+        }
+        return list 
+    }
+    
+    @ProxyMethod
+    public void buildCommonRpuInfo( faas  ) {
+        def rpuinfo = faas.rpu 
+        rpuinfo.taxable         = true 
+        rpuinfo.totalbmv        = 0.0
+        rpuinfo.totalmv         = 0.0
+        rpuinfo.totalav         = 0.0
+        rpuinfo.totalareasqm    = 0.0
+        rpuinfo.totalareaha     = 0.0
+        rpuinfo.useswornamount  = false
+    }
+    
+    
+    /*
+
+    String buildFullPin( faas ) {
+        String fullpin = faas.rp.pin 
+        if( faas.rpu.rputype != LAND_TYPE ) {
+            fullpin += '-' + faas.rpu.suffix 
+        }
+        if( faas.rpu.rputype == BLDG_TYPE && faas.rpu.info.iscondo ) {
+            fullpin += '-' + faas.rpu.info.subsuffix
+        }
+        return fullpin 
+    }
+    */
+    
+}

@@ -1,0 +1,51 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+/*
+* Periodically reads sys_inbox for messages. When messages are available,
+* it dispatches the message by calling MessageService.onreceive
+* and move the message to from inbox to processedinbox 
+*
+*/
+class InboxTask
+{
+    @PersistenceContext('main')
+    def em 
+    
+    @Service('MessageService')
+    def msgSvc
+	
+	@ProxyMethod
+	public def processInbox( task ) {
+        def msg = getInboxMessage()
+        if( msg )  {
+			try {
+				msgSvc.onreceive( msg )
+				moveMessageToProcessedInbox( msg )
+			}
+			catch( e ) {
+				logMessage( msg, e.message )
+			}	
+        }
+        return true
+	}
+	
+	void logMessage( msg, errorMsg ) {
+        msg.messages.add( createMessage(errorMsg))
+        em.update( msg.schemaname, msg )
+    }
+    
+    def getInboxMessage() {
+        //return the first available msg from the inbox 
+        def msg = em.sqlContext.createNamedQuery('message:getId').setMaxResults(1).singleResult
+        if( msg ) {
+            return em.read( 'message:inbox', [objid:msg.objid] )
+        }
+        return null
+    }
+    		
+	void moveMessageToProcessedInbox( msg ) {
+		em.create('message:processedinbox', msg )
+		em.delete('message:inbox', msg )
+	}
+}
