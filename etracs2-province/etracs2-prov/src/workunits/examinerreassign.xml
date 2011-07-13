@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="etracsmgmt.action" caption="Re-Assign" target="window" permission="examinerreassign.view" icon="images/assign.png" />
+        <invoker type="home.action" caption="Re-Assign" target="window" permission="examinerreassign.view" icon="images/assign.png" />
         
         <invoker type="formActions" tooltip="New" action="create" immediate="true"  permission="examinerreassign.create" visibleWhen="#{mode == 'read'}" mnemonic="n" icon="images/addnew24.png"/>
         <invoker type="formActions" tooltip="Edit" action="edit" immediate="true"  permission="examinerreassign.edit" visibleWhen="#{mode == 'read' and entity.objid != null and entity.state == 'DRAFT'}"  mnemonic="e" icon="images/edit24.png"/>
@@ -53,11 +53,11 @@ public class ReassignLGUController
     }
     
     def lookupExaminerFrom() {
-        return InvokerUtil.lookupOpener("examiner:lookup", [searchText:entity.assignedFrom, onselect:selectExaminerFrom]);
+        return InvokerUtil.lookupOpener("examiner.lookup", [searchText:entity.assignedFrom, onselect:selectExaminerFrom]);
     }
     
     def lookupExaminerTo() {
-        return InvokerUtil.lookupOpener("examiner:lookup", [searchText:entity.assignedTo, onselect:selectExaminerTo]);
+        return InvokerUtil.lookupOpener("examiner.lookup", [searchText:entity.assignedTo, onselect:selectExaminerTo]);
     }
     
     def selectExaminerFrom = { examiner ->

@@ -31,7 +31,7 @@ public class ListPage extends javax.swing.JPanel {
         jPanel5 = new javax.swing.JPanel();
         jPanel8 = new javax.swing.JPanel();
         xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
-        xTable1 = new com.rameses.rcp.control.XTable();
+        xDataTable1 = new com.rameses.rcp.control.XDataTable();
         jPanel6 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         xEditorPane1 = new com.rameses.rcp.control.XEditorPane();
@@ -60,12 +60,9 @@ public class ListPage extends javax.swing.JPanel {
 
         jPanel5.add(jPanel8, java.awt.BorderLayout.NORTH);
 
-        xTable1.setAutoResize(false);
-        xTable1.setDepends(new String[] {"selectedItem"});
-        xTable1.setHandler("listHandler");
-        xTable1.setName("selectedItem");
-        xTable1.setPreferredSize(new java.awt.Dimension(0, 0));
-        jPanel5.add(xTable1, java.awt.BorderLayout.CENTER);
+        xDataTable1.setHandler("listHandler");
+        xDataTable1.setName("selectedItem");
+        jPanel5.add(xDataTable1, java.awt.BorderLayout.CENTER);
 
         jSplitPane1.setLeftComponent(jPanel5);
 
@@ -106,8 +103,8 @@ public class ListPage extends javax.swing.JPanel {
     private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
+    private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XEditorPane xEditorPane1;
-    private com.rameses.rcp.control.XTable xTable1;
     // End of variables declaration//GEN-END:variables
     
 }

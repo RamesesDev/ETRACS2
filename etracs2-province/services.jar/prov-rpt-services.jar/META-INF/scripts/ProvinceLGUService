@@ -20,6 +20,16 @@ class ProvinceLGUService
 
     
     @ProxyMethod
+    public List lookupMunicipality(searchText) {
+        searchText = ( searchText ? searchText+'%' : '%' )
+        def criteria = [indexno:searchText, name:searchText]
+        def result = []
+        if( (result = getListByQuery('provlgu:lookupMunicipaltyByIndex', criteria, null)).size() > 0 ) return result 
+        return getListByQuery('provlgu:lookupMunicipaltyByName', criteria, null)
+    }
+    
+    
+    @ProxyMethod
     public Map open() {
         def lgu = em.sqlContext.createNamedQuery('provlgu:checkExists').singleResult 
         if( lgu )  {
@@ -127,5 +137,13 @@ class ProvinceLGUService
     List getLgusByParentid( parentid ) {
         return em.sqlContext.createNamedQuery('provlgu:getLgusByParentid').setParameter('parentid', parentid).resultList 
     }
+
+    def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
 }
 

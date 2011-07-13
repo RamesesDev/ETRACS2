@@ -1,16 +1,27 @@
 <schema>
 	<!-- faas database storage -->
 	<element name="faas" tablename="faas">
-		<field name="objid" primary="true"/>
+		<link ref="faasdata"/>
+	</element>
+    
+    <element name="disapprovedfaas" tablename="disapprovedfaas">
+		<link ref="faasdata"/>
+        <field name="faasid" required="true"/>
+	</element>
+    
+    <element name="faasdata">
+        <field name="objid" primary="true"/>
 		<field name="schemaname" required="true"/>
 		<field name="schemaversion" required="true"/>
 		<field name="docstate" required="true"/>
-		<complex name="info" ref="faasinfo" serializer="default"/>
+        <field name="message" />
+        <field name="sys_dtapproved" />
+        <complex name="info" ref="faasinfo" serializer="default"/>
         <complex name="rp" ref="realproperty" serializer="default"/>
 		<complex name="rpu" ref="rpu:rpu" serializer="default" />
 		<complex name="previousfaases" ref="previousfaas" required="false" type="list" serializer="default" />
 		<complex name="extended" merge="true" serializer="default" required="false"/>
-	</element>
+    </element>
     
     <!-- realprperty "rp" info -->
     <element name="realproperty">
@@ -105,6 +116,7 @@
 		<field name="approvedby" required="true"  />
 		<field name="approvedbytitle" required="true" />
 		<field name="dtapproved" required="true" />		
+        <field name="sys_dtapproved" required="true" />
         <!-- cancel info --> 
         <field name="cancelreason"  />
 		<field name="canceldate" />

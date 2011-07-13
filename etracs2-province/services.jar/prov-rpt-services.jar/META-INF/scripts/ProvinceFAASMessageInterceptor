@@ -2,7 +2,7 @@ import com.rameses.annotations.*
 import com.rameses.eserver.*;
 import com.rameses.common.*;
 
-class FAASMessageInterceptor
+class ProvinceFAASMessageInterceptor
 {
 	@PersistenceContext('main')
 	def em
@@ -16,12 +16,13 @@ class FAASMessageInterceptor
     
 	@After(pattern='MessageService.onreceive') 
 	public void interceptOnReceive( evt ) {
-		def msg = evt.result 
-		def faas = evt.data.faas 
-		
-		em.create( faas.schemaname, faas )
-		em.create( LISTSCHEMA_NAME, faas )
-		logService.log('ONLINE-RECEIVED', 'FAAS', faas.objid);
+        def msg = evt.result 
+        if( msg.action == 'faas.receive') {
+            def faas = msg.data.faas 
+            em.create( faas.schemaname, faas )
+            em.create( LISTSCHEMA_NAME, faas )
+            logSvc.log('ONLINE-RECEIVED', 'FAAS', faas.objid);
+        }
 	}
 	
 	

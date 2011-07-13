@@ -1,159 +1,209 @@
 <workunit>
     <invokers>
-        <invoker folderid="menu/file" action="init" permission="province.view" caption="Province" />
-        <!--
-        <invoker type="formActions" action="edit" tooltip="Edit" permission="province.edit" mnemonic="e" shortcut="ctrl S" icon="images/save24.png"/>
-        -->
+        <invoker folderid="menu/rpt" action="init" permission="province.view" caption="Province" />
         <invoker type="formActions" action="save" tooltip="Save" mnemonic="s" shortcut="ctrl S" icon="images/save24.png"/>
     </invokers>
     
     <code>
         
 <![CDATA[        
-        import com.rameses.rcp.common.*;
-import com.rameses.rcp.annotations.*;
-import java.rmi.server.UID;
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import java.rmi.server.UID
 
 class ProvinceController 
 {
     @Binding
-    def binding;
+    def binding
     
-    @ChangeLog(prefix=["province","province.municipalities"])
-    def changeLog;
+    @Service("ProvinceLGUService")
+    def svc
     
-    @Service("LguService")
-    def svc;
+    def message
+    def selectedMunicipality
+    def selectedBarangay
+    def province
     
-    def title = "Province Information";
-    def message;
-    def selectedMunicipality;
-    def selectedBarangay;
-    def province;
-    def newRecord = false;
-    
-    void init() {
-        province = svc.openProvince();
-        if( ! province ) {
-            province = [ 
-                objid         : getNewId("P"),
-                type          : "province",
-                schemaName    : "lgu:province",
-		schemaVersion : "1.0",
-                municipalities : [] 
-            ];
-            newRecord = true;
-            title = "Provine (New)";
+    def init() {
+        province = svc.open()
+        if( province.objid ) {
+            return 'default'
         }
-        else {
-            newRecord = false;
-            title = "Province: $province.name";
-        }
+        return 'init' 
+    }
+    
+    def create() {
+        save()
+        return 'default' 
     }
     
     void save() {
-        sortItems();
-        if( newRecord ) {
-            svc.createProvince( province ); 
-            newRecord = false;
-            title = "Province: $province.name";
+        if( province.objid ) {
+            province = svc.update( province )
         }
         else {
-            def saveOption = [diff: changeLog.difference];
-            svc.updateProvince( province, saveOption );
+            province = svc.create( province )
         }
     }
     
-    def municipalityHandler = [
-        getRows     : { return 100; },
-        getColumns  : {
-            return [
-                    new Column( name:"item.indexNo", caption:"Index No.", width:60, minWidth:60, editable:true, required:true ),
-                    new Column( name:"item.name", caption:"Name", width:150, editable:true, required:true ),
-                    new Column( name:"item.formalName", caption:"Formal Name", width:200, editable:true, required:true ),
-            ];
-        },
-        fetchList    : { return province.municipalities; },
-        createItem   : { return createMunicipality(); },
-        onAddItem    : { item -> province.municipalities.add(item); },
-        validate     : { listItem -> doValidate(listItem.item, province.municipalities); },
-        onRemoveItem : { item -> 
-            if( MsgBox.confirm("Delete item?") ) {
-                province.municipalities.remove( item );
-            }
-        },
-    ] as SubListModel;
     
-    def barangayHandler = [
-        getRows     : { return 100; },
-        getColumns  : {
-            return [
-                    new Column( name:"item.indexNo", caption:"Index No.", width:60, minWidth:60, editable:true, required:true ),
-                    new Column( name:"item.name", caption:"Name", width:150, editable:true, required:true ),
-                    new Column( name:"item.formalName", caption:"Formal Name", width:200, editable:true, required:true ),
-            ];
-        },
-        fetchList    : { return selectedMunicipality?.item?.barangays; },
-        createItem   : { return createBarangay(); },
-        onAddItem    : { item -> selectedMunicipality.item.barangays.add(item); },
-        validate     : { listItem -> doValidate(listItem.item, selectedMunicipality.item.barangays); },
+    void setSelectedMunicipality( selectedMunicipality ) {
+        if( selectedMunicipality ) {
+            selectedMunicipality.barangays = svc.getBarangayList( selectedMunicipality.objid )
+        }
+        this.selectedMunicipality = selectedMunicipality
+    }   
+    
+    
+    def municipalityListHandler = [
+        createItem   : { return createMunicipality() },
+        getRows     : { return 100 },
+        getColumns  : { return [
+            new Column( name:"indexno", caption:"Index No.", maxWidth:80, editable:true, required:true ),
+            new Column( name:"name", caption:"Name", editable:true, required:true ),
+        ]},
+        onAddItem    : { item -> addMunicipalityItem( item ) },
+        validate     : { li -> validateMunicipalityItem( li.item )},
         onRemoveItem : { item -> 
             if( MsgBox.confirm("Delete item?") ) {
-                selectedMunicipality.item.barangays.remove( item );
+                svc.removeMunicipality( item.objid )
+                province.municipalities.remove( item )
             }
         },
-    ] as SubListModel;
-
-    void doValidate( item, list ) {
-        message = null;
-        try {
-            checkDuplicate( item, list, "indexNo", "Index No." ) ;
-            checkDuplicate( item, list, "name", "Name" ) ;
-            checkDuplicate( item, list, "formalName", "Formal Name" ) ;
+        fetchList    : { return province.municipalities },
+    ] as SubListModel
+    
+    void addMunicipalityItem( item ) {
+        try{
+            def muni = svc.createMunicipality( item )
+            item.putAll( muni )
+            province.municipalities.add(item) 
         }
         catch( e ) {
-            message = e.message;
-            throw e;
+            showMessage( e ) 
         }
+    }
+    
+    void validateMunicipalityItem( item) {
+        try {
+            checkDuplicate( item, province.municipalities, "indexno", "Index No." ) 
+            checkDuplicate( item, province.municipalities, "name", "Name" ) 
+            if( ! newMunicipality( item) ) {
+                def muni = svc.updateMunicipality( item )
+                item.putAll( muni)
+            }
+        }
+        catch( e ) {
+            showMessage( e )
+        }
+    }
+    
+    boolean newMunicipality( muni ) {
+        def data = province.municipalities.find{ it.objid == muni.objid }
+        return ( data == null )
+    }
+    
+    
+    def brgyListHandler = [
+        createItem  : { return createBarangay() },
+        getRows     : { return 100 },
+        getColumns  : {return [
+            new Column( name:"indexno", caption:"Index No.", maxWidth:80, editable:true, required:true ),
+            new Column( name:"name", caption:"Name", editable:true, required:true ),
+        ]},
+        onAddItem    : { item -> addBarangayItem( item ) },
+        validate     : { li -> validateBarangayItem(li.item ) },
+        onRemoveItem : { item -> 
+            if( MsgBox.confirm("Delete item?") ) {
+                svc.removeBarangay( item.objid )
+                selectedMunicipality.barangays.remove( item )
+            }
+        },
+        fetchList    : { return selectedMunicipality?.barangays },
+    ] as SubListModel
+
+    void addBarangayItem( item ) {
+        try {
+            def brgy = svc.createBarangay( item )
+            item.putAll( brgy )
+            selectedMunicipality.barangays.add(item) 
+        }
+        catch( e) {
+            showMessage( e ) 
+        }
+    }
+    
+    void validateBarangayItem( item) {
+        try {
+            checkDuplicate( item, selectedMunicipality.barangays, "indexno", "Index No." ) 
+            checkDuplicate( item, selectedMunicipality.barangays, "name", "Name" ) 
+            if( !newBarangay( item) ) {
+                def brgy = svc.updateBarangay( item )
+                item.putAll( brgy )
+            }
+        }
+        catch( e ) {
+            showMessage( e )
+        }
+    }
+    
+    boolean newBarangay( brgy ) {
+        def data = selectedMunicipality.barangays.find{ it.objid == brgy.objid }
+        return ( data == null )
+    }
+    
+    void validateItem( item, list ) {
+        try {
+            checkDuplicate( item, list, "indexno", "Index No." ) 
+            checkDuplicate( item, list, "name", "Name" ) 
+            clearMessage()
+        }
+        catch( e ) {
+            showMessage( e )
+        }
+    }
+    
+    void clearMessage() {
+        message = null
+        binding.refresh('message')
+    }
+    
+    void showMessage( e ) {
+        message = e.message
+        binding.refresh( 'message') 
+        throw e
     }
 
     void checkDuplicate( item, list, key, caption ) {
-        if( list.find { f -> f."$key" == item."$key"  && f.objid != item.objid } )
-            throw new Exception("Duplicate $caption not allowed.");
+        if( list.find { f -> f."$key" == item."$key"  && f.pin != item.pin } )
+            throw new Exception("Duplicate $caption not allowed.")
     }
     
     def createMunicipality() {
         return [
-            objid     : getNewId( "M" ),
-            type      : "municipality",
-            barangays : [],
-        ];
+            objid           : 'M' + new UID(),
+            lgutype         : 'MUNICIPALITY',
+            parentid        : province.objid,
+            parentindexno   : province.indexno,
+            barangays       : [],
+        ]
     }
     
     def createBarangay() {
         return [
-            objid : getNewId( "B" ),
-            type  : "barangay",
-        ];
+            objid       : 'B' + new UID(),
+            lgutype        : "BARANGAY",
+            parentid    : selectedMunicipality?.objid,
+            parentindexno   : selectedMunicipality?.pin,
+        ]
     }
-    
-    def getNewId( prefix ) {
-        return prefix + '-' + new UID();
-    }
-    
-    void sortItems() {
-        province.municipalities.sort { a, b -> return a.indexNo.compareTo(b.indexNo) };
-        province.municipalities.each { muni ->
-            muni.barangays.sort { a, b -> return a.indexNo.compareTo(b.indexNo) };
-        }
-    }
-        
 }
 
 ]]>
     </code>
     
     <pages>
+        <page name="init" template="etracs2.prov.ProvinceInitPage"/>
         <page template="etracs2.prov.ProvincePage"/>
     </pages>
 </workunit>

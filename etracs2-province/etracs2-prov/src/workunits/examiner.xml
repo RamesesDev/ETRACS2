@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="etracsmgmt.action" caption="Examiners" target="window" permission="examiner.view"  icon="images/examiner.png" />
+        <invoker type="home.action" caption="Examiners" target="window" permission="examiner.view"   icon="images/examiner.png" /> 
         
         <invoker type="formActions" tooltip="New" action="create" immediate="true" permission="examiner.new" visibleWhen="#{mode == 'read'}" mnemonic="n" icon="images/addnew24.png"/>
         <invoker type="formActions" tooltip="Edit" action="edit" immediate="true" permission="examiner.edit"  visibleWhen="#{mode == 'read' and examiner.objid != null}"  mnemonic="e" icon="images/edit24.png"/>
@@ -46,15 +46,7 @@ public class ExaminerController
         examiner = createExaminer();
         municipalityHandler.load();
     }
-    
-    def lookupUser() {
-        return InvokerUtil.lookupOpener("etracsuser:lookup", [searchText:examiner.uid, onselect:selectUserHandler]);
-    }
-    
-    def lookupMunicipality() {
-        return InvokerUtil.lookupOpener("municipality:lookup", [searchText:searchMunicipality, onselect:selectHandler]);
-    }
-    
+
     def selectUserHandler = { user ->
         if( user ) {
             examiner = examiner + user;
@@ -70,6 +62,16 @@ public class ExaminerController
             binding.refresh("searchMunicipality");
         }
     }
+    
+        
+    def lookupUser() {
+        return InvokerUtil.lookupOpener("etracsuser.lookup", [searchText:examiner.uid, onselect:selectUserHandler]);
+    }
+    
+    def lookupMunicipality() {
+        return InvokerUtil.lookupOpener("municipality.lookup", [searchText:searchMunicipality, onselect:selectHandler]);
+    }
+    
     
     void save() {
         if( mode == "create" ) {
