@@ -177,6 +177,7 @@ class FAASService
         validateSubmitToProvince( faasinfo )
         def faas = open( faasinfo.objid )
         updateFaasState( faas, FORPROVAPPROVAL_STATE )
+        sendToInbox( faas )
         logSvc.log('SUBMIT_TO_PROVINCE','FAAS', faasid)
         return faas 
     }
@@ -293,6 +294,24 @@ class FAASService
     /*-----------------------------------------------------------------------
     ** Support Methods
     -----------------------------------------------------------------------*/
+    void sendToInbox( faas ) {
+        def msg = [
+            objid           : 'MI' + new UID(),
+            schemaname      : 'message:inbox',
+            schemaversion   : '1.0',
+            fromlguindex    : var.lgu_index,
+            fromlguname     : var.lgu_name,
+            dtsent          : new Date(),
+            sentby          : ( env.USERNAME ? env.USERNAME : 'SYSTEM' ),
+            sentbytitle     : ( env.JOBTITLE ? env.JOBTITLE : 'SYSTEM' ),
+            action          : 'faas.receive',
+            data            : [ faas:faas, images:[] ],
+            messages        : [],
+        ]
+        em.create('message:inbox', msg )
+    }
+    
+    
     /* for land approval, update references of all land improvements to the new faas 
     *  applied only for the following if the transaction is not 
     *  datacapture 
@@ -341,10 +360,14 @@ class FAASService
         values.keySet().each {
             tdno = tdno.replace( it, values[it] )
         }
-        
-        faas.info.tdno = tdno + '-' + seqSvc.getNextFormattedSeries( tdno )
+        def seqno = seqSvc.getNextFormattedSeries( tdno )
+        if( var.td_format.contains( '-') ) {
+            faas.info.tdno = tdno + '-' + seqno 
+        }
+        else {
+            faas.info.tdno = tdno + seqno
+        }
         em.update(faas.schemaname, faas )
-        //update faaslisttdno 
         em.sqlContext.createNamedExecutor('faas:updateListTdNo').setParameters([tdno:faas.info.tdno, objid:faas.objid]).execute()
     }
     
@@ -599,7 +622,6 @@ class FAASService
     void validateRPUInfo( faas ) {
         if( faas.rpu.rputype == LAND_TYPE ) {
             //TODO:validate LandRPU 
-            println 'TODO:FAASService.validateRPUInfo -> LAND not yet implemented.'
         }
     }
     
