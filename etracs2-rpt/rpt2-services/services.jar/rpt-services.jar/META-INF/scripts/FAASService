@@ -177,7 +177,7 @@ class FAASService
         validateSubmitToProvince( faasinfo )
         def faas = open( faasinfo.objid )
         updateFaasState( faas, FORPROVAPPROVAL_STATE )
-        sendToInbox( faas )
+        sendToOutbox( faas )
         logSvc.log('SUBMIT_TO_PROVINCE','FAAS', faasid)
         return faas 
     }
@@ -198,6 +198,21 @@ class FAASService
         validateProvinceApproval( faasinfo )
         def faas = open( faasinfo.objid )
         updateAutonumberTdNo( faas )
+        invokeCommonApproveActions( faas )
+        return faas 
+    }
+    
+    @ProxyMethod
+    public Map onlineApprove( faasid, approvaldata  ) {
+        def faas                = open( faasid )
+        faas.info.tdno          = approvaldata.tdno
+        faas.info.dtapproved    = approvaldata.dtapproved 
+        //update pin for land type 
+        if( faas.info.datacapture == false && faas.rpu.rputype == LAND_TYPE) {
+            faas.rp.pin     = approvaldata.pin 
+            faas.rpu.pin    = approvaldata.fullpin 
+            createOnlinePIN( faas ) 
+        }
         invokeCommonApproveActions( faas )
         return faas 
     }
@@ -294,13 +309,15 @@ class FAASService
     /*-----------------------------------------------------------------------
     ** Support Methods
     -----------------------------------------------------------------------*/
-    void sendToInbox( faas ) {
+    void sendToOutbox( faas ) {
         def msg = [
             objid           : 'MI' + new UID(),
-            schemaname      : 'message:inbox',
+            schemaname      : 'message:outbox',
             schemaversion   : '1.0',
             fromlguindex    : var.lgu_index,
             fromlguname     : var.lgu_name,
+            tolguindex      : faas.rp.provcityindex,
+            tolguname       : faas.rp.provcity, 
             dtsent          : new Date(),
             sentby          : ( env.USERNAME ? env.USERNAME : 'SYSTEM' ),
             sentbytitle     : ( env.JOBTITLE ? env.JOBTITLE : 'SYSTEM' ),
@@ -308,7 +325,7 @@ class FAASService
             data            : [ faas:faas, images:[] ],
             messages        : [],
         ]
-        em.create('message:inbox', msg )
+        em.create('message:outbox', msg )
     }
     
     
@@ -404,6 +421,15 @@ class FAASService
             em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
         }
     }
+    
+    void createOnlinePIN( faas ) {
+        def validTxnTypes = ['ND','SD','CS']
+        if( validTxnTypes.contains( faas.info.txntype ) ) {
+            def pin = [pin:faas.rpu.fullpin, claimno:faas.info.claimno, docstate:faas.docstate]
+            em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
+        }
+    }
+    
     void buildPinInfo( faas ) {
         def lgu = em.sqlContext.createNamedQuery('faas:getLgu').setParameter('objid', faas.rp.munidistrictid).singleResult
         if( !lgu) throw new Exception('Cannot load LGU for index ' + faas.rp.munidistrictid + '.' )

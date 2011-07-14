@@ -15,12 +15,11 @@ class InboxTask
     @Service('MessageService')
     def msgSvc
 	
-	def INBOX_SCHEMA = 'message:inbox'
+    def INBOX_SCHEMA = 'message:inbox'
 	def PROCESSEDINBOX_SCHEMA = 'message:processedinbox'
-	
+    
 	@ProxyMethod
 	public def processMessage( task ) {
-		println 'InboxTask firing...'
         def msg = getInboxMessage()
         if( msg )  {
 			try {
@@ -29,7 +28,7 @@ class InboxTask
 				moveMessageToProcessedInbox( msg )
 			}
 			catch( e ) {
-                e.printStackTrace()
+                println 'InboxTask: ' + e.message 
 				logMessage( msg, e.message )
 			}	
         }
@@ -38,20 +37,20 @@ class InboxTask
 	
 	void logMessage( msg, errorMsg ) {
         msg.message = [date:new Date(), msg:errorMsg]
-        em.update( msg.schemaname, msg )
+        em.update( INBOX_SCHEMA, msg )
     }
     
     def getInboxMessage() {
         //return the first available msg from the inbox 
         def msg = em.sqlContext.createNamedQuery('message:getInboxMessageId').setMaxResults(1).singleResult
         if( msg ) {
-            return em.read( INBOX_SCHEMA, msg)
+            return em.read( INBOX_SCHEMA, [objid:msg.objid] )
         }
         return null
     }
     		
 	void moveMessageToProcessedInbox( msg ) {
-		em.create(PROCESSEDINBOX_SCHEMA, msg )
-		em.delete(INBOX_SCHEMA, msg )
+		em.create( PROCESSEDINBOX_SCHEMA, msg )
+		em.delete( INBOX_SCHEMA, msg )
 	}
 }

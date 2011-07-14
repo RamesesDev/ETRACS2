@@ -1,0 +1,18 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import com.rameses.invoker.client.*
+
+class DynamicHttpInvokerService 
+{
+    @Service('Var')
+    def var 
+    
+    @ProxyMethod
+    public def invokeRemoteService( servicename, methodname, params ) {
+        def remote = new DynamicHttpInvoker( var.remote_host, var.remote_context, false )
+        // remote.connectionTimeout = 10000 
+        // remote.readTimeout = 10000 
+        def svc = remote.create( servicename )
+        return svc.invoke( methodname, params )
+    }
+}

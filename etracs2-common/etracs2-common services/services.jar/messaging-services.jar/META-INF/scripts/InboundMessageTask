@@ -1,0 +1,49 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import com.rameses.invoker.client.*
+
+class InboundMessageTask
+{
+    @PersistenceContext('main')
+    def em 
+    
+    @Service('Var')
+    def var
+    
+    @Service('DynamicHttpInvokerService')
+    def invokerSvc
+    
+    def INBOX_SCHEMA = 'message:inbox'
+	def PROCESSEDINBOX_SCHEMA = 'message:processedinbox'
+    
+	@ProxyMethod
+	public def fetchMessage( task ) {
+        try {
+            def params = [ lguindexno : var.lgu_index ]
+            def msg = invokerSvc.invokeRemoteService( 'RemoteOutboxService', 'fetchMessage', [params] as Object[])
+            if( msg ) {
+                println 'Processing message from ' + msg.fromlguname 
+                //check if msg has already been fetched, check both inbox and processedinbox 
+                def oldmsg = em.read(INBOX_SCHEMA, [objid:msg.objid])
+                if( !oldmsg ) oldmsg = em.read(PROCESSEDINBOX_SCHEMA, [objid:msg.objid])
+                if( !oldmsg ) {
+                    saveToInbox( msg ) 
+                    invokerSvc.invokeRemoteService( 'RemoteOutboxService', 'fetchSuccess', [msg.objid] as Object[])
+                }
+                else {
+                    invokerSvc.invokeRemoteService( 'RemoteOutboxService', 'fetchSuccess', [oldmsg.objid] as Object[])
+                }
+            }
+        }
+        catch ( e ) {
+            println 'Cannot connect to remote outbox of ' + var.lgu_name 
+        }
+        return true
+	}
+    
+    void saveToInbox( msg )  {
+        msg.schemaname = INBOX_SCHEMA
+        em.create( INBOX_SCHEMA, msg )
+    }
+    		
+}

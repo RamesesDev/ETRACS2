@@ -1,0 +1,64 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import com.rameses.invoker.client.*
+
+class OutboundMessageTask
+{
+    @PersistenceContext('main')
+    def em 
+    
+    @Service('DynamicHttpInvokerService')
+    def invokerSvc
+    
+    @Service('Var')
+    def var
+    
+    def OUTBOX_SCHEMA = 'message:outbox'
+    def PROCESSEDOUTBOX_SCHEMA = 'message:processedoutbox'
+	
+	@ProxyMethod
+	public def deliverMessage( task ) {
+        def msg = getOutboxMessage()
+        if( msg )  {
+            try {
+                println 'Sending message to remote -> ' + msg.tolguname
+                def retval = invokerSvc.invokeRemoteService( 'RemoteInboxService', 'receive', [msg] as Object[])
+                msg.message = createMessage( retval.msg )
+                if( retval.status == 'ok' ) {
+                    moveMessageToProcessedOutbox( msg )
+                }
+                else {
+                    em.update( OUTBOX_SCHEMA, msg )
+                }
+            }
+            catch( e ) {
+                logMessage( msg, e.message )
+            }
+        }
+        return true
+	}
+    
+    def getOutboxMessage() {
+        //return the first available msg from the inbox 
+        def msg = em.sqlContext.createNamedQuery('message:getOutboxMessageId').setMaxResults(1).singleResult
+        if( msg ) {
+            return em.read( OUTBOX_SCHEMA, msg )
+        }
+        return null
+    }
+	
+    void moveMessageToProcessedOutbox( msg ) {
+        em.create( PROCESSEDOUTBOX_SCHEMA, msg )
+        em.delete( OUTBOX_SCHEMA, msg )
+    }
+    
+    void logMessage( msg, errorMsg ) {
+        msg.message = createMessage( errorMsg )
+        em.update( msg.schemaname, msg )
+    }
+    
+    def createMessage( err ) {
+        return [ date:new Date(), msg:err ]
+    }
+    		
+}
