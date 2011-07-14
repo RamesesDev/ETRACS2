@@ -4,129 +4,104 @@
         <invoker type="home.action" action="initForApproval" caption="FAAS (For Approval)" permission="faas.view-forapproval" target="window" icon="images/faas_approval.png"/>
         <invoker type="home.action" action="initCurrent" caption="FAAS (Current)" permission="faas.view-current" target="window" icon="images/faas_current.png"  />        
         
-        <invoker type="formActions" action="open" permission="faas.view" caption="Open" mnemonic="o"  visibleWhen="#{selectedItem.item != null}" icon="images/open24.png"/>
+        <invoker type="formActions" action="open" permission="faas.view" caption="Open" mnemonic="o"  visibleWhen="#{selectedItem != null}" icon="images/open24.png"/>
     </invokers>
     
     <code>
         <![CDATA[
         
-        import com.rameses.rcp.common.*;
-        import com.rameses.rcp.annotations.*;
-        import com.rameses.osiris2.client.*;
+        import com.rameses.rcp.common.*
+        import com.rameses.rcp.annotations.*
+        import com.rameses.osiris2.client.*
         
         public class FAASListController 
         {
-            @Service("FAASService")
-            def svc;
+            @Service("ProvinceFAASService")
+            def svc
             
-            @Service("FAASHtmlService")
-            def htmlService;
+            @Service("ProvinceFAASHtmlService")
+            def htmlService
             
             @Binding
-            def binding;
+            def binding
             
             @FormTitle
-            def title = "FAAS for Review";
+            def title = "FAAS for Review"
         
-            def state = "PROVAPPROVAL";
-            def selectedItem;
-            def search = [:];
+            def state = "FORPROVAPPROVAL"
+            def selectedItem
+            def search = [:]
             
             public void initForReview() {
-                init( "PROVAPPROVAL", "FAAS for Review" );
+                init( "FORPROVAPPROVAL", "FAAS for Review" )
             }
             
             public void initForApproval() {
-                init( "FORAPPROVAL", "FAAS for Approval" );
+                init( "FORAPPROVAL", "FAAS for Approval" )
             }
             
             public void initCurrent() {
-                init( "CURRENT", "Current FAAS" );
+                init( "CURRENT", "Current FAAS" )
             }
             
             public void doSearch() {
-                listHandler.load();
+                listHandler.load()
             }
             
             public def open() {
-                return doOpen( selectedItem.item );
+                return doOpen( selectedItem )
             }
             
             def listHandler = [
-                getRows    : { return 25; },
+                getRows    : { return 25 },
                 getColumns : {
                     return [
-                        new Column( name:"item.municipality", caption:"Municipality", width:120),
-                        new Column( name:"item.pin", caption:"PIN", width:150),
-                        new Column( name:"item.tdNo", caption:"TD No.", width:120),
+                        new Column( name:"munidistrict", caption:"Municipality", width:120),
+                        new Column( name:"fullpin", caption:"PIN", width:150),
+                        new Column( name:"tdno", caption:"TD No.", width:120),
                     ]
                 },
                 fetchList  : { 
-                    search.state = state;
-                    return svc.getList( search, it );  
+                    search.docstate = state
+                    return svc.getList( search, it )  
                 },
-                onOpenItem : { item, colname -> doOpen(item); }
-            ] as PageListModel;
+                onOpenItem : { item, colname -> doOpen(item) }
+            ] as PageListModel
         
             def refreshHandler = {
-                listHandler.load();
-                selectedItem = listHandler.selectedItem;
-                binding.refresh();
+                listHandler.load()
+                binding.refresh()
             } 
             
             public def getHtml() {
-                if( selectedItem?.item ) {
-                    if( ! selectedItem.item.html ) {
-                        selectedItem.item.html = htmlService.getHtml( selectedItem.item.objid );
+                if( selectedItem ) {
+                    if( ! selectedItem.html ) {
+                        selectedItem.html = htmlService.getHtml( selectedItem.objid )
                     }
-                    return selectedItem.item.html;
+                    return selectedItem.html
                 }
-                return "No record or item selected...";
+                return "No record or item selected..."
+                
             } 
             
             public def showAttachment( params ) {
-                def data = params.split("~~");
-                def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] );
-                opener.caption = "Attachment: " + data[1];
-                return opener;
+                def data = params.split("~~")
+                def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] )
+                opener.caption = "Attachment: " + data[1]
+                return opener
             }
             
             private void init( state, title ) {
-                this.state = state;
-                this.title = title;
-                initRefreshTask();
+                this.state = state
+                this.title = title
             }
             
             private def doOpen( item ) {
-                return InvokerUtil.lookupOpener("faas:open", [ faasId: item.objid, listRefreshHandler:refreshHandler] );
+                return InvokerUtil.lookupOpener("faas.open", [ faas: item, listRefreshHandler:refreshHandler] )
             }
             
-            
-            def refreshTask =  new RefreshListTask( refreshHandler:refreshHandler );
-            private void initRefreshTask() {
-                OsirisContext.clientContext.taskManager.addTask( refreshTask );
-            }
-            
-            @Close
-            public void doClose() {
-                refreshTask.ended = true;
-            }
         }
-        
-        class RefreshListTask extends Task
-        {
-            def refreshHandler;
-            def MINUTE = 60 * 1000;
-            
-            public void start() { ended = false; }
-            public boolean accept(){  return true; }
-            
-            public void execute() {
-                Thread.sleep(3 * MINUTE);
-                refreshHandler();
-            }
-        }
-        
+
         ]]>
         
     </code>

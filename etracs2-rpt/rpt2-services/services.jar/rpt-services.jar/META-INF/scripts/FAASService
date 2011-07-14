@@ -177,6 +177,7 @@ class FAASService
         validateSubmitToProvince( faasinfo )
         def faas = open( faasinfo.objid )
         updateFaasState( faas, FORPROVAPPROVAL_STATE )
+        sendToOutbox( faas )
         logSvc.log('SUBMIT_TO_PROVINCE','FAAS', faasid)
         return faas 
     }
@@ -197,6 +198,21 @@ class FAASService
         validateProvinceApproval( faasinfo )
         def faas = open( faasinfo.objid )
         updateAutonumberTdNo( faas )
+        invokeCommonApproveActions( faas )
+        return faas 
+    }
+    
+    @ProxyMethod
+    public Map onlineApprove( faasid, approvaldata  ) {
+        def faas                = open( faasid )
+        faas.info.tdno          = approvaldata.tdno
+        faas.info.dtapproved    = approvaldata.dtapproved 
+        //update pin for land type 
+        if( faas.info.datacapture == false && faas.rpu.rputype == LAND_TYPE) {
+            faas.rp.pin     = approvaldata.pin 
+            faas.rpu.pin    = approvaldata.fullpin 
+            createOnlinePIN( faas ) 
+        }
         invokeCommonApproveActions( faas )
         return faas 
     }
@@ -243,7 +259,7 @@ class FAASService
         faas = open( faas.objid )
         faas.info.claimno = claimno 
         if( txntype == 'TR' ) return initTransfer( faas, txntype, prevtdno, autonumber )
-        else if( txntype == 'RE' ) return initReassessment( faas, txntype, prevtdno, autonumber )
+        else if( txntype == 'RE' || txntype == 'CE' ) return initReassessment( faas, txntype, prevtdno, autonumber )
         else {
             throw new Exception('TxnType ' + txntype + ' not yet supported.')
         }
@@ -293,6 +309,26 @@ class FAASService
     /*-----------------------------------------------------------------------
     ** Support Methods
     -----------------------------------------------------------------------*/
+    void sendToOutbox( faas ) {
+        def msg = [
+            objid           : 'MI' + new UID(),
+            schemaname      : 'message:outbox',
+            schemaversion   : '1.0',
+            fromlguindex    : var.lgu_index,
+            fromlguname     : var.lgu_name,
+            tolguindex      : faas.rp.provcityindex,
+            tolguname       : faas.rp.provcity, 
+            dtsent          : new Date(),
+            sentby          : ( env.USERNAME ? env.USERNAME : 'SYSTEM' ),
+            sentbytitle     : ( env.JOBTITLE ? env.JOBTITLE : 'SYSTEM' ),
+            action          : 'faas.receive',
+            data            : [ faas:faas, images:[] ],
+            messages        : [],
+        ]
+        em.create('message:outbox', msg )
+    }
+    
+    
     /* for land approval, update references of all land improvements to the new faas 
     *  applied only for the following if the transaction is not 
     *  datacapture 
@@ -300,17 +336,18 @@ class FAASService
     void updateImprovementLandReference( faas ) {
         if( faas.info.datacapture == true ) return 
         if( faas.rpu.rputype != LAND_TYPE ) return 
+
+        //update improvement references 
         def prevfaasid = ( faas.previousfaases ? faas.previousfaases[0].faasid : null )
         def improvementIds = getLandImprovementIds( prevfaasid)
         improvementIds.each { 
             def improvementfaas = em.read( faas.schemaname, [objid:it.objid ] )
+            if( ! improvementfaas ) throw new Exception('Cannot open land improvement with ID ' + it.objid + '.\nPlease contact ETRACS Administrator.')
+            improvementfaas.rp.putAll( faas.rp )
             improvementfaas.info.landfaasid          = faas.objid 
             improvementfaas.info.landfaastaxpayerid  = faas.info.taxpayerid 
             em.update( improvementfaas.schemaname, improvementfaas )
-            
-            // update faaslist landref
-            def faaslist = [objid:it.objid, landfaasid:faas.objid, landfaastaxpayerid:faas.info.taxpayerid]
-            em.sqlContext.createNamedExecutor('faas:updateListLandReference').setParameters(faaslist).execute()
+            em.update( LISTSCHEMA_NAME, improvementfaas )
         }
     }
     
@@ -340,10 +377,14 @@ class FAASService
         values.keySet().each {
             tdno = tdno.replace( it, values[it] )
         }
-        
-        faas.info.tdno = tdno + '-' + seqSvc.getNextFormattedSeries( tdno )
+        def seqno = seqSvc.getNextFormattedSeries( tdno )
+        if( var.td_format.contains( '-') ) {
+            faas.info.tdno = tdno + '-' + seqno 
+        }
+        else {
+            faas.info.tdno = tdno + seqno
+        }
         em.update(faas.schemaname, faas )
-        //update faaslisttdno 
         em.sqlContext.createNamedExecutor('faas:updateListTdNo').setParameters([tdno:faas.info.tdno, objid:faas.objid]).execute()
     }
     
@@ -380,6 +421,15 @@ class FAASService
             em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
         }
     }
+    
+    void createOnlinePIN( faas ) {
+        def validTxnTypes = ['ND','SD','CS']
+        if( validTxnTypes.contains( faas.info.txntype ) ) {
+            def pin = [pin:faas.rpu.fullpin, claimno:faas.info.claimno, docstate:faas.docstate]
+            em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
+        }
+    }
+    
     void buildPinInfo( faas ) {
         def lgu = em.sqlContext.createNamedQuery('faas:getLgu').setParameter('objid', faas.rp.munidistrictid).singleResult
         if( !lgu) throw new Exception('Cannot load LGU for index ' + faas.rp.munidistrictid + '.' )
@@ -598,7 +648,6 @@ class FAASService
     void validateRPUInfo( faas ) {
         if( faas.rpu.rputype == LAND_TYPE ) {
             //TODO:validate LandRPU 
-            println 'TODO:FAASService.validateRPUInfo -> LAND not yet implemented.'
         }
     }
     

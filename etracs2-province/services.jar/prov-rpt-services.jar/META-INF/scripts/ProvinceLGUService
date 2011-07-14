@@ -1,0 +1,149 @@
+import com.rameses.annotations.*
+import java.rmi.server.UID
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class ProvinceLGUService
+{
+	@PersistenceContext('main')
+	def em
+    
+    @Service('LogService')
+    def logSvc
+    
+    def SCHEMA_NAME = 'provlgu'
+    def SCHEMA_VERSION = '1.0'
+    
+    def PROVINCE_TYPE = 'PROVINCE'
+    def MUNICIPALITY_TYPE = 'MUNICIPALITY' 
+    def BARANGAY_TYPE = 'BARANGAY'
+
+    
+    @ProxyMethod
+    public List lookupMunicipality(searchText) {
+        searchText = ( searchText ? searchText+'%' : '%' )
+        def criteria = [indexno:searchText, name:searchText]
+        def result = []
+        if( (result = getListByQuery('provlgu:lookupMunicipaltyByIndex', criteria, null)).size() > 0 ) return result 
+        return getListByQuery('provlgu:lookupMunicipaltyByName', criteria, null)
+    }
+    
+    
+    @ProxyMethod
+    public Map open() {
+        def lgu = em.sqlContext.createNamedQuery('provlgu:checkExists').singleResult 
+        if( lgu )  {
+            lgu = em.read(SCHEMA_NAME, lgu )
+            lgu.municipalities = getLgusByParentid( lgu.objid )
+            lgu.municipalities.each { it.barangays = [] }
+        }
+        else {
+            lgu = [ 
+                lgutype         : PROVINCE_TYPE,
+                schemaname      : SCHEMA_NAME,
+                schemaversion   : SCHEMA_VERSION,    
+                parentid        : null,
+                parentindexno   : null, 
+                municipalities  :   [] 
+            ]
+        }
+        return lgu 
+    }
+    
+    @ProxyMethod
+    public def create( lgu ) {
+        lgu.objid           = lgu.indexno
+        lgu.pin             = lgu.indexno 
+        em.validate( lgu.schemaname, lgu )
+        em.create( lgu.schemaname, lgu )
+        logSvc.log('CREATE', 'ProvineLGU', lgu.objid )
+        return open()
+    }
+    
+    @ProxyMethod
+    public def  update( lgu ) {
+        em.validate( lgu.schemaname, lgu )
+        em.update( lgu.schemaname, lgu, { diff ->
+                logSvc.logB('UPDATE', 'ProvinceLGU', lgu.objid, null, diff )
+            } as UpdateChangeHandler
+        )
+        return open()
+    }
+    
+    @ProxyMethod
+    public def createMunicipality( lgu ) {
+        lgu.pin             = lgu.parentindexno + '-' + lgu.indexno
+        lgu.objid           = lgu.pin 
+        lgu.schemaname      = SCHEMA_NAME
+        lgu.schemaversion   = SCHEMA_VERSION
+        em.validate( lgu.schemaname, lgu )
+        em.create( lgu.schemaname, lgu )
+        logSvc.log('CREATE', 'Municipality', lgu.objid )
+        return lgu 
+    }
+    
+    @ProxyMethod
+    public def updateMunicipality( lgu ) {
+        lgu.schemaname      = SCHEMA_NAME
+        lgu.schemaversion   = SCHEMA_VERSION
+        em.validate( lgu.schemaname, lgu )
+        em.update( lgu.schemaname, lgu, { diff ->
+                logSvc.logB('UPDATE', 'Municipality', lgu.objid, null, diff )
+            } as UpdateChangeHandler
+        )
+        return lgu 
+    }
+    
+    @ProxyMethod
+    public void removeMunicipality( municipalityid ) {
+        em.sqlContext.createNamedExecutor('provlgu:deleteLguByParentId').setParameter('parentid', municipalityid ).execute()
+        em.sqlContext.createNamedExecutor('provlgu:deleteLguById').setParameter('objid', municipalityid ).execute()
+    }
+    
+    @ProxyMethod
+    public List getBarangayList( municipalityid ) {
+        return getLgusByParentid( municipalityid )
+    }
+    
+    @ProxyMethod
+    public def createBarangay( lgu ) {
+        lgu.pin             = lgu.parentindexno + '-' + lgu.indexno
+        lgu.objid           = lgu.pin 
+        lgu.schemaname      = SCHEMA_NAME
+        lgu.schemaversion   = SCHEMA_VERSION
+        em.validate( lgu.schemaname, lgu )
+        em.create( lgu.schemaname, lgu )
+        logSvc.log('CREATE', 'Barangay', lgu.objid )
+        return lgu 
+    }
+    
+    @ProxyMethod
+    public def updateBarangay( lgu ) {
+        lgu.schemaname      = SCHEMA_NAME
+        lgu.schemaversion   = SCHEMA_VERSION
+        em.validate( lgu.schemaname, lgu )
+        em.update( lgu.schemaname, lgu, { diff ->
+                logSvc.logB('UPDATE', 'Barangay', lgu.objid, null, diff )
+            } as UpdateChangeHandler
+        )
+        return lgu 
+    }
+    
+    @ProxyMethod
+    public void removeBarangay( brgyid ) {
+        em.sqlContext.createNamedExecutor('provlgu:deleteLguById').setParameter('objid', brgyid ).execute()
+    }
+    
+    List getLgusByParentid( parentid ) {
+        return em.sqlContext.createNamedQuery('provlgu:getLgusByParentid').setParameter('parentid', parentid).resultList 
+    }
+
+    def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+}
+
