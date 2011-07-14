@@ -21,6 +21,8 @@ class PlantTreeRPUService
         def rpuinfo = faas.rpu.info 
         //
         //set plant/tree specific info below
+        rpuinfo.totalbearing 	= 0;
+        rpuinfo.totalnonbearing = 0;
         
         return faas 
     }
@@ -36,14 +38,15 @@ class PlantTreeRPUService
         //calculate basemarketvalue
         planttree.basemarketvalue = numberSvc.round( planttree.bearing * planttree.unitvalue )
         //calculate adjustment 
-        planttree.adjustment = calculateAdjustment( planttree )
+        def adj = calculateAdjustment( planttree );
+        planttree.adjustmentrate = adj.adjustmentrate;
+        planttree.adjustment = adj.adjustment;
         //calculate marketvalue 
         planttree.marketvalue = numberSvc.round( planttree.basemarketvalue + planttree.adjustment )
         //calculate assessedvalue
         planttree.assessedvalue = numberSvc.roundToTen(planttree.marketvalue * planttree.assesslevel / 100.0 )
         return planttree 
     }
-    
     
     /*----------------------------------------------------------------------------------
     * Lookup Support
@@ -89,16 +92,39 @@ class PlantTreeRPUService
             return al.rate 
         }
         List ranges = em.serializer.read( al.ranges )
-        def range = ranges.find{ planttree.marketvalue > it.from && (planttree.marketvalue <= it.to || it.to == 0.0) }
+        def range = ranges.find{ planttree.marketvalue > it.mvfrom && (planttree.marketvalue <= it.mvto || it.mvto == 0.0) }
         if( ! range ) throw new Exception('Market Value of P' + numberSvc.format('#,##0.00', planttree.marketvalue) + ' has no assess level range definition.' )
         return range.rate 
     }
     
     def calculateAdjustment( planttree ) {
-        //TODO: not yet implemented
-        println 'TODO: calculateAdjustment is not yet implemented'
-        return 0.0 
+        def land = em.read('faas', [objid:planttree.landfaasid]);
+        def adjrate = getAgriculturalRate( land.rpu.info.landdetails );
+        
+        def adjustment = planttree.basemarketvalue * adjrate;
+        
+        return [adjustment:adjustment, adjustmentrate:adjrate];
     }
+    
+    def getAgriculturalRate( landdetails ) {
+    	def adjrate = 0.0;
+    	
+    	def rysetting = em.sqlContext.createNamedQuery( 'landrpu:getRPTSetting' ).singleResult;
+    	
+    	if( rysetting.adjustplanttree == 1 ){
+    		def agrilands = landdetails.findAll{ it.actualuseid == rysetting.agriculturalid };
+
+    		if( agrilands ) {
+    			def totalbmv = agrilands.basemarketvalue.sum();
+    			def totaladj = agrilands.adjustment.sum();
+    			
+    			if( totalbmv != 0.0 )  adjrate = ( totaladj / totalbmv ) * 100.0;
+    		}
+    	} 
+    	
+    	return adjrate;
+    }
+    
     
     
     private def getListByName(namedQuery, values, params ) {
