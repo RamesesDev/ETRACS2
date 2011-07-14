@@ -177,6 +177,7 @@ class FAASService
         validateSubmitToProvince( faasinfo )
         def faas = open( faasinfo.objid )
         updateFaasState( faas, FORPROVAPPROVAL_STATE )
+        updateMessage(faas, null )
         sendToOutbox( faas )
         logSvc.log('SUBMIT_TO_PROVINCE','FAAS', faasid)
         return faas 
@@ -193,12 +194,39 @@ class FAASService
     }
     
     @ProxyMethod
+    public Map disapprove( faasid ) {
+        def faasinfo = getFaasInfo( faasid )
+        if( faasinfo.docstate == INTERIM_STATE) throw new Exception('FAAS is still interim.')
+        if( faasinfo.docstate == FORPROVAPPROVAL_STATE) throw new Exception('FAAS has already been submitted to province')
+        if( faasinfo.docstate == CURRENT_STATE) throw new Exception('FAAS is already current.')
+        if( faasinfo.docstate == CANCELLED_STATE) throw new Exception('FAAS has already been cancelled.')
+        def faas = open( faasinfo.objid )
+        updateFaasState( faas, INTERIM_STATE )
+        return faas 
+    }
+    
+    @ProxyMethod
     public Map approveByProvince( faasid ) {
         def faasinfo = getFaasInfo( faasid )
         validateProvinceApproval( faasinfo )
         def faas = open( faasinfo.objid )
         updateAutonumberTdNo( faas )
+        updateMessage( faas, null )
         invokeCommonApproveActions( faas )
+        return faas 
+    }
+    
+    
+    @ProxyMethod
+    public Map disapproveByProvince( faasid ) {
+        def faasinfo = getFaasInfo( faasid )
+        if( faasinfo.docstate == INTERIM_STATE) throw new Exception('FAAS is still interim.')
+        if( faasinfo.docstate == FORAPPROVAL_STATE) throw new Exception('FAAS has already been submitted for approval.')
+        if( faasinfo.docstate == CURRENT_STATE) throw new Exception('FAAS is already current.')
+        if( faasinfo.docstate == CANCELLED_STATE) throw new Exception('FAAS has already been cancelled.')
+        def faas = open( faasinfo.objid )
+        updateFaasState( faas, FORAPPROVAL_STATE )
+        moveOutboxMessageToProcessed( faasid )
         return faas 
     }
     
@@ -207,13 +235,29 @@ class FAASService
         def faas                = open( faasid )
         faas.info.tdno          = approvaldata.tdno
         faas.info.dtapproved    = approvaldata.dtapproved 
+        faas.message            = null 
         //update pin for land type 
         if( faas.info.datacapture == false && faas.rpu.rputype == LAND_TYPE) {
             faas.rp.pin     = approvaldata.pin 
             faas.rpu.pin    = approvaldata.fullpin 
             createOnlinePIN( faas ) 
         }
+        em.update( faas.schemaname, faas )
         invokeCommonApproveActions( faas )
+        return faas 
+    }
+    
+    @ProxyMethod
+    public Map onlineDisapprove( faasid, disapprovaldata ) {
+        def faasinfo = getFaasInfo( faasid )
+        if( faasinfo.docstate == INTERIM_STATE) throw new Exception('FAAS is still interim.')
+        if( faasinfo.docstate == FORAPPROVAL_STATE) throw new Exception('FAAS has already been submitted.')
+        if( faasinfo.docstate == CURRENT_STATE) throw new Exception('FAAS is already current.')
+        if( faasinfo.docstate == CANCELLED_STATE) throw new Exception('FAAS has already been cancelled.')
+        def faas = open( faasinfo.objid )
+        faas.message = disapprovaldata.message 
+        updateMessage( faas, faas.message )
+        updateFaasState( faas, FORAPPROVAL_STATE )
         return faas 
     }
     
@@ -309,11 +353,20 @@ class FAASService
     /*-----------------------------------------------------------------------
     ** Support Methods
     -----------------------------------------------------------------------*/
+    void updateMessage( faas, message ) {
+        faas.message = message
+        def params = [objid:faas.objid, message:message]
+        em.sqlContext.createNamedExecutor('faas:updateMessage').setParameters( params ).execute() 
+    }
+    
+    
+    
     void sendToOutbox( faas ) {
         def msg = [
             objid           : 'MI' + new UID(),
             schemaname      : 'message:outbox',
             schemaversion   : '1.0',
+            refid           : faas.objid, 
             fromlguindex    : var.lgu_index,
             fromlguname     : var.lgu_name,
             tolguindex      : faas.rp.provcityindex,
@@ -326,6 +379,15 @@ class FAASService
             messages        : [],
         ]
         em.create('message:outbox', msg )
+    }
+    
+    void moveOutboxMessageToProcessed( refid ) {
+        def msg = em.sqlContext.createNamedQuery('message:getOutboxMessageByRefId').setParameter('refid', refid).singleResult
+        if( msg ) {
+            msg = em.read('message:outbox', msg )
+            em.create('message:processedoutbox', msg )
+            em.delete('message:outbox', msg )
+        }
     }
     
     

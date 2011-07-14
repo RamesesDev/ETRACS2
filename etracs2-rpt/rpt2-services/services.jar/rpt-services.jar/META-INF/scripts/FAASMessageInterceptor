@@ -20,20 +20,36 @@ class FAASMessageInterceptor
 	@After(pattern='MessageService.onreceive') 
 	public void interceptOnReceive( evt ) {
         def msg = evt.result 
-        if( msg.action == 'faas.approve') {
-            try {
-                println 'Processing message -> ' + msg.action 
-                faasSvc.onlineApprove( msg.data.faasid, msg.data  )
-                logSvc.log('ONLINE-APPROVAL', 'FAAS', msg.data.faasid )
-            }
-            catch( e ) {
-                println '-'*30
-                e.printStackTrace()
-                println '-'*30
-                throw e 
-            }
-        }
+        if( msg.action == 'faas.approve') approveFaas( msg ) 
+        else if( msg.action == 'faas.disapprove') disapproveFaas( msg ) 
 	}
+    
+    void approveFaas( msg ) {
+        try {
+            println 'Processing message -> ' + msg.action 
+            faasSvc.onlineApprove( msg.data.faasid, msg.data  )
+            logSvc.log('ONLINE-APPROVAL', 'FAAS', msg.data.faasid )
+        }
+        catch( e ) {
+            println e.message
+            msg.message =[date:new Date(), msg:e.message]
+            throw e 
+        }
+    }
+    
+    void disapproveFaas( msg ) {
+        try {
+            println 'Processing message -> ' + msg.action 
+            faasSvc.onlineDisapprove( msg.data.faasid, msg.data  )
+            logSvc.log('ONLINE-APPROVAL', 'FAAS', msg.data.faasid )
+        }
+        catch( e ) {
+            println '-'*30
+            e.printStackTrace()
+            msg.message =[date:new Date(), msg:e.message]
+            throw e 
+        }
+    }
 	
 }
 

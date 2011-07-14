@@ -19,6 +19,7 @@ class InboundMessageTask
 	@ProxyMethod
 	public def fetchMessage( task ) {
         try {
+            println 'Fetching message...'
             def params = [ lguindexno : var.lgu_index ]
             def msg = invokerSvc.invokeRemoteService( 'RemoteOutboxService', 'fetchMessage', [params] as Object[])
             if( msg ) {
@@ -33,6 +34,9 @@ class InboundMessageTask
                 else {
                     invokerSvc.invokeRemoteService( 'RemoteOutboxService', 'fetchSuccess', [oldmsg.objid] as Object[])
                 }
+            }
+            else {
+                println 'No inbound messages for processing...'
             }
         }
         catch ( e ) {

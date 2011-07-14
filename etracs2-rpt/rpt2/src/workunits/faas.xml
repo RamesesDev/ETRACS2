@@ -20,8 +20,10 @@
         <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{showSaveAction == true}" caption="Save" mnemonic="s" icon="images/save24.png"/>
         <invoker type="formActions" action="submit" shortcut="ctrl M" visibleWhen="#{faas.docstate == 'INTERIM' and mode != 'create'}" caption="Submit For Approval" mnemonic="m" />
         <invoker type="formActions" action="remove" shortcut="ctrl D" visibleWhen="#{faas.docstate == 'INTERIM' and mode != 'create'}" immediate="true" caption="Delete" mnemonic="d" />
+        <invoker type="formActions" action="disapprove" visibleWhen="#{showDisapproveAction == true}" caption="Disapprove" />
         <invoker type="formActions" action="approve" shortcut="ctrl A" visibleWhen="#{showApproveAction == true}" caption="Approve" mnemonic="a" icon="images/save24.png"/>
         <invoker type="formActions" action="submitToProvince" shortcut="ctrl M" visibleWhen="#{showSubmitToProvinceAction == true}" caption="Submit To Province" mnemonic="m" />
+        <invoker type="formActions" action="disapproveByProvince" visibleWhen="#{showDisapproveByProvinceAction == true}" caption="Disapprove" />
         <invoker type="formActions" action="approveByProvince" shortcut="ctrl A" visibleWhen="#{showApprovedByProvinceAction == true}" caption="Approve" mnemonic="a" />
     </invokers>
     <code lang="groovy">
@@ -90,6 +92,13 @@ public class FAASController
         }
     }
     
+    void disapprove() {
+        if( MsgBox.confirm('Disapprove FAAS?') ) {
+            save()
+            faas = svc.disapprove( faas.objid )
+        }
+    }
+    
     void submitToProvince() {
         if( MsgBox.confirm('Submit to Province?') ) {
             save()
@@ -102,6 +111,13 @@ public class FAASController
             faas = svc.approveByProvince( faas.objid )
         }
     }    
+    
+    void disapproveByProvince() {
+        if( MsgBox.confirm('Disapprove FAAS?') ) {
+            save()
+            faas = svc.disapproveByProvince( faas.objid )
+        }
+    }
     
     def onupdateRpu = { rpu ->
         binding.refresh('faas.rpu.*|totalmv|totalav')
@@ -268,6 +284,12 @@ public class FAASController
         return true
     }
     
+    boolean getShowDisapproveAction() {
+        if( faas.lgutype != 'city'  ) return false
+        if( faas.docstate != 'FORAPPROVAL' ) return false
+        return true
+    }
+    
     boolean getShowSubmitToProvinceAction() {
         if( faas.lgutype != 'municipality'  ) return false
         if( faas.docstate != 'FORAPPROVAL' ) return false
@@ -280,6 +302,11 @@ public class FAASController
         return true
     }
     
+    boolean getShowDisapproveByProvinceAction() {
+        if( faas.lgutype != 'municipality'  ) return false
+        if( faas.docstate != 'FORPROVAPPROVAL' ) return false
+        return true
+    }
     
     /*-----------------------------------------------------------------------------
     *
@@ -354,3 +381,4 @@ public class FAASController
         <page name="txninit" template="etracs2.rpt.faas.FAASTxnInitPage"/>
     </pages>
 </workunit>
+

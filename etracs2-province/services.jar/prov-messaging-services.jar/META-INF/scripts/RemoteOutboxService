@@ -2,7 +2,7 @@ import com.rameses.annotations.*;
 import com.rameses.common.*
 
 
-class OutboxService
+class RemoteOutboxService
 {
 	@PersistenceContext('main')
 	def em
@@ -12,7 +12,7 @@ class OutboxService
 	
 	@ProxyMethod
 	public def fetchMessage( params ) {
-		println 'Fetching message for LGU ' + params.lguindexno
+		println 'Fetching messages for LGU ' + params.lguindexno
 		def msg = em.sqlContext.createNamedQuery('message:getOutboxMessageId').setParameter('tolguindex', params.lguindexno ).setMaxResults(1).singleResult
 		if( msg ) {
 			msg = em.read(OUTBOX_SCHEMA, msg)

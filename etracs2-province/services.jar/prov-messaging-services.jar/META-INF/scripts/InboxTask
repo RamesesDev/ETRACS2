@@ -20,8 +20,7 @@ class InboxTask
 	
 	@ProxyMethod
 	public def processMessage( task ) {
-		println 'InboxTask firing...'
-        def msg = getInboxMessage()
+		def msg = getInboxMessage()
         if( msg )  {
 			try {
                 println 'Processing inbox message[' + msg.action + ']'
@@ -33,6 +32,9 @@ class InboxTask
 				logMessage( msg, e.message )
 			}	
         }
+		else {
+			println 'Inbox is empty...'
+		}
         return true
 	}
 	

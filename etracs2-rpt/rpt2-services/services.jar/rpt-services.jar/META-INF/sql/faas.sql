@@ -111,6 +111,9 @@ UPDATE faaslist SET tdno = $P{tdno} WHERE objid = $P{objid}
 [updateListLandReference]
 UPDATE faaslist SET landfaasid = $P{landfaasid}, landfaastaxpayerid = $P{landfaastaxpayerid} WHERE objid = $P{objid} 
 
+[updateMessage]
+UPDATE faas SET message = $P{message} WHERE objid = $P{objid} 
+
 
 
 #----------------------------------------------------------------
