@@ -83,9 +83,9 @@ class BldgRPUService
 	
 	@ProxyMethod
 	public def calculateBldgAge( issuedate, dtcompleted, dtoccupied ) {
-		required( "Issue Date", issuedate )
-		required( "Date Completed", dtcompleted )
-		required( "Date Occupied", dtoccupied )
+		if( ! (issuedate && dtcompleted && dtoccupied ) ) {
+            return 0
+        }
 		
         issuedate = dateSvc.parse( 'yyyy-MM-dd', issuedate )
         dtcompleted = dateSvc.parse( 'yyyy-MM-dd', dtcompleted)
@@ -97,7 +97,8 @@ class BldgRPUService
 		}
 		int refyear = dateSvc.getYear( refdate )
 		int curryear = dateSvc.getYear( issuedate )
-		return curryear - refyear 
+		def age = curryear - refyear 
+        return ( age < 0 ? 0 : age )
 	}
     
     @ProxyMethod

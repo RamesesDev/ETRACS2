@@ -190,6 +190,7 @@ class FAASService
         def faas = open( faasinfo.objid )
         updateAutonumberTdNo( faas  )
         invokeCommonApproveActions( faas )
+        logSvc.log('APPROVE','FAAS', faas.objid)
         return faas 
     }
     
@@ -213,6 +214,7 @@ class FAASService
         updateAutonumberTdNo( faas )
         updateMessage( faas, null )
         invokeCommonApproveActions( faas )
+        logSvc.log('APPROVEBYPROVINCE','FAAS', faas.objid)
         return faas 
     }
     
@@ -232,7 +234,13 @@ class FAASService
     
     @ProxyMethod
     public Map onlineApprove( faasid, approvaldata  ) {
-        def faas                = open( faasid )
+        def faas = open( faasid )
+        if( faas.docstate == CURRENT_STATE || faas.docstate == CANCELLED_STATE)  {
+            //the faas is already approve
+            //this happens if the approval was done manually
+            //so just return the faas 
+            return [date:new Date(), status:'Faas is already ' + faas.docstate] 
+        }
         faas.info.tdno          = approvaldata.tdno
         faas.info.dtapproved    = approvaldata.dtapproved 
         faas.message            = null 
@@ -244,21 +252,21 @@ class FAASService
         }
         em.update( faas.schemaname, faas )
         invokeCommonApproveActions( faas )
-        return faas 
+        return [date:new Date(), status:'Processed successfully.']
     }
     
     @ProxyMethod
     public Map onlineDisapprove( faasid, disapprovaldata ) {
-        def faasinfo = getFaasInfo( faasid )
-        if( faasinfo.docstate == INTERIM_STATE) throw new Exception('FAAS is still interim.')
-        if( faasinfo.docstate == FORAPPROVAL_STATE) throw new Exception('FAAS has already been submitted.')
-        if( faasinfo.docstate == CURRENT_STATE) throw new Exception('FAAS is already current.')
-        if( faasinfo.docstate == CANCELLED_STATE) throw new Exception('FAAS has already been cancelled.')
         def faas = open( faasinfo.objid )
+        if( faas.docstate == CURRENT_STATE || faas.docstate == CANCELLED_STATE){
+            //the faas has already been approved or superseded
+            //do not alter the state, just a message 
+            return [date:new Date(), status:'Faas is already ' + faas.docstate]
+        }  
         faas.message = disapprovaldata.message 
         updateMessage( faas, faas.message )
         updateFaasState( faas, FORAPPROVAL_STATE )
-        return faas 
+        return [date:new Date(), status:'Processed successfully.']
     }
     
     void invokeCommonApproveActions( faas ) {
@@ -268,7 +276,6 @@ class FAASService
         cancelPreviousFaas( faas )
         deleteTxnReference( faas )
         ledgerSvc.post( faas.objid )
-        logSvc.log('APPROVE','FAAS', faas.objid)
     }
     
     @ProxyMethod
@@ -735,7 +742,10 @@ class FAASService
     Map updateFaasState( faas, state ) {
         faas.docstate = state
         em.sqlContext.createNamedExecutor('faas:updateState').setParameters( faas ).execute()
-        em.sqlContext.createNamedExecutor('faas:updateListState').setParameters( faas ).execute()
+        
+        def faaslist = [objid:faas.objid, docstate:faas.docstate, tdno:faas.info.tdno]
+        em.sqlContext.createNamedExecutor('faas:updateListStateTdno').setParameters( faaslist ).execute()
+        
         updatePinState( faas.rpu.fullpin, faas.info.claimno, faas.docstate )
         return faas 
     }

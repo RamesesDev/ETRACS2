@@ -27,11 +27,13 @@ class FAASMessageInterceptor
     void approveFaas( msg ) {
         try {
             println 'Processing message -> ' + msg.action 
-            faasSvc.onlineApprove( msg.data.faasid, msg.data  )
+            def retval = faasSvc.onlineApprove( msg.data.faasid, msg.data  )
+            updateMessageInfo( msg, retval )
             logSvc.log('ONLINE-APPROVAL', 'FAAS', msg.data.faasid )
         }
         catch( e ) {
-            println e.message
+            println '-'*30 
+            e.printStackTrace()
             msg.message =[date:new Date(), msg:e.message]
             throw e 
         }
@@ -40,15 +42,20 @@ class FAASMessageInterceptor
     void disapproveFaas( msg ) {
         try {
             println 'Processing message -> ' + msg.action 
-            faasSvc.onlineDisapprove( msg.data.faasid, msg.data  )
+            def retval = faasSvc.onlineDisapprove( msg.data.faasid, msg.data  )
+            updateMessageInfo( msg, retval )
             logSvc.log('ONLINE-APPROVAL', 'FAAS', msg.data.faasid )
         }
         catch( e ) {
-            println '-'*30
-            e.printStackTrace()
+            println 'FAASMessageInterceptor: ' + e.message
             msg.message =[date:new Date(), msg:e.message]
             throw e 
         }
+    }
+    
+    void updateMessageInfo( msg, retval  ) {
+        msg.message = retval 
+        em.update( msg.schemaname, msg ) 
     }
 	
 }

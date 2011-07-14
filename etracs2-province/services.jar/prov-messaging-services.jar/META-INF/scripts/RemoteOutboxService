@@ -24,6 +24,7 @@ class RemoteOutboxService
 	public def fetchSuccess( msgid ) {
 		def msg = em.read( OUTBOX_SCHEMA, [objid:msgid] )
 		if( msg ) {
+			msg.schemaname = OUTBOX_SCHEMA
 			em.create(PROCESSEDOUTBOX_SCHEMA, msg )
 			em.delete(OUTBOX_SCHEMA, msg )
 		}

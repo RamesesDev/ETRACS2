@@ -21,6 +21,8 @@ class ProvinceFAASMessageInterceptor
             def faas = msg.data.faas 
             em.create( faas.schemaname, faas )
             em.create( LISTSCHEMA_NAME, faas )
+			msg.message =[date:new Date(), status:'Processed successfully.']
+			em.update( msg.schemaname, msg )
             logSvc.log('ONLINE-RECEIVED', 'FAAS', faas.objid);
         }
 	}

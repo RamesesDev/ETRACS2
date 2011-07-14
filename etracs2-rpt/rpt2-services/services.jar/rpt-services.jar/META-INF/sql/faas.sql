@@ -89,6 +89,9 @@ UPDATE faas SET docstate = $P{docstate} WHERE objid = $P{objid}
 [updateListState]    
 UPDATE faaslist SET docstate = $P{docstate} WHERE objid = $P{objid} 
 
+[updateListStateTdno]    
+UPDATE faaslist SET docstate = $P{docstate}, tdno = $P{tdno} WHERE objid = $P{objid} 
+
 [updatePinState]    
 UPDATE pin SET docstate = $P{docstate} WHERE pin = $P{pin} 
 
