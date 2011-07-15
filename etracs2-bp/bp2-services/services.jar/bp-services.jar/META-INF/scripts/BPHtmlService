@@ -7,93 +7,78 @@ class BPHtmlService
 	@Service("BPApplicationService")
 	def svc;
 	
-	def style = """
-		<style type="text/css">
-			td { background-color:white; }
-			th { background-color : #CCCCCC; }
-			.data { font-weight:bold; }
-			.numeric { text-align:right; }
-			.caption {}
-			
-			.title {
-				background-color:#CCCCFF;
-				font-weight:bold;
-			}
-			
-			body, td, th { 
-				font-family: tahoma; 
-				font-size  : 12pt;
-			}
-			
-			.header {
-				font-family : tahoma;
-				font-size   : 18pt;
-				width       : 120
-			}
-		</style>
-	""";
+	@Service('NumberService')
+	def numberSvc
 	
-	def data = { def caption, def val ->
-		return """
-			<tr>
-				<td class='caption' valign='top'>$caption</td>
-				<td class='data' valign='top'>$val</td>
-			 </tr>
-		""";
-	}
+	@Service('XTemplateTestService')
+	def htmlService
 	
 	@ProxyMethod
 	public def getHtml(def applicationid){
-		def template = [:];
-		def application = svc.open( applicationid );
+		def app = svc.open( applicationid );
 		
-		template.header = new StringBuffer();
-		template.detail = new StringBuffer();
-		
-		template.header.append("<table>");
-		template.header.append( "<tr>" );
-		template.header.append( "<td class='caption'>State</td>" );
-		template.header.append( "<td class='data'><h3>$application.docstate</h3></td>" );
-		template.header.append( "</tr>" );
-		template.header.append( data("Date", application.txndate) );
-		template.header.append( data("Trade Name", application.tradename) );
-		template.header.append( data("Business Address", application.businessaddress) );
-		template.header.append( data("Taxpayer Name", application.info.taxpayername) );
-		template.header.append( data("Taxpayer Address", application.info.taxpayeraddress) );
-		template.header.append("</table>");
-		
-		template.detail.append("<div style='background:silver' width='100%'>");
-		template.detail.append("<table cellspacing='1' width='100%'>");
-		template.detail.append("<tr><td colspan='3' class='header'>Line Of Business</td></tr>");
-		template.detail.append("<tr>");
-		template.detail.append("<th>Classification</th>");
-		template.detail.append("<th>Assessment Type</th>");
-		template.detail.append("<th>Year</th>");
-		template.detail.append("</tr>");
-		
-		application.info.lobs.each{
-			template.detail.append("<tr>");
-			template.detail.append("<td valign='top'>$it.name</td>");
-			template.detail.append("<td valign='top'>$it.assessmenttype</td>");
-			template.detail.append("<td align='right' valign='top' width='20'>$it.iyear</td>");
-			template.detail.append("</tr");
-		}
-		template.detail.append("</table>");
-		template.detail.append("</div>");
-		return parse( template );
+		def document = [
+			title:'APP No: ' +  app.txnno,
+			state:app.docstate,
+			subheaders:[
+				[caption:'Type', value:app.txntype],
+				[caption:'Mode', value:app.txnmode],
+				[caption:'Date', value:app.txndate],
+				[caption:'Year', value:app.iyear]
+			],
+			
+			items:[
+			   [
+				   title:'General Information',
+				   cols:1,
+				   items:[
+					  [caption:'Trade Name', value:app.tradename],
+					  [caption:'Business Address', value:app.businessaddress],
+					  [caption:'Taxpayer Name', value:app.info.taxpayername],
+					  [caption:'Taxpayer Address', value:app.info.taxpayeraddress],
+					  [caption:'Administrator Name', value:app.info.administratorname],
+					  [caption:'Administrator Address', value:app.info.administratoraddress]
+				   ]
+			   ],
+			   
+			   [
+				   title:'Business Detail',
+				   cols:2,
+				   items:[
+					  [caption:'Organization', value:app.info.organization],
+					  [caption:'Office Type', value:app.info.officetype],
+					  [caption:'Barangay', value:app.info.barangay.barangayid+', '+app.info.barangay.barangayname],
+					  [caption:'BIN', value:app.info.bin],
+					  [caption:'PIN', value:app.info.pin],
+					  [caption:'CTC No.', value:app.info.ctcno],
+					  [caption:'CTC Place Issued', value:app.info.ctcplaceissued],
+					  [caption:'TIN', value:app.info.tin]
+				   ]
+			   ],
+			   
+			   [
+				   title:'Line Of Bussines',
+				   cols:1,
+				   tables:[
+					  [
+						 title:'',
+						 cols: 1,
+						 headers:[
+							[name:'name', caption:'Name'],
+							[name:'assessmenttype', caption:'Assessment Type'],
+							[name:'iyear', caption:'Year']
+						 ],
+						 items: app.lobs
+					  ]
+				   ],
+				   items:[
+					   [caption:'', value:'']
+				   ]
+			   ],
+            ]
+		];
+		println "PASSING GET HTML.............";
+		return htmlService.buildDocHTML(document);
 	}
 	
-	public def parse( def template ){
-		return """
-			<html>
-				<head> $style; </head>
-				<body>
-					<table width="100%">
-						<tr> <td>$template.header</td> </tr>
-						<tr> <td>$template.detail</td> </tr>
-					<table>
-				</body>
-			</html>
-		""";
-	}
 }

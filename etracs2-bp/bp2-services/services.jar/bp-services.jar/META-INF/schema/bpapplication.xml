@@ -16,7 +16,12 @@
 		<field name="businessid"/>
 		<field name="parentid"/>
 		<complex name="info" ref="bpinfo" serializer="default"/>
-		<complex name="extended" merge="true" serializer="default" required="false"/>
+		<complex name="lobs" ref="lob" type="list" serializer="default"/>
+		<complex name="appinfos" ref="appinfo" type="list" required="false" serializer="default"/>
+		<complex name="taxfees" ref="taxfee" type="list" required="false" serializer="default"/>
+		<complex name="receivables"  ref="bpreceivable" type="list" required="false" serializer="default"/>
+		<complex name="credits"  ref="bpreceivablecredit" type="list" required="false" serializer="default"/>
+		<complex name="extended" merge="true" required="false" serializer="default"/>
 	</element>
 	
 	<element name="bpinfo">
@@ -35,13 +40,11 @@
 		<field name="ctcdateissued"/>
 		<field name="administratorname"/>
 		<field name="administratoraddress"/>
-		<complex name="barangay" ref="barangay"/>
-		<complex name="lobs" ref="lob" type="list"/>
-		<complex name="appinfos" ref="appinfo" type="list" required="false"/>
-		<complex name="taxfees" ref="taxfee" type="list" required="false"/>
-		<complex name="applicationsignatories" ref="appsignatory" type="list" required="false"/>
-		<complex name="assessmentsignatories"  ref="appsignatory" type="list" required="false"/>
-		<complex name="requirements"  ref="requirement" type="list" required="false"/>
+		<field name="barangayid"/>
+		<field name="barangayname"/>
+		<complex name="applicationsignatories" ref="appsignatory" type="list" required="false" serializer="default"/>
+		<complex name="assessmentsignatories"  ref="appsignatory" type="list" required="false" serializer="default"/>
+		<complex name="requirements"  ref="requirement" type="list" required="false" serializer="default"/>
 	</element>
 	
 	<element name="barangay">
@@ -89,5 +92,35 @@
 		<field name="name" required="true"/>
 		<field name="department" required="true"/>
 		<field name="title" required="true"/>
+	</element>
+	
+	<element name="bpreceivable">
+		<field name="objid" primary="true"/>
+		<field name="businessid" required="true"/>
+		<field name="applicationid" required="true"/>
+		<field name="applicationtype" required="true"/>
+		<field name="appno" required="true"/>
+		<field name="iyear" required="true" type="integer"/>
+		<field name="iqtr" required="" type="" />
+		<field name="lobid" required="true"/>
+		<field name="lobname" required="true"/>
+		<field name="acctid" required="true"/>
+		<field name="acctno" required="true"/>
+		<field name="accttitle" required="true"/>
+		<field name="amount" required="true" type="decimal"/>
+		<field name="amtpaid" required="true" type="decimal"/>
+	</element>
+	
+	<element name="bpreceivablecredit">
+		<field name="objid" primary="true"/>
+		<field name="bpreceivableid" required="true"/>
+		<field name="refid" />
+		<field name="reftype" required="true"/>
+		<field name="refno" required="true"/>
+		<field name="refdate" required="true" />
+		<field name="amount" required="true" type="decimal"/>
+		<field name="surcharge" required="true" type="decimal"/>
+		<field name="interest" required="true" type="decimal"/>
+		<field name="discount" required="true" type="decimal"/>
 	</element>
 </schema>

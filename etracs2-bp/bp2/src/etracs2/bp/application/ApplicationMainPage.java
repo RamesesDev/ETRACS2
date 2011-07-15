@@ -195,17 +195,17 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         formPanel4.setBounds(0, 70, 340, 120);
 
         xTextField6.setCaption("CTC No.");
-        xTextField6.setName("application.ctcno");
+        xTextField6.setName("application.info.ctcno");
         xTextField6.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel5.add(xTextField6);
 
         xTextField7.setCaption("Place Issued");
-        xTextField7.setName("application.ctcplaceissued");
+        xTextField7.setName("application.info..ctcplaceissued");
         xTextField7.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel5.add(xTextField7);
 
         xDateField2.setCaption("Date Issued");
-        xDateField2.setName("application.ctcdateissued");
+        xDateField2.setName("application.info.ctcdateissued");
         xDateField2.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel5.add(xDateField2);
 
@@ -219,13 +219,13 @@ public class ApplicationMainPage extends javax.swing.JPanel {
 
         xTextField8.setCaption("Administrator");
         xTextField8.setCaptionWidth(85);
-        xTextField8.setName("application.administratorname");
+        xTextField8.setName("application.info.administratorname");
         xTextField8.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel6.add(xTextField8);
 
         xTextField9.setCaption("Address");
         xTextField9.setCaptionWidth(85);
-        xTextField9.setName("application.administratoraddress");
+        xTextField9.setName("application.info.administratoraddress");
         xTextField9.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel6.add(xTextField9);
 

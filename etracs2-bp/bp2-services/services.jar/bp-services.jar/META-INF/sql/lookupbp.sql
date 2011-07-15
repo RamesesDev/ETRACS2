@@ -1,39 +1,39 @@
-[lookupBusiness]
-SELECT b.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM business b 
-INNER JOIN bpapplication bpa on bpa.objid = b.applicationid 
+[lookupApproveApplication]
+SELECT bpa.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM bpapplication bpa 
+INNER JOIN business b on b.applicationid = bpa.objid 
 
-[lookupBusinessByBIN] 
-SELECT b.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM business b 
-INNER JOIN bpapplication bpa on bpa.objid = b.applicationid 
+[lookupApproveApplicationByBIN] 
+SELECT bpa.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM bpapplication bpa 
+INNER JOIN business b on b.applicationid = bpa.objid 
 WHERE b.bin = $P{searchText} 
 
-[lookupBusinessByAppNo] 
-SELECT b.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM business b 
-INNER JOIN bpapplication bpa on bpa.objid = b.applicationid 
+[lookupApproveApplicationByAppNo] 
+SELECT bpa.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM bpapplication bpa 
+INNER JOIN business b on b.applicationid = bpa.objid 
 WHERE bpa.txnno = $P{searchText} 
 
-[lookupBusinessByPermitNo] 
-SELECT b.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM business b 
-INNER JOIN bpapplication bpa on bpa.objid = b.applicationid 
+[lookupApproveApplicationByPermitNo] 
+SELECT bpa.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM bpapplication bpa 
+INNER JOIN business b on b.applicationid = bpa.objid 
 INNER JOIN bppermit bp on bp.businessid = b.objid 
 WHERE bp.txnno = $P{searchText} 
 
-[lookupBusinessByTradeName] 
-SELECT b.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM business b 
-INNER JOIN bpapplication bpa on bpa.objid = b.applicationid 
+[lookupApproveApplicationByTradeName] 
+SELECT bpa.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM bpapplication bpa 
+INNER JOIN business b on b.applicationid = bpa.objid 
 WHERE b.tradename LIKE $P{searchText} 
 
-[lookupBusinessByTaxpayerName] 
-SELECT b.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM business b 
-INNER JOIN bpapplication bpa on bpa.objid = b.applicationid 
+[lookupApproveApplicationByTaxpayerName] 
+SELECT bpa.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM bpapplication bpa 
+INNER JOIN business b on b.applicationid = bpa.objid 
 WHERE b.taxpayername LIKE $P{searchText} 
 
-[lookupBusinessAdminstratorName] 
-SELECT b.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM business b 
-INNER JOIN bpapplication bpa on bpa.objid = b.applicationid 
+[lookupApproveApplicationByAdminstratorName] 
+SELECT bpa.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM bpapplication bpa 
+INNER JOIN business b on b.applicationid = bpa.objid 
 WHERE b.adminname LIKE $P{searchText} 
 
-[lookupBusinessBusinessAddress] 
-SELECT b.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM business b 
-INNER JOIN bpapplication bpa on bpa.objid = b.applicationid 
+[lookupApproveApplicationByBusinessAddress] 
+SELECT bpa.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress FROM bpapplication bpa 
+INNER JOIN business b on b.applicationid = bpa.objid 
 WHERE b.businessaddress LIKE $P{searchText} 

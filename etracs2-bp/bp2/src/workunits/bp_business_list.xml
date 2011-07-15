@@ -1,0 +1,92 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/bp/txn" action="initApplication" caption="Approved Application "/>
+        <invoker folderid="/menu/bp/txn" action="initReleasePermit" caption="For Release Permit"/>
+        <invoker folderid="/menu/bp/txn" action="initActivePermit" caption="Active Permit"/>
+
+        <invoker type="formActions" action="previewApplication" caption="View Application" visibleWhen="#{selectedItem != null}"/>
+        <invoker type="formActions" action="previewAssessment" caption="View Assessment" visibleWhen="#{selectedItem != null}"/>
+        <invoker type="formActions" action="release" caption="Release Permit" mnemonic="r" visibleWhen="#{selectedItem.docstate == 'PERMIT_PENDING'}"/>
+        <invoker type="formActions" action="viewPermit" caption="View Permit" mnemonic="r" visibleWhen="#{selectedItem.docstate == 'ACTIVE'}"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class BusinessMgmtList
+{
+    @Binding
+    def binding;
+    
+    def mode = 'VIEW';
+    
+    @Service('BusinessMgmtService')
+    def svc;
+    
+    @Service('BPHtmlService')
+    def htmlSvc;
+    
+    def docstate;
+    def searchText;
+    
+    void initApplication(){ docstate = 'APPROVED'; }
+    void initReleasePermit(){ docstate = 'PERMIT_PENDING'; }
+    void initActivePermit(){ docstate = 'ACTIVE'; }
+    
+    def selectedItem;
+    def listHandler = [
+        getRows: { return 25; },
+        getColumns : {
+            return [
+                new Column(name:'docstate', caption:'Status'),
+                new Column(name:'txnno', caption:'Application No.'),
+                new Column(name:'tradename', caption:'Trade Name'),
+                new Column(name:'businessaddress', caption:'Business Address' ),
+                new Column(name:'taxpayername', caption:'Payer Name'),
+                new Column(name:'taxpayeraddress', caption:'Payer Address')
+            ];
+        },
+        
+        fetchList : {
+            return svc.getList( searchText, docstate, it );
+        }
+    ] as PageListModel;
+    
+    public def getHtml(){
+        def html = "";
+        if( selectedItem ) {
+            if( !selectedItem.html ){
+                try{ selectedItem.html = htmlSvc.getHtml( selectedItem.objid );
+                }catch(e){ e.printStackTrace(); }
+            }
+            html = selectedItem.html;
+        }
+        
+        if( html ) return html;
+        return 'No selected item';
+    }
+    
+    def previewApplication(){
+        return InvokerUtil.lookupOpener('bp.applicationreport', [applicationid:selectedItem.objid]);
+    }
+    
+    def previewAssessment(){
+        return InvokerUtil.lookupOpener('bp.assessmentreport', [applicationid:selectedItem.objid]);
+    }
+    
+    void release(){
+        svc.releasePermit( selectedItem.objid );
+        listHandler.load();
+    }
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.bp.application.BusinessMmgtPage"/>
+    </pages>
+</workunit>

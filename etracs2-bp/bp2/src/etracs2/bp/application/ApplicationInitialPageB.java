@@ -56,7 +56,7 @@ public class ApplicationInitialPageB extends javax.swing.JPanel {
         xActionTextField1.setActionName("lookupBusiness");
         xActionTextField1.setCaption("Search");
         xActionTextField1.setIndex(-1);
-        xActionTextField1.setName("business.appno");
+        xActionTextField1.setName("app.appno");
         xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
         xActionTextField1.setRequired(true);
         formPanel1.add(xActionTextField1);

@@ -1,0 +1,122 @@
+<workunit>
+    <invokers>
+        <invoker type="collection" caption="Business Tax" afid="51" appcode="business_tax"/>
+        <invoker type="tc:business_tax" action="init" caption="Business Tax" afid="51"/>
+        
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}"/>
+        <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}"/>
+        <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}"/>
+        <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}"/>
+        <invoker type="formActions" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" visibleWhen="#{mode == 'view'}"/>
+        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view'}"/>
+        
+        <invoker type="receipt.actions:tc:business_tax" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup"/>
+        <invoker type="receipt.actions:tc:business_tax" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P"/>
+        <invoker type="receipt.actions:tc:business_tax" action="doVoid" caption="Void" mnemonic="v"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+    import com.rameses.rcp.common.*
+    import com.rameses.rcp.annotations.*
+    import com.rameses.osiris2.client.*
+    import com.rameses.osiris2.reports.*
+    import etracs2.groovy.*
+    import etracs2.tc.groovy.*
+
+    class BusinessTaxCollectionController extends AbstractCollectionController
+    {
+        @Binding
+        def binding
+        
+        @Service('BPCollectionService')
+        def bpcolSvc;
+        
+        @Service('ReceiptService')
+        def svc;
+        
+        @Service('ReceiptHtmlService')
+        def htmlSvc;
+        
+        def bp = [:];
+        def years = [];
+        
+        def year = 0;
+        def qtr = 4;
+        
+        def getService() { return svc; }
+        def getHtmlService() { return htmlSvc; }
+        def getCollectionTitle() { return 'Business Liscence Fee'; }
+        def lookupBusiness(){ return InvokerUtil.lookupOpener( 'bp:business_list', [onselect:onbpselect, searchText:bp.appno] ); }
+        def getReportName() { return 'receipt/af51'; }
+        
+        def listHandler = [
+            getColumns : {
+                return [
+                    new Column( name:'lobname', caption:'Line Of Business'),
+                    new Column( name:'accttitle', caption:'Account'),
+                    new Column( name:'taxamount', caption:'Amount', type:'decimal', format:"#,##0.00"),
+                    new Column( name:'surcharge', caption:'Surcharge', type:'decimal', format:"#,##0.00"),
+                    new Column( name:'interest', caption:'Interest', type:'decimal', format:"#,##0.00"),
+                    new Column( name:'discount', caption:'Discount', type:'decimal', format:"#,##0.00"),
+                    new Column( name:'amount', caption:'Total', type:'decimal', format:"#,##0.00"),
+                    new Column( name:'iqtr', caption:'Qtr', width:5, resizable:false, type:'integer'),
+                    new Column( name:'iyear', caption:'Year', width:10, resizable:false, type:'integer', format:"0000")
+                ];
+            },
+            
+            fetchList  : { 
+                entity = bpcolSvc.getBill( entity, year, qtr );
+                return entity.items;
+            }
+        ] as SubListModel
+        
+        void init() {
+            super.init();
+            entity.doctype = 'BUSINESS_TAX';
+        }
+        
+        def onbpselect = {
+            if( it ){
+                bp.appno = it.appno;
+                bp.objid = it.objid;
+                bp.tradename = it.tradename;
+                bp.businessaddress = it.businessaddress;
+            }
+            binding.refresh();
+        }
+        
+        def doNext(){ 
+            entity.year = 0;
+            entity.qtr = 0;
+            
+            entity.applicationid = bp.objid;
+            entity = bpcolSvc.getBill( entity, 0, 0 );
+            
+            entity.items.collect{ it.iyear }.each{ y ->
+                if( !years.find{ it == y } )
+                    years << y;
+            }
+            
+            year = years[0];
+            return 'view';
+        }
+        
+        def getQtrs(){
+            def list = [];
+            entity.items.findAll{ it.iyear == year }.each{ i ->
+                if( !list.find{ it == i.iqtr } ) 
+                    list << i.iqtr;
+            }
+            qtr = list[ list.size()-1 ];
+            return list;
+        }
+    }
+]]>        
+    </code>
+    <pages>
+        <page template="etracs2.bp.collection.BusinessSelectionPage"/>
+        <page name="view" template="etracs2.bp.collection.GeneralCollectionPage"/>
+        <page name="html" template="etracs2.tc.HtmlPage"/>
+    </pages>
+</workunit>
