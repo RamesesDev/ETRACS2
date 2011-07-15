@@ -227,8 +227,8 @@ public class FAASController
     -----------------------------------------------------------------------------*/
     boolean iscondo = false 
     def barangay
-    int section
-    int parcel
+    def section = 0
+    def parcel = 0
     
     def create() {
         faas.rp.barangayid = barangay.objid
@@ -323,14 +323,6 @@ public class FAASController
     def txntype
     def claimno = '-'
     
-    def newdiscovery()  { 
-        faas    = svc.createNewDiscovery()
-        mode    = 'create' 
-        txntype = faas.info.txntype
-        txntitle = 'New Discovery Transaction'
-        return 'new' 
-    }
-    
     def transfer()      { initTxn( 'TR', 'Transfer of Ownership Transaction' ) }
     def reassessment()  { initTxn( 'RE', 'Re-Assessment Transaction' ) }
     def correction()    { initTxn( 'CE', 'Correction of Entry Transaction' ) }
@@ -405,6 +397,49 @@ public class FAASController
         return 'default'
     }
     
+    
+    /*-----------------------------------------------------------------------------
+    *
+    * NewDiscovery Support 
+    *
+    -----------------------------------------------------------------------------*/
+    def rputype = 'land'
+    
+    def newdiscovery()  { 
+        faas    = svc.createNewDiscovery()
+        mode    = 'create' 
+        txntype = faas.info.txntype
+        txntitle = 'New Discovery Transaction'
+        section  = 0
+        parcel   = 0
+        return 'ndinit' 
+    }
+    
+    void setRputype( rputype ) {
+        this.rputype = rputype
+        updateParcelNo()
+    }
+    
+    void setSection( section) {
+        this.section = section
+        updateParcelNo()
+    }
+    
+    void updateParcelNo() {
+        if( rputype == 'land' ){
+            faas.rpu.suffix = 0
+            if( barangay ) {
+                parcel = svc.getNextParcelNo( barangay, section )
+            }
+        }
+        binding.refresh('faas.rpu.suffix|parcel')
+    }
+    
+    List getRputypeList() {
+        return ['land', 'improvement']
+    }
+    
+    
 }
 
 ]]>
@@ -413,6 +448,7 @@ public class FAASController
     <pages>
         <page template="etracs2.rpt.faas.FAASPage"/>
         <page name="new" template="etracs2.rpt.faas.FAASNewPage"/>
+        <page name="ndinit" template="etracs2.rpt.faas.FAASNDInitPage"/>
         <page name="txninit" template="etracs2.rpt.faas.FAASTxnInitPage"/>
     </pages>
 </workunit>

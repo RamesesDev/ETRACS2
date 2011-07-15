@@ -1,0 +1,40 @@
+".*" [ true == true ] {
+    enabled:true;
+}
+
+"parcel|faas.rpu.suffix" [ rputype == 'land'] {
+    enabled:false;
+}
+
+"parcel|faas.rpu.suffix" [ rputype != 'land'] {
+    enabled:true;
+}
+
+
+
+"iscondo|faas.rpu.subsuffix" [ faas.rpu.suffix >= 1001 && faas.rpu.suffix <= 1999 ] {
+    enabled:true;
+}
+
+"iscondo|faas.rpu.subsuffix" [ faas.rpu.suffix < 1001 || faas.rpu.suffix > 1999 ] {
+    enabled:false;
+}
+
+"faas.rpu.subsuffix" [ iscondo == true ] {
+    enabled:true;
+}
+
+"faas.rpu.subsuffix" [ iscondo == false] {
+    enabled:false;
+}
+
+"faas.info.txn" [ faas.info.datacapture == false] {
+    enabled:false;
+}
+
+
+
+"faas.info.claimno" [ faas.info.txntype != 'MC'] {
+    enabled:false;
+}
+

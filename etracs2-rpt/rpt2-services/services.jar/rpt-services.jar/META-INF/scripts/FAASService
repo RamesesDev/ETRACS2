@@ -252,10 +252,7 @@ class FAASService
         faas.message            = null 
         //update pin for land type 
         if( faas.info.datacapture == false && faas.rpu.rputype == LAND_TYPE) {
-            if( faas.rp.pin != approvaldata.pin ) {
-                //pin has been changed by province, delete temp pin 
-                deletePin( faas.rpu.fullpin )
-            }
+            deletePin( faas.rpu.fullpin )
             faas.rp.pin         = approvaldata.pin 
             faas.rpu.fullpin    = approvaldata.fullpin 
             createOnlinePIN( faas ) 
@@ -305,6 +302,22 @@ class FAASService
         em.delete(SCHEMA_NAME, [objid:faasid ] )
     }
     
+    
+    @ProxyMethod
+    public def getNextParcelNo( barangay, section ) {
+        def key = barangay.pin + '-' + buildSectionNo( section )
+        return seqSvc.getCurrentSeries( key )
+    }
+    
+    def buildSectionNo( section )  {
+		def sectionLen = Integer.parseInt( var.pin_section_length )
+		return section.toString().padLeft(sectionLen, '0')
+	}
+	
+	def buildParcelNo( newSeries ) {
+		def parcelLen = Integer.parseInt( var.pin_parcel_length )
+		return newSeries.toString().padLeft( parcelLen,'0')
+	}
     
     /*-----------------------------------------------------------------------
     ** Transaction Support Methods
