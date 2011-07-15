@@ -49,18 +49,18 @@ class BPApplicationService{
 		
 		if( !application.lobs ) throw new Exception("There must be at least 1 line of business.");
 		
+		def checkLobs = { l ->
+			if( l.matches('RENEW|RETIRELOB|ADDLOB') ){
+				if( !application.lobs.findAll{ it.assessmenttype == l } ){
+					throw new Exception("There must be at least 1 line of business that is $l.")
+				}
+			}
+		}
+		
 		if( application.txnmode == 'ONLINE' ){
-			if( application.txntype == 'RENEW' ) {
-				if( !application.lobs.findAll{ it.assessmenttype == 'RENEW'; } ) throw new Exception("There must be at least 1 line of business that is RENEW.");
-			}
-
-			if( application.txntype == 'RETIRE' ){
-				if( !application.lobs.findAll{ it.assessmenttype == 'RETIRELOB'; } ) throw new Exception("There must be at least 1 line of business that is RETIRELOB.");
-			}
-			
-			if( application.txntype == 'ADDLOB' ){
-				if( !application.lobs.findAll{ it.assessmenttype == 'NEW'; } ) throw new Exception("There must be at least 1 line of business that is NEW.");
-			}
+			println application.lobs;
+			println application.txntype;
+			checkLobs( application.txntype == 'RETIRE' ? 'RETIRELOB' : application.txntype );
 		}
 
 		loadSignatoriesAndRequirements( application );
@@ -276,6 +276,9 @@ class BPApplicationService{
 	@ProxyMethod
 	public def evaluateTaxesAndFees( def parentid, def list ){
 		list.each{ it ->
+		
+			println "passing";
+		
 			def application = open( it.objid );
 			def app = createAppEntity( application );
 			
