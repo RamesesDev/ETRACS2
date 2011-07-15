@@ -248,17 +248,11 @@ public class LandRYSettingController
         ]},
         validate     : { li -> doValidateSpecificClass( li.item ) },
         onAddItem    : { item -> 
-            selectedSpecificClass = item;
-            svc.saveLCUVSpecificClass( selectedSpecificClass );
+            svc.saveLCUVSpecificClass( item );
+            selectedLCUV.specificclass.add( item );
         },
         onRemoveItem   : { item -> doRemoveSpecificClassItem( item ) },
-        fetchList    : { 
-            if( !selectedLCUV ) return [];
-            selectedSpecificClass = svc.openSpecificClass( selectedLCUV.objid );
-            if( selectedSpecificClass == null ) selectedSpecificClass = [];
-            
-            return selectedSpecificClass;  
-        },
+        fetchList    : { return selectedLCUV.specificclass; },
     ] as SubListModel
     
     def subClassListHandler = [
@@ -272,17 +266,11 @@ public class LandRYSettingController
         validate     : { li -> doValidateSubClass( li.item ) },
         onAddItem    : { item -> 
             item.specificclassid = selectedSpecificClass.objid;
-            selectedSubClass = item;
-            svc.saveLCUVSubClass( selectedSubClass );
+            svc.saveLCUVSubClass( item );
+            selectedSpecificClass.subclass.add( item );
         },
         onRemoveItem   : { item -> doRemoveSubClassItem( item ) },
-        fetchList    : { 
-            if( !selectedSpecificClass ) return [];
-            selectedSubClass = svc.openSubClass( selectedSpecificClass.objid );
-            if( selectedSubClass == null ) selectedSubClass = [];
-            
-            return selectedSubClass; 
-        },
+        fetchList    : { return selectedSpecificClass.subclass; },
     ] as SubListModel
     
     def strippingListHandler = [
@@ -294,17 +282,11 @@ public class LandRYSettingController
         ]},
         validate     : { li -> doValidateStripping( li.item ) },
         onAddItem    : { item -> 
-            selectedStripping = item;
-            svc.saveLCUVStripping( selectedStripping );
+            svc.saveLCUVStripping( item );
+            selectedLCUV.stripping.add( item );
         },
         onRemoveItem   : { item -> doRemoveStrippingItem( item ) },
-        fetchList    : { 
-            if( !selectedLCUV ) return [];
-            selectedStripping = svc.openStripping( selectedLCUV.objid );
-            if( selectedStripping == null ) selectedStripping = [];
-            
-            return selectedStripping;  
-        },
+        fetchList    : { return selectedLCUV.stripping; },
     ] as SubListModel
     
     def allowColumnEdit = { item ->
@@ -338,7 +320,7 @@ public class LandRYSettingController
     }
     
     void doRemoveSpecificClassItem( item ) {
-        selectedSpecificClass.remove( item );
+        selectedLCUV.specificclass.remove( item );
         svc.removeLCUVSpecificClass( item );
     }
     
@@ -348,6 +330,7 @@ public class LandRYSettingController
             required( sc.classcode, 'Code' );
             required( sc.classname, 'Name' );
             required( sc.areatype, 'Area Type' );
+            svc.saveLCUVSpecificClass( sc );;
         }
         catch( e ) {
             lcuvMsg = e.message 
@@ -357,7 +340,7 @@ public class LandRYSettingController
     }
     
     void doRemoveSubClassItem( item ) {
-        selectedSubClass.remove( item );
+        selectedLCUV.subclass.remove( item );
         svc.removeLCUVSubClass( item );
     }
     
@@ -367,6 +350,7 @@ public class LandRYSettingController
             required( sc.subclasscode, 'Code' );
             required( sc.subclassname, 'Name' );
             required( sc.unitvalue, 'unitvalue' );
+            svc.saveLCUVSubClass( item );
         }
         catch( e ) {
             lcuvMsg = e.message 
@@ -376,7 +360,7 @@ public class LandRYSettingController
     }
     
     void doRemoveStrippingItem( item ) {
-        selectedStripping.remove( item );
+        selectedLCUV.stripping.remove( item );
         svc.removeLCUVStripping( item );
     }
     
@@ -385,6 +369,7 @@ public class LandRYSettingController
         try {
             required( st.striplevel, 'Stripping Level' );
             validateRate( st.rate );
+            svc.saveLCUVStripping( st );
         }
         catch( e ) {
             lcuvMsg = e.message 
@@ -395,10 +380,21 @@ public class LandRYSettingController
     
     void setSelectedLCUV( item ){
         selectedLCUV = item;
+        
+        if( selectedLCUV ){ 
+            selectedLCUV.specificclass = svc.openSpecificClass( selectedLCUV.objid );
+            selectedLCUV.stripping = svc.openStripping( selectedLCUV.objid );
+        } else{ 
+            selectedLCUV.specificclass = [];
+            selectedLCUV.stripping = [];
+        }
     }
     
     void setSelectedSpecificClass( item ){
         selectedSpecificClass = item;
+        
+        if( selectedSpecificClass ) selectedSpecificClass.subclass = svc.openSubClass( selectedSpecificClass.objid );
+        else selectedSpecificClass.subclass = [];
     }
     
     
