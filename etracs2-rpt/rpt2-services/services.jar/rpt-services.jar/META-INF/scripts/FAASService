@@ -5,9 +5,6 @@ import com.rameses.common.*;
 
 class FAASService
 {
-	@PersistenceContext('java:system')
-	def em_sys
-	
 	@PersistenceContext('main')
 	def em
     
@@ -107,6 +104,15 @@ class FAASService
             previousfaases: [],
             lgutype       : var.lgu_type,
         ]
+    }
+    
+    @ProxyMethod
+    public Map createNewDiscovery() {
+        def faas            = createFaas() 
+        faas.info.txntype   = 'ND'
+        faas.info.txn       = resolveTxnType( faas.info.txntype )
+        faas.info.datacapture = false 
+        return faas 
     }
     
     @ProxyMethod
@@ -246,18 +252,23 @@ class FAASService
         faas.message            = null 
         //update pin for land type 
         if( faas.info.datacapture == false && faas.rpu.rputype == LAND_TYPE) {
-            faas.rp.pin     = approvaldata.pin 
-            faas.rpu.pin    = approvaldata.fullpin 
+            if( faas.rp.pin != approvaldata.pin ) {
+                //pin has been changed by province, delete temp pin 
+                deletePin( faas.rpu.fullpin )
+            }
+            faas.rp.pin         = approvaldata.pin 
+            faas.rpu.fullpin    = approvaldata.fullpin 
             createOnlinePIN( faas ) 
         }
         em.update( faas.schemaname, faas )
+        em.update(LISTSCHEMA_NAME, faas )
         invokeCommonApproveActions( faas )
         return [date:new Date(), status:'Processed successfully.']
     }
     
     @ProxyMethod
     public Map onlineDisapprove( faasid, disapprovaldata ) {
-        def faas = open( faasinfo.objid )
+        def faas = open( faasid  )
         if( faas.docstate == CURRENT_STATE || faas.docstate == CANCELLED_STATE){
             //the faas has already been approved or superseded
             //do not alter the state, just a message 
@@ -288,7 +299,7 @@ class FAASService
         
         //delete record
         if( faasinfo.datacapture ) {
-            deletePin( faasinfo )
+            deletePin( faasinfo.fullpin )
         }
         em.delete(LISTSCHEMA_NAME, [objid:faasid] )
         em.delete(SCHEMA_NAME, [objid:faasid ] )
@@ -674,8 +685,8 @@ class FAASService
         }
     }
     
-    void deletePin( faasinfo ) {
-        em.sqlContext.createNamedExecutor('faas:deletePin').setParameter('pin', faasinfo.fullpin).execute()
+    void deletePin( pin ) {
+        em.sqlContext.createNamedExecutor('faas:deletePin').setParameter('pin', pin).execute()
     }
     
     void validateSubmit( faasinfo ) {

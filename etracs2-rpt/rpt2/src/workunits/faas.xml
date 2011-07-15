@@ -8,6 +8,8 @@
         <invoker type="faas.create" action="initCapture" caption="New" mnemonic="n" shortcut="ctrl N" target="window"/>
         <invoker type="faas.open" action="open" caption="Open" mnemonic="o" shortcut="ctrl O" target="window"/>
         
+        <invoker type="faas.viewprevious" action="openPrevious" caption="View Previous" target="popup"/>
+        
         <!-- transactions -->
         <invoker folderid="/menu/rpt/txn" action="initCapture" caption="Data Capture" mnemonic="c" target="window"/>
         <invoker folderid="/menu/rpt/txn" action="transfer" caption="Transfer of Ownership" mnemonic="t"  target="window"/>
@@ -25,6 +27,8 @@
         <invoker type="formActions" action="submitToProvince" shortcut="ctrl M" visibleWhen="#{showSubmitToProvinceAction == true}" caption="Submit To Province" mnemonic="m" />
         <invoker type="formActions" action="disapproveByProvince" visibleWhen="#{showDisapproveByProvinceAction == true}" caption="Disapprove" />
         <invoker type="formActions" action="approveByProvince" shortcut="ctrl A" visibleWhen="#{showApprovedByProvinceAction == true}" caption="Approve" mnemonic="a" />
+        
+        <invoker type="faasActions" action="viewPrevious" caption="View Previous" visibleWhen="#{showViewPrevious == true}" />
     </invokers>
     <code lang="groovy">
 <![CDATA[
@@ -320,8 +324,10 @@ public class FAASController
     def claimno = '-'
     
     def newdiscovery()  { 
-        mode = 'create' 
-        faas = svc.createNewDiscovery()
+        faas    = svc.createNewDiscovery()
+        mode    = 'create' 
+        txntype = faas.info.txntype
+        txntitle = 'New Discovery Transaction'
         return 'new' 
     }
     
@@ -370,6 +376,35 @@ public class FAASController
         if( faas.info.datacapture == false ) return false 
         return true 
     }
+    
+    
+    /*-----------------------------------------------------------------------------
+    *
+    * FaasActions Support 
+    *
+    -----------------------------------------------------------------------------*/
+    boolean getShowViewPrevious() {
+        if( faas.previousfaases?.size() > 0 ) return true
+        return false
+    }
+    
+    def viewPrevious() {
+        if( faas.previousfaases.size() == 1 ) {
+            def prevfaas = [ objid:faas.previousfaases[0].faasid ]
+            return InvokerUtil.lookupOpener('faas.viewprevious', [faas:prevfaas])
+        }
+        else {
+            return InvokerUtil.lookupOpener('faaspreviouslist.open', [previousfaaslist:faas.previousfaases] )
+        }
+    }
+    
+    def openPrevious() {
+        mode = 'view' 
+        faas = svc.open( faas.objid )
+        initFormFields( faas )
+        return 'default'
+    }
+    
 }
 
 ]]>

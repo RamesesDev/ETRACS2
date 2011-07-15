@@ -33,9 +33,10 @@
         def oldPin
         def acceptHandler;
         def key;
+        def overrideNextSeries = false 
         
         void init() {
-            section = toInt(faas.rp.info.sectionNo, 1);    
+            section = toInt(faas.rp.section, 1);    
             doInit();
         }
         
@@ -44,7 +45,7 @@
             oldSeries = seqService.getCurrentSeries( key );
             newSeries = oldSeries;
             newPin = buildPin( key, newSeries );
-            oldPin = faas.rp.info.pin;
+            oldPin = faas.rp.pin;
         }
         
         void setSection( int sec ) {
@@ -70,19 +71,20 @@
         }
         
         def doCancel() {
-            faas.rp.info.pin = oldPin;
+            faas.rp.pin         = oldPin
+            faas.rpu.fullpin    = oldPin
             return "_close";
         }
         
         private def buildKey( faas )  {
-            int sectionLen = Integer.parseInt(var.section_index_len);
-            key = faas.rp.info.provCityIndex + '-' + faas.rp.info.muniDistrictIndex + '-' + faas.rp.info.brgyIndex;
+            int sectionLen = Integer.parseInt(var.pin_section_length);
+            key = faas.rp.provcityindex + '-' + faas.rp.munidistrictindex + '-' + faas.rp.barangayindex;
             key += '-' + section.toString().padLeft( sectionLen, '0');
             return key;
         }
         
         private def buildPin( key, newSeries ) {
-            int parcelLen = Integer.parseInt( var.parcel_index_len );
+            int parcelLen = Integer.parseInt( var.pin_parcel_length );
             return key + '-' + newSeries.toString().padLeft( parcelLen, '0');
         }
         
@@ -94,8 +96,7 @@
                 return defValue;
             }   
         }
-        
-        
+
     }
 ]]>
 

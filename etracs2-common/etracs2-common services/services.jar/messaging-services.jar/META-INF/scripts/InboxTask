@@ -27,9 +27,11 @@ class InboxTask
 				msgSvc.onreceive( msg )
 				moveMessageToProcessedInbox( msg )
 			}
-			catch( e ) {
-                println 'InboxTask: ' + e.message 
-				logMessage( msg, e.message )
+			catch( ex ) {
+                print '-' * 50
+                ex.printStackTrace()
+                println 'InboxTask: ' + ex.message 
+				logMessage( msg, ex )
 			}	
         }
         else {
@@ -38,8 +40,8 @@ class InboxTask
         return true
 	}
 	
-	void logMessage( msg, errorMsg ) {
-        msg.message = [date:new Date(), msg:errorMsg]
+	void logMessage( msg, ex ) {
+        msg.message = [date:new Date(), msg:ex.message]
         em.update( INBOX_SCHEMA, msg )
     }
     

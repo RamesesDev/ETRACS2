@@ -3,6 +3,9 @@ import java.rmi.server.UID
 
 class ProvinceFAASService
 {
+	@PersistenceContext('java:system')
+	def em_sys
+	
 	@PersistenceContext('main')
 	def em
 	
@@ -148,35 +151,41 @@ class ProvinceFAASService
     
     @ProxyMethod
 	public def assignPin( faas, key, section, newSeries, oldSeries ) {
-		if( faas.rpu.rputype != 'land') throw new Exception("Only Land RPU could be assigned a new PIN.")
+		if( faas.rpu.rputype != 'land' ) throw new Exception("Only Land RPU could be assigned a new PIN.")
 		if( ! faasExists( faas.objid ) ) throw new Exception("FAAS not found.")
 		
 		validateParcelSeries( key, newSeries, oldSeries ) 
 		def sectionNo       = buildSectionNo( section )
 		def parcelNo        = buildParcelNo( newSeries )
 		def pin             = key + '-' + parcelNo
-        faas.rp.pin         = pin 
+		faas.rp.pin         = pin 
         faas.rpu.fullpin    = pin 
 		checkDuplicatePin( faas )
 		seqSvc.updateNextSeries( key, newSeries + 1)
 		
 		/* update faas pin related info */
 		faas.rp.section     = sectionNo
-		faas.rp.parcelLen   = parcelNo
+		faas.rp.parcel      = parcelNo
 		em.update( faas.schemaname, faas )
         def params = [objid:faas.objid, fullpin:faas.rpu.fullpin, pin:faas.rp.pin ]
 		em.sqlContext.createNamedExecutor('faas:updateFaasListPin').setParameters(params ).execute()
 		return faas
 	}
     
+	@ProxyMethod
+	public def getExchangePinList( faasId ) {
+		/* return FORAPPROVAL faas excluding this faasId */
+		return em.sqlContext.createNamedQuery("faas:getExchangePinList").setParameter("objid", faasId).resultList;
+	}
+	
     @ProxyMethod
 	public def exchangePin( fromFaasId, toFaasId ) {
 		def fromFaas = open( fromFaasId )
 		def toFaas = open( toFaasId )
 		
-		if( fromFaas.rpu.info.type != 'LAND') throw new Exception("Only Land RPU could be assigned a new PIN.")
-		if( fromFaas.docstate != FORAPPROVAL_STATE ) throw new Exception("RPU $fromFaas.rpu.info.pin is $fromFaas.docstate. Only for approval state is allowed. ")
-		if( toFaas.docstate != FORAPPROVAL_STATE ) throw new Exception("RPU $toFaas.rpu.info.pin is $toFaas.docstate. Only for approval state is allowed. ")
+		if( fromFaas.rpu.rputype != 'LAND') throw new Exception("Only Land RPU could be assigned a new PIN.")
+		if( fromFaas.docstate != FORPROVAPPROVAL_STATE ) throw new Exception("RPU $fromFaas.rpu.info.pin is $fromFaas.docstate. Only for approval state is allowed. ")
+		if( toFaas.docstate != FORPROVAPPROVAL_STATE ) throw new Exception("RPU $toFaas.rpu.info.pin is $toFaas.docstate. Only for approval state is allowed. ")
 		
 		/* preserve fromFaas Pin Info */
 		def fromPin = fromFaas.rp.pin
@@ -186,7 +195,7 @@ class ProvinceFAASService
 		updatePinInfo( fromFaas , toFaas.rp.pin, toFaas.rp.section, toFaas.rp.parcel )
 		updatePinInfo( toFaas , fromPin, fromSectionNo, fromParcelNo )
 		/* set oldPin used by logging */
-		fromFaas.oldPin = fromPin
+		fromFaas.oldpin = fromPin
 		return fromFaas
 	}
 	
@@ -308,12 +317,12 @@ class ProvinceFAASService
 
     
     def buildSectionNo( section )  {
-		def sectionLen = Integer.parseInt( var.section_index_len )
+		def sectionLen = Integer.parseInt( var.pin_section_length )
 		return section.toString().padLeft(sectionLen, '0')
 	}
 	
 	def buildParcelNo( newSeries ) {
-		def parcelLen = Integer.parseInt( var.parcel_index_len )
+		def parcelLen = Integer.parseInt( var.pin_parcel_length )
 		return newSeries.toString().padLeft( parcelLen,'0')
 	}
     

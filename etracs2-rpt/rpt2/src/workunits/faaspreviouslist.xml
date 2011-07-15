@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+// date      : july 15, 2011
+-->
+<workunit>
+    <invokers>
+        <invoker type="faaspreviouslist.open" action="open" caption="Open" target="popup" />        
+    </invokers>
+    <code lang="groovy">
+        
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+
+public class FAASPreviousList
+{
+    
+    def previousfaaslist
+    def selectedItem
+    
+    def view() {
+        if( selectedItem ) {
+            def prevfaas = [ objid: selectedItem.faasid ]
+            return InvokerUtil.lookupOpener('faas.viewprevious', [faas:prevfaas ])
+        }
+        return null
+    }
+    
+}
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.PreviousFaasListPage"/>
+    </pages>
+</workunit>

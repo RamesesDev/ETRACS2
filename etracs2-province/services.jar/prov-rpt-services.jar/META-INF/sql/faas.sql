@@ -14,6 +14,10 @@ SELECT COUNT(*) AS pinCount FROM faaslist WHERE pin = $P{pin}
 SELECT * FROM pin WHERE pin = $P{pin} AND claimno = $P{claimno}
 
 
+[getExchangePinList]
+SELECT objid, pin FROM faaslist WHERE objid <> $P{objid}  AND docstate = 'FORAPPROVAL' ORDER BY pin 
+
+
 #----------------------------------------------------------------
 # CHECKS
 #----------------------------------------------------------------
@@ -31,7 +35,7 @@ UPDATE faaslist SET docstate = $P{docstate} WHERE objid = $P{objid}
 UPDATE faaslist SET tdno = $P{tdno} WHERE objid = $P{objid}
 
 
-[updatefaaslistPin]
+[updateFaasListPin]
 UPDATE faaslist SET pin = $P{pin}, fullpin = $P{fullpin} WHERE objid = $P{objid} 
 
 
