@@ -54,3 +54,8 @@ WHERE objid = $P{objid}
 UPDATE bppermit 
 SET docstate = 'ACTIVE' 
 WHERE applicationid = $P{applicationid} 
+
+[updateApplicationListingForActive] 
+UPDATE bpapplicationlisting  
+SET docstate = 'ACTIVE' 
+WHERE objid = $P{objid} 
