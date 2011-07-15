@@ -5,7 +5,7 @@ import java.rmi.server.UID;
 
 class LguService
 {
-	@PersistenceContext("etracs")
+	@PersistenceContext("main")
 	def em;
 	
 	@Service('ETRACSUtilService')
@@ -17,6 +17,14 @@ class LguService
 	def schemaname = "lgu:lgu"
 	def schemaversion = "1.0"
 	
+    @ProxyMethod
+    public List lookupMunicipality( searchText ) {
+        searchText = ( searchText ? searchText+'%' : '%' )
+        def criteria = [lguname:searchText]
+        return getListByQuery('lgu:lookupMunicipality', criteria, null )
+    }
+    
+    
 	@ProxyMethod
 	public def getParent(){
 		return em.sqlContext.createNamedQuery( 'lgu:getList' ).singleResult;

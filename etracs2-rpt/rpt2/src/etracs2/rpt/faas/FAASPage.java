@@ -36,6 +36,7 @@ public class FAASPage extends javax.swing.JPanel {
         xLabel2 = new com.rameses.rcp.control.XLabel();
         xLabel9 = new com.rameses.rcp.control.XLabel();
         xLabel10 = new com.rameses.rcp.control.XLabel();
+        xActionBar2 = new com.rameses.rcp.control.XActionBar();
         jPanel3 = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
         jPanel5 = new javax.swing.JPanel();
@@ -182,6 +183,9 @@ public class FAASPage extends javax.swing.JPanel {
         formPanel1.add(xLabel10);
 
         jPanel1.add(formPanel1, java.awt.BorderLayout.CENTER);
+
+        xActionBar2.setName("faasActions");
+        jPanel1.add(xActionBar2, java.awt.BorderLayout.EAST);
 
         jPanel2.add(jPanel1, java.awt.BorderLayout.NORTH);
 
@@ -764,6 +768,7 @@ public class FAASPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel9;
     private javax.swing.JScrollPane jScrollPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
+    private com.rameses.rcp.control.XActionBar xActionBar2;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XActionTextField xActionTextField2;
     private com.rameses.rcp.control.XActionTextField xActionTextField3;

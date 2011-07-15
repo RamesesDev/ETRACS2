@@ -1,0 +1,111 @@
+import com.rameses.annotations.*
+import java.rmi.server.UID
+
+class PlantTreeRPUService
+{
+	@PersistenceContext('main')
+	def em
+    
+    @Service('NumberService')
+	def numberSvc
+    
+    @Service('RPUService')
+    def rpuSvc 
+
+	@Env
+	def env
+    
+    @ProxyMethod
+    public Map initPlantTreeRpu( faas ) {
+        rpuSvc.buildCommonRpuInfo( faas )
+        def rpuinfo = faas.rpu.info 
+        //
+        //set plant/tree specific info below
+        
+        return faas 
+    }
+	
+    @ProxyMethod
+    public Map calculatePlantTreeAssessment( planttree ) {
+        //reset values to 0.0
+        planttree.basemarketvalue  = 0.0
+        planttree.adjustment       = 0.0
+        planttree.marketvalue      = 0.0
+        planttree.assessedvalue    = 0.0
+        
+        //calculate basemarketvalue
+        planttree.basemarketvalue = numberSvc.round( planttree.bearing * planttree.unitvalue )
+        //calculate adjustment 
+        planttree.adjustment = calculateAdjustment( planttree )
+        //calculate marketvalue 
+        planttree.marketvalue = numberSvc.round( planttree.basemarketvalue + planttree.adjustment )
+        //calculate assessedvalue
+        planttree.assessedvalue = numberSvc.roundToTen(planttree.marketvalue * planttree.assesslevel / 100.0 )
+        return planttree 
+    }
+    
+    
+    /*----------------------------------------------------------------------------------
+    * Lookup Support
+    ----------------------------------------------------------------------------------*/
+    @ProxyMethod
+    public List lookupUnitValues( ry, searchText, params) {
+        if( !searchText ) return getListByName('planttreerpu:lookupUnitValue', [ry:ry], params)
+        return getListByName('planttreerpu:lookupUnitValueByCode', [ry:ry, code:searchText+'%'], params)
+    }
+    
+    @ProxyMethod
+    public List lookupAssessLevel( ry, searchText, params) {
+        def setting = em.sqlContext.createNamedQuery('planttreerpu:getRYSetting').setParameter('ry', ry ).singleResult
+        if( ! setting) throw new Exception('Plant/Tree Revision Setting for year ' + ry + ' is not defined.')
+        setting.assesslevels = em.serializer.read( setting.assesslevels )
+        def levels = []
+        if( !searchText || searchText.startsWith('%') ) return buildAssessLevels( setting.assesslevels )
+        return buildAssessLevels( setting.assesslevels.findAll{ it.code.startsWith(searchText) } )
+    }
+    
+    
+    
+    
+    /*----------------------------------------------------------------------------------
+    * Support Methods 
+    ----------------------------------------------------------------------------------*/
+    List buildAssessLevels( list ) {
+        List levels = []
+        list.each {
+            levels.add([
+                assesslevelid     : it.objid,
+                assesslevelcode   : it.code,
+                assesslevelname   : it.name,
+                assesslevel       : it.rate,
+            ])
+        }
+        return levels 
+    }
+    def determineAssessLevel( planttree ) {
+        def al = em.sqlContext.createNamedQuery('landrpu:getAssessLevelById').setParameter('objid', planttree.assesslevelid).singleResult
+        if( ! al ) throw new Exception('Assess Level for ' + planttree.assesslevelname + ' does not exists or has been deleted.')
+        if( (al.fixrate as boolean ) ==  true ) {
+            return al.rate 
+        }
+        List ranges = em.serializer.read( al.ranges )
+        def range = ranges.find{ planttree.marketvalue > it.from && (planttree.marketvalue <= it.to || it.to == 0.0) }
+        if( ! range ) throw new Exception('Market Value of P' + numberSvc.format('#,##0.00', planttree.marketvalue) + ' has no assess level range definition.' )
+        return range.rate 
+    }
+    
+    def calculateAdjustment( planttree ) {
+        //TODO: not yet implemented
+        println 'TODO: calculateAdjustment is not yet implemented'
+        return 0.0 
+    }
+    
+    
+    private def getListByName(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+}

@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="municipality:lookup" caption="Lookup Municipality" target="popup" />
+        <invoker type="municipality.lookup" caption="Lookup Municipality" target="popup" />
     </invokers>
     
     <code>
@@ -12,7 +12,7 @@ import com.rameses.rcp.annotations.*;
 
 class LookupMunicipalityController 
 {
-    @Service("LguService")
+    @Service('ProvinceLGUService')
     def svc;
     
     def onselect;
@@ -21,7 +21,7 @@ class LookupMunicipalityController
     
     def ok() {
         if( onselect ) {
-            onselect( selectedItem.item );
+            onselect( selectedItem);
         }
         return "_close";
     }
@@ -30,12 +30,12 @@ class LookupMunicipalityController
         getRows    : { return 100; },
         getColumns : {
             return [
-                new Column(name:"item.pin", caption:"Index", width:120),
-                new Column(name:"item.name", caption:"Name", width:350),
+                new Column(name:"pin", caption:"Index No.", width:120),
+                new Column(name:"name", caption:"LGU Name", width:350),
             ]
         },
         fetchList : { 
-                def list = svc.getMunicipalityList(searchText);
+                def list = svc.lookupMunicipality(searchText);
                 if( list ) return list;
                 throw new Exception("Records not found.");
 	},

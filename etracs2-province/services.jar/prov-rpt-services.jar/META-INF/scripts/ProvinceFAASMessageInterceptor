@@ -1,0 +1,33 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class ProvinceFAASMessageInterceptor
+{
+	@PersistenceContext('main')
+	def em
+    
+	@Service('LogService')
+    def logSvc
+	
+	def SCHEMA_NAME = 'faas'
+    def SCHEMA_VERSION = '1.0'
+    def LISTSCHEMA_NAME = 'faas:faaslist'
+    
+	@After(pattern='MessageService.onreceive') 
+	public void interceptOnReceive( evt ) {
+        def msg = evt.result 
+        if( msg.action == 'faas.receive') {
+            def faas = msg.data.faas 
+            em.create( faas.schemaname, faas )
+            em.create( LISTSCHEMA_NAME, faas )
+			msg.message =[date:new Date(), status:'Processed successfully.']
+			em.update( msg.schemaname, msg )
+            logSvc.log('ONLINE-RECEIVED', 'FAAS', faas.objid);
+        }
+	}
+	
+	
+}
+
+

@@ -1,0 +1,426 @@
+import com.rameses.annotations.*
+import java.rmi.server.UID
+
+class ProvinceFAASService
+{
+	@PersistenceContext('java:system')
+	def em_sys
+	
+	@PersistenceContext('main')
+	def em
+	
+	@Env
+	def env
+	
+	@Service('DateService')
+	def dateService
+
+	@Service('Var')
+	def var
+
+	@Service('SequenceService')
+	def seqSvc
+
+	def FORPROVAPPROVAL_STATE = 'FORPROVAPPROVAL'
+	def FORAPPROVAL_STATE = 'FORAPPROVAL'
+	def CURRENT_STATE = 'CURRENT'
+	def DISAPPROVED_STATE = 'DISAPPROVED'
+	def CANCELLED_STATE = 'CANCELLED'
+    
+    def SCHEMA_NAME = 'faas'
+    def LISTSCHEMA_NAME = 'faas:faaslist'
+    def DISAPPROVED_SCHEMANAME = 'faas:disapprovedfaas'
+   
+    @ProxyMethod
+    public def open( faasid ){
+        def faas = em.read(SCHEMA_NAME, [objid:faasid])
+        if( ! faas ) throw new Exception('FAAS record does not exists.')
+        return faas 
+    }
+    
+    @ProxyMethod
+	public def submit( faasid ) {
+		def faas = open( faasid )
+		if( faas.docstate == FORAPPROVAL_STATE ) throw new Exception('FAAS has already been submitted for approval.')
+        if( faas.docstate == CURRENT_STATE ) throw new Exception('FAAS is already current.')
+        if( faas.docstate == DISAPPROVED_STATE ) throw new Exception('FAAS has already been disapproved.')
+        if( faas.docstate == CANCELLED_STATE ) throw new Exception('FAAS has already been cancelled.')
+		
+		def currDate            = dateService.getServerDate()
+		faas.docstate           = FORAPPROVAL_STATE
+		faas.info.reviewedby    = env.USERNAME
+		faas.info.reviewedbytitle = env.JOBTITLE
+		faas.info.dtreviewed    = currDate
+        faas.message            = null
+		em.update( SCHEMA_NAME, faas )
+        updateFaasListState( faasid, FORAPPROVAL_STATE )
+		return faas
+	}
+    
+    @ProxyMethod
+	public def returnDoc( faasid, remarks ) {
+		def faas = open( faasid )
+		if( faas.docstate == FORPROVAPPROVAL_STATE ) throw new Exception('FAAS has not yet been reviewed.')
+        if( faas.docstate == CURRENT_STATE) throw new Exception('FAAS is already current.')
+        if( faas.docstate == DISAPPROVED_STATE ) throw new Exception('FAAS has already been disapproved.')
+        if( faas.docstate == CANCELLED_STATE ) throw new Exception('FAAS has already been cancelled.')
+		
+		faas.docstate             = FORPROVAPPROVAL_STATE
+		faas.message              = remarks
+		faas.info.reviewedby      = null 
+		faas.info.reviewedbytitle = null 
+		faas.info.dtreviewed      = null 
+		em.update( faas.schemaname, faas )
+		updateFaasListState( faasid, FORPROVAPPROVAL_STATE )
+		return faas
+	}
+    
+    @ProxyMethod
+	public def approve( faasid ) {
+		def faas = open( faasid )
+        if( faas.docstate == FORPROVAPPROVAL_STATE ) throw new Exception('FAAS has not yet beeen reviewed.')
+        if( faas.docstate == CURRENT_STATE ) throw new Exception('FAAS is already current.')
+        if( faas.docstate == DISAPPROVED_STATE ) throw new Exception('FAAS has already been disapproved.')
+        if( faas.docstate == CANCELLED_STATE ) throw new Exception('FAAS has already been cancelled.')
+        checkDuplicatePin( faas )
+        
+		if( assignNewTdNo( faas ) ) {
+			def newtdno = getNextAutonumberTdNo( faas )
+			checkDuplicateTdNo( faas.objid, newtdno )
+            faas.info.tdno = newtdno 
+		}
+		
+		def currDate            = dateService.getServerDate()
+		faas.docstate           = CURRENT_STATE
+		faas.info.issuedate     = dateService.format('yyyy-MM-dd', currDate)
+		faas.info.dtapproved    = currDate
+        faas.approvedby         = var.provincial_assessor_name
+		faas.approvedbytitle    = var.provincial_assessor_title
+		faas.sys_dtapproved     = currDate
+		faas.message            = null
+		
+        em.update( faas.schemaname, faas )
+        updateFaasListState( faasid, CURRENT_STATE )
+        em.sqlContext.createNamedExecutor('faas:updateListTdNo').setParameters([tdno:faas.info.tdno, objid:faas.objid]).execute()
+        createPIN( faas ) 
+        sendToOutbox( faas, 'faas.approve', [
+			faasid		: faas.objid,
+			docstate	: faas.docstate,
+			approvedby	: faas.info.approvedby,
+			approvedbytitle : faas.info.approvedbytitle,
+			dtapproved		: faas.info.dtapproved,
+			tdno			: faas.info.tdno,
+			pin				: faas.rp.pin,
+			fullpin			: faas.rpu.fullpin, 
+		])
+		return faas
+	}
+    
+    @ProxyMethod
+	public def disapprove( faasid, remarks )  {
+		def faas = open( faasid )
+		if( faas.docstate == DISAPPROVED_STATE ) throw new Exception('FAAS has already been disapproved.')
+        if( faas.docstate == CANCELLED_STATE ) throw new Exception('FAAS has already been cancelled.')
+		
+		// copy to disapproved faas 
+        def currDate            = dateService.getServerDate()
+		faas.docstate           = DISAPPROVED_STATE
+		faas.message            = remarks
+		faas.sys_dtapproved     = null
+		faas.info.approvedby    = null 
+		faas.info.approvedbytitle = null 
+		faas.info.dtapproved      = null 
+        
+        def dfaas = [:]
+        dfaas.putAll( faas )
+        dfaas.objid  = 'DF' + new UID()
+        dfaas.faasid = faas.objid 
+		em.create(DISAPPROVED_SCHEMANAME, dfaas)
+        em.delete(faas.schemaname, faas)
+        em.delete( LISTSCHEMA_NAME, faas)
+		
+		sendToOutbox( faas, 'faas.disapprove', [
+			faasid		: faas.objid,
+			tdno		: faas.info.tdno,
+			pin			: faas.rp.pin,
+			fullpin		: faas.rpu.fullpin, 
+			message		: faas.message 	
+		])
+		return faas
+	}
+    
+    @ProxyMethod
+	public def assignPin( faas, key, section, newSeries, oldSeries ) {
+		if( faas.rpu.rputype != 'land' ) throw new Exception("Only Land RPU could be assigned a new PIN.")
+		if( ! faasExists( faas.objid ) ) throw new Exception("FAAS not found.")
+		
+		validateParcelSeries( key, newSeries, oldSeries ) 
+		def sectionNo       = buildSectionNo( section )
+		def parcelNo        = buildParcelNo( newSeries )
+		def pin             = key + '-' + parcelNo
+		faas.rp.pin         = pin 
+        faas.rpu.fullpin    = pin 
+		checkDuplicatePin( faas )
+		seqSvc.updateNextSeries( key, newSeries + 1)
+		
+		/* update faas pin related info */
+		faas.rp.section     = sectionNo
+		faas.rp.parcel      = parcelNo
+		em.update( faas.schemaname, faas )
+        def params = [objid:faas.objid, fullpin:faas.rpu.fullpin, pin:faas.rp.pin ]
+		em.sqlContext.createNamedExecutor('faas:updateFaasListPin').setParameters(params ).execute()
+		return faas
+	}
+    
+	@ProxyMethod
+	public def getExchangePinList( faasId ) {
+		/* return FORAPPROVAL faas excluding this faasId */
+		return em.sqlContext.createNamedQuery("faas:getExchangePinList").setParameter("objid", faasId).resultList;
+	}
+	
+    @ProxyMethod
+	public def exchangePin( fromFaasId, toFaasId ) {
+		def fromFaas = open( fromFaasId )
+		def toFaas = open( toFaasId )
+		
+		if( fromFaas.rpu.rputype != 'LAND') throw new Exception("Only Land RPU could be assigned a new PIN.")
+		if( fromFaas.docstate != FORPROVAPPROVAL_STATE ) throw new Exception("RPU $fromFaas.rpu.info.pin is $fromFaas.docstate. Only for approval state is allowed. ")
+		if( toFaas.docstate != FORPROVAPPROVAL_STATE ) throw new Exception("RPU $toFaas.rpu.info.pin is $toFaas.docstate. Only for approval state is allowed. ")
+		
+		/* preserve fromFaas Pin Info */
+		def fromPin = fromFaas.rp.pin
+		def fromSectionNo = fromFaas.rp.section 
+		def fromParcelNo = fromFaas.rp.parcel 
+		/* exchange pin info */
+		updatePinInfo( fromFaas , toFaas.rp.pin, toFaas.rp.section, toFaas.rp.parcel )
+		updatePinInfo( toFaas , fromPin, fromSectionNo, fromParcelNo )
+		/* set oldPin used by logging */
+		fromFaas.oldpin = fromPin
+		return fromFaas
+	}
+	
+	
+	
+    
+    @ProxyMethod
+    public void checkDuplicateTdNo( faasid, tdno ) {
+        if( ! tdno ) return 
+        def data = em.sqlContext.createNamedQuery('faas:checkDuplicateTdNo').setParameters([objid:faasid, tdno:tdno]).singleResult
+        if( data ) throw new Exception('TD No. ' + tdno + ' is already existing.')
+    }
+    
+    
+	@ProxyMethod
+	public def getList( search, params ) {
+        if( env.ASSIGNED_LGU?.size() > 0)
+			return getListByAssignedLgu( search, params )
+		return getListAll( search, params )
+        
+	}
+	
+	@ProxyMethod
+	public def getListAll( search, params ) {
+		def result = null
+		def docstate = search.docstate
+		def textSearch = search.textSearch
+		if( ! textSearch ) return getListByName('faas:findByState', [docstate:docstate], params)
+		if( (result = getListByName('faas:findByTdNo', [docstate:docstate, tdno:textSearch], params)) ) return result
+		if( (result = getListByName('faas:findByTaxpayerName', [docstate:docstate, taxpayername:textSearch], params)) ) return result
+		if( (result = getListByName('faas:findByPin', [docstate:docstate, pin:textSearch], params)) ) return result
+		if( (result = getListByName('faas:findByBarangay', [docstate:docstate, barangay:textSearch], params)) ) return result
+		if( (result = getListByName('faas:findByCadastralLotNo', [docstate:docstate, cadastrallotno:textSearch], params)) ) return result
+		if( (result = getListByName('faas:findBySurveyNo', [docstate:docstate, surveyno:textSearch], params)) ) return result
+		if( (result = getListByName('faas:findByBlockNo', [docstate:docstate, blockno:textSearch], params)) ) return result
+		return result
+	}
+	
+	@ProxyMethod
+	public def getListByAssignedLgu( search, params ) {
+		def docstate        = search.docstate
+		def textSearch      = search.textSearch
+		def assignedLgus    = env.ASSIGNED_LGU
+		def len             = assignedLgus.size
+		def whereClause     = ''
+		
+		def vars = '?,'.multiply( len )[0..(len*2)-2]
+        
+		def values = assignedLgus
+        if( ! textSearch ) {
+            values.add( docstate )
+            whereClause = " WHERE munidistrict in  ($vars) AND docstate = ? ORDER BY pin "
+			return getListByVars('faas:findByExaminer',['whereClause':whereClause], values, params )
+		}
+		
+		values = assignedLgus
+        values.add( docstate )
+        values.add( textSearch )
+		
+		def result = null		
+		
+		whereClause = " WHERE munidistrict in  ($vars) AND tdno = ? AND docstate = ? ORDER BY pin "
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result
+		
+		whereClause = " WHERE munidistrict in  ($vars) AND taxpayername LIKE ? AND docstate = ? ORDER BY pin "
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result
+		
+		whereClause = " WHERE munidistrict in  ($vars) AND pin LIKE ? AND docstate = ? ORDER BY pin "
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result
+		
+		whereClause = " WHERE munidistrict in  ($vars) AND barangay = ? AND docstate = ? ORDER BY pin "
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result
+		
+		whereClause = " WHERE munidistrict in  ($vars) AND cadastrallotno = ? AND docstate = ? ORDER BY pin "
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result
+		
+		whereClause = " WHERE munidistrict in  ($vars) AND surveyno = ? AND docstate = ? ORDER BY pin "
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result
+		
+		whereClause = " WHERE munidistrict in  ($vars) AND blockno = ? AND docstate = ? ORDER BY pin "
+		if( (result = getListByVars("faas:findByExaminer",["whereClause":whereClause], values, params )) ) return result
+		
+		return result
+	}
+    
+    /*---------------------------------------------------------------------------------
+    * Support Methods
+    ---------------------------------------------------------------------------------*/
+    void sendToOutbox( faas, action, data ) {
+        def msg = [
+            objid           : 'MI' + new UID(),
+            schemaname      : 'message:outbox',
+            schemaversion   : '1.0',
+			refid			: faas.objid, 
+            fromlguindex    : var.lgu_index,
+            fromlguname     : var.lgu_name,
+			tolguindex      : faas.rp.provcityindex + '-' + faas.rp.munidistrictindex,
+            tolguname       : faas.rp.munidistrict,
+            dtsent          : new Date(),
+            sentby          : ( env.USERNAME ? env.USERNAME : 'SYSTEM' ),
+            sentbytitle     : ( env.JOBTITLE ? env.JOBTITLE : 'SYSTEM' ),
+            action          : action,
+            data            : data, 
+            messages        : [],
+        ]
+        em.create('message:outbox', msg )
+    }
+    
+    void updatePinInfo( faas, newPin, newSectionNo, newParcelNo ) {
+		faas.rp.pin         = newPin
+        faas.rpu.fullpin    = newPin
+		faas.rp.section     = newSectionNo
+		faas.rp.parcel      = newParcelNo
+		em.update(faas.schemaname, faas)
+		
+        def params = [objid:faas.objid, fullpin:faas.rpu.fullpin, pin:faas.rp.pin ]
+		em.sqlContext.createNamedExecutor('faas:updateFaasListPin').setParameters(params ).execute()
+	}
+
+    
+    def buildSectionNo( section )  {
+		def sectionLen = Integer.parseInt( var.pin_section_length )
+		return section.toString().padLeft(sectionLen, '0')
+	}
+	
+	def buildParcelNo( newSeries ) {
+		def parcelLen = Integer.parseInt( var.pin_parcel_length )
+		return newSeries.toString().padLeft( parcelLen,'0')
+	}
+    
+    void checkDuplicatePin( faas ) {
+        def checktxntypes = 'ND/SD/CS/DC'
+        if( faas.info.datacapture == false && checktxntypes.indexOf( faas.info.txntype ) < 0 ) {
+            return 
+        }
+        
+        def rputype = faas.rpu.rputype
+        def fullpin = faas.rpu.fullpin
+        def claimno = faas.info.claimno
+        
+        //check for unique pin and claimno  only
+        def data = em.sqlContext.createNamedQuery('faas:getPinClaimno').setParameters([pin:fullpin, claimno:claimno]).singleResult
+        if( data ) throw new Exception('PIN ' + fullpin + ' already exists.')
+    }
+    
+    void createPIN( faas ) {
+        def validTxnTypes = ['DC','ND','SD','CS']
+        if( validTxnTypes.contains( faas.info.txntype ) ) {
+            def pin = [pin:faas.rpu.fullpin, claimno:faas.info.claimno, docstate:faas.docstate]
+            em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
+        }
+    }
+
+    
+    private void validateParcelSeries( key, newSeries, oldSeries) {
+		def seq = em_sys.sqlContext.createNamedQuery("sequence:getCurrentSeries").setParameter("objid",key).singleResult
+		if( seq && oldSeries != seq.currentSeries ) throw new Exception("Current Series has been modified. Please try again.")
+		if( seq && seq.currentSeries > newSeries) throw new Exception("New Series $newSeries must be greater than or equal to $seq.currentSeries")
+	}
+    
+    boolean faasExists( faasid) {
+		def data = em.sqlContext.createNamedQuery("faas:getState").setParameter("objid", faasid).singleResult
+		if( data ) 
+			return true
+		return false
+ 	}
+    
+    def getNextAutonumberTdNo( faas ) {
+        faas.info.autonumber = faas.info.autonumber as boolean 
+        faas.info.autonumber = ( faas.info.datacapture ? false : faas.info.autonumber )
+        if( faas.info.datacapture == true ||  faas.info.autonumber == false ) {
+            return 
+        }
+        //TD Formatting Options:
+        // Y - revision year
+        // P - province index 
+        // C - city index 
+        // M - municipality index 
+        // D - district index 
+        // B - barangay index 
+        def ry              = faas.rpu.ry +''
+        def provindex       = faas.rp.provcityindex 
+        def cityindex       = faas.rp.provcityindex 
+        def muniindex       = faas.rp.munidistrictindex
+        def districtindex   = faas.rp.munidistrictindex
+        def barangayindex   = faas.rp.barangayindex
+        
+        def values = [Y:ry, P:provindex, C:cityindex, M:muniindex, D:districtindex, B:barangayindex]
+        def tdno   = var.td_format 
+        values.keySet().each {
+            tdno = tdno.replace( it, values[it] )
+        }
+        def seqno = seqSvc.getNextFormattedSeries( tdno )
+        if( var.td_format.contains( '-') ) {
+            return  tdno + '-' + seqno 
+        }
+        return  tdno + seqno
+    }
+    
+    
+    boolean assignNewTdNo( faas ) {
+		if( ! faas.info.tdno ) return true
+		if( faas.info.datacapture == false ) return true
+		return false
+	}
+    
+    void updateFaasListState( faasid, docstate) {
+        def params = [ objid:faasid, docstate:docstate ]
+        em.sqlContext.createNamedExecutor('faas:updateListState').setParameters( params ).execute()
+    }
+    
+    List getListByName( namedQuery, criteria, params ) {
+		return em.sqlContext.createNamedQuery( namedQuery )
+						.setParameters( criteria )
+						.setFirstResult( params._start )
+						.setMaxResults( params._limit )
+						.resultList
+	}
+	
+	List getListByVars( namedQuery, vars, values, params ) {
+		return em.sqlContext.createNamedQuery(namedQuery).setVars(vars).setParameters(values)
+						.setFirstResult( params._start )
+						.setMaxResults( params._limit )
+						.resultList
+	}
+	
+	
+}

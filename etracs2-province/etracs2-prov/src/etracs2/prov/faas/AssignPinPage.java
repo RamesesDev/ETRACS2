@@ -6,10 +6,13 @@
 
 package etracs2.prov.faas;
 
+import com.rameses.rcp.ui.annotations.StyleSheet;
+
 /**
  *
  * @author  jzamss
  */
+@StyleSheet("etracs2/prov/faas/AssignPinPage.style")
 public class AssignPinPage extends javax.swing.JPanel {
     
     /** Creates new form AssignPinPage */
@@ -31,6 +34,7 @@ public class AssignPinPage extends javax.swing.JPanel {
         xLabel1 = new com.rameses.rcp.control.XLabel();
         xButton1 = new com.rameses.rcp.control.XButton();
         xButton2 = new com.rameses.rcp.control.XButton();
+        xCheckBox1 = new com.rameses.rcp.control.XCheckBox();
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("Assign New PIN");
@@ -38,12 +42,15 @@ public class AssignPinPage extends javax.swing.JPanel {
         xLabel2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel2.setCaption("Barangay");
         xLabel2.setCaptionWidth(85);
-        xLabel2.setName("faas.barangay");
+        xLabel2.setFont(new java.awt.Font("Arial", 1, 11));
+        xLabel2.setName("faas.rp.barangay");
         xLabel2.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel1.add(xLabel2);
 
         xNumberField2.setCaption("Section");
         xNumberField2.setCaptionWidth(85);
+        xNumberField2.setFont(new java.awt.Font("Arial", 1, 14));
+        xNumberField2.setIndex(-100);
         xNumberField2.setName("section");
         xNumberField2.setPreferredSize(new java.awt.Dimension(0, 19));
         xNumberField2.setRequired(true);
@@ -51,12 +58,15 @@ public class AssignPinPage extends javax.swing.JPanel {
 
         xNumberField1.setCaption("Next Series");
         xNumberField1.setCaptionWidth(85);
+        xNumberField1.setDepends(new String[] {"section", "overrideNextSeries"});
+        xNumberField1.setFont(new java.awt.Font("Arial", 1, 14));
         xNumberField1.setName("newSeries");
         xNumberField1.setPreferredSize(new java.awt.Dimension(0, 19));
         xNumberField1.setRequired(true);
         formPanel1.add(xNumberField1);
 
         xLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        xLabel1.setForeground(new java.awt.Color(153, 0, 0));
         xLabel1.setCaption("New PIN No.");
         xLabel1.setCaptionWidth(85);
         xLabel1.setDepends(new String[] {"newSeries"});
@@ -72,14 +82,22 @@ public class AssignPinPage extends javax.swing.JPanel {
         xButton2.setText("Assign");
         xButton2.setName("assign");
 
+        xCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        xCheckBox1.setText("Override Next Series");
+        xCheckBox1.setIndex(-10);
+        xCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        xCheckBox1.setName("overrideNextSeries");
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
                     .add(layout.createSequentialGroup()
+                        .add(xCheckBox1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
@@ -92,9 +110,11 @@ public class AssignPinPage extends javax.swing.JPanel {
                 .addContainerGap()
                 .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 135, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                        .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(xCheckBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(170, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -104,6 +124,7 @@ public class AssignPinPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel1;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
+    private com.rameses.rcp.control.XCheckBox xCheckBox1;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XNumberField xNumberField1;

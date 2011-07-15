@@ -1,0 +1,48 @@
+<workunit>
+    <invokers>
+        <invoker type="faas.exchangepin" action="init" caption="Exchange PIN"  target="popup" />
+    </invokers>
+
+    <code>
+<![CDATA[
+
+    import com.rameses.rcp.common.*;
+    import com.rameses.rcp.annotations.*;
+    import com.rameses.osiris2.client.*;
+
+    class ExchangePinController 
+    {
+        @Service("ProvinceFAASService")
+        def faasService;
+        
+        @Binding
+        def binding;
+        
+        
+        def faas;
+        def selectedItem;
+        def items;
+        def exchangeHandler;
+        
+        void init() {
+            items = faasService.getExchangePinList( faas.objid );
+        }
+        
+        def exchange() {
+            if( ! selectedItem )  throw new Exception("PIN to exchange with is required.");        
+            if( MsgBox.confirm("Exchange PIN?") ) {
+                if( exchangeHandler ) exchangeHandler( faas.objid, selectedItem.objid );
+                return "_close";
+            }
+            return "default";
+        }
+        
+    }
+]]>
+
+    </code>
+
+    <pages>
+        <page template="etracs2.prov.faas.ExchangeFaasPage"/>
+    </pages>
+</workunit>

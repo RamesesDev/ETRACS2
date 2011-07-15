@@ -1,0 +1,108 @@
+<workunit>
+    <invokers>
+        <invoker type="faas.assignpin" action="init" caption="Assign New PIN"  target="popup" />
+    </invokers>
+
+    <code>
+<![CDATA[
+
+    import com.rameses.rcp.common.*;
+    import com.rameses.rcp.annotations.*;
+    import com.rameses.osiris2.client.*;
+
+    class AssignPinController 
+    {
+        @Service("SequenceService")
+        def seqService;
+        
+        @Service("ProvinceFAASService")
+        def faasService;
+        
+        @Service("Var")
+        def var;
+        
+        @Binding
+        def binding;
+        
+        
+        def faas;
+        int oldSeries;
+        int newSeries; 
+        int section = 1;
+        def newPin;
+        def oldPin
+        def acceptHandler;
+        def key;
+        def overrideNextSeries = false 
+        
+        void init() {
+            section = toInt(faas.rp.section, 1);    
+            doInit();
+        }
+        
+        void doInit() {
+            key = buildKey( faas );
+            oldSeries = seqService.getCurrentSeries( key );
+            newSeries = oldSeries;
+            newPin = buildPin( key, newSeries );
+            oldPin = faas.rp.pin;
+        }
+        
+        void setSection( int sec ) {
+            section = sec;
+            doInit();
+            binding.refresh();
+        }
+        
+        void setNewSeries( int series ) {
+            if( series < oldSeries ) {
+                throw new Exception("Next Series should be greater than or equal to $oldSeries.");
+            }
+            newSeries = series;
+            newPin = buildPin( key, newSeries );
+            binding.refresh();
+        }
+        
+        def assign() {
+            if( MsgBox.confirm("Assign New PIN No.?") ) {
+                if( acceptHandler ) acceptHandler( key, section, newSeries, oldSeries );
+                return "_close";
+            }
+        }
+        
+        def doCancel() {
+            faas.rp.pin         = oldPin
+            faas.rpu.fullpin    = oldPin
+            return "_close";
+        }
+        
+        private def buildKey( faas )  {
+            int sectionLen = Integer.parseInt(var.pin_section_length);
+            key = faas.rp.provcityindex + '-' + faas.rp.munidistrictindex + '-' + faas.rp.barangayindex;
+            key += '-' + section.toString().padLeft( sectionLen, '0');
+            return key;
+        }
+        
+        private def buildPin( key, newSeries ) {
+            int parcelLen = Integer.parseInt( var.pin_parcel_length );
+            return key + '-' + newSeries.toString().padLeft( parcelLen, '0');
+        }
+        
+        def toInt( sint, defValue ) {
+            try {
+                return Integer.parseInt( sint );
+            }
+            catch ( e ) {
+                return defValue;
+            }   
+        }
+
+    }
+]]>
+
+    </code>
+
+    <pages>
+        <page template="etracs2.prov.faas.AssignPinPage"/>
+    </pages>
+</workunit>

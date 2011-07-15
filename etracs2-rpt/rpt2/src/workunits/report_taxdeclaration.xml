@@ -1,0 +1,56 @@
+<workunit>
+    <invokers>
+        <invoker type="assessor.reports" action="init" caption="Tax Declaration" target="popup" />
+        <invoker type="faasmgmt.action" action="init" caption="Tax Declaration" index="102" />
+        
+        <invoker type="formActions" action="_close" caption="Close" mnemonic="c" shortcut="ctrl c" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class TaxDeclarationReportController
+{
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('DateService')
+    def svcDate;
+    
+    @Service("TDReportService")
+    def svc;
+   
+    def data;
+    def faasid;
+    
+    void init(){
+        if( !faasid ) throw new Exception( "Select a FAAS. $faasid " );
+        view();
+    }
+    
+    def view() {
+       data = svc.getReportData( faasid );
+       if( !data ) throw new Exception("No results found.");
+       report.viewReport();
+       return "preview";
+    }
+    
+    def report =[
+        getReportName : { "tdreport/tdreport" },
+        getReportData : { return data; },
+        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+    ] as ServerReportModel;
+    
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>
