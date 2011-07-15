@@ -1,0 +1,92 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class BPApplicationServiceInterceptor {
+
+	@PersistenceContext('main')
+	def em;
+	
+	@After(pattern="BPApplicationService.approveApplication") 
+	public void approveApplication( evt ) {
+		def application = evt.result;
+		def app = [objid : application.objid,
+			   docstate : application.docstate,
+			   txntype : application.txntype,
+			   txndate : application.txndate,
+			   txnno : application.txnno,
+			   barcode : application.barcode,
+			   txnmode : application.txnmode,
+			   tradename : application.tradename,
+			   businessaddress : application.businessaddress,
+			   taxpayerid : application.taxpayerid,
+			   taxpayername : application.info.taxpayername,
+			   taxpayeraddress : application.info.taxpayeraddress,
+			   tin: application.info.tin,
+			   bin: application.info.bin,
+			   pin: application.info.pin,
+			   officetype: application.info.officetype,
+			   organization: application.info.organization,
+			   ctcno: application.info.cctno,
+			   ctcplaceissued: application.info.ctcplaceissued,
+			   ctcdateissued: application.info.ctcdateissued,
+			   administratorname: application.info.administratorname,
+			   administratoraddress: application.info.administratoraddress,
+			   iyear : application.iyear,
+			   businessid: application.businessid,
+			   parentid: application.parentid,
+			   barangayid: application.info.barangay.barangayid,
+			   barangayname: application.info.barangay.barangayname]
+		
+		em.validate( 'bplisting:bpapplicationlisting', app );
+		em.create('bplisting:bpapplicationlisting', app);
+		
+		application.lobs.each{
+			def lob = [
+				objid : application.objid+":"+it.lobid,
+				applicationid: application.objid,
+				lobid: it.lobid,
+				classificationid: it.classificationid,
+				lobname: it.lobname,
+				iyear: it.iyear,
+				assessmenttype: it.assessmenttype
+			];
+			em.validate( "bplisting:loblisting", lob );
+			em.create( "bplisting:loblisting", lob );
+		}
+		
+		application.appinfos.each{
+			def info = [
+				objid: application.objid+':'+it.lobid+':'+it.varid,
+				application: application.objid,
+				lobid: it.lobid,
+				lobname: it.lobname,
+				varid: it.varid,
+				varname: it.varname,
+				vartype: it.vartype,
+				value: it.value,
+				arrayvalues: it.arrayvalues,
+				requiredbeforeprint: it.requiredbeforeprint
+			];
+			em.validate("bplisting:appinfolisting", info);
+			em.create("bplisting:appinfolisting", info);
+		}
+		
+		application.taxfees.each{
+			def taxfee = [
+				objid: application.objid+':'+it.lobid+':'+it.acctid,
+				applicationid: application.objid,
+				lobid: it.lobid,
+				lobname: it.lobname,
+				acctid: it.acctid,
+				acctno: it.acctno,
+				accttitle: it.accttitle,
+				assessedvalue: it.assessedvalue,
+				amountdue: it.amountdue
+			];
+			em.validate("bplisting:taxfeelisting", taxfee);
+			em.create("bplisting:taxfeelisting", taxfee);
+		}
+		
+	}
+}

@@ -28,10 +28,11 @@ class BusinessApplication
     @Service("BPApplicationService")
     def svc;
     
-    def business = [:];
+    def app = [:];
     def application = [
         docstate:'DRAFT',
-        info:[taxpayername:'',taxpayeraddress:'', lobs:[]],
+        info:[taxpayername:'',taxpayeraddress:''],
+        lobs: []
     ];
     
     def typeList;
@@ -70,7 +71,7 @@ class BusinessApplication
     def initCaptureRenew(){
         init();
         application.txnmode = 'CAPTURE';
-        application.txntype = 'NEW';   
+        application.txntype = 'RENEW';   
         return 'default';
     }
     
@@ -108,22 +109,23 @@ class BusinessApplication
     
     def onbpselect = { entity ->
         if( entity ){
-            business.appno = entity.appno;
-            business.objid = entity.objid;
-            business.tradename = entity.tradename;
-            business.businessaddress = entity.businessaddress;
+            app.appno = entity.appno;
+            app.objid = entity.objid;
+            app.tradename = entity.tradename;
+            app.businessaddress = entity.businessaddress;
         }
+        
         binding.refresh();
     }
     
     def next(){
-        application.businessid = business.objid;
+        application.parentid = app.objid;
         application = svc.evaluateTxnType( application );
         return InvokerUtil.lookupOpener('bp:open', [application:application]);
     }
     
     public def lookupBusiness(){
-        return InvokerUtil.lookupOpener( 'bp:business_list', [onselect: onbpselect, searchText:business.appno] );
+        return InvokerUtil.lookupOpener( 'bp:business_list', [onselect: onbpselect, searchText:app.appno] );
     }
     
     public def lookupPayer(){

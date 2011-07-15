@@ -5,7 +5,9 @@ SELECT
 	o.tradename, 
 	o.businessaddress, 
 	o.docstate 
-FROM bpapplication o ORDER BY o.txnno 
+FROM bpapplication o 
+WHERE o.docstate IN ('DRAFT','FOR_REVIEW') 
+ORDER BY o.txnno 
 
 [getBusinessForRENEW] 
 SELECT b.objid, b.tradename, b.businessaddress, bpa.info FROM business b 
@@ -41,3 +43,14 @@ WHERE bpa.parentid = $P{parentid}
 [deleteReferenceApplication] 
 DELETE FROM bpapplication 
 WHERE parentid = $P{parentid}  
+
+
+[updateApplicationForActive] 
+UPDATE bpapplication  
+SET docstate = 'ACTIVE' 
+WHERE objid = $P{objid} 
+
+[updatePermitForActive] 
+UPDATE bppermit 
+SET docstate = 'ACTIVE' 
+WHERE applicationid = $P{applicationid} 

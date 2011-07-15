@@ -1,0 +1,101 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class BPCollectionInterceptor {
+
+	@Service("LogService")
+	def logService;
+	
+	@Service("DateService")
+	def dateService;
+	
+	@Service("BPCollectionService")
+	def billingSvc;
+	
+	@PersistenceContext('main')
+	def em;
+	
+	@After(pattern="ReceiptService.create") 
+	public void interceptCreateBPReceipt( evt ) {
+		def receipt = evt.result;
+		if( receipt?.doctype != 'BUSINESS_TAX' ) return;
+		
+		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]);
+		
+		def isValidForCollection =  {
+			
+		};
+		
+		receipt.items.each{ r ->
+			app.credits << [ objid			: 'BPRCR' + new UID(),
+							 bpreceivableid	: r.taxfeeid, 
+							 refid			: receipt.objid,
+							 reftype		: 'ONLINE',
+							 refno			: receipt.info.serialno,
+							 refdate		: receipt.info.txndate,
+							 amount			: r.amount,
+							 surcharge		: r.surcharge,
+							 interest		: r.interest,
+							 discount		: r.discount ];
+			
+			def brc = app.receivables.find{ it.objid == r.taxfeeid };
+			if( !brc.amtpaid ) brc.amtpaid = 0.0;
+			brc.amtpaid += r.amount + r.surcharge + r.interest - r.discount;
+		}
+
+		def b = em.read('business:business', [objid: app.businessid]);
+		
+		b.lastqtrpaid = receipt.qtr;
+		b.lastyearpaid = receipt.year;
+
+		em.update( 'business:business', b );
+		em.update( 'bpapplication:bpapplication', app );
+		
+		if( isApplicationStatusForPermit( app ) ){
+			em.sqlContext.createNamedExecutor("bpcollection:updatePermitForRelease")
+			  .setParameters([applicationid: app.objid])
+			  .execute();
+			
+			app.docstate = 'PERMIT_PENDING';
+			em.update( 'bpapplication:bpapplication', app );
+			
+			def bplisting = em.read('bplisting:bpapplicationlisting', [objid: app.objid]);
+			bplisting.docstate = 'PERMIT_PENDING';
+			em.update( 'bplisting:bpapplicationlisting',  bplisting );
+		}
+	}
+	
+	@After(pattern="ReceiptService.delete") 
+	public void interceptDeleteBPReceipt( evt ) {;}
+	
+	@After(pattern="ReceiptService.update") 
+	public void interceptUpdateBPReceipt( evt ) {;}
+	
+	@After(pattern="ReceiptService.voidReceipt") 
+	public void interceptVoidBPReceipt( evt ) {;}
+	
+	def isApplicationStatusForPermit( app ){
+		def year = Integer.parseInt( new java.text.SimpleDateFormat("yyyy").format( dateService.serverDate ) );
+		def bp = em.read('bpapplication:bpapplication', [objid: app.businessid]);
+		def bill = [
+			ledgerid      : bp.objid,
+			yearstarted   : bp.yearstarted,
+			lastyearpaid  : bp.lastyearpaid,
+			lastqtrpaid   : bp.lastqtrpaid,
+			taxfees       : []
+		];
+		
+		def getUnpaidReceivables = { 
+			def list = app.receivables.findAll{ it.amount > it.amtpaid };
+			if( app.txntype.matches('NEW|ADDLOB') ) return list;
+			return list.findAll{ it.qtr <= entity.qtr || ( it.assessmentype.matches('NEW|ADDLOB')) }
+		}
+		
+		def taxfees = getUnpaidReceivables();
+						
+		if( taxfees.findAll{ it.systype != 'BUSINESS_TAX' } ) return false;
+		if( taxfees.findAll{ it.applicationtype.matches('NEW|ADDLOB') } ) return false;
+		return true;
+	}
+}

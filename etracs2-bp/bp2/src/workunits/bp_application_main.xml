@@ -2,7 +2,7 @@
     <invokers>
         <invoker type="bp:DRAFT" action="initView" caption="BP Application" target="window"/>
         <invoker type="bp:open" action="init" caption="BP Application"/>
-        <invoker type="bp:view" caption="BP Application"/>
+        <invoker type="bp:view" action="initView" caption="BP Application"/>
 
         <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c" icon="images/cancel24.png" immediate="true"/>
         <invoker type="formActions" action="edit"   caption="Edit"   mnemonic="s" icon="images/edit24.png"   immediate="true"  shortcut="ctrl S" visibleWhen="#{mode == 'view'}"/>
@@ -66,7 +66,7 @@ class BPApplication
     def allowedDelete( def lob ){
         if( mode != 'VIEW' ){
             if( lob.assessmenttype == 'NEW' ) return true;
-            if( lob.assessmenttype == 'RENEW' && application.txntype == 'CAPTURE' ) return true;
+            if( lob.assessmenttype == 'RENEW' && application.txnmode == 'CAPTURE' ) return true;
             if( application.txntype == 'RETIRE_LINE' ) return true;
         }
         return false;
@@ -101,23 +101,22 @@ class BPApplication
         
         onRemoveItem : {
             if( allowedDelete( it ) ) {
-                application.info.lobs.remove( it );
+                application.lobs.remove( it );
             }
         },
         
-        fetchList : { return application.info.lobs; },
+        fetchList : { return application.lobs; },
     ] as SubListModel;
     
     def onselect = { selected ->
         if(selected){
-            def o = application.info.lobs.find{ it.lobid == selected.objid };
+            def o = application.lobs.find{ it.lobid == selected.objid };
             if( o ) throw new Exception("LOB '$selected.name' is already in application list.");
-            def l = [lobid:selected.objid, name:selected.name, assessmenttype:'NEW'];
+            def l = [lobid:selected.objid, name:selected.name, assessmenttype:'NEW', classificationid:selected.classificationid];
             if( application.txntype == 'ADDLOB' ) l.assessmentype = 'ADLOB';
             if( application.txnmode == 'CAPTURE' && application.txntype == 'RENEW' ) l.assessmenttype = 'RENEW';
-            application.info.lobs.add( l );
+            application.lobs << l;
             lobSearch = '';
-            
             binding.refresh();
         }
     }

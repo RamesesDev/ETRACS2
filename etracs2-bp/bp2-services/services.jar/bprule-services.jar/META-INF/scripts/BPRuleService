@@ -201,7 +201,9 @@ class AddTaxFeeHandler implements RuleActionHandler
 	def FACTS_PACKAGE = 'bp.assessment.facts.'
 	
 	public void execute( drools, tfvalue ) {
+		def util = new Util(em: em);
 		def av =  calculateAssessedValue( tfvalue )
+		def acct = util.getIncomeAccountById( tfvalue.acctid );
 		def taxfee = [
 			appid     : tfvalue.appid,
 			lobid     : tfvalue.lobid,
@@ -404,10 +406,16 @@ class UpdateNotLowestTaxFeeHandler implements RuleActionHandler
 
 class Util
 {
-
+	def em;
 	def ruleService 
 	def BPASSESSMENT_RULESET = 'bpassessment'
 	def FACTS_PACKAGE = 'bp.assessment.facts.'
+	
+	public def getIncomeAccountById(def objid){
+		return em.sqlContext.createNamedQuery('bprule:getIncomeAccountById')
+		  .setParameters([objid: objid])
+		  .singleResult;
+	}
 	
 	public def evaluate( expr, params ) {
 		return (new GroovyShell( new Binding( params) )).evaluate( expr )

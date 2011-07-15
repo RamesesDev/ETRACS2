@@ -1,0 +1,56 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class BusinessMgmtService{
+	
+	@PersistenceContext('main')
+	def em;
+	
+	private def format( def date, def format ){
+		def sdf = new java.text.SimpleDateFormat( format );
+		if( date instanceof Date ) return sdf.format( date );
+		return sdf.parse( date );
+	}
+
+	def getResultList( def list, def qryname, def docstate, def searchText, def param ){
+		list.clear();
+		def qry = em.sqlContext.createNamedQuery( qryname );
+		if( searchText ) 
+			qry.setParameter('search', searchText);
+		
+		qry.setParameter('docstate', docstate);
+		qry.setFirstResult( param._start );
+		qry.setMaxResults( param._limit );
+		list.addAll( qry.resultList );
+		return list;
+	}
+	
+	@ProxyMethod
+	public def getList( def searchText, def docstate, def param ){
+		def list = [];
+		if( !searchText )  return getResultList(list, 'bpmgmt:getList', docstate, searchText, param);
+		if( getResultList( list, 'bpmgmt:getListByPermitNo', docstate, searchText, param ) ) return list;
+		if( getResultList( list, 'bpmgmt:getListByBusinessName', docstate, searchText+'%', param ) ) return list;
+		if( getResultList( list, 'bpmgmt:getListByTaxpayerName', docstate, searchText+'%', param ) ) return list;
+		if( getResultList( list, 'bpmgmt:getListByBusinessAddress', docstate, searchText+'%', param ) ) return list;
+		if( getResultList( list, 'bpmgmt:getListByTaxpayerAddress', docstate, searchText+'%', param ) ) return list;
+		return list;
+	}
+	
+	@ProxyMethod
+	public def releasePermit( def applicationid ){
+		def app = em.read('bpapplication:bpapplication', [objid: applicationid]);
+		if( app.docstate != 'PERMIT_PENDING' ) throw new Exception("Only permit pending transaction can be released.");
+		
+		em.sqlContext.createNamedExecutor('bpapplication:updateApplicationForActive')
+		  .setParameter('objid', applicationid) 
+		  .execute();
+		
+		em.sqlContext.createNamedExecutor('bpapplication:updatePermitForActive')
+		  .setParameter('objid', applicationid) 
+		  .execute();
+		  
+		return app;
+	}
+}
