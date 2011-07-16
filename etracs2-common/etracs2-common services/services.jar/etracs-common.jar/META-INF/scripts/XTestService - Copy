@@ -1,0 +1,41 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class XTestService
+{
+	@PersistenceContext("main")
+	def em;
+	
+	@ProxyMethod
+	public def open( objid ) {
+		return em.read( "af:af", [objid:objid]);
+	}
+	
+	@ProxyMethod
+	public void update( entity ) {
+		em.update( "af:af", entity, { o ->
+			println "DIFF -> $o";
+		} as UpdateChangeHandler )
+	}
+	
+	@ProxyMethod
+	public void update2( entity ) {
+		em.update( "af:af", entity)
+	}
+	
+	
+	@ProxyMethod
+	public def testRollback() {
+		em.sqlContext.createExecutor('INSERT INTO test1 VALUES($P{p1}, $P{p2})').setParameters([p1:'01', p2:'01']).execute()
+		em.sqlContext.createExecutor('INSERT INTO test2 VALUES($P{p1}, $P{p2})').setParameters([p1:'01', p2:'01']).execute()
+		return 'done'
+	}
+	
+	@ProxyMethod
+	public def testRollback2() {
+		em.sqlContext.createExecutor('INSERT INTO test1 VALUES($P{p1}, $P{p2})').setParameters([p1:'02', p2:'02']).execute()
+		em.sqlContext.createExecutor('INSERT INTO test2 VALUES($P{p1}, $P{p2})').setParameters([p1:'02', p2:null]).execute()
+		return 'done'
+	}
+	
+}
