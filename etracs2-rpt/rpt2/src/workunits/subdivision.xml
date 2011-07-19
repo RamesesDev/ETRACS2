@@ -49,6 +49,7 @@ public class SubdivisionController
     def subdivision     
     def subdividedlands
     def affectedrpus
+    def errorMsg
     
     void open() {
         subdivision     = svc.open( subdivision.objid )
@@ -132,6 +133,7 @@ public class SubdivisionController
         return InvokerUtil.lookupOpener('faas.lookup', [searchText:searchText, 
             onselect: { faas ->
                 if( faas.docstate != 'CURRENT' ) throw new Exception('FAAS is not current.')
+                if( faas.rputype != 'land' ) throw new Exception('Selected FAAS is a ' + faas.rputype + '.\nOnly land property is allowed.')
                 faas = faasSvc.getFaasInfo( faas.objid ) 
                 subdivision.motherfaasid            = faas.objid
                 subdivision.mothertdno              = faas.tdno
@@ -151,7 +153,10 @@ public class SubdivisionController
     }
     
     def create() {
-        subdivision = svc.create( subdivision )
+        def data = svc.create( subdivision )
+        subdivision  = data.subdivision
+        affectedrpus = data.affectedrpus 
+        data = null
         return 'default'
     }   
     
@@ -176,6 +181,7 @@ public class SubdivisionController
         return InvokerUtil.lookupOpener('subdivisionland.create', [
             subdivision : subdivision,
             onadd : { sland ->
+                sland.itemno = subdividedlands.size() + 1
                 svc.createSubdividedLand( sland  )
                 subdividedlands.add( sland )
                 landListHandler.load()
@@ -213,6 +219,7 @@ public class SubdivisionController
     def landListHandler = [
         getRows     : { return 50 },
         getColumns  : { return [
+            new Column(name:'itemno', caption:'Item No.', maxWidth:100 ),
             new Column(name:'newpin', caption:'New PIN', maxWidth:200 ),
             new Column(name:'areasqm', caption:'Area (Sqm)', maxWidth:120),
             new Column(name:'areaha', caption:'Area (Ha.)', maxWidth:120),
@@ -236,8 +243,54 @@ public class SubdivisionController
     
     
     
+    /*----------------------------------------------------------
+    *
+    * AffectedRPU support
+    *
+    ----------------------------------------------------------*/
+    def selectedAffectedRpu
     
+    def affectedrpuListHandler = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column( name:'rputype', caption:'Type', maxWidth:60 ),
+            new Column( name:'prevfullpin', caption:'PIN', maxWidth:150),
+            new Column( name:'prevtdno', caption:'TD No.', maxWidth:120),
+            new Column( name:'newtdno', caption:'New TD No.', maxWidth:120, editable:true),
+            new Column( name:'itemno', caption:'New Land Reference', maxWidth:200, editable:true),
+            new Column( name:'newpin', caption:'New PIN', maxWidth:120),
+            new Column( name:'newsuffix', caption:'New Suffix', type:'integer', maxWidth:120, editable:true),
+            new Column( name:'memoranda', caption:'Memoranda*', editable:true),
+        ]},
+        validate  : { li -> validateAffectedRpu( li.item ) },
+        fetchList : { return affectedrpus },
+    ] as SubListModel
     
+    void validateAffectedRpu( item ) {
+        try {
+            if( item.itemno ) {
+                def sland = subdividedlands.find{ it.itemno == item.itemno }
+                if( ! sland ) throw new Exception('Invalid New Land Reference.')
+                item.subdivisionlandid = sland.objid 
+            }
+            item.newfaas.info.appraisedby        = subdivision.appraisedby 
+            item.newfaas.info.appraisedbytitle   = subdivision.appraisedbytitle 
+            item.newfaas.info.dtappraised        = subdivision.dtappraised
+            item.newfaas.info.recommendedby      = subdivision.recommendedby
+            item.newfaas.info.recommendedbytitle = subdivision.recommendedbytitle
+            item.newfaas.info.dtrecommended      = subdivision.dtrecommended
+            item.newfaas.info.approvedby         = subdivision.approvedby
+            item.newfaas.info.approvedbytitle    = subdivision.approvedbytitle
+            item.newfaas.info.dtapproved         = subdivision.dtapproved
+            item.newfaas.info.memoranda          = subdivision.memoranda
+            svc.updateAffectedRpu( item )
+        }
+        catch( e ) {
+            errorMsg = e.message
+            binding.refresh('errorMsg')
+            throw e 
+        }
+    }
     
     /*-----------------------------------------------------------------------------
     *

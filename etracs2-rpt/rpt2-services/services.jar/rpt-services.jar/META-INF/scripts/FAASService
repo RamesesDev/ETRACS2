@@ -357,7 +357,6 @@ class FAASService
         def key =   faas.rp.provcityindex + '-' + 
                     faas.rp.munidistrictindex + '-' + 
                     faas.rp.barangayindex + '-' + faas.rp.section 
-        println 'key-> ' + key 
         def nextparcel      = seqSvc.getNextSeries( key )
         faas.rp.pin         = key + '-' + buildParcelNo( nextparcel )
         faas.rpu.fullpin    = faas.rp.pin 
@@ -457,8 +456,7 @@ class FAASService
     
     @ProxyMethod
     public def checkLedgerBalance( faas ) {
-        def ledgerid = faas.fullpin + '-' + faas.claimno 
-        def ledger = em.sqlContext.createNamedQuery('faas:getLedgerInfo').setParameter('objid', ledgerid ).singleResult
+        def ledger = em.sqlContext.createNamedQuery('faas:getLedgerInfo').setParameter('objid', faas.ledgerid ).singleResult
         if( !ledger) throw new Exception('Cannot open Ledger for FAAS ' + faas.tdno + '.')
         
         def msg = 'Ledger is not fully paid.'
@@ -483,6 +481,26 @@ class FAASService
         else if( rputype == PLANTTREE_TYPE) planttreeRpuSvc.initPlantTreeRpu( faas )
         else if( rputype == MISC_TYPE) miscRpuSvc.initMiscRpu( faas )
         else throw new Exception('Invalid RPU Type ' + rputype + '.')
+    }
+    
+    
+    @ProxyMethod
+    public void checkSuffix( rputype, suffix ) {
+        if( rputype == LAND_TYPE && suffix != 0  ) {
+            throw new Exception('Suffix must be zero for land property.')
+        }
+        else if( rputype == BLDG_TYPE && (suffix < 1001 || suffix > 1999 )) {
+            throw new Exception('Suffix must be between 1001 and 1999 for building property.')
+        }
+        else if( rputype == MACH_TYPE && (suffix < 2001 || suffix > 2999 )) {
+            throw new Exception('Suffix must be between 2001 and 2999 for machine property.')
+        }
+        else if( rputype == PLANTTREE_TYPE && (suffix < 3001 || suffix > 6999 )) {
+            throw new Exception('Suffix must be betwwen 3001 and 6999 for plant/tree property.')
+        }
+        else if( rputype == MISC_TYPE && (suffix < 7001 || suffix > 7999 )) {
+            throw new Exception('Suffix must be betwwen 7001 and 7999 for miscellaneous property.')
+        }
     }
     
     /*-----------------------------------------------------------------------
