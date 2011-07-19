@@ -86,7 +86,6 @@ public class RuleAnalyzerPage extends javax.swing.JPanel {
         xComboBox4.setItems("barangays");
         xComboBox4.setName("barangay");
         xComboBox4.setPreferredSize(new java.awt.Dimension(0, 22));
-        xComboBox4.setRequired(true);
         formPanel1.add(xComboBox4);
 
         jPanel5.add(formPanel1, java.awt.BorderLayout.CENTER);
