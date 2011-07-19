@@ -168,6 +168,14 @@ class FAASService
     }
     
     @ProxyMethod
+    public Map getFaasInfo( faasid ){
+        def faasinfo = em.read(LISTSCHEMA_NAME, [objid:faasid])
+        if( ! faasinfo ) throw new Exception('Cannot open FAAS with ID No. ' + faasid )
+        faasinfo.datacapture = faasinfo.datacapture as boolean 
+        return faasinfo 
+    }
+    
+    @ProxyMethod
     public Map submit( faasid ) {
         def faasinfo = getFaasInfo( faasid )
         validateSubmit( faasinfo )
@@ -277,6 +285,22 @@ class FAASService
         return [date:new Date(), status:'Processed successfully.']
     }
     
+    @ProxyMethod
+    public Map approveSubdivisionFaas( faasid ) {
+        def faasinfo = getFaasInfo( faasid )
+        validateApprove( faasinfo )
+        def faas = open( faasinfo.objid )
+        updateAutonumberTdNo( faas  )
+        validateRPUInfo( faas )
+        updateFaasState( faas, CURRENT_STATE )
+        cancelPreviousFaas( faas )
+        deleteTxnReference( faas )
+        ledgerSvc.postSubdivisionFaas( faas.objid )
+        logSvc.log('APPROVE','FAAS', faas.objid)
+        return faas 
+    }
+
+    
     void invokeCommonApproveActions( faas ) {
         validateRPUInfo( faas )
         updateFaasState( faas, CURRENT_STATE )
@@ -309,14 +333,64 @@ class FAASService
         return seqSvc.getCurrentSeries( key )
     }
     
-    def buildSectionNo( section )  {
+    @ProxyMethod
+    public def buildSectionNo( section )  {
 		def sectionLen = Integer.parseInt( var.pin_section_length )
 		return section.toString().padLeft(sectionLen, '0')
 	}
 	
-	def buildParcelNo( newSeries ) {
+	@ProxyMethod
+    public def buildParcelNo( newSeries ) {
 		def parcelLen = Integer.parseInt( var.pin_parcel_length )
 		return newSeries.toString().padLeft( parcelLen,'0')
+	}
+    
+    @ProxyMethod
+    public def resolveTxnType( txntype ) {
+        def type = getTxnTypes().find{ it.txntype == txntype }
+        if( ! type ) throw new Exception('TxnType ' + txntype + ' is not defined in TxnTypes.')
+        return type 
+    }
+    
+    @ProxyMethod
+    public void assignNextPin( faas  ) {
+        def key =   faas.rp.provcityindex + '-' + 
+                    faas.rp.munidistrictindex + '-' + 
+                    faas.rp.barangayindex + '-' + faas.rp.section 
+        println 'key-> ' + key 
+        def nextparcel      = seqSvc.getNextSeries( key )
+        faas.rp.pin         = key + '-' + buildParcelNo( nextparcel )
+        faas.rpu.fullpin    = faas.rp.pin 
+        checkDuplicatePin( faas )
+    }
+    
+    @ProxyMethod
+	public def assignPin( faas, key, section, newSeries, oldSeries ) {
+		if( faas.rpu.rputype != 'land') throw new Exception("Only Land RPU could be assigned a new PIN.")
+		if( ! faasExists( faas.objid ) ) throw new Exception("FAAS not found.")
+		
+		validateParcelSeries( key, newSeries, oldSeries ) 
+		def sectionNo       = buildSectionNo( section )
+		def parcelNo        = buildParcelNo( newSeries )
+		def pin             = key + '-' + parcelNo
+        faas.rp.pin         = pin 
+        faas.rpu.fullpin    = pin 
+		checkDuplicatePin( faas )
+		seqService.updateNextSeries( key, newSeries + 1)
+		
+		/* update faas pin related info */
+		faas.rp.section  = sectionNo
+		faas.rp.parcel   = parcelNo
+		em.update( faas.schemaname, faas )
+        def params = [objid:faas.objid, fullpin:faas.rpu.fullpin, pin:faas.rp.pin ]
+		em.sqlContext.createNamedExecutor('faas:updateFaasListPin').setParameters(params ).execute()
+		return faas
+	}
+    
+    private void validateParcelSeries( key, newSeries, oldSeries) {
+		def seq = em_sys.sqlContext.createNamedQuery("sequence:getCurrentSeries").setParameter("objid",key).singleResult
+		if( seq && oldSeries != seq.currentSeries ) throw new Exception("Current Series has been modified. Please try again.")
+		if( seq && seq.currentSeries > newSeries) throw new Exception("New Series $newSeries must be greater than or equal to $seq.currentSeries")
 	}
     
     /*-----------------------------------------------------------------------
@@ -379,6 +453,36 @@ class FAASService
         def lgu = em.read('lgu', [objid:lguindex] )
         if( !lgu) throw new Exception('LGU ' + lguindex + ' not found.')
         return lgu.barangays 
+    }
+    
+    @ProxyMethod
+    public def checkLedgerBalance( faas ) {
+        def ledgerid = faas.fullpin + '-' + faas.claimno 
+        def ledger = em.sqlContext.createNamedQuery('faas:getLedgerInfo').setParameter('objid', ledgerid ).singleResult
+        if( !ledger) throw new Exception('Cannot open Ledger for FAAS ' + faas.tdno + '.')
+        
+        def msg = 'Ledger is not fully paid.'
+        def parseddate = dateSvc.parseCurrentDate()
+        if( ledger.docstate == 'PENDING' ) throw new Exception('Ledger if not yet approved.\nLet LandTax approve the ledger before processing the transaction.')
+        if( ledger.docstate == 'CANCELLED') throw new Exception('Ledger has already been cancelled.')
+        if( ledger.lastyearpaid < parseddate.year ) throw new Exception( msg )
+        if( ledger.lastqtrpaid < 4 ) throw new Exception( msg )
+    }
+    
+    
+    @ProxyMethod
+    public void initFaasInfo( faas ) {
+        faas.info.txntype = faas.info.txn.txntype 
+        String rputype = faas.rpu.rputype 
+        if( rputype != LAND_TYPE ) {
+            updateLandRPInfo( faas )
+        }
+        if( rputype == LAND_TYPE) landRpuSvc.initLandRpu( faas )
+        else if( rputype == BLDG_TYPE) bldgRpuSvc.initBldgRpu( faas )
+        else if( rputype == MACH_TYPE) machRpuSvc.initMachRpu( faas )
+        else if( rputype == PLANTTREE_TYPE) planttreeRpuSvc.initPlantTreeRpu( faas )
+        else if( rputype == MISC_TYPE) miscRpuSvc.initMiscRpu( faas )
+        else throw new Exception('Invalid RPU Type ' + rputype + '.')
     }
     
     /*-----------------------------------------------------------------------
@@ -592,20 +696,6 @@ class FAASService
     	if( !faasland ) throw new Exception( 'Land reference is required.' );
     }
     
-    void initFaasInfo( faas ) {
-        faas.info.txntype = faas.info.txn.txntype 
-        String rputype = faas.rpu.rputype 
-        if( rputype != LAND_TYPE ) {
-            updateLandRPInfo( faas )
-        }
-        if( rputype == LAND_TYPE) landRpuSvc.initLandRpu( faas )
-        else if( rputype == BLDG_TYPE) bldgRpuSvc.initBldgRpu( faas )
-        else if( rputype == MACH_TYPE) machRpuSvc.initMachRpu( faas )
-        else if( rputype == PLANTTREE_TYPE) planttreeRpuSvc.initPlantTreeRpu( faas )
-        else if( rputype == MISC_TYPE) miscRpuSvc.initMiscRpu( faas )
-        else throw new Exception('Invalid RPU Type ' + rputype + '.')
-    }
-    
     void resolveRpuType( faas ) {
         int suffix = faas.rpu.suffix 
         def rputype = null 
@@ -654,11 +744,7 @@ class FAASService
         return data.ry 
     }
     
-    def getFaasInfo( faasid ){
-        def faasinfo = em.read(LISTSCHEMA_NAME, [objid:faasid])
-        faasinfo.datacapture = faasinfo.datacapture as boolean 
-        return faasinfo 
-    }
+    
     
     def checkFaasTxnReference( faasid ) {
         def ref = em.sqlContext.createNamedQuery('faas:getTxnReference').setParameter('objid', faasid).singleResult
@@ -667,18 +753,6 @@ class FAASService
         }
     }
     
-    def checkLedgerBalance( faas ) {
-        def ledgerid = faas.fullpin + '-' + faas.claimno 
-        def ledger = em.sqlContext.createNamedQuery('faas:getLedgerInfo').setParameter('objid', ledgerid ).singleResult
-        if( !ledger) throw new Exception('Cannot open Ledger for FAAS ' + faas.tdno + '.')
-        
-        def msg = 'Ledger is not fully paid.'
-        def parseddate = dateSvc.parseCurrentDate()
-        if( ledger.docstate == 'PENDING' ) throw new Exception('Ledger if not yet approved.\nLet LandTax approve the ledger before processing the transaction.')
-        if( ledger.docstate == 'CANCELLED') throw new Exception('Ledger has already been cancelled.')
-        if( ledger.lastyearpaid < parseddate.year ) throw new Exception( msg )
-        if( ledger.lastqtrpaid < 4 ) throw new Exception( msg )
-    }
     
     void insertTxnReference( faas ) {
         if( faas.previousfaases )  {
@@ -889,10 +963,6 @@ class FAASService
         return faas 
     }
     
-    def resolveTxnType( txntype ) {
-        def type = getTxnTypes().find{ it.txntype == txntype }
-        if( ! type ) throw new Exception('TxnType ' + txntype + ' is not defined in TxnTypes.')
-        return type 
-    }
+    
 }
 

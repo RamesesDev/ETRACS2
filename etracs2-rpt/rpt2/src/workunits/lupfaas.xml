@@ -1,10 +1,11 @@
 <!--
 // author    : jzamora
 // copyright : Rameses Systems Inc
+// date      : 17 july 2011
 -->
 <workunit>
     <invokers>
-        <invoker type="entity.lookup" action="init" caption="Land Assess Level Lookup" target="popup" />
+        <invoker type="faas.lookup" action="init" caption="Land Assess Level Lookup" target="popup" />
     </invokers>
     
     <code>
@@ -14,14 +15,13 @@
 import com.rameses.rcp.common.*
 import com.rameses.rcp.annotations.*
 
-class EntityLookupController extends LookupModel 
+class FaasLookupController extends LookupModel 
 {
-    @Service("EntityService")
+    @Service("FAASService")
     def svc
     
     def onselect
     def searchText
-    def ry
     def selected
     
     void init(){
@@ -42,9 +42,10 @@ class EntityLookupController extends LookupModel
     
     Column[] getColumns() {
         return [
-            new Column(name:"entityno", caption:"Account No.", maxWidth:90),
-            new Column(name:"entityname", caption:"Account Name"),
-            new Column(name:"entityaddress", caption:"Address"),
+            new Column(name:"fullpin", caption:"PIN", maxWidth:120),
+            new Column(name:"tdno", caption:"TD No.", maxWidth:120),
+            new Column(name:"taxpayername", caption:"Taxpayer"),
+            new Column(name:"docstate", caption:"State", maxWidth:120),
         ]
     }
     

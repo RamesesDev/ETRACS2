@@ -104,6 +104,10 @@ class RPTLedgerService
         return [PENDING_STATE, APPROVED_STATE, CANCELLED_STATE]
     }
     
+    
+    /*-------------------------------------------------------------------
+    * Posting Methods 
+    -------------------------------------------------------------------*/
 	@ProxyMethod
     public void post( faasid ) {
         def faas = openFaas( faasid )
@@ -113,6 +117,21 @@ class RPTLedgerService
         else throw new Exception('RPTLedgerService.post: Posting of TxnType ' + faas.txntype + ' is not yet supported.')        
     }
     
+    @ProxyMethod
+    public void postSubdivisionFaas( faasid ) {
+        def faas = openFaas( faasid )   
+        if( faas.rputype == LAND_TYPE ) {
+            postNewLedger( faas, APPROVED_STATE )
+        }
+        else {
+            postLedgerItem( faas ) 
+        }
+    }
+    
+    
+    /*-------------------------------------------------------------------
+    * Support Methods 
+    -------------------------------------------------------------------*/
     void postNewLedger( faas, state ) {
         def ledger = createLedger( faas, state)
         def ledgeritem = createLedgerItem( ledger )

@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+// date      : 07 Jul 2011
+-->
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/rpt/txn" action="init" caption="Subdivision" target="window"/>
+        
+        <invoker type="subdivision.create" action="init" caption="New" mnemonic="n" shortcut="ctrl N" target="window"/>
+        <invoker type="subdivision.open" action="open" caption="Open" mnemonic="o" shortcut="ctrl O" target="window"/>
+        
+        <invoker type="formActions" action="update" shortcut="ctrl S" visibleWhen="#{subdivision.docstate == 'DRAFT' or subdivision.docstate == 'FORAPPROVAL'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="submit" shortcut="ctrl M" visibleWhen="#{subdivision.docstate == 'DRAFT'}" caption="Submit For Approval" mnemonic="m" />
+        <invoker type="formActions" action="remove" shortcut="ctrl D" visibleWhen="#{subdivision.docstate == 'DRAFT' }" immediate="true" caption="Delete" mnemonic="d" />
+        <invoker type="formActions" action="disapprove" visibleWhen="#{showDisapproveAction == true}" caption="Disapprove" />
+        <invoker type="formActions" action="approve" shortcut="ctrl A" visibleWhen="#{showApproveAction == true}" caption="Approve" mnemonic="a" icon="images/save24.png"/>
+        <invoker type="formActions" action="submitToProvince" shortcut="ctrl M" visibleWhen="#{showSubmitToProvinceAction == true}" caption="Submit To Province" mnemonic="m" />
+        <invoker type="formActions" action="disapproveByProvince" visibleWhen="#{showDisapproveByProvinceAction == true}" caption="Disapprove" />
+        <invoker type="formActions" action="approveByProvince" shortcut="ctrl A" visibleWhen="#{showApprovedByProvinceAction == true}" caption="Approve" mnemonic="a" />
+        
+        <invoker type="subdividedlandActions" action="addSubdividedLand" caption="Add" mnemonic="a" />
+        <invoker type="subdividedlandActions" action="editSubdividedLand" caption="Edit" mnemonic="e" />
+        <invoker type="subdividedlandActions" action="removeSubdividedLand" caption="Delete" mnemonic="d" />
+    </invokers>
+    <code lang="groovy">
+        
+<![CDATA[
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+import java.text.DecimalFormat;
+
+public class SubdivisionController 
+{
+    @Binding
+    def binding
+    
+    @Service('SubdivisionService')
+    def svc
+    
+    @Service('FAASService')
+    def faasSvc
+    
+    @Service('Var')
+    def var 
+    
+    def subdivision     
+    def subdividedlands
+    def affectedrpus
+    
+    void open() {
+        subdivision     = svc.open( subdivision.objid )
+        subdividedlands = subdivision.subdividedlands
+        affectedrpus    = subdivision.affectedrpus 
+        subdivision.remove( 'subdividedlands' )
+        subdivision.remove( 'affectedrpus ' ) 
+    }
+    
+    void update() {
+        svc.update( subdivision )
+    }
+    
+    void submit() {
+        if( MsgBox.confirm('Submit for approval?') ) {
+            subdivision = svc.submit( subdivision.objid )
+        }
+    }
+    
+    void approve() {
+        if( MsgBox.confirm('Approve subdivision?') ) {
+            subdivision = svc.approve( subdivision.objid )
+        }
+    }
+    
+    void disapprove() {
+        if( MsgBox.confirm('disapprove subdivision?') ) {
+            subdivision = svc.disapprove( subdivision.objid )
+        }
+    }
+    
+    void submitToProvince() {
+        if( MsgBox.confirm('Submit to province?') ) {
+            subdivision = svc.submitToProvince( subdivision.objid )
+        }
+    }
+    
+    void approveByProvince() {
+        if( MsgBox.confirm('Approve?') ) {
+            subdivision = svc.approveByProvince( subdivision.objid )
+        }
+    }
+    
+    void disapproveByProvince() {
+        if( MsgBox.confirm('Disapprove subdivision?') ) {
+            subdivision = svc.disapproveByProvince( subdivision.objid )
+        }
+    }
+    
+    def remove() {
+        if( MsgBox.confirm('Delete record?') ) {
+            svc.remove( subdivision.objid )
+            return '_close'
+        }
+        return 'default' 
+    }
+    
+    
+    /*----------------------------------------------------------
+    *
+    * InitPage support
+    *
+    ----------------------------------------------------------*/
+    
+    def searchText
+    
+    def init() {
+        subdivision = [
+            docstate         : 'DRAFT', 
+            subdivisioncount : 2,
+            affectedrpucount : 0,
+            lgutype          : var.lgu_type,
+            
+        ]
+        subdividedlands = []
+        affectedrpus    = []
+        return 'init' 
+    }
+    
+    def lookupFaas() {
+        return InvokerUtil.lookupOpener('faas.lookup', [searchText:searchText, 
+            onselect: { faas ->
+                if( faas.docstate != 'CURRENT' ) throw new Exception('FAAS is not current.')
+                faas = faasSvc.getFaasInfo( faas.objid ) 
+                subdivision.motherfaasid            = faas.objid
+                subdivision.mothertdno              = faas.tdno
+                subdivision.motherpin               = faas.fullpin
+                subdivision.mothertaxpayername      = faas.taxpayername
+                subdivision.mothercadastrallotno    = faas.cadastrallotno
+                subdivision.motherclasscode         = faas.classcode 
+                subdivision.mothersurveyno          = faas.surveyno 
+                subdivision.mothermv                = faas.totalmv
+                subdivision.motherav                = faas.totalav
+                subdivision.motherareasqm           = faas.totalareasqm
+                subdivision.motherareaha            = faas.totalareaha
+                searchText                          = faas.tdno
+                binding.refresh( 'searchText' )
+            } ]
+        )
+    }
+    
+    def create() {
+        subdivision = svc.create( subdivision )
+        return 'default'
+    }   
+    
+    
+    /*----------------------------------------------------------
+    *
+    * MainPage support
+    *
+    ----------------------------------------------------------*/
+    
+    
+    
+    
+    /*----------------------------------------------------------
+    *
+    * SubdividedLand support
+    *
+    ----------------------------------------------------------*/
+    def selectedLand
+    
+    def addSubdividedLand() {
+        return InvokerUtil.lookupOpener('subdivisionland.create', [
+            subdivision : subdivision,
+            onadd : { sland ->
+                svc.createSubdividedLand( sland  )
+                subdividedlands.add( sland )
+                landListHandler.load()
+                binding.refresh('totalareasqm|totalareaha')
+            }
+        ])
+    }
+    
+    def editSubdividedLand() {
+        if( selectedLand == null || selectedLand.newpin == null ) {
+            return null
+        }
+        return InvokerUtil.lookupOpener('subdivisionland.open', [
+            subdivision    : subdivision,
+            subdividedland : selectedLand,
+            onupdate : { sland ->
+                binding.refresh('selectedLand|totalareasqm|totalareaha')
+            }
+        ])
+    }
+    
+    void removeSubdividedLand() {
+        if( selectedLand == null || selectedLand.newpin == null ) {
+            return 
+        }
+        if( MsgBox.confirm('Delete selected subdivision land?') ) {
+            svc.removeSubdividedLand( selectedLand.objid )
+            subdividedlands.remove( selectedLand )
+            landListHandler.load()
+        }
+    }
+    
+    def lookupTaxpayer = InvokerUtil.lookupOpener('entity.lookup', [:])
+    
+    def landListHandler = [
+        getRows     : { return 50 },
+        getColumns  : { return [
+            new Column(name:'newpin', caption:'New PIN', maxWidth:200 ),
+            new Column(name:'areasqm', caption:'Area (Sqm)', maxWidth:120),
+            new Column(name:'areaha', caption:'Area (Ha.)', maxWidth:120),
+            new Column(name:'newtdno', caption:'New TD No.', editable:true, maxWidth:150),
+            new Column(name:'newtitletype', caption:'New Title Type', editable:true, maxWidth:150),
+            new Column(name:'newtitleno', caption:'New Title No.', editable:true, maxWidth:150),
+            new Column(name:'newtitledate', caption:'New Title Date', type:'date', editable:true, maxWidth:150),
+            new Column(name:'memoranda', caption:'Memoranda*', editable:true),
+            new Column(name:'taxpayer', caption:'Taxpayer', editable:true, type:'lookup', handler:lookupTaxpayer, expression:'#{entityname}'),
+        ]},
+        validate    : { li -> validateSubdividedLand( li.item ) },
+        fetchList   : { return subdividedlands },
+    ] as SubListModel        
+    
+    void validateSubdividedLand( item ) {
+        item.taxpayerid         = item.taxpayer.objid
+        item.taxpayerno         = item.taxpayer.entityno
+        item.taxpayername       = item.taxpayer.entityname
+        item.taxpayeraddress    = item.taxpayer.entityaddress
+    }
+    
+    
+    
+    
+    
+    
+    /*-----------------------------------------------------------------------------
+    *
+    * Lookup and LIst Support 
+    *
+    -----------------------------------------------------------------------------*/
+    
+    def lookupAppraiser() { 
+        return InvokerUtil.lookupOpener('rptofficers.lookup', [
+            searchText  : subdivision.appraisedby, 
+            officerType : 'APPRAISER',
+            onselect    : { officer ->
+                subdivision.appraisedbyid    = officer.objid
+                subdivision.appraisedby      = officer.name
+                subdivision.appraisedbytitle = officer.title 
+                binding.refresh( 'subdivision.appraisedby' )
+            }
+        ])
+    }
+    
+    def lookupRecommender() {
+        return InvokerUtil.lookupOpener('rptofficers.lookup', [
+            searchText  : subdivision.recommendedby, 
+            officerType : 'RECOMMENDER',
+            onselect    : { officer ->
+                subdivision.recommendedbyid    = officer.objid
+                subdivision.recommendedby      = officer.name
+                subdivision.recommendedbytitle = officer.title 
+                binding.refresh( 'subdivision.recommendedby' )
+            }
+        ])
+    }
+
+    def lookupApprover() {
+        return InvokerUtil.lookupOpener('rptofficers.lookup', [
+            searchText  : subdivision.approvedby, 
+            officerType : 'APPROVER',
+            onselect    : { officer ->
+                subdivision.approvedbyid    = officer.objid
+                subdivision.approvedby      = officer.name
+                subdivision.approvedbytitle = officer.title 
+                binding.refresh( 'subdivision.approvedby' )
+            }
+        ])
+    }
+    
+    def getQuarterList() {
+        return [1,2,3,4]
+    }
+    
+    
+    /*----------------------------------------------------------
+    *
+    * Toolbar support
+    *
+    ----------------------------------------------------------*/
+    boolean getShowApproveAction() {
+        if( subdivision.lgutype != 'city'  ) return false
+        if( subdivision.docstate != 'FORAPPROVAL' ) return false
+        return true
+    }
+    
+    boolean getShowDisapproveAction() {
+        if( subdivision.lgutype != 'city'  ) return false
+        if( subdivision.docstate != 'FORAPPROVAL' ) return false
+        return true
+    }
+    
+    boolean getShowSubmitToProvinceAction() {
+        if( subdivision.lgutype != 'municipality'  ) return false
+        if( subdivision.docstate != 'FORAPPROVAL' ) return false
+        return true 
+    }
+    
+    boolean getShowApprovedByProvinceAction() {
+        if( subdivision.lgutype != 'municipality'  ) return false
+        if( subdivision.docstate != 'FORPROVAPPROVAL' ) return false
+        return true
+    }
+    
+    boolean getShowDisapproveByProvinceAction() {
+        if( subdivision.lgutype != 'municipality'  ) return false
+        if( subdivision.docstate != 'FORPROVAPPROVAL' ) return false
+        return true
+    }
+    
+    def getTotalareasqm() {
+        return formatNumber( subdividedlands.areasqm.sum() )        
+    }
+    
+    def getTotalareaha() {
+        return formatNumber( subdividedlands.areaha.sum() )        
+    }
+    
+    def formatNumber( value ) {
+        try {
+            return (new DecimalFormat('#,##0.000000')).format( value )
+        }
+        catch( e ) {
+            return '0.000000'
+        }
+    }
+    
+    boolean getAllowEdit() {
+        if( subdivision.docstate == 'FORPROVAPPROVAL' ) return false
+        if( subdivision.docstate == 'APPROVED' ) return false
+        return true
+    }
+    
+    
+}
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.subdivision.SubdivisionPage" />
+        <page name="init" template="etracs2.rpt.subdivision.SubdivisionInitPage" />
+    </pages>
+</workunit>
+
