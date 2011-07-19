@@ -22,10 +22,10 @@ SELECT * FROM subdivision WHERE mothertaxpayername LIKE $P{taxpayername} ORDER B
 
 
 [getSubdividedLandIds]
-SELECT objid  FROM subdivisionland WHERE subdivisionid = $P{subdivisionid} 
+SELECT objid  FROM subdivisionland WHERE subdivisionid = $P{subdivisionid}  ORDER BY itemno 
 
 [getAffectedRpuIds]
-SELECT objid  FROM subdivisionaffectedrpu WHERE subdivisionid = $P{subdivisionid} 
+SELECT objid  FROM subdivisionaffectedrpu WHERE subdivisionid = $P{subdivisionid}  ORDER BY itemno 
 
 [getSubdividedLandTdNo]
 SELECT newtdno FROM subdivisionland WHERE subdivisionid = $P{subdivisionid} 
@@ -35,12 +35,35 @@ SELECT ry FROM rptsetting
 
 
 [getSubdividedLands]
-SELECT *  FROM subdivisionland WHERE subdivisionid = $P{subdivisionid} 
+SELECT *  FROM subdivisionland WHERE subdivisionid = $P{subdivisionid} ORDER BY itemno
 
 [getAffectedRpus]
-SELECT *  FROM subdivisionaffectedrpu WHERE subdivisionid = $P{subdivisionid} 
+SELECT *  FROM subdivisionaffectedrpu WHERE subdivisionid = $P{subdivisionid}  ORDER BY rputype, prevfullpin 
 
 
+[getImprovementIds]
+SELECT objid FROM faaslist WHERE landfaasid = $P{landfaasid} AND docstate <> 'CANCELLED' AND rputype <> 'land' 
+
+
+[getImprovementStates] 
+SELECT f.tdno, f.docstate  
+FROM faaslist f, subdivisionaffectedrpu r  
+WHERE f.objid = r.prevfaasid  
+  AND f.docstate NOT IN ('CURRENT', 'CANCELLED')  
+  AND r.subdivisionid = $P{subdivisionid} 
+
+[getAffectedRpuUnapprovedLedgers]  
+SELECT rl.tdno, rl.docstate 
+FROM subdivisionaffectedrpu r, rptledger rl 
+WHERE r.prevfaasid = rl.faasid  
+  AND rl.docstate NOT IN ('APPROVED')  
+  AND r.subdivisionid = $P{subdivisionid} 
+
+  
+[getAffectedRpuNewPin]  
+SELECT newpin FROM subdivisionland WHERE objid = $P{objid} 
+
+  
 #--------------------------------------------------------------------
 # UPDATES
 #--------------------------------------------------------------------

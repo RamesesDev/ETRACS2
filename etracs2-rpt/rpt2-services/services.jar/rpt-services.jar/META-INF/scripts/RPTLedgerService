@@ -148,6 +148,10 @@ class RPTLedgerService
         closePreviousLedgerItemToYear( ledger, faas )
         em.update( ledger.schemaname, ledger )
         em.create( ledgeritem.schemaname, ledgeritem )
+        faas.ledgerid = ledger.objid 
+        def params = [ ledgerid:ledger.objid, objid:faas.objid ]
+        em.sqlContext.createNamedExecutor('rptledger:updateFaasLedgerId').setParameters(params).execute()
+        em.sqlContext.createNamedExecutor('rptledger:updateFaasListLedgerId').setParameters(params).execute()
         logSvc.log('CREATE_ITEM', 'RPTLedger', ledger.objid)
     }
     
@@ -157,7 +161,7 @@ class RPTLedgerService
     Map createLedger( faas, state ) {
         def ledger = [:]
         ledger.putAll( faas )
-        ledger.objid            = faas.fullpin + '-' + faas.claimno
+        ledger.objid            = 'L' + new UID()
         ledger.claimno          = faas.claimno 
         ledger.schemaname       = LEDGER_SCHEMA
         ledger.schemaversion    = SCHEMA_VERSION
@@ -219,8 +223,7 @@ class RPTLedgerService
     }
     
     Map openLedger( faas ) {
-        def ledgerid = faas.fullpin + '-' + faas.claimno 
-        def ledger = em.read(LEDGER_SCHEMA, [ objid:ledgerid] )
+        def ledger = em.read(LEDGER_SCHEMA, [ objid:faas.ledgerid] )
         if( ! ledger ) throw new Exception('Ledger for FAAS ' + faas.tdno  + ' does not exists.\nKindly ask assistance from Land Tax.')
         return ledger 
     }
