@@ -1,0 +1,169 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class TrueCopyReportService
+{
+    @PersistenceContext('main')
+    def em
+    
+    @Service('NumberService')
+    def numberSvc
+    
+    @ProxyMethod
+    public def getReportData( faasid ) {
+    	def faas = em.read('faas', [objid:faasid]);
+    	
+    	def td =[:]
+    	td.putAll( faas.info )
+    	td.putAll( faas.rp )
+    	td.putAll( faas.rpu )
+    	td.docstate = faas.docstate
+    	td.munidistprovince = faas.rp.munidistrict + ', ' + faas.rp.provcity
+    	td.propertytype = faas.rpu.rputype 
+    	td.avinwords = numberSvc.convertDouble( faas.rpu.totalav )
+    	
+    	td.assessmentItems = getAssessmentItems( faas.rpu );
+    	
+    	return td;
+    }
+    
+    private def getAssessmentItems( rpu ) {
+    	def data = [];
+    	
+    	if( rpu.rputype == 'land' ) data = getLandDetails( rpu )
+    	else if( rpu.rputype == 'bldg' ) data = getBldgDetails( rpu )
+    	else if( rpu.rputype == 'mach' ) data = getMachDetails( rpu )
+    	else if( rpu.rputype == 'planttree' ) data = getPlantTreeDetails( rpu )
+    	else if( rpu.rputype == 'misc' ) data = getMiscDetails( rpu )
+    	else throw new Exception( 'Invalid RPU Type.' )
+    	
+    	return data;
+    }
+    
+    private def getLandDetails( rpu ) {
+    	def data = [];
+    	
+    	def landdetails = rpu.info.landdetails;
+
+		landdetails.each {
+			def item = [
+				kind			: rpu.rputype,
+				classification	: rpu.classname,
+				actualuse 		: it.actualusename,
+				area			: it.area,
+				assesslevel		: it.assesslevel,
+				marketvalue		: it.marketvalue,
+				assessedvalue	: it.assessedvalue
+			];
+			
+			data.add( item );
+		}
+		
+		return data;
+    }
+    
+    private def getBldgDetails( rpu ) {
+    	def data = [];
+    	
+    	def bldguses = rpu.info.bldguses;
+			
+		if( rpu.info.predominant as boolean ) {
+			def item = [
+				kind			: rpu.rputype,
+				classification	: rpu.classname,
+				actualuse 		: rpu.classname,
+				assesslevel		: rpu.info.assesslevel,
+				marketvalue		: rpu.totalmv,
+				assessedvalue	: rpu.totalav
+			];
+			
+			data.add( item );
+		} else {
+			bldguses.each {
+				def item = [
+					kind			: rpu.rputype,
+					classification	: rpu.classname,
+					actualuse		: it.actualuse.actualusename,
+					assesslevel		: it.assesslevel,
+					marketvalue		: it.marketvalue,
+					assessedvalue	: it.assessedvalue
+				];
+				
+				data.add( item );
+			}
+		}
+		
+		return data;
+    }
+    
+    private def getMachDetails( rpu ) {
+    	def data = [];
+    	
+    	def machuses = rpu.info.machuses;
+			
+		machuses.each { mu ->
+			mu.machdetails.each {
+				def item = [
+					kind				: rpu.rputype,
+					classification		: rpu.classname,
+					machine				: it.machinename,
+					actualuse			: mu.actualuse.actualusename,
+					depreciation		: it.depreciation,
+					marketvalue			: it.marketvalue,
+					assesslevel			: it.assesslevel,
+					assessedvalue		: it.assessedvalue
+				];
+				
+				data.add( item );
+			}
+		}
+    	
+    	return data;
+    }
+    
+    private def getPlantTreeDetails( rpu ) {
+    	def data = [];
+    	
+    	def planttreedetails = rpu.info.planttreedetails;
+			
+		planttreedetails.each {
+			def item = [
+				kind				: rpu.rputype,
+				classification 		: rpu.classname,
+				actualuse			: it.assesslevelname,
+				planttree			: it.planttreename,
+				marketvalue			: it.marketvalue,
+				assesslevel			: it.assesslevel,
+				assessedvalue		: it.assessedvalue
+			];
+			
+			data.add( item );
+		}
+		
+		return data;
+    }
+    
+    private def getMiscDetails( rpu ) {
+    	def data = [];
+    	
+    	def miscrpuitems = rpu.info.miscrpuitems;
+			
+		miscrpuitems.each {
+			def item = [
+				kind				: rpu.rputype,
+				classification		: rpu.classname,
+				miscitem			: it.miscitemname,
+				actualuse			: rpu.info.actualusename,
+				marketvalue			: it.marketvalue,
+				assesslevel			: it.assesslevel,
+				assessedvalue		: it.assessedvalue
+			];
+			
+			data.add( item );
+		}
+    	
+    	return data;
+    }
+    
+}

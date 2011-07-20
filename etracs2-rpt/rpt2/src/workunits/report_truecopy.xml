@@ -1,7 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="assessorreports.td" action="init" caption="Tax Declaration" target="popup" />
-        <invoker type="faasmgmt.action" action="init" caption="Tax Declaration" index="102" />
+        <invoker type="assessorreports.truecopy" action="init" caption="Certified True Copy" target="popup" />        
         
         <invoker type="formActions" action="_close" caption="Close" mnemonic="c" shortcut="ctrl c" />
     </invokers>
@@ -21,30 +20,40 @@ class TaxDeclarationReportController
     @Service('DateService')
     def svcDate;
     
-    @Service("TDReportService")
+    @Service("TrueCopyReportService")
     def svc;
    
     def data;
-    def faasid;
+    def entity;
     
     void init(){
-        if( !faasid ) throw new Exception( "Select a FAAS. $faasid " );
+        if( !entity.faasid ) throw new Exception( "Select a FAAS. $faasid " );
         view();
     }
     
     def view() {
-       data = svc.getReportData( faasid );
+       data = svc.getReportData( entity.faasid );
        if( !data ) throw new Exception("No results found.");
        report.viewReport();
        return "preview";
     }
     
     def report =[
-        getReportName : { "tdreport/tdreport" },
+        getReportName : { "truecopy/tdtruecopyreport" },
         getReportData : { return data; },
-        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+        getParameters : { getStandardReportParams(); }
     ] as ServerReportModel;
     
+    def getStandardReportParams() {
+        return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [
+            CERTIFIEDBY         : entity.certifiedby,
+            CERTIFIEDBYTITLE    : entity.certifiedbytitle,
+            AUTHORITY           : entity.authority,
+            CERTIFICATIONORAMOUNT : entity.oramount,
+            CERTIFICATIONORDATE   : entity.ordate,
+            CERTIFICATIONORNO     : entity.orno
+        ]; 
+    }
 }
 
 ]]>        

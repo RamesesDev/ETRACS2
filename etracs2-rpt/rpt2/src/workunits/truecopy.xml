@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invoker folderid="/menu/rpt/txn" action="init" caption="Certified True Copy" index="10" />
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="viewReport" shortcut="ctrl w" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="View" mnemonic="w" />
+    
+    <code lang="groovy">
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import java.rmi.server.UID;
+        
+        public class TrueCopyController  extends etracs2.groovy.CRUDController  {
+            @Service("TrueCopyService")
+            def svc;
+
+            def getService() { return svc; }
+            def getCreateFocusComponent() { return "entity.requestedby"; }
+            def getListHandler() { return listHandler; }
+            
+            def createEntity() {
+                return [
+                    txnno       : getTxnNo(),
+                    issuedate   : new Date(),
+                    purpose     : 'FOR ANY LEGAL PURPOSE IT MAY SERVE.',
+                    oramount    : 0.0,
+                    faasinfo    : [:]
+                ];
+            }
+            
+            def listHandler = [
+                getRows    : { return 20; },
+                getColumns : {
+                    return [
+                        new Column(name:"txnno", caption:"TxN No."),
+                        new Column(name:"tdno", caption:"TD No."),
+                        new Column(name:"requestedby", caption:"Requested By"),
+                    ];
+                },
+                fetchList : { 
+                    return list; 
+                },
+            ] as SubListModel;
+
+            
+            def getTxnNo(){
+                def txnno;
+                def data = svc.getLastRecord();
+                if( !data ) txnno = 1;
+                else txnno = Integer.parseInt( data.txnno ) + 1;
+                
+                return txnno + "";
+            }
+            
+            def lookupFaas(){
+                return InvokerUtil.lookupOpener("faas.lookup", [searchText:entity.tdno, onselect:selectedFaasHandler])
+            }
+
+            def selectedFaasHandler = { item ->
+                entity.faasid = item.objid
+                entity.tdno   = item.tdno
+                entity.faasinfo.issuedate       = item.issuedate
+                entity.faasinfo.effectivityyear = item.effectivityyear
+                entity.faasinfo.effectivityqtr  = item.effectivityqtr
+                entity.faasinfo.taxpayername    = item.taxpayername
+                entity.faasinfo.taxpayeraddress = item.taxpayeraddress
+                entity.faasinfo.pin             = item.fullpin
+                entity.faasinfo.classcode       = item.classcode
+                entity.faasinfo.cadastrallotno  = item.cadastrallotno
+                entity.faasinfo.barangay        = item.barangay
+                entity.faasinfo.mv              = item.totalmv
+                entity.faasinfo.surveyno        = item.surveyno
+                entity.faasinfo.av              = item.totalav
+                
+                binding.refresh('entity.faasinfo.*|entity.tdno')
+            }
+
+            def viewReport(){
+                return InvokerUtil.lookupOpener("assessorreports.truecopy", [entity:entity])
+            }
+        }
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.td.certifications.CertifiedTrueCopyPage" />
+    </pages>
+</workunit>
