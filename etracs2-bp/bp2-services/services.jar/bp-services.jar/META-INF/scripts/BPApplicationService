@@ -58,8 +58,6 @@ class BPApplicationService{
 		}
 		
 		if( application.txnmode == 'ONLINE' ){
-			println application.lobs;
-			println application.txntype;
 			checkLobs( application.txntype == 'RETIRE' ? 'RETIRELOB' : application.txntype );
 		}
 
@@ -75,26 +73,27 @@ class BPApplicationService{
 		else application = update( application );
 		
 		if( application.txntype == 'LATE_RENEWAL' ) insertForlateRenewal( app );
+		
 		return application;
 	}
 	
 	def createBPApp( def application ){
 		application.objid = 'BP'+new UID();
+		application.txnno = getNextSeries();
 		application.schemaname = SCHEMANAME;
-		application.barcode = 'BP_51_'+application.objid;
+		application.barcode = 'BP_51_'+application.txnno;
 		application.schemaversion = SCHEMAVERSION;
 		application.tradename = application.info.tradename;
 		application.businessaddress = application.info.businessaddress;
-		application.txnno = getNextSeries();
 		application.receivables = [];
 		application.credits = [];
 		
-		if( application.businesid ) {
-			txnSvc.insert( em, businesid, application.objid, 'BPApplication', 'Unable to process transaction. \n business is currently reference by a ' + application.txntype + ' transaction');
-		}
+		def msg = 'Unable to process transaction. \nBusiness application is currently reference by a ' + application.txntype + ' transaction';
+		txnSvc.insert( application.objid, application.objid, 'BPApplication', msg );
 		
 		em.validate( SCHEMANAME, application );
 		em.create( SCHEMANAME, application );
+		
 		return application;
 	}
 	
@@ -159,7 +158,9 @@ class BPApplicationService{
 	
 	@ProxyMethod
 	public def evaluateTxnType(def application){
-
+	
+		txnSvc.checkReference( application.objid );
+		
 		def txndate = dateService.serverDate;
 		application.txndate = format( txndate, 'yyyy-MM-dd' );
 		application.iyear = format( txndate, 'yyyy' );
@@ -277,8 +278,6 @@ class BPApplicationService{
 	public def evaluateTaxesAndFees( def parentid, def list ){
 		list.each{ it ->
 		
-			println "passing";
-		
 			def application = open( it.objid );
 			def app = createAppEntity( application );
 			
@@ -349,8 +348,7 @@ class BPApplicationService{
 		
 		def business = getBusiness( app );
 		business.applicationid = app.objid;
-		business.docstate = 'ACTIVE';
-		
+
 		if( app.txnmode == 'ONLINE' && app.txntype.matches( 'RENEW|LATE_RENEWAL' ) ){
 			updatePreviousApplication( business.objid );
 		}
@@ -374,7 +372,7 @@ class BPApplicationService{
 		em.update( SCHEMANAME, app );
 		
 		addReceivables( business , applist );
-		
+		txnSvc.delete( appid );
 		return app;
 	}
 	

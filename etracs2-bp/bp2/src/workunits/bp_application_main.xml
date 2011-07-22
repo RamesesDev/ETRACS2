@@ -2,7 +2,7 @@
     <invokers>
         <invoker type="bp:DRAFT" action="initView" caption="BP Application" target="window"/>
         <invoker type="bp:open" action="init" caption="BP Application"/>
-        <invoker type="bp:view" action="initView" caption="BP Application"/>
+        <invoker type="bp:view" action="initView" caption="BP Application" target="window"/>
 
         <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c" icon="images/cancel24.png" immediate="true"/>
         <invoker type="formActions" action="edit"   caption="Edit"   mnemonic="s" icon="images/edit24.png"   immediate="true"  shortcut="ctrl S" visibleWhen="#{mode == 'view'}"/>
@@ -10,16 +10,16 @@
         <invoker type="formActions" action="delete" caption="Delete" mnemonic="d" icon="images/delete24.png"   immediate="true" shortcut="ctrl X" visibleWhen="#{application.txnno != null and application.docstate != 'APPROVED' }"/>
         
         <invoker type="formActions" action="submit"   caption="Submit" 
-                 visibleWhen="#{application.docstate == 'DRAFT' and mode == 'view'}"/>
+                 visibleWhen="#{application.docstate == 'DRAFT' and mode == 'view'}" icon="images/submit24.png"/>
         <invoker type="formActions" action="assess"   caption="Assess"
-                 visibleWhen="#{application.docstate == 'FOR_ASSESSMENT' and mode == 'view'}"/>
+                 visibleWhen="#{application.docstate == 'FOR_ASSESSMENT' and mode == 'view'}" icon="images/assess24.png"/>
         <invoker type="formActions" action="reassess" caption="Re-Assess"
-                 visibleWhen="#{application.docstate == 'FOR_APPROVAL' and mode == 'view'}"/>
+                 visibleWhen="#{application.docstate == 'FOR_APPROVAL' and mode == 'view'}" icon="images/reassess24.png"/>
                  
         <invoker type="formActions" 
                  action="previewApplication" 
                  caption="Preview Application" 
-                 visibleWhen="#{application.docstate != 'DRAFT' and mode == 'view'}"/>
+                 visibleWhen="#{application.docstate != 'DRAFT' and mode == 'view'}" icon="images/view24.png"/>
     </invokers>
     <code>
 <![CDATA[
@@ -79,7 +79,7 @@ class BPApplication
     
     def isTypeEditable = {
         if( mode == 'VIEW' ) return false;
-        if( application.txntype == 'NEW' ) return false;
+        if( application.txntype.matches('NEW|ADDLOB') ) return false;
         if( application.txnmode == 'CAPTURE' ) return false;
         if( lob?.assessmenttype == 'ADDLOB' ) return false;
         return true;
@@ -113,7 +113,7 @@ class BPApplication
             def o = application.lobs.find{ it.lobid == selected.objid };
             if( o ) throw new Exception("LOB '$selected.name' is already in application list.");
             def l = [lobid:selected.objid, name:selected.name, assessmenttype:'NEW', classificationid:selected.classificationid];
-            if( application.txntype == 'ADDLOB' ) l.assessmentype = 'ADLOB';
+            if( application.txntype == 'ADDLOB' ) l.assessmenttype = 'ADDLOB';
             if( application.txnmode == 'CAPTURE' && application.txntype == 'RENEW' ) l.assessmenttype = 'RENEW';
             application.lobs << l;
             lobSearch = '';
@@ -122,7 +122,10 @@ class BPApplication
     }
     
     def lobSearch;
-    def lookupLob = InvokerUtil.lookupOpener('lob.lookup', [onselect:onselect]);
+
+    public def getLookupLob(){
+        return InvokerUtil.lookupOpener('lob.lookup', [onselect:onselect, searchText:lobSearch]);
+    }
     
     def cancel() {
         if( mode != 'edit' ) return '_close';
@@ -146,17 +149,28 @@ class BPApplication
     }
     
     def submit(){
-       application = svc.submitForAssessment( application.objid );
-       return InvokerUtil.lookupOpener('bp:assessment',[application:application]);
+        if( MsgBox.confirm("Submit for assessment?") ){
+            application = svc.submitForAssessment( application.objid );
+            return InvokerUtil.lookupOpener('bp:assessment',[application:application]);
+        }
+        return null;
     }
     
     def delete(){
-       svc.delete( application.objid );
-       return '_close';
+        if( MsgBox.confirm("Delete ?") ){
+            svc.delete( application.objid );
+            return '_close';
+        }
+        return null;
     }
     
     def previewApplication(){
         return InvokerUtil.lookupOpener('bp.applicationreport', [applicationid:application.objid]);
+    }
+    
+    
+    def viewPermit(){
+        return InvokerUtil.lookupOpener('bp.bppermitreport', [applicationid:selectedItem.objid]);
     }
 }
 

@@ -6,17 +6,17 @@
         <invoker type="bp:FOR_REVIEW" caption="Business Application" target="window"/>
         <invoker type="bp:APPROVED" caption="Business Application" target="window"/>
         
-        <invoker type="formActions" action="cancelAssessment" caption="Cancel Assessment" visibleWhen="#{application.docstate != 'APPROVED'}"/>
-        <invoker type="formActions" action="assess" caption="Assess" visibleWhen="#{application.docstate == 'FOR_ASSESSMENT'}"/>
-        <invoker type="formActions" action="reassess" caption="Re-Assess" visibleWhen="#{application.docstate == 'FOR_REVIEW' or application.docstate == 'FOR_APPROVAL'}"/>
-        <invoker type="formActions" action="submit" caption="Submit For Approval" visibleWhen="#{application.docstate == 'FOR_REVIEW'}"/>
-        <invoker type="formActions" action="disapprove" caption="Disapprove" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}"/>
-        <invoker type="formActions" action="approve" caption="Approve" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}"/>
+        <invoker type="formActions" action="cancelAssessment" caption="Cancel Assessment" visibleWhen="#{application.docstate != 'APPROVED'}" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="assess" caption="Assess" visibleWhen="#{application.docstate == 'FOR_ASSESSMENT'}" mnemonic="a" icon="images/assess24.png"/>
+        <invoker type="formActions" action="reassess" caption="Re-Assess" visibleWhen="#{application.docstate == 'FOR_REVIEW' or application.docstate == 'FOR_APPROVAL'}" mnemonic="r" icon="images/reassess24.png"/>
+        <invoker type="formActions" action="submit" caption="Submit For Approval" visibleWhen="#{application.docstate == 'FOR_REVIEW'}" mnemonic="s" icon="images/submit24.png"/>
+        <invoker type="formActions" action="disapprove" caption="Disapprove" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}" mnemonic="d" icon="images/disapprove24.png"/>
+        <invoker type="formActions" action="approve" caption="Approve" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}" mnemonic="a" icon="images/approve24.png"/>
         
-        <invoker type="formActions" action="viewAssessment" caption="View Assessment" visibleWhen="#{application.docstate == 'APPROVED'}"/>
-        <invoker type="formActions" action="printAssessment" caption="Print Assessment" visibleWhen="#{application.docstate == 'APPROVED'}"/>
+        <invoker type="formActions" action="viewAssessment" caption="View Assessment" visibleWhen="#{application.docstate != 'FOR_ASSESSMENT'}" icon="images/view24.png"/>
+        <!-- invoker type="formActions" action="printAssessment" caption="Print Assessment" visibleWhen="#{application.docstate != 'FOR_ASSESSMENT'}" icon="images/view24.png"/-->
         
-        <invoker type="formActions" action="previewApplication" caption="View Application" />
+        <invoker type="formActions" action="previewApplication" caption="View Application" icon="images/view24.png"/>
     </invokers>
     
     <code>
@@ -101,12 +101,17 @@ class BusinessApplicationForAssessment
     }
     
     void submit(){
-        application = svc.submitForReview( application.objid, applist );
+        if( MsgBox.confirm("Submit for approval?") ){
+            application = svc.submitForReview( application.objid, applist );
+        }
     }
     
     def approve(){
-        application = svc.approveApplication( application.objid, applist );
-        return InvokerUtil.lookupOpener('bp:assessment', [application:application]);
+        if( MsgBox.confirm("Approve?") ){
+            application = svc.approveApplication( application.objid, applist );
+            return InvokerUtil.lookupOpener('bp:assessment', [application:application]);
+        }
+        return null;
     }
     
     void disapprove(){

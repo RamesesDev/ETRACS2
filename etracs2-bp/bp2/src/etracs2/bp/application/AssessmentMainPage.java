@@ -37,10 +37,11 @@ public class AssessmentMainPage extends javax.swing.JPanel {
         formPanel2 = new com.rameses.rcp.util.FormPanel();
         xLabel3 = new com.rameses.rcp.control.XLabel();
         xLabel5 = new com.rameses.rcp.control.XLabel();
-        xLabel4 = new com.rameses.rcp.control.XLabel();
         formPanel3 = new com.rameses.rcp.util.FormPanel();
         xLabel6 = new com.rameses.rcp.control.XLabel();
         xLabel7 = new com.rameses.rcp.control.XLabel();
+        xLabel4 = new com.rameses.rcp.control.XLabel();
+        xLabel8 = new com.rameses.rcp.control.XLabel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
         xDataTable3 = new com.rameses.rcp.control.XDataTable();
         jLabel1 = new javax.swing.JLabel();
@@ -105,12 +106,6 @@ public class AssessmentMainPage extends javax.swing.JPanel {
         jPanel3.add(formPanel2);
         formPanel2.setBounds(410, 20, 310, 50);
 
-        xLabel4.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        xLabel4.setExpression("<html><font color='blue'>#{application.txnno}</font>(<font color='red'>#{application.docstate}</font>)</html>");
-        xLabel4.setFont(new java.awt.Font("Tahoma", 1, 12));
-        jPanel3.add(xLabel4);
-        xLabel4.setBounds(102, 0, 610, 17);
-
         com.rameses.rcp.control.border.XLineBorder xLineBorder5 = new com.rameses.rcp.control.border.XLineBorder();
         xLineBorder5.setLineColor(new java.awt.Color(204, 204, 204));
         xLabel6.setBorder(xLineBorder5);
@@ -130,6 +125,17 @@ public class AssessmentMainPage extends javax.swing.JPanel {
 
         jPanel3.add(formPanel3);
         formPanel3.setBounds(0, 80, 720, 50);
+
+        xLabel4.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        xLabel4.setExpression("<html>APP No.: #{application.txnno}(<font color='blue''>#{application.docstate}</font>)</html>");
+        xLabel4.setFont(new java.awt.Font("Tahoma", 1, 12));
+        jPanel3.add(xLabel4);
+        xLabel4.setBounds(380, 0, 350, 17);
+
+        xLabel8.setExpression("<html>#{application.txntype} (<font color='red'>#{application.txnmode}</font>)</html>");
+        xLabel8.setFont(new java.awt.Font("Tahoma", 1, 12));
+        jPanel3.add(xLabel8);
+        xLabel8.setBounds(100, 0, 260, 20);
 
         jPanel2.add(jPanel3);
         jPanel3.setBounds(10, 0, 730, 140);
@@ -202,6 +208,7 @@ public class AssessmentMainPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel5;
     private com.rameses.rcp.control.XLabel xLabel6;
     private com.rameses.rcp.control.XLabel xLabel7;
+    private com.rameses.rcp.control.XLabel xLabel8;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     // End of variables declaration//GEN-END:variables
     

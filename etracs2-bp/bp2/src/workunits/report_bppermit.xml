@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="bp.applicationreport" action="view" caption="Business Application" target="window"/>
+        <invoker type="bp.bppermitreport" action="view" caption="Business Permit" target="window"/>
         <invoker type="formActions" action="back" caption="Back" mnemonic="b" shortcut="ctrl b"/>
     </invokers>
     <code>
@@ -12,12 +12,12 @@ import com.rameses.osiris2.client.*;
 import com.rameses.osiris2.reports.*;
 import java.rmi.server.UID;
 
-class ApplicationController
+class BusinessPermitController
 {
     @Service("ReportParameterService")
     def svcParams;
     
-    @Service("BPApplicationReportService")
+    @Service("BPPermitReportService")
     def svc;
 
     def applicationid;
@@ -26,7 +26,7 @@ class ApplicationController
     def report = [
         getReportName : { return appReport.reportName; },
         getReportData : { return [appReport.info]; },
-        getParameters : { getStandardReportParams(); }
+        getParameters : { getStandardReportParams() + app.params }
     ] as ServerReportModel;
     
     void view() {
@@ -36,7 +36,7 @@ class ApplicationController
     def back(){ return '_close'; }
 
     def getAppReport(){
-        if( !app ) app =  svc.getApplicationReportInfo( applicationid );
+        if( !app ) app =  svc.getPermitReportInfo( applicationid );
         return app;
     }
     

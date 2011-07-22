@@ -122,7 +122,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xLabel5.setBounds(120, 0, 180, 20);
 
         xLabel4.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        xLabel4.setExpression("<html>#{application.txnno}(<font color='blue''>#{application.docstate}</font>)</html>");
+        xLabel4.setExpression("<html>APP No.: #{application.txnno}(<font color='blue''>#{application.docstate}</font>)</html>");
         xLabel4.setFont(new java.awt.Font("Tahoma", 1, 12));
         jPanel2.add(xLabel4);
         xLabel4.setBounds(290, 0, 300, 17);
@@ -154,6 +154,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         formPanel3.setBounds(0, 20, 590, 50);
 
         xComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "application.organization" }));
+        xComboBox1.setAllowNull(false);
         xComboBox1.setCaption("Organization");
         xComboBox1.setCaptionWidth(85);
         xComboBox1.setItems("organizations");
@@ -162,6 +163,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xComboBox1.setRequired(true);
         formPanel4.add(xComboBox1);
 
+        xComboBox2.setAllowNull(false);
         xComboBox2.setCaption("Office Type");
         xComboBox2.setCaptionWidth(85);
         xComboBox2.setItems("officetypes");
