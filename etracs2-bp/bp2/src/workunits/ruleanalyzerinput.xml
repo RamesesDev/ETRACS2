@@ -5,9 +5,9 @@
     <code>
 <![CDATA[
 
-import com.rameses.rcp.annotations.*
-import com.rameses.rcp.common.*
-import com.rameses.osisirs2.client.*
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
 
 class InputValuesController
 {
@@ -19,16 +19,7 @@ class InputValuesController
     def selectedLobInfo
     def inputHandler 
     def acceptInputHandler
-    
-    def infoListHandler = [
-        getColumns : { return [
-            new Column(name:'lobname', caption:'Line of Business'),
-            new Column(name:'varcaption', caption:'Variable'),
-            new Column(name:'value', caption:'Value', editable:true),
-        ]},
-        fetchList : { return entity.infos }
-    ] as SubListModel
-    
+      
     def cancel() {
         return '_close'
     }
@@ -43,6 +34,27 @@ class InputValuesController
             if( acceptInputHandler ) acceptInputHandler( entity )
             return '_close'
         }
+    }
+    
+    def getFields(){
+        def fieldinfos = entity.infos;
+        fieldinfos.each{
+            it.datatype = it.vartype;
+            it.category = it.lobname;
+            it.caption = it.varname;
+            it.items = it.arrayvalues;
+        }
+
+        fieldinfos.sort{ a, b -> 
+            def atext = (a.lobname ? a.lobname : '-') + a.name 
+            def btext = (b.lobname ? b.lobname : '-') + b.name 
+            return atext <=> btext 
+        }
+        return fieldinfos;
+    }
+    
+    public def getInfoHandler(){
+        return InvokerUtil.lookupOpener('input_fields', [fields: getFields()]);
     }
 }
 
