@@ -44,17 +44,6 @@ WHERE bpa.parentid = $P{parentid}
 DELETE FROM bpapplication 
 WHERE parentid = $P{parentid}  
 
-
-[updateApplicationForActive] 
-UPDATE bpapplication  
-SET docstate = 'ACTIVE' 
-WHERE objid = $P{objid} 
-
-[updatePermitForActive] 
-UPDATE bppermit 
-SET docstate = 'ACTIVE' 
-WHERE applicationid = $P{applicationid} 
-
 [updateApplicationListingForActive] 
 UPDATE bpapplicationlisting  
 SET docstate = 'ACTIVE' 

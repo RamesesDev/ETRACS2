@@ -1,0 +1,139 @@
+<workunit>
+    <invokers>
+        <invoker type="entity.multiple" caption="Entity (Multiple)" />        
+        <invoker folderid="/menu/entity" action="init" caption="Multiple" />   
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" target="popup"/>
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png"/>
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png"/>
+
+    </invokers>
+    <code>
+<![CDATA[        
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+class EntityMultipleController extends etracs2.groovy.AbstractEntityController 
+{
+    @Service("EntityService")
+    def svc
+    
+    
+    void init() {
+        super.create()
+    }
+    
+    def getService() { return svc }
+    def getCreateFocusComponent() { return "entity.name"; }
+    def getEditFocusComponent() { return "entity.name"; }
+    
+    def createEntity() { 
+        return [
+            entitytype : 'multiple',
+            info       : [
+                fullname : '',
+                members  : []
+            ],
+        ]
+    } 
+    
+    def selectedMember
+    def lookupEntity = InvokerUtil.lookupOpener("entity.lookup",[:]);
+
+    def membersListHandler = [
+        getRows    : { return 15; },
+        getColumns : {
+            return [
+                new Column(name:"itemno", caption:"Item No.", maxWidth:70),
+                new Column(name:"prefix", caption:"Prefix", editable:true, maxWidth:100),
+                new Column(name:"entity", caption:"Taxpayer Name", editable:true, type:"lookup", handler:lookupEntity, expression: '#{entityname}'),
+                new Column(name:"suffix", caption:"Suffix", editable:true, maxWidth:100)
+            ];
+        },
+        fetchList : { return entity.info.members; },
+        createItem : { return [:]; },
+        onAddItem  : { item ->
+            updateEntity( item );
+            if( entity.info.members == null ) entity.info.members = [];
+            entity.info.members.add( item );
+        },
+        validate     : { li -> doValidateEntity( li.item ) },
+        onRemoveItem : { item -> doRemoveEntity( item ) },
+        onColumnUpdate : { item, colName ->
+            if( colName == 'entity' ) updateEntity( item );
+        },
+    ] as SubListModel;
+    
+    void doValidateEntity( item ) {
+        required(item.taxpayername, 'Taxpayer Name');
+        updateFullName( item, 'add' );
+    }
+    
+    void updateEntity( item ) {
+        item.itemno = getItemNo();
+        item.taxpayerid = item.entity.objid;
+        item.taxpayername = item.entity.entityname;
+    }
+    
+    void doRemoveEntity( item ) {
+        if( MsgBox.confirm("Remove selected item?") ) {
+            entity.info.members.remove( item );
+            membersListHandler.load();
+        }
+        updateFullName( item, 'remove' );
+    }
+    
+    void updateFullName( item, state ) {
+        if( state == 'add' ) {
+            def prefix = ( item.prefix ? item.prefix : "" ).toString();
+            def suffix = ( item.suffix ? item.suffix : "" ).toString();
+
+            if( entity.info.fullname == null || entity.info.fullname == '' ) 
+                entity.info.fullname = "$prefix $item.taxpayername $suffix";
+            else entity.info.fullname += ", $prefix $item.taxpayername $suffix";
+        } else {
+            entity.info.fullname = '';
+            entity.info?.members.each {
+                def prefix = ( it.prefix ? it.prefix : "" ).toString();
+                def suffix = ( it.suffix ? it.suffix : "" ).toString();
+
+                if( entity.info.fullname == null || entity.info.fullname == '' ) 
+                    entity.info.fullname = "$prefix $it.taxpayername $suffix";
+                else entity.info.fullname += ", $prefix $it.taxpayername $suffix";
+            }
+        }
+        binding.refresh('entity.info.fullname');
+    }
+    
+    void copyfullname() {
+        entity.entityname = entity.info.fullname;
+        binding.refresh('entity.entityname');
+    }
+    
+    def getItemNo() {
+        def num;
+        
+        if( entity.info.members.size() == 0 ) num = 1;
+        else {
+            def last = entity.info.members.last();
+            num = last.itemno + 1;
+        }
+        
+        return num;
+    }
+    
+    void required( caption, value ) {
+        if( !value ) throw new Exception( caption + ' is required.')
+    }
+}        
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.entity.MultiplePage"/>
+    </pages>
+</workunit>

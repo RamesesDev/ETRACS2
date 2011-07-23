@@ -1,0 +1,58 @@
+<workunit>
+    <invokers>
+        <invoker type="bp.releasepermit" caption="Release Permit" target="window"/>
+        
+        <invoker type="formActions" action="_close" caption="Cancel" mnemonic="r" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="previewApplication" caption="View Application" icon="images/view24.png"/>
+        <invoker type="formActions" action="previewAssessment" caption="View Assessment" icon="images/view24.png"/>
+        <invoker type="formActions" action="release" caption="Release" visibleWhen="#{permit.docstate == 'PERMIT_PENDING'}" mnemonic="r" icon="images/approve24.png"/>
+        <invoker type="formActions" action="viewPermit" caption="View Permit" visibleWhen="#{permit.docstate == 'ACTIVE'}" mnemonic="r" icon="images/approve24.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPReleasePermitController 
+{
+    @Binding
+    def binding;
+    
+    @Service('BusinessMgmtService')
+    def svc;
+    
+    def permit;
+    
+    def lobHandler = [
+        getRows: {return 5;},
+        getColumns: {
+            return [ new Column(name:'name', caption:'Name') ];
+        },
+        fetchList : {  return permit.lobs; }
+    ] as SubListModel;
+    
+    public void release(){
+        if( MsgBox.confirm('Release permit?') ) permit = svc.releasePermit( permit );
+    }
+    
+    def previewApplication(){
+        return InvokerUtil.lookupOpener('bp.applicationreport', [applicationid:permit.applicationid]);
+    }
+    
+    def previewAssessment(){
+        return InvokerUtil.lookupOpener('bp.assessmentreport', [applicationid:permit.applicationid]);
+    }
+    
+    def viewPermit(){
+        return InvokerUtil.lookupOpener( 'bp.bppermitreport', [applicationid:permit.applicationid] );
+    }
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.application.PermitPage" />
+    </pages>
+</workunit>

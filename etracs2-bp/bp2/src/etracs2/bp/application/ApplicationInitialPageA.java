@@ -54,7 +54,6 @@ public class ApplicationInitialPageA extends javax.swing.JPanel {
 
         xActionTextField1.setActionName("lookupPayer");
         xActionTextField1.setCaption("Permittee");
-        xActionTextField1.setHint("LASTNAME%FIRSTNAME%MIDDLENAME");
         xActionTextField1.setIndex(-1);
         xActionTextField1.setName("application.info.taxpayername");
         xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));

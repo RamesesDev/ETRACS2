@@ -4,6 +4,9 @@ import java.rmi.server.UID
 
 class BusinessMgmtService{
 	
+	@Service('DateService')
+	def dateService;
+	
 	@PersistenceContext('main')
 	def em;
 	
@@ -39,22 +42,40 @@ class BusinessMgmtService{
 	}
 	
 	@ProxyMethod
-	public def releasePermit( def applicationid ){
-		def app = em.read('bpapplication:bpapplication', [objid: applicationid]);
+	public def releasePermit( def permit ){
+		def bp = em.read( 'bppermit:bppermit', [objid: permit.objid] );
+		if( !bp ) throw new Exception('Permit with objid '+ permit.objid +' is no longer exist.');
+		
+		def app = em.read('bpapplication:bpapplication', [objid: bp.applicationid]);
+		if( !bp ) throw new Exception('Application with objid '+ bp.applicationid +' is no longer exist.');
 		if( app.docstate != 'PERMIT_PENDING' ) throw new Exception("Only permit pending transaction can be released.");
+
+		bp.plateno = permit.plateno;
+		bp.txndate = dateService.serverDate;
+		bp.docstate = 'ACTIVE';
 		
-		em.sqlContext.createNamedExecutor('bpapplication:updateApplicationForActive')
-		  .setParameter('objid', applicationid) 
-		  .execute(); 
+		println bp.lobs.size();
 		
-		em.sqlContext.createNamedExecutor('bpapplication:updatePermitForActive')
-		  .setParameter('applicationid', applicationid) 
-		  .execute(); 
-		  
+		em.update('bppermit:bppermit', bp);
+		
+		app.docstate = 'ACTIVE';
+		em.update('bpapplication:bpapplication', app);
+		
 		em.sqlContext.createNamedExecutor('bpapplication:updateApplicationListingForActive')
-		  .setParameter('objid', applicationid) 
-		  .execute(); 
-		  
-		return app;
+		  .setParameter('objid', bp.applicationid) 
+		  .execute();
+		
+		return bp;
+	}
+	
+	@ProxyMethod
+	public def openPermit( def applicationid ){
+		def permit = em.sqlContext.createNamedQuery('bpmgmt:findPermitByApplicationId')
+					   .setParameter('applicationid', applicationid)
+					   .singleResult;
+		if( !permit ) throw new Exception('Permit with an applicationid '+ applicationid +' is no longer exist.');
+		permit.lobs = em.serializer.read( permit.lobs );
+		permit.txndate = (permit.docstate == 'ACTIVE') ? permit.txndate : null ;
+		return permit;
 	}
 }

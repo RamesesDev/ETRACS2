@@ -1,0 +1,65 @@
+<workunit>
+    <invokers>
+        <invoker type="assessorreports.truecopy" action="init" caption="Certified True Copy" target="popup" />        
+        
+        <invoker type="formActions" action="_close" caption="Close" mnemonic="c" shortcut="ctrl c" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class TaxDeclarationReportController
+{
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('DateService')
+    def svcDate;
+    
+    @Service("TrueCopyReportService")
+    def svc;
+   
+    def data;
+    def entity;
+    
+    void init(){
+        if( !entity.faasid ) throw new Exception( "Select a FAAS. $faasid " );
+        view();
+    }
+    
+    def view() {
+       data = svc.getReportData( entity.faasid );
+       if( !data ) throw new Exception("No results found.");
+       report.viewReport();
+       return "preview";
+    }
+    
+    def report =[
+        getReportName : { "truecopy/tdtruecopyreport" },
+        getReportData : { return data; },
+        getParameters : { getStandardReportParams(); }
+    ] as ServerReportModel;
+    
+    def getStandardReportParams() {
+        return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [
+            CERTIFIEDBY         : entity.certifiedby,
+            CERTIFIEDBYTITLE    : entity.certifiedbytitle,
+            AUTHORITY           : entity.authority,
+            CERTIFICATIONORAMOUNT : entity.oramount,
+            CERTIFICATIONORDATE   : entity.ordate,
+            CERTIFICATIONORNO     : entity.orno
+        ]; 
+    }
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>

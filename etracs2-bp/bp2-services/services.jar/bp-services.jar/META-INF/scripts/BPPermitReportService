@@ -1,0 +1,54 @@
+import com.rameses.annotations.*;
+
+public class BPPermitReportService
+{
+	@PersistenceContext('main')
+	def em;
+	
+	@Service('Var')
+	def var;
+	
+	@ProxyMethod
+	public def getPermitReportInfo( def applicationid ){
+		def yearFormat = new java.text.SimpleDateFormat('yyyy');
+		def dateFormat = new java.text.SimpleDateFormat('yyyy-MM-dd');
+	
+		def bp = em.sqlContext.createNamedQuery('bpmgmt:findPermitByApplicationId')
+				   .setParameters([applicationid: applicationid])
+		           .singleResult;
+				   
+		def app = em.read('bpapplication:bpapplication', [objid:applicationid]);
+
+		bp.txntype = app.txntype;
+		bp.barcode = app.barcode;
+		bp.barcodeurl = var.get('barcode_url').replace('$P{data}', app.barcode);
+		
+		bp.lines = em.serializer.read( bp.lobs );
+		bp.lobs = null;
+		
+		bp.iyear = yearFormat.format( bp.txndate );
+		bp.validity = dateFormat.parse( bp.iyear + '-12-31' );
+		
+		bp.orlist = [];
+		
+		app.credits.each{ c ->
+			def o = bp.orlist.find{ it.orno == c.refno };
+			if( !o ) {
+				o = [orno: c.refno+'', 
+				     ordate: dateFormat.parse( c.refdate ),
+					 amount: 0.0];
+				bp.orlist << o;
+			}
+			o.amount = c.amount + c.surcharge + c.interest - c.discount;
+		}
+		
+		def sdf = new java.text.SimpleDateFormat("EEEEE MMMMM dd, yyyy");
+		def params = [
+			PERMITDATE: sdf.format( bp.txndate )
+		];
+		
+		return [reportName: 'bp/businesspermit',
+			    info: bp,
+				params: params];
+	}
+}

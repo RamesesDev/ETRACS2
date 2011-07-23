@@ -4,10 +4,10 @@
         <invoker folderid="/menu/bp/txn" action="initReleasePermit" caption="For Release Permit"/>
         <invoker folderid="/menu/bp/txn" action="initActivePermit" caption="Active Permit"/>
 
-        <invoker type="formActions" action="previewApplication" caption="View Application" visibleWhen="#{selectedItem != null}"/>
-        <invoker type="formActions" action="previewAssessment" caption="View Assessment" visibleWhen="#{selectedItem != null}"/>
-        <invoker type="formActions" action="release" caption="Release Permit" mnemonic="r" visibleWhen="#{selectedItem.docstate == 'PERMIT_PENDING'}"/>
-        <invoker type="formActions" action="viewPermit" caption="View Permit" mnemonic="r" visibleWhen="#{selectedItem.docstate == 'ACTIVE'}"/>
+        <invoker type="formActions" action="previewApplication" caption="View Application" visibleWhen="#{selectedItem != null}" icon="images/view24.png"/>
+        <invoker type="formActions" action="previewAssessment" caption="View Assessment" visibleWhen="#{selectedItem != null}" icon="images/view24.png"/>
+        <invoker type="formActions" action="release" caption="Release Permit" mnemonic="r" visibleWhen="#{selectedItem.docstate == 'PERMIT_PENDING'}" icon="images/release24.png"/>
+        <invoker type="formActions" action="viewPermit" caption="View Permit" mnemonic="r" visibleWhen="#{selectedItem.docstate == 'ACTIVE'}" icon="images/view24.png"/>
     </invokers>
     <code>
 <![CDATA[
@@ -77,10 +77,16 @@ class BusinessMgmtList
         return InvokerUtil.lookupOpener('bp.assessmentreport', [applicationid:selectedItem.objid]);
     }
     
-    void release(){
-        svc.releasePermit( selectedItem.objid );
-        listHandler.load();
+    def release(){
+        def permit = svc.openPermit( selectedItem.objid );
+        return InvokerUtil.lookupOpener('bp.releasepermit', [permit: permit]);
     }
+    
+    def viewPermit(){
+        return InvokerUtil.lookupOpener( 'bp.bppermitreport', [applicationid:selectedItem.objid] );
+    }
+    
+    void search(){ listHandler.load(); }
 }
 
 ]]>        

@@ -65,6 +65,9 @@ class BPCollectionService{
 		entity.info.amount = 0.0;
 		entity.items = [];
 		
+		println entity.info.collectortitle;
+		println entity.info.collectorname;
+		
 		bill.taxfees.each{
 			def acct = em.read("incomeacct:incomeacct", [objid: it.acctid]);
 			def item = [taxfeeid: it.objid,
@@ -91,7 +94,8 @@ class BPCollectionService{
 			def sB = b.iyear+''+b.iqtr;
 			return sA<=>sB;
 		}
-
+		
+		entity.applicationlastmodified = app.lastmodified;
     	return entity;
 	}
 

@@ -37,23 +37,24 @@ public class AssessmentMainPage extends javax.swing.JPanel {
         formPanel2 = new com.rameses.rcp.util.FormPanel();
         xLabel3 = new com.rameses.rcp.control.XLabel();
         xLabel5 = new com.rameses.rcp.control.XLabel();
-        xLabel4 = new com.rameses.rcp.control.XLabel();
         formPanel3 = new com.rameses.rcp.util.FormPanel();
         xLabel6 = new com.rameses.rcp.control.XLabel();
         xLabel7 = new com.rameses.rcp.control.XLabel();
+        xLabel4 = new com.rameses.rcp.control.XLabel();
+        xLabel8 = new com.rameses.rcp.control.XLabel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
-        xDataTable3 = new com.rameses.rcp.control.XDataTable();
         jLabel1 = new javax.swing.JLabel();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
         xDataTable4 = new com.rameses.rcp.control.XDataTable();
+        jTabbedPane1 = new javax.swing.JTabbedPane();
+        xDataTable3 = new com.rameses.rcp.control.XDataTable();
+        xDataTable5 = new com.rameses.rcp.control.XDataTable();
 
         setLayout(new java.awt.BorderLayout());
 
         setPreferredSize(new java.awt.Dimension(546, 229));
         xActionBar1.setName("formActions");
         add(xActionBar1, java.awt.BorderLayout.NORTH);
-
-        jPanel2.setLayout(null);
 
         jPanel3.setLayout(null);
 
@@ -105,12 +106,6 @@ public class AssessmentMainPage extends javax.swing.JPanel {
         jPanel3.add(formPanel2);
         formPanel2.setBounds(410, 20, 310, 50);
 
-        xLabel4.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        xLabel4.setExpression("<html><font color='blue'>#{application.txnno}</font>(<font color='red'>#{application.docstate}</font>)</html>");
-        xLabel4.setFont(new java.awt.Font("Tahoma", 1, 12));
-        jPanel3.add(xLabel4);
-        xLabel4.setBounds(102, 0, 610, 17);
-
         com.rameses.rcp.control.border.XLineBorder xLineBorder5 = new com.rameses.rcp.control.border.XLineBorder();
         xLineBorder5.setLineColor(new java.awt.Color(204, 204, 204));
         xLabel6.setBorder(xLineBorder5);
@@ -131,8 +126,16 @@ public class AssessmentMainPage extends javax.swing.JPanel {
         jPanel3.add(formPanel3);
         formPanel3.setBounds(0, 80, 720, 50);
 
-        jPanel2.add(jPanel3);
-        jPanel3.setBounds(10, 0, 730, 140);
+        xLabel4.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        xLabel4.setExpression("<html>APP No.: #{application.txnno}(<font color='blue''>#{application.docstate}</font>)</html>");
+        xLabel4.setFont(new java.awt.Font("Tahoma", 1, 12));
+        jPanel3.add(xLabel4);
+        xLabel4.setBounds(380, 0, 350, 17);
+
+        xLabel8.setExpression("<html>#{application.txntype} (<font color='red'>#{application.txnmode}</font>)</html>");
+        xLabel8.setFont(new java.awt.Font("Tahoma", 1, 12));
+        jPanel3.add(xLabel8);
+        xLabel8.setBounds(100, 0, 260, 20);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Required Informations");
@@ -141,24 +144,10 @@ public class AssessmentMainPage extends javax.swing.JPanel {
         xDataTable2.setDynamic(true);
         xDataTable2.setHandler("appinfoListHandler");
         xDataTable2.setImmediate(true);
-        jPanel2.add(xDataTable2);
-        xDataTable2.setBounds(10, 220, 730, 110);
-
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder3.setTitle("Taxes and Fees");
-        xDataTable3.setBorder(xTitledBorder3);
-        xDataTable3.setDepends(new String[] {"appdata"});
-        xDataTable3.setDynamic(true);
-        xDataTable3.setHandler("taxfeeListHandler");
-        xDataTable3.setImmediate(true);
-        jPanel2.add(xDataTable3);
-        xDataTable3.setBounds(10, 330, 730, 110);
 
         jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setText("Total Assessment :");
         jLabel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 2, 1, 2));
-        jPanel2.add(jLabel1);
-        jLabel1.setBounds(450, 440, 111, 20);
 
         xNumberField1.setEditable(false);
         xNumberField1.setDepends(new String[] {"appdata"});
@@ -166,19 +155,62 @@ public class AssessmentMainPage extends javax.swing.JPanel {
         xNumberField1.setFont(new java.awt.Font("Arial", 1, 12));
         xNumberField1.setName("totalAssessment");
         xNumberField1.setPattern("#,##0.00");
-        jPanel2.add(xNumberField1);
-        xNumberField1.setBounds(580, 440, 160, 20);
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder4.setTitle("Application List");
-        xDataTable4.setBorder(xTitledBorder4);
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder3.setTitle("Application List");
+        xDataTable4.setBorder(xTitledBorder3);
         xDataTable4.setDynamic(true);
         xDataTable4.setHandler("applistHandler");
         xDataTable4.setImmediate(true);
         xDataTable4.setName("appdata");
-        jPanel2.add(xDataTable4);
-        xDataTable4.setBounds(10, 140, 730, 80);
 
+        xDataTable3.setBorder(null);
+        xDataTable3.setDepends(new String[] {"appdata"});
+        xDataTable3.setDynamic(true);
+        xDataTable3.setHandler("taxfeeListHandler");
+        xDataTable3.setImmediate(true);
+        jTabbedPane1.addTab("Taxes and Fees", xDataTable3);
+
+        xDataTable5.setBorder(null);
+        xDataTable5.setDynamic(true);
+        xDataTable5.setHandler("requirementHandler");
+        xDataTable5.setImmediate(true);
+        jTabbedPane1.addTab("Requirement", xDataTable5);
+
+        org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2Layout.createSequentialGroup()
+                        .add(440, 440, 440)
+                        .add(jLabel1)
+                        .add(19, 19, 19)
+                        .add(xNumberField1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 160, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 730, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 730, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 730, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jTabbedPane1))
+                .add(56, 56, 56))
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel2Layout.createSequentialGroup()
+                .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 140, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(xDataTable4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 80, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(xDataTable2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 110, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jTabbedPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 168, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 20, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(xNumberField1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .add(11, 11, 11))
+        );
         add(jPanel2, java.awt.BorderLayout.CENTER);
 
     }// </editor-fold>//GEN-END:initComponents
@@ -191,10 +223,12 @@ public class AssessmentMainPage extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JTabbedPane jTabbedPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XDataTable xDataTable2;
     private com.rameses.rcp.control.XDataTable xDataTable3;
     private com.rameses.rcp.control.XDataTable xDataTable4;
+    private com.rameses.rcp.control.XDataTable xDataTable5;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
@@ -202,6 +236,7 @@ public class AssessmentMainPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel5;
     private com.rameses.rcp.control.XLabel xLabel6;
     private com.rameses.rcp.control.XLabel xLabel7;
+    private com.rameses.rcp.control.XLabel xLabel8;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     // End of variables declaration//GEN-END:variables
     

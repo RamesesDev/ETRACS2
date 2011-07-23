@@ -1,22 +1,22 @@
 <workunit>
     <invokers>
-        <invoker type="bp:assessment" caption="Business Application"/>
+        <invoker type="bp:assessment"  action="checkPageToLoad" caption="Business Application"/>
         <invoker type="bp:FOR_ASSESSMENT" caption="Business Application" target="window"/>
-        <invoker type="bp:FOR_APPROVAL" caption="Business Application" target="window"/>
-        <invoker type="bp:FOR_REVIEW" caption="Business Application" target="window"/>
-        <invoker type="bp:APPROVED" caption="Business Application" target="window"/>
+        <invoker type="bp:FOR_APPROVAL" action="init" caption="Business Application" target="window"/>
+        <invoker type="bp:FOR_REVIEW" action="init" caption="Business Application" target="window"/>
+        <invoker type="bp:APPROVED" action="init" caption="Business Application" target="window"/>
         
-        <invoker type="formActions" action="cancelAssessment" caption="Cancel Assessment" visibleWhen="#{application.docstate != 'APPROVED'}"/>
-        <invoker type="formActions" action="assess" caption="Assess" visibleWhen="#{application.docstate == 'FOR_ASSESSMENT'}"/>
-        <invoker type="formActions" action="reassess" caption="Re-Assess" visibleWhen="#{application.docstate == 'FOR_REVIEW' or application.docstate == 'FOR_APPROVAL'}"/>
-        <invoker type="formActions" action="submit" caption="Submit For Approval" visibleWhen="#{application.docstate == 'FOR_REVIEW'}"/>
-        <invoker type="formActions" action="disapprove" caption="Disapprove" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}"/>
-        <invoker type="formActions" action="approve" caption="Approve" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}"/>
+        <invoker type="formActions" action="cancelAssessment" caption="Cancel Assessment" visibleWhen="#{application.docstate != 'APPROVED'}" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="assess" caption="Assess" visibleWhen="#{application.docstate == 'FOR_ASSESSMENT'}" mnemonic="a" icon="images/assess24.png"/>
+        <invoker type="formActions" action="reassess" caption="Re-Assess" visibleWhen="#{application.docstate == 'FOR_REVIEW' or application.docstate == 'FOR_APPROVAL'}" mnemonic="r" icon="images/reassess24.png"/>
+        <invoker type="formActions" action="submit" caption="Submit For Approval" visibleWhen="#{application.docstate == 'FOR_REVIEW'}" mnemonic="s" icon="images/submit24.png"/>
+        <invoker type="formActions" action="disapprove" caption="Disapprove" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}" mnemonic="d" icon="images/disapprove24.png"/>
+        <invoker type="formActions" action="approve" caption="Approve" visibleWhen="#{application.docstate == 'FOR_APPROVAL'}" mnemonic="a" icon="images/approve24.png"/>
         
-        <invoker type="formActions" action="viewAssessment" caption="View Assessment" visibleWhen="#{application.docstate == 'APPROVED'}"/>
-        <invoker type="formActions" action="printAssessment" caption="Print Assessment" visibleWhen="#{application.docstate == 'APPROVED'}"/>
+        <invoker type="formActions" action="viewAssessment" caption="View Assessment" visibleWhen="#{application.docstate != 'FOR_ASSESSMENT'}" icon="images/view24.png"/>
+        <!-- invoker type="formActions" action="printAssessment" caption="Print Assessment" visibleWhen="#{application.docstate != 'FOR_ASSESSMENT'}" icon="images/view24.png"/-->
         
-        <invoker type="formActions" action="previewApplication" caption="View Application" />
+        <invoker type="formActions" action="previewApplication" caption="View Application" icon="images/view24.png"/>
     </invokers>
     
     <code>
@@ -68,8 +68,20 @@ class BusinessApplicationForAssessment
         }
     ] as SubListModel
     
+    def requirementHandler = [
+        getRows: { return 10; },
+        getColumns: {
+            return [
+                new Column(name:"complied", caption:"?", type:"boolean", editable:(application.docstate != 'APPROVED'), maxWidth:25),
+                new Column(name:"requirement", caption:"Requirement"),
+                new Column(name:"remarks", caption:"Remarks", editable:(application.docstate != 'APPROVED'))
+            ];
+        },
+        fetchList: { return application.info.requirements; }
+    ] as SubListModel;
+    
     def taxfeeListHandler = [
-        getRows    : { return 3 },
+        getRows    : { return 10 },
         getColumns : { return [
             new Column(name:'lobname', caption:'Line of Business'),
             new Column(name:'accttitle', caption:'Account'),
@@ -97,16 +109,21 @@ class BusinessApplicationForAssessment
     
     def cancelAssessment(){ 
         def app = svc.cancelApplicationForAssessement( application.objid );
-        return InvokerUtil.lookupOpener('bp:view', [application:app] );
+        return InvokerUtil.lookupOpener('bp:open', [application:app] );
     }
     
     void submit(){
-        application = svc.submitForReview( application.objid, applist );
+        if( MsgBox.confirm("Submit for approval?") ){
+            application = svc.submitForReview( application.objid, applist, application.info.requirements );
+        }
     }
     
     def approve(){
-        application = svc.approveApplication( application.objid, applist );
-        return InvokerUtil.lookupOpener('bp:assessment', [application:application]);
+        if( MsgBox.confirm("Approve?") ){
+            application = svc.approveApplication( application.objid, applist, application.info.requirements );
+            return InvokerUtil.lookupOpener('bp:assessment', [application:application]);
+        }
+        return null;
     }
     
     void disapprove(){
@@ -129,12 +146,19 @@ class BusinessApplicationForAssessment
     def viewAssessment(){
         return InvokerUtil.lookupOpener('bp.assessmentreport', [applicationid:application.objid]);
     }
+    
+    def init(){ return "forassessment";}
+    
+    def checkPageToLoad(){ 
+        return (application.docstate == 'FOR_ASSESSMENT' ) ? "default"  : "forassessment";
+    }
 }
 
 ]]>        
         
     </code>
     <pages>
-        <page template="etracs2.bp.application.AssessmentMainPage"/>
+        <page name="forassessment" template="etracs2.bp.application.AssessmentMainPage"/>
+        <page template="etracs2.bp.application.ApplicationForAssessmentPage"/>
     </pages>
 </workunit>

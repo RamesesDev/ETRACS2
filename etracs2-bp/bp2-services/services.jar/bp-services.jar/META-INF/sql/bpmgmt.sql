@@ -26,3 +26,7 @@ AND   o.docstate = $P{docstate}
 SELECT o.* FROM bpapplicationlisting o 
 WHERE o.taxpayeraddress LIKE $P{search} 
 AND   o.docstate = $P{docstate} 
+
+[findPermitByApplicationId] 
+SELECT o.* FROM bppermit o 
+WHERE o.applicationid = $P{applicationid} 

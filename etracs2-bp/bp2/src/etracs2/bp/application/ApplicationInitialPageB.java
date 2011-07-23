@@ -67,7 +67,7 @@ public class ApplicationInitialPageB extends javax.swing.JPanel {
         xLabel1.setCaption("Trade Name");
         xLabel1.setCaptionFont(new java.awt.Font("Tahoma", 0, 11));
         xLabel1.setDepends(new String[] {"business.appno"});
-        xLabel1.setExpression("#{business.tradename}");
+        xLabel1.setExpression("#{app.tradename}");
         xLabel1.setFont(new java.awt.Font("Tahoma", 0, 11));
         xLabel1.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xLabel1);
@@ -78,7 +78,7 @@ public class ApplicationInitialPageB extends javax.swing.JPanel {
         xLabel2.setCaption("Address");
         xLabel2.setCaptionFont(new java.awt.Font("Tahoma", 0, 11));
         xLabel2.setDepends(new String[] {"business.appno"});
-        xLabel2.setExpression("#{business.businessaddress}");
+        xLabel2.setExpression("#{app.businessaddress}");
         xLabel2.setFont(new java.awt.Font("Tahoma", 0, 11));
         xLabel2.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xLabel2);

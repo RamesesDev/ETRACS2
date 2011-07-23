@@ -43,7 +43,8 @@ class LobController extends etracs2.groovy.CRUDController
     }
     
     def onselectAttribute = { attr ->
-        entity.attributes.add( attr )
+        if( !entity.attributes ) entity.attributes = [];
+        entity.attributes << attr;
         attributeListHandler.load()
         searchAttribute = null
         binding.refresh('searchAttribute')

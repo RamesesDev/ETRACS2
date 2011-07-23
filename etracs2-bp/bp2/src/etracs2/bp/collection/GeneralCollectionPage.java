@@ -269,7 +269,6 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         xComboBox2.setAllowNull(false);
         xComboBox2.setCaption("Qtr");
         xComboBox2.setCaptionWidth(50);
-        xComboBox2.setDynamic(true);
         xComboBox2.setImmediate(true);
         xComboBox2.setItems("qtrs");
         xComboBox2.setName("qtr");

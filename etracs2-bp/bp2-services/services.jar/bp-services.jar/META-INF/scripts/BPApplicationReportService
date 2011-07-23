@@ -23,7 +23,8 @@ public class BPApplicatioService
 	def buildInfo( def bpa ){
 		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
 		def info = [
-			barcode: var.get('barcode_url').replace('$P{data}', bpa.barcode),
+			barcode: bpa.barcode,
+			barcodeurl: var.get('barcode_url').replace('$P{data}', bpa.barcode),
 			txnno: bpa.txnno,
 			txntype: bpa.txntype,
 			txndate: sdf.format( bpa.txndate ),
@@ -38,10 +39,13 @@ public class BPApplicatioService
 			ctcno: bpa.info.ctcno,
 			ctcplaceissued: bpa.info.ctcplaceissued,
 			ctcdateissued: bpa.info.ctcdateissued,
-			infos: buildAppInfo( bpa.appinfos ),
-			signatories: [],
-			requirements: []
+			infos: buildAppInfo( bpa.appinfos )
 		];
+		
+		info.signatories = (!bpa.info.appsignatories) ? [[name:'', department:'', title:'']] : bpa.info.appsignatories ;
+		info.requirements = (!bpa.info.requirements)  ? [[requirement:'', complied:'', remarks:'']] : bpa.info.requirements;
+		info.requirements.each{ it.complied = ((it.complied == true ) ? "YES" : "");  }
+		
 		return info;
 	}
 
@@ -61,32 +65,34 @@ public class BPApplicatioService
 		}
 		
 		def format = { pattern, val ->
+			if( !val ) return "";
 			def f = new java.text.DecimalFormat( pattern );
-			f.format( val );
+			return f.format( val );
 		}
 		
 		if( lob.vartype == 'integer' ) sb << format('#,##0', lob.value );
 		if( lob.vartype == 'decimal' ) sb << format('#,##0.00', lob.value );
-		if( lob.vartype == 'string' )  sb << lob.value;
+		if( lob.vartype == 'string'  ) sb << ((lob.value == null) ? "" : lob.value);
 		
 		return sb.toString().trim();
 	}
 	
 	def buildAppInfo( def infos ){
 		def appinfos = [];
-
-		infos.each{
-			appinfos << [
-				name: it.varname,
-				category: it.lobname,
-				value: getDisplayText( it ),
-			];
-		}
-		
-		appinfos.sort{ a, b ->
-			def sA = ( a.category ) ? a.category : "";
-			def bA = ( b.category ) ? b.category : "";
-			return sA <=> bA;
+		if( infos ){
+			infos.each{
+				appinfos << [
+					name: it.varname,
+					category: it.lobname,
+					value: getDisplayText( it ),
+				];
+			}
+			
+			appinfos.sort{ a, b ->
+				def sA = ( a.category ) ? a.category : "";
+				def bA = ( b.category ) ? b.category : "";
+				return sA <=> bA;
+			}
 		}
 		return appinfos;
 	}

@@ -10,22 +10,21 @@ class BPCollectionInterceptor {
 	@Service("DateService")
 	def dateService;
 	
-	@Service("BPCollectionService")
+	@Service("BPBillingService")
 	def billingSvc;
 	
 	@PersistenceContext('main')
 	def em;
 	
 	@After(pattern="ReceiptService.create") 
-	public void interceptCreateBPReceipt( evt ) {
+	public void afterCreate( evt ) {
 		def receipt = evt.result;
 		if( receipt?.doctype != 'BUSINESS_TAX' ) return;
 		
 		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]);
 		
-		def isValidForCollection =  {
-			
-		};
+		if( app.lastmodified != receipt.applicationlastmodified ) 
+			throw new Exception("Unabled to continue.\nThe document has been modified by the other user.");
 		
 		receipt.items.each{ r ->
 			app.credits << [ objid			: 'BPRCR' + new UID(),
@@ -49,6 +48,8 @@ class BPCollectionInterceptor {
 		b.lastqtrpaid = receipt.qtr;
 		b.lastyearpaid = receipt.year;
 
+		app.lastmodified = dateService.serverDate.time;
+		
 		em.update( 'business:business', b );
 		em.update( 'bpapplication:bpapplication', app );
 		
@@ -56,7 +57,7 @@ class BPCollectionInterceptor {
 			em.sqlContext.createNamedExecutor("bpcollection:updatePermitForRelease")
 			  .setParameters([applicationid: app.objid])
 			  .execute();
-			
+
 			app.docstate = 'PERMIT_PENDING';
 			em.update( 'bpapplication:bpapplication', app );
 			
@@ -76,16 +77,6 @@ class BPCollectionInterceptor {
 	public void interceptVoidBPReceipt( evt ) {;}
 	
 	def isApplicationStatusForPermit( app ){
-		def year = Integer.parseInt( new java.text.SimpleDateFormat("yyyy").format( dateService.serverDate ) );
-		def bp = em.read('bpapplication:bpapplication', [objid: app.objid]);
-		def bill = [
-			ledgerid      : bp.objid,
-			yearstarted   : bp.yearstarted,
-			lastyearpaid  : bp.lastyearpaid,
-			lastqtrpaid   : bp.lastqtrpaid,
-			taxfees       : []
-		];
-		
 		def getUnpaidReceivables = { 
 			def list = app.receivables.findAll{ it.amount > it.amtpaid };
 			if( app.txntype.matches('NEW|ADDLOB') ) return list;
@@ -93,7 +84,7 @@ class BPCollectionInterceptor {
 		}
 		
 		def taxfees = getUnpaidReceivables();
-						
+		
 		if( taxfees.findAll{ it.systype != 'BUSINESS_TAX' } ) return false;
 		if( taxfees.findAll{ it.applicationtype.matches('NEW|ADDLOB') } ) return false;
 		return true;
