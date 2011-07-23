@@ -22,6 +22,7 @@ class BPCollectionInterceptor {
 		if( receipt?.doctype != 'BUSINESS_TAX' ) return;
 		
 		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]);
+		
 		if( app.lastmodified != receipt.applicationlastmodified ) 
 			throw new Exception("Unabled to continue.\nThe document has been modified by the other user.");
 		
@@ -56,7 +57,7 @@ class BPCollectionInterceptor {
 			em.sqlContext.createNamedExecutor("bpcollection:updatePermitForRelease")
 			  .setParameters([applicationid: app.objid])
 			  .execute();
-			
+
 			app.docstate = 'PERMIT_PENDING';
 			em.update( 'bpapplication:bpapplication', app );
 			

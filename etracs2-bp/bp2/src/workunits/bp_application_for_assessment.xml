@@ -1,10 +1,10 @@
 <workunit>
     <invokers>
-        <invoker type="bp:assessment" caption="Business Application"/>
+        <invoker type="bp:assessment"  action="checkPageToLoad" caption="Business Application"/>
         <invoker type="bp:FOR_ASSESSMENT" caption="Business Application" target="window"/>
-        <invoker type="bp:FOR_APPROVAL" caption="Business Application" target="window"/>
-        <invoker type="bp:FOR_REVIEW" caption="Business Application" target="window"/>
-        <invoker type="bp:APPROVED" caption="Business Application" target="window"/>
+        <invoker type="bp:FOR_APPROVAL" action="init" caption="Business Application" target="window"/>
+        <invoker type="bp:FOR_REVIEW" action="init" caption="Business Application" target="window"/>
+        <invoker type="bp:APPROVED" action="init" caption="Business Application" target="window"/>
         
         <invoker type="formActions" action="cancelAssessment" caption="Cancel Assessment" visibleWhen="#{application.docstate != 'APPROVED'}" mnemonic="c" icon="images/cancel24.png"/>
         <invoker type="formActions" action="assess" caption="Assess" visibleWhen="#{application.docstate == 'FOR_ASSESSMENT'}" mnemonic="a" icon="images/assess24.png"/>
@@ -68,8 +68,20 @@ class BusinessApplicationForAssessment
         }
     ] as SubListModel
     
+    def requirementHandler = [
+        getRows: { return 10; },
+        getColumns: {
+            return [
+                new Column(name:"complied", caption:"?", type:"boolean", editable:(application.docstate != 'APPROVED'), maxWidth:25),
+                new Column(name:"requirement", caption:"Requirement"),
+                new Column(name:"remarks", caption:"Remarks", editable:(application.docstate != 'APPROVED'))
+            ];
+        },
+        fetchList: { return application.info.requirements; }
+    ] as SubListModel;
+    
     def taxfeeListHandler = [
-        getRows    : { return 3 },
+        getRows    : { return 10 },
         getColumns : { return [
             new Column(name:'lobname', caption:'Line of Business'),
             new Column(name:'accttitle', caption:'Account'),
@@ -97,18 +109,18 @@ class BusinessApplicationForAssessment
     
     def cancelAssessment(){ 
         def app = svc.cancelApplicationForAssessement( application.objid );
-        return InvokerUtil.lookupOpener('bp:view', [application:app] );
+        return InvokerUtil.lookupOpener('bp:open', [application:app] );
     }
     
     void submit(){
         if( MsgBox.confirm("Submit for approval?") ){
-            application = svc.submitForReview( application.objid, applist );
+            application = svc.submitForReview( application.objid, applist, application.info.requirements );
         }
     }
     
     def approve(){
         if( MsgBox.confirm("Approve?") ){
-            application = svc.approveApplication( application.objid, applist );
+            application = svc.approveApplication( application.objid, applist, application.info.requirements );
             return InvokerUtil.lookupOpener('bp:assessment', [application:application]);
         }
         return null;
@@ -134,12 +146,19 @@ class BusinessApplicationForAssessment
     def viewAssessment(){
         return InvokerUtil.lookupOpener('bp.assessmentreport', [applicationid:application.objid]);
     }
+    
+    def init(){ return "forassessment";}
+    
+    def checkPageToLoad(){ 
+        return (application.docstate == 'FOR_ASSESSMENT' ) ? "default"  : "forassessment";
+    }
 }
 
 ]]>        
         
     </code>
     <pages>
-        <page template="etracs2.bp.application.AssessmentMainPage"/>
+        <page name="forassessment" template="etracs2.bp.application.AssessmentMainPage"/>
+        <page template="etracs2.bp.application.ApplicationForAssessmentPage"/>
     </pages>
 </workunit>

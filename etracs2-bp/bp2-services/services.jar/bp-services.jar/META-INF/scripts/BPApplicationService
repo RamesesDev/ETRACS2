@@ -61,8 +61,6 @@ class BPApplicationService{
 			checkLobs( application.txntype == 'RETIRE' ? 'RETIRELOB' : application.txntype );
 		}
 
-		loadSignatoriesAndRequirements( application );
-		
 		for( it in application.lobs ){
 			if( it.assessmenttype.matches('NEW|ADDLOB') ) it.iyear = Integer.parseInt( format( dateService.serverDate, "yyyy") );
 			if( it.assessmenttype.matches('RENEW|LATE_RENEWAL') ) it.iyear = Integer.parseInt( format( application.txndate, "yyyy") );
@@ -188,6 +186,8 @@ class BPApplicationService{
 			em.update( SCHEMANAME, it );
 		}
 		
+		loadSignatoriesAndRequirements( app );
+		
 		app.docstate = 'FOR_ASSESSMENT';
 		em.update( SCHEMANAME, app );
 		
@@ -275,7 +275,7 @@ class BPApplicationService{
 	}
 	
 	@ProxyMethod
-	public def evaluateTaxesAndFees( def parentid, def list ){
+	public def evaluateTaxesAndFees( def parentid, def list, def requirements ){
 		list.each{ it ->
 		
 			def application = open( it.objid );
@@ -287,7 +287,10 @@ class BPApplicationService{
 			application.appinfos = it.infos;
 			
 			if( parentid == it.objid ){
-				if( application.docstate == 'FOR_ASSESSMENT' ) application.docstate = 'FOR_REVIEW'; 
+				if( application.docstate == 'FOR_ASSESSMENT' ) {
+					application.docstate = 'FOR_REVIEW'; 
+					application.info.requirements = requirements;
+				}
 			}
 
 			update( application );
@@ -314,11 +317,14 @@ class BPApplicationService{
 	}
 	
 	@ProxyMethod
-	public def submitForReview( def appid, def applist ){
+	public def submitForReview( def appid, def applist, def requirements ){
 		applist.each{
 			def app = open( it.objid );
 			app.taxfees = it.taxfees;
-			if( app.objid == appid ) app.docstate = 'FOR_APPROVAL';
+			if( app.objid == appid ) {
+				app.docstate = 'FOR_APPROVAL';
+				app.info.requirements = requirements;
+			}
 			em.update(  SCHEMANAME, app );
 		}
 		return open( appid );
@@ -340,11 +346,12 @@ class BPApplicationService{
 	}
 	
 	@ProxyMethod
-	public def approveApplication( def appid, def applist ){
+	public def approveApplication( def appid, def applist, def requirements ){
 		def app = open( appid );
 		if( app.docstate == 'APPROVED' ) throw new Exception('Application is already APPROVED.');
-		submitForReview( appid, applist );
+		submitForReview( appid, applist, requirements );
 		app.docstate = 'APPROVED';
+		app.info.requirements = requirements;
 		
 		def business = getBusiness( app );
 		business.applicationid = app.objid;
@@ -383,7 +390,7 @@ class BPApplicationService{
 		return val;
 	}
 
-	def createReceivable( def qtr, def businessid, def app, def it ){
+	def createReceivable( def qtr, def qtrCount, def businessid, def app, def it ){
 		def brc = [
 			objid: 'BPRC' + new UID(),
 			businessid: businessid,
@@ -412,11 +419,11 @@ class BPApplicationService{
 				if( acct.systype == 'BUSINESS_TAX' ){
 					for( int i=1; i <= 4; i++ ){
 						if( it.amountdue > 0 ){
-							app.receivables <<  createReceivable( i, business.objid, app, it );
+							app.receivables <<  createReceivable( i, 4, business.objid, app, it );
 						}
 					}
 				}else{
-					app.receivables << createReceivable( 0, business.objid, app, it );
+					app.receivables << createReceivable( 1, 1, business.objid, app, it );
 				}
 			}
 			
@@ -483,6 +490,7 @@ class BPApplicationService{
 	}
 	
 	def evaluateRenew( def application ){
+		println application.businessid;
 		def bp = em.read( 'business:business', [objid:application.businessid] );
 		if( bp.docstate != 'EXPIRED' ) throw new Exception('Only expired business can be renewed.');
 		def prevapp = open( bp.applicationid );
@@ -502,7 +510,7 @@ class BPApplicationService{
 	}
 	
 	def evaluateRetire( def application ){
-		def bp = em.read( 'business:business', [objid:application.businessid] );
+		def bp = em.read( 'bpapplication:bpapplication', [objid:application.businessid] );
 		def prevapp = open( bp.applicationid );
 		
 		application.taxpayerid = prevapp.taxpayerid;
@@ -555,10 +563,9 @@ class BPApplicationService{
 		application.info.assessmentsignatories = setting.assessmentsignatories;
 		application.info.requirements = [];
 		setting.requirements.each{
-			def req = [requirement: it.requirement,
-					   complied: false,
-					   remarks: ''];
-			application.info.requirements.add( req );
+			application.info.requirements << [requirement: it.requirement,
+											   complied: false,
+											   remarks: ''];
 		};
 	}
 	

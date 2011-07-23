@@ -1,8 +1,9 @@
 <workunit>
     <invokers>
         <invoker type="bp:DRAFT" action="initView" caption="BP Application" target="window"/>
-        <invoker type="bp:open" action="init" caption="BP Application"/>
+        <invoker type="bp:create" action="init" caption="BP Application"/>
         <invoker type="bp:view" action="initView" caption="BP Application" target="window"/>
+        <invoker type="bp:open" action="initView" caption="BP Application"/>
 
         <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c" icon="images/cancel24.png" immediate="true"/>
         <invoker type="formActions" action="edit"   caption="Edit"   mnemonic="s" icon="images/edit24.png"   immediate="true"  shortcut="ctrl S" visibleWhen="#{mode == 'view'}"/>
@@ -11,15 +12,6 @@
         
         <invoker type="formActions" action="submit"   caption="Submit" 
                  visibleWhen="#{application.docstate == 'DRAFT' and mode == 'view'}" icon="images/submit24.png"/>
-        <invoker type="formActions" action="assess"   caption="Assess"
-                 visibleWhen="#{application.docstate == 'FOR_ASSESSMENT' and mode == 'view'}" icon="images/assess24.png"/>
-        <invoker type="formActions" action="reassess" caption="Re-Assess"
-                 visibleWhen="#{application.docstate == 'FOR_APPROVAL' and mode == 'view'}" icon="images/reassess24.png"/>
-                 
-        <invoker type="formActions" 
-                 action="previewApplication" 
-                 caption="Preview Application" 
-                 visibleWhen="#{application.docstate != 'DRAFT' and mode == 'view'}" icon="images/view24.png"/>
     </invokers>
     <code>
 <![CDATA[
@@ -65,7 +57,7 @@ class BPApplication
     
     def allowedDelete( def lob ){
         if( mode != 'VIEW' ){
-            if( lob.assessmenttype == 'NEW' ) return true;
+            if( lob.assessmenttype.matches('NEW|ADDLOB') ) return true;
             if( lob.assessmenttype == 'RENEW' && application.txnmode == 'CAPTURE' ) return true;
             if( application.txntype == 'RETIRE_LINE' ) return true;
         }
@@ -151,9 +143,9 @@ class BPApplication
     def submit(){
         if( MsgBox.confirm("Submit for assessment?") ){
             application = svc.submitForAssessment( application.objid );
-            return InvokerUtil.lookupOpener('bp:assessment',[application:application]);
+            return InvokerUtil.lookupOpener('bp:assessment', [application: application]);
         }
-        return null;
+        return "default";
     }
     
     def delete(){

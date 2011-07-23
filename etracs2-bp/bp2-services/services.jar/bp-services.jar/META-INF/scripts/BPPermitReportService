@@ -5,6 +5,9 @@ public class BPPermitReportService
 	@PersistenceContext('main')
 	def em;
 	
+	@Service('Var')
+	def var;
+	
 	@ProxyMethod
 	public def getPermitReportInfo( def applicationid ){
 		def yearFormat = new java.text.SimpleDateFormat('yyyy');
@@ -17,6 +20,9 @@ public class BPPermitReportService
 		def app = em.read('bpapplication:bpapplication', [objid:applicationid]);
 
 		bp.txntype = app.txntype;
+		bp.barcode = app.barcode;
+		bp.barcodeurl = var.get('barcode_url').replace('$P{data}', app.barcode);
+		
 		bp.lines = em.serializer.read( bp.lobs );
 		bp.lobs = null;
 		

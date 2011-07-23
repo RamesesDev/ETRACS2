@@ -56,9 +56,9 @@ class BusinessApplicationAssessment
         }
 
         fieldinfos.sort{ a, b -> 
-            def atext = (a.lobname ? a.lobname : '-') + a.name 
-            def btext = (b.lobname ? b.lobname : '-') + b.name 
-            return atext <=> btext 
+            def atext = (a.lobname ? a.lobname : '-') + a.name ;
+            def btext = (b.lobname ? b.lobname : '-') + b.name ;
+            return atext <=> btext ;
         }
         return fieldinfos;
     }
@@ -84,22 +84,20 @@ class BusinessApplicationAssessment
         }
         
         app.infos = requiredforprintinfo;
-        inputtedApps.add( app );
+        inputtedApps << app;
         
         if( applist ){
             if( (index+1) < applist.size() ) {
                 app = applist[index];
                 evaluateInfo();
                 index += 1;
-                return '_default';
+                return 'default';
             }
         }
         
         app = [ infos:[] ];
-        caller.application = svc.evaluateTaxesAndFees( application.objid, inputtedApps );
-        caller.applist = [];
-        caller.applistHandler.load();
-        return '_close';
+        def bpapp = svc.evaluateTaxesAndFees( application.objid, inputtedApps, application.info.requirements );
+        return InvokerUtil.lookupOpener("bp:assessment", [application: bpapp]);
     }
     
     def back(){

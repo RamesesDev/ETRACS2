@@ -110,18 +110,20 @@ class BusinessApplication
     def onbpselect = { entity ->
         if( entity ){
             app.appno = entity.appno;
+            app.businessid = entity.businessid;
             app.objid = entity.objid;
             app.tradename = entity.tradename;
             app.businessaddress = entity.businessaddress;
         }
-        
         binding.refresh();
     }
     
     def next(){
         application.parentid = app.objid;
+        application.businessid = app.businessid;
+
         application = svc.evaluateTxnType( application );
-        return InvokerUtil.lookupOpener('bp:open', [application:application]);
+        return InvokerUtil.lookupOpener('bp:create', [application:application]);
     }
     
     public def lookupBusiness(){

@@ -23,7 +23,8 @@ public class BPApplicatioService
 	def buildInfo( def bpa ){
 		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
 		def info = [
-			barcode: var.get('barcode_url').replace('$P{data}', bpa.barcode),
+			barcode: bpa.barcode,
+			barcodeurl: var.get('barcode_url').replace('$P{data}', bpa.barcode),
 			txnno: bpa.txnno,
 			txntype: bpa.txntype,
 			txndate: sdf.format( bpa.txndate ),
@@ -38,10 +39,13 @@ public class BPApplicatioService
 			ctcno: bpa.info.ctcno,
 			ctcplaceissued: bpa.info.ctcplaceissued,
 			ctcdateissued: bpa.info.ctcdateissued,
-			infos: buildAppInfo( bpa.appinfos ),
-			signatories: [],
-			requirements: []
+			infos: buildAppInfo( bpa.appinfos )
 		];
+		
+		info.signatories = (!bpa.info.appsignatories) ? [[name:'', department:'', title:'']] : bpa.info.appsignatories ;
+		info.requirements = (!bpa.info.requirements)  ? [[requirement:'', complied:'', remarks:'']] : bpa.info.requirements;
+		info.requirements.each{ it.complied = ((it.complied == true ) ? "YES" : "");  }
+		
 		return info;
 	}
 
