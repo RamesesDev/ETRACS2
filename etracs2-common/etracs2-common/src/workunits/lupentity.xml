@@ -10,7 +10,7 @@
 import com.rameses.rcp.common.*;
 import com.rameses.rcp.annotations.*;
 
-class EntityLookupController 
+class EntityLookupController extends LookupModel 
 {
     @Service("EntityService")
     def svc;
@@ -20,27 +20,32 @@ class EntityLookupController
     def selected;
     
     def ok() {
-        if( onselect ) {
-            onselect( selected );
-        }
-        return "_close";
+        search = null
+        if( onselect ) onselect( selected )
+        return select();
     }
     
-    def listHandler = [
-        getRows    : { return 50; },
-        getColumns : {
-            return [
-                new Column(name:"entityno", caption:"Account No.", maxWidth:90),
-                new Column(name:"entityname", caption:"Account Name"),
-                new Column(name:"entityaddress", caption:"Address"),
-            ]
-        },
-        fetchList : { 
-                def list = svc.getList(searchText, null);
-                if( list ) return list;
-                throw new Exception("Record not found.");
-	},
-    ] as SubListModel;
+    def getListHandler() {
+        return this;
+    }
+    
+    int getRows() { return 20; }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"entityno", caption:"Account No.", maxWidth:90),
+            new Column(name:"entityname", caption:"Account Name"),
+            new Column(name:"entityaddress", caption:"Address"),
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getList(searchText, null);
+        if( list ) return list;
+        throw new Exception("Record not found.");
+    }
 }  
 
 
