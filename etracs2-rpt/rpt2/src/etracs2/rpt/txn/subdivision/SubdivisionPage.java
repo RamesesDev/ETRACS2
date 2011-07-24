@@ -4,7 +4,7 @@
  * Created on July 1, 2011, 4:55 PM
  */
 
-package etracs2.rpt.subdivision;
+package etracs2.rpt.txn.subdivision;
 
 import com.rameses.rcp.ui.annotations.StyleSheet;
 
@@ -12,7 +12,7 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  *
  * @author  rameses
  */
-@StyleSheet("etracs2/rpt/subdivision/SubdivisionPage.style")
+@StyleSheet("etracs2/rpt/txn/subdivision/SubdivisionPage.style")
 public class SubdivisionPage extends javax.swing.JPanel {
     
     /** Creates new form SubdivisionPage */

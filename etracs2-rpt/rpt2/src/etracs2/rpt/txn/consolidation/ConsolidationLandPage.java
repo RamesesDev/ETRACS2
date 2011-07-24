@@ -4,16 +4,16 @@
  * Created on July 18, 2011, 1:24 PM
  */
 
-package etracs2.rpt.subdivision;
+package etracs2.rpt.txn.consolidation;
 
 /**
  *
  * @author  jzamora
  */
-public class SubdivisionLandMainPage extends javax.swing.JPanel {
+public class ConsolidationLandPage extends javax.swing.JPanel {
     
     /** Creates new form SubdivisionLandMain */
-    public SubdivisionLandMainPage() {
+    public ConsolidationLandPage() {
         initComponents();
     }
     
@@ -30,7 +30,7 @@ public class SubdivisionLandMainPage extends javax.swing.JPanel {
         setLayout(new java.awt.BorderLayout());
 
         xActionBar1.setBorder(new com.rameses.rcp.control.border.XUnderlineBorder());
-        xActionBar1.setName("mainActions");
+        xActionBar1.setName("landActions");
         add(xActionBar1, java.awt.BorderLayout.NORTH);
 
         xSubFormPanel1.setHandler("opener");

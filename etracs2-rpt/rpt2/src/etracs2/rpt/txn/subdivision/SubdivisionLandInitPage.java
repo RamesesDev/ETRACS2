@@ -4,7 +4,7 @@
  * Created on July 18, 2011, 3:34 PM
  */
 
-package etracs2.rpt.subdivision;
+package etracs2.rpt.txn.subdivision;
 
 /**
  *

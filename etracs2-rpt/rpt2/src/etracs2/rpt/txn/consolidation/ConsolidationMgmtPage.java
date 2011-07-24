@@ -4,7 +4,7 @@
  * Created on February 27, 2011, 12:48 PM
  */
 
-package etracs2.rpt.subdivision;
+package etracs2.rpt.txn.consolidation;
 
 import com.rameses.rcp.ui.annotations.StyleSheet;
 
@@ -13,10 +13,10 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  * @author  jzamss
  */
 @StyleSheet("etracs2/tc/stylesheet/Listing.style")
-public class SubdivisionMgmtPage extends javax.swing.JPanel {
+public class ConsolidationMgmtPage extends javax.swing.JPanel {
     
     /** Creates new form AccountPage */
-    public SubdivisionMgmtPage() {
+    public ConsolidationMgmtPage() {
         initComponents();
     }
     
