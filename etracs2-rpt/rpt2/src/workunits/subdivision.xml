@@ -53,10 +53,8 @@ public class SubdivisionController
     
     void open() {
         subdivision     = svc.open( subdivision.objid )
-        subdividedlands = subdivision.subdividedlands
-        affectedrpus    = subdivision.affectedrpus 
-        subdivision.remove( 'subdividedlands' )
-        subdivision.remove( 'affectedrpus ' ) 
+        subdividedlands = svc.getSubdividedLands( subdivision.objid )
+        affectedrpus    = svc.getAffectedRpus( subdivision.objid )
     }
     
     void update() {
@@ -133,7 +131,7 @@ public class SubdivisionController
         return InvokerUtil.lookupOpener('faas.lookup', [searchText:searchText, 
             onselect: { faas ->
                 if( faas.docstate != 'CURRENT' ) throw new Exception('FAAS is not current.')
-                if( faas.rputype != 'land' ) throw new Exception('Selected FAAS is a ' + faas.rputype + '.\nOnly land property is allowed.')
+                if( faas.rputype != 'land' ) throw new Exception('Only land property is allowed for subdivision.')
                 faas = faasSvc.getFaasInfo( faas.objid ) 
                 subdivision.motherfaasid            = faas.objid
                 subdivision.mothertdno              = faas.tdno
@@ -153,23 +151,12 @@ public class SubdivisionController
     }
     
     def create() {
-        def data = svc.create( subdivision )
-        subdivision  = data.subdivision
-        affectedrpus = data.affectedrpus 
-        data = null
+        subdivision = svc.create( subdivision )
+        affectedrpus = svc.loadAffectedRpus( subdivision )
         return 'default'
     }   
     
-    
-    /*----------------------------------------------------------
-    *
-    * MainPage support
-    *
-    ----------------------------------------------------------*/
-    
-    
-    
-    
+
     /*----------------------------------------------------------
     *
     * SubdividedLand support
@@ -181,7 +168,6 @@ public class SubdivisionController
         return InvokerUtil.lookupOpener('subdivisionland.create', [
             subdivision : subdivision,
             onadd : { sland ->
-                sland.itemno = subdividedlands.size() + 1
                 svc.createSubdividedLand( sland  )
                 subdividedlands.add( sland )
                 landListHandler.load()
@@ -219,7 +205,6 @@ public class SubdivisionController
     def landListHandler = [
         getRows     : { return 50 },
         getColumns  : { return [
-            new Column(name:'itemno', caption:'Item No.', maxWidth:100 ),
             new Column(name:'newpin', caption:'New PIN', maxWidth:200 ),
             new Column(name:'areasqm', caption:'Area (Sqm)', maxWidth:120),
             new Column(name:'areaha', caption:'Area (Ha.)', maxWidth:120),
@@ -235,10 +220,13 @@ public class SubdivisionController
     ] as SubListModel        
     
     void validateSubdividedLand( item ) {
-        item.taxpayerid         = item.taxpayer.objid
-        item.taxpayerno         = item.taxpayer.entityno
-        item.taxpayername       = item.taxpayer.entityname
-        item.taxpayeraddress    = item.taxpayer.entityaddress
+        if( item.taxpayer ) {
+            item.taxpayerid         = item.taxpayer.objid
+            item.taxpayerno         = item.taxpayer.entityno
+            item.taxpayername       = item.taxpayer.entityname
+            item.taxpayeraddress    = item.taxpayer.entityaddress
+        }
+        svc.updateSubdividedLand( item )
     }
     
     

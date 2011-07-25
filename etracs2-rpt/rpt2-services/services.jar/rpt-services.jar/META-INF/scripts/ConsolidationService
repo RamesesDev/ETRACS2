@@ -35,6 +35,7 @@ class ConsolidationService
     def SCHEMA_NAME                  = 'consolidation'
     def CONSOLIDATEDLAND_SCHEMANAME  = 'consolidation:consolidatedland'
     def AFFECTEDRPU_SCHEMANAME       = 'consolidation:consolidationaffectedrpu'
+    def FAAS_SCHEMANAME              = 'faas:faas'
     def FAASLIST_SCHEMANAME          = 'faas:faaslist'
     
     def SCHEMA_VERSION         = '1.0'
@@ -183,6 +184,16 @@ class ConsolidationService
             arpu.newtdno = faas.info.tdno 
             arpu.newpin  = faas.rpu.fullpin 
             em.update( AFFECTEDRPU_SCHEMANAME, arpu ) 
+            //
+            //cancel previous faas 
+            def prevfaas = em.read( 'faas', [objid:arpu.prevfaasid] )
+            if( ! prevfaas ) throw new Exception('Cannot open affected FAAS with TD No. ' + arpu.prevtdno + '.')
+            prevfaas.docstate           = CANCELLED_STATE
+            prevfaas.info.cancelreason  = CONSOLIDATION_TXNTYPE
+            prevfaas.info.canceldate    = consolidation.issuedate 
+            prevfaas.info.cancelledbytdnos = arpu.newtdno 
+            em.update( FAAS_SCHEMANAME, prevfaas )
+            em.update( FAASLIST_SCHEMANAME, prevfaas )
         }
     }
     

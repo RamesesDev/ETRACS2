@@ -150,6 +150,10 @@ class RPTLedgerService
         em.validate( ledgeritem.schemaname, ledgeritem ) 
         em.create( ledger.schemaname, ledger )
         em.create( ledgeritem.schemaname, ledgeritem )
+        faas.ledgerid = ledger.objid 
+        def params = [ ledgerid:ledger.objid, objid:faas.objid ]
+        em.sqlContext.createNamedExecutor('rptledger:updateFaasLedgerId').setParameters(params).execute()
+        em.sqlContext.createNamedExecutor('rptledger:updateFaasListLedgerId').setParameters(params).execute()
         logSvc.log('CREATE', 'RPTLedger', ledger.objid)
     }
     
@@ -159,10 +163,6 @@ class RPTLedgerService
         closePreviousLedgerItemToYear( ledger, faas )
         em.update( ledger.schemaname, ledger )
         em.create( ledgeritem.schemaname, ledgeritem )
-        faas.ledgerid = ledger.objid 
-        def params = [ ledgerid:ledger.objid, objid:faas.objid ]
-        em.sqlContext.createNamedExecutor('rptledger:updateFaasLedgerId').setParameters(params).execute()
-        em.sqlContext.createNamedExecutor('rptledger:updateFaasListLedgerId').setParameters(params).execute()
         logSvc.log('CREATE_ITEM', 'RPTLedger', ledger.objid)
     }
     

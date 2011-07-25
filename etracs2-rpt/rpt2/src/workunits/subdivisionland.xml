@@ -33,44 +33,40 @@ public class SubdivisionLandController
     
     def subdivision
     def subdividedland 
-    def faas 
+    def rp
+    def rpu 
     def section = 0
     def parcel  = 0
     
     def create() {
-        subdividedland = svc.initSubdividedLand( subdivision )
-        faas = subdividedland.newfaas 
+        subdividedland =  svc.initSubdividedLand( subdivision )
+        rp = subdividedland.rp 
+        rpu = subdividedland.rpu
         return 'rp'
     }
     
     def open() {
-        section = parseInt( subdividedland.newfaas.rp.section )
-        parcel  = parseInt( subdividedland.newfaas.rp.parcel )
-        faas = subdividedland.newfaas
+        section = parseInt( subdividedland.rp.section )
+        parcel  = parseInt( subdividedland.rp.parcel )
+        rp = subdividedland.rp
+        rpu = subdividedland.rpu 
         return 'rp'
     }
 
     def validateRealProperty() {
-        def rp = svc.validateRealProperty( faas.rp, section, parcel )
-        faas.rp.putAll( rp )
-        faas.rpu.fullpin = rp.pin 
+        rp.putAll( svc.validateRealProperty( rp, section, parcel ) )
+        rpu.fullpin = rp.pin 
         return 'default' 
     }
         
     def addLand() {
-        subdividedland.newpin  = faas.rpu.fullpin 
-        subdividedland.areasqm = faas.rpu.totalareasqm
-        subdividedland.areaha  = faas.rpu.totalareaha
-        subdividedland.taxpayerid       = faas.info.taxpayerid 
-        subdividedland.taxpayerno       = faas.info.taxpayerno
-        subdividedland.taxpayername     = faas.info.taxpayername 
-        subdividedland.taxpayeraddress  = faas.info.taxpayeraddress
-        subdividedland.taxpayer = [ 
-            objid        : faas.info.taxpayerid, 
-            entityno     : faas.info.taxpayerno,
-            entityname   : faas.info.taxpayername ,
-            entityaddrss : faas.info.taxpayeraddress,
-        ]
+        subdividedland.newpin  = rpu.fullpin 
+        subdividedland.areasqm = rpu.totalareasqm
+        subdividedland.areaha  = rpu.totalareaha
+        subdividedland.taxpayerid       = subdivision.taxpayerid 
+        subdividedland.taxpayerno       = subdivision.taxpayerno
+        subdividedland.taxpayername     = subdivision.taxpayername 
+        subdividedland.taxpayeraddress  = subdivision.taxpayeraddress
         if( onadd ) {
             onadd( subdividedland)
         }
@@ -79,8 +75,8 @@ public class SubdivisionLandController
     
     def updateLand() {
         if( onupdate) {
-            subdividedland.areasqm = faas.rpu.totalareasqm
-            subdividedland.areaha  = faas.rpu.totalareaha
+            subdividedland.areasqm = rpu.totalareasqm
+            subdividedland.areaha  = rpu.totalareaha
             svc.updateSubdividedLand( subdividedland )
             onupdate( subdividedland )
         }
@@ -88,7 +84,8 @@ public class SubdivisionLandController
     }
     
     def getOpener() {
-        return InvokerUtil.lookupOpener('rpu.land', [faas:faas, rpu:faas.rpu ] )
+        def faas = [docstate:subdivision.docstate, info:[txntype:subdivision.txntype]]
+        return InvokerUtil.lookupOpener('rpu.land', [faas:faas, rpu:rpu ] )
     }
     
     def parseInt( value ) {

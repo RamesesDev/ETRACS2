@@ -12,7 +12,7 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  *
  * @author  rameses
  */
-@StyleSheet("etracs2/rpt/rp/RealPropertyPage.style")
+@StyleSheet("etracs2/rpt/rp/RealProperty.style")
 public class RealPropertyPage extends javax.swing.JPanel {
     
     /** Creates new form RealPropertyInfoPage */
@@ -64,13 +64,13 @@ public class RealPropertyPage extends javax.swing.JPanel {
         xLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel1.setCaption("Barangay");
         xLabel1.setFont(new java.awt.Font("Arial", 1, 11));
-        xLabel1.setName("faas.rp.barangay");
+        xLabel1.setName("rp.barangay");
         xLabel1.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel3.add(xLabel1);
 
         xNumberField1.setCaption("Section No.");
         xNumberField1.setFieldType(Integer.class);
-        xNumberField1.setIndex(-100);
+        xNumberField1.setIndex(-10);
         xNumberField1.setName("section");
         xNumberField1.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel3.add(xNumberField1);
@@ -83,18 +83,18 @@ public class RealPropertyPage extends javax.swing.JPanel {
         formPanel3.add(xNumberField2);
 
         xTextField3.setCaption("Cadastral Lot No.");
-        xTextField3.setName("faas.rp.cadastrallotno");
+        xTextField3.setName("rp.cadastrallotno");
         xTextField3.setPreferredSize(new java.awt.Dimension(0, 18));
         xTextField3.setRequired(true);
         formPanel3.add(xTextField3);
 
         xTextField4.setCaption("Block No.");
-        xTextField4.setName("faas.rp.blockno");
+        xTextField4.setName("rp.blockno");
         xTextField4.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel3.add(xTextField4);
 
         xTextField5.setCaption("Survey No.");
-        xTextField5.setName("faas.rp.surveyno");
+        xTextField5.setName("rp.surveyno");
         xTextField5.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel3.add(xTextField5);
 
@@ -110,8 +110,8 @@ public class RealPropertyPage extends javax.swing.JPanel {
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel3Layout.createSequentialGroup()
-                .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(32, Short.MAX_VALUE))
+                .add(formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 155, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -119,22 +119,22 @@ public class RealPropertyPage extends javax.swing.JPanel {
         jPanel4.setBorder(xTitledBorder2);
 
         xTextField6.setCaption("House No.");
-        xTextField6.setName("faas.rp.houseno");
+        xTextField6.setName("rp.houseno");
         xTextField6.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xTextField6);
 
         xTextField7.setCaption("Street");
-        xTextField7.setName("faas.rp.street");
+        xTextField7.setName("rp.street");
         xTextField7.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xTextField7);
 
         xTextField8.setCaption("Purok/Zone");
-        xTextField8.setName("faas.rp.purok");
+        xTextField8.setName("rp.purok");
         xTextField8.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xTextField8);
 
         xTextField13.setCaption("Tag/Attributes");
-        xTextField13.setName("faas.rp.attribute");
+        xTextField13.setName("rp.attribute");
         xTextField13.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel5.add(xTextField13);
 
@@ -151,7 +151,7 @@ public class RealPropertyPage extends javax.swing.JPanel {
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel4Layout.createSequentialGroup()
                 .add(formPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(75, Short.MAX_VALUE))
+                .addContainerGap(78, Short.MAX_VALUE))
         );
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -159,25 +159,25 @@ public class RealPropertyPage extends javax.swing.JPanel {
         jPanel5.setBorder(xTitledBorder3);
 
         xTextField9.setCaption("North");
-        xTextField9.setName("faas.rp.north");
+        xTextField9.setName("rp.north");
         xTextField9.setPreferredSize(new java.awt.Dimension(0, 18));
         xTextField9.setRequired(true);
         formPanel6.add(xTextField9);
 
         xTextField10.setCaption("South");
-        xTextField10.setName("faas.rp.south");
+        xTextField10.setName("rp.south");
         xTextField10.setPreferredSize(new java.awt.Dimension(0, 18));
         xTextField10.setRequired(true);
         formPanel6.add(xTextField10);
 
         xTextField11.setCaption("East");
-        xTextField11.setName("faas.rp.east");
+        xTextField11.setName("rp.east");
         xTextField11.setPreferredSize(new java.awt.Dimension(0, 18));
         xTextField11.setRequired(true);
         formPanel6.add(xTextField11);
 
         xTextField12.setCaption("West");
-        xTextField12.setName("faas.rp.west");
+        xTextField12.setName("rp.west");
         xTextField12.setPreferredSize(new java.awt.Dimension(0, 18));
         xTextField12.setRequired(true);
         formPanel6.add(xTextField12);
@@ -195,7 +195,7 @@ public class RealPropertyPage extends javax.swing.JPanel {
             jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel5Layout.createSequentialGroup()
                 .add(formPanel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 106, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(52, Short.MAX_VALUE))
+                .addContainerGap(94, Short.MAX_VALUE))
         );
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
@@ -210,15 +210,15 @@ public class RealPropertyPage extends javax.swing.JPanel {
                         .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(31, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel1Layout.createSequentialGroup()
                 .add(11, 11, 11)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                    .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .add(jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .add(117, 117, 117))
