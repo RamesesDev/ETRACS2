@@ -104,6 +104,10 @@ class RPTLedgerService
         return [PENDING_STATE, APPROVED_STATE, CANCELLED_STATE]
     }
     
+    
+    /*-------------------------------------------------------------------
+    * Posting Methods 
+    -------------------------------------------------------------------*/
 	@ProxyMethod
     public void post( faasid ) {
         def faas = openFaas( faasid )
@@ -113,6 +117,32 @@ class RPTLedgerService
         else throw new Exception('RPTLedgerService.post: Posting of TxnType ' + faas.txntype + ' is not yet supported.')        
     }
     
+    @ProxyMethod
+    public void postSubdivisionFaas( faasid ) {
+        def faas = openFaas( faasid )   
+        if( faas.rputype == LAND_TYPE ) {
+            postNewLedger( faas, APPROVED_STATE )
+        }
+        else {
+            postLedgerItem( faas ) 
+        }
+    }
+    
+    @ProxyMethod
+    public void postConsolidatedFaas( faasid ) {
+        def faas = openFaas( faasid )   
+        if( faas.rputype == LAND_TYPE ) {
+            postNewLedger( faas, APPROVED_STATE )
+        }
+        else {
+            postLedgerItem( faas ) 
+        }
+    }
+    
+    
+    /*-------------------------------------------------------------------
+    * Support Methods 
+    -------------------------------------------------------------------*/
     void postNewLedger( faas, state ) {
         def ledger = createLedger( faas, state)
         def ledgeritem = createLedgerItem( ledger )
@@ -129,6 +159,10 @@ class RPTLedgerService
         closePreviousLedgerItemToYear( ledger, faas )
         em.update( ledger.schemaname, ledger )
         em.create( ledgeritem.schemaname, ledgeritem )
+        faas.ledgerid = ledger.objid 
+        def params = [ ledgerid:ledger.objid, objid:faas.objid ]
+        em.sqlContext.createNamedExecutor('rptledger:updateFaasLedgerId').setParameters(params).execute()
+        em.sqlContext.createNamedExecutor('rptledger:updateFaasListLedgerId').setParameters(params).execute()
         logSvc.log('CREATE_ITEM', 'RPTLedger', ledger.objid)
     }
     
@@ -138,7 +172,7 @@ class RPTLedgerService
     Map createLedger( faas, state ) {
         def ledger = [:]
         ledger.putAll( faas )
-        ledger.objid            = faas.fullpin + '-' + faas.claimno
+        ledger.objid            = 'L' + new UID()
         ledger.claimno          = faas.claimno 
         ledger.schemaname       = LEDGER_SCHEMA
         ledger.schemaversion    = SCHEMA_VERSION
@@ -200,8 +234,7 @@ class RPTLedgerService
     }
     
     Map openLedger( faas ) {
-        def ledgerid = faas.fullpin + '-' + faas.claimno 
-        def ledger = em.read(LEDGER_SCHEMA, [ objid:ledgerid] )
+        def ledger = em.read(LEDGER_SCHEMA, [ objid:faas.ledgerid] )
         if( ! ledger ) throw new Exception('Ledger for FAAS ' + faas.tdno  + ' does not exists.\nKindly ask assistance from Land Tax.')
         return ledger 
     }

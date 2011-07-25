@@ -21,8 +21,9 @@ class ETRACSUserService
 	public def getList( searchText, params ) {
 		if( ! searchText ) return getListByName("etracsuser:getList", [:], params);
 		def result = [];
-		if( (result = getListByName("etracsuser:findByUid", [uid:searchText], params)) ) return result;
-		if( (result = getListByName("etracsuser:findByLastName", [uid:searchText], params)) ) return result;
+        def criteria = [uid:searchText, lastname:searchText+'%']
+		if( (result = getListByName("etracsuser:findByUid", criteria, params)) ) return result;
+		if( (result = getListByName("etracsuser:findByLastName", criteria, params)) ) return result;
 		return result;
 	}
     

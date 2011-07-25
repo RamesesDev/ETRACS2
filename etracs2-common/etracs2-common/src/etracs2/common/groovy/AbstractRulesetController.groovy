@@ -9,9 +9,10 @@ public abstract class AbstractRulesetController
 {
     abstract def getBinding()
     abstract def getAbstractRuleService()
+    abstract def getHtmlRuleService() 
     abstract String getRuleset()
     abstract String getOpenerName()
-    
+            
     def searchText
     def selectedItem 
     def list = []
@@ -63,7 +64,7 @@ public abstract class AbstractRulesetController
     ] as PageListModel
     
     def getHtml() {
-        abstractRuleService.getHtml( selectedItem?.objid )
+        return htmlRuleService.getHtml( selectedItem?.objid )
     }
     
     /*------------------------------------------------------------------

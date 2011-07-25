@@ -1,3 +1,8 @@
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+// date      : 17 july 2011
+-->
 <workunit>
     <invokers>
         <invoker type="faas.lookup" action="init" caption="FAAS Lookup" target="popup" />
@@ -7,46 +12,50 @@
         
 <![CDATA[
 
-import com.rameses.rcp.common.*;
-import com.rameses.rcp.annotations.*;
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
 
-class LookupFAASController extends LookupModel 
+class FaasLookupController extends LookupModel 
 {
     @Service("FAASService")
-    def svc;
+    def svc
     
-    def onselect;
-    def searchText;
-    def selected;
+    def onselect
+    def searchText
+    def selected
     
-    void init() {;}
+    void init(){
+    }
     
-     def ok() {
+    
+    def ok() {
         search = null
         if( onselect ) onselect( selected )
-        return select();
+        return select()
     }
     
     def getListHandler() {
-        return this;
+        return this
     }
     
-    int getRows() { return 20; }
+    int getRows() { return 25 }
     
     Column[] getColumns() {
         return [
-            new Column(name:"tdno", caption:"Code", width:70),
-            new Column(name:"taxpayername", caption:"Name"),
-            new Column(name:"taxpayeraddress", caption:"Address"),
+            new Column(name:"fullpin", caption:"PIN", maxWidth:150),
+            new Column(name:"tdno", caption:"TD No.", maxWidth:150),
+            new Column(name:"taxpayername", caption:"Taxpayer"),
+            new Column(name:"docstate", caption:"State", maxWidth:150),
+
         ]
     }
     
     List fetchList( Map params ) { 
         def s = search
         if( !s ) s = searchText 
-        def list = svc.getLookupList( s, params);
-        if( list ) return list;
-        throw new Exception("Record not found.");
+        def list = svc.getList( s, params)
+        if( list ) return list
+        throw new Exception("Record not found.")
     }
 }  
 
@@ -56,6 +65,6 @@ class LookupFAASController extends LookupModel
     </code>
     
     <pages>
-        <page template="etracs2.rpt.LookupPage"/>
+        <page template="etracs2.common.LookupPage"/>
     </pages>
 </workunit>

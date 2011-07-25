@@ -35,8 +35,10 @@ SELECT MIN(fromyear) AS minfromyear FROM rptledgeritem WHERE parentid = $P{paren
 
 
 
+[updateFaasLedgerId]
+UPDATE faas SET ledgerid = $P{ledgerid} WHERE objid = $P{objid}
 
-
-
+[updateFaasListLedgerId]
+UPDATE faaslist SET ledgerid = $P{ledgerid} WHERE objid = $P{objid}
 
 

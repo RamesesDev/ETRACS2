@@ -1,35 +1,44 @@
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
 <workunit>
     <invokers>
-        <invoker type="entity.lookup" caption="Entity Lookup" target="popup" />
+        <invoker type="entity.lookup" action="init" caption="Land Assess Level Lookup" target="popup" />
     </invokers>
     
     <code>
         
 <![CDATA[
 
-import com.rameses.rcp.common.*;
-import com.rameses.rcp.annotations.*;
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
 
 class EntityLookupController extends LookupModel 
 {
     @Service("EntityService")
-    def svc;
+    def svc
     
-    def onselect;
-    def searchText;
-    def selected;
+    def onselect
+    def searchText
+    def ry
+    def selected
+    
+    void init(){
+    }
+    
     
     def ok() {
         search = null
         if( onselect ) onselect( selected )
-        return select();
+        return select()
     }
     
     def getListHandler() {
-        return this;
+        return this
     }
     
-    int getRows() { return 20; }
+    int getRows() { return 25 }
     
     Column[] getColumns() {
         return [
@@ -42,9 +51,9 @@ class EntityLookupController extends LookupModel
     List fetchList( Map params ) { 
         def s = search
         if( !s ) s = searchText 
-        def list = svc.getList(searchText, null);
-        if( list ) return list;
-        throw new Exception("Record not found.");
+        def list = svc.getList( s, params)
+        if( list ) return list
+        throw new Exception("Record not found.")
     }
 }  
 

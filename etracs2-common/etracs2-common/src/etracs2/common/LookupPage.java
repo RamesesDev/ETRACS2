@@ -35,7 +35,7 @@ public class LookupPage extends javax.swing.JPanel {
         setPreferredSize(new java.awt.Dimension(484, 334));
         xDataTable1.setHandler("listHandler");
         xDataTable1.setImmediate(true);
-        xDataTable1.setIndex(-10);
+        xDataTable1.setIndex(-100);
         xDataTable1.setName("selected");
 
         xButton1.setMnemonic('c');
@@ -46,6 +46,7 @@ public class LookupPage extends javax.swing.JPanel {
         xButton2.setText("OK");
         xButton2.setDefaultCommand(true);
         xButton2.setDepends(new String[] {"selected"});
+        xButton2.setIndex(-10);
         xButton2.setName("ok");
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);

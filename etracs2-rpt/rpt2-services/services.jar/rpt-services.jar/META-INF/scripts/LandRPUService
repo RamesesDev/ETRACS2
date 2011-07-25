@@ -19,9 +19,9 @@ class LandRPUService
     
     
     @ProxyMethod
-    public Map initLandRpu( faas ) {
-        rpuSvc.buildCommonRpuInfo( faas )
-        def rpuinfo = faas.rpu.info 
+    public Map initLandRpu( rpu ) {
+        rpuSvc.buildCommonRpuInfo( rpu )
+        def rpuinfo = rpu.info 
         //
         //land specific info
         rpuinfo.idleland = false 
@@ -45,7 +45,7 @@ class LandRPUService
             assessedvalue   : 0.0,
         ]
         rpuinfo.adjustments = []
-        return faas 
+        return rpu
     }
     
     
@@ -54,10 +54,10 @@ class LandRPUService
         //calculate areas 
         if( landdetail.areatype == 'SQM' ) {
             landdetail.areasqm = landdetail.area 
-            landdetail.areaha  = landdetail.area / 10000 
+            landdetail.areaha  = landdetail.area / 10000.0
         }
         else {
-            landdetail.areasqm = landdetail.area * 10000 
+            landdetail.areasqm = landdetail.area * 10000.0
             landdetail.areaha  = landdetail.area 
         }
         
@@ -178,7 +178,8 @@ class LandRPUService
     
     @ProxyMethod
     public List lookupStripping( ry, actualuseid, searchText, params) {
-        def searchValue = (searchText ? searchText+'%' : '%')
+        println "ry: $ry  actualuseid: $actualuseid"
+        def searchValue = (searchText ? searchText : '-1')
         def criteria = [ry:ry, actualuseid:actualuseid, striplevel:searchValue ]
         return getListByName('landrpu:lookupStripping', criteria, params)
     }

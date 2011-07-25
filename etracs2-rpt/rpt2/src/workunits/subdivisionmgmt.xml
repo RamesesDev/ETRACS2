@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
+<workunit>
+    <invokers>
+        <invoker folderid="menu/rpt/txn" caption="Subdivision Management" mnemonic="s" />
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null and selectedItem.objid != null}" immediate="true" caption="Open" mnemonic="o" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+public class SubdivisionMgmtController 
+{
+    @Binding 
+    def binding
+    
+    @Service('SubdivisionService')
+    def svc 
+    
+    String searchText
+    def selectedItem
+    List list
+    
+    def create() {
+        return InvokerUtil.lookupOpener('subdivision.create', [subdivision:selectedItem])
+    }
+    
+    def open() {
+        return InvokerUtil.lookupOpener('subdivision.open', [subdivision:selectedItem])
+    }
+    
+    
+    void search() {
+        list = null
+        listHandler.load()
+    }
+    
+    def listHandler =[
+        getRows    : { return 25 },
+        getColumns : { return [
+            new Column( name:'docstate', caption:'State', maxWidth:100 ),
+            new Column( name:'motherpin', caption:'Mother PIN', maxWidth:150),
+            new Column( name:'mothertdno', caption:'Mother TD No.', maxWidth:150 ),
+            new Column( name:'motherclasscode', caption:'Class', maxWidth:60 ),
+            new Column( name:'mothercadastrallotno', caption:'Cadastral', maxWidth:120),
+            new Column( name:'mothertaxpayername', caption:'Taxpayer'),
+        ]},
+        fetchList  : {
+            if( ! list  ) {
+                list = svc.getList( searchText, it )
+            }
+            return list 
+        }
+    ] as PageListModel
+    
+
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.txn.subdivision.SubdivisionMgmtPage"/>
+    </pages>
+</workunit>
