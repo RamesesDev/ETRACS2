@@ -44,7 +44,7 @@ public class BPBillingRuleHtmlService
         
         rule.conditions.each { cond ->
             html += "<tr>"
-            html += '<td>' + svc.buildFactCondition( cond, null ) + '</td>'
+            html += '<td>' + cond.displaytext + '</td>'
             html += "</tr>"
         }
         html += "</table>"
@@ -60,12 +60,7 @@ public class BPBillingRuleHtmlService
         
         rule.actions.each { action ->
             html += "<tr>"
-            if( action.opener == 'bpbillingrule_action_discount') {
-                html += "<td>Calculate Discount using the formula : $action.expr</td>"
-            }
-            else {
-                html += "<td>Calculate $action.accttitle using the formula : $action.expr</td>"
-            }
+            html += '<td>' + action.displaytext + '</td>'
             html += "</tr>"
         }
         html += "</table>"
