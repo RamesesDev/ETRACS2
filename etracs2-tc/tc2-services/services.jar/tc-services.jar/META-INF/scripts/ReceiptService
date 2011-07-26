@@ -134,7 +134,7 @@ class ReceiptService
 	}
 	
 	void validate( receipt ) {
-		checkDuplicateSerialNo( receipt.objid, receipt.info.serialno )
+		checkDuplicateSerialNo( receipt.objid, receipt.info.afid, receipt.info.serialno )
 		if( receipt.info.amount < 0 ) {
 			throw new Exception('Amount Due must be greater than zero.')
 		}
@@ -182,9 +182,9 @@ class ReceiptService
 		receipt.iday   = dt.day
 	}
 	
-	void checkDuplicateSerialNo( objid, serialno ) {
+	void checkDuplicateSerialNo( objid, afid, serialno ) {
 		if( ! serialno ) return;
-		def rct = em.sqlContext.createNamedQuery('receipt:checkDuplicateSerialNo').setParameter('serialno', serialno).singleResult
+		def rct = em.sqlContext.createNamedQuery('receipt:checkDuplicateSerialNo').setParameters([serialno:serialno, afid:afid]).singleResult
 		if( rct && rct.objid != objid ) throw new Exception("Duplicate Serial No. $serialno found.")
 	}
 	

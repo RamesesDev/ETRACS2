@@ -48,7 +48,7 @@ SELECT voided FROM receipt WHERE objid = $P{objid}
 SELECT serialno FROM receiptlist WHERE objid = $P{objid} 
 
 [checkDuplicateSerialNo]
-SELECT objid, serialno FROM receiptlist WHERE serialno = $P{serialno} 
+SELECT objid, serialno FROM receiptlist WHERE serialno = $P{serialno} AND afid = $P{afid} 
 
 
 
