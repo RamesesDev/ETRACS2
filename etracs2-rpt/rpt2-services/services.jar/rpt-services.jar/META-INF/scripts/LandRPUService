@@ -62,8 +62,10 @@ class LandRPUService
         }
         
         //adjust unitvalue if stripping is set 
-        if( landdetail.strippingid && landdetail.striprate > 0) {
-            landdetail.unitvalue = numberSvc.round( landdetail.basemarketvalue * landdetail.striprate / 100.0 )
+        if( landdetail.stripping && landdetail.stripping.striprate > 0) {
+            landdetail.strippingid = landdetail.stripping.objid 
+            landdetail.striprate   = landdetail.stripping.striprate 
+            landdetail.unitvalue = numberSvc.round( landdetail.basevalue * landdetail.striprate / 100.0 )
         }
         
         //reset values to 0.0
@@ -178,7 +180,6 @@ class LandRPUService
     
     @ProxyMethod
     public List lookupStripping( ry, actualuseid, searchText, params) {
-        println "ry: $ry  actualuseid: $actualuseid"
         def searchValue = (searchText ? searchText : '-1')
         def criteria = [ry:ry, actualuseid:actualuseid, striplevel:searchValue ]
         return getListByName('landrpu:lookupStripping', criteria, params)
