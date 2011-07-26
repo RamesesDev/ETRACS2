@@ -1,0 +1,45 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class BPApplicationService{
+	
+	def SCHEMANAME = 'lob:lobattribute';
+	
+	@PersistenceContext('main')
+	def em;
+	
+	@ProxyMethod
+	public def getList( search, def param ){
+		def name = (search) ? search+'%' : '%';
+		return em.sqlContext.createNamedQuery("lob:getAttributes")
+			     .setParameters( [name: name] )
+		         .resultList;
+	}
+	
+	@ProxyMethod
+	public def create(def attribute){
+		attribute.objid = ( attribute.name ) ? attribute.name.replaceAll(' ', '_') : "ID";
+		if( em.read( SCHEMANAME, [objid: attribute.objid] ) )
+			throw new Exception("Attribute already exist.");
+		
+		em.validate( SCHEMANAME, attribute );
+		em.create( SCHEMANAME, attribute );
+		return attribute;
+	}
+	
+	@ProxyMethod
+	public def update(def attribute){
+		if( !em.read( SCHEMANAME, [objid: attribute.objid] ) ) 
+			throw new Exception("Attribute is no longer exist.");
+		em.update( SCHEMANAME, attribute );
+		return attribute;
+	}
+
+	@ProxyMethod
+	public void delete(def attribute){
+		if( !em.read( SCHEMANAME, [objid: attribute.objid] ) ) 
+			throw new Exception("Attribute is no longer exist.");
+		em.delete( SCHEMANAME, attribute );
+	}
+}

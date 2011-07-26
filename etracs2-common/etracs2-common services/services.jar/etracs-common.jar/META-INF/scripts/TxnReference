@@ -7,11 +7,14 @@ class TxnReference{
 	@Service('DateService')
 	def dateService;
 	
+	@PersistenceContext('main')
+	def em;
+	
 	def SCHEMANAME = 'txnreference:txnreference';
 	
 	@ProxyMethod
-	public def insert( def em, def objid, def refid, def refname, def message ){
-		checkReference( em, objid );
+	public def insert( def objid, def refid, def refname, def message ){
+		checkReference( objid );
 		def txn = [objid: objid, refid:refid, refname:refname, message:message, txndate:dateService.serverDate];
 		em.validate( SCHEMANAME, txn );
 		em.create( SCHEMANAME, txn );
@@ -19,22 +22,21 @@ class TxnReference{
 	}
 	
 	@ProxyMethod
-	public def delete( def em, def objid ){
-        def txn = get( em, objid )
-		em.delete( SCHEMANAME, [objid:objid]);
-        return txn 
+	public def delete( def objid ){
+		def txn = get( objid );
+		if( txn ) em.delete( SCHEMANAME, txn );
+		return txn;
 	}
 	
 	@ProxyMethod
-	public def get( def em, def objid ){
+	public def get( def objid ){
 		return em.read( SCHEMANAME, [objid: objid] );
 	}
 	
 	@ProxyMethod
-	public void checkReference(def em, def objid ){
-		def txn = get( em, objid );
-        if( txn ) {
-            throw new Exception( txn.message );
-        }
+	public void checkReference( def objid ){
+		def txn = get( objid );
+		if( txn ) throw new Exception( txn.message );
 	}
+	
 }
