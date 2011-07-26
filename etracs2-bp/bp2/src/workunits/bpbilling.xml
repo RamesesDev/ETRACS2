@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker folderid="/menu/bp" action="view" caption="Business Billing" />
+        
+        <invoker type="formActions" action="close" immediate="true" caption="Close" />
+        <invoker type="formActions" action="viewReport" caption="Preview" />
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.osiris2.reports.*;
+        
+        public class BPBillingController {
+
+            @Service('BPBillingService')
+            def svc;
+            
+            @Caller
+            def caller;
+            
+            @Binding
+            def binding;
+            
+            def entity = [:];
+            
+            def mode = 'init';
+            
+            def report = [
+                getReportName : { return 'bp/billing' },
+                getReportData : { return svc.getBilling( entity ) }, 
+                getParameters : { 
+                    def params = paramsvc.getStandardParameter( OsirisContext.env.USERNAME );
+                    return params;
+                }
+            ] as ServerReportModel;
+            
+            def close() {
+                return '_close';
+            }
+            
+            def view() {
+                mode = 'init';
+                entity = [
+                    info : [:]
+                ];
+                return 'init';
+            }
+            
+            def viewReport() {
+                mode = 'view';
+                report.viewReport();
+                return 'report';
+            }
+            
+            
+            def onselectTaxpayer = { st ->
+                entity.info.taxpayerid = st.objid;
+                entity.info.taxpayername = st.entityname;
+                entity.info.taxpayeraddress = st.entityaddress;
+                binding.refresh();
+            }
+            
+            def lookupTaxpayer() {
+                return InvokerUtil.lookupOpener( 'entity:lookup', [onselect:onselectTaxpayer, searchText:entity.info.taxpayername] );
+            }
+
+        }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page name="init" template="etracs2.bp.billing.BPBillingInitPage" />
+        <page name="report" template="etracs2.bp.PreviewPage" />
+    </pages>
+</workunit>

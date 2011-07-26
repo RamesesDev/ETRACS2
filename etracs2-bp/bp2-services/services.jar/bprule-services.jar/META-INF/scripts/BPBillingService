@@ -15,8 +15,68 @@ public class BPBillingService
 	@Resource("RuleService/local")
 	def ruleService;
 	
+	@Service("DateService")
+	def dtService;
+	
+	@Service("BPSettingService")
+	def bpSettingService;
+	
+	def setting;
+	
+	@ProxyMethod
+	public def getBilling( billing ) {
+		def businesslist = getBusinessByTaxpayer( billing.info.taxpayerid );
+		billing.items = [];
+		for ( business in businesslist ) {
+			def item = [
+				tradename 	: business.tradename,
+				address		: business.businessaddress,
+				ledgerid	: business.objid,
+				yearstarted	: business.yearstarted,
+				lastyearpaid: business.lastyrpaid,
+				lastqtrpaid	: business.lastqtrpaid,
+				taxfees		: getUnpaidTaxFeesByBusinessId( business.objid )
+			];
+			billing.items += buildBill( item );
+		}
+		print "Billing> " + billing;
+		return billing;
+	}
+	
+	private def getBusinessByTaxpayer( taxpayerid ) {
+		return em.sqlContext.createNamedQuery( 'business:getListByTaxpayerid' ).setParameters( [taxpayerid:taxpayerid] ).resultList;
+	}
+	
+	private def getTaxFeesByBusinessId( buisnessid ) {
+		return em.sqlContext.createNamedQuery( 'bpledger:getBPReceivablesByBusinessId' ).setParameters( [businessid:businessid] ).resultList;
+	}
+	
+	private def getUnpaidTaxFeesByBusinessId( businessid ) {
+		def taxfees = [];
+		def apps = getApplicationsByBusinessId( businessid );
+		for ( app in apps ) {
+			taxfees += getUnpaidTaxFeesByApplication( app );
+		}
+		return taxfees;
+	}
+	
+	private def getApplicationsByBusinessId( businessid ) {
+		return em.sqlContext.createNamedQuery( 'business:getApplicationsByBusinessId' ).setParameters( [businessid:businessid] ).resultList;
+	}
+	
+	private def getUnpaidTaxFeesByApplication( app ) {
+		def taxfees = [];
+		def receivables = em.serializer.read( app.receivables );
+		for ( rc in receivables ) {
+			if ( rc.amtpaid < rc.amount )
+				taxfees += rc;
+		}
+		return taxfees;
+	}
+	
 	@ProxyMethod
 	public def buildBill( bill ) {
+		setting = bpSettingService.getSetting();
 		def facts = createFacts( bill  )
 		def actionList = ruleService.createRuleAction()
 		buildActionCommands( bill, facts, actionList )
@@ -37,11 +97,10 @@ public class BPBillingService
 	
 	def createCYFact( ) {
 		def cyfact = ruleService.createFact('bpbilling','bp.billing.facts.CurrentYearFact')
-        //test data only 
-		cyfact.year  = 2011 
-		cyfact.qtr   = 2 
-		cyfact.month = 6 
-		cyfact.day   = 14
+		cyfact.year  = dtService.getServerYear();
+		cyfact.qtr   = dtService.getServerQtr();
+		cyfact.month = dtService.getServerMonth();
+		cyfact.day   = dtService.getServerDay();
 		return cyfact
 	}
 	
@@ -53,7 +112,6 @@ public class BPBillingService
 		ledgerFact.lastyearpaid = bill.lastyearpaid
 		ledgerFact.lastqtrpaid  = bill.lastqtrpaid
 		facts += ledgerFact 
-		
 		bill.taxfees.each {
 			def tffact = ruleService.createFact('bpbilling','bp.billing.facts.TaxFeeFact')
 			tffact.taxfeeid = it.objid 
@@ -61,7 +119,7 @@ public class BPBillingService
 			tffact.lobid = it.lobid 
 			tffact.lobname = it.lobname 
 			tffact.year = it.year
-			tffact.qtr = it.qtr 
+			tffact.qtr = it.qtr
 			tffact.acctid = it.acctid
 			tffact.accttitle = it.accttitle
 			tffact.amount    = it.amount 
@@ -70,7 +128,11 @@ public class BPBillingService
 			tffact.discount = 0.0
 			tffact.monthsfromjan = calculateNoOfMonthsFromJan( cyfact, it.year, it.qtr )
 			tffact.monthsfromqtr = calculateNoOfMonthsFromQtr( cyfact, it.year, it.qtr )
-			facts += tffact 
+			tffact.daysfromjan = calculateNoOfDaysFromJan( cyfact, it.year, it.qtr )
+			tffact.daysfromqtr = calculateNoOfDaysFromQtr( cyfact, it.year, it.qtr )
+			tffact.applysurcharge = isApplySurcharge( cyfact, it.year, it.qtr )
+			tffact.applydiscount = isApplyDiscount( cyfact, it.year, it.qtr )
+			facts += tffact
 		}
 		return facts 
 	}
@@ -92,7 +154,7 @@ public class BPBillingService
 			return nm < 0 ? 0 : nm
 		}
 	}
-	
+
 	int calculateNoOfMonthsFromJan(currentFact, year, qtr) {
 		int currYear = currentFact.year
 		int currMonth = currentFact.month
@@ -103,6 +165,83 @@ public class BPBillingService
 			return currMonth
 		}
 	}
+	
+	int calculateNoOfDaysFromJan( currentFact, year, qtr ) {
+		if ( qtr > currentFact.qtr && year == currentFact.year )
+			return 0;
+		
+		def cal = Calendar.instance;
+		cal.set( Calendar.MONTH, currentFact.month - 1 );
+		cal.set( Calendar.DATE, currentFact.day );
+		cal.set( Calendar.YEAR, currentFact.year );
+		
+		def dayCount = cal.get( Calendar.DAY_OF_YEAR );
+		
+		return dayCount;
+	}
+	
+	int calculateNoOfDaysFromQtr( currentFact, year, qtr ) {
+		def cal = Calendar.instance;
+		cal.set( Calendar.MONTH, (qtr - 1) * 3 );
+		cal.set( Calendar.YEAR, currentFact.year );
+		cal.set( Calendar.DATE, 1 );
+		def dayCount = cal.get( Calendar.DAY_OF_YEAR );
+		
+		if ( qtr > currentFact.qtr && year == currentFact.year )
+			return 0;
+			
+		cal.set( Calendar.MONTH, currentFact.month - 1 );
+		cal.set( Calendar.DATE, currentFact.day );
+		
+		dayCount = cal.get( Calendar.DAY_OF_YEAR ) - dayCount + 1;
+		
+		def tempYear = year;
+		while ( tempYear < currentFact.year ) {
+			cal.set( Calendar.MONTH, 11 );
+			cal.set( Calendar.YEAR, tempYear );
+			cal.set( Calendar.DATE, 31 );
+			dayCount += cal.get( Calendar.DAY_OF_YEAR );
+			tempYear++;
+		}
+		
+		return dayCount;
+	}
+	
+	boolean isApplySurcharge( currentFact, year, qtr ) {
+		if ( year < currentFact.year )
+			return true;
+		if ( qtr < currentFact.qtr )
+			return true;
+		def surchargedue = setting.collection.qtr1surcharge;
+		if ( qtr == 1 && surchargedue.month < currentFact.month)
+			return true;
+		if ( qtr == 1 && currentFact.month == surchargedue.month && currentFact.day < surchargedue.day )
+			return true;
+		surchargedue = setting.collection.qtr2surcharge;
+		if ( qtr == 2 && surchargedue.month < currentFact.month )
+			return true;
+		if ( qtr == 2 && currentFact.month == surchargedue.month && currentFact.day < surchargedue.day )
+			return true;
+		surchargedue = setting.collection.qtr3surcharge;
+		if ( qtr == 3 &&  surchargedue.month < currentFact.month )
+			return true;
+		if ( qtr == 3 && currentFact.month == surchargedue.month && currentFact.day < surchargedue.day )
+			return true;
+		surchargedue = setting.collection.qtr4surcharge;
+		if ( qtr == 4 && surchargedue.month < currentFact.month )
+			return true;
+		if ( qtr == 4 && currentFact.month == surchargedue.month && currentFact.day < surchargedue.day )
+			return true;
+		return false;
+	}
+	
+	boolean isApplyDiscount( currentFact, year, qtr ) {
+		def discountdue = setting.collection.discount;
+		if ( currentFact.year == year && currentFact.month <= discountdue.month && currentFact.day <= currentFact.day )
+			return true;
+		return false;
+	}
+	
 }	
 
 class CalcSurchargeHandler implements RuleActionHandler 
@@ -135,7 +274,7 @@ class CalcInterestHandler implements RuleActionHandler
 		//drools.update( taxfee )
 	}
 	
-	void updateInterest( taxfee) {
+	void updateInterest( taxfee ) {
 		def tf = bill.taxfees.find{ it.objid == taxfee.taxfeeid }
 		tf.interest = 0.0
 		if( taxfee ) {

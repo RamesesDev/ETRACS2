@@ -102,10 +102,6 @@ public class LandRPUController
         return InvokerUtil.lookupOpener('landassesslevel.lookup', [ry:rpu.ry] )
     }
     
-    def getLookupStripping() {
-        return  InvokerUtil.lookupOpener('lcuvstripping.lookup', [ry:rpu.ry, actualuseid:selectedLand?.actualuseid] )
-    }
-    
     def landListHandler = [
         createItem : { return createLandDetail() },
         getColumns : { return [
@@ -114,7 +110,7 @@ public class LandRPUController
             new Column(name:'actualusename', caption:'Actual Use', maxWidth:100 ),
             new Column(name:'taxable', caption:'Tax?', type:'boolean', maxWidth:50, editable:true ),
             new Column(name:'al', caption:'Assess Level*', type:'lookup', handler:lookupAssessLevel, expression:'#{assesslevelcode}', maxWidth:100, editable:true ),
-            new Column(name:'stripping', caption:'Strip', type:'lookup', handler:lookupStripping, editable:true, maxWidth:50 ),
+            new Column(name:'striplevel', caption:'Strip', editable:true, maxWidth:50 ),
             new Column(name:'area', caption:'Area*', type:'decimal', format:'#,##0.0000',editable:true, maxWidth:100 ),
             new Column(name:'unitvalue', caption:'Unit Value', type:'decimal', maxWidth:100),
             new Column(name:'basemarketvalue', caption:'Base Market Value', type:'decimal', maxWidth:100),
@@ -132,7 +128,7 @@ public class LandRPUController
         onColumnUpdate : { item, colName -> 
             if( colName == 'subclass' ) updateSubClassInfo( item )
             else if( colName == 'al' ) updateAssessLevelInfo( item )
-            else if( colName == 'stripping') updateStrippingInfo( item )
+            else if( colName == 'striplevel') updateStrippingInfo( item )
         },
         fetchList      : { return rpu.info.landdetails  },
     ] as SubListModel
@@ -192,9 +188,13 @@ public class LandRPUController
     }
     
     void updateStrippingInfo( item ) {
-        item.strippingid = item.stripping?.stripid 
-        item.striplevel = item.stripping?.striplevel  
-        item.striprate = item.stripping?.striprate 
+        def stripping = svc.lookupStripping( rpu.ry, item.actualuseid, item.striplevel, null )
+        if( stripping ) {
+            item.stripping = stripping[0]
+            item.strippingid = stripping[0].stripid 
+            item.striplevel = stripping[0].striplevel  
+            item.striprate = stripping[0].striprate 
+        }
     }
     
     void applyLandAdjustments( landdetail ) {
