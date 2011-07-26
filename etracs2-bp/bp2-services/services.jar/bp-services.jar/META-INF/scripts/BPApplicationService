@@ -87,11 +87,10 @@ class BPApplicationService{
 		application.credits = [];
 		
 		def msg = 'Unable to process transaction. \nBusiness application is currently reference by a ' + application.txntype + ' transaction';
-		txnSvc.insert( application.objid, application.objid, 'BPApplication', msg );
+		if( application.businessid ) txnSvc.insert( application.businessid, application.objid, 'BPApplication', msg );
 		
 		em.validate( SCHEMANAME, application );
 		em.create( SCHEMANAME, application );
-		
 		return application;
 	}
 	
@@ -156,9 +155,8 @@ class BPApplicationService{
 	
 	@ProxyMethod
 	public def evaluateTxnType(def application){
-	
-		txnSvc.checkReference( application.objid );
-		
+		if( application.businessid ) txnSvc.checkReference( application.objid );
+
 		def txndate = dateService.serverDate;
 		application.txndate = format( txndate, 'yyyy-MM-dd' );
 		application.iyear = format( txndate, 'yyyy' );
