@@ -15,3 +15,15 @@ WHERE taxpayername LIKE CONCAT( $P{taxpayername}, '%' )
 AND docstate = 'ACTIVE' 
 ORDER BY tradename, taxpayername
 
+[getListByTaxpayerid]
+SELECT * FROM business 
+WHERE taxpayerid = $P{taxpayerid} 
+AND docstate = 'ACTIVE' 
+ORDER BY tradename, taxpayername
+
+[getApplicationsByBusinessId]
+SELECT * FROM bpapplication 
+WHERE businessid = $P{businessid} 
+AND docstate IN ( 'APPROVED', 'ACTIVE' ) 
+ORDER BY txnno
+
