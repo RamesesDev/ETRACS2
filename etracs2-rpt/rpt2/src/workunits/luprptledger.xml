@@ -1,0 +1,61 @@
+<workunit>
+    <invokers>
+        <invoker type="rptledger.lookup" action="init" caption="RPT Ledger Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+
+class LookupRPTLedgerController extends LookupModel 
+{
+    @Service("RPTLedgerService")
+    def svc;
+    
+    def onselect;
+    def searchText;
+    def selected;
+    
+    void init() {;}
+    
+     def ok() {
+        search = null
+        if( onselect ) onselect( selected )
+        return select();
+    }
+    
+    def getListHandler() {
+        return this;
+    }
+    
+    int getRows() { return 20; }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"tdno", caption:"TD No.", width:70),
+            new Column(name:"taxpayername", caption:"Name"),
+            new Column(name:"taxpayeraddress", caption:"Address"),
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getLookupList( s, params);
+        if( list ) return list;
+        throw new Exception("Record not found.");
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.LookupPage"/>
+    </pages>
+</workunit>
