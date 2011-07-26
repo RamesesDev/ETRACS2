@@ -7,7 +7,7 @@ SELECT * FROM bankaccount WHERE objid = $P{objid}
 [getFund]
 SELECT f.objid AS objid, f.fundname AS fundname 
 FROM fund f 
-   LEFT JOIN bankaccount b ON NOT b.fundid = f.objid 
+LEFT JOIN bankaccount b ON b.fundid != f.objid 
 WHERE f.docstate = 'APPROVED'
 
 [getFundByFundName]
