@@ -377,7 +377,7 @@ class BPApplicationService{
 		em.update( SCHEMANAME, app );
 		
 		addReceivables( business , applist );
-		txnSvc.delete( appid );
+		txnSvc.delete( business.objid );
 		return app;
 	}
 	
@@ -402,26 +402,31 @@ class BPApplicationService{
 			acctid: it.acctid,
 			acctno: it.acctno,
 			accttitle: it.accttitle,
-			amount: getAmount( qtr , 4 , it.amountdue ),
+			amount: getAmount( ( qtr > qtrCount) ? 1 : qtr , qtrCount , it.amountdue ),
 			amtpaid: 0.0
 		];
 		return brc;
 	}
 	
 	void addReceivables( def business, def applist ){
+	
+		def sdf = new SimpleDateFormat("MM");
+		def cMonth = Integer.parseInt( sdf.format( dateService.serverDate ) );
+		def cQtr = ( cMonth > 3 ) ? ( cMonth > 6 ? ( cMonth > 9 ? 4 : 3 ) : 2 ) : 1;
+		
 		applist.each{ a ->
 			def app = open( a.objid );
 			app.receivables = [];
 			app.taxfees.each{ 
 				def acct = em.read("incomeacct:incomeacct", [objid: it.acctid]); 
-				if( acct.systype == 'BUSINESS_TAX' ){
+				if( acct.systype == 'BUSINESS_TAX' && app.txntype == 'RENEW' ){
 					for( int i=1; i <= 4; i++ ){
 						if( it.amountdue > 0 ){
 							app.receivables <<  createReceivable( i, 4, business.objid, app, it );
 						}
 					}
 				}else{
-					app.receivables << createReceivable( 1, 1, business.objid, app, it );
+					app.receivables << createReceivable( cQtr, 1, business.objid, app, it );
 				}
 			}
 			
