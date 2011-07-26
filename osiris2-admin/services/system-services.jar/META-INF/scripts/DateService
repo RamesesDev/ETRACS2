@@ -133,5 +133,57 @@ class DateService {
 			[index:4, name:"4TH", caption:"4th Quarter"]
 		];
 	}
+    
+    @ProxyMethod
+    public def getMonthEndDate( dt ) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(dt);
+        int d = cal.getActualMaximum( Calendar.DAY_OF_MONTH );
+        cal.set( Calendar.DAY_OF_MONTH, d );
+        return cal.getTime();
+    }
+    
+    @ProxyMethod
+    public Date getBeginningQtrDate( int qtr, int year, int day ) {
+        Calendar cal = Calendar.getInstance();
+        int month = 0;
+        switch(qtr) {
+            case 1: month = Calendar.JANUARY; break;
+            case 2: month = Calendar.APRIL; break;
+            case 3: month = Calendar.JULY; break;
+            default: month = Calendar.OCTOBER;
+        }
+        cal.set( year, month, day,  0, 0  );
+        return cal.getTime();
+    }
+    
+    @ProxyMethod
+    public Date getQtrEndDate( int qtr, int year ) {
+        Calendar cal = Calendar.getInstance();
+        int month = 0;
+        switch(qtr) {
+            case 1: month = Calendar.MARCH; break;
+            case 2: month = Calendar.JUNE; break;
+            case 3: month = Calendar.SEPTEMBER; break;
+            default: month = Calendar.DECEMBER; break;
+        }
+        cal.set( year, month, 1, 0, 0, 0  );
+        int d = cal.getActualMaximum( Calendar.DAY_OF_MONTH );
+        cal.set( Calendar.DAY_OF_MONTH, d );
+        return cal.getTime();
+    }
+    
+    @ProxyMethod
+    public int getQtr( Date d ) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime( d );
+        int month = cal.get( Calendar.MONTH );
+        if( month == Calendar.JANUARY || month == Calendar.FEBRUARY || month == Calendar.MARCH ) return 1;
+        if( month == Calendar.APRIL || month == Calendar.MAY || month == Calendar.JUNE ) return 2;
+        if( month == Calendar.JULY || month == Calendar.AUGUST || month == Calendar.SEPTEMBER ) return 3;
+        return 4;
+    }
+    
+    
 
 }

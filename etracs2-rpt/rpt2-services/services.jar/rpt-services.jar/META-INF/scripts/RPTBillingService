@@ -26,8 +26,8 @@ public class RPTBillingService
     def RULESET = 'rptbilling'
     def FACTS_PACKAGE = 'etracs2.rpt.billing.facts'
     
-	@ProxyMethod
-	public def buildBill( bill ) {
+    @ProxyMethod
+	public def generateBill( bill ) {
         createBillItems( bill )
         def facts = createFacts( bill  )
         def actionList = ruleService.createRuleAction()
@@ -36,6 +36,7 @@ public class RPTBillingService
         ruleService.execute( RULESET, facts, [actionList:actionList], 'PENALTY' )
         ruleService.execute( RULESET, facts, [actionList:actionList], 'DISCOUNT' )
         ruleService.execute( RULESET, facts, [actionList:actionList], 'SUMMARY' )
+        finalizeBillInfo( bill )
         return bill
         
 	}	
@@ -47,6 +48,17 @@ public class RPTBillingService
         return em.sqlContext.createNamedQuery('rptbill:getOpenLedgersByTaxpayerId').setParameters( params ).resultList
     }
     
+    @ProxyMethod
+    public List getOpenLedgersByIds( ledgerids ) {
+        def dt = dateSvc.parseCurrentDate()
+        def list = []
+        def params = [ currentyr:dt.year ]
+        ledgerids.each{ id ->
+            params.objid = id 
+            list.addAll( em.sqlContext.createNamedQuery('rptbill:getOpenLedgersById').setParameters( params ).resultList )
+        }
+        return list 
+    }
     
     /*-------------------------------------------------------------------------------
 	* Rule Support Methods
@@ -77,7 +89,7 @@ public class RPTBillingService
             item.details.each { detail ->
                 def lfact = ruleService.createFact(RULESET, FACTS_PACKAGE + '.RPTLedgerFact')
                 detail.keySet().each {
-                    try { lfact."$it" = detail[it] } catch( e ) {;}
+                    try { lfact[it] = detail[it] } catch( e ) {;}
                 }
                 lfact.factname               = 'RPTLedgerFact'
                 lfact.rputype                = item.rputype
@@ -148,7 +160,13 @@ public class RPTBillingService
     -------------------------------------------------------------------------------*/
     void createBillItems( bill ) {
         initBillToYearQtrInfo( bill )
-        def openLedgers = getOpenLedgersByTaxpayerId( bill.taxpayerid )
+        def openLedgers = []
+        if( bill.ledgerids ) {
+            openLedgers = getOpenLedgersByIds( bill.ledgerids )
+        }
+        else {
+            openLedgers = getOpenLedgersByTaxpayerId( bill.taxpayerid )
+        }
         if( !openLedgers ) throw new Exception('There are no open ledgers for this taxpayer.')
         bill.items = openLedgers 
         bill.items.each { billitem ->
@@ -191,7 +209,7 @@ public class RPTBillingService
         // 4. else original av 
         def util = new Util()
         def av = ledgeritem.assessedvalue
-        if( firstitem && yr < bill.billtoyear ) {
+        if( firstitem && yr < bill.billtoyear && billitem.lastqtrpaid != 4) {
             av = util.round( ledgeritem.assessedvalue / 4 ) * (4 - billitem.lastqtrpaid)
         }
         else if( firstitem && yr == bill.billtoyear ) {
@@ -257,7 +275,66 @@ public class RPTBillingService
         def dt = dateSvc.parseCurrentDate()
         if( ! bill.billtoyear || bill.billtoyear == 0 ) bill.billtoyear = dt.year 
         if( ! bill.billtoqtr || bill.billtoqtr == 0 ) bill.billtoqtr = dt.qtr 
+        if( ! bill.billdate ) bill.billdate = dateSvc.serverDate 
     }
+    
+    void finalizeBillInfo( bill ) {
+        bill.items.each { item ->
+            item.basic      = 0.0
+            item.basicint   = 0.0
+            item.basicdisc  = 0.0
+            item.basicdp    = 0.0
+            item.basicnet   = 0.0
+            item.sef        = 0.0
+            item.sefint     = 0.0
+            item.sefdisc    = 0.0
+            item.sefdp      = 0.0
+            item.sefnet     = 0.0
+            item.total      = 0.0
+            
+            item.details.each { detail ->
+                detail.basicdp  = detail.basicint - detail.basicdisc 
+                detail.basicnet = detail.basic + detail.basicdp 
+                detail.sefdp    = detail.sefint - detail.sefdisc 
+                detail.sefnet   = detail.sef + detail.sefdp 
+                detail.total    = detail.basicnet + detail.sefnet 
+                
+                detail.period   = ( detail.qtr == 0 ? detail.year+'' : detail.year +'-' + detail.qtr )
+                if( detail.firstitem ){
+                    detail.period   = detail.year + (detail.lastqtrpaid != 4 ? '-' + (detail.lastqtrpaid + 1) + '4' : '')
+                }
+                
+                item.basic      += detail.basic
+                item.basicint   += detail.basicint 
+                item.basicdisc  += detail.basicdisc 
+                item.basicdp    += detail.basicdp 
+                item.basicnet   += detail.basicnet 
+                item.sef        += detail.sef
+                item.sefint     += detail.sefint 
+                item.sefdisc    += detail.sefdisc 
+                item.sefdp      += detail.sefdp 
+                item.sefnet     += detail.sefnet
+                item.total      += detail.total 
+            }
+        }
+        
+        bill.totalbasic     = bill.items.basic.sum()
+        bill.totalbasicint  = bill.items.basicint.sum()
+        bill.totalbasicdisc = bill.items.basicdisc.sum()
+        bill.totalbasicdp   = bill.totalbasicint - bill.totalbasicdisc 
+        bill.totalbasicnet  = bill.totalbasic + bill.totalbasicdp 
+        
+        bill.totalsef       = bill.items.sef.sum()
+        bill.totalsefint    = bill.items.sefint.sum()
+        bill.totalsefdisc   = bill.items.sefdisc.sum()
+        bill.totalsefdp     = bill.totalsefint - bill.totalsefdisc 
+        bill.totalsefnet    = bill.totalsef + bill.totalsefdp 
+        
+        bill.grandtotal     =  bill.totalbasicnet + bill.totalsefnet 
+        bill.expirydate     =  dateSvc.getMonthEndDate( bill.billdate )
+    }
+    
+    
 }
     
     
@@ -283,8 +360,10 @@ class CalcBasicHandler implements RuleActionHandler
             def expr            = util.getFunctionExpressions() + ruleledger.expr 
 			detail.basic        = util.round( util.evaluate( expr, ruleledger.varlist ) )
             detail.basicacctid  = ruleledger.basicacctid 
+            detail.revtype      = ruleledger.revtype 
             def fact            = util.findRPTLedgerFact( facts, ruleledger.ledgerid )
             fact.basic          = detail.basic 
+            fact.revtype         = detail.revtype 
 		}
 	}
 }
@@ -302,8 +381,10 @@ class CalcBasicInterestHandler implements RuleActionHandler
             def expr               = util.getFunctionExpressions() + ruleledger.expr 
 			detail.basicint        = util.round( util.evaluate( expr, ruleledger.varlist ) )
             detail.basicintacctid  = ruleledger.basicintacctid 
+            detail.revtype         = ruleledger.revtype 
             def fact               = util.findRPTLedgerFact( facts, ruleledger.ledgerid )
             fact.basicint          = detail.basicint
+            fact.revtype         = detail.revtype 
 		}
 	}
 }
@@ -339,8 +420,10 @@ class CalcSefHandler implements RuleActionHandler
             def expr          = util.getFunctionExpressions() + ruleledger.expr 
 			detail.sef        = util.round( util.evaluate( expr, ruleledger.varlist ) )
             detail.sefacctid  = ruleledger.sefacctid  
+            detail.revtype    = ruleledger.revtype 
             def fact          = util.findRPTLedgerFact( facts, ruleledger.ledgerid )
             fact.sef          = detail.sef
+            fact.revtype         = detail.revtype 
 		}
 	}
 }
@@ -358,8 +441,10 @@ class CalcSefInterestHandler implements RuleActionHandler
             def expr             = util.getFunctionExpressions() + ruleledger.expr 
 			detail.sefint        = util.round( util.evaluate( expr, ruleledger.varlist ) )
             detail.sefintacctid  = ruleledger.sefintacctid  
+            detail.revtype       = ruleledger.revtype 
             def fact             = util.findRPTLedgerFact( facts, ruleledger.ledgerid )
             fact.sefint          = detail.sefint
+            fact.revtype         = detail.revtype 
 		}
 	}
 }
@@ -392,8 +477,11 @@ class Util {
     
     public def findDetail( bill, ruleledger ) {
         def detail 
-        bill.items.each { item ->
-            detail = item.details.find{ it.ledgerid == ruleledger.ledgerid }
+        def size = bill.items.size()
+        for( int i = 0; i < size; i++ ) {
+            def details = bill.items[i].details
+            detail      = details.find{ it.ledgerid == ruleledger.ledgerid }
+            if( detail ) break 
         }
         return detail 
     }
@@ -419,4 +507,6 @@ class Util {
         def bd = new BigDecimal(amount+'')
         return bd.setScale(scale, RoundingMode.HALF_UP)
     }
+    
+
 }
