@@ -5,10 +5,10 @@ SELECT * FROM bankaccount
 SELECT * FROM bankaccount WHERE objid = $P{objid}
 
 [getFund]
-SELECT objid, fundname FROM fund
-WHERE objid not in(
-   SELECT fundid FROM bankaccount)
-AND docstate = 'APPROVED'
+SELECT f.objid AS objid, f.fundname AS fundname 
+FROM fund f 
+   LEFT JOIN bankaccount b ON NOT b.fundid = f.objid 
+WHERE f.docstate = 'APPROVED'
 
 [getFundByFundName]
 SELECT objid FROM fund WHERE fundname = $P{fundname}
