@@ -53,7 +53,7 @@ public class AFControlActivatePage extends javax.swing.JPanel {
         xButton2.setName("activate");
 
         xComboBox1.setCaption("Collector");
-        xComboBox1.setExpression("#{collectorname}");
+        xComboBox1.setExpression("#{formalname}");
         xComboBox1.setImmediate(true);
         xComboBox1.setItems("collectorList");
         xComboBox1.setName("collector");
