@@ -75,6 +75,14 @@ SELECT objid, docstate, lastyearpaid, lastqtrpaid FROM rptledger where objid = $
 [getLandImprovementIds]
 SELECT objid FROM faaslist WHERE landfaasid = $P{landfaasid} AND docstate NOT IN ('CANCELLED') 
 
+[getBarangayInfo]
+SELECT provcity, munidistrict, barangay, barangayid, provcityindex, munidistrictindex, barangayindex 
+FROM faaslist 
+WHERE objid = $P{objid} 
+
+[getTaxpayerInfo]
+SELECT taxpayerid, taxpayerno, taxpayername, taxpayeraddress FROM faaslist WHERE objid = $P{objid} 
+
 
 #----------------------------------------------------------------
 # INSERT

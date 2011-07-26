@@ -21,11 +21,16 @@ SELECT * FROM subdivision WHERE mothertaxpayername LIKE $P{taxpayername} ORDER B
 
 
 
+[getAffectedRpusByLandId]
+SELECT * FROM subdivisionaffectedrpu 
+WHERE subdivisionid = $P{subdivisionid} AND subdivisionlandid = $P{subdivisionlandid} 
+
+
 [getSubdividedLandIds]
-SELECT objid  FROM subdivisionland WHERE subdivisionid = $P{subdivisionid}  ORDER BY itemno 
+SELECT objid, newfaasid  FROM subdivisionland WHERE subdivisionid = $P{subdivisionid}  ORDER BY newpin 
 
 [getAffectedRpuIds]
-SELECT objid  FROM subdivisionaffectedrpu WHERE subdivisionid = $P{subdivisionid}  ORDER BY itemno 
+SELECT objid, newfaasid  FROM subdivisionaffectedrpu WHERE subdivisionid = $P{subdivisionid}  ORDER BY newpin 
 
 [getSubdividedLandTdNo]
 SELECT newtdno FROM subdivisionland WHERE subdivisionid = $P{subdivisionid} 
@@ -35,7 +40,7 @@ SELECT ry FROM rptsetting
 
 
 [getSubdividedLands]
-SELECT *  FROM subdivisionland WHERE subdivisionid = $P{subdivisionid} ORDER BY itemno
+SELECT *  FROM subdivisionland WHERE subdivisionid = $P{subdivisionid} ORDER BY newtdno 
 
 [getAffectedRpus]
 SELECT *  FROM subdivisionaffectedrpu WHERE subdivisionid = $P{subdivisionid}  ORDER BY rputype, prevfullpin 
