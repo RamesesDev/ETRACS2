@@ -43,11 +43,13 @@ public class RPTLedgerController  {
     def ledger 
     def selectedItem
     def ledgerItems
+    def payments = []
     
     void open() {
         ledger = svc.open( ledger.objid )
         ledgerItems = ledger.ledgerItems 
         ledger.remove('ledgerItems')
+        payments = svc.getPayments( ledger.objid )
     }
     
     void approve() {
@@ -57,6 +59,17 @@ public class RPTLedgerController  {
     }
     
     def capturePayment() {
+        return InvokerUtil.lookupOpener('rptledgercapturepmt.create',[
+            ledger  : ledger,
+            onadd   : { pmt ->
+                pmt.putAll( svc.createCapturePayment( ledger.objid, pmt ) )
+                payments.add( pmt ) 
+                ledger.lastyearpaid = pmt.toyear
+                ledger.lastqtrpaid  = pmt.toqtr 
+                paymentListHandler.load()
+                binding.refresh('ledger.lastyearpaid|ledger.lastqtrpaid')
+            }
+        ])
     }
     
     
@@ -170,6 +183,33 @@ public class RPTLedgerController  {
         return ledger.partialbasic + ledger.partialsef
     }
     
+    
+    
+    def paymentListHandler = [
+        getRows     : { return 25 },
+        getColumns  : { return [
+            new Column(name:'mode', caption:'Mode'),
+            new Column(name:'receiptno', caption:'Receipt No.'),
+            new Column(name:'receiptdate', caption:'Receipt Date'),
+            new Column(name:'collectorname', caption:'Collector'),
+            new Column(name:'fromyear', caption:'From Year'),
+            new Column(name:'fromqtr', caption:'From Qtr'),
+            new Column(name:'toyear', caption:'To Year'),
+            new Column(name:'toqtr', caption:'To Qtr'),
+            
+            new Column(name:'basic', caption:'Basic', type:'decimal'),
+            new Column(name:'basicdisc', caption:'Discount', type:'decimal'),
+            new Column(name:'basicint', caption:'Penalty', type:'decimal'),
+            new Column(name:'basicnet', caption:'Basic Net', type:'decimal'),
+            
+            new Column(name:'sef', caption:'SEF', type:'decimal'),
+            new Column(name:'sefdisc', caption:'Discount', type:'decimal'),
+            new Column(name:'sefint', caption:'Penalty', type:'decimal'),
+            new Column(name:'sefnet', caption:'SEF Net', type:'decimal'),
+            new Column(name:'total', caption:'Total', type:'decimal'),
+        ]},
+        fetchList   : { return payments }
+    ] as SubListModel
     
 }
 

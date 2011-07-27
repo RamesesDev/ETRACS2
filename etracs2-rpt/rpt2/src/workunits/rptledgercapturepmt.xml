@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
+<workunit>
+    <invokers>
+        <invoker type="rptledgercapturepmt.create" action="create" target="popup" />        
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import com.rameses.osiris2.reports.*
+import java.rmi.server.UID;
+
+
+
+public class RPTLedgerCapturePmtController  {
+    
+    //handlers
+    def onadd
+    
+    def ledger 
+    def payment
+    
+    void create() {
+        def fromyear = ( ledger.lastqtrpaid == 4 ? ledger.lastyearpaid + 1 : ledger.lastyearpaid )
+        def fromqtr  = ( ledger.lastqtrpaid == 4 ? 1 : ledger.lastqtrpaid + 1 )
+        payment = [
+            objid       : 'RP' + new UID(),
+            mode        : 'CAPTURE', 
+            opener      : 'rptledgercapturepmt',
+            voided      : false, 
+            rptledgerid : ledger.objid,
+            fromyear    : fromyear, 
+            fromqtr     : fromqtr, 
+            toyear      : fromyear,
+            toqtr       : 4,
+            basic       : 0.0,
+            basicint    : 0.0,
+            basicdisc   : 0.0,
+            basicpartial: 0.0,
+            sef         : 0.0,
+            sefint      : 0.0,
+            sefdisc     : 0.0,
+            sefpartial  : 0.0,
+        ]
+    }
+    
+    def ok() {
+        if( payment.toyear < payment.fromyear ) throw new Exception('To Year must be greater than or equal to from year.') 
+        if( payment.toyear == payment.fromyear && payment.toqtr < payment.fromqtr ) throw new Exception('To Qtr must be greater than or equal to from qtr.') 
+        initNullValues()
+        checkNegative( 'Basic', payment.basic )
+        checkNegative( 'Basic Discount', payment.basicdisc )
+        checkNegative( 'Basic Penalty', payment.basicint )
+        checkNegative( 'Basic Partial', payment.basicpartial )
+        checkNegative( 'SEF', payment.sef )
+        checkNegative( 'SEF Discount', payment.sefdisc )
+        checkNegative( 'SEF Penalty', payment.sefint )
+        checkNegative( 'SEF Partial', payment.sefpartial )
+        if( payment.basicdisc > payment.basic ) throw new Exception('Basic Dmust be less than Basic.')
+        if( payment.sefdisc > payment.sef ) throw new Exception('SEF Discount must be less than SEF.')
+        
+        if( MsgBox.confirm('Posted payment could no longer be edited.\nPlease verify the information is correct.\n\nPost?') ) {
+            if( onadd ) {
+                onadd( payment )
+            }
+            return '_close' 
+        }
+        return 'default' 
+    }
+    
+    List getQuarters() {
+        return [1,2,3,4]
+    }
+    
+    void initNullValues() {
+        if( payment.basic == null ) payment.basic = 0.0
+        if( payment.basicint == null ) payment.basicint = 0.0
+        if( payment.basicdisc == null ) payment.basicdisc = 0.0
+        if( payment.basicpartial == null ) payment.basicpartial = 0.0
+        
+        if( payment.sef == null ) payment.sef = 0.0
+        if( payment.sefint == null ) payment.sefint = 0.0
+        if( payment.sefdisc == null ) payment.sefdisc = 0.0
+        if( payment.sefpartial == null ) payment.sefpartial = 0.0
+    }
+    
+    void checkNegative( caption, value ) {
+        if( value == null ) throw new Exception( caption + ' must not be null.')
+    }
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.ledger.RPTCapturePaymentPage" />
+    </pages>
+</workunit>

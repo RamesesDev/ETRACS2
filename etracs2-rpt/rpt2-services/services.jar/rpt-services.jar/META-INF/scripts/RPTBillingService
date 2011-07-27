@@ -92,6 +92,7 @@ public class RPTBillingService
                     try { lfact[it] = detail[it] } catch( e ) {;}
                 }
                 lfact.factname               = 'RPTLedgerFact'
+                lfact.rptledgerid            = item.rptledgerid
                 lfact.rputype                = item.rputype
                 lfact.numberofmonthsfromqtr  = calculateNoOfMonthsFromQtr( cyfact, lfact.year, lfact.qtr )
                 lfact.numberofmonthsfromjan  = calculateNoOfMonthsFromJan( cyfact, lfact.year, lfact.qtr )
@@ -239,6 +240,7 @@ public class RPTBillingService
     def createBillItemDetail( bill, billitem, ledgeritem, av, yr, qtr, firstitem  ) {
         def detail = [:]
         detail.putAll( ledgeritem )
+        detail.rptledgerid   = detail.objid 
         detail.ledgerid      = detail.objid + '-' + yr + '-' + qtr
         detail.firstitem     = firstitem 
         detail.year          = yr

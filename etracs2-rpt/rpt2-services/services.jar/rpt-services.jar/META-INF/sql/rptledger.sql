@@ -33,6 +33,15 @@ SELECT * FROM rptledgeritem WHERE parentid = $P{parentid} ORDER BY fromyear DESC
 SELECT MIN(fromyear) AS minfromyear FROM rptledgeritem WHERE parentid = $P{parentid} AND docstate = 'APPROVED' 
 
 
+[getPayments]
+SELECT 
+	r.*,  
+	basic + basicint - basicdisc AS basicnet,   
+	sef + sefint - sefdisc AS sefnet,  
+	basic + basicint - basicdisc + sef + sefint - sefdisc AS total  
+FROM rptpayment r 
+WHERE rptledgerid = $P{ledgerid} 
+ORDER BY fromYear DESC, fromqtr DESC   
 
 
 [updateFaasLedgerId]
@@ -41,4 +50,7 @@ UPDATE faas SET ledgerid = $P{ledgerid} WHERE objid = $P{objid}
 [updateFaasListLedgerId]
 UPDATE faaslist SET ledgerid = $P{ledgerid} WHERE objid = $P{objid}
 
+
+[updateLastYearQtrPaid]
+UPDATE rptledger SET lastyearpaid = $P{lastyearpaid}, lastqtrpaid = $P{lastqtrpaid} WHERE objid = $P{objid} 
 

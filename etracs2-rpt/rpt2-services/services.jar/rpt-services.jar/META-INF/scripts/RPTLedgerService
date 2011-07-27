@@ -17,6 +17,9 @@ class RPTLedgerService
 	@Service('LogService')
     def logSvc
     
+    @Env
+    def env 
+    
     def PENDING_STATE = 'PENDING'
     def APPROVED_STATE = 'APPROVED'
     def CANCELLED_STATE = 'CANCELLED'
@@ -138,6 +141,36 @@ class RPTLedgerService
             postLedgerItem( faas ) 
         }
     }
+    
+    
+    /*-------------------------------------------------------------------
+    *  Payment Support  
+    -------------------------------------------------------------------*/
+    @ProxyMethod
+    public List getPayments(ledgerid ) {
+        return em.sqlContext.createNamedQuery('rptledger:getPayments').setParameter('ledgerid', ledgerid ).resultList
+    }
+    
+    @ProxyMethod
+    public Map createCapturePayment( ledgerid, pmt ) {
+        pmt.schemaname      = 'rptpayment'
+        pmt.schemaversion   = '1.0'
+        pmt.ledgerid        = ledgerid 
+        pmt.mode            = 'CAPTURE'
+        pmt.dtposted        = dateSvc.serverDate
+        pmt.capturedby      = ( env.USERNAME ? env.USERNAME : 'SYSTEM' )
+        pmt.basicnet        = pmt.basic + pmt.basicint - pmt.basicdisc 
+        pmt.sefnet          = pmt.sef + pmt.sefint - pmt.sefdisc 
+        pmt.total           = pmt.basicnet + pmt.sefnet 
+        em.validate( pmt.schemaname, pmt )
+        em.create( pmt.schemaname, pmt ) 
+        
+        //update ledger lastyearpaid and lastqtrpaid 
+        def params = [ objid:ledgerid, lastyearpaid:pmt.toyear, lastqtrpaid:pmt.toqtr ]
+        em.sqlContext.createNamedExecutor('rptledger:updateLastYearQtrPaid').setParameters(params).execute()
+        return pmt 
+    }
+    
     
     
     /*-------------------------------------------------------------------
