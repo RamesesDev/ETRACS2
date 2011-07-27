@@ -3,11 +3,11 @@
         <invoker type="home.action" folderid="/menu/bp/txn" action="initApplication" caption="Approved Applications" permission="bppermit.approvedapplications" id="approvedapplications" target="window"/>
         <invoker type="home.action" folderid="/menu/bp/txn" action="initReleasePermit" caption="For Release Permits" permission="bppermit.forreleasepermits" id="forreleasepermits" target="window"/>
         <invoker type="home.action" folderid="/menu/bp/txn" action="initActivePermit" caption="Active Permits" permission="bppermit.activepermits" id="activepermits" target="window"/>
+        <invoker type="home.action" folderid="/menu/bp/txn" caption="Retired Application" permission="bppermit.retire" id="retiredapplications" target="window"/>
 
         <invoker type="formActions" action="previewApplication" caption="View Application" visibleWhen="#{selectedItem != null}" icon="images/view24.png"/>
         <invoker type="formActions" action="previewAssessment" caption="View Assessment" visibleWhen="#{selectedItem != null}" icon="images/view24.png"/>
-        <invoker type="formActions" action="release" caption="Release Permit" mnemonic="r" visibleWhen="#{selectedItem.docstate == 'PERMIT_PENDING'}" icon="images/release24.png"/>
-        <invoker type="formActions" action="viewPermit" caption="View Permit" mnemonic="r" visibleWhen="#{selectedItem.docstate == 'ACTIVE'}" icon="images/view24.png"/>
+        <invoker type="formActions" action="open" caption="Open" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'ACTIVE' }" icon="images/open24.png"/>
     </invokers>
     <code>
 <![CDATA[
@@ -29,6 +29,7 @@ class BusinessMgmtList
     @Service('BPHtmlService')
     def htmlSvc;
     
+    def txntype;
     def docstate;
     def searchText;
     
@@ -77,15 +78,14 @@ class BusinessMgmtList
         return InvokerUtil.lookupOpener('bp.assessmentreport', [applicationid:selectedItem.objid]);
     }
     
+    def retire(){ return InvokerUtil.lookupOpener('bp.retire', [applicationid: selectedItem.objid]);}
+    
     def release(){
         def permit = svc.openPermit( selectedItem.objid );
         return InvokerUtil.lookupOpener('bp.releasepermit', [permit: permit]);
     }
     
-    def viewPermit(){
-        return InvokerUtil.lookupOpener( 'bp.bppermitreport', [applicationid:selectedItem.objid] );
-    }
-    
+    def open(){ return selectedItem.txntype.matches('RETIRE|RETIRELOB') ? retire() : release(); }
     void search(){ listHandler.load(); }
 }
 

@@ -65,13 +65,13 @@ class BPApplication
     }
     
     def getTypes = {
-        if( application.txntype.matches('RETIRE|RETIRE_LINE')) return ['ACTIVE','RETIRE_LINE'];
-        if( lob?.assessmenttype == 'RENEW' ) return ['RETIRE_LINE','RENEW'];
+        if( application.txntype.matches('RETIRE|RETIRELOB')) return ['ACTIVE','RETIRELOB'];
+        if( lob?.assessmenttype == 'RENEW' ) return ['RETIRELOB','RENEW'];
     }
     
     def isTypeEditable = {
         if( mode == 'VIEW' ) return false;
-        if( application.txntype.matches('NEW|ADDLOB') ) return false;
+        if( application.txntype.matches('NEW|ADDLOB|RETIRE') ) return false;
         if( application.txnmode == 'CAPTURE' ) return false;
         if( lob?.assessmenttype == 'ADDLOB' ) return false;
         return true;
@@ -81,20 +81,15 @@ class BPApplication
         getRows    : { return 5; },
         getColumns : {
             return [
+                new Column(name:"retire", caption:"", type:'boolean', visible:application.txntype.matches('RETIRE|RETIRELOB'), width:25, resizable:false, editable:(application.txntype == 'RETIRELOB') ),
                 new Column(name:"name", caption:"Classification"),
                 new Column(name:"assessmenttype", caption:"Assessment Type", type:'combo', items:getTypes(), editable: isTypeEditable(), required:true),
-                new Column(name:"iyear", caption:"Year")
+                new Column(name:"iyear", caption:"Year", format:"####")
             ];
         },
         
-        onColumnUpdate: { val, name ->
-            if( val ) lob.put(name, name);
-        },
-        
         onRemoveItem : {
-            if( allowedDelete( it ) ) {
-                application.lobs.remove( it );
-            }
+            if( allowedDelete( it ) ) { application.lobs.remove( it );}
         },
         
         fetchList : { return application.lobs; },
@@ -108,23 +103,21 @@ class BPApplication
             if( application.txntype == 'ADDLOB' ) l.assessmenttype = 'ADDLOB';
             if( application.txnmode == 'CAPTURE' && application.txntype == 'RENEW' ) l.assessmenttype = 'RENEW';
             application.lobs << l;
-            lobSearch = '';
+            lobHandler.load();
             binding.refresh();
+            lobSearch = '';
         }
     }
     
     def lobSearch;
-
-    public def getLookupLob(){
-        return InvokerUtil.lookupOpener('lob.lookup', [onselect:onselect, searchText:lobSearch]);
-    }
+    public def getLookupLob(){ return InvokerUtil.lookupOpener('lob.lookup', [onselect:onselect, searchText:lobSearch]); }
     
     def cancel() {
         if( mode != 'edit' ) return '_close';
         application.putAll( old );
-        binding.refresh();
         mode = 'view';
-        return null;
+        binding.refresh();
+        return '_default';
     }
 
     def old = [:];
@@ -132,6 +125,7 @@ class BPApplication
     void edit(){
         old.putAll( application );
         mode = 'edit';
+        binding.refresh();
     }
     
     void save(){
