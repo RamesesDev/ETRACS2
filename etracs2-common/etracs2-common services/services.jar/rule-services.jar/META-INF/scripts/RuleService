@@ -60,12 +60,16 @@ class RuleService
 	
 	@ProxyMethod
 	public def create( rule ) {
+        if( ! rule.conditions ) throw new Exception('At least one condition is required.')
+        if( ! rule.actions ) throw new Exception('At least one action is required.')
+        
 		rule.objid = 'R' + new UID()
 		rule.schemaname = SCHEMA_NAME
 		rule.schemaversion = SCHEMA_VERSION
 		rule.rulename = fixRuleName( rule )
 		rule.docstate = DRAFT_STATE
 		rule.packagename = 'bp.assessment.rules.' + rule.rulename 
+        
 		buildRuleText( rule )
 		validate( rule )
 		em.create( rule.schemaname, rule )
