@@ -56,9 +56,7 @@ public class CheckPaymentTypePage extends javax.swing.JPanel {
         xDateField1.setCaption("Check Date");
         xDateField1.setCaptionWidth(150);
         xDateField1.setFont(new java.awt.Font("Arial", 0, 20));
-        xDateField1.setInputFormat("MM-dd-yyyy");
         xDateField1.setName("checkdate");
-        xDateField1.setOutputFormat("MM-dd-yyyy");
         xDateField1.setPreferredSize(new java.awt.Dimension(0, 30));
         xDateField1.setRequired(true);
         formPanel1.add(xDateField1);
