@@ -235,12 +235,13 @@ public class BPBillingRuleService
 	/*-------------------------------------------------------------
 	* BuildRuleText Support
 	-------------------------------------------------------------*/
-	void buildRuleText( rule ) {
+    @ProxyMethod
+    public String buildRuleText( rule ) {
 		def ruleHeader = buildRuleHeader( rule )
 		def conditions = buildRuleConditions( rule )
 		def actions = buildRuleActions( rule )
-		rule.ruletext = ruleHeader + conditions + actions + 'end'
-	}
+		return ruleHeader + conditions + actions + 'end'
+	} 
 	
 	String buildRuleActions( rule ) {
 		String s = 'then\n'

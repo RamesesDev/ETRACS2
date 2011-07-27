@@ -124,9 +124,14 @@ abstract class AbstractCollectionController
         
     
     void printNow( report ) {
-        ReceiptUtil.buildReportInfo( entity )
-        report.viewReport()
-        ReportUtil.print( report.report, true )
+        try {
+            ReceiptUtil.buildReportInfo( entity )
+            report.viewReport()
+            ReportUtil.print( report.report, true )
+        }
+        catch( e ) {
+            MsgBox.alert( e.message )
+        }
     }
     
     def report = [
@@ -143,7 +148,6 @@ abstract class AbstractCollectionController
     void voidReceipt() {
         if( MsgBox.confirm('Void receipt?') ) {
             def reason = MsgBox.prompt('Enter reason for voiding the receipt:')
-            println 'REASON -> ' + reason
             CommonUtil.required( 'Reason', reason )
             entity = svc.voidReceipt( entity.objid, reason.toUpperCase() )   
             invokeNewHandler()
@@ -226,12 +230,12 @@ abstract class AbstractCollectionController
     }
     
     void updatePaymentInfo( payments ) {
-        entity.payments.clear()
-        entity.payments.addAll( payments )
         calculateTotalPayment(payments)
         calculateTotalOtherPayment( payments )
         calculateTotalCashPayment( payments )
         calculateChange()
+        entity.payments.clear()
+        entity.payments.addAll( payments )
     } 
     
     void calculateTotalPayment( payments ) {

@@ -12,6 +12,29 @@ class DateService {
 		def val = db.createQuery( "select now() as dt" ).singleResult;
 		return val.dt; 
 	}
+	
+	@ProxyMethod
+	public def getServerYear() {
+		def pd = parseDate( serverDate, null );
+        return pd.year;
+	}
+	
+	@ProxyMethod
+	public def getServerQtr() {
+		return getQtr( serverDate );
+	}
+	
+	@ProxyMethod
+	public def getServerMonth() {
+		def pd = parseDate( serverDate, null );
+        return pd.month;
+	}
+	
+	@ProxyMethod
+	public def getServerDay() {
+		def pd = parseDate( serverDate, null );
+        return pd.day;
+	}
 
 	@ProxyMethod(local=true)
 	public def getLocaleTime( String timeZone ) {
@@ -182,6 +205,22 @@ class DateService {
         if( month == Calendar.APRIL || month == Calendar.MAY || month == Calendar.JUNE ) return 2;
         if( month == Calendar.JULY || month == Calendar.AUGUST || month == Calendar.SEPTEMBER ) return 3;
         return 4;
+    }
+    
+    @ProxyMethod
+    public def getDaysDiff(Date startDate, Date endDate ) {
+        Calendar startCal = Calendar.getInstance();
+        Calendar endCal = Calendar.getInstance();
+        
+        startCal.setTime(startDate);
+        endCal.setTime(endDate );
+        
+        long startMillis = startCal.getTimeInMillis();
+        long endMillis = endCal.getTimeInMillis();
+        
+        // Calculate no. of days using diff in milliseconds
+        long diff = endMillis - startMillis;
+        return (int)(diff / (24 * 60 * 60 * 1000) + 1);
     }
     
     
