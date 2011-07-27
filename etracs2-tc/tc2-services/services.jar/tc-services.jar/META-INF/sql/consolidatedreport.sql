@@ -44,6 +44,15 @@ AND craafmonth = $P{craafmonth}
 AND craafyear = $P{craafyear}   
 ORDER BY c.collectorname, c.afid, c.beginfrom, c.receivedfrom
 
+[getReportDataCanceledSeries]
+SELECT c.collectorname, a.stubno, c.afid, c.canceledqty AS beginqty,   
+	   c.canceledfrom AS beginfrom, c.canceledto AS beginto    
+FROM craaf c, afcontrol a   
+WHERE c.afinventorycreditid = a.afinventorycreditid   
+AND craafyear = $P{craafyear} 
+AND craafmonth = $P{craafmonth}  
+AND canceledqty != 0 
+
 [updateCRAAFbyIRAFCol]
 UPDATE craaf SET
 	issuedqty = $P{issuedqty},

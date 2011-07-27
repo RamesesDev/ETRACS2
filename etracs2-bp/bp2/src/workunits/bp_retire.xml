@@ -1,0 +1,50 @@
+<workunit>
+    <invokers>
+        <invoker type="bp.retire" action="init" mnemonic="c" caption="Retire Application"/>
+        <invoker type="formActions" action="retire" mnemonic="r" caption="Retire" immediate="true" icon="images/approve24.png" visibleWhen="#{application.docstate == 'APPROVED'}"/>
+        <invoker type="formActions" action="viewcertificate" mnemonic="v" caption="View Certificate" icon="images/view24.png" visibleWhen="#{application.docstate == 'ACTIVE'}"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class RetireBusinessController
+{
+
+    @Service('BusinessMgmtService')
+    def svc;
+    def application;
+    def applicationid;
+
+    void init(){
+        application = svc.openRetireApplication( applicationid );
+    }
+    
+    def lobHandler = [
+        getRows: {return 5;},
+        getColumns: {
+            return [ new Column(name:'name', caption:'Name') ];
+        },
+        fetchList : {  return application.lobs; }
+    ] as SubListModel;
+    
+    public void retire(){
+        application = svc.retireApplication( applicationid );
+    }
+    
+    def viewcertificate(){
+        return InvokerUtil.lookupOpener('bp.retirereport', application );
+    }
+    
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.bp.application.RetireClosePage"/>
+    </pages>
+</workunit>

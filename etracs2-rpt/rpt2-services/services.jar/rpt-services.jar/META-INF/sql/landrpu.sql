@@ -1,6 +1,9 @@
 [getAssessLevelById]
 SELECT * FROM landassesslevel WHERE objid = $P{objid}
 
+[getRPTSetting]
+SELECT * FROM rptsetting
+
 #----------------------------------------------------------------
 # Lookups
 #----------------------------------------------------------------
@@ -30,14 +33,14 @@ ORDER BY classcode
 
 	
     
-[lookupStripping] 
+[lookupStripping]
 SELECT s.objid AS strippingid, s.striplevel, s.rate AS striprate 
-FROM lcuvstripping s, lcuv l, landrysetting ls 
-WHERE s.lcuvid = l.objid    
+FROM lcuvstripping s, lcuv l, landrysetting ls
+WHERE s.lcuvid = l.objid 
   AND l.landrysettingid = ls.objid 
   AND ls.ry = $P{ry} 
   AND s.lcuvid = $P{actualuseid}     
-  AND s.striplevel = $P{striplevel}   
+  AND s.striplevel LIKE $P{striplevel}   
 ORDER BY striplevel 
 
 [lookupAdjType]
