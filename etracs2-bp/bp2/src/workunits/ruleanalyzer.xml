@@ -129,11 +129,12 @@ class RuleAnalyzerController
     
     
     def lobLookup = InvokerUtil.lookupOpener( 'lob.lookup', [:] )
+    def assessmenttypes = ['NEW', 'RENEW', 'RETIRE']
     
     def lobListHandler = [
         getColumns : { return [
-            new Column(name:'lob', caption:'Name',editable:true, type:'lookup', handler:lobLookup, expression:'#{name}' ),
-            new Column(name:'assessmenttype', caption:'Type', maxWidth:150, editable:true ),
+            new Column(name:'lob', caption:'Name', editable:true, type:'lookup', handler:lobLookup, expression:'#{name}' ),
+            new Column(name:'assessmenttype', caption:'Type', editable:true, maxWidth:150, type:'combo', items:assessmenttypes ),
         ]},
         createItem : { return [:] },
         fetchList  : { return entity.lobs },

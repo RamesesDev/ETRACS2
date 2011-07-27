@@ -9,15 +9,21 @@
 
         <invoker type="formActions" action="approve" caption="Approve" shortcut="ctrl A" visibleWhen="#{ledger.docstate == 'PENDING'}" mnemonic="a" icon="images/addnew24.png" />
         <invoker type="formActions" action="capturePayment" caption="Capture Payment" shortcut="ctrl m" visibleWhen="#{ledger.docstate == 'APPROVED'}" mnemonic="M" />        
+        <invoker type="formActions" action="previewBill" caption="Preview" visibleWhen="#{ledger.docstate == 'APPROVED'}" mnemonic="v" />        
+        <invoker type="formActions" action="printBill" caption="Print" visibleWhen="#{ledger.docstate == 'APPROVED'}" mnemonic="p" />        
+        
+        <invoker type="previewActions" action="backMain" caption="Back" mnemonic="b" />
     </invokers>
     
     <code lang="groovy">
         <![CDATA[
         
-import com.rameses.rcp.common.*;
-import com.rameses.rcp.annotations.*;
-import com.rameses.osiris2.client.*;
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import com.rameses.osiris2.reports.*
 import java.rmi.server.UID;
+
 
 
 public class RPTLedgerController  {
@@ -26,7 +32,14 @@ public class RPTLedgerController  {
     
     @Service("RPTLedgerService")
     def svc;
+    
+    @Service("RPTBillingService")
+    def billingSvc;
 
+    @Service("ReportParameterService")
+    def reportSvc
+    
+    
     def ledger 
     def selectedItem
     def ledgerItems
@@ -45,6 +58,62 @@ public class RPTLedgerController  {
     
     def capturePayment() {
     }
+    
+    
+    /*------------------------------------------------------------------------------------------------
+    *
+    * Preview and Print Bill Support 
+    *
+    -------------------------------------------------------------------------------------------------*/
+    def bill
+    
+    def backMain() {
+        return 'default'
+    }
+    
+    void buildBillReportInfo(){
+        bill = createBillInfo()
+        bill = billingSvc.generateBill( bill )
+        report.viewReport()
+    }
+    
+    void printBill() {
+        buildBillReportInfo()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def previewBill() {
+        buildBillReportInfo()
+        return 'preview'
+    }
+    
+    def report = [
+        getReportName : { return 'billing/rptbilling' },
+        getReportData : { return bill },
+        getParameters : { return reportSvc.getStandardParameter( OsirisContext.env.USERNAME ) }
+    ] as ServerReportModel
+    
+    
+    Map createBillInfo() {
+        return [
+            taxpayerid     : ledger.taxpayerid,
+            taxpayername   : ledger.taxpayername,
+            taxpayeraddress: ledger.taxpayeraddress, 
+            ledgerids      : [ledger.objid],
+            advancepayment : false,
+            billdate       : null,
+            billtoyear     : null,
+            billtoqtr      : 4,
+            fullpayment    : true,
+            qtrlypaymentavailed : false, 
+            advancepayment : false,
+            items          : []
+        ]
+    }
+    
+    
+    
+    
     
     
     
@@ -110,5 +179,6 @@ public class RPTLedgerController  {
     
     <pages>
         <page template="etracs2.rpt.ledger.RPTLedgerPage" />
+        <page name="preview" template="etracs2.common.PreviewPage"/>
     </pages>
 </workunit>

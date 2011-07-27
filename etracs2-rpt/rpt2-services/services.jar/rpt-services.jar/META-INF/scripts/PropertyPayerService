@@ -1,0 +1,116 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class PropertyPayerService{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = 'propertypayer:propertypayer';
+	def schemaversion = '1.0';
+	
+	@ProxyMethod
+	public def getList( searchText, params ){
+		if( !searchText ) return getListByQuery( 'propertypayer:getList', [:], params );
+		
+		def result = [];
+		
+		if((result = getListByQuery( 'propertypayer:getListByName', [taxpayername:searchText+"%"], params ))) return result;
+		
+		return result;
+	}
+	
+	@ProxyMethod
+	public def open( objid ){
+		def data = em.sqlContext.createNamedQuery( 'propertypayer:getById' ).setParameter( 'objid', objid ).singleResult;
+		
+		data.info = em.serializer.read( data.info );
+		data.info.each{
+			def ledger = openLedger( it.ledgerid );
+			it.ledgerid			= ledger.ledgerid;
+			it.taxpayername 	= ledger.taxpayername;
+			it.taxpayeraddress	= ledger.taxpayeraddress;
+			it.classification	= ledger.classcode;
+			it.fullpin			= ledger.fullpin;
+			it.cadastrallotno	= ledger.cadastrallotno;
+			it.assessedvalue	= ledger.assessedvalue;
+			it.ledger			= [tdno:ledger.tdno];
+		}
+
+		return data;
+	}
+	
+	@ProxyMethod
+	public def openLedger( ledgerid ) {
+		def ledger = em.sqlContext.createNamedQuery( 'propertypayer:getLedgerData' ).setParameter('ledgerid', ledgerid).singleResult;
+		if(!ledger) throw new Exception('RPT Ledger not found!');
+
+		return ledger;
+	}
+	
+	@ProxyMethod
+	public def create( propertypayer ){
+		propertypayer.objid = "PP" + new UID();
+		propertypayer.schemaname = schemaname;
+		propertypayer.schemaversion = schemaversion;
+		
+		validate( propertypayer );
+		em.create( propertypayer.schemaname, propertypayer );
+		
+		return propertypayer;
+	}
+	
+	@ProxyMethod
+	public def update( propertypayer ){
+		validateUpdate( propertypayer );
+		
+		em.update( propertypayer.schemaname, propertypayer, { diff ->
+			logService.logB( 'UPDATE', 'PROPERTY PAYER', propertypayer.taxpayername, null, diff );
+		} as UpdateChangeHandler )
+		
+		return propertypayer;
+	}
+	
+	@ProxyMethod
+	public void delete( propertypayer ){
+		em.delete( propertypayer.schemaname, propertypayer );
+	}
+	
+	
+	private void validate( propertypayer ){
+		def oldpropertypayer = em.read(propertypayer.schemaname, propertypayer);
+		util.validateLastUpdate( propertypayer, oldpropertypayer );
+		
+		checkDuplicates( propertypayer );
+		em.validate(propertypayer.schemaname, propertypayer);
+	}
+	
+	private void validateUpdate( propertypayer ){
+		def oldpropertypayer = em.read(propertypayer.schemaname, propertypayer);
+		util.validateLastUpdate( propertypayer, oldpropertypayer );
+		
+		em.validate(propertypayer.schemaname, propertypayer);
+	}
+	
+	private void checkDuplicates( propertypayer ){
+		def data = em.sqlContext.createNamedQuery( 'propertypayer:checkDuplicateTaxpayer' ).setParameter( 'taxpayername', propertypayer.taxpayername ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Property Payer $propertypayer.taxpayername already exists." );
+	}
+	
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+
+}

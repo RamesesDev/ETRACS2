@@ -161,6 +161,7 @@ public class RIVPage extends javax.swing.JPanel {
         xActionTextField3.setDepends(new String[] {"selectedItem"});
         xActionTextField3.setName("entity.info.approvedby");
         xActionTextField3.setPreferredSize(new java.awt.Dimension(0, 19));
+        xActionTextField3.setRequired(true);
         formPanel3.add(xActionTextField3);
 
         xLabel7.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));

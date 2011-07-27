@@ -1,7 +1,7 @@
 <workunit>
     <invokers>
-        <invoker type="rptbillingrule_action.type" action="create" caption="Calculate Basic Discount" index="7" />        
-        <invoker type="rptbillingrule_action_basicdisc.open" action="open" caption="Calculate Basic Discount" />        
+        <invoker type="rptbillingrule_action.type" action="create" caption="Calculate SEF Previous Interest" index="22" />        
+        <invoker type="rptbillingrule_action_sefprevint.open" action="open" caption="Calculate SEF Previous Interest" />        
     </invokers>
     <code>
 <![CDATA[
@@ -10,7 +10,7 @@ import com.rameses.rcp.annotations.*
 import com.rameses.rcp.common.*
 import com.rameses.osiris2.client.*
 
-class RPTBillingActionBasicDiscController
+class RPTBillingActionSefPrevIntController
 {
     @Binding
     def binding
@@ -21,13 +21,13 @@ class RPTBillingActionBasicDiscController
     def action
     def varlist 
     def selectedVariable
-    def title = 'Calculate Basic Discount'
+    def title = 'Calculate SEF Previous Interest'
     def accttitle 
     def rule
     
     void create() {
         action = [
-            opener    : 'rptbillingrule_action_basicdisc',
+            opener    : 'rptbillingrule_action_sefprevint',
             acctid    : null,
             accttitle : null, 
             expr      : null,
@@ -40,13 +40,14 @@ class RPTBillingActionBasicDiscController
     
     //must be implemented by a handler
     void accept() {
+        if( ! action.acctid ) throw new Exception('Account is required.')
         if( ! action.expr ) throw new Exception('Tax Computation Expression is required.')
         action.displaytext = buildDisplayText()
-        action.actiontype = 'calcBasicDisc' 
+        action.actiontype = 'calcSefPrevInt' 
     }
     
     def buildDisplayText() {
-        return 'Calculate Basic Discount using the formula: ' + action.expr 
+        return 'Calculate ' + action.accttitle + ' using the formula: ' + action.expr 
     }
     
     def selectAcctHandler = { acct ->
@@ -57,7 +58,7 @@ class RPTBillingActionBasicDiscController
     }
     
     def lookupAccount() {
-        return InvokerUtil.lookupOpener('rptincomeacct_basic.lookup', [searchText:accttitle, onselect:selectAcctHandler])
+        return InvokerUtil.lookupOpener('rptincomeacct_sefprevint.lookup', [searchText:accttitle, onselect:selectAcctHandler])
     }
     
     
@@ -66,6 +67,6 @@ class RPTBillingActionBasicDiscController
 ]]>
     </code>
     <pages>
-        <page template="etracs2.common.rule.FormulaActionPage" />
+        <page template="etracs2.common.rule.AccountActionPage" />
     </pages>
 </workunit>

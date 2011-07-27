@@ -167,15 +167,15 @@ class RIVController
     def createEntity() {
         if( !env.USERID ) dummyCol = svcUser.getCollector( env.USERID );
         return [
-            docstate   : "DRAFT",
-            rivtype : rivType,
-            requestedby: (env.USERNAME ? env.USERNAME : dummyCol.collectorname ),
-            requestedbytitle : (env.JOBTITLE ? env.JOBTITLE : dummyCol.collectortitle ),
+            docstate    : "DRAFT",
+            rivtype     : rivType,
+            requestedby : (env.USERNAME ? env.USERNAME : dummyCol.collectorname ),
+            requestedbytitle : (env.JOBTITLE ? env.JOBTITLE : "" ),
             info    : [ treasuryname: var.treasurer_office,
                         lgu: var.lgu_name,
                         requestedbyid: (env.USERID ? env.USERID : dummyCol.collectorid ),
                         requestedby: (env.USERNAME ? env.USERNAME : dummyCol.collectorname ),
-                        requestedbytitle : (env.JOBTITLE ? env.JOBTITLE : dummyCol.collectortitle )
+                        requestedbytitle : (env.JOBTITLE ? env.JOBTITLE : "" )
                       ],
             items  : [],
         ];
@@ -253,11 +253,13 @@ class RIVController
     }
     
     void updateAfItem( item ){
-        item.afid = item.af.objid;
-        item.afdescription = item.af.description;
-        item.aftype = item.af.aftype;
-        item.afunit = item.af.unit;
-        item.afpcsperunit = item.af.pcsperunit;
+        if( item.af ){
+            item.afid = item.af.objid;
+            item.afdescription = item.af.description;
+            item.aftype = item.af.aftype;
+            item.afunit = item.af.unit;
+            item.afpcsperunit = item.af.pcsperunit;
+        }
     }
     
     
