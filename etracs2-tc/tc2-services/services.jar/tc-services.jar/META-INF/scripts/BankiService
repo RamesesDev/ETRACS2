@@ -94,6 +94,7 @@ class BankiService{
       StringBuffer sb = new StringBuffer();
       
 	   def data = em.sqlContext.createNamedQuery( 'banki:getByBankCode').setParameters( ['bankcode':bank.bankcode] ).singleResult;	   
+       if( ! data ) return 
 	   if( data.count != 0 ) sb.append("A Bank with bankcode $bank.bankcode already exists.  ");
       
       def datax = em.sqlContext.createNamedQuery( 'banki:checkDuplicateBank' ).setParameters( [ 'bankname':bank.bankname, 'branchname':bank.branchname  ] ).singleResult;
