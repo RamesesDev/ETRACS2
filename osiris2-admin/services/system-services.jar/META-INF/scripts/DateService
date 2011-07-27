@@ -12,6 +12,29 @@ class DateService {
 		def val = db.createQuery( "select now() as dt" ).singleResult;
 		return val.dt; 
 	}
+	
+	@ProxyMethod
+	public def getServerYear() {
+		def pd = parseDate( serverDate, null );
+        return pd.year;
+	}
+	
+	@ProxyMethod
+	public def getServerQtr() {
+		return getQtr( serverDate );
+	}
+	
+	@ProxyMethod
+	public def getServerMonth() {
+		def pd = parseDate( serverDate, null );
+        return pd.month;
+	}
+	
+	@ProxyMethod
+	public def getServerDay() {
+		def pd = parseDate( serverDate, null );
+        return pd.day;
+	}
 
 	@ProxyMethod(local=true)
 	public def getLocaleTime( String timeZone ) {
