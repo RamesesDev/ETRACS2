@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+// date      : 27 jul 2011
+-->
+<workunit>
+    <invokers>
+        <invoker folderid="menu/rpt/txn" caption="RPT Billing" action="init"  />
+
+        <invoker type="formActions" action="printBill" caption="Print" shortcut="ctrl P" mnemonic="p" />
+        <invoker type="formActions" action="previewBill" caption="Preview" shortcut="ctrl v" mnemonic="v" />
+        
+        <invoker type="previewActions" action="backMain" caption="Back" mnemonic="b" />
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import com.rameses.osiris2.reports.*
+import java.rmi.server.UID;
+
+
+public class RPTBillingController  {
+    @Binding
+    def binding
+    
+    @Service('DateService')
+    def dateSvc
+    
+    @Service("RPTBillingService")
+    def billingSvc;
+
+    @Service("ReportParameterService")
+    def reportSvc
+    
+    def parsedate
+    def bill
+    
+    void init() {
+        parsedate = dateSvc.parseCurrentDate()
+        bill = [
+            taxpayerid     : null,
+            taxpayername   : null,
+            taxpayeraddress: null,
+            ledgerids      : [],
+            advancepayment : false,
+            billdate       : parsedate.date,
+            billtoyear     : parsedate.year,
+            billtoqtr      : 4,
+            fullpayment    : true,
+            qtrlypaymentavailed : false, 
+            advancepayment : false,
+            items          : []
+        ]
+    }
+    
+    def backMain() {
+        return 'default' 
+    }
+    
+    def lookupTaxpayer() {
+        return InvokerUtil.lookupOpener('entity.lookup', [
+            searchText : bill.taxpayername,
+            onselect   : { entity ->
+                bill.taxpayerid         = entity.objid
+                bill.taxpayername       = entity.entityname
+                bill.taxpayeraddress    = entity.entityaddress
+                binding.refresh('bill.taxpayer.*')
+            }
+        ]) 
+    }
+    void buildBillReportInfo(){
+        if( bill.advancepayment && bill.billdate <= parsedate.date)  {
+            throw new Exception('Advance Billing Date must be greater than todays date.')
+        }
+        else {
+            bill.billdate = parsedate.date 
+            binding.refresh('bill.billdate')
+        }
+        bill = billingSvc.generateBill( bill )
+        report.viewReport()
+    }
+    
+    void printBill() {
+        buildBillReportInfo()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def previewBill() {
+        buildBillReportInfo()
+        return 'preview'
+    }
+    
+    def report = [
+        getReportName : { return 'billing/rptbilling' },
+        getReportData : { return bill },
+        getParameters : { return reportSvc.getStandardParameter( OsirisContext?.env?.USERNAME ) }
+    ] as ServerReportModel
+    
+    List getQuarters() {
+        return  [1,2,3,4]
+    }
+    
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.billing.RPTBillingPage" />
+        <page name="preview" template="etracs2.common.PreviewPage"/>
+    </pages>
+</workunit>
