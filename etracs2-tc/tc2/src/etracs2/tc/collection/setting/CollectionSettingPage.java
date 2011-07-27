@@ -30,19 +30,19 @@ public class CollectionSettingPage extends javax.swing.JPanel {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xSeparator1 = new com.rameses.rcp.control.XSeparator();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
         xSeparator2 = new com.rameses.rcp.control.XSeparator();
         formPanel3 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField2 = new com.rameses.rcp.control.XLookupField();
         xNumberField2 = new com.rameses.rcp.control.XNumberField();
         xSeparator3 = new com.rameses.rcp.control.XSeparator();
         formPanel4 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField3 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField3 = new com.rameses.rcp.control.XLookupField();
         xNumberField3 = new com.rameses.rcp.control.XNumberField();
         xSeparator4 = new com.rameses.rcp.control.XSeparator();
         formPanel5 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField4 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField4 = new com.rameses.rcp.control.XLookupField();
         xNumberField4 = new com.rameses.rcp.control.XNumberField();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
 
@@ -77,13 +77,14 @@ public class CollectionSettingPage extends javax.swing.JPanel {
         formPanel2.setPadding(new java.awt.Insets(0, 20, 0, 0));
         formPanel2.setPreferredSize(new java.awt.Dimension(0, 50));
         formPanel2.setShowCaption(false);
-        xActionTextField1.setActionName("lookupOwnershipAccount");
-        xActionTextField1.setCaption("Account");
-        xActionTextField1.setCaptionWidth(70);
-        xActionTextField1.setName("entity.info.lcoaccttitle");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
-        xActionTextField1.setRequired(true);
-        formPanel2.add(xActionTextField1);
+        xLookupField1.setCaption("Account");
+        xLookupField1.setCaptionWidth(70);
+        xLookupField1.setExpression("#{accttitle}");
+        xLookupField1.setHandler("lookupOwnershipAccount");
+        xLookupField1.setName("cattleownership");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField1.setRequired(true);
+        formPanel2.add(xLookupField1);
 
         xNumberField1.setCaption("Amount");
         xNumberField1.setCaptionWidth(70);
@@ -116,13 +117,14 @@ public class CollectionSettingPage extends javax.swing.JPanel {
         formPanel3.setPadding(new java.awt.Insets(0, 20, 0, 0));
         formPanel3.setPreferredSize(new java.awt.Dimension(0, 50));
         formPanel3.setShowCaption(false);
-        xActionTextField2.setActionName("lookupTransferAccount");
-        xActionTextField2.setCaption("Account");
-        xActionTextField2.setCaptionWidth(70);
-        xActionTextField2.setName("entity.info.lctaccttitle");
-        xActionTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
-        xActionTextField2.setRequired(true);
-        formPanel3.add(xActionTextField2);
+        xLookupField2.setCaption("Account");
+        xLookupField2.setCaptionWidth(70);
+        xLookupField2.setExpression("#{accttitle}");
+        xLookupField2.setHandler("lookupTransferAccount");
+        xLookupField2.setName("cattletransfer");
+        xLookupField2.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField2.setRequired(true);
+        formPanel3.add(xLookupField2);
 
         xNumberField2.setCaption("Amount");
         xNumberField2.setCaptionWidth(70);
@@ -155,13 +157,14 @@ public class CollectionSettingPage extends javax.swing.JPanel {
         formPanel4.setPadding(new java.awt.Insets(0, 20, 0, 0));
         formPanel4.setPreferredSize(new java.awt.Dimension(0, 50));
         formPanel4.setShowCaption(false);
-        xActionTextField3.setActionName("lookupMarriageAccount");
-        xActionTextField3.setCaption("Account");
-        xActionTextField3.setCaptionWidth(70);
-        xActionTextField3.setName("entity.info.marriageaccttitle");
-        xActionTextField3.setPreferredSize(new java.awt.Dimension(0, 19));
-        xActionTextField3.setRequired(true);
-        formPanel4.add(xActionTextField3);
+        xLookupField3.setCaption("Account");
+        xLookupField3.setCaptionWidth(70);
+        xLookupField3.setExpression("#{accttitle}");
+        xLookupField3.setHandler("lookupMarriageAccount");
+        xLookupField3.setName("marriage");
+        xLookupField3.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField3.setRequired(true);
+        formPanel4.add(xLookupField3);
 
         xNumberField3.setCaption("Amount");
         xNumberField3.setCaptionWidth(70);
@@ -194,13 +197,14 @@ public class CollectionSettingPage extends javax.swing.JPanel {
         formPanel5.setPadding(new java.awt.Insets(0, 20, 0, 0));
         formPanel5.setPreferredSize(new java.awt.Dimension(0, 50));
         formPanel5.setShowCaption(false);
-        xActionTextField4.setActionName("lookupBurialAccount");
-        xActionTextField4.setCaption("Account");
-        xActionTextField4.setCaptionWidth(70);
-        xActionTextField4.setName("entity.info.burialaccttitle");
-        xActionTextField4.setPreferredSize(new java.awt.Dimension(0, 19));
-        xActionTextField4.setRequired(true);
-        formPanel5.add(xActionTextField4);
+        xLookupField4.setCaption("Account");
+        xLookupField4.setCaptionWidth(70);
+        xLookupField4.setExpression("#{accttitle}");
+        xLookupField4.setHandler("lookupBurialAccount");
+        xLookupField4.setName("burial");
+        xLookupField4.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField4.setRequired(true);
+        formPanel5.add(xLookupField4);
 
         xNumberField4.setCaption("Amount");
         xNumberField4.setCaptionWidth(70);
@@ -217,15 +221,15 @@ public class CollectionSettingPage extends javax.swing.JPanel {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
+            .add(jPanel1Layout.createSequentialGroup()
                 .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 456, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(11, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel1Layout.createSequentialGroup()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(74, Short.MAX_VALUE))
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 358, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(148, Short.MAX_VALUE))
         );
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -243,10 +247,10 @@ public class CollectionSettingPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel5;
     private javax.swing.JPanel jPanel1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField2;
-    private com.rameses.rcp.control.XActionTextField xActionTextField3;
-    private com.rameses.rcp.control.XActionTextField xActionTextField4;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
+    private com.rameses.rcp.control.XLookupField xLookupField2;
+    private com.rameses.rcp.control.XLookupField xLookupField3;
+    private com.rameses.rcp.control.XLookupField xLookupField4;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField2;
     private com.rameses.rcp.control.XNumberField xNumberField3;
