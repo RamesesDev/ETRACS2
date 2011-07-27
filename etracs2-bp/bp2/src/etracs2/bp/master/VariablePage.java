@@ -141,11 +141,13 @@ public class VariablePage extends javax.swing.JPanel {
         xButton1.setText("Add");
         xButton1.setDepends(new String[] {"selectedItem", "entity.datatype"});
         xButton1.setName("doAdd");
+        xButton1.setVisibleWhen("#{entity.datatype == 'string_array'}");
 
         xButton2.setMnemonic('r');
         xButton2.setText("Remove");
         xButton2.setDepends(new String[] {"selectedItem", "entity.datatype", "arrayvalue"});
         xButton2.setName("doRemove");
+        xButton2.setVisibleWhen("#{entity.datatype == 'string_array'}");
 
         org.jdesktop.layout.GroupLayout jPanel5Layout = new org.jdesktop.layout.GroupLayout(jPanel5);
         jPanel5.setLayout(jPanel5Layout);

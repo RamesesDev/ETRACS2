@@ -66,6 +66,8 @@ class RuleService
 		rule.rulename = fixRuleName( rule )
 		rule.docstate = DRAFT_STATE
 		rule.packagename = 'bp.assessment.rules.' + rule.rulename 
+		if( !rule.conditions ) throw new Exception("There must be at least 1 condition.");
+		if( !rule.actions ) throw new Exception("There must be at least 1 action.");
 		buildRuleText( rule )
 		validate( rule )
 		em.create( rule.schemaname, rule )

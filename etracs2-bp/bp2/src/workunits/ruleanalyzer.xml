@@ -127,8 +127,12 @@ class RuleAnalyzerController
         }
     }
     
+    def onselect = { lob ->
+        if( entity.lobs.find{ it.lob.objid == lob.objid } )
+            throw new Exception("Line of business $lob.name already exist.");
+    }
     
-    def lobLookup = InvokerUtil.lookupOpener( 'lob.lookup', [:] )
+    def lobLookup = InvokerUtil.lookupOpener( 'lob.lookup', [onselect:onselect] );
     def assessmenttypes = ['NEW', 'RENEW', 'RETIRE']
     
     def lobListHandler = [
@@ -140,7 +144,7 @@ class RuleAnalyzerController
         fetchList  : { return entity.lobs },
         onAddItem  : { item -> doAddItem( item ) },
         onRemoveItem : { item -> 
-            if( MsgBox.confirm('Delete selecte line of business?') ) {
+            if( MsgBox.confirm('Delete selected line of business?') ) {
                 entity.lobs.remove( item )
                 resetComputation()
             }

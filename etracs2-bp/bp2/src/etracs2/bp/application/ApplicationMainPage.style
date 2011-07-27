@@ -1,17 +1,13 @@
-"application.*" [ mode != 'view' && application.txntype != 'RETIRE'] {
+"application.*" [ mode != 'view' ] {
     readonly:false;
 }
 
-"application.*" [ mode == 'view' || application.txntype == 'RETIRE' ] {
+"application.*" [ mode == 'view' || application.txntype =='RETIRE' || application.txntype == 'RETIRELOB' || application.txntype == 'ADDLOB' ] {
     readonly:true;
 }
 
-"lobSearch" [ mode != 'view' && application.txntype != 'RETIRE']{
+"lobSearch" [ mode != 'view' || application.txntype == 'RETIRE' || application.txntype == 'RETIRELOB']{
     readonly:false;
-}
-
-"lobSearch" [ mode == 'view' || application.txntype == 'RETIRE']{
-    readonly:true;
 }
 
 "application.txndate" [application.txnmode == 'ONLINE' && mode != 'view']{
