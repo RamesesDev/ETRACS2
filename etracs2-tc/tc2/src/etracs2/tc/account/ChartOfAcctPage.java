@@ -57,6 +57,7 @@ public class ChartOfAcctPage extends javax.swing.JPanel {
 
         xNumberField1.setCaption("From Year");
         xNumberField1.setCaptionWidth(80);
+        xNumberField1.setFieldType(int.class);
         xNumberField1.setName("account.fromyear");
         xNumberField1.setPattern("0000");
         xNumberField1.setPreferredSize(new java.awt.Dimension(100, 19));
@@ -65,6 +66,7 @@ public class ChartOfAcctPage extends javax.swing.JPanel {
 
         xNumberField2.setCaption("To Year");
         xNumberField2.setCaptionWidth(80);
+        xNumberField2.setFieldType(int.class);
         xNumberField2.setName("account.toyear");
         xNumberField2.setPattern("0000");
         xNumberField2.setPreferredSize(new java.awt.Dimension(100, 19));

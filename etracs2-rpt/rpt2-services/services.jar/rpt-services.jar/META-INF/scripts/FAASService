@@ -112,8 +112,8 @@ class FAASService
                                 backtaxyrs      : 0, 
                                 claimno:'-'
                             ],
-            rp            : [lgutype: var.lgu_type, attributes:[], autonumber:var.pin_autonumber],
-            rpu           : [ry:ry, classid:'RES', classcode:'RES', classname:'RES',suffix:0,info:[:], taxable:true],
+            rp            : [lgutype: var.lgu_type, attributes:[]],
+            rpu           : [ry:ry, classid:'RES', classcode:'RES', classname:'RES', totalareasqm:0.0, totalareaha:0.0, suffix:0,info:[:]],
             previousfaases: [],
             lgutype       : var.lgu_type,
         ]
@@ -172,14 +172,6 @@ class FAASService
     }
     
     @ProxyMethod
-    public Map getFaasInfo( faasid ){
-        def faasinfo = em.read(LISTSCHEMA_NAME, [objid:faasid])
-        if( ! faasinfo ) throw new Exception('Cannot open FAAS with ID No. ' + faasid )
-        faasinfo.datacapture = faasinfo.datacapture as boolean 
-        return faasinfo 
-    }
-    
-    @ProxyMethod
     public Map submit( faasid ) {
         def faasinfo = getFaasInfo( faasid )
         validateSubmit( faasinfo )
@@ -218,89 +210,6 @@ class FAASService
         invokeCommonApproveActions( faas )
         return faas 
     }
-        
-    @ProxyMethod
-    public Map disapproveByProvince( faasid ) {
-        def faasinfo = getFaasInfo( faasid )
-        if( faasinfo.docstate == INTERIM_STATE) throw new Exception('FAAS is still interim.')
-        if( faasinfo.docstate == FORAPPROVAL_STATE) throw new Exception('FAAS has already been submitted for approval.')
-        if( faasinfo.docstate == CURRENT_STATE) throw new Exception('FAAS is already current.')
-        if( faasinfo.docstate == CANCELLED_STATE) throw new Exception('FAAS has already been cancelled.')
-        def faas = open( faasinfo.objid )
-        updateFaasState( faas, FORAPPROVAL_STATE )
-        moveOutboxMessageToProcessed( faasid )
-        return faas 
-    }
-    
-    @ProxyMethod
-    public Map onlineApprove( faasid, approvaldata  ) {
-        def faas = open( faasid )
-        if( faas.docstate == CURRENT_STATE || faas.docstate == CANCELLED_STATE)  {
-            //the faas is already approve
-            //this happens if the approval was done manually
-            //so just return the faas 
-            return [date:new Date(), status:'Faas is already ' + faas.docstate] 
-        }
-        faas.info.tdno          = approvaldata.tdno
-        faas.info.dtapproved    = approvaldata.dtapproved 
-        faas.message            = null 
-        //update pin for land type 
-        if( faas.info.datacapture == false && faas.rpu.rputype == LAND_TYPE) {
-            deletePin( faas.rpu.fullpin )
-            faas.rp.pin         = approvaldata.pin 
-            faas.rpu.fullpin    = approvaldata.fullpin 
-            createOnlinePIN( faas ) 
-        }
-        em.update( faas.schemaname, faas )
-        em.update(LISTSCHEMA_NAME, faas )
-        invokeCommonApproveActions( faas )
-        return [date:new Date(), status:'Processed successfully.']
-    }
-    
-    @ProxyMethod
-    public Map onlineDisapprove( faasid, disapprovaldata ) {
-        def faas = open( faasid  )
-        if( faas.docstate == CURRENT_STATE || faas.docstate == CANCELLED_STATE){
-            //the faas has already been approved or superseded
-            //do not alter the state, just a message 
-            return [date:new Date(), status:'Faas is already ' + faas.docstate]
-        }  
-        faas.message = disapprovaldata.message 
-        updateMessage( faas, faas.message )
-        updateFaasState( faas, FORAPPROVAL_STATE )
-        return [date:new Date(), status:'Processed successfully.']
-    }
-    
-    @ProxyMethod
-    public Map approveSubdivisionFaas( faasid ) {
-        def faasinfo = getFaasInfo( faasid )
-        validateApprove( faasinfo )
-        def faas = open( faasinfo.objid )
-        updateAutonumberTdNo( faas  )
-        validateRPUInfo( faas )
-        updateFaasState( faas, CURRENT_STATE )
-        cancelPreviousFaas( faas )
-        deleteTxnReference( faas )
-        ledgerSvc.postSubdivisionFaas( faas.objid )
-        logSvc.log('APPROVE','FAAS', faas.objid)
-        return faas 
-    }
-    
-    @ProxyMethod
-    public Map approveConsolidatedFaas( faasid ) {
-        def faasinfo = getFaasInfo( faasid )
-        validateApprove( faasinfo )
-        def faas = open( faasinfo.objid )
-        assignNextPin( faas )
-        updateAutonumberTdNo( faas  )
-        validateRPUInfo( faas )
-        updateFaasState( faas, CURRENT_STATE )
-        cancelPreviousFaas( faas )
-        deleteTxnReference( faas )
-        ledgerSvc.postConsolidatedFaas( faas.objid )
-        logSvc.log('APPROVE','FAAS', faas.objid)
-        return faas 
-    }
     
     void invokeCommonApproveActions( faas ) {
         validateRPUInfo( faas )
@@ -328,74 +237,6 @@ class FAASService
         em.delete(SCHEMA_NAME, [objid:faasid ] )
     }
     
-    @ProxyMethod
-    public def getNextParcelNo( barangay, section ) {
-        def key = barangay.pin + '-' + buildSectionNo( section )
-        return seqSvc.getCurrentSeries( key )
-    }
-    
-    @ProxyMethod
-    public def buildSectionNo( section )  {
-		def sectionLen = Integer.parseInt( var.pin_section_length )
-		return section.toString().padLeft(sectionLen, '0')
-	}
-	
-	@ProxyMethod
-    public def buildParcelNo( newSeries ) {
-		def parcelLen = Integer.parseInt( var.pin_parcel_length )
-		return newSeries.toString().padLeft( parcelLen,'0')
-	}
-    
-    @ProxyMethod
-    public def resolveTxnType( txntype ) {
-        def type = getTxnTypes().find{ it.txntype == txntype }
-        if( ! type ) throw new Exception('TxnType ' + txntype + ' is not defined in TxnTypes.')
-        return type 
-    }
-    
-    @ProxyMethod
-    public void assignNextPin( faas  ) {
-        def autonumber = faas.rp.autonumber as boolean 
-        if( !autonumber || faas.rp.pin == '-' || faas.rpu.rputype != LAND_TYPE) return 
-        
-        def key =   faas.rp.provcityindex + '-' + 
-                    faas.rp.munidistrictindex + '-' + 
-                    faas.rp.barangayindex + '-' + faas.rp.section 
-        def nextparcel      = seqSvc.getNextSeries( key )
-        faas.rp.pin         = key + '-' + buildParcelNo( nextparcel )
-        faas.rpu.fullpin    = faas.rp.pin 
-        checkDuplicatePin( faas )
-        createPIN( faas ) 
-    }
-    
-    @ProxyMethod
-	public def assignPin( faas, key, section, newSeries, oldSeries ) {
-		if( faas.rpu.rputype != 'land') throw new Exception("Only Land RPU could be assigned a new PIN.")
-		if( ! faasExists( faas.objid ) ) throw new Exception("FAAS not found.")
-		
-		validateParcelSeries( key, newSeries, oldSeries ) 
-		def sectionNo       = buildSectionNo( section )
-		def parcelNo        = buildParcelNo( newSeries )
-		def pin             = key + '-' + parcelNo
-        faas.rp.pin         = pin 
-        faas.rpu.fullpin    = pin 
-		checkDuplicatePin( faas )
-		seqService.updateNextSeries( key, newSeries + 1)
-		
-		/* update faas pin related info */
-		faas.rp.section  = sectionNo
-		faas.rp.parcel   = parcelNo
-		em.update( faas.schemaname, faas )
-        def params = [objid:faas.objid, fullpin:faas.rpu.fullpin, pin:faas.rp.pin ]
-		em.sqlContext.createNamedExecutor('faas:updateFaasListPin').setParameters(params ).execute()
-		return faas
-	}
-    
-    private void validateParcelSeries( key, newSeries, oldSeries) {
-		def seq = em_sys.sqlContext.createNamedQuery("sequence:getCurrentSeries").setParameter("objid",key).singleResult
-		if( seq && oldSeries != seq.currentSeries ) throw new Exception("Current Series has been modified. Please try again.")
-		if( seq && seq.currentSeries > newSeries) throw new Exception("New Series $newSeries must be greater than or equal to $seq.currentSeries")
-	}
     
     /*-----------------------------------------------------------------------
     ** Transaction Support Methods
@@ -459,100 +300,6 @@ class FAASService
         return lgu.barangays 
     }
     
-    @ProxyMethod
-    public def checkLedgerBalance( faas ) {
-        def ledger = em.sqlContext.createNamedQuery('faas:getLedgerInfo').setParameter('objid', faas.ledgerid ).singleResult
-        if( !ledger) throw new Exception('Cannot open Ledger for FAAS ' + faas.tdno + '.')
-        
-        def msg = 'Ledger is not fully paid.'
-        def parseddate = dateSvc.parseCurrentDate()
-        if( ledger.docstate == 'PENDING' ) throw new Exception('Ledger if not yet approved.\nLet LandTax approve the ledger before processing the transaction.')
-        if( ledger.docstate == 'CANCELLED') throw new Exception('Ledger has already been cancelled.')
-        if( ledger.lastyearpaid < parseddate.year ) throw new Exception( msg )
-        if( ledger.lastqtrpaid < 4 ) throw new Exception( msg )
-    }
-    
-    
-    @ProxyMethod
-    public void initFaasInfo( faas ) {
-        faas.info.txntype = faas.info.txn.txntype 
-        String rputype = faas.rpu.rputype 
-        if( rputype != LAND_TYPE ) {
-            updateLandRPInfo( faas )
-        }
-        if( rputype == LAND_TYPE) landRpuSvc.initLandRpu( faas.rpu )
-        else if( rputype == BLDG_TYPE) bldgRpuSvc.initBldgRpu( faas )
-        else if( rputype == MACH_TYPE) machRpuSvc.initMachRpu( faas )
-        else if( rputype == PLANTTREE_TYPE) planttreeRpuSvc.initPlantTreeRpu( faas )
-        else if( rputype == MISC_TYPE) miscRpuSvc.initMiscRpu( faas )
-        else throw new Exception('Invalid RPU Type ' + rputype + '.')
-    }
-    
-    
-    @ProxyMethod
-    public void checkSuffix( rputype, suffix ) {
-        if( rputype == LAND_TYPE && suffix != 0  ) {
-            throw new Exception('Suffix must be zero for land property.')
-        }
-        else if( rputype == BLDG_TYPE && (suffix < 1001 || suffix > 1999 )) {
-            throw new Exception('Suffix must be between 1001 and 1999 for building property.')
-        }
-        else if( rputype == MACH_TYPE && (suffix < 2001 || suffix > 2999 )) {
-            throw new Exception('Suffix must be between 2001 and 2999 for machine property.')
-        }
-        else if( rputype == PLANTTREE_TYPE && (suffix < 3001 || suffix > 6999 )) {
-            throw new Exception('Suffix must be betwwen 3001 and 6999 for plant/tree property.')
-        }
-        else if( rputype == MISC_TYPE && (suffix < 7001 || suffix > 7999 )) {
-            throw new Exception('Suffix must be betwwen 7001 and 7999 for miscellaneous property.')
-        }
-    }
-    
-    @ProxyMethod
-    public void createPIN( faas ) {
-        def validTxnTypes = ['DC','ND','SD','CS']
-        if( validTxnTypes.contains( faas.info.txntype ) ) {
-            def pin = [pin:faas.rpu.fullpin, claimno:faas.info.claimno, docstate:faas.docstate]
-            em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
-        }
-    }
-    
-    
-    @ProxyMethod
-    public void updateAutonumberTdNo( faas ) {
-        faas.info.autonumber = faas.info.autonumber as boolean 
-        faas.info.autonumber = ( faas.info.datacapture == true ? false : faas.info.autonumber )
-        
-        if( faas.info.datacapture == true ||  faas.info.autonumber == false ) {
-            return 
-        }
-        //TD Formatting Options:
-        // Y - revision year
-        // P - province index 
-        // C - city index 
-        // M - municipality index 
-        // D - district index 
-        // B - barangay index 
-        def ry              = faas.rpu.ry +''
-        def provindex       = faas.rp.provcityindex 
-        def cityindex       = faas.rp.provcityindex 
-        def muniindex       = faas.rp.munidistrictindex
-        def districtindex   = faas.rp.munidistrictindex
-        def barangayindex   = faas.rp.barangayindex
-        
-        def values = [Y:ry, P:provindex, C:cityindex, M:muniindex, D:districtindex, B:barangayindex]
-        def tdno   = var.td_format 
-        values.keySet().each {
-            tdno = tdno.replace( it, values[it] )
-        }
-        
-        faas.info.tdno = tdno + '-' + seqSvc.getNextFormattedSeries( tdno )
-        em.update(faas.schemaname, faas )
-        em.update(LISTSCHEMA_NAME, faas )
-        //update faaslisttdno 
-        //em.sqlContext.createNamedExecutor('faas:updateListTdNo').setParameters([tdno:faas.info.tdno, objid:faas.objid]).execute()
-    }
-    
     /*-----------------------------------------------------------------------
     ** Support Methods
     -----------------------------------------------------------------------*/
@@ -578,7 +325,37 @@ class FAASService
     }
     
     
-    
+    void updateAutonumberTdNo( faas ) {
+        faas.info.autonumber = faas.info.autonumber as boolean 
+        faas.info.autonumber = ( faas.info.datacapture ? false : faas.info.autonumber )
+        if( faas.info.datacapture == true ||  faas.info.autonumber == false ) {
+            return 
+        }
+        //TD Formatting Options:
+        // Y - revision year
+        // P - province index 
+        // C - city index 
+        // M - municipality index 
+        // D - district index 
+        // B - barangay index 
+        def ry              = faas.rpu.ry +''
+        def provindex       = faas.rp.provcityindex 
+        def cityindex       = faas.rp.provcityindex 
+        def muniindex       = faas.rp.munidistrictindex
+        def districtindex   = faas.rp.munidistrictindex
+        def barangayindex   = faas.rp.barangayindex
+        
+        def values = [Y:ry, P:provindex, C:cityindex, M:muniindex, D:districtindex, B:barangayindex]
+        def tdno   = var.td_format 
+        values.keySet().each {
+            tdno = tdno.replace( it, values[it] )
+        }
+        
+        faas.info.tdno = tdno + '-' + seqSvc.getNextFormattedSeries( tdno )
+        em.update(faas.schemaname, faas )
+        //update faaslisttdno 
+        em.sqlContext.createNamedExecutor('faas:updateListTdNo').setParameters([tdno:faas.info.tdno, objid:faas.objid]).execute()
+    }
     
     
     public void initOpenRpuInfo( rpu ) {
@@ -606,7 +383,13 @@ class FAASService
         }
     }
     
-    
+    void createPIN( faas ) {
+        def validTxnTypes = ['DC','ND','SD','CS']
+        if( validTxnTypes.contains( faas.info.txntype ) ) {
+            def pin = [pin:faas.rpu.fullpin, claimno:faas.info.claimno, docstate:faas.docstate]
+            em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
+        }
+    }
     void buildPinInfo( faas ) {
         def lgu = em.sqlContext.createNamedQuery('faas:getLgu').setParameter('objid', faas.rp.munidistrictid).singleResult
         if( !lgu) throw new Exception('Cannot load LGU for index ' + faas.rp.munidistrictid + '.' )
@@ -676,6 +459,20 @@ class FAASService
     	if( !faasland ) throw new Exception( 'Land reference is required.' );
     }
     
+    void initFaasInfo( faas ) {
+        faas.info.txntype = faas.info.txn.txntype 
+        String rputype = faas.rpu.rputype 
+        if( rputype != LAND_TYPE ) {
+            updateLandRPInfo( faas )
+        }
+        if( rputype == LAND_TYPE) landRpuSvc.initLandRpu( faas )
+        else if( rputype == BLDG_TYPE) bldgRpuSvc.initBldgRpu( faas )
+        else if( rputype == MACH_TYPE) machRpuSvc.initMachRpu( faas )
+        else if( rputype == PLANTTREE_TYPE) planttreeRpuSvc.initPlantTreeRpu( faas )
+        else if( rputype == MISC_TYPE) miscRpuSvc.initMiscRpu( faas )
+        else throw new Exception('Invalid RPU Type ' + rputype + '.')
+    }
+    
     void resolveRpuType( faas ) {
         int suffix = faas.rpu.suffix 
         def rputype = null 
@@ -724,7 +521,11 @@ class FAASService
         return data.ry 
     }
     
-    
+    def getFaasInfo( faasid ){
+        def faasinfo = em.read(LISTSCHEMA_NAME, [objid:faasid])
+        faasinfo.datacapture = faasinfo.datacapture as boolean 
+        return faasinfo 
+    }
     
     def checkFaasTxnReference( faasid ) {
         def ref = em.sqlContext.createNamedQuery('faas:getTxnReference').setParameter('objid', faasid).singleResult
@@ -733,6 +534,18 @@ class FAASService
         }
     }
     
+    def checkLedgerBalance( faas ) {
+        def ledgerid = faas.fullpin + '-' + faas.claimno 
+        def ledger = em.sqlContext.createNamedQuery('faas:getLedgerInfo').setParameter('objid', ledgerid ).singleResult
+        if( !ledger) throw new Exception('Cannot open Ledger for FAAS ' + faas.tdno + '.')
+        
+        def msg = 'Ledger is not fully paid.'
+        def parseddate = dateSvc.parseCurrentDate()
+        if( ledger.docstate == 'PENDING' ) throw new Exception('Ledger if not yet approved.\nLet LandTax approve the ledger before processing the transaction.')
+        if( ledger.docstate == 'CANCELLED') throw new Exception('Ledger has already been cancelled.')
+        if( ledger.lastyearpaid < parseddate.year ) throw new Exception( msg )
+        if( ledger.lastqtrpaid < 4 ) throw new Exception( msg )
+    }
     
     void insertTxnReference( faas ) {
         if( faas.previousfaases )  {
@@ -941,6 +754,10 @@ class FAASService
         return faas 
     }
     
-    
+    def resolveTxnType( txntype ) {
+        def type = getTxnTypes().find{ it.txntype == txntype }
+        if( ! type ) throw new Exception('TxnType ' + txntype + ' is not defined in TxnTypes.')
+        return type 
+    }
 }
 
