@@ -119,6 +119,15 @@ class ReceiptService
 		if((result = getListByQuery('receipt:getListByPaidBy', searchParam, params))) return result 
 		return result 
 	}
+    
+    @ProxyMethod
+    public void validateCheckDate( checkdate ) {
+        def currdate = dateService.serverDate 
+        checkdate = dateService.parse( 'yyyy-MM-dd',checkdate)
+        if( checkdate > currdate ) throw new Exception('Post dated check is not allowed.')
+        def daysdiff = dateService.getDaysDiff( checkdate, currdate ) 
+        if( daysdiff > 60 ) throw new Exception('Stale check is not allowed.')
+    }
 	
 	
 	
@@ -141,7 +150,7 @@ class ReceiptService
 		if( receipt.info.totalpayment < receipt.info.amount ) {
 			throw new Exception('Total Payment must be greater than or equal to amount due.')
 		}
-		em.validate( receipt.schemaname, receipt )
+        em.validate( receipt.schemaname, receipt )
 	}
 	
 	void checkRemitted( receipt ) {

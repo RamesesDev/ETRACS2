@@ -184,6 +184,22 @@ class DateService {
         return 4;
     }
     
+    @ProxyMethod
+    public def getDaysDiff(Date startDate, Date endDate ) {
+        Calendar startCal = Calendar.getInstance();
+        Calendar endCal = Calendar.getInstance();
+        
+        startCal.setTime(startDate);
+        endCal.setTime(endDate );
+        
+        long startMillis = startCal.getTimeInMillis();
+        long endMillis = endCal.getTimeInMillis();
+        
+        // Calculate no. of days using diff in milliseconds
+        long diff = endMillis - startMillis;
+        return (int)(diff / (24 * 60 * 60 * 1000) + 1);
+    }
+    
     
 
 }
