@@ -26,10 +26,10 @@ class XTemplateTestService
 	}
 	
 	@ProxyMethod
-	public def buildHTML(def htmlType, def data) {
+	public def buildHTML(def template, def data) {
       def temp = [:];
 
-      temp.body = tmp.getResult('META-INF/templates/' + htmlType + '.groovy', data);
+      temp.body = tmp.getResult('META-INF/templates/' + template + '.groovy', data);
 
       if(data.style == null)
          temp.style = getStyle(data.fontSize);
@@ -69,24 +69,22 @@ class XTemplateTestService
 	   if(data.items != null) {
          for(a in 0..data.items.size() - 1) {
             data.items[a].x = ''
-         
             try {
                if(data.items[a].tables != null) {
-                  for(b in 0..data.items[a].tables.size()) {
-                     data.items[a].x = tmp.getResult('META-INF/templates/simple-list.groovy', data.items[a].tables[b]);
+                  for(b in 0..data.items[a].tables.size() - 1) {
+                     if(data.items[a].tables[b].headers.size() - 1 > 0) {
+                        data.items[a].x += tmp.getResult('META-INF/templates/template_01.groovy', data.items[a].tables[b]);
+                     } else { 
+                        data.items[a].x += tmp.getResult('META-INF/templates/template_02.groovy', data.items[a].tables[b]);
+                     }
                   }
                }
-            }catch(Exception ex){}
-                           
-            /*if(data.items[a].ifValue != null) {
-               if( genStatement(data.ifAgainst, data.ifOperator, data.items[a].ifValue) ) {
-                  temp.body += tmp.getResult('META-INF/templates/split-info.groovy', data.items[a]);
-               } else {
-                  temp.body += '';
-               }
-            } else {*/
+               
                temp.body += tmp.getResult('META-INF/templates/split-info.groovy', data.items[a]);
-            //}
+            }catch(Exception ex){
+               ex.printStackTrace();
+            }
+            
          }
 	   }
       if(data.style == null)
@@ -103,5 +101,17 @@ class XTemplateTestService
 	         return true;
 	      
 	   return false;
+	}
+	
+	@ProxyMethod
+	public saveHTMLToFile(def html) {
+      byte[] b = html.getBytes();
+
+      OutputStream out = new FileOutputStream("/home/rameses/Desktop/a.html");
+      try {
+          out.write(b);
+      }finally{
+          out.close();
+      }
 	}
 }
