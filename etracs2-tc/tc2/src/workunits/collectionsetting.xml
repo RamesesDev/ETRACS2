@@ -19,61 +19,74 @@ class CollectionSettingController
     def svc;
     
     def entity
+    def cattleownership
+    def cattletransfer
+    def marriage
+    def burial
+    
     
     void init() {
         entity = svc.open()
+        cattleownership = [objid:entity.info.lcoacctid, accttitle:entity.info.lcoaccttitle]
+        cattletransfer = [objid:entity.info.lctacctid, accttitle:entity.info.lctaccttitle]
+        marriage = [objid:entity.info.marriageacctid, accttitle:entity.info.marriageaccttitle]
+        burial = [objid:entity.info.burialacctid, accttitle:entity.info.burialaccttitle]
     }
     
     void save() {
         entity = svc.save( entity )
+        MsgBox.alert('Record has been successfully saved.')
     }
     
-    def onselectOwnership = { ia ->
-        entity.info.lcoacctid = ia.objid
-        entity.info.lcoacctno = ia.acctno
-        entity.info.lcoaccttitle = ia.accttitle
-        entity.info.lcofundid = ia.fundid
-        binding.refresh('entity.info.lco.*')
+    
+    def getLookupOwnershipAccount() {
+       return InvokerUtil.lookupOpener('incomeacct:lookup',[:]) 
     }
     
-    def lookupOwnershipAccount() {
-       return InvokerUtil.lookupOpener('incomeacct:lookup',[searchText:entity.info.lcoaccttitle, onselect:onselectOwnership]) 
+    void setCattleownership( cattleownership )  {
+        this.cattleownership = cattleownership
+        entity.info.lcoacctid = cattleownership?.objid
+        entity.info.lcoacctno = cattleownership?.acctno
+        entity.info.lcoaccttitle = cattleownership?.accttitle
+        entity.info.lcofundid = cattleownership?.fundid
     }
     
-    def onselectTransfer = { ia ->
-        entity.info.lctacctid = ia.objid
-        entity.info.lctacctno = ia.acctno
-        entity.info.lctaccttitle = ia.accttitle
-        entity.info.lctfundid = ia.fundid
-        binding.refresh('entity.info.lct.*')
+    
+    def getLookupTransferAccount() {
+       return InvokerUtil.lookupOpener('incomeacct:lookup',[:]) 
     }
     
-    def lookupTransferAccount() {
-       return InvokerUtil.lookupOpener('incomeacct:lookup',[searchText:entity.info.lctaccttitle, onselect:onselectTransfer]) 
+    void setCattletransfer( cattletransfer )  {
+        this.cattletransfer = cattletransfer
+        entity.info.lctacctid = cattletransfer?.objid
+        entity.info.lctacctno = cattletransfer?.acctno
+        entity.info.lctaccttitle = cattletransfer?.accttitle
+        entity.info.lctfundid = cattletransfer?.fundid
     }
     
-    def onselectMarriage = { ia ->
-        entity.info.marriageacctid = ia.objid
-        entity.info.marriageacctno = ia.acctno
-        entity.info.marriageaccttitle = ia.accttitle
-        entity.info.marriagefundid = ia.fundid
-        binding.refresh('entity.info.marriage.*')
+    def getLookupMarriageAccount() {
+       return InvokerUtil.lookupOpener('incomeacct:lookup',[:]) 
     }
     
-    def lookupMarriageAccount() {
-       return InvokerUtil.lookupOpener('incomeacct:lookup',[searchText:entity.info.marriageaccttitle, onselect:onselectMarriage]) 
+    void setMarriage( marriage ) {
+        this.marriage = marriage
+        entity.info.marriageacctid = marriage?.objid
+        entity.info.marriageacctno = marriage?.acctno
+        entity.info.marriageaccttitle = marriage?.accttitle
+        entity.info.marriagefundid = marriage?.fundid
     }
     
-    def onselectBurial = { ia ->
-        entity.info.burialacctid = ia.objid
-        entity.info.burialacctno = ia.acctno
-        entity.info.burialaccttitle = ia.accttitle
-        entity.info.burialfundid = ia.fundid
-        binding.refresh('entity.info.burial.*')
+    
+    def getLookupBurialAccount() {
+       return InvokerUtil.lookupOpener('incomeacct:lookup',[:]) 
     }
     
-    def lookupBurialAccount() {
-       return InvokerUtil.lookupOpener('incomeacct:lookup',[searchText:entity.info.burialaccttitle, onselect:onselectBurial]) 
+    void setBurial( burial ) {
+        this.burial = burial
+        entity.info.burialacctid = burial?.objid
+        entity.info.burialacctno = burial?.acctno
+        entity.info.burialaccttitle = burial?.accttitle
+        entity.info.burialfundid = burial?.fundid
     }
     
 }

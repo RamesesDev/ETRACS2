@@ -1,0 +1,112 @@
+import com.rameses.annotations.*
+import groovy.text.SimpleTemplateEngine
+
+class BldgHtmlService
+{
+   @ProxyMethod
+   def buildBldgHTML(def faas) {
+      def bldg = [
+         [
+            title:'Assessment Detail',
+            cols:1,
+            tables:[
+               [
+                  title:'Building Information',
+                  cols:1,
+                  headers:[[:]],
+                  items:[
+                     [caption:'PSIC', value:faas.rpu.info.psic],
+                     [caption:'Permit No', value:faas.rpu.info.permitno],
+                     [caption:'Permit Date', value:faas.rpu.info.permitdate],
+                     [caption:'Issued By', value:faas.rpu.info.permitissuedby],
+                     [caption:'Date Completed', value:faas.rpu.info.dtcompleted],
+                     [caption:'Date Occupied', value:faas.rpu.info.dtoccupied],
+                     [caption:'Age', value:faas.rpu.info.bldgage],
+                     [caption:'Depreciation (%)', value:faas.rpu.info.depreciation],
+                     [caption:'Depreciation Value', value:faas.rpu.info.depreciationvalue],
+                  ],
+                  leftItems:'',
+                  data:'',
+                  rightItems:''
+                ],
+                [
+                  title:'Building Characteristic',
+                  cols:1,
+                  headers:[
+                     [name:'actualuse', caption:'Actual Use'],
+                     [name:'area', caption:'Area'],
+                     [name:'basemarketvalue', caption:'Base Market Value'],
+                     [name:'adjustment', caption:'Adjusment'],
+                     [name:'marketvalue', caption:'Market Value'],
+                     [name:'assessedvalue', caption:'Assessed Value'],
+                  ],
+                  items:[
+                     [actualuse:faas.rpu.info.bldguses.actualuse.actualusename],
+                     [area:faas.rpu.info.bldguses.area],
+                     [basemarketvalue:faas.rpu.info.bldguses.basemarketvalue],
+                     [adjustment:faas.rpu.info.bldguses.adjustment],
+                     [marketvalue:faas.rpu.info.bldguses.marketvalue],
+                     [assessedvalue:faas.rpu.info.bldguses.assessedvalue],
+                     
+                  ],
+                  leftItems:'',
+                  data:'',
+                  rightItems:''
+                ],
+                [
+                  title:'Building Classification',
+                  cols:1,
+                  headers:[
+                     [name:'structurename', caption:'Structure'],
+                     [name:'materialname', caption:'Material'],
+                  ],
+                  items:[
+                     [structurename:faas.rpu.info.bldgstructures.structurename],
+                     [materialname:faas.rpu.info.bldguses.materialname],
+                  ],
+                  leftItems:'',
+                  data:'',
+                  rightItems:''
+                ],
+                [
+                  title:'',
+                  cols:1,
+                  headers:[[:]],
+                  items:[
+                     [caption:'Building Type', value:faas.rpu.info.bldgtype.bldgtypename],
+                     [caption:'Building Kind', value:faas.rpu.info.bldgkindbucc.bldgkindcode],
+                     [caption:'Building Class', value:faas.rpu.info.bldgclass],
+                     [caption:'Base Value', value:faas.rpu.info.basevalue],
+                     [caption:'Sworn Amount', value:faas.rpu.info.swornamount],
+                     [caption:'Uses Sworn Amount', value:faas.rpu.info.useswornamount],
+                     [caption:'Additional Information', value:faas.rpu.info.additionalinfo]
+                     
+                  ],
+                  leftItems:'',
+                  data:'',
+                  rightItems:''
+                ]
+            ],
+            items:[
+               [caption:'Base Market Value', value:faas.rpu.totalbmv],
+               [caption:'Market Value', value:faas.rpu.totalmv],
+               [caption:'Assessed Value', value:faas.rpu.totalav],
+            ]
+         ]
+      ]
+      
+      return bldg
+   }
+   
+	def validateListOfMaps = { list ->
+      def l = []
+      list.each {
+         if( it ) l << list
+      }
+      
+      if( l )
+         return l
+      
+      return ''
+   }
+}

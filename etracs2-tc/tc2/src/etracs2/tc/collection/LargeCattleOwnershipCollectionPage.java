@@ -111,6 +111,7 @@ public class LargeCattleOwnershipCollectionPage extends javax.swing.JPanel {
         xNumberField1.setName("entity.info.amount");
         xNumberField1.setOpaque(false);
         xNumberField1.setPattern("#,##0.00");
+        xNumberField1.setReadonly(true);
         jPanel2.add(xNumberField1);
         xNumberField1.setBounds(12, 38, 206, 48);
 
@@ -122,6 +123,7 @@ public class LargeCattleOwnershipCollectionPage extends javax.swing.JPanel {
         xNumberField2.setName("entity.info.totalpayment");
         xNumberField2.setOpaque(false);
         xNumberField2.setPattern("#,##0.00");
+        xNumberField2.setReadonly(true);
         jPanel2.add(xNumberField2);
         xNumberField2.setBounds(12, 116, 206, 48);
 
@@ -134,6 +136,7 @@ public class LargeCattleOwnershipCollectionPage extends javax.swing.JPanel {
         xNumberField3.setName("entity.info.change");
         xNumberField3.setOpaque(false);
         xNumberField3.setPattern("#,##0.00");
+        xNumberField3.setReadonly(true);
         jPanel2.add(xNumberField3);
         xNumberField3.setBounds(12, 196, 206, 48);
 
@@ -193,6 +196,7 @@ public class LargeCattleOwnershipCollectionPage extends javax.swing.JPanel {
         xActionTextField1.setCaption("Payor");
         xActionTextField1.setCaptionWidth(75);
         xActionTextField1.setFont(new java.awt.Font("Arial", 0, 12));
+        xActionTextField1.setHint("Search Payor");
         xActionTextField1.setIndex(-10);
         xActionTextField1.setName("entity.info.payorname");
         xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 20));
@@ -218,9 +222,7 @@ public class LargeCattleOwnershipCollectionPage extends javax.swing.JPanel {
         xDateField1.setCaptionWidth(75);
         xDateField1.setDepends(new String[] {"af"});
         xDateField1.setFont(new java.awt.Font("Arial", 0, 12));
-        xDateField1.setInputFormat("MM-dd-yyyy");
         xDateField1.setName("entity.info.txndate");
-        xDateField1.setOutputFormat("MM-dd-yyyy");
         xDateField1.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xDateField1);
 
