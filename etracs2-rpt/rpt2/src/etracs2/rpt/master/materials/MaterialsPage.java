@@ -56,7 +56,7 @@ public class MaterialsPage extends javax.swing.JPanel {
 
         xTextField2.setCaption("Material");
         xTextField2.setDepends(new String[] {"selectedItem"});
-        xTextField2.setName("entity.material");
+        xTextField2.setName("entity.materialdesc");
         xTextField2.setPreferredSize(new java.awt.Dimension(0, 18));
         xTextField2.setRequired(true);
         formPanel1.add(xTextField2);

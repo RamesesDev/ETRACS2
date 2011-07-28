@@ -83,6 +83,7 @@
                     return entity.requirements; 
                 },
                 createItem : { return [:]; },
+                validate       : { li -> validateTxnType( li.item ) },
                 onAddItem : { item ->
                     updateRequirements( item );
                     entity.requirements.add( item );
@@ -106,6 +107,19 @@
                 item.reqname = item.requirement.reqname;
             }
             
+            void validateTxnType( item ){
+                required( 'Code', item.requirement );
+                checkDuplicate( item );
+            }
+            
+            void checkDuplicate( item ){
+                def data = entity.requirements.find{ it.objid == item.objid };
+                if( data ){ 
+                    MsgBox.alert('Duplicate not allowed!');
+                    throw new Exception('Duplicate not allowed!');
+                }
+            }
+            
             void save() {
                 if( mode == "create") entity = svc.create( entity );
                 else entity = svc.update( entity );
@@ -126,6 +140,13 @@
             void focus( name ) {
                 binding.refresh("entity.*");
                 binding.focus( name );
+            }
+            
+            void required( caption, value ) {
+                if( !value ){ 
+                    MsgBox.alert( caption + ' is required.')
+                    throw new Exception( caption + ' is required.')
+                }
             }
         }
         

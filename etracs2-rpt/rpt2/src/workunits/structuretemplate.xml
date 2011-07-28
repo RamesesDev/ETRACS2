@@ -66,6 +66,7 @@
                     return entity.structures; 
                 },
                 createItem : { return [:]; },
+                validate       : { li -> validateStructure( li.item ) },
                 onAddItem : { item ->
                     updateStructures( item );
                     entity.structures.add( item );
@@ -90,6 +91,19 @@
                 item.structure.remove('materials');
             }
             
+            void validateStructure( item ){
+                required( 'Code', item.structure );
+                checkDuplicate( item );
+            }
+            
+            void checkDuplicate( item ){
+                def data = entity.structures.find{ it.objid == item.objid }
+                if( data ){ 
+                    MsgBox.alert('Duplicate not allowed!');
+                    throw new Exception('Duplicate not allowed!');
+                }
+            }
+            
             void save(){
                 if( mode == 'create' ) svc.create( entity );
                 else svc.update( entity );
@@ -107,6 +121,13 @@
             void focus( name ) {
                 binding.refresh("entity.*");
                 binding.focus( name );
+            }
+            
+            void required( caption, value ) {
+                if( !value ){ 
+                    MsgBox.alert( caption + ' is required.')
+                    throw new Exception( caption + ' is required.')
+                }
             }
         }
         

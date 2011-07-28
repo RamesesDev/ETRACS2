@@ -30,7 +30,7 @@ SELECT COUNT(*) AS count FROM propertyclassification WHERE propertydesc = $P{pro
 SELECT COUNT(*) AS count FROM propertyclassification WHERE propertycode = $P{propertycode}
 
 [checkReferencedLCUVId]
-SELECT COUNT(*) AS count FROM lcuv WHERE propertyclassificationid = $P{objid}
+SELECT COUNT(*) AS count FROM lcuv WHERE objid = $P{objid}
 
 [checkReferencedAgriId]
 SELECT COUNT(*) AS count FROM rptsetting WHERE agriculturalid = $P{objid}

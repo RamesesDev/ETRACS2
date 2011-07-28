@@ -53,6 +53,7 @@
             }
             
             void save() {
+                validateRate( entity.residualrate )
                 if( mode == "create") entity = svc.create( entity );
                 else entity = svc.update( entity );
                 
@@ -72,6 +73,11 @@
             void focus( name ) {
                 binding.refresh("entity.*");
                 binding.focus( name );
+            }
+            
+            void validateRate( rate ) {
+                if( rate < 0.0 ) throw new Exception('Rate must be greater than or equal to zero.')
+                if( rate > 100) throw new Exception('Rate must not exceed 100.00')
             }
   
         }

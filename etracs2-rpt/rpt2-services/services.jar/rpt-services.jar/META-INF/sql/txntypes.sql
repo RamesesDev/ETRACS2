@@ -11,4 +11,4 @@ SELECT * FROM txntypes WHERE objid = $P{objid}
 SELECT COUNT(*) AS count FROM txntypes WHERE txntype = $P{txntype}
 
 [checkReferenced]
-SELECT COUNT(*) AS count FROM txntypes WHERE objid = $P{objid}
+SELECT COUNT(*) AS count FROM txnrequirements WHERE txntypeid = $P{objid}
