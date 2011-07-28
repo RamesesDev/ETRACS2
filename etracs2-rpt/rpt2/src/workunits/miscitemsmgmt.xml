@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="rpt.master" caption="Miscellaneous Items" index="12" />
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null }" immediate="true" caption="Open" mnemonic="e" icon="images/edit24.png" />
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{selectedItem != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[        
+
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+public class MiscellaneousItemsMgmtController
+{
+    @Binding
+    def binding
+    
+    @Service("MiscItemsService")
+    def svc 
+    
+    def searchText
+    def selectedItem
+    def params
+    
+    def create() {
+        return InvokerUtil.lookupOpener('miscitem.create', [:])
+    }
+    
+    def open() {
+        return InvokerUtil.lookupOpener('miscitem.open', [entity:selectedItem])
+    }
+    
+    void delete() {
+        if( selectedItem && MsgBox.confirm('Delete item?') ) {
+            svc.delete( selectedItem )
+            search()
+        }
+    }
+    
+    void search() {
+        listHandler.load()
+    }
+    
+    def listHandler = [
+        getRows    : { return 50; },
+        getColumns : {
+            return [
+                new Column(name:"misccode", caption:"Code", minWidth:40),
+                new Column(name:"miscdesc", caption:"Description", minWidth:170),
+            ];
+        },
+        fetchList : { return svc.getList( searchText, params ) },
+    ] as SubListModel;
+}
+
+]]>
+    </code>    
+    
+    <pages>
+        <page template="etracs2.rpt.ry.RYListMgmtPage" />
+    </pages>
+</workunit>

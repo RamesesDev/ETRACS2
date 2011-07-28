@@ -50,11 +50,11 @@ public class MasterMgmtPage extends javax.swing.JPanel {
         xSubFormPanel1.setLayout(xSubFormPanel1Layout);
         xSubFormPanel1Layout.setHorizontalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 361, Short.MAX_VALUE)
+            .add(0, 355, Short.MAX_VALUE)
         );
         xSubFormPanel1Layout.setVerticalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 389, Short.MAX_VALUE)
+            .add(0, 464, Short.MAX_VALUE)
         );
         add(xSubFormPanel1, java.awt.BorderLayout.CENTER);
 

@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
-    
-    <invoker folderid="/menu/rpt/master" action="init" caption="Transaction Requirements" index="16" />
-    <invoker type="rpt.master" caption="Transaction Requirements" />
+        <invoker type="txnreq.create" action="createItem" caption="Create Transaction Requirement" mnemonic="c" icon="images/addnew24.png" target="popup"/>
+        <invoker type="txnreq.open" action="openItem" caption="Edit Transaction Requirement" mnemonic="e" icon="images/addnew24.png" target="popup"/>
         
-        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="_close" shortcut="ctrl C" immediate="true" caption="Close" mnemonic="c" icon="images/addnew24.png" />
         <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null }" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png" />
         <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
-        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
-        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
     
     <code lang="groovy">
         <![CDATA[
@@ -16,25 +13,42 @@
         import com.rameses.rcp.common.*;
         import com.rameses.rcp.annotations.*;
         import com.rameses.osiris2.client.*;
-        import java.rmi.server.UID;
         
-        public class TransactionRequirementsController  extends etracs2.groovy.CRUDController  {
+        public class TransactionRequirementsController {
+            
+            @Binding
+            def binding;
+            
             @Service("TxnRequirementsService")
             def svc;
             
+            def mode = "view" ;
+            def entity;
             def txntype;
             def requirements;
             def txntypelist = [];
             
-            def getService() { return svc; }
-            def getCreateFocusComponent() { return "txntype"; }
-            def getEditFocusComponent() { return "txntype"; }
-            def getListHandler() { return listHandler; }
-            
-            void init(){
-                super.init();
+            /*---------------------------------------------------------------------
+            * FormAction Support
+            ---------------------------------------------------------------------*/
+            def createItem() {
+                mode = "create"; 
+                entity = createEntity();
+                txntypelist = svc.getTxnTypes().collect{ [objid:it.objid, txntype:it.txntype] };
+                
+                return "new";
+            }
+
+            void openItem() {
+                mode = "view";
+                entity = svc.open( entity.objid );
+                
                 txntypelist = svc.getAllTxnTypes().collect{ [objid:it.objid, txntype:it.txntype] };
             }
+            
+            /*---------------------------------------------------------------------
+            * Main
+            ---------------------------------------------------------------------*/
             
             def getTxnTypes(){
                 return txntypelist;
@@ -49,33 +63,11 @@
                 entity.txntype = txntype.txntype;
             }
             
-            void create(){
-                txntypelist = svc.getTxnTypes().collect{ [objid:it.objid, txntype:it.txntype] };
-                super.create();
-            }
-            
-            void cancel(){
-                txntypelist = svc.getAllTxnTypes();
-                super.cancel();
-            }
-            
             def createEntity() {
                 return [
                     requirements : [],
                 ];
             }
-            
-            def listHandler = [
-                getRows    : { return 20; },
-                getColumns : {
-                    return [
-                        new Column(name:"txntype", caption:"Transaction Types"),
-                    ];
-                },
-                fetchList : { 
-                    return list; 
-                },
-            ] as SubListModel;
             
             def lookupRequirements = InvokerUtil.lookupOpener("requirements:lookup",[:]);
             
@@ -113,6 +105,28 @@
                 item.reqcode = item.requirement.reqcode;
                 item.reqname = item.requirement.reqname;
             }
+            
+            void save() {
+                if( mode == "create") entity = svc.create( entity );
+                else entity = svc.update( entity );
+                
+                mode = "view";
+                binding.refresh("entity.*");
+            }
+            
+            void edit() {
+                mode = "edit";
+                focus( "entity.txntype" );
+            }
+            
+            /*---------------------------------------------------------------------
+            * Support Methods
+            ---------------------------------------------------------------------*/
+            
+            void focus( name ) {
+                binding.refresh("entity.*");
+                binding.focus( name );
+            }
         }
         
         
@@ -120,6 +134,6 @@
     </code>
     
     <pages>
-        <page template="etracs2.rpt.master.transactionrequirements.TransactionRequirementsPage" />
+        <page name="new" template="etracs2.rpt.master.transactionrequirements.TransactionRequirementsPage" />
     </pages>
 </workunit>

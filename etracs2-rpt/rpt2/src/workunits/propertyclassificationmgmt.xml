@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="rpt.master" caption="Property Classification" index="3" />
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null }" immediate="true" caption="Open" mnemonic="e" icon="images/edit24.png" />
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{selectedItem != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[        
+
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+public class PropertyClassificationMgmtController
+{
+    @Binding
+    def binding
+    
+    @Service("PropertyClassificationService")
+    def svc 
+    
+    def searchText
+    def selectedItem
+    def params
+    
+    def create() {
+        return InvokerUtil.lookupOpener('propertyclass.create', [:])
+    }
+    
+    def open() {
+        return InvokerUtil.lookupOpener('propertyclass.open', [entity:selectedItem])
+    }
+    
+    void delete() {
+        if( selectedItem && MsgBox.confirm('Delete item?') ) {
+            svc.delete( selectedItem )
+            search()
+        }
+    }
+    
+    void search() {
+        listHandler.load()
+    }
+    
+    def listHandler = [
+        getRows    : { return 50; },
+        getColumns : {
+            return [
+                new Column(name:"propertycode", caption:"Code", minWidth:40),
+                new Column(name:"propertydesc", caption:"Description", minWidth:150),
+                new Column(name:'special', caption:'Special?', type:'boolean'),
+                new Column(name:"orderno", caption:"Order No."),
+            ];
+        },
+        fetchList : { 
+            def list = svc.getList( searchText, params );
+            list.each{
+                if( it.special == 1 ) it.special = true;
+            }
+            return list;
+        },
+    ] as SubListModel;
+}
+
+]]>
+    </code>    
+    
+    <pages>
+        <page template="etracs2.rpt.ry.RYListMgmtPage" />
+    </pages>
+</workunit>

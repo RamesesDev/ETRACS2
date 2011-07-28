@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
-    
-    <invoker folderid="/menu/rpt/master" action="init" caption="Structures" index="8" />
-    <invoker type="rpt.master" caption="Structures" />
+        <invoker type="structure.create" action="createItem" caption="Create Structure" mnemonic="c" icon="images/addnew24.png" target="popup"/>
+        <invoker type="structure.open" action="openItem" caption="Edit Structure" mnemonic="e" icon="images/addnew24.png" target="popup"/>
         
-        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="_close" shortcut="ctrl C" immediate="true" caption="Close" mnemonic="c" icon="images/addnew24.png" />
         <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null }" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png" />
         <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
-        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
-        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
     
     <code lang="groovy">
         <![CDATA[
@@ -18,36 +15,42 @@
         import com.rameses.osiris2.client.*;
         import java.rmi.server.UID;
         
-        public class StructuresController  extends etracs2.groovy.CRUDController  {
+        public class StructuresController {
+        
+            @Binding
+            def binding;
+            
             @Service("StructuresService")
             def svc;
             
+            def mode = "view" ;
+            def entity;
             def materials;
             
-            def getService() { return svc; }
-            def getCreateFocusComponent() { return "entity.structurecode"; }
-            def getEditFocusComponent() { return "entity.structurecode"; }
-            def getListHandler() { return listHandler; }
+            /*---------------------------------------------------------------------
+            * FormAction Support
+            ---------------------------------------------------------------------*/
+            def createItem() {
+                mode = "create"; 
+                entity = createEntity();
+                
+                return "new";
+            }
+
+            void openItem() {
+                mode = "view";
+                entity = svc.open( entity.objid );
+            }
+
             
-            
+            /*---------------------------------------------------------------------
+            * Main
+            ---------------------------------------------------------------------*/
             def createEntity() {
                 return [
                     materials : [],
                 ];
             }
-            
-            def listHandler = [
-                getRows    : { return 20; },
-                getColumns : {
-                    return [
-                        new Column(name:"structurecode", caption:"Code", minWidth:50),
-                        new Column(name:"structuredesc", caption:"Structure", minWidth:200)
-                    ];
-                },
-                fetchList : { 
-                    return list; 
-                },
-            ] as SubListModel;
             
             def lookupMaterials = InvokerUtil.lookupOpener("materials:lookup",[:]);
             
@@ -85,6 +88,28 @@
                 item.materialcode = item.material.materialcode;
                 item.materialdesc = item.material.materialdesc;
             }
+            
+            void save() {
+                if( mode == "create") entity = svc.create( entity );
+                else entity = svc.update( entity );
+                
+                mode = "view";
+                binding.refresh("entity.*");
+            }
+            
+            void edit() {
+                mode = "edit";
+                focus( "entity.structurecode" );
+            }
+            
+            /*---------------------------------------------------------------------
+            * Support Methods
+            ---------------------------------------------------------------------*/
+            
+            void focus( name ) {
+                binding.refresh("entity.*");
+                binding.focus( name );
+            }
         }
         
         
@@ -92,6 +117,6 @@
     </code>
     
     <pages>
-        <page template="etracs2.rpt.master.structures.StructuresPage" />
+        <page name="new" template="etracs2.rpt.master.structures.StructuresPage" />
     </pages>
 </workunit>

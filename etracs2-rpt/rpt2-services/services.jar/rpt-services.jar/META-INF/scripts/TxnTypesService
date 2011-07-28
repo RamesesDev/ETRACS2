@@ -57,6 +57,7 @@ class TxnTypesService{
 	
 	@ProxyMethod
 	public void delete( txntype ){
+		checkReferenced( txntype );
 		em.delete( txntype.schemaname, txntype );
 	}
 	
@@ -79,6 +80,11 @@ class TxnTypesService{
 	private void checkDuplicates( txntype ){
 		def data = em.sqlContext.createNamedQuery( 'txntypes:checkDuplicateType' ).setParameter( 'txntype', txntype.txntype ).singleResult;
 		if( data.count > 0 ) throw new Exception( "Txn Type $txntype.txntype already exists." );
+	}
+	
+	private void checkReferenced( txntype ){
+		def data = em.sqlContext.createNamedQuery( 'txntypes:checkReferenced' ).setParameter( 'objid', txntype.objid ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Delete not allowed. Txn Type $txntype.txntype already used." );
 	}
 	
 	
