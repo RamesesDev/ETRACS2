@@ -33,8 +33,12 @@ public class FAASMgmtController
     def selectedItem
     List list
     
+    def invokerparam = [
+        getParams :  { return [faasid:selectedItem?.objid] }
+    ] as InvokerParameter
+    
     def getFormActions() {
-        return InvokerUtil.lookupActions('faasmgmt.actions',[faasid:selectedItem?.objid])
+        return InvokerUtil.lookupActions('faasmgmt.action', invokerparam )
     }
     
     
@@ -44,10 +48,6 @@ public class FAASMgmtController
     
     def open() {
         return InvokerUtil.lookupOpener('faas.open', [faas:selectedItem])
-    }
-    
-    def viewtd(){
-        return InvokerUtil.lookupOpener('assessorreports.td', [faasid:selectedItem.objid])
     }
     
     void search() {
