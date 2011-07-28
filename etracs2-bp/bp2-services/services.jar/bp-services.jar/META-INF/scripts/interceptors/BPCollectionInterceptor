@@ -10,6 +10,9 @@ class BPCollectionInterceptor {
 	@Service("DateService")
 	def dateService;
 	
+	@Service('BPLedgerService')
+	def ledgerSvc;
+	
 	@Service("BPBillingService")
 	def billingSvc;
 	
@@ -26,72 +29,113 @@ class BPCollectionInterceptor {
 		if( app.lastmodified != receipt.applicationlastmodified ) 
 			throw new Exception("Unabled to continue.\nThe document has been modified by the other user.");
 		
+		def payment = [
+			 applicationid: app.objid,
+			 refid: receipt.objid,
+			 reftype: 'ONLINE',
+			 refno: receipt.info.serialno,
+			 refdate: receipt.info.txndate,
+			 items: []
+		];
+		
 		receipt.items.each{ r ->
-			app.credits << [ objid			: 'BPRCR' + new UID(),
-							 bpreceivableid	: r.taxfeeid, 
-							 refid			: receipt.objid,
-							 reftype		: 'ONLINE',
-							 refno			: receipt.info.serialno,
-							 refdate		: receipt.info.txndate,
+			payment.items << [ bpreceivableid	: r.taxfeeid,
 							 amount			: r.amount,
 							 surcharge		: r.surcharge,
 							 interest		: r.interest,
 							 discount		: r.discount ];
-			
-			def brc = app.receivables.find{ it.objid == r.taxfeeid };
-			if( !brc.amtpaid ) brc.amtpaid = 0.0;
-			brc.amtpaid += r.amount + r.surcharge + r.interest - r.discount;
 		}
-
-		def b = em.read('business:business', [objid: app.businessid]);
 		
-		b.lastqtrpaid = receipt.qtr;
-		b.lastyearpaid = receipt.year;
-
-		app.lastmodified = dateService.serverDate.time;
-		
-		em.update( 'business:business', b );
-		em.update( 'bpapplication:bpapplication', app );
-		
-		if( isApplicationStatusForPermit( app ) ){
-			em.sqlContext.createNamedExecutor("bpcollection:updatePermitForRelease")
-			  .setParameters([applicationid: app.objid])
-			  .execute();
-
-			def bplisting = em.read('bplisting:bpapplicationlisting', [objid: app.objid]);
-			
-			if( !app.docstate.matches('EXPIRED') ){
-				app.docstate = 'PERMIT_PENDING';
-				bplisting.docstate = 'PERMIT_PENDING';
-			}
-			
-			em.update( 'bpapplication:bpapplication', app );
-			em.update( 'bplisting:bpapplicationlisting',  bplisting );
-		}
+		ledgerSvc.postPayment( payment );
 	}
 	
 	@After(pattern="ReceiptService.delete") 
-	public void interceptDeleteBPReceipt( evt ) {}
+	public void interceptDeleteBPReceipt( evt ) {
+		def receipt = evt.result;
+		if( receipt?.doctype != 'BUSINESS_TAX' ) return;
+		
+		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]);
+		
+		if( app.lastmodified != receipt.applicationlastmodified ) 
+			throw new Exception("Unabled to continue.\nThe document has been modified by the other user.");
+		
+		def payment = [
+			 applicationid: app.objid,
+			 refid: receipt.objid,
+			 reftype: 'ONLINE',
+			 refno: receipt.info.serialno,
+			 refdate: receipt.info.txndate,
+			 items: []
+		];
+		
+		receipt.items.each{ r ->
+			payment.items << [ bpreceivableid	: r.taxfeeid,
+							 amount			: r.amount,
+							 surcharge		: r.surcharge,
+							 interest		: r.interest,
+							 discount		: r.discount ];
+		}
+		
+		ledgerSvc.deletePayment( payment );
+	}
 	
 	@After(pattern="ReceiptService.update") 
 	public void interceptUpdateBPReceipt( evt ) {
+		def receipt = evt.result;
+		if( receipt?.doctype != 'BUSINESS_TAX' ) return;
+		
+		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]);
+		
+		if( app.lastmodified != receipt.applicationlastmodified ) 
+			throw new Exception("Unabled to continue.\nThe document has been modified by the other user.");
+		
+		def payment = [
+			 applicationid: app.objid,
+			 refid: receipt.objid,
+			 reftype: 'ONLINE',
+			 refno: receipt.info.serialno,
+			 refdate: receipt.info.txndate,
+			 items: []
+		];
+		
+		receipt.items.each{ r ->
+			payment.items << [ bpreceivableid	: r.taxfeeid,
+							 amount			: r.amount,
+							 surcharge		: r.surcharge,
+							 interest		: r.interest,
+							 discount		: r.discount ];
+		}
+		
+		ledgerSvc.updatePayment( payment );
 	}
 	
 	@After(pattern="ReceiptService.voidReceipt") 
 	public void interceptVoidBPReceipt( evt ) {
-	}
-	
-	def isApplicationStatusForPermit( app ){
-		def getUnpaidReceivables = { 
-			def list = app.receivables.findAll{ it.amount > it.amtpaid };
-			if( app.txntype.matches('NEW|ADDLOB') ) return list;
-			return list.findAll{ it.qtr <= entity.qtr || ( it.assessmentype.matches('NEW|ADDLOB')) }
+		def receipt = evt.result;
+		if( receipt?.doctype != 'BUSINESS_TAX' ) return;
+		
+		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]);
+		
+		if( app.lastmodified != receipt.applicationlastmodified ) 
+			throw new Exception("Unabled to continue.\nThe document has been modified by the other user.");
+		
+		def payment = [
+			 applicationid: app.objid,
+			 refid: receipt.objid,
+			 reftype: 'ONLINE',
+			 refno: receipt.info.serialno,
+			 refdate: receipt.info.txndate,
+			 items: []
+		];
+		
+		receipt.items.each{ r ->
+			payment.items << [ bpreceivableid	: r.taxfeeid,
+							 amount			: r.amount,
+							 surcharge		: r.surcharge,
+							 interest		: r.interest,
+							 discount		: r.discount ];
 		}
 		
-		def taxfees = getUnpaidReceivables();
-		
-		if( taxfees.findAll{ it.systype != 'BUSINESS_TAX' } ) return false;
-		if( taxfees.findAll{ it.applicationtype.matches('NEW|ADDLOB') } ) return false;
-		return true;
+		ledgerSvc.deletePayment( payment );
 	}
 }
