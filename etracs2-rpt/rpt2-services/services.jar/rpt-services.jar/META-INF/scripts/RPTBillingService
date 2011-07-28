@@ -38,7 +38,6 @@ public class RPTBillingService
         ruleService.execute( RULESET, facts, [actionList:actionList], 'SUMMARY' )
         finalizeBillInfo( bill )
         return bill
-        
 	}	
     
     @ProxyMethod
@@ -161,15 +160,13 @@ public class RPTBillingService
     -------------------------------------------------------------------------------*/
     void createBillItems( bill ) {
         initBillToYearQtrInfo( bill )
-        def openLedgers = []
         if( bill.ledgerids ) {
-            openLedgers = getOpenLedgersByIds( bill.ledgerids )
+            bill.items = getOpenLedgersByIds( bill.ledgerids )
         }
         else {
-            openLedgers = getOpenLedgersByTaxpayerId( bill.taxpayerid )
+            bill.items = getOpenLedgersByTaxpayerId( bill.taxpayerid )
         }
-        if( !openLedgers ) throw new Exception('There are no open ledgers for this taxpayer.')
-        bill.items = openLedgers 
+        if( !bill.items ) throw new Exception('There are no open ledgers for this taxpayer.')
         bill.items.each { billitem ->
             //set toyear and toqtr 
             billitem.toyear = bill.billtoyear
@@ -214,7 +211,7 @@ public class RPTBillingService
         if( firstitem && yr < bill.billtoyear && billitem.lastqtrpaid != 4) {
             av = util.round( ledgeritem.assessedvalue / 4 ) * (4 - billitem.lastqtrpaid)
         }
-        else if( firstitem && yr == bill.billtoyear ) {
+        else if( firstitem && yr == bill.billtoyear && billitem.lastqtrpaid < 4 ) {
             av = util.round( ledgeritem.assessedvalue / 4 ) * (bill.billtoqtr - billitem.lastqtrpaid)
         }
         else if( yr == bill.billtoyear ) {
@@ -277,8 +274,8 @@ public class RPTBillingService
     
     void initBillToYearQtrInfo( bill ) {
         def dt = dateSvc.parseCurrentDate()
-        if( ! bill.billtoyear || bill.billtoyear == 0 ) bill.billtoyear = dt.year 
-        if( ! bill.billtoqtr || bill.billtoqtr == 0 ) bill.billtoqtr = dt.qtr 
+        if( bill.billtoyear == null || bill.billtoyear == 0 ) bill.billtoyear = dt.year 
+        if( bill.billtoqtr == null  || bill.billtoqtr == 0 ) bill.billtoqtr = dt.qtr 
         if( ! bill.billdate ) bill.billdate = dateSvc.serverDate 
     }
     
@@ -296,6 +293,8 @@ public class RPTBillingService
             item.sefnet     = 0.0
             item.total      = 0.0
             
+            item.period    = determinePaidPeriod( item )
+            
             item.details.each { detail ->
                 detail.basicdp  = detail.basicint - detail.basicdisc 
                 detail.basicnet = detail.basic + detail.basicdp 
@@ -305,7 +304,9 @@ public class RPTBillingService
                 
                 detail.period   = ( detail.qtr == 0 ? detail.year+'' : detail.year +'-' + detail.qtr )
                 if( detail.firstitem ){
-                    if( detail.year == bill.billtoyear && detail.lastqtrpaid + 1 == bill.billtoqtr )
+                    if( detail.year == bill.billtoyear && detail.lastqtrpaid == 4 )
+                        detail.period = detail.year + '-1' + bill.billtoqtr 
+                    else if( detail.year == bill.billtoyear && detail.lastqtrpaid + 1 == bill.billtoqtr )
                         detail.period = detail.year + '-' + bill.billtoqtr 
                     else if( detail.year == bill.billtoyear )
                         detail.period = detail.year + (detail.lastqtrpaid != 4 ? '-' + (detail.lastqtrpaid + 1) + bill.billtoqtr : '')
@@ -344,6 +345,18 @@ public class RPTBillingService
         
         bill.grandtotal     =  bill.totalbasicnet + bill.totalsefnet 
         bill.expirydate     =  dateSvc.getMonthEndDate( bill.billdate )
+    }
+    
+    def determinePaidPeriod( item ) {
+        if( item.fromyear == item.toyear && item.fromqtr == 1 && item.toqtr == 4 ) 
+            return 'Full ' + item.fromyear 
+        if( item.fromyear == item.toyear && item.fromqtr == item.toqtr  ) 
+            return item.fromqtr + 'Q, ' + item.fromyear 
+        if( item.fromyear == item.toyear ) 
+            return item.fromqtr + '-' + item.toqtr + 'Q, ' + item.fromyear 
+        if(  item.fromqtr == 1 && item.toqtr == 4 ) 
+            return 'Full ' + item.fromyear + '-' + item.toyear 
+        return item.fromqtr + 'Q,' + item.fromyear + '-' + item.toqtr + 'Q,' + item.toyear 
     }
     
     

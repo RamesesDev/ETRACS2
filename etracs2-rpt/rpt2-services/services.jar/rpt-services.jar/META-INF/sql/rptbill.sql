@@ -38,6 +38,9 @@ FROM rptledgeritem
 WHERE parentid = $P{parentid} AND docstate = 'APPROVED' AND taxable = 1   
 ORDER BY fromyear   
 
+[getIncomeAccountInfo]
+SELECT objid AS acctid, acctno, accttitle, fundid, fundname FROM incomeaccount  WHERE objid = $P{objid}
+
 
 [lookupAccount]
 SELECT objid, acctno, accttitle FROM incomeaccount WHERE systype = $P{systype} ORDER BY accttitle 
