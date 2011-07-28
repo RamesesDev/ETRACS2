@@ -1,37 +1,60 @@
 [getList]  
 SELECT o.* FROM bpapplicationlisting o 
 WHERE  o.docstate = $P{docstate} 
-AND   NOT o.txntype in ('RETIRE','RETIRELOB') 
 
 [getListByPermitNo]  
 SELECT o.* FROM bpapplicationlisting o 
 WHERE o.txnno = $P{search} 
 AND   o.docstate = $P{docstate} 
-AND   NOT o.txntype in ('RETIRE','RETIRELOB') 
 
 [getListByTradeName]  
 SELECT o.* FROM bpapplicationlisting o  
 WHERE o.tradename LIKE $P{search}  
 AND   o.docstate = $P{docstate} 
-AND   NOT o.txntype in ('RETIRE','RETIRELOB') 
 
 [getListByBusinessAddress]  
 SELECT o.* FROM bpapplicationlisting o 
 WHERE o.businessaddress LIKE $P{search}  
 AND   o.docstate = $P{docstate} 
-AND   NOT o.txntype in ('RETIRE','RETIRELOB') 
 
 [getListByTaxpayerName]  
 SELECT o.* FROM bpapplicationlisting o 
 WHERE o.taxpayername LIKE $P{search} 
 AND   o.docstate = $P{docstate} 
-AND   NOT o.txntype in ('RETIRE','RETIRELOB') 
 
 [getListByTaxpayerAddress]  
 SELECT o.* FROM bpapplicationlisting o 
 WHERE o.taxpayeraddress LIKE $P{search} 
 AND   o.docstate = $P{docstate} 
-AND   NOT o.txntype in ('RETIRE','RETIRELOB') 
+
+[getForRenewalList]  
+SELECT o.* FROM bpapplicationlisting o 
+WHERE   o.docstate IN ('EXPIRED','RENEWED') 
+
+[getForRenewalListByPermitNo]  
+SELECT o.* FROM bpapplicationlisting o 
+WHERE o.txnno = $P{search} 
+AND   o.docstate IN ('EXPIRED','RENEWED') 
+
+[getForRenewalListByTradeName]  
+SELECT o.* FROM bpapplicationlisting o  
+WHERE o.tradename LIKE $P{search}  
+AND   o.docstate IN ('EXPIRED','RENEWED') 
+
+[getForRenewalListByBusinessAddress]  
+SELECT o.* FROM bpapplicationlisting o 
+WHERE o.businessaddress LIKE $P{search}  
+AND   o.docstate IN ('EXPIRED','RENEWED') 
+
+[getForRenewalListByTaxpayerName]  
+SELECT o.* FROM bpapplicationlisting o 
+WHERE o.taxpayername LIKE $P{search} 
+AND   o.docstate IN ('EXPIRED','RENEWED') 
+
+[getForRenewalListByTaxpayerAddress]  
+SELECT o.* FROM bpapplicationlisting o 
+WHERE o.taxpayeraddress LIKE $P{search} 
+AND   o.docstate IN ('EXPIRED','RENEWED') 
 
 [getRetiredList]  
 SELECT o.* FROM bpapplicationlisting o 
