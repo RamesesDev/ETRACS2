@@ -17,6 +17,13 @@ class StructureTemplateService{
 	def schemaversion = '1.0';
 	
 	@ProxyMethod
+	public def getList( searchText ) {
+		if( !searchText ) return em.sqlContext.createQuery('SELECT * FROM structuretemplate').resultList;
+		
+		return [];
+	}
+	
+	@ProxyMethod
 	public def open(){
 		def template = em.sqlContext.createQuery('SELECT objid FROM structuretemplate').singleResult;
 		if( template ) return em.read( schemaname, template );

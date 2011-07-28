@@ -58,23 +58,28 @@ class BPCollectionInterceptor {
 			  .setParameters([applicationid: app.objid])
 			  .execute();
 
-			app.docstate = 'PERMIT_PENDING';
-			em.update( 'bpapplication:bpapplication', app );
-			
 			def bplisting = em.read('bplisting:bpapplicationlisting', [objid: app.objid]);
-			bplisting.docstate = 'PERMIT_PENDING';
+			
+			if( !app.docstate.matches('EXPIRED') ){
+				app.docstate = 'PERMIT_PENDING';
+				bplisting.docstate = 'PERMIT_PENDING';
+			}
+			
+			em.update( 'bpapplication:bpapplication', app );
 			em.update( 'bplisting:bpapplicationlisting',  bplisting );
 		}
 	}
 	
 	@After(pattern="ReceiptService.delete") 
-	public void interceptDeleteBPReceipt( evt ) {;}
+	public void interceptDeleteBPReceipt( evt ) {}
 	
 	@After(pattern="ReceiptService.update") 
-	public void interceptUpdateBPReceipt( evt ) {;}
+	public void interceptUpdateBPReceipt( evt ) {
+	}
 	
 	@After(pattern="ReceiptService.voidReceipt") 
-	public void interceptVoidBPReceipt( evt ) {;}
+	public void interceptVoidBPReceipt( evt ) {
+	}
 	
 	def isApplicationStatusForPermit( app ){
 		def getUnpaidReceivables = { 

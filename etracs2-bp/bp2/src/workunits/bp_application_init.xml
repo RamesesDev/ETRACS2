@@ -71,7 +71,7 @@ class BusinessApplication
     def initCaptureRenew(){
         init();
         application.txnmode = 'CAPTURE';
-        application.txntype = 'RENEW';   
+        application.txntype = 'RENEW';
         return 'default';
     }
     
@@ -121,13 +121,15 @@ class BusinessApplication
     def next(){
         application.parentid = app.objid;
         application.businessid = app.businessid;
-
+        
+        application.lobs = [];
+        
         application = svc.evaluateTxnType( application );
         return InvokerUtil.lookupOpener('bp.create', [application:application]);
     }
     
     public def lookupBusiness(){
-        return InvokerUtil.lookupOpener( 'bp.business_list', [onselect: onbpselect, searchText:app.appno] );
+        return InvokerUtil.lookupOpener( 'bp.lookupbusiness', [onselect: onbpselect, searchText:app.appno, txntype:application.txntype] );
     }
     
     public def lookupPayer(){

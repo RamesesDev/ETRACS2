@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="bp.business_list" caption="Business Lookup" target="popup"/>
+        <invoker type="bp.lookupbusiness" caption="Business Lookup" target="popup"/>
     </invokers>
     
     <code>
@@ -17,6 +17,7 @@ class LookupBusinessListController
     def svc;
     def selected;
     def searchText;
+    def txntype;
     
     def onselect;
     
@@ -32,7 +33,9 @@ class LookupBusinessListController
         },
 
         fetchList : { 
-            def list = svc.lookupApproveApplication( searchText );
+            def list = [];
+            if( txntype ) list = svc.lookupApplicationByTxnType( searchText, txntype );
+            else list = svc.lookupApproveApplication( searchText );
             if( !list ) throw new Exception( 'There are no records found.' );
             return list;
 	}

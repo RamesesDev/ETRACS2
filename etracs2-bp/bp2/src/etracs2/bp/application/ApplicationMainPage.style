@@ -1,12 +1,16 @@
-"application.*" [ mode != 'view' ] {
+"application.*" [mode != 'view'] {
     readonly:false;
 }
 
-"application.*" [ mode == 'view' || application.txntype =='RETIRE' || application.txntype == 'RETIRELOB' || application.txntype == 'ADDLOB' ] {
+"application.*" [mode == 'view' || application.txntype != 'NEW'] {
     readonly:true;
 }
 
-"lobSearch" [ mode != 'view' || application.txntype == 'RETIRE' || application.txntype == 'RETIRELOB']{
+"application.*" [mode != 'view' && application.txnmode == 'CAPTURE'] {
+    readonly:false;
+}
+
+"lobSearch" [mode != 'view' || application.txntype == 'RETIRE' || application.txntype == 'RETIRELOB']{
     readonly:false;
 }
 
@@ -18,10 +22,10 @@
     readonly:false;
 }
 
-"lob" [ mode != 'view' ] {
+"lob" [mode != 'view'] {
     enabled:true;
 }
 
-"lob" [ mode == 'view' ] {
+"lob" [mode == 'view'] {
     enabled:false;
 }

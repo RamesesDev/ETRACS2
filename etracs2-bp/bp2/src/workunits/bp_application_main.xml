@@ -2,6 +2,7 @@
     <invokers>
         <invoker type="bp.DRAFT" action="initView" caption="BP Application" target="window"/>
         <invoker type="bp.create" action="init" caption="BP Application"/>
+        <invoker type="bp.createInWindow" action="init" caption="BP Application" target="window"/>
         <invoker type="bp.view" action="initView" caption="BP Application" target="window"/>
         <invoker type="bp.open" action="initView" caption="BP Application"/>
 
@@ -42,6 +43,7 @@ class BPApplication
         organizations = res.organizations;
         officetypes = res.officeTypes;
         barangays = enumSvc.barangays;
+        
         mode = 'new';
     }
     
@@ -65,13 +67,13 @@ class BPApplication
     }
     
     def getTypes = {
-        if( application.txntype.matches('RETIRE|RETIRELOB')) return ['ACTIVE','RETIRELOB'];
-        if( lob?.assessmenttype == 'RENEW' ) return ['RETIRELOB','RENEW'];
+        if( lob?.assessmenttype == 'ADDLOB' ) return ['ADDLOB'];
+        return ['RENEW', 'RETIRELOB'];
     }
     
     def isTypeEditable = {
         if( mode == 'VIEW' ) return false;
-        if( application.txntype.matches('NEW|ADDLOB|RETIRE') ) return false;
+        if( application.txntype.matches('NEW|ADDLOB|RETIRE|RETIRELOB') ) return false;
         if( application.txnmode == 'CAPTURE' ) return false;
         if( lob?.assessmenttype == 'ADDLOB' ) return false;
         return true;
@@ -100,7 +102,7 @@ class BPApplication
             def o = application.lobs.find{ it.lobid == selected.objid };
             if( o ) throw new Exception("LOB '$selected.name' is already in application list.");
             def l = [lobid:selected.objid, name:selected.name, assessmenttype:'NEW', classificationid:selected.classificationid];
-            if( application.txntype == 'ADDLOB' ) l.assessmenttype = 'ADDLOB';
+            if( application.txntype.matches('ADDLOB|RENEW') ) l.assessmenttype = 'ADDLOB';
             if( application.txnmode == 'CAPTURE' && application.txntype == 'RENEW' ) l.assessmenttype = 'RENEW';
             application.lobs << l;
             lobHandler.load();

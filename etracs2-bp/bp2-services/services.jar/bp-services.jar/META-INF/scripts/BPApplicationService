@@ -396,9 +396,9 @@ class BPApplicationService{
 
 		def business = getBusiness( app );
 		business.applicationid = app.objid;
-
+		
 		if( app.txnmode == 'ONLINE' && app.txntype.matches( 'RENEW|LATE_RENEWAL' ) ){
-			updatePreviousApplication( business.objid );
+			updatePreviousApplication( app.parentid );
 		}
 		
 		app.businessid = business.objid;
@@ -525,9 +525,8 @@ class BPApplicationService{
 		return business;
 	}
 	
-	void updatePreviousApplication( def busineid ){
-		def b = em.read( BUSINESS_SCHEMA, [objid:businessid] );
-		def app = em.read( SCHEMANAME, b.applicationid );
+	void updatePreviousApplication( def applicationid ){
+		def app = open( applicationid );
 		app.docstate = 'RENEWED';
 		em.update( SCHEMANAME, app );
 	}
@@ -553,9 +552,14 @@ class BPApplicationService{
 	}
 	
 	def evaluateRenew( def application ){
-		def bp = em.read( 'business:business', [objid:application.businessid] );
-		if( bp.docstate != 'EXPIRED' ) throw new Exception('Only expired business can be renewed.');
-		def prevapp = open( bp.applicationid );
+		def prevapp = open( application.parentid );
+		
+		if( prevapp.docstate != 'EXPIRED' ) throw new Exception('Only expired business can be renewed.');
+		if( (prevapp.iyear+1) < dateService.serverYear )
+			throw new Exception("Please process this application in LATE_RENEWAL transaction.");
+
+		if( getBilling( prevapp.objid ).taxfees )
+			throw new Exception('Application not yet fully paid.');
 		
 		application.taxpayerid = prevapp.taxpayerid;
 		application.taxpayername = prevapp.taxpayername;
@@ -566,18 +570,19 @@ class BPApplicationService{
 		application.info = prevapp.info;
 		application.taxfees = [];
 		application.appinfos = [];
+		application.lobs = [];
+		
+		prevapp.lobs.each{ 
+			it.assessmenttype = 'RENEW';
+			application.lobs << it;
+		}
 		
 		prevapp.retiredlobs?.each{ l ->
 			application.lobs.remove( application.find{ it.objid == l.objid } );
 		}
 		
-		prevapp.lobs.each{ 
-			it.assessmentype = 'RENEW';
-			application.lobs << it;
-		}
-		
 		prevapp.addeddlobs?.each{
-			it.assessmentype = 'RENEW';
+			it.assessmenttype = 'RENEW';
 			application.lobs << it;
 		}
 		
@@ -587,8 +592,6 @@ class BPApplicationService{
 	def evaluateRetire( def application ){
 		def prevapp = open( application.parentid );
 		if( !prevapp ) throw new Exception("Reference application is no longer exist.");
-		
-		println prevapp.objid +' '+ prevapp.docstate;
 		
 		if( prevapp.docstate == 'RETIRED' ) 
 			throw new Exception("Reference application is already required.");
@@ -616,11 +619,36 @@ class BPApplicationService{
 	}
 	
 	@ProxyMethod
+	public def lookupApplicationByTxnType( def searchText, def txntype ){
+	
+		def fetch = { list, qry, param ->
+			list.clear();
+			def q = em.sqlContext.createNamedQuery(qry);
+			if( param ) q.setParameter('searchText', param );
+
+			list.addAll( q.setMaxResults(10).resultList );
+			return list;
+		}
+		
+		def list = [];
+		if( !searchText ) return fetch(list, 'lookupbp:lookupApplicationByTxntype', '' );
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByBIN', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByAppNo', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByPermitNo', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByTradeName' , searchText + '%') ) return list;
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByTaxpayerName',searchText + '%') ) return list;
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByAdminstratorName', searchText  + '%') ) return list;
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByBusinessAddress', searchText +'%' ) ) return list;
+		return list;
+	}
+	
+	@ProxyMethod
 	public def lookupApproveApplication( def searchText ){
 		def fetch = { list, qry, param ->
 			list.clear();
 			def q = em.sqlContext.createNamedQuery(qry);
 			if( param ) q.setParameter('searchText', param );
+			
 			list.addAll( q.setMaxResults(10).resultList );
 			return list;
 		}

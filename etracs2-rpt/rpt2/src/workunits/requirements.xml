@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
-    
-    <invoker folderid="/menu/rpt/master" action="init" caption="Requirements" index="14" />
-    <invoker type="rpt.master" caption="Requirements" />
+        <invoker type="requirement.create" action="createItem" caption="Create Requirement" mnemonic="c" icon="images/addnew24.png" target="popup"/>
+        <invoker type="requirement.open" action="openItem" caption="Edit Requirement" mnemonic="e" icon="images/addnew24.png" target="popup"/>
         
-        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="_close" shortcut="ctrl C" immediate="true" caption="Close" mnemonic="c" icon="images/addnew24.png" />
         <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null }" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png" />
         <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
-        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
-        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
     
     <code lang="groovy">
         <![CDATA[
@@ -16,34 +13,63 @@
         import com.rameses.rcp.common.*;
         import com.rameses.rcp.annotations.*;
         import com.rameses.osiris2.client.*;
-        import java.rmi.server.UID;
         
-        public class RequirementsController  extends etracs2.groovy.CRUDController  {
+        public class RequirementsController  {
+        
+            @Binding
+            def binding;
+            
             @Service("RequirementsService")
             def svc;
-
-            def getService() { return svc; }
-            def getCreateFocusComponent() { return "entity.reqcode"; }
-            def getEditFocusComponent() { return "entity.reqcode"; }
-            def getListHandler() { return listHandler; }
             
+            def mode = "view" ;
+            def entity;
+            
+            /*---------------------------------------------------------------------
+            * FormAction Support
+            ---------------------------------------------------------------------*/
+            def createItem() {
+                mode = "create"; 
+                entity = createEntity();
+                
+                return "new";
+            }
+
+            void openItem() {
+                mode = "view";
+                entity = svc.open( entity.objid );
+            }
+
+            
+            /*---------------------------------------------------------------------
+            * Main
+            ---------------------------------------------------------------------*/
             
             def createEntity() {
                 return [:];
             }
             
-            def listHandler = [
-                getRows    : { return 20; },
-                getColumns : {
-                    return [
-                        new Column(name:"reqcode", caption:"Code", minWidth:40),
-                        new Column(name:"reqname", caption:"Name", minWidth:170),
-                    ];
-                },
-                fetchList : { 
-                    return list; 
-                },
-            ] as SubListModel;
+            void save() {
+                if( mode == "create") entity = svc.create( entity );
+                else entity = svc.update( entity );
+                
+                mode = "view";
+                binding.refresh("entity.*");
+            }
+            
+            void edit() {
+                mode = "edit";
+                focus( "entity.reqcode" );
+            }
+            
+            /*---------------------------------------------------------------------
+            * Support Methods
+            ---------------------------------------------------------------------*/
+            
+            void focus( name ) {
+                binding.refresh("entity.*");
+                binding.focus( name );
+            }
         }
         
         
@@ -51,6 +77,6 @@
     </code>
     
     <pages>
-        <page template="etracs2.rpt.master.requirements.RequirementsPage" />
+        <page name="new" template="etracs2.rpt.master.requirements.RequirementsPage" />
     </pages>
 </workunit>
