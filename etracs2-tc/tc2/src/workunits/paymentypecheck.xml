@@ -17,6 +17,9 @@
         @Binding
         def binding
         
+        @Service('ReceiptService')
+        def receiptSvc
+        
         def acceptHandler
         
         def bank
@@ -50,6 +53,7 @@
                 throw new Exception( 'Amount must be greater than zero.' )
             }
             // invoke service to impose rules for stale and postdated checks.
+            receiptSvc.validateCheckDate( checkdate )
         }
         
     }
