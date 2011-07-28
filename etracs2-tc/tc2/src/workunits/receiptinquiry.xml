@@ -16,17 +16,15 @@ class ReceiptInquiryController
     
     def searchText
     def selectedItem
-    def opener
-    def txnmode = 'ONLINE'
-    def formActions
     
-    void setSelectedItem( item ) {
-        selectedItem = item
-        opener = null
-        formActions = null
+    def getOpener() {
+        println 'selecteditem -> ' + selectedItem?.doctype  + ' - ' + selectedItem?.opener 
         if( selectedItem ) {
-            opener = InvokerUtil.lookupOpener('inquiry:' + selectedItem.opener, [entity:selectedItem])
+            def opener  =InvokerUtil.lookupOpener('inquiry:' + selectedItem.opener, [entity:selectedItem])
+            println 'opener -> ' + opener 
+            return opener 
         }
+        return null
     }
     
     
