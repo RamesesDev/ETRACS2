@@ -113,11 +113,11 @@ class LiquidationService {
 	
 	@ProxyMethod
 	public def createLiquidation( liq ) {
-		// TO BE EDITTED
 		liq.info.amount = 0.0;
 		liq.info.totalcash = 0.0;
 		liq.info.totalotherpayment = 0.0;
-		for (collector in getSubordinates( liq.info.liquidatingofficerid )) {
+		def subordinates = getSubordinates( liq.info.liquidatingofficerid );
+		for (collector in subordinates) {
 			def remits = em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceByCollector" ).setParameter( "collectorid", collector.objid ).resultList;
 			if ( remits ) {
 				liq.remittances += remits;
@@ -128,6 +128,9 @@ class LiquidationService {
 				liq.info.totalotherpayment += reminfo.totalotherpayment;
 			}
 		}
+		
+		if ( ! liq.remittances )
+			throw new IllegalStateException( "There are no remittances." );
 		
 		return liq;
 	}
