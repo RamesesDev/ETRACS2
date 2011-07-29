@@ -69,7 +69,9 @@ class PropertyClassificationService{
 	
 	@ProxyMethod
 	public void delete( propertyclass ){
+		println "check"
 		checkReferencedId( propertyclass );
+		println "done"
 		em.delete( propertyclass.schemaname, propertyclass );
 	}
 
@@ -103,12 +105,11 @@ class PropertyClassificationService{
 		data = em.sqlContext.createNamedQuery('propertyclassification:checkReferencedAgriId').setParameter("objid", propertyclass.objid).singleResult
 		if( data.count > 0 ) util.checkDuplicateError( data.count, "Delete not allowed. $propertyclass.propertydesc has already been referenced." )
 		
-		data = em.sqlContext.createNamedQuery('propertyclassification:checkReferencedSettingId').resultList
-		data.each{ d ->
-			d.propertyclassifications.each{
-				if( it.objid == propertyclass.objid )	
-					throw new Exception( "Delete not allowed. $propertyclass.propertydesc has already been referenced." )
-			}
+		def rptsetting = em.sqlContext.createNamedQuery('propertyclassification:checkReferencedSettingId').singleResult;
+		def propertyclassifications = em.serializer.read( rptsetting.propertyclassifications );
+		propertyclassifications.each{
+			if( it.objid == propertyclass.objid )	
+				throw new Exception( "Delete not allowed. $propertyclass.propertydesc has already been referenced." )
 		}
 	}
 	

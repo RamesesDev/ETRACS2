@@ -53,7 +53,7 @@ class RPTOfficersService{
 		rptofficer.objid = "RPTO" + new UID();
 		rptofficer.schemaname = schemaname;
 		rptofficer.schemaversion = schemaversion;
-		rptofficer.fullname = "$rptofficer.lastname, $rptofficer.firstname " + (rptofficer.middlename ? rptofficer.middlename : "").toString();
+		rptofficer.fullname = rptofficer.firstname + ' ' + (rptofficer.middlename ? rptofficer.middlename : '').toString() + ' ' + rptofficer.lastname;
 		
 		validate( rptofficer );
 		em.create( rptofficer.schemaname, rptofficer );
@@ -63,7 +63,7 @@ class RPTOfficersService{
 	
 	@ProxyMethod
 	public def update( rptofficer ){
-		rptofficer.fullname = "$rptofficer.lastname, $rptofficer.firstname " + (rptofficer.middlename ? rptofficer.middlename : "");
+		rptofficer.fullname = rptofficer.firstname + ' ' + (rptofficer.middlename ? rptofficer.middlename : '').toString() + ' ' + rptofficer.lastname;
 		validateUpdate( rptofficer );
 		
 		em.update( rptofficer.schemaname, rptofficer, { diff ->
