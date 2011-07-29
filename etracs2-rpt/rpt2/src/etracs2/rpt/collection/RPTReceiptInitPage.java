@@ -79,6 +79,7 @@ public class RPTReceiptInitPage extends javax.swing.JPanel {
         formPanel2.setPreferredSize(new java.awt.Dimension(400, 170));
         formPanel2.setShowCaption(false);
         xRadio1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        xRadio1.setMnemonic('a');
         xRadio1.setText(" Pay all properties");
         xRadio1.setCellPadding(new java.awt.Insets(10, 30, 0, 0));
         xRadio1.setFont(new java.awt.Font("Arial", 0, 12));
@@ -91,7 +92,8 @@ public class RPTReceiptInitPage extends javax.swing.JPanel {
         formPanel2.add(xRadio1);
 
         xRadio2.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xRadio2.setText("Pay by TD No.");
+        xRadio2.setMnemonic('l');
+        xRadio2.setText("Pay by Ledger");
         xRadio2.setCellPadding(new java.awt.Insets(10, 30, 0, 0));
         xRadio2.setFont(new java.awt.Font("Arial", 0, 12));
         xRadio2.setMargin(new java.awt.Insets(0, 0, 0, 0));
@@ -111,6 +113,7 @@ public class RPTReceiptInitPage extends javax.swing.JPanel {
 
         xButton1.setMnemonic('p');
         xButton1.setText("Process");
+        xButton1.setDefaultCommand(true);
         xButton1.setName("process");
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
