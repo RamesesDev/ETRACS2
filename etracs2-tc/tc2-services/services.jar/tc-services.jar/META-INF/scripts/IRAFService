@@ -66,7 +66,7 @@ class IRAFService
 	
 	@ProxyMethod
 	public def create(def rivid){
-
+        
 		checkIRAFByRIV( rivid );
 
 		def riv = openRIV( rivid );
@@ -234,6 +234,7 @@ class IRAFService
 	
 	private def openRIV( def rivid ){
 		def riv = em.read('riv:riv', [objid: rivid] );
+        if( !riv ) throw new Exception('RIV No. is invalid.')
 		if( riv.docstate == 'CLOSE' ) throw new Exception('RIV is already close for transaction.');
 		for( it in riv.items ){
 			if( it.qtydelivered < it.qtyrequested ){
