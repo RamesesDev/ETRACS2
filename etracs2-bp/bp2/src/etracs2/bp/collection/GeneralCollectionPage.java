@@ -102,7 +102,6 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         jPanel2.add(jLabel5);
         jLabel5.setBounds(12, 170, 158, 20);
 
-        xNumberField1.setEditable(false);
         xNumberField1.setDepends(new String[] {"year", "qtr"});
         xNumberField1.setFieldType(BigDecimal.class);
         xNumberField1.setFocusable(false);
@@ -115,7 +114,6 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         jPanel2.add(xNumberField1);
         xNumberField1.setBounds(12, 38, 206, 48);
 
-        xNumberField2.setEditable(false);
         xNumberField2.setFieldType(BigDecimal.class);
         xNumberField2.setFocusable(false);
         xNumberField2.setFont(new java.awt.Font("Tahoma", 1, 24));
@@ -127,7 +125,6 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         jPanel2.add(xNumberField2);
         xNumberField2.setBounds(12, 116, 206, 48);
 
-        xNumberField3.setEditable(false);
         xNumberField3.setFieldType(BigDecimal.class);
         xNumberField3.setFocusable(false);
         xNumberField3.setFont(new java.awt.Font("Tahoma", 1, 24));
