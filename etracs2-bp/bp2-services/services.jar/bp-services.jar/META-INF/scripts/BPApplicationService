@@ -318,11 +318,9 @@ class BPApplicationService{
 	@ProxyMethod
 	public def evaluateTaxesAndFees( def parentid, def list, def requirements ){
 		list.each{ it ->
-		
 			def application = open( it.objid );
 			def app = createAppEntity( application );
-			
-			app.infos = it.infos.findAll{ it.requiredbeforeprint == false };
+			app.infos = it.infos;
 			def res = ruleSvc.buildTaxFees( app );
 			application.taxfees = res.taxfees;
 			application.appinfos = it.infos;
@@ -333,7 +331,7 @@ class BPApplicationService{
 					application.info.requirements = requirements;
 				}
 			}
-
+			
 			update( application );
 		}
 		

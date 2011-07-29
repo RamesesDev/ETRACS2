@@ -96,15 +96,6 @@ class BusinessApplicationForAssessment
         }
     ] as SubListModel
     
-    def assess() { 
-        return InvokerUtil.lookupOpener('bp.assessmentinfo', [application:application, applist:applist, svc:svc]);
-    }
-    
-    def reassess(){
-        def list = (appdata) ? [appdata] : applist;
-        return InvokerUtil.lookupOpener('bp.assessmentinfo', [application:application, applist:list, svc:svc]);
-    }
-    
     def cancelAssessment(){ 
         def app = svc.cancelApplicationForAssessement( application.objid );
         return InvokerUtil.lookupOpener('bp.open', [application:app] );
@@ -149,6 +140,63 @@ class BusinessApplicationForAssessment
     
     def checkPageToLoad(){ 
         return (application.docstate == 'FOR_ASSESSMENT' ) ? "default"  : "forassessment";
+    }
+    
+    /* ------------------------------------------------------------------------
+    // Input Values Support
+    //------------------------------------------------------------------------ */
+    
+    /* ------------------------------------------------------------------------
+    * Checks if there are still infos required before printing. If present,
+    * execute rule again for re-evaluation. However infos that are not required
+    * before printing are preserved and not included in the re-evaluation to avoid 
+    * infinite loop in the rule. The preserved infos are added when all infos are gathered. 
+    *
+    * return true if there are still infos required before printing 
+    ------------------------------------------------------------------------*/
+    def additionalInfos = []
+    def inputtedValues = [];
+    
+    def inputHandler = { app ->
+        additionalInfos.clear()
+        additionalInfos = determineAdditionalInfos(app)
+        if( additionalInfos ) {
+            //preserve currently inputted values
+            inputtedValues.addAll( app.infos )
+            //remove additional infos to avoid infinite loop
+            app.infos.clear()
+            app.infos.addAll( additionalInfos )
+            app = svc.evaluateApplicationInfo( app )
+            
+            //exclude previous infos from result 
+            removeAllInfos( app, additionalInfos )
+            removeAllInfos( app, inputtedValues ) 
+            return app 
+        }
+    }
+    
+    def removeAllInfos( app, list ) {
+        list.each { item ->
+            app.infos.removeAll( app.infos.findAll{ it.lobid == item.lobid && it.varid == item.varid } )
+        }
+    }
+    
+    List determineAdditionalInfos( app ) {
+        return app.infos.findAll { it.requiredbeforeprint == true }
+    }
+    
+    def acceptHandler = { app ->
+        app.infos.addAll( inputtedValues );
+        inputtedValues.clear();
+    }
+
+    def assess() { 
+        return InvokerUtil.lookupOpener('bp.assessmentinfo', [entitylist:applist, inputHandler:inputHandler, acceptHandler:acceptHandler, application:application, svc:svc] );
+    }
+    
+    def reassess(){
+        def list = (appdata) ? [appdata] : applist;
+        return InvokerUtil.lookupOpener('bp.assessmentinfo', [entitylist:list, inputHandler:inputHandler, acceptHandler:acceptHandler, application:application, svc:svc] );
     }
 }
 
