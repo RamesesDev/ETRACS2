@@ -1,0 +1,96 @@
+<workunit>
+    <invokers>
+        <invoker type="bp.assessmentinfo" action="init" caption="Assessment Information"/>
+        <invoker type="formActions" action="_close" mnemonic="b" caption="Back" immediate="true" icon="images/back.png"/>
+        <invoker type="formActions" action="next" mnemonic="n" caption="Next" icon="images/next.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class AssessmentInputValuesController
+{
+    @Binding
+    def binding;
+    
+    def svc;
+    def application;
+    
+    def entity; 
+    def entitylist;
+    
+    def applist = [];
+    
+    def selectedInfo;
+    def selectedLobInfo;
+    def inputHandler;
+    def acceptHandler;
+    def index = 0;
+    
+    void init(){
+        if( entitylist ) entity = entitylist[index];
+        entity = svc.evaluateApplicationInfo( entity );
+    }
+    
+    def cancel() {
+        return '_close'
+    }
+    
+    def next() {
+        if( entity ){
+            if( inputHandler ) entity = inputHandler( entity );
+            if( entity.infos ) {
+                infoListHandler.load();
+                return 'default'; 
+            } else {
+                if( acceptHandler ) acceptHandler( entity );
+                applist << entity;
+                index ++;
+                if( index < entitylist.size() ){
+                    entity = entitylist[index];
+                    entity = svc.evaluateApplicationInfo( entity );
+                    return 'default';
+                }
+            }
+        }
+        
+        def bpapp = svc.evaluateTaxesAndFees( application.objid, applist, application.info.requirements );
+        
+        bpapp.taxfees.each{
+            System.out.println( it );
+        }
+        return InvokerUtil.lookupOpener("bp.assessment", [application: bpapp]);
+    }
+    
+    def getFields(){
+        def fieldinfos = entity.infos;
+        fieldinfos.each{
+            it.datatype = it.vartype;
+            it.category = it.lobname;
+            it.caption = it.varname;
+            it.items = it.arrayvalues;
+        }
+
+        fieldinfos.sort{ a, b -> 
+            def atext = (a.lobname ? a.lobname : '-') + a.name 
+            def btext = (b.lobname ? b.lobname : '-') + b.name 
+            return atext <=> btext 
+        }
+        return fieldinfos;
+    }
+    
+    public def getInfoHandler(){
+        return InvokerUtil.lookupOpener('input_fields', [fields: getFields()]);
+    }
+}
+
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.application.AssessmentInfoPage"/>
+    </pages>
+</workunit>

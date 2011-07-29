@@ -7,8 +7,8 @@
     <invokers>
         <invoker folderid="menu/rpt/txn" caption="FAAS Management" mnemonic="f" />
         
-        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
-        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null and selectedItem.objid != null}" immediate="true" caption="Open" mnemonic="o" />
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/doc-add.png" />
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null and selectedItem.objid != null}" immediate="true" caption="Open" mnemonic="o" icon="images/open.png"/>
         <invoker type="formActions" action="viewtd" shortcut="ctrl t" visibleWhen="#{selectedItem != null and selectedItem.objid != null}" immediate="true" caption="Tax Declaration" />
     </invokers>
     <code lang="groovy">
@@ -33,8 +33,12 @@ public class FAASMgmtController
     def selectedItem
     List list
     
+    def invokerparam = [
+        getParams :  { return [faasid:selectedItem?.objid] }
+    ] as InvokerParameter
+    
     def getFormActions() {
-        return InvokerUtil.lookupActions('faasmgmt.actions',[faasid:selectedItem?.objid])
+        return InvokerUtil.lookupActions('faasmgmt.action', invokerparam )
     }
     
     
@@ -44,10 +48,6 @@ public class FAASMgmtController
     
     def open() {
         return InvokerUtil.lookupOpener('faas.open', [faas:selectedItem])
-    }
-    
-    def viewtd(){
-        return InvokerUtil.lookupOpener('assessor.reports', [faasid:selectedItem.objid])
     }
     
     void search() {

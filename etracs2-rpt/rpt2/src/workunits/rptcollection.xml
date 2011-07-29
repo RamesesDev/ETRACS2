@@ -1,0 +1,336 @@
+<workunit>
+    <invokers>
+        <invoker type="collection" caption="Real Property Tax" afid="56" appcode="real_property"  />
+        <invoker type="tc:real_property" action="init" caption="Real Property" afid="56"/>
+        <invoker type="inquiry:tc:real_property" action="initInquiry" caption="Inquiry" />
+        
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}" />
+        <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}"/>
+        <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}"/>
+        <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}" />
+        <invoker type="formActions" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" visibleWhen="#{mode == 'view'}" />
+        <invoker type="formActions" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" visibleWhen="#{mode == 'view'}"/>
+        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view' and entity.voided == 0}" />
+
+        <invoker type="receipt.actions:tc:real_property" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" />
+        <invoker type="receipt.actions:tc:real_property" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" />
+        <invoker type="receipt.actions:tc:real_property" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" />
+        <invoker type="receipt.actions:tc:real_property" action="doVoid" caption="Void" mnemonic="v" />   
+    </invokers>
+    <code>
+<![CDATA[
+
+    import com.rameses.rcp.common.*
+    import com.rameses.rcp.annotations.*
+    import com.rameses.osiris2.client.*
+    import com.rameses.osiris2.reports.*
+    import etracs2.groovy.*
+    import etracs2.tc.groovy.*
+
+    class RPTCollectionController extends AbstractCollectionController
+    {
+        @Service('RPTReceiptService')
+        def svc
+        
+        @Service('RPTReceiptHtmlService')
+        def htmlSvc
+        
+        @Service('DateService')
+        def dateSvc 
+        
+        @Service('RPTBillingService')
+        def billingSvc
+    
+        def parsedate 
+        def payments = []
+        
+        def getService() { return svc }
+        def getHtmlService() { return htmlSvc }
+        def getCollectionTitle() { return 'Real Property Tax Collection' }
+        def getReportName() { return 'rptreceipt/af56' }
+        def getDetailReportName() { return 'rptreceipt/af56' }
+        
+        void init() {
+            super.init()
+            entity.doctype = 'RPT'
+            parsedate = dateSvc.parseCurrentDate()
+        }
+        
+        void newRecord() {
+            init()
+            listHandler.load()
+            paymentSummary.handle.reload()
+        }
+        
+      
+        
+        
+        /*================================================================================================
+        *
+        * Receipt Actions Support 
+        *
+        ================================================================================================*/
+        
+        def create() {
+            if( MsgBox.confirm("Save collection?") ) {
+                validateTxnDate()
+                entity = svc.create( entity, bill  )
+                print()
+                mode = 'view'
+                return 'view'
+            }
+            return null
+        }
+        
+        /*================================================================================================
+        *
+        * Initial Page Support 
+        *
+        ================================================================================================*/
+        def payoption = 'all'
+        def payor
+        def errorMsg
+        def selectedItem
+        def bill
+        
+        def getLookupPayor(){
+            return InvokerUtil.lookupOpener('entity.lookup', [:])
+        }
+        
+        void setPayor( payor ) {
+            this.payor = payor
+            entity.info.payorid   = payor?.objid
+            entity.info.payorname = payor?.entityname
+            entity.info.payoraddress = payor?.entityaddress
+            entity.info.paidby = entity.info.payorname
+            entity.info.paidbyaddress = entity.info.payoraddress
+            binding.refresh( 'entity.info.*')
+        }
+        
+        def process() {
+            if( ! entity.info.payorid ) throw new Exception('Payor is required.')
+            if( payoption == 'all' ) {
+                loadBill()
+                return 'main'
+            }
+            else if ( payoption == 'bytd' ) {
+                return 'bytd'
+            }
+            return 'init' 
+            
+        }
+        
+        void loadBill() {
+            bill = createBill()
+            bill = billingSvc.generateBill( bill )
+            
+            //add pay and amount fields in every item
+            bill.items.each { 
+                it.pay    = true 
+                it.amount = it.total
+            }
+            calculateReceiptAmount()
+        }
+        
+        Map createBill() {
+            return [
+                taxpayerid     : entity.info.payorid,
+                ledgerids      : [],
+                advancepayment : false,
+                billdate       : parsedate.date,
+                billtoyear     : parsedate.year,
+                billtoqtr      : 4,
+                fullpayment    : true,
+                qtrlypaymentavailed : false, 
+                advancepayment : false,
+                items          : []
+            ]
+        }
+        
+        
+        /*================================================================================================
+        *
+        * Main Page Support 
+        *
+        ================================================================================================*/
+        def listHandler = [
+            getRows     : { return 50 },
+            getColumns  : { return [
+                new Column(name:'pay', caption:'Pay?', type:'boolean', maxWidth:60, editable:true),
+                new Column(name:'tdno', caption:'TD No.', width:150),
+                new Column(name:'pin', caption:'PIN', width:150),
+                new Column(name:'fromyear', caption:'From Year', format:'0000', type:'integer'),
+                new Column(name:'fromqtr', caption:'From Qtr', format:'0', type:'integer'),
+                new Column(name:'toyear', caption:'To Year*', editable:true, type:'integer', format:'0000'),
+                new Column(name:'toqtr', caption:'To Qtr*', editable:true, type:'integer', format:'0'),
+                new Column(name:'amount', caption:'Amount', type:'decimal'),
+            ]},
+            onColumnUpdate : { item, colname -> processColumnUpdate( item, colname) },
+            fetchList   : { return bill?.items }
+        ] as SubListModel
+
+        void processColumnUpdate( item, colname) {
+            try {
+                if( colname == 'pay' ) {
+                    processPayColumn( item )
+                }
+                else if( colname == 'toyear' || colname == 'toqtr' ) {
+                    // if( item.toyear > (item.toyear + 4) ) throw new Exception('To Year must not exceed ' + (item.toyear+4) + '.' )
+                    // if( item.toqtr < 0 || item.toqtr > 4 ) throw new Exception('To Qtr must be between 1 and 4.')
+                    
+                    int maxtoyear = parsedate.year + 3
+                    if( item.toyear  > maxtoyear ) {
+                        showError('To Year must not exceed ' + maxtoyear + '.' ) 
+                        item.toyear =parsedate.year 
+                    }
+                    if( item.toqtr < 0 || item.toqtr > 4 ) {
+                        showError('To Qtr must be between 1 and 4.')
+                        item.toqtr = 4
+                    }
+                    
+                    if( item.toyear < item.fromyear ) throw new Exception('To Year must be greater than or equal to From Year.')
+                    if( item.toyear == item.fromyear && item.toqtr < item.fromqtr) throw new Exception('To Qtr must be greater than or equal to From Qtr.')
+                    processBillTo( item )
+                }
+                calculateReceiptAmount()
+            }
+            catch( e ) {
+                println '='*50
+                e.printStackTrace()
+                showError( e.message )
+                item.total  = 0.0
+                item.amount = 0.0
+            }
+        }
+        
+        
+        /*================================================================================================
+        *
+        * ByLedger Support 
+        *
+        ================================================================================================*/
+        def ledger
+        
+        def getLookupLedger() {
+            return InvokerUtil.lookupOpener( 'rptledger.lookup',  [:] )
+        }
+        
+        void setLedger( ledger ) {
+            if( ! ledger ) return 
+            if( ledger.docstate == 'PENDING' ) throw new Exception('Ledger is still pending.')
+            if( ledger.docstate == 'CANCELLED' ) throw new Exception('Ledger has already been cancelled.')
+            if( bill && duplicateLedger( ledger ) ) return 
+            
+            //load billitems for this ledger
+            def newbill = createBill()
+            newbill.ledgerids.add( ledger.objid )
+            
+            newbill = billingSvc.generateBill( newbill )
+            
+            //add pay and amount fields in every item
+            newbill.items.each { 
+                it.pay    = true 
+                it.amount = it.total
+            }
+            if( ! bill ) {
+                bill = newbill 
+            }
+            else {
+                bill.items.addAll( newbill.items )
+            }
+            listHandler.load()
+            calculateReceiptAmount()
+        }
+        
+        boolean duplicateLedger( ledger ) {
+            if( bill.items.findAll{ it.objid == ledger.objid } ) {
+                return true
+            }
+            return false 
+        }
+        
+        
+        
+        
+        void showError( msg ) {
+            errorMsg = msg
+            binding.refresh('errorMsg')
+        }
+        
+        void processBillTo( item ) {
+            def newbill = createBill()
+            newbill.ledgerids.add( item.objid )
+            newbill.billtoyear = item.toyear
+            newbill.billtoqtr  = item.toqtr 
+            newbill.fullpayment = ( item.toyear == parsedate.year && item.toqtr == 4 )
+            newbill.qtrlypaymentavailed = ( item.toqtr != 4 )
+            newbill.advancepayment  = (item.toyear > parsedate.year )
+            
+            newbill = billingSvc.generateBill( newbill )
+            def newitem = newbill.items[0]
+            if( !newitem )  throw new Exception('Cannot process bill for this item.')
+            
+            def toyear = item.toyear
+            def toqtr = item.toqtr
+            
+            item.details.clear()
+            item.putAll( newitem )
+            item.toyear = toyear
+            item.toqtr  = toqtr 
+            item.pay = true
+            item.amount = newitem.total
+            calculateReceiptAmount()
+        }
+        
+        void processPayColumn( item ) {
+            if( item.pay  ) {
+                item.amount = item.total
+            }
+            else {
+                item.amount = 0.0
+            }
+        }
+        
+        
+        void selectAll() {
+            bill.items.each { 
+                it.pay    = true
+                it.amount = it.total 
+            }
+            listHandler.load()
+            calculateReceiptAmount()
+        }
+        
+        void deselectAll() {
+            bill.items.each { 
+                it.pay    = false
+                it.amount = 0.0
+            }
+            listHandler.load()
+            calculateReceiptAmount()
+        }
+        
+        void fullPayment() {
+            loadBill()
+            listHandler.load()
+            calculateReceiptAmount()
+        }
+        
+        void calculateReceiptAmount() {
+            entity.info.amount = bill.items.amount.sum()
+            def payments = []
+            payments.addAll( entity.payments )
+            updatePaymentInfo( payments )
+            binding.refresh('entity.info.amount|entity.info.totalpayment|entity.info.change')
+        }
+    }
+]]>        
+    </code>
+    <pages>
+        <page name="init" template="etracs2.rpt.collection.RPTReceiptInitPage" />
+        <page name="main" template="etracs2.rpt.collection.RPTReceiptPage" />
+        <page name="bytd" template="etracs2.rpt.collection.RPTReceiptByTDPage" />
+        <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
+        <page name="html" template="etracs2.tc.HtmlPage"/>
+    </pages>
+</workunit>

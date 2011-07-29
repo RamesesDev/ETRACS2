@@ -150,6 +150,12 @@ class ReceiptService
 		if( receipt.info.totalpayment < receipt.info.amount ) {
 			throw new Exception('Total Payment must be greater than or equal to amount due.')
 		}
+        
+        def txndate = dateService.parse('yyyy-MM-dd', receipt.info.txndate )
+        if( txndate > dateService.serverDate ) {
+            throw new Exception('Txn Date must be before or equal to current date.')
+        }
+        
         em.validate( receipt.schemaname, receipt )
 	}
 	
@@ -221,7 +227,9 @@ class ReceiptService
 	void postReceiptItems( receipt ) {
 		em.sqlContext.createNamedExecutor('receipt:deleteReceiptItem').setParameter('receiptid', receipt.objid ).execute()
 		receipt.items.each { item ->
-			item.objid = 'RI' + new UID()
+            if( ! item.objid ) {
+                item.objid = 'RI' + new UID()
+            }
 			item.receiptid = receipt.objid
 			em.validate(RECEIPTITEM_SCHEMA, item)
 			em.create( RECEIPTITEM_SCHEMA, item)
