@@ -4,8 +4,9 @@
     <invokers>
         <invoker folderid="/menu/bp" action="view" caption="Business Billing" />
         
-        <invoker type="formActions" action="close" immediate="true" caption="Close" />
-        <invoker type="formActions" action="viewReport" caption="Preview" />
+        <invoker type="formActions" action="back" immediate="true" caption="Back" mnemonic="b" visibleWhen="#{mode == 'view'}"/>
+        <invoker type="formActions" action="_close" immediate="true" caption="Close" mnemonic="c" visibleWhen="#{mode != 'view'}"/>
+        <invoker type="formActions" action="viewReport" caption="Preview" mnemonic="P" visibleWhen="#{mode != 'view'}"/>
     </invokers>
     
     <code lang="groovy">
@@ -19,6 +20,9 @@
 
             @Service('BPBillingService')
             def svc;
+            
+            @Service("ReportParameterService")
+            def svcParams;
             
             @Caller
             def caller;
@@ -34,14 +38,10 @@
                 getReportName : { return 'bp/billing' },
                 getReportData : { return svc.getBilling( entity ) }, 
                 getParameters : { 
-                    def params = paramsvc.getStandardParameter( OsirisContext.env.USERNAME );
+                    def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME );
                     return params;
                 }
             ] as ServerReportModel;
-            
-            def close() {
-                return '_close';
-            }
             
             def view() {
                 mode = 'init';
@@ -49,6 +49,11 @@
                     info : [:]
                 ];
                 return 'init';
+            }
+            
+            def back(){
+                mode = 'init';
+                return mode;
             }
             
             def viewReport() {
