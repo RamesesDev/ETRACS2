@@ -41,18 +41,19 @@ public class RPTBillingService
 	}	
     
     @ProxyMethod
-    public List getOpenLedgersByTaxpayerId( taxpayerid ) {
-        def dt = dateSvc.parseCurrentDate()
-        def params = [ taxpayerid:taxpayerid, currentyr:dt.year ]
+    public List getOpenLedgersByTaxpayerId( bill ) {
+        def dt = dateSvc.parseDate( bill.billdate, null )
+        def params = [ taxpayerid:bill.taxpayerid, currentyr:dt.year ]
         return em.sqlContext.createNamedQuery('rptbill:getOpenLedgersByTaxpayerId').setParameters( params ).resultList
     }
     
     @ProxyMethod
-    public List getOpenLedgersByIds( ledgerids ) {
-        def dt = dateSvc.parseCurrentDate()
+    public List getOpenLedgersByIds( bill ) {
+        
+        def dt = dateSvc.parseDate( bill.billdate, null )
         def list = []
         def params = [ currentyr:dt.year ]
-        ledgerids.each{ id ->
+        bill.ledgerids.each{ id ->
             params.objid = id 
             list.addAll( em.sqlContext.createNamedQuery('rptbill:getOpenLedgersById').setParameters( params ).resultList )
         }
@@ -76,7 +77,7 @@ public class RPTBillingService
     -------------------------------------------------------------------------------*/
     def createFacts( bill ) {
         def facts = []
-        def cyfact = createCYFact()
+        def cyfact = createCYFact( bill )
 		facts += cyfact
         facts += createLedgerFacts( bill, cyfact )
 		return facts 
@@ -92,7 +93,7 @@ public class RPTBillingService
                 }
                 lfact.factname               = 'RPTLedgerFact'
                 lfact.rptledgerid            = item.rptledgerid
-                lfact.rputype                = item.rputype
+                lfact.rputype                = item.rputype                
                 lfact.numberofmonthsfromqtr  = calculateNoOfMonthsFromQtr( cyfact, lfact.year, lfact.qtr )
                 lfact.numberofmonthsfromjan  = calculateNoOfMonthsFromJan( cyfact, lfact.year, lfact.qtr )
                 lfact.firstqtrpaidontime     = determineFirstQtrPaidOnTime( bill, item )
@@ -107,14 +108,14 @@ public class RPTBillingService
         return facts 
     }
     
-    def createCYFact( ) {
+    def createCYFact( bill ) {
 		def cyfact = ruleService.createFact(RULESET, FACTS_PACKAGE + '.CurrentYearFact')
-        def dt = dateSvc.parseCurrentDate()
+        def billdate = dateSvc.parseDate( bill.billdate, null )
         cyfact.factname     = 'CurrentYearFact'
-		cyfact.year         = dt.year 
-		cyfact.qtr          = dt.qtr 
-		cyfact.month        = dt.month 
-		cyfact.day          = dt.day 
+		cyfact.year         = billdate.year 
+		cyfact.qtr          = billdate.qtr 
+		cyfact.month        = billdate.month 
+		cyfact.day          = billdate.day 
 		return cyfact
 	}
     
@@ -132,9 +133,9 @@ public class RPTBillingService
     }
     
     
-    int calculateNoOfMonthsFromQtr(currentFact, year, qtr) {
-		int currYear = currentFact.year
-		int currMonth = currentFact.month
+    int calculateNoOfMonthsFromQtr(cyfact, year, qtr) {
+		int currYear = cyfact.year
+		int currMonth = cyfact.month
 		if(year < currYear) {
 			return ((currYear - year) * 12 - (3 * (qtr-1))) + currMonth 
 		}
@@ -144,9 +145,9 @@ public class RPTBillingService
 		}
 	}
 	
-	int calculateNoOfMonthsFromJan(currentFact, year, qtr) {
-		int currYear = currentFact.year
-		int currMonth = currentFact.month
+	int calculateNoOfMonthsFromJan(cyfact, year, qtr) {
+		int currYear = cyfact.year
+		int currMonth = cyfact.month
 		if(year < currYear) {
 			return ( currYear - year ) * 12 + currMonth
 		}
@@ -161,10 +162,10 @@ public class RPTBillingService
     void createBillItems( bill ) {
         initBillToYearQtrInfo( bill )
         if( bill.ledgerids ) {
-            bill.items = getOpenLedgersByIds( bill.ledgerids )
+            bill.items = getOpenLedgersByIds( bill  )
         }
         else {
-            bill.items = getOpenLedgersByTaxpayerId( bill.taxpayerid )
+            bill.items = getOpenLedgersByTaxpayerId( bill )
         }
         if( !bill.items ) throw new Exception('There are no open ledgers for this taxpayer.')
         bill.items.each { billitem ->
@@ -177,7 +178,8 @@ public class RPTBillingService
     
     void createBillItemDetailList( bill, billitem ) {
         def util = new Util()
-        def currdate = dateSvc.parseCurrentDate()
+        //def currdate = dateSvc.parseCurrentDate()
+        def currdate = dateSvc.parseDate( bill.billdate, null )
         def params = [ parentid:billitem.objid, currentyr:currdate.year ]
         def ledgeritems = em.sqlContext.createNamedQuery('rptbill:getOpenLedgerItems').setParameters( params ).resultList 
         def firstitem = true  
