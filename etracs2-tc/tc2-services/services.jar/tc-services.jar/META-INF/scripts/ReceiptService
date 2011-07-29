@@ -221,7 +221,9 @@ class ReceiptService
 	void postReceiptItems( receipt ) {
 		em.sqlContext.createNamedExecutor('receipt:deleteReceiptItem').setParameter('receiptid', receipt.objid ).execute()
 		receipt.items.each { item ->
-			item.objid = 'RI' + new UID()
+            if( ! item.objid ) {
+                item.objid = 'RI' + new UID()
+            }
 			item.receiptid = receipt.objid
 			em.validate(RECEIPTITEM_SCHEMA, item)
 			em.create( RECEIPTITEM_SCHEMA, item)
