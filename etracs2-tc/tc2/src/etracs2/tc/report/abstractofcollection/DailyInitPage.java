@@ -46,6 +46,7 @@ public class DailyInitPage extends javax.swing.JPanel {
         xDateField1.setCaptionWidth(100);
         xDateField1.setName("collectiondate");
         xDateField1.setPreferredSize(new java.awt.Dimension(100, 19));
+        xDateField1.setRequired(true);
         formPanel1.add(xDateField1);
 
         jPanel1.add(formPanel1);

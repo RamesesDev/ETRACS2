@@ -26,21 +26,80 @@ public class BPBillingService
 	@ProxyMethod
 	public def getBilling( billing ) {
 		def businesslist = getBusinessByTaxpayer( billing.info.taxpayerid );
+		if( !businesslist ) throw new Exception("There is no business registered in this taxpayer.");
 		billing.items = [];
+		billing.grandtotal = 0.0;
+		def bpsetting = bpSettingService.getSetting();
+		
 		for ( business in businesslist ) {
-			def item = [
-				tradename 	: business.tradename,
-				address		: business.businessaddress,
-				ledgerid	: business.objid,
-				yearstarted	: business.yearstarted,
-				lastyearpaid: business.lastyrpaid,
-				lastqtrpaid	: business.lastqtrpaid,
-				taxfees		: getUnpaidTaxFeesByBusinessId( business.objid )
-			];
-			billing.items += buildBill( item );
+			def applist = getApplicationsByBusinessId( business.objid );
+			for( application in applist ){
+				def item = [
+					appno       : application.txnno,
+					txntype     : application.txntype,
+					tradename 	: business.tradename,
+					address		: business.businessaddress,
+					ledgerid	: business.objid,
+					yearstarted	: business.yearstarted,
+					lastyearpaid: business.lastyrpaid,
+					lastqtrpaid	: business.lastqtrpaid,
+					taxfees		: getUnpaidTaxFeesByApplication( application ) 
+				];
+				
+				if( item.taxfees ){
+					def bill = buildBill( item );
+					bill.totaldiscount = 0.0;
+					bill.totalsurcharge = 0.0;
+					bill.totalamount = 0.0;
+					bill.totalinterest = 0.0;
+					bill.grandtotal = 0.0;
+					
+					bill.taxfees.each{
+						def duedate = getDueDate( bpsetting, it.qtr );
+						if( !it.discount ) it.discount = 0.0;
+						if( !it.surcharge ) it.surcharge = 0.0;
+						if( !it.interest ) it.interest = 0.0;
+						if( !it.amount ) it.amount = 0.0;
+						
+						it.total = it.amount + it.surcharge + it.interest - it.discount;
+						it.duedate = it.year+"-"+duedate.month+"-"+duedate.day;
+						
+						bill.totalamount += it.amount;
+						bill.totalsurcharge += it.surcharge;
+						bill.totalinterest += it.interest;
+						bill.totaldiscount += it.discount;
+						bill.grandtotal += it.total;
+					}
+					billing.grandtotal += bill.grandtotal;
+					billing.items << bill;
+				}
+			}
 		}
-		print "Billing> " + billing;
+		
+		if( !billing.items ) throw new Exception("Registered business(s) is/are fully paid.");
+		
+		def serverDate = dtService.serverDate;
+		def duedate  = getDueDate( bpsetting,  getQtr( serverDate ) );
+		
+		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+		billing.expirydate = sdf.parse( dtService.serverYear+"-"+duedate.month+"-"+duedate.day );
+		if( billing.expirydate.time < serverDate.time ) billing.expirydate = serverDate;
+		billing.info.billdate = serverDate;
 		return billing;
+	}
+	
+	def getDueDate( def bpsetting, def qtr ){
+		def collection = bpsetting.collection;
+		if( qtr == 1 ) return collection.qtr1surcharge;
+		else if( qtr == 2 ) return collection.qtr2surcharge;
+		else if( qtr == 3 ) return collection.qtr3surcharge;
+		else return collection.qtr4surcharge;
+	}
+	
+	def getQtr( def date ){
+		def sdf = new java.text.SimpleDateFormat("MM");
+		int month = Integer.parseInt( sdf.format( date ) );
+		return (Integer)(month / 3);
 	}
 	
 	private def getBusinessByTaxpayer( taxpayerid ) {
@@ -68,8 +127,11 @@ public class BPBillingService
 		def taxfees = [];
 		def receivables = em.serializer.read( app.receivables );
 		for ( rc in receivables ) {
-			if ( rc.amtpaid < rc.amount )
-				taxfees += rc;
+			if ( rc.amtpaid < rc.amount ){
+				rc.year = rc.iyear;
+				rc.qtr = rc.iqtr;
+				taxfees << rc;
+			}
 		}
 		return taxfees;
 	}
@@ -79,6 +141,7 @@ public class BPBillingService
 		setting = bpSettingService.getSetting();
 		def facts = createFacts( bill  )
 		def actionList = ruleService.createRuleAction()
+		if( !actionList ) throw new Exception("Error in creating Rule Action");
 		buildActionCommands( bill, facts, actionList )
 		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'SURCHARGE' )
 		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'INTEREST' )
@@ -97,6 +160,7 @@ public class BPBillingService
 	
 	def createCYFact( ) {
 		def cyfact = ruleService.createFact('bpbilling','bp.billing.facts.CurrentYearFact')
+		if( !cyfact ) throw new Exception("Error in creating Current Year Fact.");
 		cyfact.year  = dtService.getServerYear();
 		cyfact.qtr   = dtService.getServerQtr();
 		cyfact.month = dtService.getServerMonth();
@@ -107,6 +171,7 @@ public class BPBillingService
 	def createLedgerFacts( bill, cyfact ) {
 		def facts = []
 		def ledgerFact = ruleService.createFact('bpbilling','bp.billing.facts.BPLedgerFact')
+		if( !ledgerFact ) throw new Exception("Error in creating Ledger Fact.");
 		ledgerFact.ledgerid = bill.ledgerid 
 		ledgerFact.yearstarted = bill.yearstarted
 		ledgerFact.lastyearpaid = bill.lastyearpaid
@@ -114,6 +179,7 @@ public class BPBillingService
 		facts += ledgerFact 
 		bill.taxfees.each {
 			def tffact = ruleService.createFact('bpbilling','bp.billing.facts.TaxFeeFact')
+			if( !tffact ) throw new Exception("Error in creating Tax Fee Fact");
 			tffact.taxfeeid = it.objid 
 			tffact.ledgerid = bill.ledgerid 
 			tffact.lobid = it.lobid 
@@ -158,6 +224,8 @@ public class BPBillingService
 	int calculateNoOfMonthsFromJan(currentFact, year, qtr) {
 		int currYear = currentFact.year
 		int currMonth = currentFact.month
+		println "CURRENT YEAR - $currYear";
+		println "YEAR - $year";
 		if(year < currYear) {
 			return ( currYear - year ) * 12 + currMonth
 		}
