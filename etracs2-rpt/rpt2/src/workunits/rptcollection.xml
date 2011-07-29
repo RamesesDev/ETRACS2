@@ -32,7 +32,7 @@
         @Service('RPTReceiptService')
         def svc
         
-        @Service('ReceiptHtmlService')
+        @Service('RPTReceiptHtmlService')
         def htmlSvc
         
         @Service('DateService')
@@ -79,7 +79,7 @@
                 mode = 'view'
                 return 'view'
             }
-            return 'default'
+            return null
         }
         
         /*================================================================================================
@@ -99,9 +99,9 @@
         
         void setPayor( payor ) {
             this.payor = payor
-            entity.info.payorid   = payor.objid
-            entity.info.payorname = payor.entityname
-            entity.info.payoraddress = payor.entityaddress
+            entity.info.payorid   = payor?.objid
+            entity.info.payorname = payor?.entityname
+            entity.info.payoraddress = payor?.entityaddress
             entity.info.paidby = entity.info.payorname
             entity.info.paidbyaddress = entity.info.payoraddress
             binding.refresh( 'entity.info.*')
@@ -114,14 +114,13 @@
                 return 'main'
             }
             else if ( payoption == 'bytd' ) {
-                throw new Exception('Not yet supported')
+                return 'bytd'
             }
             return 'init' 
             
         }
         
         void loadBill() {
-            
             bill = createBill()
             bill = billingSvc.generateBill( bill )
             
@@ -167,7 +166,7 @@
                 new Column(name:'amount', caption:'Amount', type:'decimal'),
             ]},
             onColumnUpdate : { item, colname -> processColumnUpdate( item, colname) },
-            fetchList   : { return bill.items }
+            fetchList   : { return bill?.items }
         ] as SubListModel
 
         void processColumnUpdate( item, colname) {
@@ -203,6 +202,55 @@
                 item.amount = 0.0
             }
         }
+        
+        
+        /*================================================================================================
+        *
+        * ByLedger Support 
+        *
+        ================================================================================================*/
+        def ledger
+        
+        def getLookupLedger() {
+            return InvokerUtil.lookupOpener( 'rptledger.lookup',  [:] )
+        }
+        
+        void setLedger( ledger ) {
+            if( ! ledger ) return 
+            if( ledger.docstate == 'PENDING' ) throw new Exception('Ledger is still pending.')
+            if( ledger.docstate == 'CANCELLED' ) throw new Exception('Ledger has already been cancelled.')
+            if( bill && duplicateLedger( ledger ) ) return 
+            
+            //load billitems for this ledger
+            def newbill = createBill()
+            newbill.ledgerids.add( ledger.objid )
+            
+            newbill = billingSvc.generateBill( newbill )
+            
+            //add pay and amount fields in every item
+            newbill.items.each { 
+                it.pay    = true 
+                it.amount = it.total
+            }
+            if( ! bill ) {
+                bill = newbill 
+            }
+            else {
+                bill.items.addAll( newbill.items )
+            }
+            listHandler.load()
+            calculateReceiptAmount()
+        }
+        
+        boolean duplicateLedger( ledger ) {
+            if( bill.items.findAll{ it.objid == ledger.objid } ) {
+                return true
+            }
+            return false 
+        }
+        
+        
+        
         
         void showError( msg ) {
             errorMsg = msg
@@ -281,6 +329,7 @@
     <pages>
         <page name="init" template="etracs2.rpt.collection.RPTReceiptInitPage" />
         <page name="main" template="etracs2.rpt.collection.RPTReceiptPage" />
+        <page name="bytd" template="etracs2.rpt.collection.RPTReceiptByTDPage" />
         <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
         <page name="html" template="etracs2.tc.HtmlPage"/>
     </pages>

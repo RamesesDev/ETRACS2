@@ -10,7 +10,7 @@
 import com.rameses.rcp.common.*;
 import com.rameses.rcp.annotations.*;
 
-class LookupBankController 
+class BankLookupController extends LookupModel 
 {
     @Service("BankiService")
     def svc;
@@ -19,31 +19,38 @@ class LookupBankController
     def searchText;
     def selected;
     
-    def ok() {
-        if( onselect ) {
-            onselect( selected );
-        }
-        return "_close";
+    void init(){
     }
     
-    def listHandler = [
-        getRows    : { return 20; },
-        getColumns : {
-            return [
-                new Column(name:"bankcode", caption:"Bank Code"),
-                new Column(name:"bankname", caption:"Bank Name"),
-                new Column(name:"branchname", caption:"Branch Name"),
-            ];
-        },
-        fetchList : { 
-            def list = svc.getList(searchText, null);
-            if(list) return list;
-            
-            throw new Exception("Record not found.");
-        }
-    ] as PageListModel;
+    
+    def ok() {
+        search = null
+        if( onselect ) onselect( selected )
+        return select();
+    }
+    
+    def getListHandler() {
+        return this;
+    }
+    
+    int getRows() { return 20; }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"bankcode", caption:"Bank Code"),
+            new Column(name:"bankname", caption:"Bank Name"),
+            new Column(name:"branchname", caption:"Branch Name"),
+        ];
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getList(s, params);
+        if( list ) return list;
+        throw new Exception("Record not found.");
+    }
 }  
-
 
 ]]>
 

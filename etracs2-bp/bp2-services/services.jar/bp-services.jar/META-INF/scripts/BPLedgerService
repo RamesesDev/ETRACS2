@@ -189,6 +189,7 @@ class BPLedgerService {
 			application.credits.remove( c );
 			def brc = application.receivables.find{ c.bpreceivableid == it.objid };
 			if( !brc ) throw new Exception("Missing receivable in credit $c.objid of this payment.");
+			brc.amtpaid -= c.amount;
 		}
 	}
 	
@@ -198,6 +199,7 @@ class BPLedgerService {
 			if( application.txntype.matches('NEW|ADDLOB') ) return list;
 			return list.findAll{ it.qtr <= entity.qtr || ( it.assessmentype.matches('NEW|ADDLOB')) }
 		}
+		
 		def taxfees = getUnpaidReceivables();
 		if( taxfees.findAll{ it.systype != 'BUSINESS_TAX' } ) return false;
 		if( taxfees.findAll{ it.applicationtype.matches('NEW|ADDLOB') } ) return false;

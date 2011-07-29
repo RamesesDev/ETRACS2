@@ -138,7 +138,7 @@ public class CollectionViewPage extends javax.swing.JPanel {
         xLabel5.setPreferredSize(new java.awt.Dimension(0, 20));
         formPanel1.add(xLabel5);
 
-        xLabel13.setCaption("Payor ");
+        xLabel13.setCaption("Address");
         xLabel13.setCaptionWidth(80);
         xLabel13.setFont(new java.awt.Font("Arial", 1, 14));
         xLabel13.setName("entity.info.payoraddress");

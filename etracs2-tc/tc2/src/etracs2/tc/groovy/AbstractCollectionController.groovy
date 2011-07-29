@@ -78,7 +78,7 @@ abstract class AbstractCollectionController
             mode = 'view'
             return 'view'
         }
-        return 'default'
+        return null
     }
     
     def update() {
@@ -90,7 +90,7 @@ abstract class AbstractCollectionController
             invokeUpdateHandler()
             return 'view'
         }
-        return 'default'
+        return null
     }
     
     void validateTxnDate() {

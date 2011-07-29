@@ -63,6 +63,9 @@ class CashTicketCollectionController extends AbstractCollectionController
     }
     
     void validateAmount() {
+        if( entity.info.amount == null || entity.info.amount == 0 ) {
+            throw new Exception('Quantity Issued is required.')
+        }
         if( entity.info.amount != entity.amount ) {
             throw new Exception('Amount Due must be equal to Amount Collected.')
         }

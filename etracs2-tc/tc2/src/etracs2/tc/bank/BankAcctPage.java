@@ -35,7 +35,7 @@ public class BankAcctPage extends javax.swing.JPanel {
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
         xTextField2 = new com.rameses.rcp.control.XTextField();
-        xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xTextField4 = new com.rameses.rcp.control.XTextField();
         xTextField5 = new com.rameses.rcp.control.XTextField();
 
@@ -123,19 +123,18 @@ public class BankAcctPage extends javax.swing.JPanel {
         xTextField2.setRequired(true);
         formPanel1.add(xTextField2);
 
-        xActionTextField2.setActionName("lookupBank");
-        xActionTextField2.setCaption(" Bank Code");
-        xActionTextField2.setCaptionWidth(100);
-        xActionTextField2.setDepends(new String[] {"selectedItem"});
-        xActionTextField2.setHint("Search Bank");
-        xActionTextField2.setName("entity.bankcode");
-        xActionTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
-        xActionTextField2.setRequired(true);
-        formPanel1.add(xActionTextField2);
+        xLookupField1.setCaption("Bank Code");
+        xLookupField1.setCaptionWidth(100);
+        xLookupField1.setExpression("#{bankcode}");
+        xLookupField1.setHandler("lookupBank");
+        xLookupField1.setName("bank");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField1.setRequired(true);
+        formPanel1.add(xLookupField1);
 
         xTextField4.setCaption("Bank Name");
         xTextField4.setCaptionWidth(100);
-        xTextField4.setDepends(new String[] {"selectedItem"});
+        xTextField4.setDepends(new String[] {"selectedItem", "bank"});
         xTextField4.setName("entity.bankname");
         xTextField4.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField4.setReadonly(true);
@@ -143,7 +142,7 @@ public class BankAcctPage extends javax.swing.JPanel {
 
         xTextField5.setCaption("Branch Name");
         xTextField5.setCaptionWidth(100);
-        xTextField5.setDepends(new String[] {"selectedItem"});
+        xTextField5.setDepends(new String[] {"selectedItem", "bank"});
         xTextField5.setName("entity.branchname");
         xTextField5.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField5.setReadonly(true);
@@ -181,10 +180,10 @@ public class BankAcctPage extends javax.swing.JPanel {
     private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField2;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XDataTable xDataTable1;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;

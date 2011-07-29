@@ -1,0 +1,71 @@
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
+<workunit>
+    <invokers>
+        <invoker type="rptledger.lookup" action="init" caption="RPT Ledger Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+
+class RPTLedgerLookupController extends LookupModel 
+{
+    @Service("RPTLedgerService")
+    def svc
+    
+    def onselect
+    def searchText
+    def docstate
+    def selected
+    
+    void init(){
+    }
+    
+    
+    def ok() {
+        search = null
+        if( onselect ) onselect( selected )
+        return select()
+    }
+    
+    def getListHandler() {
+        return this
+    }
+    
+    int getRows() { return 25 }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"tdno", caption:"TD No.", maxWidth:120),
+            new Column(name:"fullpin", caption:"PIN", maxWidth:150),
+            new Column(name:"cadastrallotno", caption:"Cadastral", maxWidth:150),
+            new Column(name:"taxpayername", caption:"Taxpayer"),
+            new Column(name:"lastyearpaid", caption:"Last Year Paid"),
+            new Column(name:"lastqtrpaid", caption:"Last Qtr Paid"),
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getList( docstate, s, params)
+        if( list ) return list
+        throw new Exception("Record not found.")
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.common.LookupPage"/>
+    </pages>
+</workunit>

@@ -111,7 +111,7 @@ class DepositHtmlService
 		deposit.fundsummaries.each {
 			def summary = buildSummary( it )
 			def depositsummary = buildDepositSummary( it )
-			def actions = buildActions( it )
+			def actions = buildActions( deposit, it )
 			
 			summaries += """
 				<div style="background:silver" width="100%">
@@ -140,14 +140,20 @@ class DepositHtmlService
 		return summaries
 	}
 	
-	def buildActions( summ ) {
+	def buildActions( deposit, summ ) {
+        def cash    = '<td></td>'
+        def noncash = '<td></td>'
+        
+        if( deposit.cash ) cash = """<td><a href="printCashDepositSlip?$summ.fundid">Print Cash Deposit Slip</a></td>"""
+        if( deposit.noncash ) noncash = """<td><a href="printCheckDepositSlip?$summ.fundid">Print Check Deposit Slip</a></td>"""
+        
 		return """
 			<tr>
 				<td colspan="8">
 					<table>
 						<tr>
-							<td><a href="printCashDepositSlip?$summ.fundid">Print Cash Deposit Slip</a></td>
-							<td><a href="printCheckDepositSlip?$summ.fundid">Print Check Deposit Slip</a></td>
+							$cash
+							$noncash
 						<tr>
 					</table>
 				</td>
@@ -164,8 +170,8 @@ class DepositHtmlService
 				<td>$summ.cash</td>
 				<td>$summ.noncash</td>
 				<td>$summ.amount</td>
-				<td>$summ.validationno</td>
-				<td>$summ.validationdate</td>
+				<td>${summ.validationno ? summ.validationno : ''}</td>
+				<td>${summ.validationdate ? summ.validationdate: ''}</td>
 			</tr>
 		"""
 	}
