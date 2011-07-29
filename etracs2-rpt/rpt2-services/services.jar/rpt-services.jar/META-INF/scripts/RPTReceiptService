@@ -19,6 +19,7 @@ class RPTReceiptService
     @ProxyMethod
     public def create( receipt, bill ) {
         def items = bill.items.findAll{ it.pay == true && it.amount > 0}
+        if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
         
         buildReceiptItems( receipt, items )
         updateReceiptInfos( receipt, items )

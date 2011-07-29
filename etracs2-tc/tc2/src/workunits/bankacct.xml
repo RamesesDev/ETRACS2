@@ -2,12 +2,12 @@
     <invokers>
         <invoker folderid="/menu/tc/master" action="init" caption="Bank Account" permission="bankacct.view" />
         
-        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png"  permission="bankacct.create" />
-        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png"  permission="bankacct.edit" />
-        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
-        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
-        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png"  permission="bankacct.delete" />
-        <invoker type="formActions" action="approve" shortcut="ctrl V" visibleWhen="#{mode == 'view' and entity.objid != null and selectedItem.docstate == 'DRAFT'}" immediate="true" caption="Approve" mnemonic="v" icon="images/approve24.png"  permission="bankacct.approve" />
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/doc-addnew.png"  permission="bankacct.create" />
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Edit" mnemonic="e" icon="images/doc-edit.png"  permission="bankacct.edit" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/doc-save.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/doc-cancel.png"/>
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/doc-delete.png"  permission="bankacct.delete" />
+        <invoker type="formActions" action="approve" shortcut="ctrl V" visibleWhen="#{mode == 'view' and entity.objid != null and selectedItem.docstate == 'DRAFT'}" immediate="true" caption="Approve" mnemonic="v" icon="images/doc-approve.png"  permission="bankacct.approve" />
     </invokers>
     <code>
         <![CDATA[
@@ -29,6 +29,12 @@ class BankAcctController extends etracs2.groovy.CRUDController
     def getEditFocusComponent() { return "entity.acctno"; }
     def getListHandler() { return listHandler; }
     def bankResult;
+    def bank;
+    
+    void open( objid ) {
+        super.open( objid )
+        bank = [bankcode:entity.bankcode]
+    }
     
     def listHandler = [
         getRows    : { return 20; },
@@ -54,19 +60,18 @@ class BankAcctController extends etracs2.groovy.CRUDController
         return data.fundname;
     }
     
-    def lookupBank() {
-        return InvokerUtil.lookupOpener("bank:lookup.bank", [searchText:entity.bankcode, onselect:selectBankHandler]);        
+    def getLookupBank() {
+        return InvokerUtil.lookupOpener("bank:lookup.bank", [:]);        
     }
     
-    def selectBankHandler = { bank ->
-        if( bank ) {
-            entity.bankid = bank.objid;
-            entity.bankcode = bank.bankcode;
-            entity.bankname = bank.bankname;
-            entity.branchname = bank.branchname;
-            binding.refresh("entity.*");
-        }
+    void setBank( bank ){
+        this.bank = bank
+        entity.bankid = bank?.objid;
+        entity.bankcode = bank?.bankcode;
+        entity.bankname = bank?.bankname;
+        entity.branchname = bank?.branchname;
     }
+    
 }
 
 ]]>        
