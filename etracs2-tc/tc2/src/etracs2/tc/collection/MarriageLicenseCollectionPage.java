@@ -55,18 +55,19 @@ public class MarriageLicenseCollectionPage extends javax.swing.JPanel {
         jPanel6 = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
         formPanel3 = new com.rameses.rcp.util.FormPanel();
+        xSeparator1 = new com.rameses.rcp.control.XSeparator();
         xTextField3 = new com.rameses.rcp.control.XTextField();
         xTextField4 = new com.rameses.rcp.control.XTextField();
         formPanel4 = new com.rameses.rcp.util.FormPanel();
         xNumberField4 = new com.rameses.rcp.control.XNumberField();
         xNumberField5 = new com.rameses.rcp.control.XNumberField();
-        formPanel5 = new com.rameses.rcp.util.FormPanel();
+        xSeparator2 = new com.rameses.rcp.control.XSeparator();
         xTextField5 = new com.rameses.rcp.control.XTextField();
         xTextField6 = new com.rameses.rcp.control.XTextField();
         formPanel6 = new com.rameses.rcp.util.FormPanel();
         xNumberField6 = new com.rameses.rcp.control.XNumberField();
         xNumberField7 = new com.rameses.rcp.control.XNumberField();
-        formPanel7 = new com.rameses.rcp.util.FormPanel();
+        xSeparator3 = new com.rameses.rcp.control.XSeparator();
         xTextField7 = new com.rameses.rcp.control.XTextField();
         xTextField8 = new com.rameses.rcp.control.XTextField();
         xTextField9 = new com.rameses.rcp.control.XTextField();
@@ -247,28 +248,47 @@ public class MarriageLicenseCollectionPage extends javax.swing.JPanel {
         xTitledBorder1.setTitle("Marriage License and Fee Information");
         jPanel7.setBorder(xTitledBorder1);
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder2.setTitle("Groom Information");
-        formPanel3.setBorder(xTitledBorder2);
-        formPanel3.setCaptionFont(new java.awt.Font("Arial", 0, 14));
+        formPanel3.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        formPanel3.setCaptionFont(new java.awt.Font("Arial", 0, 12));
+        xSeparator1.setCaption("Groom Information");
+        xSeparator1.setCaptionWidth(120);
+        xSeparator1.setFont(new java.awt.Font("Tahoma", 1, 12));
+        xSeparator1.setPreferredSize(new java.awt.Dimension(0, 20));
+        xSeparator1.setShowCaption(true);
+        org.jdesktop.layout.GroupLayout xSeparator1Layout = new org.jdesktop.layout.GroupLayout(xSeparator1);
+        xSeparator1.setLayout(xSeparator1Layout);
+        xSeparator1Layout.setHorizontalGroup(
+            xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 500, Short.MAX_VALUE)
+        );
+        xSeparator1Layout.setVerticalGroup(
+            xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 20, Short.MAX_VALUE)
+        );
+        formPanel3.add(xSeparator1);
+
         xTextField3.setCaption("Name");
         xTextField3.setCaptionWidth(120);
-        xTextField3.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField3.setCellPadding(new java.awt.Insets(0, 20, 0, 0));
+        xTextField3.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField3.setIndex(-10);
         xTextField3.setName("entity.groomname");
-        xTextField3.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField3.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField3.setRequired(true);
         formPanel3.add(xTextField3);
 
         xTextField4.setCaption("Address");
         xTextField4.setCaptionWidth(120);
-        xTextField4.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField4.setCellPadding(new java.awt.Insets(0, 20, 0, 0));
+        xTextField4.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField4.setName("entity.groomaddress");
-        xTextField4.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField4.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField4.setRequired(true);
         formPanel3.add(xTextField4);
 
-        formPanel4.setCaptionFont(new java.awt.Font("Arial", 0, 14));
+        formPanel4.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        formPanel4.setCaptionFont(new java.awt.Font("Arial", 0, 12));
+        formPanel4.setCellpadding(new java.awt.Insets(10, 0, 0, 0));
         formPanel4.setCellspacing(5);
         formPanel4.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
         formPanel4.setPadding(new java.awt.Insets(0, 0, 0, 0));
@@ -276,44 +296,62 @@ public class MarriageLicenseCollectionPage extends javax.swing.JPanel {
         formPanel4.setShowCaption(false);
         xNumberField4.setCaption("Age -> Years");
         xNumberField4.setCaptionWidth(120);
+        xNumberField4.setCellPadding(new java.awt.Insets(0, 20, 0, 0));
         xNumberField4.setFieldType(Integer.class);
-        xNumberField4.setFont(new java.awt.Font("Arial", 0, 14));
+        xNumberField4.setFont(new java.awt.Font("Arial", 0, 12));
         xNumberField4.setName("entity.groomageyear");
-        xNumberField4.setPreferredSize(new java.awt.Dimension(100, 22));
+        xNumberField4.setPreferredSize(new java.awt.Dimension(100, 19));
         xNumberField4.setRequired(true);
         formPanel4.add(xNumberField4);
 
         xNumberField5.setCaption("Months");
         xNumberField5.setCaptionWidth(70);
         xNumberField5.setFieldType(Integer.class);
-        xNumberField5.setFont(new java.awt.Font("Arial", 0, 14));
+        xNumberField5.setFont(new java.awt.Font("Arial", 0, 12));
         xNumberField5.setName("entity.groomagemonth");
-        xNumberField5.setPreferredSize(new java.awt.Dimension(100, 22));
+        xNumberField5.setPreferredSize(new java.awt.Dimension(100, 19));
         formPanel4.add(xNumberField5);
 
         formPanel3.add(formPanel4);
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder3.setTitle("Bride Information");
-        formPanel5.setBorder(xTitledBorder3);
-        formPanel5.setCaptionFont(new java.awt.Font("Arial", 0, 14));
+        xSeparator2.setCaption("Bride Information");
+        xSeparator2.setCaptionWidth(120);
+        xSeparator2.setCellPadding(new java.awt.Insets(5, 0, 0, 0));
+        xSeparator2.setFont(new java.awt.Font("Tahoma", 1, 12));
+        xSeparator2.setPreferredSize(new java.awt.Dimension(0, 20));
+        xSeparator2.setShowCaption(true);
+        org.jdesktop.layout.GroupLayout xSeparator2Layout = new org.jdesktop.layout.GroupLayout(xSeparator2);
+        xSeparator2.setLayout(xSeparator2Layout);
+        xSeparator2Layout.setHorizontalGroup(
+            xSeparator2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 500, Short.MAX_VALUE)
+        );
+        xSeparator2Layout.setVerticalGroup(
+            xSeparator2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 20, Short.MAX_VALUE)
+        );
+        formPanel3.add(xSeparator2);
+
         xTextField5.setCaption("Name");
         xTextField5.setCaptionWidth(120);
-        xTextField5.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField5.setCellPadding(new java.awt.Insets(0, 20, 0, 0));
+        xTextField5.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField5.setName("entity.bridename");
-        xTextField5.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField5.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField5.setRequired(true);
-        formPanel5.add(xTextField5);
+        formPanel3.add(xTextField5);
 
         xTextField6.setCaption("Address");
         xTextField6.setCaptionWidth(120);
-        xTextField6.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField6.setCellPadding(new java.awt.Insets(0, 20, 0, 0));
+        xTextField6.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField6.setName("entity.brideaddress");
-        xTextField6.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField6.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField6.setRequired(true);
-        formPanel5.add(xTextField6);
+        formPanel3.add(xTextField6);
 
-        formPanel6.setCaptionFont(new java.awt.Font("Arial", 0, 14));
+        formPanel6.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        formPanel6.setCaptionFont(new java.awt.Font("Arial", 0, 12));
         formPanel6.setCellspacing(5);
         formPanel6.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
         formPanel6.setPadding(new java.awt.Insets(0, 0, 0, 0));
@@ -321,80 +359,92 @@ public class MarriageLicenseCollectionPage extends javax.swing.JPanel {
         formPanel6.setShowCaption(false);
         xNumberField6.setCaption("Age -> Years");
         xNumberField6.setCaptionWidth(120);
+        xNumberField6.setCellPadding(new java.awt.Insets(0, 20, 0, 0));
         xNumberField6.setFieldType(Integer.class);
-        xNumberField6.setFont(new java.awt.Font("Arial", 0, 14));
+        xNumberField6.setFont(new java.awt.Font("Arial", 0, 12));
         xNumberField6.setName("entity.brideageyear");
-        xNumberField6.setPreferredSize(new java.awt.Dimension(100, 22));
+        xNumberField6.setPreferredSize(new java.awt.Dimension(100, 19));
         xNumberField6.setRequired(true);
         formPanel6.add(xNumberField6);
 
         xNumberField7.setCaption("Months");
         xNumberField7.setCaptionWidth(70);
+        xNumberField7.setCellPadding(new java.awt.Insets(0, 20, 0, 0));
         xNumberField7.setFieldType(Integer.class);
-        xNumberField7.setFont(new java.awt.Font("Arial", 0, 14));
+        xNumberField7.setFont(new java.awt.Font("Arial", 0, 12));
         xNumberField7.setName("entity.brideagemonth");
-        xNumberField7.setPreferredSize(new java.awt.Dimension(100, 22));
+        xNumberField7.setPreferredSize(new java.awt.Dimension(100, 19));
         formPanel6.add(xNumberField7);
 
-        formPanel5.add(formPanel6);
+        formPanel3.add(formPanel6);
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder4.setTitle("Marriage License Fee Detail");
-        formPanel7.setBorder(xTitledBorder4);
-        formPanel7.setCaptionFont(new java.awt.Font("Arial", 0, 14));
+        xSeparator3.setCaption("License Fee Detail");
+        xSeparator3.setCaptionWidth(120);
+        xSeparator3.setCellPadding(new java.awt.Insets(5, 0, 0, 0));
+        xSeparator3.setFont(new java.awt.Font("Tahoma", 1, 12));
+        xSeparator3.setPreferredSize(new java.awt.Dimension(0, 20));
+        xSeparator3.setShowCaption(true);
+        org.jdesktop.layout.GroupLayout xSeparator3Layout = new org.jdesktop.layout.GroupLayout(xSeparator3);
+        xSeparator3.setLayout(xSeparator3Layout);
+        xSeparator3Layout.setHorizontalGroup(
+            xSeparator3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 500, Short.MAX_VALUE)
+        );
+        xSeparator3Layout.setVerticalGroup(
+            xSeparator3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 20, Short.MAX_VALUE)
+        );
+        formPanel3.add(xSeparator3);
+
         xTextField7.setCaption("Register No.");
         xTextField7.setCaptionWidth(120);
+        xTextField7.setCellPadding(new java.awt.Insets(0, 20, 0, 0));
         xTextField7.setFont(new java.awt.Font("Arial", 0, 14));
         xTextField7.setName("entity.registerno");
-        xTextField7.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField7.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField7.setRequired(true);
-        formPanel7.add(xTextField7);
+        formPanel3.add(xTextField7);
 
         xTextField8.setCaption("Attachments");
         xTextField8.setCaptionWidth(120);
+        xTextField8.setCellPadding(new java.awt.Insets(0, 20, 0, 0));
         xTextField8.setFont(new java.awt.Font("Arial", 0, 14));
         xTextField8.setName("entity.attachments");
-        xTextField8.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField8.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField8.setRequired(true);
-        formPanel7.add(xTextField8);
+        formPanel3.add(xTextField8);
 
         xTextField9.setCaption("LCR Officer");
         xTextField9.setCaptionWidth(120);
+        xTextField9.setCellPadding(new java.awt.Insets(0, 20, 0, 0));
         xTextField9.setFont(new java.awt.Font("Arial", 0, 14));
         xTextField9.setName("entity.lcrofficer");
-        xTextField9.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField9.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField9.setRequired(true);
-        formPanel7.add(xTextField9);
+        formPanel3.add(xTextField9);
 
         xTextField10.setCaption("Job Title");
         xTextField10.setCaptionWidth(120);
+        xTextField10.setCellPadding(new java.awt.Insets(0, 20, 0, 0));
         xTextField10.setFont(new java.awt.Font("Arial", 0, 14));
         xTextField10.setName("entity.lcrofficertitle");
-        xTextField10.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField10.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField10.setRequired(true);
-        formPanel7.add(xTextField10);
+        formPanel3.add(xTextField10);
 
         org.jdesktop.layout.GroupLayout jPanel7Layout = new org.jdesktop.layout.GroupLayout(jPanel7);
         jPanel7.setLayout(jPanel7Layout);
         jPanel7Layout.setHorizontalGroup(
             jPanel7Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel7Layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel7Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanel7Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 649, Short.MAX_VALUE))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .add(formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 630, Short.MAX_VALUE)
+                .addContainerGap())
         );
         jPanel7Layout.setVerticalGroup(
             jPanel7Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel7Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 116, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(formPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 115, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(formPanel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 140, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 321, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -402,11 +452,11 @@ public class MarriageLicenseCollectionPage extends javax.swing.JPanel {
         jPanel6.setLayout(jPanel6Layout);
         jPanel6Layout.setHorizontalGroup(
             jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 654, Short.MAX_VALUE)
+            .add(jPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 199, Short.MAX_VALUE)
+            .add(jPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 340, Short.MAX_VALUE)
         );
         jPanel5.add(jPanel6, java.awt.BorderLayout.CENTER);
 
@@ -422,9 +472,7 @@ public class MarriageLicenseCollectionPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel2;
     private com.rameses.rcp.util.FormPanel formPanel3;
     private com.rameses.rcp.util.FormPanel formPanel4;
-    private com.rameses.rcp.util.FormPanel formPanel5;
     private com.rameses.rcp.util.FormPanel formPanel6;
-    private com.rameses.rcp.util.FormPanel formPanel7;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
@@ -450,6 +498,9 @@ public class MarriageLicenseCollectionPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XNumberField xNumberField5;
     private com.rameses.rcp.control.XNumberField xNumberField6;
     private com.rameses.rcp.control.XNumberField xNumberField7;
+    private com.rameses.rcp.control.XSeparator xSeparator1;
+    private com.rameses.rcp.control.XSeparator xSeparator2;
+    private com.rameses.rcp.control.XSeparator xSeparator3;
     private com.rameses.rcp.control.XSubFormPanel xSubFormPanel1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField10;

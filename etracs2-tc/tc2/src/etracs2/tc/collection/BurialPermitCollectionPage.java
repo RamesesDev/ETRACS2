@@ -243,78 +243,79 @@ public class BurialPermitCollectionPage extends javax.swing.JPanel {
         jPanel6.setBorder(xTitledBorder1);
         jPanel6.setPreferredSize(new java.awt.Dimension(566, 382));
 
-        formPanel3.setCaptionFont(new java.awt.Font("Arial", 0, 14));
+        formPanel3.setCaptionFont(new java.awt.Font("Arial", 0, 12));
+        formPanel3.setPadding(new java.awt.Insets(0, 5, 5, 5));
         xComboBox1.setCaption("Permission Type");
         xComboBox1.setCaptionWidth(140);
-        xComboBox1.setFont(new java.awt.Font("Arial", 0, 14));
+        xComboBox1.setFont(new java.awt.Font("Arial", 0, 12));
         xComboBox1.setItems("permissionTypeList");
         xComboBox1.setName("entity.permissiontype");
-        xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));
+        xComboBox1.setPreferredSize(new java.awt.Dimension(0, 19));
         xComboBox1.setRequired(true);
         formPanel3.add(xComboBox1);
 
         xTextField3.setCaption("Name");
         xTextField3.setCaptionWidth(140);
-        xTextField3.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField3.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField3.setName("entity.name");
-        xTextField3.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField3.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField3.setRequired(true);
         formPanel3.add(xTextField3);
 
         xTextField4.setCaption("Nationality");
         xTextField4.setCaptionWidth(140);
-        xTextField4.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField4.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField4.setName("entity.nationality");
-        xTextField4.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField4.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField4.setRequired(true);
         formPanel3.add(xTextField4);
 
         xNumberField4.setCaption("Age (Years)");
         xNumberField4.setCaptionWidth(140);
         xNumberField4.setFieldType(Integer.class);
-        xNumberField4.setFont(new java.awt.Font("Arial", 0, 14));
+        xNumberField4.setFont(new java.awt.Font("Arial", 0, 12));
         xNumberField4.setName("entity.age");
-        xNumberField4.setPreferredSize(new java.awt.Dimension(120, 22));
+        xNumberField4.setPreferredSize(new java.awt.Dimension(120, 19));
         xNumberField4.setRequired(true);
         formPanel3.add(xNumberField4);
 
         xComboBox2.setCaption("Sex");
         xComboBox2.setCaptionWidth(140);
-        xComboBox2.setFont(new java.awt.Font("Arial", 0, 14));
+        xComboBox2.setFont(new java.awt.Font("Arial", 0, 12));
         xComboBox2.setItems("sexList");
         xComboBox2.setName("entity.sex");
-        xComboBox2.setPreferredSize(new java.awt.Dimension(120, 22));
+        xComboBox2.setPreferredSize(new java.awt.Dimension(120, 19));
         xComboBox2.setRequired(true);
         formPanel3.add(xComboBox2);
 
         xDateField2.setCaption("Date of Death");
         xDateField2.setCaptionWidth(140);
-        xDateField2.setFont(new java.awt.Font("Arial", 0, 14));
+        xDateField2.setFont(new java.awt.Font("Arial", 0, 12));
         xDateField2.setName("entity.dtdeath");
-        xDateField2.setPreferredSize(new java.awt.Dimension(120, 22));
+        xDateField2.setPreferredSize(new java.awt.Dimension(120, 19));
         xDateField2.setRequired(true);
         formPanel3.add(xDateField2);
 
         xTextField5.setCaption("Cause of Death");
         xTextField5.setCaptionWidth(140);
-        xTextField5.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField5.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField5.setName("entity.deathcause");
-        xTextField5.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField5.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField5.setRequired(true);
         formPanel3.add(xTextField5);
 
         xTextField6.setCaption("Cemetery");
         xTextField6.setCaptionWidth(140);
-        xTextField6.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField6.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField6.setName("entity.cemetery");
-        xTextField6.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField6.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField6.setRequired(true);
         formPanel3.add(xTextField6);
 
         formPanel4.setAddCaptionColon(false);
         formPanel4.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
         formPanel4.setCaptionFont(new java.awt.Font("Arial", 1, 12));
-        formPanel4.setPadding(new java.awt.Insets(10, 0, 0, 0));
+        formPanel4.setPadding(new java.awt.Insets(5, 0, 0, 0));
         formPanel4.setPreferredSize(new java.awt.Dimension(0, 150));
         formPanel4.setShowCaption(false);
         xSeparator1.setCaption("In case of disenterment");
@@ -333,29 +334,29 @@ public class BurialPermitCollectionPage extends javax.swing.JPanel {
         );
         formPanel4.add(xSeparator1);
 
-        formPanel5.setCaptionFont(new java.awt.Font("Arial", 0, 14));
-        formPanel5.setPadding(new java.awt.Insets(5, 20, 5, 5));
+        formPanel5.setCaptionFont(new java.awt.Font("Arial", 0, 12));
+        formPanel5.setPadding(new java.awt.Insets(0, 20, 5, 5));
         formPanel5.setPreferredSize(new java.awt.Dimension(0, 150));
         formPanel5.setShowCaption(false);
         xTextField7.setCaption("Infectious or Non-Infectious");
         xTextField7.setCaptionWidth(230);
-        xTextField7.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField7.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField7.setName("entity.infectious");
-        xTextField7.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField7.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel5.add(xTextField7);
 
         xTextField8.setCaption("Body embalmed or not embalmed");
         xTextField8.setCaptionWidth(230);
-        xTextField8.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField8.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField8.setName("entity.embalmed");
-        xTextField8.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField8.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel5.add(xTextField8);
 
         xTextField9.setCaption("Disposition of remains");
         xTextField9.setCaptionWidth(230);
-        xTextField9.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField9.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField9.setName("entity.disposition");
-        xTextField9.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField9.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel5.add(xTextField9);
 
         formPanel4.add(formPanel5);
