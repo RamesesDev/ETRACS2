@@ -6,10 +6,13 @@
 
 package etracs2.tc.liquidation;
 
+import com.rameses.rcp.ui.annotations.StyleSheet;
+
 /**
  *
  * @author  alvin
  */
+@StyleSheet("etracs2/tc/liquidation/LiquidationPage.style")
 public class LiquidationPage extends javax.swing.JPanel {
     
     /**

@@ -40,6 +40,7 @@ ORDER BY txnno DESC, txndate DESC
 SELECT pay.* 
 FROM paymentitem pay, receiptlist r, remittancelist rm 
 WHERE rm.liquidationid = $P{liquidationid} 
+AND NOT pay.paytype = 'CASH' 
 AND rm.objid = r.remittanceid 
 AND r.objid = pay.receiptid 
 

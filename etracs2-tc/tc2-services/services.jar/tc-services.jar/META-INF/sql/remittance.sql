@@ -55,7 +55,8 @@ ORDER BY serialno DESC, txndate DESC
 SELECT pi.* FROM paymentitem pi, receiptlist rl 
 WHERE rl.objid = pi.receiptid 
 AND NOT pi.paytype = 'CASH' 
-AND rl.collectorid = $P{collectorid}
+AND rl.collectorid = $P{collectorid} 
+AND rl.docstate = 'OPEN'
 
 [getRemittanceInfo]
 SELECT 

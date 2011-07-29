@@ -12,6 +12,7 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  *
  * @author  alvin
  */
+@StyleSheet("etracs2/tc/remittance/RemittancePage.style")
 public class RemittancePage extends javax.swing.JPanel {
     
     /** Creates new form RemittancePage */
