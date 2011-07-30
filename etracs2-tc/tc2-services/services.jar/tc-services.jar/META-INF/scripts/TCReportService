@@ -22,7 +22,10 @@ class TDReportService {
 	}
 	
 	private def getReceiptsByDate( txntimestamp ) {
-		return em.sqlContext.createNamedQuery( "tcreport:getReceiptsByDate" ).setParameters( [txntimestamp:txntimestamp] ).resultList;
+		def receipts = em.sqlContext.createNamedQuery( "tcreport:getReceiptsByDate" ).setParameters( [txntimestamp:txntimestamp] ).resultList;
+		if ( !receipts )
+			throw new IllegalStateException( "No records for this particular date." );
+		return receipts;
 	}
 	
 	private def getReceiptSummaryByDate( txntimestamp ) {
@@ -39,7 +42,10 @@ class TDReportService {
 	}
 	
 	private def getReceiptsByMonth( monthtimestamp ) {
-		return em.sqlContext.createNamedQuery( "tcreport:getReceiptsByMonth" ).setParameters( [monthtimestamp:monthtimestamp] ).resultList;
+		def receipts = em.sqlContext.createNamedQuery( "tcreport:getReceiptsByMonth" ).setParameters( [monthtimestamp:monthtimestamp] ).resultList;
+		if ( !receipts )
+			throw new IllegalStateException( "No records for this particular month." );
+		return receipts;
 	}
 	
 	private def getReceiptSummaryByMonth( monthtimestamp ) {
@@ -56,7 +62,10 @@ class TDReportService {
 	}
 	
 	private def getReceiptsByQtr( qtrtimestamp ) {
-		return em.sqlContext.createNamedQuery( "tcreport:getReceiptsByQtr" ).setParameters( [qtrtimestamp:qtrtimestamp] ).resultList;
+		def receipts = em.sqlContext.createNamedQuery( "tcreport:getReceiptsByQtr" ).setParameters( [qtrtimestamp:qtrtimestamp] ).resultList;
+		if ( !receipts )
+			throw new IllegalStateException( "No records for this particular quarter." );
+		return receipts;
 	}
 	
 	private def getReceiptSummaryByQtr( qtrtimestamp ) {
