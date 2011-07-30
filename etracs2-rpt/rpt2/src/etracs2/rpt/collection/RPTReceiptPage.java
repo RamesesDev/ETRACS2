@@ -301,10 +301,11 @@ public class RPTReceiptPage extends javax.swing.JPanel {
         formPanel5.add(xLabel6);
 
         xLabel11.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        xLabel11.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         xLabel11.setCaption("Assessed Value");
         xLabel11.setCaptionWidth(100);
         xLabel11.setDepends(new String[] {"selectedItem"});
-        xLabel11.setName("selectedItem.assessedvalue");
+        xLabel11.setName("assessedvalue");
         xLabel11.setPreferredSize(new java.awt.Dimension(150, 19));
         formPanel5.add(xLabel11);
 
