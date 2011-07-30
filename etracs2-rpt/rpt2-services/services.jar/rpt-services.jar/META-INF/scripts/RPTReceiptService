@@ -17,8 +17,7 @@ class RPTReceiptService
     
     
     @ProxyMethod
-    public def create( receipt, bill ) {
-        def items = bill.items.findAll{ it.pay == true && it.amount > 0}
+    public def create( receipt, items ) {
         if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
         
         buildReceiptItems( receipt, items )
@@ -45,7 +44,6 @@ class RPTReceiptService
     public Map open( receiptid ) {
         def receipt = em.read('receipt', [objid:receiptid])
         receipt._items = loadRPTPayments( receiptid )
-        println receipt._items
         return receipt 
     }
     
