@@ -41,7 +41,7 @@ public class AFPage extends javax.swing.JPanel {
         xTextField2 = new com.rameses.rcp.control.XTextField();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
-        xTextField3 = new com.rameses.rcp.control.XTextField();
+        xNumberField3 = new com.rameses.rcp.control.XNumberField();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
         xNumberField2 = new com.rameses.rcp.control.XNumberField();
 
@@ -127,11 +127,12 @@ public class AFPage extends javax.swing.JPanel {
         xComboBox1.setRequired(true);
         formPanel1.add(xComboBox1);
 
-        xTextField3.setCaption("Length");
-        xTextField3.setDepends(new String[] {"selectedItem", "aftype"});
-        xTextField3.setName("entity.serieslength");
-        xTextField3.setPreferredSize(new java.awt.Dimension(100, 18));
-        formPanel1.add(xTextField3);
+        xNumberField3.setCaption("Length");
+        xNumberField3.setDepends(new String[] {"aftype"});
+        xNumberField3.setName("entity.serieslength");
+        xNumberField3.setPreferredSize(new java.awt.Dimension(100, 19));
+        xNumberField3.setRequired(true);
+        formPanel1.add(xNumberField3);
 
         xNumberField1.setCaption("Pcs./Unit");
         xNumberField1.setDepends(new String[] {"aftype"});
@@ -184,9 +185,9 @@ public class AFPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField2;
+    private com.rameses.rcp.control.XNumberField xNumberField3;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
-    private com.rameses.rcp.control.XTextField xTextField3;
     // End of variables declaration//GEN-END:variables
     
 }

@@ -13,6 +13,18 @@ SELECT * FROM remittancelist
 WHERE collectorname LIKE CONCAT($P{collectorname}, '%') 
 ORDER BY txndate DESC, txnno DESC
 
+[getListByCollectorid]
+SELECT * FROM remittancelist 
+WHERE collectorid = $P{collectorid} 
+ORDER BY txndate DESC, txnno DESC
+
+[getRemittanceByTxnNoByCollectorid]
+SELECT * 
+FROM remittancelist 
+WHERE txnno = $P{txnno} 
+AND collectorid = $P{collectorid} 
+ORDER BY txndate DESC, txnno DESC
+
 
 
 [getReceiptsByRemittance]
