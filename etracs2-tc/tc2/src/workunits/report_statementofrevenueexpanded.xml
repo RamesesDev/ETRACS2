@@ -24,21 +24,33 @@ class StatementOfRevenue
     def svc;
 
     def entity = [:];
-    def qtrList = [1,2,3,4];
-    def monthList =  [
-            [name:"JANUARY", value:1],
-            [name:"FEBRUARY", value:2],
-            [name:"MARCH", value:3],
-            [name:"APRIL", value:4],
-            [name:"MAY", value:5],
-            [name:"JUNE", value:6],
-            [name:"JULY", value:7],
-            [name:"AUGUST", value:8],
-            [name:"SEPTEMBER", value:9],
-            [name:"OCTOBER", value:10],
-            [name:"NOVEMBER", value:11],
-            [name:"DECEMBER", value:12]
+    def qtrList = [
+        [name:"QTR1", value:1],
+        [name:"QTR2", value:2],
+        [name:"QTR3", value:3],
+        [name:"QTR4", value:4]
     ];
+    
+    def months =  [
+            [name:"JANUARY", value:1, qtr:1],
+            [name:"FEBRUARY", value:2, qtr:1],
+            [name:"MARCH", value:3, qtr:1],
+            [name:"APRIL", value:4, qtr:2],
+            [name:"MAY", value:5, qtr:2],
+            [name:"JUNE", value:6, qtr:2],
+            [name:"JULY", value:7, qtr:3],
+            [name:"AUGUST", value:8, qtr:3],
+            [name:"SEPTEMBER", value:9, qtr:3],
+            [name:"OCTOBER", value:10, qtr:4],
+            [name:"NOVEMBER", value:11, qtr:4],
+            [name:"DECEMBER", value:12, qtr:4]
+    ];
+    
+    def getMonthList() {
+        if (!entity.qtr)
+            return months;
+        return months.findAll{ it.qtr == entity.qtr.value }
+    }
     
     def data;
     def param;
@@ -59,10 +71,15 @@ class StatementOfRevenue
     }
     
     def view(){
-        data = svc.generateStatementOfRevenueExpanded( entity.year, entity.qtr, entity.month, entity.fund.objid );
+        data = svc.generateStatementOfRevenueExpanded( entity.year, entity.qtr?.value, entity.month?.value, entity.fund.objid );
         param = svcParams.getStandardParameter( OsirisContext.env.USERNAME );
         param.put("FUND", entity.fund.fundname);
-        param.put("PERIOD", entity.year );
+        def period = entity.year;
+        if (entity.month)
+            period = entity.month.name + ", " + period;
+        else if (entity.qtr)
+            period = entity.qtr.name + ", " + period;
+        param.put("PERIOD", period );
         report.viewReport();
         mode = "view";
         return "preview";

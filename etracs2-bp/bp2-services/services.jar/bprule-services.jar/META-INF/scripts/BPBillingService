@@ -224,8 +224,6 @@ public class BPBillingService
 	int calculateNoOfMonthsFromJan(currentFact, year, qtr) {
 		int currYear = currentFact.year
 		int currMonth = currentFact.month
-		println "CURRENT YEAR - $currYear";
-		println "YEAR - $year";
 		if(year < currYear) {
 			return ( currYear - year ) * 12 + currMonth
 		}
@@ -237,7 +235,6 @@ public class BPBillingService
 	int calculateNoOfDaysFromJan( currentFact, year, qtr ) {
 		if ( qtr > currentFact.qtr && year == currentFact.year )
 			return 0;
-		
 		def cal = Calendar.instance;
 		cal.set( Calendar.MONTH, currentFact.month - 1 );
 		cal.set( Calendar.DATE, currentFact.day );
@@ -257,10 +254,9 @@ public class BPBillingService
 		
 		if ( qtr > currentFact.qtr && year == currentFact.year )
 			return 0;
-			
+		
 		cal.set( Calendar.MONTH, currentFact.month - 1 );
 		cal.set( Calendar.DATE, currentFact.day );
-		
 		dayCount = cal.get( Calendar.DAY_OF_YEAR ) - dayCount + 1;
 		
 		def tempYear = year;
@@ -271,7 +267,6 @@ public class BPBillingService
 			dayCount += cal.get( Calendar.DAY_OF_YEAR );
 			tempYear++;
 		}
-		
 		return dayCount;
 	}
 	

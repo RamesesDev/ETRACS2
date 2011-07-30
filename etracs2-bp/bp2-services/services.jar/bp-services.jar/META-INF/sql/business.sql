@@ -27,3 +27,9 @@ WHERE businessid = $P{businessid}
 AND docstate IN ( 'APPROVED', 'ACTIVE', 'PERMIT_PENDIN', 'EXPIRED' ) 
 ORDER BY txnno 
 
+[getApplicationListByBusinessId] 
+SELECT b.* FROM bpapplication b 
+INNER JOIN bpapplicationlisting l ON l.objid = b.objid 
+WHERE b.businessid = $P{businessid} 
+ORDER BY b.txnno DESC 
+
