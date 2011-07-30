@@ -35,21 +35,35 @@ class RemittanceService {
 	
 	@ProxyMethod
 	public def getList( searchText, params ) {
+		print "IS COLLECTOR> " + isCollector( params.USERID );
+		if ( isCollector( params.USERID ) )
+			return getListByCollector( searchText, params );
+		return getListAll( searchText, params );
+	}
+	
+	private def isCollector( userid ) {
+		def roles = em.sqlContext.createNamedQuery( "etracsuser:getUserRoles" ).setParameters( [userid:userid] ).resultList;
+		if ( roles.find{ it.role == 'COLLECTOR' } )
+			return true;
+		return false;
+	}
+	
+	private def getListAll( searchText, params ) {
 		if ( !searchText )
 			return em.sqlContext.createNamedQuery( "remittance:getList" ).resultList;
-		def results = getRemittanceByTxnNo( searchText, params );
+		def results = em.sqlContext.createNamedQuery( "remittance:getRemittanceByTxnNo" ).setParameter( "txnno", searchText ).resultList;
 		if (results) return results;	
-		results = getRemittanceByCollector( searchText, params );
+		results = em.sqlContext.createNamedQuery( "remittance:getRemittanceByCollector" ).setParameter( "collectorname", searchText ).resultList;
 		if (results) return results;
 		return [];
 	}
 	
-	private def getRemittanceByTxnNo( txnno, params ) {
-		return em.sqlContext.createNamedQuery( "remittance:getRemittanceByTxnNo" ).setParameter( "txnno", txnno ).resultList;
-	}
-	
-	private def getRemittanceByCollector( collectorname, params ) {
-		return em.sqlContext.createNamedQuery( "remittance:getRemittanceByCollector" ).setParameter( "collectorname", collectorname ).resultList;
+	private def getListByCollector( searchText, params ) {
+		if ( !searchText )
+			return em.sqlContext.createNamedQuery( "remittance:getListByCollectorid" ).setParameters( [collectorid:params.USERID] ).resultList;
+		def results = em.sqlContext.createNamedQuery( "remittance:getRemittanceByTxnNoByCollectorid" ).setParameters( [collectorid:params.USERID, txnno:searchText] ).resultList;
+		if (results) return results;	
+		return [];
 	}
 
 	@ProxyMethod

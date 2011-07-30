@@ -13,6 +13,9 @@ SELECT objid, txnno, docstate, requestedby, rivtype FROM riv WHERE txnno LIKE $P
 [getListByState]
 SELECT objid, txnno, docstate, requestedby, rivtype FROM riv WHERE docstate = 'OPEN'
 
+[getListByTxnnoOpen]
+SELECT objid, txnno, docstate, requestedby, rivtype FROM riv WHERE txnno LIKE $P{txnno} AND docstate = 'OPEN'
+
 [getListByRequesterOpen]
 SELECT objid, txnno, docstate, requestedby, rivtype FROM riv WHERE requestedby LIKE $P{requestedby} AND docstate = 'OPEN'
 
