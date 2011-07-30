@@ -50,6 +50,7 @@ public class RPTReceiptPage extends javax.swing.JPanel {
         xLabel13 = new com.rameses.rcp.control.XLabel();
         xLabel15 = new com.rameses.rcp.control.XLabel();
         xLabel16 = new com.rameses.rcp.control.XLabel();
+        xLabel17 = new com.rameses.rcp.control.XLabel();
         xSubFormPanel1 = new com.rameses.rcp.control.XSubFormPanel();
         jPanel6 = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
@@ -220,6 +221,14 @@ public class RPTReceiptPage extends javax.swing.JPanel {
         xLabel16.setName("entity.info.paidbyaddress");
         xLabel16.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xLabel16);
+
+        xLabel17.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        xLabel17.setCaption("Txn Date");
+        xLabel17.setCaptionWidth(70);
+        xLabel17.setFont(new java.awt.Font("Arial", 1, 11));
+        xLabel17.setName("entity.info.txndate");
+        xLabel17.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel1.add(xLabel17);
 
         jPanel5.add(formPanel1, java.awt.BorderLayout.NORTH);
 
@@ -393,6 +402,7 @@ public class RPTReceiptPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel13;
     private com.rameses.rcp.control.XLabel xLabel15;
     private com.rameses.rcp.control.XLabel xLabel16;
+    private com.rameses.rcp.control.XLabel xLabel17;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
     private com.rameses.rcp.control.XLabel xLabel4;

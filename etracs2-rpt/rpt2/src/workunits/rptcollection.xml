@@ -41,6 +41,7 @@
         @Service('RPTBillingService')
         def billingSvc
     
+        def currdate 
         def parsedate 
         def payments = []
         
@@ -53,7 +54,6 @@
         void init() {
             super.init()
             entity.doctype = 'RPT'
-            parsedate = dateSvc.parseCurrentDate()
         }
         
         void newRecord() {
@@ -108,7 +108,18 @@
         }
         
         def process() {
+        
             if( ! entity.info.payorid ) throw new Exception('Payor is required.')
+            if( entity.info.mode == 'CAPTURE' && !entity.info.txndate ) throw new Exception('Txn Date is required.')
+            
+            if( entity.info.mode == 'CAPTURE' ) {
+                currdate = dateSvc.parseCurrentDate()    
+                parsedate = dateSvc.parseDate( entity.info.txndate, null )
+                if( parsedate.date > currdate.date ) throw new Exception('Txn Date must be earlier or equal to current date.')
+            }
+            else {
+                parsedate = dateSvc.parseCurrentDate()
+            }
             if( payoption == 'all' ) {
                 loadBill()
                 return 'main'
