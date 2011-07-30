@@ -401,6 +401,15 @@ class FAASService
     ** Transaction Support Methods
     -----------------------------------------------------------------------*/
     @ProxyMethod
+    public Map createNewDiscovery() {
+        def faas            = createFaas() 
+        faas.info.txntype   = 'ND'
+        faas.info.txn       = resolveTxnType( faas.info.txntype )
+        faas.info.datacapture = false 
+        return faas 
+    }
+    
+    @ProxyMethod
     public Map initTransaction( txntype, prevtdno, autonumber, claimno) {
         autonumber = var.td_autonumber as boolean 
         def faas = em.sqlContext.createNamedQuery('faas:getInfoByTdno').setParameter('tdno', prevtdno).singleResult
