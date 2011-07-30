@@ -42,8 +42,6 @@ public class PreviewPage extends javax.swing.JPanel {
         );
         add(xReportPanel1, java.awt.BorderLayout.CENTER);
 
-        xActionBar1.setButtonBorderPainted(false);
-        xActionBar1.setButtonContentAreaFilled(false);
         xActionBar1.setName("formActions");
         xActionBar1.setPreferredSize(new java.awt.Dimension(104, 40));
         add(xActionBar1, java.awt.BorderLayout.NORTH);

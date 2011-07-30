@@ -6,10 +6,13 @@
 
 package etracs2.rpt.collection;
 
+import com.rameses.rcp.ui.annotations.StyleSheet;
+
 /**
  *
  * @author  jzamora
  */
+@StyleSheet("etracs2/rpt/collection/RPTReceiptInitPage.style")
 public class RPTReceiptInitPage extends javax.swing.JPanel {
     
     /** Creates new form RPTCollectionInitPage */
@@ -29,6 +32,7 @@ public class RPTReceiptInitPage extends javax.swing.JPanel {
         xLabel1 = new com.rameses.rcp.control.XLabel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xTextField2 = new com.rameses.rcp.control.XTextField();
+        xDateField1 = new com.rameses.rcp.control.XDateField();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
         xRadio1 = new com.rameses.rcp.control.XRadio();
         xRadio2 = new com.rameses.rcp.control.XRadio();
@@ -66,12 +70,17 @@ public class RPTReceiptInitPage extends javax.swing.JPanel {
         formPanel1.add(xTextField1);
 
         xTextField2.setCaption("Address");
-        xTextField2.setCellPadding(new java.awt.Insets(0, 0, 20, 0));
         xTextField2.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField2.setName("entity.info.paidbyaddress");
         xTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField2.setRequired(true);
         formPanel1.add(xTextField2);
+
+        xDateField1.setCaption("Txn Date");
+        xDateField1.setCellPadding(new java.awt.Insets(0, 0, 20, 0));
+        xDateField1.setName("entity.info.txndate");
+        xDateField1.setPreferredSize(new java.awt.Dimension(110, 19));
+        formPanel1.add(xDateField1);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Payment Options");
@@ -148,6 +157,7 @@ public class RPTReceiptInitPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel2;
     private javax.swing.JLabel jLabel1;
     private com.rameses.rcp.control.XButton xButton1;
+    private com.rameses.rcp.control.XDateField xDateField1;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XRadio xRadio1;

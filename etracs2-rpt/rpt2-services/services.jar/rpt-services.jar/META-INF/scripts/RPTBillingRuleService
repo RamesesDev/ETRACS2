@@ -26,7 +26,7 @@ public class RPTBillingRuleService
     
     @ProxyMethod
     public List lookupIncomeAccount( systype, searchText, params) {
-        if( !searchText ) return getListByQuery("rptbill:lookupAccount", [:], params );
+        if( !searchText ) return getListByQuery("rptbill:lookupAccount", [systype:systype], params );
         def criteria = [ systype:systype, acctno:searchText, accttitle:searchText+'%' ]
 		def result = []; 
 		if((result = getListByQuery("rptbill:lookupAccountByNo", criteria, params ))) return result;
