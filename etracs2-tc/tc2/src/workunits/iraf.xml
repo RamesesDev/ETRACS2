@@ -32,6 +32,7 @@ class IRAFController
     def mode = "view" ;
     def entity = [:];
     def searchText;
+    def riv 
     
     public void init(){
         create();
@@ -109,10 +110,12 @@ class IRAFController
             info: [:],
             rcvitems: []
         ];
+        riv = null
         mode = "create";
     }
     
-    def onselectRiv = { riv ->
+    void setRiv( riv ){
+        this.riv = riv 
         if( riv ){
             def txnno = this.entity.txnno;
             this.entity = svc.create( riv.objid );
@@ -129,11 +132,16 @@ class IRAFController
             this.entity.info.preparedbytitle = this.entity.preparedbytitle;
             binding.refresh();
         }
+        else {
+            create()
+            requestedHandler.load()
+            receivedHandler.load()
+            binding.refresh('entity.*')
+        }
     }
     
-    def lookupRiv() {
-        def opener = InvokerUtil.lookupOpener("riv:lookup", [searchText:entity.rivno, onselect:onselectRiv] );
-        return opener;
+    def getLookupRiv() {
+        return InvokerUtil.lookupOpener("riv:lookup", [:] );
     }
     
     def refreshHandler = {
@@ -180,6 +188,7 @@ class IRAFController
         selectedItem = item;
         if( mode !=  "create") {
             this.entity = svc.open( selectedItem?.objid );
+            riv = [txnno:entity.rivno]
         }
     }
     

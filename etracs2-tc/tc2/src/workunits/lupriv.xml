@@ -5,12 +5,12 @@
     
     <code>
         
-<![CDATA[
+        <![CDATA[
 
 import com.rameses.rcp.common.*;
 import com.rameses.rcp.annotations.*;
 
-class LookupRIVController 
+class LookupRIVController extends LookupModel 
 {
     @Service("RIVService")
     def svc;
@@ -19,32 +19,37 @@ class LookupRIVController
     def searchText;
     def selected;
     
-    void init() {
+    void init(){
     }
+    
     
     def ok() {
-        if( onselect ) {
-            onselect( selected );
-        }
-        return "_close";
+        search = null
+        if( onselect ) onselect( selected )
+        return select();
     }
     
-    def listHandler = [
-        getRows    : { return 25; },
-        getColumns : {
-            return [
-                new Column(name:"txnno", caption:"RIV No.", width:200),
-                new Column(name:"requestedby", caption:"Requested By", width:250),
-                new Column(name:"rivtype", caption:"Type", width:150),
-            ]
-        },
-        fetchList : { 
-                def search = [searchText:searchText];
-                def list = svc.getListByState(search, it);
-                if( list ) return list;
-                throw new Exception("Record not found.");
-	},
-    ] as PageListModel;
+    def getListHandler() {
+        return this;
+    }
+    
+    int getRows() { return 20; }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"txnno", caption:"RIV No.", width:200),
+            new Column(name:"requestedby", caption:"Requested By", width:250),
+            new Column(name:"rivtype", caption:"Type", width:150),
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getListByState( [searchText:s], params);
+        if( list ) return list;
+        throw new Exception("Record not found.");
+    }
 }  
 
 
