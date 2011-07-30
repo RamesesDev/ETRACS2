@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
     <invokers>
-        <invoker type="liquidation:report" caption="Liquidation Report Detailed By Fund And Income Account"/>
+        <invoker type="liquidation:report" action="init" caption="Liquidation Report Detailed By Fund And Income Account"/>
         <invoker type="formActions" action="back" caption="Back" icon="images/back.png"/>
     </invokers>
 
@@ -36,9 +36,14 @@
                 return reportModel.report;
             }
             
+            void init() {
+                setFund( fundList[0] );
+                setChart( chartList[0] );
+            }
+            
             public def getLiquidationData(){
-                if( !fund ) fund = fundList[0];
-                if( !chart ) chart = chartList[0];
+                if( !fund ) setFund( fundList[0] );
+                if( !chart ) setChart( chartList[0] );
                 return svc.buildReportDData( liquidation.objid, chart , fund.objid );
             }
             

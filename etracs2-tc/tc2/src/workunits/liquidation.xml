@@ -4,14 +4,15 @@
     <invokers>
         <invoker folderid="/menu/tc" action="create" caption="Liquidation" permission="liquidation.create" />
         
-        <invoker type="formActions" action="close" visibleWhen="#{mode != 'view' and mode != 'report' and mode != 'rcd'}"  immediate="true" caption="Close" mnemonic="c" icon="images/doc-cancel.png"/>
+        <invoker type="formActions" action="close" visibleWhen="#{mode != 'view' and mode != 'reports' and mode != 'rcd'}"  immediate="true" caption="Close" mnemonic="c" icon="images/doc-cancel.png"/>
         <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/doc-add.png" permission="liquidation.create"/>
         <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" caption="Next" mnemonic="n" icon="images/next.png"/>
+        <invoker type="formActions" action="back" shortcut="ctrl B" visibleWhen="#{mode == 'main'}" caption="Back" mnemonic="b" icon="images/back.png"/>
         <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'main'}" caption="Submit" mnemonic="s" icon="images/doc-save.png"/>
         <invoker type="formActions" action="viewRCD" visibleWhen="#{mode == 'view' and entity.objid != null}"  immediate="true" caption="A. RCD" mnemonic="a"/>
         <invoker type="formActions" action="reports" visibleWhen="#{mode == 'view' and entity.objid != null}"  immediate="true" caption="Reports" mnemonic="r" icon=""/>
-        <invoker type="formActions" action="back" visibleWhen="#{mode == 'report' or mode == 'rcd'}"  immediate="true" caption="Back" mnemonic="b" icon="images/back.png"/>
-        <invoker type="formActions" action="viewReport" visibleWhen="#{mode == 'report'}"  immediate="true" caption="Generate" mnemonic="g" icon=""/>
+        <invoker type="formActions" action="backToMain" shortcut="ctrl B" visibleWhen="#{mode == 'reports' or mode == 'rcd'}" immediate="true" caption="Back" mnemonic="b" icon="images/back.png"/>
+        <invoker type="formActions" action="viewReport" visibleWhen="#{mode == 'reports'}"  immediate="true" caption="Generate" mnemonic="g" icon=""/>
 
     </invokers>
     
@@ -183,7 +184,7 @@
             }
             
             def reports(){
-                mode = 'report';
+                mode = 'reports';
                 return "reports";
             }
 
@@ -200,7 +201,13 @@
             }
             
             public def viewRCD(){
+                mode = 'rcd';
                 return new Opener( name:'tc2:liquidation_report_rcd', action:'view', params:[entity:entity] );
+            }
+            
+            def backToMain() {
+                mode = 'view';
+                return 'main';
             }
 
         }

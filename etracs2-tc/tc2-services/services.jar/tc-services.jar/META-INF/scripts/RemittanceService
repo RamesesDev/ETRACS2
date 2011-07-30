@@ -175,9 +175,9 @@ class RemittanceService {
 			throw new Exception( "There are no unremitted receipts." );
 		
 		def reminfo = em.sqlContext.createNamedQuery( "remittance:getRemittanceInfo" ).setParameter( "collectorid", rem.collectorid ).singleResult;
-		rem.info.amount = reminfo.totalamount;
-		rem.info.totalcash = reminfo.totalcash;
-		rem.info.totalotherpayment = reminfo.totalotherpayment;
+		rem.info.amount = (reminfo.totalamount) ? reminfo.totalamount : 0.0;
+		rem.info.totalcash = (reminfo.totalcash) ? reminfo.totalcash : 0.0;
+		rem.info.totalotherpayment = (reminfo.totalotherpayment) ? reminfo.totalotherpayment : 0.0;
 		
 		rem.otherpayments = em.sqlContext.createNamedQuery( "remittance:getOtherPayments" ).setParameter( "collectorid", rem.collectorid ).resultList;
 
