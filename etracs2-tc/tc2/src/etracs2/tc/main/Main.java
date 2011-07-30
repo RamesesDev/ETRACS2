@@ -9,8 +9,10 @@
 
 package etracs2.tc.main;
 
+import com.rameses.osiris2.client.OsirisContext;
 import com.rameses.osiris2.client.OsirisTestPlatform;
 import com.rameses.osiris2.reports.ServerReportModel;
+import com.rameses.rcp.common.Opener;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;

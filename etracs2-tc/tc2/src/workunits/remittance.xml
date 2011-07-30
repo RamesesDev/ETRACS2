@@ -11,7 +11,7 @@
         <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'main'}" caption="Submit" mnemonic="s" icon="images/doc-submit.png" permission="remittance.submit"/>
         <invoker type="formActions" action="viewRCD" shortcut="ctrl R" visibleWhen="#{mode == 'view'}" immediate="true" caption="View RCD" mnemonic="r" icon="images/doc-view.png" permission="remittance.create"/>
         <invoker type="formActions" action="viewOtherReports" shortcut="ctrl O" visibleWhen="#{mode == 'view'}" immediate="true" caption="Other Reports" mnemonic="o" icon="images/otherReports.png" permission="remittance.create"/>
-        <invoker type="formActions" action="backToMain" shortcut="ctrl B" visibleWhen="#{mode == 'reports'}" immediate="true" caption="Back" mnemonic="b" icon="images/back.png"/>
+        <invoker type="formActions" action="backToMain" shortcut="ctrl B" visibleWhen="#{mode == 'reports' or mode == 'rcd'}" immediate="true" caption="Back" mnemonic="b" icon="images/back.png"/>
         <invoker type="formActions" action="viewReport" shortcut="ctrl V" visibleWhen="#{mode == 'reports'}" immediate="true" caption="View" mnemonic="v" icon="images/doc-view.png" permission="remittance.create"/>
     </invokers>
     
@@ -213,6 +213,7 @@
             
             
             def viewRCD() {
+                mode = 'rcd';
                 return new Opener( name:'tc2:remittance_report_rcd', action:'view', params:[entity:entity] );
             }
             
