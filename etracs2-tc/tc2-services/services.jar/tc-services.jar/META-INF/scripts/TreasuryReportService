@@ -8,8 +8,8 @@ class TreasuryReportService
 	
 	def parsetime = { year, qtr, month ->
 		def sb = new StringBuffer();
-		sb.append(year);
-		if( qtr ) sb.append( qtr );
+		sb.append( year );
+		if( qtr ) 
 		if( month ){
 			if( !qtr ){
 				if( month <= 3 )  sb.append( 1 );
@@ -17,8 +17,12 @@ class TreasuryReportService
 				if( month <= 9 )  sb.append( 3 );
 				if( month <= 12 ) sb.append( 4 );
 			}
-			sb.append( month );
-		}
+			if ( month > 9 )
+				sb.append( "" + month );
+			else
+				sb.append( "0" + month );
+		} else if ( qtr)
+			sb.append( qtr + "" );
 		sb.append("%");
 		return sb;
 	}
@@ -27,11 +31,14 @@ class TreasuryReportService
 	public def generateStatementOfRevenue( def year, def qtr, def month, def fundid ){
 		def dtime = parsetime( year, qtr, month );
 		def list = [];
+		println "TS> " + dtime;
 		em.sqlContext.createNamedQuery("treasuryreport:getChartList").resultList.each{
             list.addAll( em.sqlContext.createNamedQuery("treasuryreport:getRevenueByGLAccount$it.acctcode")
-			               .setParameter("fundid", fundid)
+			               .setParameters( [fundid:fundid, liqtimestamp:dtime] )
 					       .resultList );
 		};
+		if (!list)
+			throw new IllegalStateException( "No records found." );
 		return list;
 	}
 	
@@ -41,9 +48,11 @@ class TreasuryReportService
 		def list = [];
 		em.sqlContext.createNamedQuery("treasuryreport:getChartList").resultList.each{
 			list.addAll( em.sqlContext.createNamedQuery("treasuryreport:getRevenueByIncomeAccount$it.acctcode")
-  						   .setParameter("fundid", fundid)
+  						   .setParameters( [fundid:fundid, liqtimestamp:dtime] )
 						   .resultList );
 		};
+		if (!list)
+			throw new IllegalStateException( "No records found." );
 		return list;
 	}
 	
