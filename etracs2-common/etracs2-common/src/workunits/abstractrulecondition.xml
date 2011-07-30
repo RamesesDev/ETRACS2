@@ -75,7 +75,13 @@ public class AbstractRuleConditionController
     * Constraint Support
     ----------------------------------------------- */
     void add() {
-        condition.constraints.add( buildConstraint() )
+        if( !field ) throw new Exception('Field is required.')
+        if( fieldvar == null && operator == null ) throw new Exception('A variable name or condition is required.')
+        
+        def constraint = buildConstraint()
+        if( fieldvar == null && constraint.value == null ) throw new Exception('Value is required.')
+        
+        condition.constraints.add( constraint )
         resetConstraintInfo()
         binding?.refresh('selectedConstraint') 
         binding?.focus('field')

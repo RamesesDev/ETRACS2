@@ -43,7 +43,7 @@ public class IRAFPage extends javax.swing.JPanel {
         xLabel10 = new com.rameses.rcp.control.XLabel();
         xLabel9 = new com.rameses.rcp.control.XLabel();
         formPanel3 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xLabel6 = new com.rameses.rcp.control.XLabel();
         xLabel8 = new com.rameses.rcp.control.XLabel();
         xLabel1 = new com.rameses.rcp.control.XLabel();
@@ -131,14 +131,15 @@ public class IRAFPage extends javax.swing.JPanel {
         formPanel1.setBounds(2, 26, 286, 80);
 
         formPanel3.setIndex(1);
-        xActionTextField2.setActionName("lookupRiv");
-        xActionTextField2.setCaption("RIV No.");
-        xActionTextField2.setCaptionWidth(85);
-        xActionTextField2.setDepends(new String[] {"selectedItem"});
-        xActionTextField2.setName("entity.rivno");
-        xActionTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
-        xActionTextField2.setRequired(true);
-        formPanel3.add(xActionTextField2);
+        xLookupField1.setCaption("RIV No.");
+        xLookupField1.setCaptionWidth(85);
+        xLookupField1.setDepends(new String[] {"selectedItem"});
+        xLookupField1.setExpression("#{txnno}");
+        xLookupField1.setHandler("lookupRiv");
+        xLookupField1.setName("riv");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField1.setRequired(true);
+        formPanel3.add(xLookupField1);
 
         xLabel6.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel6.setCaption("RIV Date");
@@ -260,7 +261,6 @@ public class IRAFPage extends javax.swing.JPanel {
     private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField2;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
     private com.rameses.rcp.control.XDataTable xDataTable1;
@@ -271,6 +271,7 @@ public class IRAFPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel6;
     private com.rameses.rcp.control.XLabel xLabel8;
     private com.rameses.rcp.control.XLabel xLabel9;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XTextField xTextField1;
     // End of variables declaration//GEN-END:variables
     

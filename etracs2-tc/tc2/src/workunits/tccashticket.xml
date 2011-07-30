@@ -9,7 +9,7 @@
         <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}" icon="images/save.png"/>
         <invoker type="formActions" action="delete" caption="Delete" mnemonic="d" visibleWhen="#{mode == 'view'}" permission="collection_cashticket.delete" icon="images/cancel.png"/>
         
-        <invoker type="receipt.actions:tc:cash_ticket" action="doDelete" caption="Delete" mnemonic="d" permission="collection_cashticket.delete" />
+        <invoker type="receipt.actions:tc:cash_ticket" action="doDelete" caption="Delete" mnemonic="d" permission="collection_cashticket.delete" icon="images/doc-delete.png"/>
     </invokers>
     <code>
 <![CDATA[
@@ -63,8 +63,11 @@ class CashTicketCollectionController extends AbstractCollectionController
     }
     
     void validateAmount() {
-        if( entity.info.amount == null || entity.info.amount == 0 ) {
+        if( !qtyissued  || qtyissued == 0 ) {
             throw new Exception('Quantity Issued is required.')
+        }
+        if( entity.info.amount == null || entity.info.amount == 0 ) {
+            throw new Exception('Amount Due must be greater than zero.')
         }
         if( entity.info.amount != entity.amount ) {
             throw new Exception('Amount Due must be equal to Amount Collected.')
