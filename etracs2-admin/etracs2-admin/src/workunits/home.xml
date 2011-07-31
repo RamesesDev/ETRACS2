@@ -19,7 +19,13 @@
             def formActions = InvokerUtil.lookupActions("home.action");
             
             def getImageUrl() {
-                return new URL( var.url_logo_lgu );
+                try {
+                    return new URL( var.url_logo_lgu );
+                }
+                catch( e ) {    
+                    MsgBox.alert('LGU Logo url not defined.')
+                    return null
+                }
             }
         }
         

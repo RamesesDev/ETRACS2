@@ -74,7 +74,6 @@ public class HomePage extends javax.swing.JPanel {
         jPanel2.add(jPanel4);
         jPanel4.setBounds(174, -48, 10, 10);
 
-        xImageViewer1.setBorder(null);
         xImageViewer1.setFitImage(true);
         xImageViewer1.setName("imageUrl");
         jPanel2.add(xImageViewer1);
@@ -86,6 +85,7 @@ public class HomePage extends javax.swing.JPanel {
 
         jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 20, 10, 20));
         xActionBar1.setButtonCaptionOrientation(javax.swing.SwingConstants.BOTTOM);
+        xActionBar1.setDynamic(true);
         xActionBar1.setName("formActions");
         xActionBar1.setOpaque(false);
         xActionBar1.setOrientation(com.rameses.rcp.constant.UIConstants.FLOW);
