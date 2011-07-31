@@ -3,10 +3,8 @@
     
     <invokers>
         <invoker folderid="/menu/bp" action="init" caption="Business Ledger" permission="bpadmin.ledger"/>
-        
-        <invoker type="formActions" action="close" immediate="true" caption="Close" icon="images/cancel.png"/>
+        <invoker type="formActions" action="back" immediate="true" caption="Back" icon="images/back.png"/>
         <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" caption="Next" mnemonic="n" icon="images/next.png"/>
-        <invoker type="formActions" action="capturePayment" shortcut="ctrl P" visibleWhen="#{mode == 'main'}" caption="Capture Payment" mnemonic="p" />
     </invokers>
     
     <code lang="groovy">
@@ -32,13 +30,16 @@
             def filter;
             
             def entity = [:];
-            
-            def selectedItem;
-            
-            def selectedReceivable;
+            def application;
+            def receivable;
             
             def init() {
                 return 'init';
+            }
+            
+            def back(){
+                mode = 'init';
+                return mode
             }
             
             def next() {
@@ -69,77 +70,78 @@
                 return InvokerUtil.lookupOpener( 'business:lookup', [onselect:onselectBusiness, searchText:filter] );
             }
             
-            def itemHandler = [
-
+            def appHandler = [
                 getRows    : { return 50; },
-
                 getColumns : {
                     return [
-                        new Column( name:"appyear", caption:"Year.", format:"#0"),
-                        new Column( name:"appno", caption:"App. No."),
-                        new Column( name:"applicationtype", caption:"Type"),
+                        new Column( name:"iyear", caption:"Year", format:"#0", maxWidth:60, resizable:false),
+                        new Column( name:"txnno", caption:"App. No."),
+                        new Column( name:"txntype", caption:"Type"),
+                        new Column( name:"txnmode", caption:"Type"),
                         new Column( name:"amount", caption:"Amount"), 
-                        new Column( name:"amtpaid", caption:"Amount Paid" )
+                        new Column( name:"amtpaid", caption:"Amount Paid" ),
+                        new Column( name:"docstate", caption:"Status")
                     ];
                 },
-
-                fetchList : { 
-                    print "ENTITY > " + entity;
-                    return entity?.items;
-                }
-
-            ] as PageListModel;
-            
-            def viewInfo() {
-                print "SELECTED ITEM > " + selectedItem;
-                if (!selectedItem) return null;
-                selectedItem = svc.openLedgerItem( selectedItem );
-                
-                return new PopupOpener( outcome:'item' );
-            }
+                fetchList : {  return svc.getApplicationByBusiness( entity.businessid ); }
+            ] as SubListModel;
             
             def receivableHandler = [
-
                 getRows    : { return 50; },
-
                 getColumns : {
                     return [
+                        new Column( name:"iyear", caption:"Year", format:"#0", maxWidth:60, resizable:false),
+                        new Column( name:"iqtr", caption:"Qtr", maxWidth:35, resizable:false),
                         new Column( name:"lobname", caption:"Line of Business"),
                         new Column( name:"accttitle", caption:"Account"),
                         new Column( name:"amount", caption:"Amount"), 
                         new Column( name:"amtpaid", caption:"Amount Paid" )
                     ];
                 },
-
-                fetchList : { 
-                    if ( !selectedItem ) return [];
-                    return selectedItem.receivables;
-                }
-
-            ] as PageListModel;
+                fetchList : {  return application?.receivables; }
+            ] as SubListModel;
+            
+            def paymentHandler = [
+                getRows : { return 25 },
+                getColumns: { 
+                    return [
+                        new Column( name:"year", caption:"Year", format:"#0", maxWidth:60, resizable:false),
+                        new Column( name:"qtr", caption:"Qtr", maxWidth:35, resizable:false),
+                        new Column( name:"refdate", caption:"Date Posted"),
+                        new Column( name:"reftype", caption:"Type"),
+                        new Column( name:"refno", caption:"Ref. No."),
+                        new Column( name:"amount", caption:"Amount"),
+                    ];
+                },
+                fetchList : { return application?.payments; }
+            ] as SubListModel;
             
             def creditHandler = [
-
                 getRows    : { return 50; },
-
                 getColumns : {
                     return [
                         new Column( name:"reftype", caption:"Type"),
                         new Column( name:"refno", caption:"Ref. No."),
                         new Column( name:"amount", caption:"Amount"), 
-                        new Column( name:"amtpaid", caption:"Amount Paid" ),
                         new Column( name:"surcharge", caption:"Surcharge"), 
                         new Column( name:"interest", caption:"Interest"), 
                         new Column( name:"discount", caption:"Discount")
                     ];
                 },
-
-                fetchList : { 
-                    if ( !selectedReceivable ) return [];
-                    return selectedReceivable.credits;
+                fetchList : {
+                    def credits = [];
+                    if( receivable ){
+                        credits = application?.credits?.findAll{ it.bpreceivableid == receivable.objid }
+                                      .sort{ a, b ->
+                                            def sA = a.year+'-'+a.qtr+'-'+a.lobname;
+                                            def bA = b.year+'-'+b.qtr+'-'+b.lobname;
+                                            return sA <=> bA;
+                                      };
+                   }
+                   return credits;
                 }
 
-            ] as PageListModel;
+            ] as SubListModel;
             
             def capturePayment() {
                 def paymentInfo = [

@@ -44,10 +44,39 @@
         def year = 0;
         def qtr = 4;
         
+        def setBp( def bp ){
+            this.bp = bp;
+            if( !bp ){
+                entity.year = 0;
+                entity.qtr = 0;
+
+                entity.applicationid = bp.objid;
+                entity = bpcolSvc.getBill( entity, 0, 0 );
+
+                entity.items.collect{ it.iyear }.each{ y ->
+                    if( !years?.find{ it == y } ) years << y;
+                }
+
+                year = years[0];
+            }else{
+                entity.year = 0;
+                entity.qtr = 0;
+                entity.applicationid = bp.objid;
+                entity.businessid = null;
+		entity.tradename = null;
+		entity.businessaddress = null;
+		entity.info.payorname = null;
+		entity.info.payoraddress = null;
+                years = [];
+                entity.items = [];
+            }
+            binding.refresh();
+        }
+        
         def getService() { return svc; }
         def getHtmlService() { return htmlSvc; }
         def getCollectionTitle() { return 'Business Liscence Fee'; }
-        def lookupBusiness(){ return InvokerUtil.lookupOpener( 'bp.lookupbusiness', [onselect:onbpselect, searchText:bp.appno] ); }
+        def getLookupBusiness(){ return InvokerUtil.lookupOpener( 'bp.lookupbusiness',[:] ); }
         def getReportName() { return 'receipt/af51'; }
         
         def listHandler = [
@@ -66,7 +95,9 @@
             },
             
             fetchList  : { 
-                entity = bpcolSvc.getBill( entity, year, qtr );
+                if( entity.applicationid ){
+                    entity = bpcolSvc.getBill( entity, year, qtr );
+                }
                 return entity.items;
             }
         ] as SubListModel
@@ -74,16 +105,6 @@
         void init() {
             super.init();
             entity.doctype = 'BUSINESS_TAX';
-        }
-        
-        def onbpselect = {
-            if( it ){
-                bp.appno = it.appno;
-                bp.objid = it.objid;
-                bp.tradename = it.tradename;
-                bp.businessaddress = it.businessaddress;
-            }
-            binding.refresh();
         }
         
         def doNext(){ 
@@ -94,28 +115,28 @@
             entity = bpcolSvc.getBill( entity, 0, 0 );
             
             entity.items.collect{ it.iyear }.each{ y ->
-                if( !years.find{ it == y } )
-                    years << y;
+                if( !years?.find{ it == y } ) years << y;
             }
-            
+
             year = years[0];
             return 'view';
         }
         
         def getQtrs(){
             def list = [];
-            entity.items.findAll{ it.iyear == year }.each{ i ->
-                if( !list.find{ it == i.iqtr } ) list << i.iqtr;
+            if( items ){
+                entity.items.findAll{ it.iyear == year }.each{ i ->
+                    if( !list.find{ it == i.iqtr } ) list << i.iqtr;
+                }
+                qtr = list[ list.size()-1 ];
             }
-            qtr = list[ list.size()-1 ];
             return list;
         }
     }
 ]]>        
     </code>
     <pages>
-        <page template="etracs2.bp.collection.BusinessSelectionPage"/>
-        <page name="view" template="etracs2.bp.collection.GeneralCollectionPage"/>
+        <page template="etracs2.bp.collection.GeneralCollectionPage"/>
         <page name="html" template="etracs2.tc.HtmlPage"/>
     </pages>
 </workunit>

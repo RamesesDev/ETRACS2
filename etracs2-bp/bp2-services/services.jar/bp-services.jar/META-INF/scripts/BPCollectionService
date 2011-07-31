@@ -18,7 +18,7 @@ class BPCollectionService{
 
 	@ProxyMethod
 	public def getBill( def entity, year, qtr ){
-		entity.year = (year == 0) ? new java.text.SimpleDateFormat("yyyy").format( dateService.serverDate ) : year;
+		entity.year = (year == 0) ? Integer.parseInt(new java.text.SimpleDateFormat("yyyy").format( dateService.serverDate )) : year;
 		entity.qtr = (qtr == 0) ? 4 : qtr;
 		
 		def app = em.read('bpapplication:bpapplication', [objid: entity.applicationid]);
@@ -48,8 +48,9 @@ class BPCollectionService{
 			it.qtr = it.iqtr;
 			bill.taxfees << it;
 		}
-		
+		println "build bill";
 		bill = billingSvc.buildBill( bill ); 
+		println "done build bill";
 		
 		if( !bill.taxfees ) throw new Exception("Business is fully paid for the QTR " + entity.qtr);
 		
@@ -65,9 +66,6 @@ class BPCollectionService{
 		entity.info.txndate = dateService.serverDate;
 		entity.info.amount = 0.0;
 		entity.items = [];
-		
-		println entity.info.collectortitle;
-		println entity.info.collectorname;
 		
 		bill.taxfees.each{
 			def acct = em.read("incomeacct:incomeacct", [objid: it.acctid]);
@@ -85,7 +83,7 @@ class BPCollectionService{
 					    interest: (it.iterest)  ? it.iterest : 0.0,
 					    taxamount: it.amount];
 			item.amount = item.taxamount + item.surcharge + item.interest - item.discount;
-			entity.items.add( item );
+			entity.items << item;
 			entity.info.amount += item.amount;
 			
 		}
@@ -97,6 +95,7 @@ class BPCollectionService{
 		}
 		
 		entity.applicationlastmodified = app.lastmodified;
+		println app.lastmodified;
     	return entity;
 	}
 

@@ -136,32 +136,33 @@ class BPApplicationService{
 		if( application.businessid ){
 			def currentyear = Integer.parse( format( dateService.serverDate, 'yyyy' ) );
 			def prevyear = currentyear - 1;
-			
-			def oldapp = em.createNamedQuery( 'bpapplication.getApplicationByBusinessId' )
-						   .setParameters([objid:application.businessid])
-						   .singleResult;
 
-			if( oldapp.iyear < prevyear ){
-				for( int i=oldapp.iyear; i <= prevyear; i++){
-					def app = clone( oldapp );
-					app.txxno = application.txnno + '-' + i;
-					app.iyear = i;
-					app.taxfees = [];
-				}
+			def business = em.read('business:business', [objid:application.businessid]);
+			def oldapp = open( business.applicationid );
+			for( int i=oldapp.iyear; i <= prevyear; i++){
+				def app = cloneApp( oldapp );
+				app.txxno = application.txnno + '-' + i;
+				app.iyear = i;
+				app.taxfees = [];
+				app.appinfos =  [];
+				app.receivables = [];
+				app.credits = [];
+				em.create( SCHEMANAME, app );
 			}
 		}
 	}
 	
-	private def clone( def obj ){
+	private def cloneApp( def obj ){
 		if( obj instanceof Map ){
 			def copy = [:];
-			obj.each{ k, v -> copy.put( k, clone( v ) ); }
+			obj.each{ k, v -> copy.put( k, cloneApp( v ) ); }
 			return copy;
 		}
 		
 		if( obj instanceof List ){
 			def copy = [];
-			obj.each{ copy.add( clone( it ) ); }
+			obj.each{ copy.add( cloneApp( it ) ); }
+			return copy;
 		}
 		return obj;
 	}
@@ -214,6 +215,7 @@ class BPApplicationService{
 		def app = open( applicationid );
 		if( app.docstate != 'DRAFT' ) throw new Exception("Only DRAFT application can be submit for assessment.");
 		app.appinfos = ruleSvc.buildInfos( createAppEntity( app ) ).infos;
+		
 		em.sqlContext.createNamedQuery('bpapplication:getApplicationByParentId')
 		.setParameters([parentid: applicationid])
 		.resultList.each{
@@ -467,10 +469,9 @@ class BPApplicationService{
 	}
 	
 	void addReceivables( def business, def applist ){
-	
 		def sdf = new java.text.SimpleDateFormat("MM");
 		def cMonth = Integer.parseInt( sdf.format( dateService.serverDate ) );
-		def cQtr = (Integer)cMonth / 3;
+		def cQtr = (Integer)(cMonth/3);
 		
 		applist.each{ a ->
 			def app = open( a.objid );
@@ -487,7 +488,6 @@ class BPApplicationService{
 					app.receivables << createReceivable( cQtr, 1, business.objid, app, it );
 				}
 			}
-			
 			em.update( SCHEMANAME, app );
 		}
 	}
@@ -553,9 +553,6 @@ class BPApplicationService{
 		def prevapp = open( application.parentid );
 		
 		if( prevapp.docstate != 'EXPIRED' ) throw new Exception('Only expired business can be renewed.');
-		if( (prevapp.iyear+1) < dateService.serverYear )
-			throw new Exception("Please process this application in LATE_RENEWAL transaction.");
-
 		if( getBilling( prevapp.objid ).taxfees )
 			throw new Exception('Application not yet fully paid.');
 		

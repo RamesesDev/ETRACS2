@@ -47,6 +47,8 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         xLabel7 = new com.rameses.rcp.control.XLabel();
         xLabel10 = new com.rameses.rcp.control.XLabel();
         xLabel8 = new com.rameses.rcp.control.XLabel();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
+        xLookupField2 = new com.rameses.rcp.control.XLookupField();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xTextField3 = new com.rameses.rcp.control.XTextField();
         xTextField2 = new com.rameses.rcp.control.XTextField();
@@ -104,29 +106,28 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
 
         xNumberField1.setDepends(new String[] {"year", "qtr"});
         xNumberField1.setFieldType(BigDecimal.class);
-        xNumberField1.setFocusable(false);
         xNumberField1.setFont(new java.awt.Font("Tahoma", 1, 24));
         xNumberField1.setImmediate(true);
         xNumberField1.setIndex(100);
         xNumberField1.setName("entity.info.amount");
         xNumberField1.setOpaque(false);
         xNumberField1.setPattern("#,##0.00");
+        xNumberField1.setReadonly(true);
         jPanel2.add(xNumberField1);
         xNumberField1.setBounds(12, 38, 206, 48);
 
         xNumberField2.setFieldType(BigDecimal.class);
-        xNumberField2.setFocusable(false);
         xNumberField2.setFont(new java.awt.Font("Tahoma", 1, 24));
         xNumberField2.setImmediate(true);
         xNumberField2.setIndex(100);
         xNumberField2.setName("entity.info.totalpayment");
         xNumberField2.setOpaque(false);
         xNumberField2.setPattern("#,##0.00");
+        xNumberField2.setReadonly(true);
         jPanel2.add(xNumberField2);
         xNumberField2.setBounds(12, 116, 206, 48);
 
         xNumberField3.setFieldType(BigDecimal.class);
-        xNumberField3.setFocusable(false);
         xNumberField3.setFont(new java.awt.Font("Tahoma", 1, 24));
         xNumberField3.setForeground(new java.awt.Color(204, 0, 0));
         xNumberField3.setImmediate(true);
@@ -134,6 +135,7 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         xNumberField3.setName("entity.info.change");
         xNumberField3.setOpaque(false);
         xNumberField3.setPattern("#,##0.00");
+        xNumberField3.setReadonly(true);
         jPanel2.add(xNumberField3);
         xNumberField3.setBounds(12, 196, 206, 48);
 
@@ -187,10 +189,22 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         xLabel8.setPreferredSize(new java.awt.Dimension(150, 20));
         formPanel2.add(xLabel8);
 
+        xLookupField1.setText("xLookupField1");
+        formPanel2.add(xLookupField1);
+
         formPanel1.add(formPanel2);
 
-        xTextField1.setCaption("Payor");
-        xTextField1.setCaptionWidth(75);
+        xLookupField2.setCaption("Trade Name");
+        xLookupField2.setCaptionWidth(100);
+        xLookupField2.setExpression("#{tradename}");
+        xLookupField2.setHandler("lookupBusiness");
+        xLookupField2.setName("bp");
+        xLookupField2.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField2.setRequired(true);
+        formPanel1.add(xLookupField2);
+
+        xTextField1.setCaption("Owner");
+        xTextField1.setCaptionWidth(100);
         xTextField1.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField1.setName("entity.info.payorname");
         xTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
@@ -198,7 +212,7 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         formPanel1.add(xTextField1);
 
         xTextField3.setCaption("Paid By");
-        xTextField3.setCaptionWidth(75);
+        xTextField3.setCaptionWidth(100);
         xTextField3.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField3.setName("entity.info.paidby");
         xTextField3.setPreferredSize(new java.awt.Dimension(0, 19));
@@ -206,7 +220,7 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         formPanel1.add(xTextField3);
 
         xTextField2.setCaption("Address");
-        xTextField2.setCaptionWidth(75);
+        xTextField2.setCaptionWidth(100);
         xTextField2.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField2.setName("entity.info.paidbyaddress");
         xTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
@@ -214,7 +228,7 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         formPanel1.add(xTextField2);
 
         xDateField1.setCaption("Txn Date ");
-        xDateField1.setCaptionWidth(75);
+        xDateField1.setCaptionWidth(100);
         xDateField1.setDepends(new String[] {"af"});
         xDateField1.setFont(new java.awt.Font("Arial", 0, 12));
         xDateField1.setInputFormat("MM-dd-yyyy");
@@ -250,11 +264,13 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
 
         jPanel7.add(jPanel8, java.awt.BorderLayout.SOUTH);
 
+        formPanel3.setCellpadding(new java.awt.Insets(0, 0, 10, 0));
         formPanel3.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
-        formPanel3.setPreferredSize(new java.awt.Dimension(100, 30));
+        formPanel3.setPreferredSize(new java.awt.Dimension(100, 35));
         xComboBox1.setAllowNull(false);
         xComboBox1.setCaption("Year");
-        xComboBox1.setCaptionWidth(75);
+        xComboBox1.setCaptionWidth(100);
+        xComboBox1.setCellPadding(new java.awt.Insets(0, 0, 10, 10));
         xComboBox1.setDynamic(true);
         xComboBox1.setImmediate(true);
         xComboBox1.setItems("years");
@@ -265,7 +281,7 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
 
         xComboBox2.setAllowNull(false);
         xComboBox2.setCaption("Qtr");
-        xComboBox2.setCaptionWidth(50);
+        xComboBox2.setCaptionWidth(30);
         xComboBox2.setImmediate(true);
         xComboBox2.setItems("qtrs");
         xComboBox2.setName("qtr");
@@ -330,6 +346,8 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel7;
     private com.rameses.rcp.control.XLabel xLabel8;
     private com.rameses.rcp.control.XLabel xLabel9;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
+    private com.rameses.rcp.control.XLookupField xLookupField2;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField2;
     private com.rameses.rcp.control.XNumberField xNumberField3;

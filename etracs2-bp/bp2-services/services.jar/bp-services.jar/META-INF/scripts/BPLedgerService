@@ -73,7 +73,8 @@ class BPLedgerService {
 		payment.formattedamtpaid = dcf.format( payment.amtpaid );
 		payment.total = 0.0;
 		payment.formattedtotal = dcf.format( payment.total );
-		payment.items = em.sqlContext.createNamedQuery( "bpledger:getBPReceivablesByBusinessId" ).setParameters( [businessid:payment.businessid] ).resultList;
+		def business = em.read('bpapplication:bpapplication', [objid:payment.applicationid]);
+		
 		return payment;
 	}
 	
@@ -114,6 +115,7 @@ class BPLedgerService {
 			throw new Exception("Payment reference number already exist.");
 		
 		if( !application ) throw new Exception("Application is no longer exist.");
+		def paymentamount = 0.0;
 		for( c in payment.items ){
 			application.credits << [ objid			: 'BPRCR' + new UID(),
 									 bpreceivableid	: c.bpreceivableid, 
@@ -128,7 +130,8 @@ class BPLedgerService {
 			
 			def brc = application.receivables.find{ it.objid == c.bpreceivableid };
 			if( !brc.amtpaid ) brc.amtpaid = 0.0;
-			brc.amtpaid += c.amount + c.surcharge + c.interest - c.discount;
+			brc.amtpaid += c.amount;
+			paymentamount += c.amount;
 		}
 
 		def b = em.read('business:business', [objid: application.businessid]);
@@ -137,13 +140,15 @@ class BPLedgerService {
 		
 		application.payments << [ refno: payment.refno, 
 								  refid: payment.refid, 
+								  reftype: payment.reftype,
 								  txndate: payment.txndate, 
 								  qtr: payment.qtr, 
 								  year:payment.year,
 								  lastyearpaid: b.lastyearpaid,
 								  lastqtrpaid: b.lastqtrpaid,
+								  amount: paymentamount,
 								  head: prep?.refno];
-								  
+
 		b.lastqtrpaid = payment.qtr;
 		b.lastyearpaid = payment.year;
 		
@@ -204,6 +209,23 @@ class BPLedgerService {
 		if( taxfees.findAll{ it.systype != 'BUSINESS_TAX' } ) return false;
 		if( taxfees.findAll{ it.applicationtype.matches('NEW|ADDLOB') } ) return false;
 		return true;
+	}
+	
+	@ProxyMethod
+	public def getApplicationByBusiness( def businessid ){
+		return em.sqlContext.createNamedQuery('business:getApplicationListByBusinessId')
+		         .setParameters([businessid: businessid])
+				 .resultList.each{ app ->
+					app.amount = 0.0;
+					app.amtpaid = 0.0;
+					
+					app.taxfees = em.serializer.read( app.taxfees );
+					app.lobs = em.serializer.read( app.lobs );
+					app.receivables = em.serializer.read( app.receivables ).each{ app.amount += it.amount; app.amtpaid += it.amtpaid; };
+					app.credits = em.serializer.read( app.credits );
+					app.putAll( em.serializer.read( app.extended ) );
+					println app.payments;
+				 };
 	}
 	
 }
