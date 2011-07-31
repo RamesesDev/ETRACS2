@@ -31,6 +31,7 @@ public class EntityMgmtPage extends javax.swing.JPanel {
         jPanel1 = new javax.swing.JPanel();
         jPanel3 = new javax.swing.JPanel();
         xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        xActionBar1 = new com.rameses.rcp.control.XActionBar();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         jPanel2 = new javax.swing.JPanel();
         xSubFormPanel1 = new com.rameses.rcp.control.XSubFormPanel();
@@ -52,8 +53,11 @@ public class EntityMgmtPage extends javax.swing.JPanel {
         xActionTextField1.setHint("Search");
         xActionTextField1.setIndex(-1);
         xActionTextField1.setName("searchText");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
-        jPanel3.add(xActionTextField1, java.awt.BorderLayout.CENTER);
+        xActionTextField1.setPreferredSize(new java.awt.Dimension(200, 19));
+        jPanel3.add(xActionTextField1, java.awt.BorderLayout.WEST);
+
+        xActionBar1.setName("formActions");
+        jPanel3.add(xActionBar1, java.awt.BorderLayout.CENTER);
 
         jPanel1.add(jPanel3, java.awt.BorderLayout.NORTH);
 
@@ -77,7 +81,7 @@ public class EntityMgmtPage extends javax.swing.JPanel {
         );
         xSubFormPanel1Layout.setVerticalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 469, Short.MAX_VALUE)
+            .add(0, 490, Short.MAX_VALUE)
         );
         jPanel2.add(xSubFormPanel1, java.awt.BorderLayout.CENTER);
 
@@ -93,6 +97,7 @@ public class EntityMgmtPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JSplitPane jSplitPane1;
+    private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XSubFormPanel xSubFormPanel1;

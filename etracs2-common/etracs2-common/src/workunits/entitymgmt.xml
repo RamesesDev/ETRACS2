@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker folderid="/menu/entity" action="init" caption="Entity Account" />
+        <invoker folderid="/menu/domain" action="init" caption="Entity Management" index="20" permission="entity.manage" />
     </invokers>
     <code>
 <![CDATA[
@@ -22,6 +22,10 @@ class EntityMgmtController
     def searchText
     def list = []
     def mode = 'view'
+    
+    def getFormActions() {
+        return InvokerUtil.lookupActions('entity.type')
+    }
     
     void init() {
         search()
