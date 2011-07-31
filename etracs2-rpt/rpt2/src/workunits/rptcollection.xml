@@ -4,18 +4,18 @@
         <invoker type="tc:real_property" action="init" caption="Real Property" afid="56"/>
         <invoker type="inquiry:tc:real_property" action="initInquiry" caption="Inquiry" />
         
-        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}" />
-        <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}"/>
-        <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}"/>
-        <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}" />
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}" icon="images/doc-new.png"/>
+        <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}" icon="images/back.png"/>
+        <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}" icon="images/save.png"/>
+        <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}" icon="images/save.png"/>
         <invoker type="formActions" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" visibleWhen="#{mode == 'view'}" />
         <invoker type="formActions" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" visibleWhen="#{mode == 'view'}"/>
-        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view' and entity.voided == 0}" />
+        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view' and entity.voided == 0}" icon="images/doc-void.png"/>
 
-        <invoker type="receipt.actions:tc:real_property" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" />
+        <invoker type="receipt.actions:tc:real_property" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" icon="images/edit.png"/>
         <invoker type="receipt.actions:tc:real_property" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" />
         <invoker type="receipt.actions:tc:real_property" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" />
-        <invoker type="receipt.actions:tc:real_property" action="doVoid" caption="Void" mnemonic="v" />   
+        <invoker type="receipt.actions:tc:real_property" action="doVoid" caption="Void" mnemonic="v" icon="images/doc-void.png"/>   
     </invokers>
     <code>
 <![CDATA[
@@ -26,6 +26,7 @@
     import com.rameses.osiris2.reports.*
     import etracs2.groovy.*
     import etracs2.tc.groovy.*
+    import java.text.DecimalFormat;
 
     class RPTCollectionController extends AbstractCollectionController
     {
@@ -54,6 +55,8 @@
         void init() {
             super.init()
             entity.doctype = 'RPT'
+            currdate = dateSvc.parseCurrentDate()    
+            if( entity.info.mode == 'CAPTURE' ) entity.info.txndate = currdate.date 
         }
         
         void newRecord() {
@@ -72,9 +75,18 @@
         ================================================================================================*/
         
         def create() {
+            if( bill == null ) {
+                throw new Exception('At least one ledger for payment is required.')
+            }
+            
+            def itemsForPayment = bill.items.findAll{ it.pay == true && it.amount > 0}
+            if( itemsForPayment.size() == 0 ) {
+                throw new Exception('At least one ledger for payment is required.')
+            }
+            
             if( MsgBox.confirm("Save collection?") ) {
                 validateTxnDate()
-                entity = svc.create( entity, bill  )
+                entity = svc.create( entity, itemsForPayment  )
                 print()
                 mode = 'view'
                 return 'view'
@@ -113,7 +125,6 @@
             if( entity.info.mode == 'CAPTURE' && !entity.info.txndate ) throw new Exception('Txn Date is required.')
             
             if( entity.info.mode == 'CAPTURE' ) {
-                currdate = dateSvc.parseCurrentDate()    
                 parsedate = dateSvc.parseDate( entity.info.txndate, null )
                 if( parsedate.date > currdate.date ) throw new Exception('Txn Date must be earlier or equal to current date.')
             }
@@ -132,7 +143,15 @@
         }
         
         void loadBill() {
-            bill = createBill()
+            if( payoption == 'bytd' ) {
+                def ledgerids = bill.items.objid
+                bill = createBill()
+                bill.ledgerids = ledgerids
+            }
+            else {
+                bill = createBill()
+            }
+            
             bill = billingSvc.generateBill( bill )
             
             //add pay and amount fields in every item
@@ -199,8 +218,14 @@
                         item.toqtr = 4
                     }
                     
-                    if( item.toyear < item.fromyear ) throw new Exception('To Year must be greater than or equal to From Year.')
-                    if( item.toyear == item.fromyear && item.toqtr < item.fromqtr) throw new Exception('To Qtr must be greater than or equal to From Qtr.')
+                    if( item.toyear < item.fromyear ) {
+                        showError('To Year must be greater than or equal to From Year.')
+                        item.toyear = item.fromyear
+                    }
+                    if( item.toyear == item.fromyear && item.toqtr < item.fromqtr) {
+                        showError('To Qtr must be greater than or equal to From Qtr.')
+                        item.toqtr = item.fromqtr 
+                    }   
                     processBillTo( item )
                 }
                 calculateReceiptAmount()
@@ -227,30 +252,38 @@
         }
         
         void setLedger( ledger ) {
+            this.ledger = ledger 
             if( ! ledger ) return 
-            if( ledger.docstate == 'PENDING' ) throw new Exception('Ledger is still pending.')
-            if( ledger.docstate == 'CANCELLED' ) throw new Exception('Ledger has already been cancelled.')
-            if( bill && duplicateLedger( ledger ) ) return 
-            
-            //load billitems for this ledger
-            def newbill = createBill()
-            newbill.ledgerids.add( ledger.objid )
-            
-            newbill = billingSvc.generateBill( newbill )
-            
-            //add pay and amount fields in every item
-            newbill.items.each { 
-                it.pay    = true 
-                it.amount = it.total
+            try {
+                if( ledger.docstate == 'PENDING' ) throw new Exception("Ledger $ledger.tdno is still pending.")
+                if( ledger.docstate == 'CANCELLED' ) throw new Exception("Ledger $ledger.tdno has already been cancelled.")
+                if( ledger.lastyearpaid == parsedate.year && ledger.lastyearpaid == 4 ) throw new Exception("Ledger $ledger.tdno is already paid.")
+                if( bill && duplicateLedger( ledger ) ) return 
+
+                //load billitems for this ledger
+                def newbill = createBill()
+                newbill.ledgerids.add( ledger.objid )
+
+                newbill = billingSvc.generateBill( newbill )
+
+                //add pay and amount fields in every item
+                newbill.items.each { 
+                    it.pay    = true 
+                    it.amount = it.total
+                }
+                if( ! bill ) {
+                    bill = newbill 
+                }
+                else {
+                    bill.items.addAll( newbill.items )
+                }
+                listHandler.load()
+                calculateReceiptAmount()
+                showError('')
             }
-            if( ! bill ) {
-                bill = newbill 
+            catch( e ) {
+                showError( e.message )
             }
-            else {
-                bill.items.addAll( newbill.items )
-            }
-            listHandler.load()
-            calculateReceiptAmount()
         }
         
         boolean duplicateLedger( ledger ) {
@@ -304,6 +337,7 @@
         
         
         void selectAll() {
+            if( bill == null ) return 
             bill.items.each { 
                 it.pay    = true
                 it.amount = it.total 
@@ -313,6 +347,7 @@
         }
         
         void deselectAll() {
+            if( bill == null ) return 
             bill.items.each { 
                 it.pay    = false
                 it.amount = 0.0
@@ -322,6 +357,7 @@
         }
         
         void fullPayment() {
+            if( bill == null ) return 
             loadBill()
             listHandler.load()
             calculateReceiptAmount()
@@ -333,6 +369,13 @@
             payments.addAll( entity.payments )
             updatePaymentInfo( payments )
             binding.refresh('entity.info.amount|entity.info.totalpayment|entity.info.change')
+        }
+        
+        def getAssessedvalue() {
+            if( selectedItem ) {
+                return (new DecimalFormat('#,##0.00')).format( selectedItem.assessedvalue )
+            }
+            return ''
         }
     }
 ]]>        

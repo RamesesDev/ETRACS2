@@ -1,5 +1,6 @@
 import com.rameses.annotations.*;
 import com.rameses.common.*;
+import java.text.DecimalFormat;
 
 public class LiquidationReportServices{
 	
@@ -8,12 +9,19 @@ public class LiquidationReportServices{
 	
 	@Service("Var")
 	def vars;
+	
+	@Service("NumberService")
+	def numsvc;
+	
+	def decformat = new DecimalFormat("#,##0.00");
 
 	@ProxyMethod
 	public def buildRCDReportData( def liquidationid ){
 		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
 		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
 		def reportData = liquidation.info;
+		reportData.amountinwords = numsvc.convertString( reportData.amount + "" );
+		reportData.amountformatted = decformat.format( reportData.amount );
 		
 		reportData.txndate = liquidation.dtposted;
 
@@ -36,7 +44,11 @@ public class LiquidationReportServices{
 			txndate: liquidation.dtposted,
 			txnno: liquidation.info.txnno,
 			liquidatingofficername: liquidation.info.liquidatingofficername,
-			liquidatingofficertitle: liquidation.info.liquidatingofficertitle
+			liquidatingofficertitle: liquidation.info.liquidatingofficertitle,
+			treasurername: liquidation.info.treasurername,
+			treasurertitle: liquidation.info.treasurertitle,
+			amountinwords: numsvc.convertString( liquidation.info.amount + "" ),
+			amountformatted: decformat.format( liquidation.info.amount )
 		];
 		
 		def map = [liquidationid: liquidationid, fundid: fundid];
@@ -58,7 +70,11 @@ public class LiquidationReportServices{
 			txndate: liquidation.dtposted,
 			txnno: liquidation.info.txnno,
 			liquidatingofficername: liquidation.info.liquidatingofficername,
-			liquidatingofficertitle: liquidation.info.liquidatingofficertitle
+			liquidatingofficertitle: liquidation.info.liquidatingofficertitle,
+			treasurername: liquidation.info.treasurername,
+			treasurertitle: liquidation.info.treasurertitle,
+			amountinwords: numsvc.convertString( liquidation.info.amount + "" ),
+			amountformatted: decformat.format( liquidation.info.amount )
 		];
 		
 		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByGLAccount$chart")
@@ -85,8 +101,12 @@ public class LiquidationReportServices{
 		def reportData = [
 			txndate: liquidation.dtposted,
 			txnno: liquidation.info.txnno,
-			liquidationofficername: liquidation.info.liquidationofficername,
-			liquidationofficertitle: liquidation.info.liquidationofficertitle
+			liquidatingofficername: liquidation.info.liquidatingofficername,
+			liquidatingofficertitle: liquidation.info.liquidatingofficertitle,
+			treasurername: liquidation.info.treasurername,
+			treasurertitle: liquidation.info.treasurertitle,
+			amountinwords: numsvc.convertString( liquidation.info.amount + "" ),
+			amountformatted: decformat.format( liquidation.info.amount )
 		];
 
 		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByIncomeAccount$chart")

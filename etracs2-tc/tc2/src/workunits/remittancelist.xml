@@ -4,7 +4,7 @@
     <invokers>
         <invoker folderid="/menu/tc/txn" caption="Remittances" permission="remittance.viewlist"/>
         
-        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/doc-add.png" permission="remittance.create"/>
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/doc-new.png" permission="remittance.create"/>
         <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" immediate="true" caption="Open" mnemonic="o" icon="images/open.png" permission="remittance.create"/>
     </invokers>
     
@@ -54,11 +54,11 @@
             }
             
             def create() {
-                return new WindowOpener( name:"tc2:remittance", action:"create" );
+                return new WindowOpener( name:"tc2:remittance", caption:"New Remittance", action:"create" );
             }
             
             def open() {
-                return new WindowOpener( name:"tc2:remittance", action:"open", params:[entity:selectedItem] );
+                return new WindowOpener( name:"tc2:remittance", caption:selectedItem.txnno, action:"open", params:[entity:selectedItem] );
             }
             
             def getHtml() {

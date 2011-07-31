@@ -23,6 +23,9 @@ class LiquidationService {
 	@Service("HTMLService")
 	def htmlsvc;
 	
+	@Service("Var")
+	def var;
+	
 	def SCHEMANAME = "liquidation:liquidation";
 	def SCHEMAVERSION = "1.0";
 	def LISTSCHEMANAME = "liquidation:liquidationlist";
@@ -116,6 +119,8 @@ class LiquidationService {
 		liq.info.amount = 0.0;
 		liq.info.totalcash = 0.0;
 		liq.info.totalotherpayment = 0.0;
+		liq.info.treasurername = var.get('treasurer_name');
+		liq.info.treasurertitle = var.get('treasurer_title');
 		def subordinates = getSubordinates( liq.info.liquidatingofficerid );
 		for (collector in subordinates) {
 			def remits = em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceByCollector" ).setParameter( "collectorid", collector.objid ).resultList;

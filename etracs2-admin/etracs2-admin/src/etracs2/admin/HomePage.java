@@ -33,7 +33,7 @@ public class HomePage extends javax.swing.JPanel {
         jPanel4 = new javax.swing.JPanel();
         xImageViewer1 = new com.rameses.rcp.control.XImageViewer();
         jPanel1 = new javax.swing.JPanel();
-        xIconPanel1 = new com.rameses.rcp.control.XIconPanel();
+        xActionBar1 = new com.rameses.rcp.control.XActionBar();
         jPanel5 = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
         jLabel6 = new javax.swing.JLabel();
@@ -63,7 +63,7 @@ public class HomePage extends javax.swing.JPanel {
         jLabel2.setForeground(new java.awt.Color(0, 51, 153));
         jLabel2.setText("ETRACS");
         jPanel2.add(jLabel2);
-        jLabel2.setBounds(106, 40, 210, 57);
+        jLabel2.setBounds(106, 40, 210, 58);
 
         jLabel4.setFont(new java.awt.Font("Tahoma", 1, 14));
         jLabel4.setForeground(new java.awt.Color(0, 51, 153));
@@ -74,6 +74,7 @@ public class HomePage extends javax.swing.JPanel {
         jPanel2.add(jPanel4);
         jPanel4.setBounds(174, -48, 10, 10);
 
+        xImageViewer1.setBorder(null);
         xImageViewer1.setFitImage(true);
         xImageViewer1.setName("imageUrl");
         jPanel2.add(xImageViewer1);
@@ -84,8 +85,12 @@ public class HomePage extends javax.swing.JPanel {
         jPanel1.setLayout(new java.awt.BorderLayout());
 
         jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        xIconPanel1.setName("home_menu");
-        jPanel1.add(xIconPanel1, java.awt.BorderLayout.CENTER);
+        xActionBar1.setButtonCaptionOrientation(javax.swing.SwingConstants.BOTTOM);
+        xActionBar1.setName("formActions");
+        xActionBar1.setOpaque(false);
+        xActionBar1.setOrientation(com.rameses.rcp.constant.UIConstants.FLOW);
+        xActionBar1.setSpacing(25);
+        jPanel1.add(xActionBar1, java.awt.BorderLayout.CENTER);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -130,8 +135,8 @@ public class HomePage extends javax.swing.JPanel {
                 .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
                     .add(jPanel5Layout.createSequentialGroup()
                         .addContainerGap()
-                        .add(jLabel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 34, Short.MAX_VALUE))
-                    .add(jPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 46, Short.MAX_VALUE))
+                        .add(jLabel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 36, Short.MAX_VALUE))
+                    .add(jPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 47, Short.MAX_VALUE))
                 .addContainerGap())
         );
         add(jPanel5, java.awt.BorderLayout.SOUTH);
@@ -154,7 +159,7 @@ public class HomePage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
-    private com.rameses.rcp.control.XIconPanel xIconPanel1;
+    private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XImageViewer xImageViewer1;
     // End of variables declaration//GEN-END:variables
     

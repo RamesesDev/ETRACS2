@@ -57,16 +57,16 @@ public class StatementOfRevenuePage extends javax.swing.JPanel {
         formPanel1.add(xDateField1);
 
         xComboBox2.setCaption("Qtr");
-        xComboBox2.setImmediate(true);
+        xComboBox2.setExpression("#{name}");
         xComboBox2.setItems("qtrList");
         xComboBox2.setName("entity.qtr");
         xComboBox2.setPreferredSize(new java.awt.Dimension(60, 20));
         formPanel1.add(xComboBox2);
 
         xComboBox1.setCaption("Month");
+        xComboBox1.setDepends(new String[] {"entity.qtr"});
         xComboBox1.setDynamic(true);
         xComboBox1.setExpression("#{name}");
-        xComboBox1.setImmediate(true);
         xComboBox1.setItems("monthList");
         xComboBox1.setName("entity.month");
         xComboBox1.setPreferredSize(new java.awt.Dimension(130, 23));

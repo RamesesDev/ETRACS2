@@ -68,7 +68,6 @@ public class LiquidationReportCPage extends javax.swing.JPanel {
         xComboBox2.setImmediate(true);
         xComboBox2.setItems("fundList");
         xComboBox2.setName("fund");
-        xComboBox2.setPreferredSize(new java.awt.Dimension(150, 22));
         xComboBox2.setRequired(true);
         formPanel1.add(xComboBox2);
 
