@@ -87,11 +87,30 @@ WHERE docstate = 'APPROVED'
 AND collectorid = $P{collectorid} 
 ORDER BY afid, stubno
 
+[getReceiptsByRemittanceAllCollectionType]
+SELECT * FROM receiptlist 
+WHERE remittanceid = $P{remittanceid} 
+ORDER BY afid, serialno DESC, txndate DESC 
+
 [getReceiptsByRemittanceCollectionType]
 SELECT * FROM receiptlist 
 WHERE remittanceid = $P{remittanceid} 
 	AND collectiontypeid = $P{collectiontypeid} 
 ORDER BY afid, serialno DESC, txndate DESC
+
+[getReceiptDetailsByAllFund]
+SELECT 
+	rl.afid AS afid, 
+	rl.serialno AS serialno, 
+	rl.txndate AS txndate, 
+	rl.paidby AS payer, 
+	ri.fundname AS fundname, 
+	ri.accttitle AS particulars, 
+	ri.amount AS amount 
+FROM receiptlist rl, receiptitem ri 
+WHERE rl.objid = ri.receiptid 
+	AND rl.remittanceid = $P{remittanceid} 
+ORDER BY rl.afid, rl.serialno, ri.accttitle 
 
 [getReceiptDetailsByFund]
 SELECT 
@@ -108,6 +127,17 @@ WHERE rl.objid = ri.receiptid
 	AND ri.fundid = $P{fundid} 
 ORDER BY rl.afid, rl.serialno, ri.accttitle
 
+[getIncomeAccuntSummaryByAllFund] 
+SELECT 
+	ri.acctid AS acctid, 
+	ri.accttitle AS acctname, 
+	SUM( ri.amount ) AS amount 
+FROM receiptlist rl, receiptitem ri 
+WHERE rl.objid = ri.receiptid 
+	AND rl.remittanceid = $P{remittanceid} 
+GROUP BY ri.acctid, ri.accttitle 
+ORDER BY ri.accttitle 
+
 [getIncomeAccuntSummaryByFund]
 SELECT 
 	ri.acctid AS acctid, 
@@ -119,6 +149,22 @@ WHERE rl.objid = ri.receiptid
 	AND ri.fundid = $P{fundid} 
 GROUP BY ri.acctid, ri.accttitle 
 ORDER BY ri.accttitle
+
+[getSerialReceiptDetailsByAllFund]
+SELECT 
+	rl.afid AS afid, 
+	rl.serialno AS serialno, 
+	rl.txndate AS txndate, 
+	rl.paidby AS payer, 
+	ri.fundname AS fundname, 
+	ri.accttitle AS particulars, 
+	ri.amount AS amount 
+FROM receiptlist rl, receiptitem ri, af af 
+WHERE rl.objid = ri.receiptid 
+	AND rl.remittanceid = $P{remittanceid} 
+	AND rl.afid = af.objid 
+	AND af.aftype = 'serial' 
+ORDER BY rl.afid, rl.serialno, ri.accttitle
 
 [getSerialReceiptDetailsByFund]
 SELECT 
@@ -133,6 +179,22 @@ FROM receiptlist rl, receiptitem ri, af af
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
 	AND ri.fundid = $P{fundid} 
+	AND rl.afid = af.objid 
+	AND af.aftype = 'serial' 
+ORDER BY rl.afid, rl.serialno, ri.accttitle
+
+[getNonSerialReceiptDetailsByAllFund]
+SELECT 
+	rl.afid AS afid, 
+	rl.serialno AS serialno, 
+	rl.txndate AS txndate, 
+	rl.paidby AS payer, 
+	ri.fundname AS fundname, 
+	ri.accttitle AS particulars, 
+	ri.amount AS amount 
+FROM receiptlist rl, receiptitem ri, af af 
+WHERE rl.objid = ri.receiptid 
+	AND rl.remittanceid = $P{remittanceid} 
 	AND rl.afid = af.objid 
 	AND af.aftype = 'serial' 
 ORDER BY rl.afid, rl.serialno, ri.accttitle

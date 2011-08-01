@@ -52,10 +52,11 @@ class RemittanceReportService {
 	}
 	
 	private def getReceiptsByRemittanceCollectionType( rem, collectiontype ) {
-		def qry = em.sqlContext.createNamedQuery( "remittance:getReceiptsByRemittanceCollectionType" );
-		if ( collectiontype )
-			qry.setParameter( "collectiontypeid", collectiontype.objid )
-		return qry.setParameter( "remittanceid", rem.objid ).resultList;
+		def query = {
+			if( collectiontype?.objid ) return em.sqlContext.createNamedQuery( "remittance:getReceiptsByRemittanceCollectionType" ).setParameter( "collectiontypeid", collectiontype.objid );
+			else return em.sqlContext.createNamedQuery( "remittance:getReceiptsByRemittanceAllCollectionType" )
+		}
+		return query().setParameter( "remittanceid", rem.objid ).resultList;
 	}
 	
 	
@@ -69,17 +70,19 @@ class RemittanceReportService {
 	}
 	
 	private def getReceiptDetailsByFund( rem, fund ) {
-		def qry = em.sqlContext.createNamedQuery( "remittance:getReceiptDetailsByFund" );
-		if ( fund )
-			qry.setParameter( "fundid", fund.objid );
-		return qry.setParameter( "remittanceid", rem.objid ).resultList;
+		def query = {
+			if( fund?.objid ) return em.sqlContext.createNamedQuery("remittance:getReceiptDetailsByFund").setParameter("fundid", fund.objid);
+			else return em.sqlContext.createNamedQuery( "remittance:getReceiptDetailsByAllFund" ); 
+		}
+		return query().setParameter( "remittanceid", rem.objid ).resultList;
 	}
 	
 	private def getIncomeAccuntSummaryByFund( rem, fund ) {
-		def qry = em.sqlContext.createNamedQuery( "remittance:getIncomeAccuntSummaryByFund" );
-		if ( fund )
-			qry.setParameter( "fundid", fund.objid );
-		return qry.setParameter( "remittanceid", rem.objid ).resultList;
+		def query = {
+			if( fund?.objid ) return em.sqlContext.createNamedQuery( "remittance:getIncomeAccuntSummaryByFund" ).setParameter("fundid", fund.objid);
+			else return em.sqlContext.createNamedQuery( "remittance:getIncomeAccuntSummaryByAllFund" );
+		}
+		return query().setParameter( "remittanceid", rem.objid ).resultList;
 	}
 	
 	
@@ -93,17 +96,19 @@ class RemittanceReportService {
 	}
 	
 	private def getSerialReceiptDetailsByFund( rem, fund ) {
-		def qry = em.sqlContext.createNamedQuery( "remittance:getSerialReceiptDetailsByFund" );
-		if ( fund )
-			qry.setParameter( "fundid", fund.objid );
-		return qry.setParameter( "remittanceid", rem.objid ).resultList;
+		def query = {
+			if( fund?.objid ) return em.sqlContext.createNamedQuery( "remittance:getSerialReceiptDetailsByFund" ).setParameter( "fundid", fund.objid );
+			else return em.sqlContext.createNamedQuery( "remittance:getSerialReceiptDetailsByAllFund" );
+		}		
+		return query().setParameter( "remittanceid", rem.objid ).resultList;
 	}
 	
 	private def getNonSerialReceiptDetailsByFund( rem, fund ) {
-		def qry = em.sqlContext.createNamedQuery( "remittance:getNonSerialReceiptDetailsByFund" );
-		if ( fund )
-			qry.setParameter( "fundid", fund.objid );
-		return qry.setParameter( "remittanceid", rem.objid ).resultList;
+		def query = {
+			if( fund?.objid ) return em.sqlContext.createNamedQuery( "remittance:getNonSerialReceiptDetailsByFund" ).setParameter( "fundid", fund.objid );
+			else return em.sqlContext.createNamedQuery( "remittance:getNonSerialReceiptDetailsByFund" );
+		}
+		return query().setParameter( "remittanceid", rem.objid ).resultList;
 	}
 	
 }
