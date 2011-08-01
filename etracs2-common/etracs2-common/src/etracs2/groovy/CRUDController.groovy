@@ -105,8 +105,12 @@ abstract class CRUDController {
     }
     
     void open( objid ) {
-        entity = service.open( objid );
-        if( ! entity) {
+        if( objid ){
+            entity = service.open( objid );
+            if( ! entity) {
+                entity = createEntity();
+            }
+        }else{
             entity = createEntity();
         }
     }
