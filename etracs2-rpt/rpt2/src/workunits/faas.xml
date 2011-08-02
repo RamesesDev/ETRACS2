@@ -29,6 +29,8 @@
         <invoker type="formActions" action="approveByProvince" shortcut="ctrl A" visibleWhen="#{showApprovedByProvinceAction == true}" caption="Approve" mnemonic="a" icon="images/approve.png"/>
         
         <invoker type="faasActions" action="viewPrevious" caption="View Previous" visibleWhen="#{showViewPrevious == true}" icon="images/doc-view.png"/>
+        <invoker type="formActions" action="showAttachments" visibleWhen="#{mode != 'create'}" caption="Attachments" mnemonic="m" />
+        
     </invokers>
     <code lang="groovy">
 <![CDATA[
@@ -440,6 +442,10 @@ public class FAASController
     }
     
     
+    
+    def showAttachments() {
+        return InvokerUtil.lookupOpener('faasattachment.open', [faas:faas] )
+    }
 }
 
 ]]>

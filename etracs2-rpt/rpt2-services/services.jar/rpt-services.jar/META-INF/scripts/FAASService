@@ -562,6 +562,27 @@ class FAASService
         //em.sqlContext.createNamedExecutor('faas:updateListTdNo').setParameters([tdno:faas.info.tdno, objid:faas.objid]).execute()
     }
     
+    
+    /*-----------------------------------------------------------------------
+    ** Attachment Support 
+    -----------------------------------------------------------------------*/
+    @ProxyMethod
+    public void removeAttachment( faasid, attachment )  {
+        def attachmentList = em.sqlContext.createNamedQuery('faas:getAttachmentsById').setParameter('objid', faasid).singleResult
+        if( attachmentList ) {
+            //remove attachment from list 
+            attachmentList = em.serializer.read( attachmentList )
+            attachmentList.remove( attachment )
+            //
+            //update attachments 
+            def params = [objid:faasid, attachments:em.serializer.write(attachmentList)]
+            em.sqlContext.createNamedExecutor('faas:updateAttachmentsById').setParameters( params ).execute()
+        }
+    }
+    
+    
+    
+    
     /*-----------------------------------------------------------------------
     ** Support Methods
     -----------------------------------------------------------------------*/

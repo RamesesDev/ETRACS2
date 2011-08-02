@@ -83,6 +83,8 @@ WHERE objid = $P{objid}
 [getTaxpayerInfo]
 SELECT taxpayerid, taxpayerno, taxpayername, taxpayeraddress FROM faaslist WHERE objid = $P{objid} 
 
+[getAttachmentsById]
+SELECT attachments FROM faas WHERE objid = $P{objid}
 
 #----------------------------------------------------------------
 # INSERT
@@ -126,6 +128,8 @@ UPDATE faaslist SET tdno = $P{tdno} WHERE objid = $P{objid}
 UPDATE faaslist SET landfaasid = $P{landfaasid}, landfaastaxpayerid = $P{landfaastaxpayerid} WHERE objid = $P{objid} 
 
 
+[updateAttachmentsById]
+UPDATE faas SET attachments = $P{attachments} WHERE objid = $P{objid}
 
 #----------------------------------------------------------------
 # CHECKS
