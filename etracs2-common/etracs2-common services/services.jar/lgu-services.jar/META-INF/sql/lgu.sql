@@ -13,4 +13,7 @@ SELECT * FROM lgu WHERE lgutype = 'MUNICIPALITY'
 SELECT * FROM lgu WHERE lgutype = 'DISTRICT'
 
 [getProvinceId]
-SELECT objid FROM lgu WHERE type = 'PROVINCE'
+SELECT objid FROM lgu WHERE lgutype = 'PROVINCE'
+
+[getProvince]
+SELECT objid FROM lgu WHERE lgutype = 'PROVINCE'

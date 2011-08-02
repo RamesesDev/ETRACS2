@@ -1,0 +1,61 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import com.rameses.io.*;
+
+
+public class ETRACSFileTransferService
+{
+    @Service('Var')
+    def var 
+
+    @ProxyMethod
+    public void uploadAttachment( param ) {
+        def path = var.faas_attachment_path
+        
+        def directory = var.faas_attachment_path + '/' + param.attachment.directory 
+        if( path.endsWith( '/' ) ) {
+            directory =    var.faas_attachment_path +  param.attachment.directory 
+        }
+        
+        def filename  = directory + '/' + param.attachment.filename 
+        
+        def dir = new File(  directory );
+        if( ! dir.exists()  ) {
+            if( ! dir.mkdir() ) throw new Exception('Cannot create directory ' + param.attachment.path + '.' )
+        }
+        else if( !dir.isDirectory() ) {
+            throw new Exception('A file with the same directory name already exists.')
+        }
+        
+        def file = new File( filename ) 
+        if( param._batch == 0 && file.exists() )  {
+            file.delete();
+        }
+        
+        def fos = new FileTransfer.FileOutputHandler(file, true);
+        fos.write( param._data );
+        fos.close();
+    }
+    
+    @ProxyMethod
+    public def downloadAttachment( param ) {
+        def path = var.faas_attachment_path
+        
+        def directory = var.faas_attachment_path + '/' + param.attachment.directory 
+        if( path.endsWith( '/' ) ) {
+            directory =    var.faas_attachment_path +  param.attachment.directory 
+        }
+        
+        def filename = directory + '/'+ param.attachment.filename 
+        
+        def file = new File( filename );
+        if( ! file.exists() )  throw new Exception("File $param.filename no longer exists.")
+        
+        def fis = new FileTransfer.FileInputSource(file, 1024);
+        fis.setPosition( 1024 * param._batch)
+        def data = fis.read()
+        fis.close();
+        return data 
+    }
+
+}

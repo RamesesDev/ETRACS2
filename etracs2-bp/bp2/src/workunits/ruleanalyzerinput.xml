@@ -25,9 +25,11 @@ class InputValuesController
     }
     
     def ok() {
-        if( inputHandler ) entity = inputHandler( entity )
-        if( entity.infos ) {
-            infoListHandler.load()
+        def done = false 
+        if( inputHandler ) {
+            done = inputHandler( entity )
+        }
+        if( !done ) {
             return 'default' 
         }
         else {

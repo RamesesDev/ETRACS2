@@ -56,6 +56,7 @@ public class RuleAnalyzerPage extends javax.swing.JPanel {
         xComboBox1.setAllowNull(false);
         xComboBox1.setCaption("Application Type");
         xComboBox1.setCaptionWidth(110);
+        xComboBox1.setIndex(-10);
         xComboBox1.setItems("applicationTypes");
         xComboBox1.setName("entity.applicationtype");
         xComboBox1.setRequired(true);
@@ -95,6 +96,7 @@ public class RuleAnalyzerPage extends javax.swing.JPanel {
         xDataTable1.setBorder(xTitledBorder2);
         xDataTable1.setDynamic(true);
         xDataTable1.setHandler("lobListHandler");
+        xDataTable1.setIndex(-100);
         xDataTable1.setName("selectedLob");
         xDataTable1.setPreferredSize(new java.awt.Dimension(450, 80));
         jPanel5.add(xDataTable1, java.awt.BorderLayout.WEST);

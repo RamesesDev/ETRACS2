@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="faasattachment.open" action="open" />
+        <invoker type="formActions" action="addAttachment" caption="Add Attachment" mnemonic="a" shortcut="ctrl A" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+import java.rmi.server.UID
+import com.rameses.io.FileTransfer
+import com.rameses.invoker.client.DynamicHttpTransfer
+import java.io.*
+
+
+public class FAASAttachmentController {
+    @Binding
+    def binding
+    
+    @Service('FAASService')
+    def faasSVc
+
+    def faas 
+    def selectedItem
+    
+    
+    
+    
+    void open() {
+        if( !faas.attachments ) {
+            faas.attachments = []
+        }
+    }
+    
+    def listHandler = [
+        getRows    : { return 25 },
+        getColumns : { return [
+            new Column(name:'type', caption:'Attachment'),
+            new Column(name:'refno', caption:'Ref. No.'),
+            new Column(name:'refdate', caption:'Ref. Date'),
+            new Column(name:'remarks', caption:'Remarks'),
+        ]},
+        onRemoveItem : { item -> removeItem( item ) },
+        fetchList : { return faas.attachments },
+    ] as SubListModel
+    
+    void removeItem( item ) {
+        if( MsgBox.confirm('Delete selected item?') ) {
+            faasSvc.removeAttachment( faas.objid, item ) 
+            faas.attachments.remove( item )
+        }
+    }
+    
+    void setSelectedItem( selectedItem ) {
+        this.selectedItem = selectedItem
+        if( selectedItem ) {
+            def file = new File( resolveFileName( selectedItem.filename ) )
+            if( ! file.exists() ) {
+                downloadFile( selectedItem )
+            }
+        }
+    }
+
+    
+    def resolveFileName( filename ) {
+        def cachedir = System.properties['user.dir'] + '/cache' 
+        def dir = new File( cachedir )
+        if( !dir.exists() ) {
+            dir.mkdir()
+        }
+        return cachedir + '/' + filename 
+    }
+    
+    def getImageUrl() {
+        if( ! selectedItem ) {
+            return null
+        }
+        
+        def file = new File( resolveFileName(selectedItem.filename ) )
+        def url = file.toURL().toString()
+        return """
+            <html>
+                <body>
+                    <img src="$url">
+                </body>
+            </html>
+        """
+    }
+    
+    /*----------------------------------------------------------------------
+    *
+    * AddAttachment Support 
+    *
+    *-----------------------------------------------------------------------*/
+    def attachment
+    def file
+    
+    def addAttachment() {
+        attachment = [:]
+        return 'attachment' 
+    }
+    
+    def doCancel() {
+        return 'default' 
+    }
+    
+    def upload() {
+        def app = getAppInfo()
+            
+        attachment.filename  = file.name 
+        attachment.directory = makeSafeFileName( faas.objid )
+        
+        FileTransfer.FileInputSource fis = new FileTransfer.FileInputSource( file )
+        DynamicHttpTransfer.Out handler = new DynamicHttpTransfer.Out(app.host , app.context, 'ETRACSFileTransferService', 'uploadAttachment')
+        handler.parameters.put('attachment', attachment )
+        
+        FileTransfer ft = new FileTransfer();
+        ft.transfer(fis, handler);
+        
+        faas.attachments.add( attachment )
+        listHandler.load()
+        return 'default' 
+
+    }
+    
+    void downloadFile( attachment ) {
+        def app = getAppInfo()
+        
+        DynamicHttpTransfer.In handler = new DynamicHttpTransfer.In( app.host, app.context, 'ETRACSFileTransferService', 'downloadAttachment');
+        handler.getParameters().put('attachment', attachment);
+        
+        File f = new File( resolveFileName(attachment.filename) );
+        FileTransfer.FileOutputHandler output = new FileTransfer.FileOutputHandler( f );
+        
+        FileTransfer ft = new FileTransfer();
+        ft.transfer( handler, output );
+    }
+    
+    def getAppInfo() {
+        def host        = OsirisContext.clientContext?.appEnv['default.host']
+        host            = ( host ? host : 'localhost:8080' )
+        def context     = OsirisContext.clientContext?.appEnv['app.context']
+        context         = (context ? context : 'maribojoc' )
+        return [host:host, context:context]
+    }
+    
+    def makeSafeFileName( strvalue ) {
+        return strvalue.replaceAll('[\\W]', '')
+    }
+    
+    
+    def getExtension( s ) {
+        def startindex = s.indexOf( '.') 
+        if( startindex < 0 ) {
+            return ''
+        }
+        else {
+            def endindex = s.length()
+            return s.substring( startindex+1, endindex )
+        }
+    }    
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.FAASAttachmentPage"/>
+        <page name="attachment" template="etracs2.rpt.faas.FAASAttachmentAddPage"/>
+    </pages>
+</workunit>
