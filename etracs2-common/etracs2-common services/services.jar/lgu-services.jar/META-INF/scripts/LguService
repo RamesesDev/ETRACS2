@@ -125,4 +125,23 @@ class LguService
 					.setMaxResults( params._limit )
 					.resultList
 	}
+    
+    @ProxyMethod
+	public def openProvince() {
+		def province = em.sqlContext.createNamedQuery("lgu:getProvinceId").singleResult;
+		if ( !province ) return null;
+		return em.read("lgu:province", [objid:province.objid]);
+	}
+    
+    @ProxyMethod
+	public def getBarangays() {
+        def munis = em.sqlContext.createNamedQuery('lgu:getMuncipalities').resultList 
+        
+        def brgys = []
+        munis.each {
+            brgys.addAll( em.serializer.read(it.barangays ) )
+        }
+		return brgys.collect{ [objid:it.objid, name:it.lguname, toString:it.lguname]}.sort{ a,b -> a.name <=> b.name }
+		//println lgu.municipalities.barangays.flatten().collect{[objid:it.objid, name:it.name] }.sort{ a,b -> a.name <=> b.name }
+	}
 }

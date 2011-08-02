@@ -41,6 +41,7 @@ public class AddTaxFeeActionPage extends javax.swing.JPanel {
         xComboBox1.setAllowNull(false);
         xComboBox1.setCaption("Apply");
         xComboBox1.setExpression("#{caption}");
+        xComboBox1.setImmediate(true);
         xComboBox1.setIndex(-9);
         xComboBox1.setItems("applyTypes");
         xComboBox1.setName("action.applytype");

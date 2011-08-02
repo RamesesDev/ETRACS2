@@ -1,6 +1,7 @@
 <workunit>
     <invokers>
         <invoker folderid="menu/bp/master" action="init" caption="Rule Analyzer" permission="bpadmin.bpruleanalyzer"/>
+        <invoker type="home.action" action="init" caption="Rule Analyzer" permission="bpadmin.bpruleanalyzer" target="window" index="30" icon="images/debug.png"/>
     </invokers>
     <code>
 <![CDATA[
@@ -73,6 +74,7 @@ class RuleAnalyzerController
         if( additionalInfos ) {
             //preserve currently inputted values
             inputtedValues.addAll( app.infos )
+            
             //remove additional infos to avoid infinite loop
             app.infos.clear()
             app.infos.addAll( additionalInfos )
@@ -81,8 +83,9 @@ class RuleAnalyzerController
             //exclude previous infos from result 
             removeAllInfos( app, additionalInfos )
             removeAllInfos( app, inputtedValues ) 
-            return app 
+            return false
         }
+        return true
     }
     
     def removeAllInfos( app, list ) {
@@ -97,7 +100,7 @@ class RuleAnalyzerController
     
     def acceptInputHandler = { app ->
         app.infos.addAll( inputtedValues)
-        convertDataTypes( app ) //TODO: Temporary while ui is not yet available
+        //convertDataTypes( app ) //TODO: Temporary while ui is not yet available
         entity = svc.buildTaxFees( app )
         sortInfos( entity )
         taxfeeListHandler.load()

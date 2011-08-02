@@ -51,35 +51,22 @@ public class RuleMgmtPage extends javax.swing.JPanel {
 
         add(jPanel1, java.awt.BorderLayout.NORTH);
 
+        jPanel2.setLayout(new java.awt.BorderLayout());
+
+        jPanel2.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
         xDataTable1.setDynamic(true);
         xDataTable1.setHandler("listHandler");
         xDataTable1.setImmediate(true);
         xDataTable1.setName("selectedItem");
+        xDataTable1.setPreferredSize(new java.awt.Dimension(200, 200));
+        jPanel2.add(xDataTable1, java.awt.BorderLayout.NORTH);
 
         xEditorPane1.setDepends(new String[] {"selectedItem"});
         xEditorPane1.setName("html");
         jScrollPane1.setViewportView(xEditorPane1);
 
-        org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 533, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 533, Short.MAX_VALUE))
-                .addContainerGap())
-        );
-        jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(xDataTable1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 194, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 229, Short.MAX_VALUE)
-                .addContainerGap())
-        );
+        jPanel2.add(jScrollPane1, java.awt.BorderLayout.CENTER);
+
         add(jPanel2, java.awt.BorderLayout.CENTER);
 
     }// </editor-fold>//GEN-END:initComponents

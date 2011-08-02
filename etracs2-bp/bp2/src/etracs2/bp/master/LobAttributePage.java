@@ -101,6 +101,8 @@ public class LobAttributePage extends javax.swing.JPanel {
         xTextArea1.setDepends(new String[] {"attribute"});
         xTextArea1.setName("attribute.description");
         xTextArea1.setPreferredSize(new java.awt.Dimension(0, 74));
+        xTextArea1.setRequired(true);
+        xTextArea1.setTextCase(com.rameses.rcp.constant.TextCase.UPPER);
         jScrollPane1.setViewportView(xTextArea1);
 
         formPanel1.add(jScrollPane1);
@@ -109,12 +111,10 @@ public class LobAttributePage extends javax.swing.JPanel {
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 433, Short.MAX_VALUE)
             .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 406, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 348, Short.MAX_VALUE)
             .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 159, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
         );
         jPanel2.add(jPanel4, java.awt.BorderLayout.CENTER);

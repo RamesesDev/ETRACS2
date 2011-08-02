@@ -57,7 +57,6 @@ public class InitLguPage extends javax.swing.JPanel {
         xComboBox1.setRequired(true);
         formPanel1.add(xComboBox1);
 
-        xLabel2.setForeground(new java.awt.Color(0, 0, 0));
         xLabel2.setText("Municipality Information");
         xLabel2.setCaption("");
         xLabel2.setFont(new java.awt.Font("Arial", 1, 12));
@@ -78,7 +77,6 @@ public class InitLguPage extends javax.swing.JPanel {
         xTextField2.setRequired(true);
         formPanel1.add(xTextField2);
 
-        xLabel1.setForeground(new java.awt.Color(0, 0, 0));
         xLabel1.setText("Domain Information");
         xLabel1.setCaption("");
         xLabel1.setFont(new java.awt.Font("Arial", 1, 12));
@@ -103,11 +101,15 @@ public class InitLguPage extends javax.swing.JPanel {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE)
+            .add(jPanel1Layout.createSequentialGroup()
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 403, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(225, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 212, Short.MAX_VALUE)
+            .add(jPanel1Layout.createSequentialGroup()
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 260, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(59, Short.MAX_VALUE))
         );
         add(jPanel1, java.awt.BorderLayout.CENTER);
 

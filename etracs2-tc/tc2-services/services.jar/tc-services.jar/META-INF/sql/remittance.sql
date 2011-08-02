@@ -106,7 +106,7 @@ SELECT
 	rl.paidby AS payer, 
 	ri.fundname AS fundname, 
 	ri.accttitle AS particulars, 
-	ri.amount AS amount 
+	CASE WHEN rl.voided = 0 THEN ri.amount ELSE 0.0 END AS amount 
 FROM receiptlist rl, receiptitem ri 
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
@@ -120,7 +120,7 @@ SELECT
 	rl.paidby AS payer, 
 	ri.fundname AS fundname, 
 	ri.accttitle AS particulars, 
-	ri.amount AS amount 
+	CASE WHEN rl.voided = 0 THEN ri.amount ELSE 0.0 END AS amount 
 FROM receiptlist rl, receiptitem ri 
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
@@ -158,7 +158,7 @@ SELECT
 	rl.paidby AS payer, 
 	ri.fundname AS fundname, 
 	ri.accttitle AS particulars, 
-	ri.amount AS amount 
+	CASE WHEN rl.voided = 0 THEN ri.amount ELSE 0.0 END AS amount 
 FROM receiptlist rl, receiptitem ri, af af 
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
@@ -174,7 +174,7 @@ SELECT
 	rl.paidby AS payer, 
 	ri.fundname AS fundname, 
 	ri.accttitle AS particulars, 
-	ri.amount AS amount 
+	CASE WHEN rl.voided = 0 THEN ri.amount ELSE 0.0 END AS amount 
 FROM receiptlist rl, receiptitem ri, af af 
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
