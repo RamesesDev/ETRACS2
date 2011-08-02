@@ -31,7 +31,7 @@ public class ApplicationInitialPageB extends javax.swing.JPanel {
         jPanel2 = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField2 = new com.rameses.rcp.control.XLookupField();
         xLabel1 = new com.rameses.rcp.control.XLabel();
         xLabel2 = new com.rameses.rcp.control.XLabel();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
@@ -53,19 +53,21 @@ public class ApplicationInitialPageB extends javax.swing.JPanel {
         xTitledBorder1.setTitle(" Business Application");
         jPanel1.setBorder(xTitledBorder1);
 
-        xActionTextField1.setActionName("lookupBusiness");
-        xActionTextField1.setCaption("Search");
-        xActionTextField1.setIndex(-1);
-        xActionTextField1.setName("app.appno");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
-        xActionTextField1.setRequired(true);
-        formPanel1.add(xActionTextField1);
+        xLookupField2.setCaption("Application No.");
+        xLookupField2.setCaptionWidth(100);
+        xLookupField2.setExpression("#{txnno}");
+        xLookupField2.setHandler("lookupBusiness");
+        xLookupField2.setName("app");
+        xLookupField2.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField2.setRequired(true);
+        formPanel1.add(xLookupField2);
 
         com.rameses.rcp.control.border.XLineBorder xLineBorder1 = new com.rameses.rcp.control.border.XLineBorder();
         xLineBorder1.setLineColor(new java.awt.Color(204, 204, 204));
         xLabel1.setBorder(xLineBorder1);
         xLabel1.setCaption("Trade Name");
         xLabel1.setCaptionFont(new java.awt.Font("Tahoma", 0, 11));
+        xLabel1.setCaptionWidth(100);
         xLabel1.setDepends(new String[] {"business.appno"});
         xLabel1.setExpression("#{app.tradename}");
         xLabel1.setFont(new java.awt.Font("Tahoma", 0, 11));
@@ -77,6 +79,7 @@ public class ApplicationInitialPageB extends javax.swing.JPanel {
         xLabel2.setBorder(xLineBorder2);
         xLabel2.setCaption("Address");
         xLabel2.setCaptionFont(new java.awt.Font("Tahoma", 0, 11));
+        xLabel2.setCaptionWidth(100);
         xLabel2.setDepends(new String[] {"business.appno"});
         xLabel2.setExpression("#{app.businessaddress}");
         xLabel2.setFont(new java.awt.Font("Tahoma", 0, 11));
@@ -89,6 +92,7 @@ public class ApplicationInitialPageB extends javax.swing.JPanel {
         xComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "application.txntype" }));
         xComboBox1.setCaption("Type");
         xComboBox1.setCaptionFont(new java.awt.Font("Tahoma", 0, 11));
+        xComboBox1.setCaptionWidth(100);
         xComboBox1.setFont(new java.awt.Font("Tahoma", 1, 11));
         xComboBox1.setItems("typeList");
         xComboBox1.setName("application.txntype");
@@ -99,6 +103,7 @@ public class ApplicationInitialPageB extends javax.swing.JPanel {
         xComboBox2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "application.txnmode" }));
         xComboBox2.setCaption("Mode");
         xComboBox2.setCaptionFont(new java.awt.Font("Tahoma", 0, 11));
+        xComboBox2.setCaptionWidth(100);
         xComboBox2.setFont(new java.awt.Font("Tahoma", 1, 11));
         xComboBox2.setItems("modeList");
         xComboBox2.setName("application.txnmode");
@@ -123,11 +128,11 @@ public class ApplicationInitialPageB extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel2;
+    private com.rameses.rcp.control.XLookupField xLookupField2;
     // End of variables declaration//GEN-END:variables
     
 }

@@ -103,27 +103,25 @@ class BusinessApplication
             application.info.taxpayeraddress = entity.entityaddress;
             application.info.taxpayerid = entity.objid;
             application.taxpayerid = entity.objid;
+        }else{
+            application.info.taxpayername = null;
+            application.info.taxpayeraddress = null;
+            application.info.taxpayerid = null;
+            application.taxpayerid = null;
         }
         binding.refresh();
     }
     
-    def onbpselect = { entity ->
-        if( entity ){
-            app.appno = entity.appno;
-            app.businessid = entity.businessid;
-            app.objid = entity.objid;
-            app.tradename = entity.tradename;
-            app.businessaddress = entity.businessaddress;
+    def setApp( def val ){
+        this.app = val;
+        if( val ){
         }
-        binding.refresh();
     }
     
     def next(){
         application.parentid = app.objid;
         application.businessid = app.businessid;
-        
         application.lobs = [];
-        
         application = svc.evaluateTxnType( application );
         return InvokerUtil.lookupOpener('bp.create', [application:application]);
     }

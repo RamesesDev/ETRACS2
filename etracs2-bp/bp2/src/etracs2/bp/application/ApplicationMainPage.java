@@ -58,7 +58,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xTextField9 = new com.rameses.rcp.control.XTextField();
         jPanel4 = new javax.swing.JPanel();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -247,14 +247,11 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         jPanel4.add(xDataTable1);
         xDataTable1.setBounds(5, 50, 580, 110);
 
-        xActionTextField1.setActionName("getLookupLob");
-        xActionTextField1.setCaption("Permittee");
-        xActionTextField1.setHint("NAME");
-        xActionTextField1.setIndex(-1);
-        xActionTextField1.setName("lobSearch");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
-        jPanel4.add(xActionTextField1);
-        xActionTextField1.setBounds(5, 30, 580, 19);
+        xLookupField1.setExpression("lobname");
+        xLookupField1.setHandler("lookupLob");
+        xLookupField1.setName("lobSearch");
+        jPanel4.add(xLookupField1);
+        xLookupField1.setBounds(5, 30, 580, 19);
 
         jPanel1.add(jPanel4);
         jPanel4.setBounds(10, 330, 600, 170);
@@ -276,7 +273,6 @@ public class ApplicationMainPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XComboBox xComboBox3;
@@ -288,6 +284,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel3;
     private com.rameses.rcp.control.XLabel xLabel4;
     private com.rameses.rcp.control.XLabel xLabel5;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;

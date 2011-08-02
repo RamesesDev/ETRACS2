@@ -2,6 +2,9 @@
     <invokers>
         <invoker type="iraf:COLLECTOR" action="init" caption="Add Iraf Item" target="popup"/>
         <invoker type="iraf:BARANGAY" action="init" caption="Add Iraf Item" target="popup"/>
+        
+        <invoker type="formActions" action="addAndNew" caption="Save and New" mnemonic="n" icon="images/doc-save.png"/>
+        <invoker type="formActions" action="addItem" caption="Save" mnemonic="s" icon="images/save.png"/>
     </invokers>
     
     <code>
@@ -28,17 +31,23 @@ class IRAFAddItemCollectorBrgyController
     }
     
     void init(){
-        item = [ qtyreceived: 0 ];
+        item = [ qtyreceived: 0, qtyremaining: 0 ];
     }
     
-    void addItem(){
+    void addAndNew(){
+        addItem();
+        init();
+    }
+    
+    def addItem(){
         def ri = iraf.requesteditems.find{ it.afid == item.afid };
         if( ri.qtyrequested < item.qtyreceived )
             throw new Exception("Qty received exceeds in the quantity requested.");
         
         ri.qtyreceived = item.qtyreceived;
+        ri.remove('qtyremaining');
         refreshHandler();
-        init();
+        return '_close';
     }
 
     void setAfId(def afid){
@@ -46,7 +55,10 @@ class IRAFAddItemCollectorBrgyController
         if( afid ){
             def ri = iraf.requesteditems.find{ it.afid == afid };
             item.qtyreceived = ri.qtyreceived
+            item.qtyremaining = ri.qtyrequested - ri.qtydelivered;
             binding.refresh();
+        }else{
+            init();
         }
     }
     

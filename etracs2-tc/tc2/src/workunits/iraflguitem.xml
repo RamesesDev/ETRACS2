@@ -1,6 +1,9 @@
 <workunit>
     <invokers>
         <invoker type="iraf:LGU" action="init" caption="Add Iraf Item" target="popup"/>
+        
+        <invoker type="formActions" action="addAndNew" caption="Save and New" mnemonic="n" icon="images/doc-save.png"/>
+        <invoker type="formActions" action="addItem" caption="Save" mnemonic="s" icon="images/save.png"/>
     </invokers>
     
     <code>
@@ -23,19 +26,25 @@ class IRAFAddItemController
     def item = [prefix:'', suffix:''];
     
     def getAfList(){
-        return iraf.requesteditems.collect{ it.afid };
+        return iraf.requesteditems.findAll{ it.qtyrequested > it.qtydelivered }.collect{ it.afid };
     }
     
     void init(){
-        item = [ qtyreceived: 0, startseries: 0 ];
+        item = [ qtyreceived: 0, startseries: 0, qtyremaining:0 ];
+    }
+    
+    def addAndNew(){
+        addItem();
+        init();
     }
     
     def addItem(){
+        item.remove('qtyremaining');
         def retVal = svc.addItem( iraf, item );
         iraf.clear();
         iraf.putAll( retVal );
         refreshHandler();
-        init();
+        return '_close';
     }
 
     void setAfId(def afid){
@@ -47,12 +56,15 @@ class IRAFAddItemController
                 item.prefix = '';
                 item.suffix = '';
                 item.startseries = 0;
+                item.qtyremaining = ri.qtyrequested - ri.qtydelivered - ri.qtyreceived;
             }else{
                 item.prefix = 'N/A';
                 item.suffix = 'N/A';
                 item.startseries = 0;
             }
             binding.refresh();
+        }else{
+            init();
         }
     }
     

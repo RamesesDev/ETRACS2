@@ -37,7 +37,7 @@ public class LobPage extends javax.swing.JPanel {
         jPanel4 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
-        xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         jPanel5 = new javax.swing.JPanel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
         jPanel6 = new javax.swing.JPanel();
@@ -87,21 +87,21 @@ public class LobPage extends javax.swing.JPanel {
         formPanel1.setCaptionWidth(85);
         formPanel1.setPadding(new java.awt.Insets(0, 0, 0, 0));
         xTextField1.setCaption("Line of Business");
-        xTextField1.setCaptionWidth(110);
+        xTextField1.setCaptionWidth(100);
         xTextField1.setDepends(new String[] {"selectedItem"});
         xTextField1.setName("entity.name");
         xTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField1.setRequired(true);
         formPanel1.add(xTextField1);
 
-        xActionTextField2.setActionName("lookupClassification");
-        xActionTextField2.setCaption("Classification");
-        xActionTextField2.setCaptionWidth(110);
-        xActionTextField2.setDepends(new String[] {"selectedItem"});
-        xActionTextField2.setName("entity.classification");
-        xActionTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
-        xActionTextField2.setRequired(true);
-        formPanel1.add(xActionTextField2);
+        xLookupField1.setCaption("Classification");
+        xLookupField1.setCaptionWidth(100);
+        xLookupField1.setExpression("#{name}");
+        xLookupField1.setHandler("lookupClassification");
+        xLookupField1.setName("classification");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField1.setRequired(true);
+        formPanel1.add(xLookupField1);
 
         jPanel5.setLayout(new java.awt.BorderLayout());
 
@@ -132,18 +132,18 @@ public class LobPage extends javax.swing.JPanel {
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel4Layout.createSequentialGroup()
                 .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 402, Short.MAX_VALUE)
-                    .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 402, Short.MAX_VALUE))
+                    .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 402, Short.MAX_VALUE)
+                    .add(jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 402, Short.MAX_VALUE))
                 .add(31, 31, 31))
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel4Layout.createSequentialGroup()
-                .addContainerGap()
+                .add(4, 4, 4)
                 .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 177, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(114, Short.MAX_VALUE))
+                .addContainerGap(121, Short.MAX_VALUE))
         );
         jPanel2.add(jPanel4, java.awt.BorderLayout.CENTER);
 
@@ -165,10 +165,10 @@ public class LobPage extends javax.swing.JPanel {
     private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField2;
     private com.rameses.rcp.control.XActionTextField xActionTextField3;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XDataTable xDataTable2;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XTextField xTextField1;
     // End of variables declaration//GEN-END:variables
     

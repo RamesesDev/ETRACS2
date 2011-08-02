@@ -188,8 +188,10 @@ class IRAFController
     void setSelectedItem( item ) {
         selectedItem = item;
         if( mode !=  "create") {
-            this.entity = svc.open( selectedItem?.objid );
-            riv = [txnno:entity.rivno]
+            if( selectedItem?.objid ){
+                this.entity = svc.open( selectedItem?.objid );
+                riv = [txnno:entity.rivno]
+            }
         }
     }
     

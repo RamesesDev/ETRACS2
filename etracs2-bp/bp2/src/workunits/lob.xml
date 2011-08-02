@@ -25,22 +25,37 @@ class LobController extends etracs2.groovy.CRUDController
     @Service("LobService")
     def svc;
     
+    def classification = [:];
     def searchAttribute
     def attribute
     
     void approve() {
         if( MsgBox.confirm('Approve?') ) {
-            entity = svc.approve( entity.objid ) 
+            entity = svc.approve( entity.objid );
         }
     }
-    
-    def onselectClassification = { lobclass ->
-        updateClassificationInfo( lobclass )
-        binding.refresh('entity.classification')
+   
+    def onselectClassification = {
+        if( it ){
+            entity.classificationid = it.objid;
+            entity.classification = it.name;
+        }else{
+            entity.classificationid = null;
+            entity.classification = null;
+        }
+        binding.refresh();
     }
     
-    def lookupClassification() {
-        return InvokerUtil.lookupOpener('lobclassification.lookup', [searchText:entity.classification, onselect:onselectClassification])
+    def getClassification(){
+        if( !this.classification ) this.classification = [:];
+        this.classification.objid = entity.classificationid;
+        this.classification.name = entity.classification;
+        return this.classification;
+    }
+    
+    
+    def getLookupClassification() {
+        return InvokerUtil.lookupOpener('lobclassification.lookup', [searchText:classification?.name, onselect:onselectClassification])
     }
     
     def onselectAttribute = { attr ->
@@ -55,11 +70,6 @@ class LobController extends etracs2.groovy.CRUDController
     
     def lookupAttribute() {
         return InvokerUtil.lookupOpener('lobattribute.lookup', [searchText:searchAttribute, onselect:onselectAttribute])
-    }
-    
-    void updateClassificationInfo( lobclass ) {
-        entity.classificationid = lobclass?.objid
-        entity.classification = lobclass?.name 
     }
     
     def attributeListHandler = [

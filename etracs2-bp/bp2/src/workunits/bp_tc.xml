@@ -44,39 +44,56 @@
         def year = 0;
         def qtr = 4;
         
-        def setBp( def bp ){
-            this.bp = bp;
-            if( !bp ){
+        def onselect = {
+            if( it ){
                 entity.year = 0;
                 entity.qtr = 0;
 
-                entity.applicationid = bp.objid;
+                entity.applicationid = it.objid;
                 entity = bpcolSvc.getBill( entity, 0, 0 );
 
                 entity.items.collect{ it.iyear }.each{ y ->
                     if( !years?.find{ it == y } ) years << y;
                 }
-
                 year = years[0];
+                listHandler.load();
             }else{
                 entity.year = 0;
                 entity.qtr = 0;
-                entity.applicationid = bp.objid;
+                entity.applicationid = it.objid;
                 entity.businessid = null;
-		entity.tradename = null;
-		entity.businessaddress = null;
-		entity.info.payorname = null;
-		entity.info.payoraddress = null;
+                entity.tradename = null;
+                entity.businessaddress = null;
+                entity.info.payorname = null;
+                entity.info.payoraddress = null;
                 years = [];
                 entity.items = [];
+                listHandler.load();
             }
             binding.refresh();
+        }
+        
+        public void setBp( def val ){
+            this.bp = val;
+            if( !val ){
+                 entity.year = 0;
+                entity.qtr = 0;
+                entity.applicationid = null;
+                entity.businessid = null;
+                entity.tradename = null;
+                entity.businessaddress = null;
+                entity.info.payorname = null;
+                entity.info.payoraddress = null;
+                years = [];
+                entity.items = [];
+                listHandler.load();
+            }
         }
         
         def getService() { return svc; }
         def getHtmlService() { return htmlSvc; }
         def getCollectionTitle() { return 'Business Liscence Fee'; }
-        def getLookupBusiness(){ return InvokerUtil.lookupOpener( 'bp.lookupbusiness',[:] ); }
+        def getLookupBusiness(){ return InvokerUtil.lookupOpener( 'bp.lookupbusiness',[onselect:onselect] ); }
         def getReportName() { return 'receipt/af51'; }
         
         def listHandler = [
@@ -124,7 +141,7 @@
         
         def getQtrs(){
             def list = [];
-            if( items ){
+            if( entity.items ){
                 entity.items.findAll{ it.iyear == year }.each{ i ->
                     if( !list.find{ it == i.iqtr } ) list << i.iqtr;
                 }

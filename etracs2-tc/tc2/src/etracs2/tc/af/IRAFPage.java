@@ -49,13 +49,13 @@ public class IRAFPage extends javax.swing.JPanel {
         xLabel1 = new com.rameses.rcp.control.XLabel();
         jPanel6 = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
-        jPanel11 = new javax.swing.JPanel();
-        xButton2 = new com.rameses.rcp.control.XButton();
-        xButton1 = new com.rameses.rcp.control.XButton();
         jPanel8 = new javax.swing.JPanel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
         xDataTable3 = new com.rameses.rcp.control.XDataTable();
         jLabel1 = new javax.swing.JLabel();
+        jPanel11 = new javax.swing.JPanel();
+        xButton2 = new com.rameses.rcp.control.XButton();
+        xButton1 = new com.rameses.rcp.control.XButton();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -180,43 +180,61 @@ public class IRAFPage extends javax.swing.JPanel {
 
         jPanel7.setBorder(javax.swing.BorderFactory.createEmptyBorder(2, 4, 2, 4));
         jPanel7.setOpaque(false);
-        jPanel11.setPreferredSize(new java.awt.Dimension(100, 34));
-        xButton2.setText("Cancelled Series");
-        xButton2.setDepends(new String[] {"receivedItem"});
-        xButton2.setName("viewCancelledSeries");
-        xButton2.setVisibleWhen("#{entity.docstate == 'APPROVED' && entity.info.rivtype == 'LGU' && receivedItem != null && receivedItem.aftype == 'serial'}");
-        jPanel11.add(xButton2);
-
-        xButton1.setText("Add");
-        xButton1.setName("add");
-        jPanel11.add(xButton1);
-
-        jPanel7.add(jPanel11, java.awt.BorderLayout.SOUTH);
-
-        jPanel8.setLayout(null);
-
         jPanel8.setOpaque(false);
         xDataTable2.setDepends(new String[] {"selectedItem"});
         xDataTable2.setDynamic(true);
         xDataTable2.setHandler("receivedHandler");
         xDataTable2.setImmediate(true);
         xDataTable2.setName("receivedItem");
-        jPanel8.add(xDataTable2);
-        xDataTable2.setBounds(0, 130, 550, 110);
+        xDataTable2.setShowRowHeader(true);
 
         xDataTable3.setDepends(new String[] {"selectedItem"});
         xDataTable3.setDynamic(true);
         xDataTable3.setHandler("requestedHandler");
         xDataTable3.setImmediate(true);
-        jPanel8.add(xDataTable3);
-        xDataTable3.setBounds(0, 0, 550, 110);
+        xDataTable3.setShowRowHeader(true);
 
         jLabel1.setFont(new java.awt.Font("Tahoma", 1, 10));
         jLabel1.setForeground(new java.awt.Color(51, 51, 51));
         jLabel1.setText("Delivered Item(s)");
-        jPanel8.add(jLabel1);
-        jLabel1.setBounds(0, 110, 550, 20);
 
+        jPanel11.setOpaque(false);
+        jPanel11.setPreferredSize(new java.awt.Dimension(100, 34));
+        xButton2.setText("Cancelled Series");
+        xButton2.setDepends(new String[] {"receivedItem"});
+        xButton2.setName("viewCancelledSeries");
+        xButton2.setPreferredSize(new java.awt.Dimension(130, 30));
+        xButton2.setVisibleWhen("#{entity.docstate == 'APPROVED' && entity.info.rivtype == 'LGU' && receivedItem != null && receivedItem.aftype == 'serial'}");
+        jPanel11.add(xButton2);
+
+        xButton1.setText("Add");
+        xButton1.setName("add");
+        xButton1.setPreferredSize(new java.awt.Dimension(70, 30));
+        jPanel11.add(xButton1);
+
+        org.jdesktop.layout.GroupLayout jPanel8Layout = new org.jdesktop.layout.GroupLayout(jPanel8);
+        jPanel8.setLayout(jPanel8Layout);
+        jPanel8Layout.setHorizontalGroup(
+            jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel8Layout.createSequentialGroup()
+                .add(jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 287, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 698, Short.MAX_VALUE)
+                    .add(xDataTable3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 698, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel11, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 698, Short.MAX_VALUE))
+                .add(0, 0, 0))
+        );
+        jPanel8Layout.setVerticalGroup(
+            jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel8Layout.createSequentialGroup()
+                .add(xDataTable3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 136, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 20, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 136, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jPanel11, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 42, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+        );
         jPanel7.add(jPanel8, java.awt.BorderLayout.CENTER);
 
         jPanel6.add(jPanel7, java.awt.BorderLayout.CENTER);
@@ -233,8 +251,8 @@ public class IRAFPage extends javax.swing.JPanel {
             .add(jPanel4Layout.createSequentialGroup()
                 .add(jPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 109, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 311, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(68, Short.MAX_VALUE))
+                .add(jPanel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 380, Short.MAX_VALUE)
+                .addContainerGap())
         );
         jPanel2.add(jPanel4, java.awt.BorderLayout.CENTER);
 
