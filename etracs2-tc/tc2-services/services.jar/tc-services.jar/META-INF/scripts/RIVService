@@ -62,7 +62,7 @@ class RIVService
 	@ProxyMethod
 	public def approve( riv ) {
 		def oldriv = em.read( riv.schemaname, riv);
-		if( oldriv.docstate != DRAFT_STATE ) throw new Exception("RIV is already $oldriv.docstate");
+		if( oldriv.docstate != DRAFT_STATE ) throw new Exception("RIV is already $oldriv.docstate.");
 		
 		def currDate = dateService.serverDate;
 		riv.txnno = getNextSeries( riv, currDate );
@@ -81,7 +81,7 @@ class RIVService
 	private void validate( riv ) {
 		def oldriv = em.read( riv.schemaname, riv);
 		util.validateLastUpdate( riv, oldriv );
-		if( oldriv && oldriv.docstate != DRAFT_STATE ) throw new Exception("RIV is already $oldriv.docstate");
+		if( oldriv && oldriv.docstate != DRAFT_STATE ) throw new Exception("RIV is already $oldriv.docstate.");
 		em.validate( riv.schemaname, riv );
 	}
 	

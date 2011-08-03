@@ -38,7 +38,6 @@ class AFInventoryController
     
     
     void init() {
-       println "init";
        list = svc.getList( searchText, docstate );
        formActions = InvokerUtil.lookupActions('afinventory.reports', [:])
     }
@@ -96,11 +95,12 @@ class AFInventoryController
                 new Column( name:"iraftype", caption:"Type" ),
                 new Column( name:"afid", caption:"AF No.", minWidth:60 ),
                 new Column( name:"aftype", caption:"AF Type", minWidth:60 ),
-                new Column( name:"qtyissued", caption:"QtyIssued", minWidth:30 ),
                 new Column( name:"prefix", caption:"Prefix", minWidth:20 ),
                 new Column( name:"startseries", caption:"Start", minWidth:30, format:'#0' ),
                 new Column( name:"endseries", caption:"End", minWidth:30,format:'#0' ),
                 new Column( name:"suffix", caption:"Suffix", minWidth:30 ),
+                new Column( name:"qtyissued", caption:"Qty. Issued", minWidth:30 ),
+                new Column( name:"balance", caption:"Balance", minWidth:30 ),
             ];
         },
         fetchList : { 
@@ -114,7 +114,7 @@ class AFInventoryController
             return [
                 new Column( name:"afid", caption:"AF No." ),
                 new Column( name:"aftype", caption:"Type" ),
-                new Column( name:"totalqty", caption:"Qty On Hand", type:"integer" )
+                new Column( name:"totalqty", caption:"Qty On Hand", type:"integer", format:'#,##0' )
             ];
         },
         fetchList   : {

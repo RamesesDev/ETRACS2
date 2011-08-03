@@ -148,7 +148,7 @@ class RemittanceService {
 	private void updateAfControls( rem ) {
 		em.sqlContext.createNamedExecutor( "remittance:updateAfControlForRemittance" ).setParameter( "collectorid",  rem.collectorid ).execute();
 		em.sqlContext.createNamedExecutor( "remittance:closeAfControl" ).setParameter( "collectorid",  rem.collectorid ).execute();
-	}
+	} 
 	
 	private def generateRemNo() {
 		def dt = dtsvc.getServerDate();
@@ -159,12 +159,17 @@ class RemittanceService {
 		
 		return 'REM-' + yr + '-' + series;
 	}
-	
+	 
 	private void postRemittedForms( rem ) {
 		for (form in rem.remittedforms) {
 			form.remittanceid = rem.objid;
 			em.validate( REMITTEDFORMSCHEMANAME, form );
 			em.create( REMITTEDFORMSCHEMANAME, form );
+            //
+            //post to afinventorycredit 
+            def creditinfo = [afcontrolid:form.afcontrolid, qtyissued:form.issuedqty ]
+            println 'creditinfo -> ' + creditinfo
+            em.sqlContext.createNamedExecutor('remittance:updateAFInventoryCreditInfo').setParameters( creditinfo ).execute()
 		}
 	}
 	
