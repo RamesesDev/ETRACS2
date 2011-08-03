@@ -24,16 +24,12 @@ public class FAASAttachmentPage extends javax.swing.JPanel {
      */
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
-        xImagePanel1 = new com.rameses.rcp.control.XImagePanel();
+        jSplitPane1 = new javax.swing.JSplitPane();
         jPanel1 = new javax.swing.JPanel();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        xEditorPane1 = new com.rameses.rcp.control.XEditorPane();
-
-        xImagePanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 3, 3, 3));
-        xImagePanel1.setAutoscrolls(true);
-        xImagePanel1.setName("imageUrl");
+        jScrollPane2 = new javax.swing.JScrollPane();
+        xEditorPane2 = new com.rameses.rcp.control.XEditorPane();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -53,25 +49,27 @@ public class FAASAttachmentPage extends javax.swing.JPanel {
         xActionBar1.setUseToolBar(false);
         jPanel1.add(xActionBar1, java.awt.BorderLayout.NORTH);
 
-        add(jPanel1, java.awt.BorderLayout.WEST);
+        jSplitPane1.setLeftComponent(jPanel1);
 
-        jScrollPane1.setName("imageUrl");
-        xEditorPane1.setDepends(new String[] {"selectedItem"});
-        xEditorPane1.setName("imageUrl");
-        jScrollPane1.setViewportView(xEditorPane1);
+        jScrollPane2.setName("imageUrl");
+        xEditorPane2.setDepends(new String[] {"selectedItem"});
+        xEditorPane2.setName("imageUrl");
+        jScrollPane2.setViewportView(xEditorPane2);
 
-        add(jScrollPane1, java.awt.BorderLayout.CENTER);
+        jSplitPane1.setRightComponent(jScrollPane2);
+
+        add(jSplitPane1, java.awt.BorderLayout.CENTER);
 
     }// </editor-fold>//GEN-END:initComponents
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
-    private com.rameses.rcp.control.XEditorPane xEditorPane1;
-    private com.rameses.rcp.control.XImagePanel xImagePanel1;
+    private com.rameses.rcp.control.XEditorPane xEditorPane2;
     // End of variables declaration//GEN-END:variables
     
 }
