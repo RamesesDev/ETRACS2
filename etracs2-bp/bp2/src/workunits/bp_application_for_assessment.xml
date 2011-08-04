@@ -157,12 +157,13 @@ class BusinessApplicationForAssessment
     def additionalInfos = []
     def inputtedValues = [];
     
-    def inputHandler = { app ->
+    def inputHandler = { app, entitySetter ->
         additionalInfos.clear()
         additionalInfos = determineAdditionalInfos(app)
         if( additionalInfos ) {
             //preserve currently inputted values
             inputtedValues.addAll( app.infos )
+            
             //remove additional infos to avoid infinite loop
             app.infos.clear()
             app.infos.addAll( additionalInfos )
@@ -171,8 +172,10 @@ class BusinessApplicationForAssessment
             //exclude previous infos from result 
             removeAllInfos( app, additionalInfos )
             removeAllInfos( app, inputtedValues ) 
-            return app 
+            entitySetter( app )
+            return false;
         }
+        return true;
     }
     
     def removeAllInfos( app, list ) {
@@ -185,18 +188,17 @@ class BusinessApplicationForAssessment
         return app.infos.findAll { it.requiredbeforeprint == true }
     }
     
-    def acceptHandler = { app ->
-        app.infos.addAll( inputtedValues );
+    def acceptInputHandler = { app ->
+        app.infos.addAll( inputtedValues )
         inputtedValues.clear();
     }
-
     def assess() { 
-        return InvokerUtil.lookupOpener('bp.assessmentinfo', [entitylist:applist, inputHandler:inputHandler, acceptHandler:acceptHandler, application:application, svc:svc] );
+        return InvokerUtil.lookupOpener('bp.assessmentinfo', [entitylist:applist, inputHandler:inputHandler, acceptInputHandler:acceptInputHandler, application:application, svc:svc] );
     }
     
     def reassess(){
         def list = (appdata) ? [appdata] : applist;
-        return InvokerUtil.lookupOpener('bp.assessmentinfo', [entitylist:list, inputHandler:inputHandler, acceptHandler:acceptHandler, application:application, svc:svc] );
+        return InvokerUtil.lookupOpener('bp.assessmentinfo', [entitylist:list, inputHandler:inputHandler, acceptInputHandler:acceptInputHandler, application:application, svc:svc] );
     }
 }
 

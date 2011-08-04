@@ -55,7 +55,7 @@ public class ApplicationInitialPageB extends javax.swing.JPanel {
 
         xLookupField2.setCaption("Application No.");
         xLookupField2.setCaptionWidth(100);
-        xLookupField2.setExpression("#{txnno}");
+        xLookupField2.setExpression("#{appno}");
         xLookupField2.setHandler("lookupBusiness");
         xLookupField2.setName("app");
         xLookupField2.setPreferredSize(new java.awt.Dimension(0, 19));
@@ -68,7 +68,7 @@ public class ApplicationInitialPageB extends javax.swing.JPanel {
         xLabel1.setCaption("Trade Name");
         xLabel1.setCaptionFont(new java.awt.Font("Tahoma", 0, 11));
         xLabel1.setCaptionWidth(100);
-        xLabel1.setDepends(new String[] {"business.appno"});
+        xLabel1.setDepends(new String[] {"app"});
         xLabel1.setExpression("#{app.tradename}");
         xLabel1.setFont(new java.awt.Font("Tahoma", 0, 11));
         xLabel1.setPreferredSize(new java.awt.Dimension(0, 19));
@@ -80,7 +80,7 @@ public class ApplicationInitialPageB extends javax.swing.JPanel {
         xLabel2.setCaption("Address");
         xLabel2.setCaptionFont(new java.awt.Font("Tahoma", 0, 11));
         xLabel2.setCaptionWidth(100);
-        xLabel2.setDepends(new String[] {"business.appno"});
+        xLabel2.setDepends(new String[] {"app"});
         xLabel2.setExpression("#{app.businessaddress}");
         xLabel2.setFont(new java.awt.Font("Tahoma", 0, 11));
         xLabel2.setPreferredSize(new java.awt.Dimension(0, 19));

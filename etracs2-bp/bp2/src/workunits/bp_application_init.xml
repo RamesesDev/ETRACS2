@@ -112,12 +112,6 @@ class BusinessApplication
         binding.refresh();
     }
     
-    def setApp( def val ){
-        this.app = val;
-        if( val ){
-        }
-    }
-    
     def next(){
         application.parentid = app.objid;
         application.businessid = app.businessid;
@@ -126,8 +120,8 @@ class BusinessApplication
         return InvokerUtil.lookupOpener('bp.create', [application:application]);
     }
     
-    public def lookupBusiness(){
-        return InvokerUtil.lookupOpener( 'bp.lookupbusiness', [onselect: onbpselect, searchText:app.appno, txntype:application.txntype] );
+    public def getLookupBusiness(){
+        return InvokerUtil.lookupOpener( 'bp.lookupbusiness', [searchText:app.appno, txntype:application.txntype] );
     }
     
     public def lookupPayer(){

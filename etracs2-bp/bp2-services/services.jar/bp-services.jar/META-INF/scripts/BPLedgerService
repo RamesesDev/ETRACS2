@@ -7,7 +7,7 @@ class BPLedgerService {
 
 	@Service("DateService")
 	def dateService;
-
+	
 	@PersistenceContext('main')
 	def em;
 	
@@ -39,12 +39,6 @@ class BPLedgerService {
 		return currQtr - 1;
 	}
 	
-	@ProxyMethod
-	public def openLedgerItem( ledgeritem ) {
-		ledgeritem.receivables = populateReceivables( getBPReceivablesByAppId( ledgeritem.applicationid ) )
-		return ledgeritem;
-	}
-	
 	private def getBusinessLedgers( businessid ) {
 		return em.sqlContext.createNamedQuery( "bpledger:getBusinessLedgers" ).setParameters( [businessid:businessid] ).resultList;
 	}
@@ -53,27 +47,45 @@ class BPLedgerService {
 		return em.sqlContext.createNamedQuery( "bpledger:getBPReceivablesByAppId" ).setParameters( [appid:appid] ).resultList;
 	}
 	
-	private def populateReceivables( receivables ) {
-		for (receivable in receivables) {
-			def params = [
-				appid			: receivable.applicationid,
-				lobid			: receivable.lobid,
-				acctid			: receivable.acctid
-			];
-			receivable.credits = em.sqlContext.createNamedQuery( "bpledger:getBPReceivableCredits" + ((receivable.lobid) ? '' : 'ForNullLOB') ).setParameters( params ).resultList;
-			println "CREDITS > " + receivable.credits;
-		}
-		
-		return receivables;
-	}
-	
-	
 	@ProxyMethod
 	public def buildCapturePayment( payment ) {
 		payment.formattedamtpaid = dcf.format( payment.amtpaid );
 		payment.total = 0.0;
+		payment.reftype = 'OFFLINE';
 		payment.formattedtotal = dcf.format( payment.total );
-		def business = em.read('bpapplication:bpapplication', [objid:payment.applicationid]);
+		payment.items = [];
+		def app = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
+		
+		if( !app.payments ) app.payments = [];
+		if( app.payments.find{ it.refno == payment.refno } )
+			throw new Exception("Payment reference number already exist.");
+			
+		def getUnpaidReceivables = { 
+			def list = app.receivables.findAll{ it.amount > it.amtpaid };
+			if( app.txntype.matches('NEW|ADDLOB') ) return list;
+			return list.findAll{ it.qtr <= payment.qtr || ( it.assessmentype.matches('NEW|ADDLOB')) }
+		}
+		
+		def receivables = getUnpaidReceivables();
+		receivables.each{
+			def acct = em.read("incomeacct:incomeacct", [objid: it.acctid]);
+			payment.items << [
+				bpreceivableid: it.objid,
+				amount: it.amount,
+				amtpaid: new BigDecimal('0.0'),
+				surcharge: new BigDecimal('0.0'),
+				interest: new BigDecimal('0.0'),
+				discount: new BigDecimal('0.0'),
+				iyear: it.iyear, 
+				iqtr: it.iqtr, 
+				lobname: it.lobname,
+				acctid: acct.objid, 
+				acctno: acct.acctno,
+				accttitle: acct.accttitle,
+				fundid: acct.fundid,
+				fundname: acct.fundname,
+			];
+		}
 		
 		return payment;
 	}
@@ -83,9 +95,9 @@ class BPLedgerService {
 		validateCapturePayment( payment );
 		def items = [];
 		for ( item in payment.items ) {
-			if (item.paymentAmt > 0) {
-					items << [  bpreceivableid	: item.objid, 
-								amount			: item.paymentAmt,
+			if (item.amtpaid > 0) {
+					items << [  bpreceivableid	: item.bpreceivableid, 
+								amount			: item.amtpaid,
 								surcharge		: item.surcharge,
 								interest		: item.interest,
 								discount		: item.discount];
@@ -93,9 +105,11 @@ class BPLedgerService {
 		}
 		
 		def p = [:];
+		p.reftype = 'CAPTURE';
 		p.putAll( payment );
+		p.qtr = p.iqtr;
+		p.year = p.iyear;
 		p.items = items;
-		
 		postPayment( p );
 		return payment;
 	}
@@ -176,9 +190,17 @@ class BPLedgerService {
 	}
 	
 	@ProxyMethod
+	public void deleteCapturePayment( def payment ){
+		/*if( payment.reftype != 'CAPTURE' ){
+			throw new Exception('Only CAPTURE type payment can be remove.');
+		*/
+		deletePayment( payment );
+	}
+	
+	@ProxyMethod
 	public void deletePayment( def payment ){
 		def application = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
-		def bplisting = em.read('bplisting:bpapplicationlisting', [objid: app.objid]);
+		def bplisting = em.read('bplisting:bpapplicationlisting', [objid: application.objid]);
 		
 		if( !application.payments ) application.payments = [];
 		def p = application.payments.find{ it.refno == payment.refno };
@@ -196,6 +218,9 @@ class BPLedgerService {
 			if( !brc ) throw new Exception("Missing receivable in credit $c.objid of this payment.");
 			brc.amtpaid -= c.amount;
 		}
+		application.payments.remove( p );
+		em.update( 'bpapplication:bpapplication', application );
+		em.update( 'bplisting:bplisting', bplisting );
 	}
 	
 	def isApplicationStatusForPermit( application ){
@@ -224,7 +249,6 @@ class BPLedgerService {
 					app.receivables = em.serializer.read( app.receivables ).each{ app.amount += it.amount; app.amtpaid += it.amtpaid; };
 					app.credits = em.serializer.read( app.credits );
 					app.putAll( em.serializer.read( app.extended ) );
-					println app.payments;
 				 };
 	}
 	

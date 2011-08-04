@@ -30,10 +30,11 @@ public class CaptureBPPaymentInitPage extends javax.swing.JPanel {
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xDateField1 = new com.rameses.rcp.control.XDateField();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
+        xComboBox1 = new com.rameses.rcp.control.XComboBox();
 
         setLayout(new java.awt.BorderLayout());
 
-        setPreferredSize(new java.awt.Dimension(452, 187));
+        setPreferredSize(new java.awt.Dimension(698, 426));
         xActionBar1.setName("formActions");
         add(xActionBar1, java.awt.BorderLayout.NORTH);
 
@@ -63,6 +64,14 @@ public class CaptureBPPaymentInitPage extends javax.swing.JPanel {
         xNumberField1.setRequired(true);
         formPanel1.add(xNumberField1);
 
+        xComboBox1.setCaption("Qtr");
+        xComboBox1.setCaptionWidth(100);
+        xComboBox1.setItems("qtrList");
+        xComboBox1.setName("entity.qtr");
+        xComboBox1.setPreferredSize(new java.awt.Dimension(50, 22));
+        xComboBox1.setRequired(true);
+        formPanel1.add(xComboBox1);
+
         jPanel1.add(formPanel1);
         formPanel1.setBounds(10, 10, 430, 140);
 
@@ -75,6 +84,7 @@ public class CaptureBPPaymentInitPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel1;
     private javax.swing.JPanel jPanel1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
+    private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XDateField xDateField1;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XTextField xTextField1;
