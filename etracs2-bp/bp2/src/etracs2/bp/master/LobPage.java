@@ -96,6 +96,7 @@ public class LobPage extends javax.swing.JPanel {
 
         xLookupField1.setCaption("Classification");
         xLookupField1.setCaptionWidth(100);
+        xLookupField1.setDepends(new String[] {"selectedItem"});
         xLookupField1.setExpression("#{name}");
         xLookupField1.setHandler("lookupClassification");
         xLookupField1.setName("classification");

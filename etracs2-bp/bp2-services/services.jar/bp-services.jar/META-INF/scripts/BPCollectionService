@@ -22,10 +22,10 @@ class BPCollectionService{
 		entity.qtr = (qtr == 0) ? 4 : qtr;
 		
 		def app = em.read('bpapplication:bpapplication', [objid: entity.applicationid]);
-		if( !app ) throw new Exception("Application with objid $entity.applicationid is no longer exist.");
+		if( !app ) throw new Exception("Application with objid $entity.applicationid no longer exists.");
 		
 		def bp = em.read('business:business', [objid: app.businessid]);
-		if( !bp ) throw new Exception("Business with objid $app.businessid is no longer exist.");
+		if( !bp ) throw new Exception("Business with objid $app.businessid no longer exists.");
 
 		def bill = [
 			ledgerid      : bp.objid,
@@ -51,7 +51,7 @@ class BPCollectionService{
 		
 		bill = billingSvc.buildBill( bill ); 
 		
-		if( !bill.taxfees ) throw new Exception("Business is fully paid for the QTR " + entity.qtr);
+		if( !bill.taxfees ) throw new Exception("Business is already paid for quarter " + entity.qtr + '.');
 		
 		entity.businessid = bp.objid;
 		entity.tradename = bp.tradename;

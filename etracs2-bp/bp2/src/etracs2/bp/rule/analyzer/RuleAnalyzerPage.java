@@ -33,7 +33,9 @@ public class RuleAnalyzerPage extends javax.swing.JPanel {
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
         xComboBox3 = new com.rameses.rcp.control.XComboBox();
         xComboBox4 = new com.rameses.rcp.control.XComboBox();
+        jPanel6 = new javax.swing.JPanel();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
+        xLabel1 = new com.rameses.rcp.control.XLabel();
         jPanel2 = new javax.swing.JPanel();
         jPanel3 = new javax.swing.JPanel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
@@ -47,7 +49,7 @@ public class RuleAnalyzerPage extends javax.swing.JPanel {
 
         setLayout(new java.awt.BorderLayout());
 
-        jPanel1.setPreferredSize(new java.awt.Dimension(160, 160));
+        jPanel1.setPreferredSize(new java.awt.Dimension(160, 180));
         jPanel5.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -91,15 +93,25 @@ public class RuleAnalyzerPage extends javax.swing.JPanel {
 
         jPanel5.add(formPanel1, java.awt.BorderLayout.CENTER);
 
+        jPanel6.setLayout(new java.awt.BorderLayout());
+
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Line of Business ");
         xDataTable1.setBorder(xTitledBorder2);
-        xDataTable1.setDynamic(true);
         xDataTable1.setHandler("lobListHandler");
         xDataTable1.setIndex(-100);
         xDataTable1.setName("selectedLob");
         xDataTable1.setPreferredSize(new java.awt.Dimension(450, 80));
-        jPanel5.add(xDataTable1, java.awt.BorderLayout.WEST);
+        xDataTable1.setShowRowHeader(true);
+        jPanel6.add(xDataTable1, java.awt.BorderLayout.WEST);
+
+        xLabel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        xLabel1.setForeground(new java.awt.Color(102, 0, 0));
+        xLabel1.setFont(new java.awt.Font("Arial", 1, 11));
+        xLabel1.setName("errorMsg");
+        jPanel6.add(xLabel1, java.awt.BorderLayout.SOUTH);
+
+        jPanel5.add(jPanel6, java.awt.BorderLayout.WEST);
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -114,7 +126,7 @@ public class RuleAnalyzerPage extends javax.swing.JPanel {
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 138, Short.MAX_VALUE)
+                .add(jPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 158, Short.MAX_VALUE)
                 .addContainerGap())
         );
         add(jPanel1, java.awt.BorderLayout.NORTH);
@@ -205,7 +217,7 @@ public class RuleAnalyzerPage extends javax.swing.JPanel {
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel4Layout.createSequentialGroup()
-                .add(xDataTable3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 151, Short.MAX_VALUE)
+                .add(xDataTable3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 131, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 17, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
@@ -227,6 +239,7 @@ public class RuleAnalyzerPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
+    private javax.swing.JPanel jPanel6;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
     private com.rameses.rcp.control.XButton xButton3;
@@ -237,6 +250,7 @@ public class RuleAnalyzerPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XDataTable xDataTable2;
     private com.rameses.rcp.control.XDataTable xDataTable3;
+    private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     // End of variables declaration//GEN-END:variables
     

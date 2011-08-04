@@ -9,6 +9,7 @@
 import com.rameses.rcp.annotations.*
 import com.rameses.rcp.common.*
 import com.rameses.osiris2.client.*
+import java.rmi.server.UID
 
 class RuleAnalyzerController
 {
@@ -33,6 +34,7 @@ class RuleAnalyzerController
     def barangay
     def totalAssessment = 0.0
     def inputtedValues = []
+    def errorMsg
     
     def entity
     
@@ -135,7 +137,7 @@ class RuleAnalyzerController
             throw new Exception("Line of business $lob.name already exist.");
     }
     
-    def lobLookup = InvokerUtil.lookupOpener( 'lob.lookup', [onselect:onselect] );
+    def lobLookup = InvokerUtil.lookupOpener( 'lob.lookup', [:] );
     def assessmenttypes = ['NEW', 'RENEW', 'RETIRE']
     
     def lobListHandler = [
@@ -143,23 +145,47 @@ class RuleAnalyzerController
             new Column(name:'lob', caption:'Name', editable:true, type:'lookup', handler:lobLookup, expression:'#{name}' ),
             new Column(name:'assessmenttype', caption:'Type', editable:true, maxWidth:150, type:'combo', items:assessmenttypes ),
         ]},
-        createItem : { return [:] },
-        fetchList  : { return entity.lobs },
+        createItem : { return [objid:'I' + new UID()] },
+        validate   : { li -> validateLobItem( li.item ) },
         onAddItem  : { item -> doAddItem( item ) },
         onRemoveItem : { item -> 
             if( MsgBox.confirm('Delete selected line of business?') ) {
                 entity.lobs.remove( item )
                 resetComputation()
             }
-        }
+        },
+        fetchList  : { return entity.lobs },
     ] as SubListModel
+    
+    void validateLobItem(item ) {
+        try {
+            required('Name', item.lob )
+            required('Type', item.assessmenttype )
+            
+            //check duplicate
+            def dup = entity.lobs.find{ it.objid != item.objid && it.lob.name == item.lob?.name }
+            if( dup ) throw new Exception('Duplicate line of business is not allowed.')
+            
+            errorMsg = null
+            binding.refresh( 'errorMsg' ) 
+        }
+        catch( e ) {
+            errorMsg = e.message
+            binding.refresh('errorMsg')
+            throw e 
+        }
+    }
+    
+    void required( caption, value ) {
+        if( !value ) throw new Exception( caption + ' is required.' )
+    }
     
     def appinfoListHandler = [
         getRows    : { return 50 },
         getColumns : { return [
             new Column(name:'lobname', caption:'Line of Business'),
             new Column(name:'varcaption', caption:'Variable'),
-            new Column(name:'value', caption:'Value', editable:true ),
+            new Column(name:'value', caption:'Value' ),
         ]},
         fetchList : { return entity.infos },
         onOpenItem :{ item, colName-> displayRuleInfo( item ) },

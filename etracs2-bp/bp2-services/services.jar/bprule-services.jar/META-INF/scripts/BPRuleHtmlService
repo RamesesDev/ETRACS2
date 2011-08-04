@@ -11,6 +11,13 @@ public class BPRuleHtmlService
 {
 	@PersistenceContext('main')
 	def em 
+    
+    @ProxyMethod
+    public String getHtmlByRuleName( rulename ) {
+        def rule = em.sqlContext.createNamedQuery('rule:getListByName').setParameters([ruleset:'bpassessment', name:rulename]).singleResult
+        if( !rule ) return '<html>Rule ' + rulename + ' cannot be loaded.</html>'
+        return getHtml( rule.objid )
+    }
 	
 	@ProxyMethod
     public String getHtml( ruleid ) {
