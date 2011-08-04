@@ -227,9 +227,7 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         xDateField1.setCaptionWidth(100);
         xDateField1.setDepends(new String[] {"af"});
         xDateField1.setFont(new java.awt.Font("Arial", 0, 12));
-        xDateField1.setInputFormat("MM-dd-yyyy");
         xDateField1.setName("entity.info.txndate");
-        xDateField1.setOutputFormat("MM-dd-yyyy");
         xDateField1.setPreferredSize(new java.awt.Dimension(0, 19));
         xDateField1.setReadonly(true);
         formPanel1.add(xDateField1);

@@ -77,20 +77,24 @@ class BPCollectionService{
 					    accttitle: acct.accttitle,
 					    fundid: acct.fundid,
 					    fundname: acct.fundname,
-					    surcharge: (it.surcharge) ? it.surcharge : 0.0,
-					    discount: (it.discount) ? it.discount : 0.0,
-					    interest: (it.iterest)  ? it.iterest : 0.0,
-					    taxamount: it.amount];
+					    surcharge: new BigDecimal( (it.surcharge) ? it.surcharge : 0.0 ),
+					    discount: new BigDecimal( (it.discount) ? new BigDecimal( it.discount ) : 0.0 ),
+					    interest: new BigDecimal( (it.interest)  ? new BigDecimal( it.interest ) : 0.0 ),
+					    taxamount: new BigDecimal( it.amount )];
 			item.amount = item.taxamount + item.surcharge + item.interest - item.discount;
 			entity.items << item;
-			entity.info.amount += item.amount;
+			entity.info.amount += new BigDecimal( item.amount );
 			
 		}
-		
+
 		entity.items.sort { a, b ->
 			def sA = a.iyear+''+a.iqtr;
 			def sB = b.iyear+''+b.iqtr;
 			return sA<=>sB;
+		}
+		
+		entity.items.each{
+			println it;
 		}
 		
 		entity.applicationlastmodified = app.lastmodified;

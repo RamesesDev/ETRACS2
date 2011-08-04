@@ -19,6 +19,11 @@ class BPCollectionInterceptor {
 	@PersistenceContext('main')
 	def em;
 	
+	@Before(pattern="ReceiptService.create")
+	public void beforeCreate( evt ){
+		//println evt.args[0];
+	}
+	
 	@After(pattern="ReceiptService.create") 
 	public void afterCreate( evt ) {
 		def receipt = evt.result;
@@ -34,7 +39,6 @@ class BPCollectionInterceptor {
 			 refid: receipt.objid,
 			 reftype: 'ONLINE',
 			 refno: receipt.info.serialno,
-			 refid: receipt.objid,
 			 refdate: receipt.info.txndate,
 			 year: receipt.year,
 			 qtr: receipt.qtr,

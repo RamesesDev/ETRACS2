@@ -35,6 +35,9 @@ class BPApplicationService{
 	
 	@PersistenceContext('main')
 	def em;
+	
+	@Service('Var')
+	def var;
 
 	private def format( def date, def format ){
 		def sdf = new java.text.SimpleDateFormat( format );
@@ -117,7 +120,7 @@ class BPApplicationService{
 		application.objid = 'BP'+new UID();
 		application.txnno = getNextSeries();
 		application.schemaname = SCHEMANAME;
-		application.barcode = 'BP_51_'+application.txnno;
+		application.barcode = var.bp_barcode_key+application.txnno;
 		application.schemaversion = SCHEMAVERSION;
 		application.tradename = application.info.tradename;
 		application.businessaddress = application.info.businessaddress;
@@ -709,7 +712,7 @@ class BPApplicationService{
 	
 	private def getBilling( def applicationid ){
 		def app = em.read('bpapplication:bpapplication', [objid: applicationid]);
-		if( !app ) throw new Exception("Application with objid $entity.applicationid is no longer exist.");
+		if( !app ) throw new Exception("Application with objid $applicationid is no longer exist.");
 		
 		def bp = em.read('business:business', [objid: app.businessid]);
 		if( !bp ) throw new Exception("Business with objid $app.businessid is no longer exist.");
@@ -725,10 +728,11 @@ class BPApplicationService{
 		def getUnpaidReceivables = { 
 			def list = app.receivables.findAll{ it.amount > it.amtpaid };
 			if( app.txntype.matches('NEW|ADDLOB') ) return list;
-			return list.findAll{ it.qtr <= entity.qtr || ( it.assessmentype.matches('NEW|ADDLOB')) }
+			return list;
 		}
 		
 		def receivables = getUnpaidReceivables();
+		
 		receivables.each{  
 			it.year = it.iyear;
 			it.qtr = it.iqtr;

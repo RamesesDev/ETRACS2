@@ -51,6 +51,7 @@ class BPLedgerService {
 	public def buildCapturePayment( payment ) {
 		payment.formattedamtpaid = dcf.format( payment.amtpaid );
 		payment.total = 0.0;
+		payment.txndate
 		payment.reftype = 'OFFLINE';
 		payment.formattedtotal = dcf.format( payment.total );
 		payment.items = [];
@@ -107,8 +108,6 @@ class BPLedgerService {
 		def p = [:];
 		p.reftype = 'CAPTURE';
 		p.putAll( payment );
-		p.qtr = p.iqtr;
-		p.year = p.iyear;
 		p.items = items;
 		postPayment( p );
 		return payment;
@@ -136,7 +135,7 @@ class BPLedgerService {
 									 refid			: payment.refid,
 									 reftype		: payment.reftype,
 									 refno			: payment.refno,
-									 refdate		: payment.txndate,
+									 refdate		: payment.refdate,
 									 amount			: c.amount,
 									 surcharge		: c.surcharge,
 									 interest		: c.interest,
@@ -155,7 +154,7 @@ class BPLedgerService {
 		application.payments << [ refno: payment.refno, 
 								  refid: payment.refid, 
 								  reftype: payment.reftype,
-								  txndate: payment.txndate, 
+								  refdate: payment.refdate, 
 								  qtr: payment.qtr, 
 								  year:payment.year,
 								  lastyearpaid: b.lastyearpaid,
@@ -200,6 +199,10 @@ class BPLedgerService {
 	@ProxyMethod
 	public void deletePayment( def payment ){
 		def application = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
+		if( !application ) throw new Exception('Application reference is no longer exist.');
+		if( application.docstate.matches('ACTIVE') )
+			throw new Exception("Unable to process transaction.\nApplication reference status is already $application.docstate.");
+		
 		def bplisting = em.read('bplisting:bpapplicationlisting', [objid: application.objid]);
 		
 		if( !application.payments ) application.payments = [];
@@ -218,7 +221,10 @@ class BPLedgerService {
 			if( !brc ) throw new Exception("Missing receivable in credit $c.objid of this payment.");
 			brc.amtpaid -= c.amount;
 		}
+
 		application.payments.remove( p );
+		if( applicaton.docstate == 'PERMIT_PENDING') application.docstate = 'APPROVED';
+		
 		em.update( 'bpapplication:bpapplication', application );
 		em.update( 'bplisting:bplisting', bplisting );
 	}

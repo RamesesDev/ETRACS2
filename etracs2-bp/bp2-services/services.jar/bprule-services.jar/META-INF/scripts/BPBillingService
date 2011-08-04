@@ -18,6 +18,9 @@ public class BPBillingService
 	@Service("DateService")
 	def dtService;
 	
+	@Service('Var')
+	def var;
+	
 	@Service("BPSettingService")
 	def bpSettingService;
 	
@@ -37,7 +40,10 @@ public class BPBillingService
 			
 				def item = [
 					appno       : application.txnno,
+					barcode     : application.barcode,
+					barcodeurl  : var.get('barcode_url').replace('$P{data}', application.barcode),
 					txntype     : application.txntype,
+					txndate     : new java.text.SimpleDateFormat( "yyyy-MM-dd" ).format( application.txndate ),
 					tradename 	: business.tradename,
 					address		: business.businessaddress,
 					ledgerid	: business.objid,
@@ -96,8 +102,9 @@ public class BPBillingService
 		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
 		billing.expirydate = sdf.parse( dtService.serverYear+"-"+duedate.month+"-"+duedate.day );
 		if( billing.expirydate.time < serverDate.time ) {
-			billing.expirydate = 
+			billing.expirydate = dtService.getMonthEndDate( dtService.serverDate );
 		}
+		
 		billing.info.billdate = serverDate;
 		return billing;
 	}
