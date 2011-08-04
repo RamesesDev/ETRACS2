@@ -145,6 +145,7 @@ public class BPLedgerPage extends javax.swing.JPanel {
         xDataTable4.setShowRowHeader(true);
 
         xButton1.setText("Capture Payment");
+        xButton1.setName("capturePayment");
 
         org.jdesktop.layout.GroupLayout jPanel3Layout = new org.jdesktop.layout.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);

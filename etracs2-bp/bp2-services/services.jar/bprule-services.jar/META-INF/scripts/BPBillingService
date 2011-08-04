@@ -34,6 +34,7 @@ public class BPBillingService
 		for ( business in businesslist ) {
 			def applist = getApplicationsByBusinessId( business.objid );
 			for( application in applist ){
+			
 				def item = [
 					appno       : application.txnno,
 					txntype     : application.txntype,
@@ -48,18 +49,23 @@ public class BPBillingService
 				
 				if( item.taxfees ){
 					def bill = buildBill( item );
-					bill.totaldiscount = 0.0;
-					bill.totalsurcharge = 0.0;
-					bill.totalamount = 0.0;
-					bill.totalinterest = 0.0;
-					bill.grandtotal = 0.0;
+					bill.totaldiscount = new BigDecimal('0.0');
+					bill.totalsurcharge = new BigDecimal('0.0');
+					bill.totalamount = new BigDecimal('0.0');
+					bill.totalinterest = new BigDecimal('0.0');
+					bill.grandtotal = new BigDecimal('0.0');
+					
+					bill.first_qtr_total = new BigDecimal('0.0');
+					bill.second_qtr_total = new BigDecimal('0.0');
+					bill.third_qtr_total = new BigDecimal('0.0');
+					bill.fourth_qtr_total = new BigDecimal('0.0');
 					
 					bill.taxfees.each{
 						def duedate = getDueDate( bpsetting, it.qtr );
-						if( !it.discount ) it.discount = 0.0;
-						if( !it.surcharge ) it.surcharge = 0.0;
-						if( !it.interest ) it.interest = 0.0;
-						if( !it.amount ) it.amount = 0.0;
+						it.discount = ( it.discount ) ? new BigDecimal( it.discount.toString() ) : new BigDecimal('0.0');
+						it.surcharge = ( it.surcharge ) ? new BigDecimal( it.surcharge.toString() ) : new BigDecimal('0.0');
+						it.interest = ( it.interest ) ? new BigDecimal( it.interest.toString() ) : new BigDecimal('0.0');
+						it.amount = ( it.amount ) ? new BigDecimal( it.amount.toString() ) : new BigDecimal('0.0');
 						
 						it.total = it.amount + it.surcharge + it.interest - it.discount;
 						it.duedate = it.year+"-"+duedate.month+"-"+duedate.day;
@@ -69,7 +75,13 @@ public class BPBillingService
 						bill.totalinterest += it.interest;
 						bill.totaldiscount += it.discount;
 						bill.grandtotal += it.total;
+						
+						if( it.qtr == 1 ) bill.first_qtr_total += it.total;
+						if( it.qtr == 2 ) bill.second_qtr_total += it.total;
+						if( it.qtr == 3 ) bill.third_qtr_total += it.total;
+						if( it.qtr == 4 ) bill.fourth_qtr_total += it.total;
 					}
+					
 					billing.grandtotal += bill.grandtotal;
 					billing.items << bill;
 				}
@@ -83,7 +95,9 @@ public class BPBillingService
 		
 		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
 		billing.expirydate = sdf.parse( dtService.serverYear+"-"+duedate.month+"-"+duedate.day );
-		if( billing.expirydate.time < serverDate.time ) billing.expirydate = serverDate;
+		if( billing.expirydate.time < serverDate.time ) {
+			billing.expirydate = 
+		}
 		billing.info.billdate = serverDate;
 		return billing;
 	}

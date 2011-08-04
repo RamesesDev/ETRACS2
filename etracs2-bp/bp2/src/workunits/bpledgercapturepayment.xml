@@ -27,6 +27,7 @@
             def binding;
             
             def mode = 'init';
+            def qtrList = [1, 2, 3, 4];
 
             def entity = [:];
             
@@ -50,18 +51,14 @@
             }
             
             def paymentItemHandler = [
-
                 getRows    : { return 50; },
-
                 getColumns : {
                     return [
-                        new Column( name:"appno", caption:"App No."),
-                        new Column( name:"iyear", caption:"Year", format:"#0"),
                         new Column( name:"iqtr", caption:"Qtr"), 
                         new Column( name:"lobname", caption:"Line of Business" ),
                         new Column( name:"accttitle", caption:"Account" ),
                         new Column( name:"amount", caption:"Amount" ),
-                        new Column( name:"paymentAmt", caption:"Amount Paid", editable:true, type:"decimal"),
+                        new Column( name:"amtpaid", caption:"Amount Paid", editable:true, type:"decimal"),
                         new Column( name:"surcharge", caption:"Surcharge", editable:true, type:"decimal"), 
                         new Column( name:"interest", caption:"Interest", editable:true, type:"decimal"),
                         new Column( name:"discount", caption:"Discount", editable:true, type:"decimal")
@@ -70,8 +67,9 @@
                 
                 onColumnUpdate : { value, colname ->
                     entity.total = 0.0;
+                    def eval = { amt -> return (amt) ? amt : 0.0; }
                     for (item in entity.items) {
-                        entity.total += item.paymentAmt + item.surcharge + item.interest - item.discount;
+                        entity.total += eval( item.amtpaid ) + eval( item.surcharge ) + eval( item.interest ) - eval( item.discount );
                     }
                     entity.formattedtotal = dcf.format( entity.total );
                     binding.refresh();

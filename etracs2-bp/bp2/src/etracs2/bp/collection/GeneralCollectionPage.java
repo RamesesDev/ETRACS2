@@ -47,7 +47,6 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         xLabel7 = new com.rameses.rcp.control.XLabel();
         xLabel10 = new com.rameses.rcp.control.XLabel();
         xLabel8 = new com.rameses.rcp.control.XLabel();
-        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xLookupField2 = new com.rameses.rcp.control.XLookupField();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xTextField3 = new com.rameses.rcp.control.XTextField();
@@ -188,9 +187,6 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         xLabel8.setName("entity.info.mode");
         xLabel8.setPreferredSize(new java.awt.Dimension(150, 20));
         formPanel2.add(xLabel8);
-
-        xLookupField1.setText("xLookupField1");
-        formPanel2.add(xLookupField1);
 
         formPanel1.add(formPanel2);
 
@@ -346,7 +342,6 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel7;
     private com.rameses.rcp.control.XLabel xLabel8;
     private com.rameses.rcp.control.XLabel xLabel9;
-    private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XLookupField xLookupField2;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField2;

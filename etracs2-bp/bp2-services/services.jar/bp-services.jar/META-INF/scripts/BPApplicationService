@@ -254,7 +254,7 @@ class BPApplicationService{
 		];
 		
 		application.lobs.each{
-			if( application.txntype.matches( 'RETIRE|RETIRE_LOB' ) ){
+			if( application.txntype.matches( 'RETIRE|RETIRELOB' ) ){
 				if( it.retire ){
 					app.lobs << [lob: [classificationid: it.classificationid, objid: it.lobid, name: it.name],
 								 assessmenttype: it.assessmenttype];
@@ -324,6 +324,7 @@ class BPApplicationService{
 			def app = createAppEntity( application );
 			app.infos = it.infos;
 			def res = ruleSvc.buildTaxFees( app );
+			res.taxfees.each{ println it; }
 			application.taxfees = res.taxfees;
 			application.appinfos = it.infos;
 			

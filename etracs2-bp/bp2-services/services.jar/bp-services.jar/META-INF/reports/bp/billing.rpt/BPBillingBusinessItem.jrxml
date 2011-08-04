@@ -36,18 +36,6 @@
 	<field name="duedate" class="java.lang.String"/>
 	<field name="discount" class="java.math.BigDecimal"/>
 
-	<variable name="FIRST_QTR_TOTAL" class="java.math.BigDecimal" resetType="Report" calculation="Sum">
-		<variableExpression><![CDATA[( ( $F{qtr}.equals(new Integer("1")) )? $F{total} : new BigDecimal(0.00))]]></variableExpression>
-	</variable>
-	<variable name="SECOND_QTR_TOTAL" class="java.math.BigDecimal" resetType="Report" calculation="Sum">
-		<variableExpression><![CDATA[( ( $F{qtr}.equals(new Integer("2")) )? $F{total} : new BigDecimal(0.00))]]></variableExpression>
-	</variable>
-	<variable name="THIRD_QTR_TOTAL" class="java.math.BigDecimal" resetType="Report" calculation="Sum">
-		<variableExpression><![CDATA[( ( $F{qtr}.equals(new Integer("3")) )? $F{total} : new BigDecimal(0.00))]]></variableExpression>
-	</variable>
-	<variable name="FOURTH_QTR_TOTAL" class="java.math.BigDecimal" resetType="Report" calculation="Sum">
-		<variableExpression><![CDATA[( ( $F{qtr}.equals(new Integer("4")) )? $F{total} : new BigDecimal(0.00))]]></variableExpression>
-	</variable>
 		<background>
 			<band height="0"  isSplitAllowed="true" >
 			</band>
@@ -492,7 +480,7 @@
 					<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None" lineSpacing="Single">
 						<font fontName="Tahoma" pdfFontName="Helvetica" size="8" isBold="false" isItalic="false" isUnderline="false" isPdfEmbedded ="false" pdfEncoding ="Cp1252" isStrikeThrough="false" />
 					</textElement>
-				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{discount}.multiply(new BigDecimal("-1") )]]></textFieldExpression>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[new BigDecimal($F{discount}.toString()).multiply(new BigDecimal("-1") )]]></textFieldExpression>
 				</textField>
 			</band>
 		</detail>

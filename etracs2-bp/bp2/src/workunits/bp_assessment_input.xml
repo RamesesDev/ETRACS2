@@ -27,7 +27,7 @@ class AssessmentInputValuesController
     def selectedInfo;
     def selectedLobInfo;
     def inputHandler;
-    def acceptHandler;
+    def acceptInputHandler;
     def index = 0;
     
     void init(){
@@ -41,27 +41,28 @@ class AssessmentInputValuesController
     
     def next() {
         if( entity ){
-            if( inputHandler ) entity = inputHandler( entity );
-            if( entity.infos ) {
-                infoListHandler.load();
-                return 'default'; 
-            } else {
-                if( acceptHandler ) acceptHandler( entity );
-                applist << entity;
-                index ++;
-                if( index < entitylist.size() ){
-                    entity = entitylist[index];
-                    entity = svc.evaluateApplicationInfo( entity );
-                    return 'default';
-                }
+            def done = false;
+            if( inputHandler ) done = inputHandler( entity, { a-> entity = it; } );
+            if( !done ) {
+                return 'default';    
             }
+            
+            if( acceptInputHandler ) {
+                acceptInputHandler( entity );
+                applist << entity;
+            }
+            
+            index ++;
+
+            if( index < entitylist.size() ){
+                entity = entitylist[index];
+                entity = svc.evaluateApplicationInfo( entity );
+                return 'default';
+            }
+            
         }
         
         def bpapp = svc.evaluateTaxesAndFees( application.objid, applist, application.info.requirements );
-        
-        bpapp.taxfees.each{
-            System.out.println( it );
-        }
         return InvokerUtil.lookupOpener("bp.assessment", [application: bpapp]);
     }
     

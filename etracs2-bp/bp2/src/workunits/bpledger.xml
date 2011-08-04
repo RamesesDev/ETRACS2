@@ -34,6 +34,7 @@
             def entity = [:];
             def application;
             def receivable;
+            def payment;
             
             def init() {
                 return 'init';
@@ -146,13 +147,23 @@
             ] as SubListModel;
             
             def capturePayment() {
-                def paymentInfo = [
-                    businessid  : entity.businessid,
-                    business    : entity.business,
-                    amtpaid     : 0.0,
-                    total       : 0.0
-                ];
-                return new PopupOpener( name:"bp2:bpledgercapturepayment", action:"init", params:[entity:paymentInfo]  );
+                if( application ){
+                    def paymentInfo = [
+                        businessid  : entity.businessid,
+                        business    : entity.business,
+                        applicationid: application.objid,
+                        amtpaid     : 0.0,
+                        total       : 0.0
+                    ];
+                    return new PopupOpener( name:"bp2:bpledgercapturepayment", action:"init", params:[entity:paymentInfo] );
+                }
+            }
+            
+            void deletePayment(){
+                if( application ){
+                    payment.applicationid = application.objid;
+                    svc.deleteCapturePayment( payment );
+                }
             }
         }
         
