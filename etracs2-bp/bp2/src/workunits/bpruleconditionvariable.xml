@@ -61,7 +61,15 @@ class BPRuleConditionVariableController
     }
     
     def buildDisplayText() {
-        return 'Use Application Data Provided: '  + condition.variable.name
+        def txt = 'Use Application Data provided '
+        if( condition.perline == true ) {
+            txt += 'per line of business '
+        }
+        txt += ': ' + condition.variable.name
+        if( condition.variable.datatype == 'string_array' ) {
+            txt += ' = ' + condition.value
+        }
+        return txt 
     }
     
     def getVariables() {

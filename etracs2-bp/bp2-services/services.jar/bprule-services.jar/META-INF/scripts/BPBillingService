@@ -26,7 +26,7 @@ public class BPBillingService
 	@ProxyMethod
 	public def getBilling( billing ) {
 		def businesslist = getBusinessByTaxpayer( billing.info.taxpayerid );
-		if( !businesslist ) throw new Exception("There is no business registered in this taxpayer.");
+		if( !businesslist ) throw new Exception("There are no businesses registered for this taxpayer.");
 		billing.items = [];
 		billing.grandtotal = 0.0;
 		def bpsetting = bpSettingService.getSetting();
@@ -76,7 +76,7 @@ public class BPBillingService
 			}
 		}
 		
-		if( !billing.items ) throw new Exception("Registered business(s) is/are fully paid.");
+		if( !billing.items ) throw new Exception("Registered businesses are fully paid.");
 		
 		def serverDate = dtService.serverDate;
 		def duedate  = getDueDate( bpsetting,  getQtr( serverDate ) );

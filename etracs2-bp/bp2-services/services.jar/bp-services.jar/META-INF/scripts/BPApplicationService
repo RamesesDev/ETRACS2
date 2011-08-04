@@ -104,13 +104,13 @@ class BPApplicationService{
 	}
 	
 	void checkIfLobAlreadyExist( def application, def lob ){
-		if( application.lobs.find{ it.lobid == lob.lobid } ) throw new Exception( "Line of business $lob.name already exist in lines." );
-		if( application.addedlobs?.find{ it.lobid == lob.lobid } ) throw new Exception( "Line of business $lob.name already exist in lines." );
+		if( application.lobs.find{ it.lobid == lob.lobid } ) throw new Exception( "Line of business $lob.name has already been added." );
+		if( application.addedlobs?.find{ it.lobid == lob.lobid } ) throw new Exception( "Line of business $lob.name has already been added." );
 	}
 	
 	void checkIfLobAlreadyRetired( def application, def lob ){
 		if( application.retiredlobs?.find{ it.objid == lob.objid } ) 
-			throw new Exception( "Line of business already retired." );
+			throw new Exception( "Line of business has already been retired." );
 	}
 	
 	def createBPApp( def application ){
@@ -182,7 +182,7 @@ class BPApplicationService{
 	@ProxyMethod
 	public def open( def objid ){
 		def application = em.read( SCHEMANAME, [objid: objid] );
-		if( !application ) throw new Exception("Application document no longer exist.");
+		if( !application ) throw new Exception("Application document no longer exists.");
 		return application;
 	}
 	
@@ -213,7 +213,7 @@ class BPApplicationService{
 	@ProxyMethod
 	public def submitForAssessment( def applicationid ) {
 		def app = open( applicationid );
-		if( app.docstate != 'DRAFT' ) throw new Exception("Only DRAFT application can be submit for assessment.");
+		if( app.docstate != 'DRAFT' ) throw new Exception("Only DRAFT application can be submitted for assessment.");
 		app.appinfos = ruleSvc.buildInfos( createAppEntity( app ) ).infos;
 		
 		em.sqlContext.createNamedQuery('bpapplication:getApplicationByParentId')
@@ -389,7 +389,7 @@ class BPApplicationService{
 	@ProxyMethod
 	public def approveApplication( def appid, def applist, def requirements ){
 		def app = open( appid );
-		if( app.docstate == 'APPROVED' ) throw new Exception('Application is already APPROVED.');
+		if( app.docstate == 'APPROVED' ) throw new Exception('Application has already been aproved.');
 		submitForReview( appid, applist, requirements );
 		app.docstate = 'APPROVED';
 		app.info.requirements = requirements;
@@ -532,8 +532,8 @@ class BPApplicationService{
 	def evaluateAddLob( def application ){
 		def prevapp = open( application.parentid );
 		def bp = em.read('business:business', [objid: prevapp.businessid]);
-		if( !bp ) throw new Exception("Business with objid $prevapp.businessid is no longer exist." );
-		if( bp.docstate != 'ACTIVE' ) throw new Exception('Only active business can add line.');
+		if( !bp ) throw new Exception("Business with objid $prevapp.businessid no longer exists." );
+		if( bp.docstate != 'ACTIVE' ) throw new Exception('Only active business can add new lines.');
 		
 		application.taxpayerid = prevapp.taxpayerid;
 		application.taxpayername = prevapp.taxpayername;
@@ -586,13 +586,13 @@ class BPApplicationService{
 	
 	def evaluateRetire( def application ){
 		def prevapp = open( application.parentid );
-		if( !prevapp ) throw new Exception("Reference application is no longer exist.");
+		if( !prevapp ) throw new Exception("Reference application no longer exists.");
 		
 		if( prevapp.docstate == 'RETIRED' ) 
-			throw new Exception("Reference application is already required.");
+			throw new Exception("Reference application has already been retired.");
 		
 		def billing = getBilling( prevapp.objid );
-		if( billing.taxfees ) throw new Exception('Unable to retire.\nBusiness not yet fully paid.');
+		if( billing.taxfees ) throw new Exception('Unable to retire.\nBusiness is not yet fully paid.');
 		
 		application.taxpayerid = prevapp.taxpayerid;
 		application.taxpayername = prevapp.taxpayername;
@@ -708,10 +708,10 @@ class BPApplicationService{
 	
 	private def getBilling( def applicationid ){
 		def app = em.read('bpapplication:bpapplication', [objid: applicationid]);
-		if( !app ) throw new Exception("Application with objid $entity.applicationid is no longer exist.");
+		if( !app ) throw new Exception("Application with objid $entity.applicationid no longer exists.");
 		
 		def bp = em.read('business:business', [objid: app.businessid]);
-		if( !bp ) throw new Exception("Business with objid $app.businessid is no longer exist.");
+		if( !bp ) throw new Exception("Business with objid $app.businessid no longer exists.");
 	
 		def bill = [
 			ledgerid      : bp.objid,
