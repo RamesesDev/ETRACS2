@@ -77,6 +77,7 @@ public class FAASAttachmentAddPage extends javax.swing.JPanel {
 
         xButton1.setMnemonic('c');
         xButton1.setText("Cancel");
+        xButton1.setImmediate(true);
         xButton1.setName("doCancel");
 
         xButton2.setText("Upload");

@@ -217,7 +217,7 @@ WHERE rl.objid = ri.receiptid
 ORDER BY rl.afid, rl.serialno, ri.accttitle
 
 
-
+ 
 
 [updateAfControlForRemittance]
 UPDATE afcontrol SET 
@@ -227,6 +227,15 @@ UPDATE afcontrol SET
 	issuedfrom = 0, 
 	issuedto = 0 
 WHERE collectorid = $P{collectorid}
+
+[updateAFInventoryCreditInfo]
+UPDATE afinventorycredit c, afcontrol af SET 
+    c.qtyissued = c.qtyissued + $P{qtyissued}, 
+	c.balance = c.balance - $P{qtyissued},
+	c.docstate = CASE WHEN c.balance - $P{qtyissued} = 0 THEN 'CLOSED' ELSE 'OPEN' end 
+WHERE c.objid = af.afinventorycreditid 
+  AND af.objid = $P{afcontrolid} 
+
 
 [closeAfControl]
 UPDATE afcontrol SET 

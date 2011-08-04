@@ -141,7 +141,7 @@ class IRAFService
 
 	private void validateItems( def iraf, def item ){
 		def ri = iraf.requesteditems.find{ it.afid == item.afid };
-		if( !ri ) throw new Exception("AF $item.afid not in requested items.");
+		if( !ri ) throw new Exception("AF $item.afid not one of the requested items.");
 		def totalQty = ri.qtyreceived + item.qtyreceived + ri.qtydelivered;
 		if( totalQty  > ri.qtyrequested ) throw new Exception("Qty recieved exceeds the qty requested.");
 		ri.qtyreceived += item.qtyreceived;
@@ -218,7 +218,7 @@ class IRAFService
 		for( o in iraf.requesteditems ){
 			if( o.qtyreceived > 0 ) return;
 		}
-		throw new Exception("There is at least 1 requested item to be received.");
+		throw new Exception("At least one item to receive is required.");
 	}
 	
 	private def getNextSeries(def rivtype) {
@@ -229,30 +229,30 @@ class IRAFService
 	}
 	
 	private void checkIRAFItems( def iraf ){
-		if( iraf.rcvitems.size() <= 0 ) throw new Exception("There must at least 1 entry in received items ");
+		if( iraf.rcvitems.size() <= 0 ) throw new Exception("At least one item to receive is required. ");
 	}
 	
 	private def openRIV( def rivid ){
 		def riv = em.read('riv:riv', [objid: rivid] );
         if( !riv ) throw new Exception('RIV No. is invalid.')
-		if( riv.docstate == 'CLOSE' ) throw new Exception('RIV is already close for transaction.');
+		if( riv.docstate == 'CLOSE' ) throw new Exception('RIV has already been closed.');
 		for( it in riv.items ){
 			if( it.qtydelivered < it.qtyrequested ){
 				return riv;
 			}
 		}
-		throw new Exception('All requested item for this RIV is already delivered.');
+		throw new Exception('All requested items for this RIV has already been delivered.');
 	}
 
 	private void checkIRAFByRIV( def rivid ){
 		def iraf = em.sqlContext.createNamedQuery( 'iraf:getDraftIrafByRivId')
 								.setParameters([rivid: rivid])
 								.singleResult;
-		if( iraf ) throw new Exception("There is currently open IRAF( ${iraf.txnno} ) in this RIV");
+		if( iraf ) throw new Exception("There is currently open IRAF( ${iraf.txnno} ) in this RIV.");
 	}
 	
 	private void checkIRAFByIRAFNo( def txnno ){
-		if( isIrafWithTxnnoExist( txnno ) ) throw new Exception("IRAF number $txnno is already exist");
+		if( isIrafWithTxnnoExist( txnno ) ) throw new Exception("IRAF No. $txnno already exists.");
 	}
 	
 	@ProxyMethod
@@ -260,7 +260,7 @@ class IRAFService
 		def iraf = open( objid );
 		def riv = openRIV( iraf.rivid );
 
-		if( iraf.docstate != 'DRAFT' ) throw new Exception( 'Only DRAFT IRAF document can be approve.' );
+		if( iraf.docstate != 'DRAFT' ) throw new Exception( 'Only DRAFT IRAF document can be approved.' );
 		
 		updateRIV( iraf, riv );
 		iraf.docstate = 'APPROVED';
@@ -302,7 +302,7 @@ class IRAFService
 					   .setParameters([objid: ri.afid])
 					   .singleResult;
 			
-			if( !af ) throw new Exception("AF $af.objid is no longer exist.");
+			if( !af ) throw new Exception("AF $af.objid no longer exists.");
 			
 			def prevAf = em.sqlContext.createNamedQuery("iraf:getAFInventoryByIRAFIdOrderByStubNo")
 						   .setParameters([irafid: iraf.objid, afid:af.objid ])
@@ -362,7 +362,7 @@ class IRAFService
 					    suffix: ri.suffix
 				   ]).singleResult;
 		if( it ) 
-			throw new Exception("There is an overlapping series in af $ri.prefix $ri.startseries - $ri.endseries $ri.suffix");
+			throw new Exception("There is an overlapping in series for AF Control $ri.prefix $ri.startseries - $ri.endseries $ri.suffix");
 	}
 	
 	private void postToAFInventoryCredit( def iraf ){
@@ -478,7 +478,7 @@ class IRAFService
 	private void addCancelledSeriesInAFControl(def afinventory, def afcontrol){
 		def iraf = em.read("iraf:iraf", [objid: afinventory.irafid] );
 		def rc = iraf.rcvitems.find{ it.startseries == afinventory.startseries && it.endseries == afinventory.endseries };
-		if( !rc ) throw new Exception("There is no received items for iraf $iraf.txnno with series $afinventory.startseries - $afinventory.endseries");
+		if( !rc ) throw new Exception("There are no received items for IRAF No. $iraf.txnno with series $afinventory.startseries - $afinventory.endseries.");
 		if( !rc.cancelledseries ) rc.cancelledseries = [];
 		rc.cancelledseries.each{
 			if( rc.afid == afcontrol.afid ){
@@ -509,15 +509,15 @@ class IRAFService
 		def afinventory = em.sqlContext.createNamedQuery("iraf:getNextOpenAFInventory")
 				     .setParameters([afid: afid])
 					 .singleResult;
-		if( !afinventory ) throw new Exception("There is no more accountable form(s) for $afid availabe in AF Inventory.");
+		if( !afinventory ) throw new Exception("There are no more Accountable Forms for AF $afid in the Inventory.");
 		return afinventory;
 	}
 	
 	@ProxyMethod
 	public def addCancelledSeries( def irafid, def cancelledseries, def afid ){
 		def iraf = em.read("iraf:iraf", [objid: irafid] );
-		if( iraf.info.rivtype != "LGU" ) throw new Exception("Only IRAF LGU can be process");
-		if( iraf.docstate != "APPROVED" ) throw new Exception("Only APPROVED IRAF can be process");
+		if( iraf.info.rivtype != "LGU" ) throw new Exception("Only IRAF LGU is allowed.");
+		if( iraf.docstate != "APPROVED" ) throw new Exception("Only APPROVED IRAF is allowed.");
 
 		def rc = getSeriesToCancel( iraf.rcvitems, cancelledseries, afid );
 		checkCancelledSeriesAlreadyCancelled( rc, cancelledseries );	
@@ -537,7 +537,7 @@ class IRAFService
 			if( ac ){
 				def afcontrol = em.read("afcontrol:afcontrol", [objid: ac.objid] );
 				if( afcontrol.currentseries > series ) {
-					throw new Exception("Series $series in AF $afcontrol.afid is already in use.");
+					throw new Exception("Series $series for AF $afcontrol.afid is already in use.");
 				}
 				if( !afcontrol.cancelledseries ){ afcontrol.cancelledseries = []; }
 				afcontrol.cancelledseries.add( [series: series, remarks: cancelledseries.remarks] );
@@ -560,7 +560,7 @@ class IRAFService
 			def toseries = cancelledseries.toseries;
 			
 			if( isBeetween( startseries, endseries, fromseries ) || isBeetween( startseries, endseries, toseries ) )
-				throw new Exception("Invalid series range to cancelled.\nOne or more series(s) include has already been cancelled.");
+				throw new Exception("Invalid series range to cancel.\nOne or more of the series included has already been cancelled.");
 		}
 	}
 	
@@ -568,7 +568,7 @@ class IRAFService
 		iraf.rcvitems.each{ rc ->
 			if( iraf.requesteditems.find{ it.afid == rc.afid } ) return;
 		}
-		throw new Exception("There is no serial items to be cancelled for this IRAF");
+		throw new Exception("There are no serial items to be cancelled for this IRAF.");
 	}
 	
 	private def getSeriesToCancel( def items, def cancelledseries, def afid ){
@@ -608,7 +608,7 @@ class IRAFService
 		for( rc in iraf.rcvitems ){
 			if( rc.afid == afid ){
 				def cs = rc?.cancelledseries.find{ it.hashCode() == cancelledseries.hashCode() };
-				if( !cs ) throw new Exception("Cancelled Series is already deleted.");
+				if( !cs ) throw new Exception("Cancelled Series has alread been deleted.");
 				rc.cancelledseries.remove( cs );
 				
 				def param = [irafid: iraf.objid, afid: afid, series: cancelledseries.fromseries];
@@ -630,7 +630,7 @@ class IRAFService
 	
 	private void checkAFControlCurrentSeriesGreaterThanTheFromSeries( def afcontrol, def fromseries ){
 		if(  afcontrol.currentseries > fromseries ) 
-			throw new Exception("Unable to delete.\nCurrent series in afcontrol is greater than the from series.");
+			throw new Exception("Unable to delete.\nCurrent series in AF Control is greater than the from series.");
 	}
 }
 

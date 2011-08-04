@@ -2,7 +2,9 @@
 <workunit>
     <invokers>
         <invoker type="faasattachment.open" action="open" />
-        <invoker type="formActions" action="addAttachment" caption="Add Attachment" mnemonic="a" shortcut="ctrl A" />
+        <invoker type="formActions" action="_close" caption="Back" mnemonic="b" shortcut="ctrl B" icon="images/back.png" />
+        <invoker type="formActions" action="addAttachment" caption="Add" mnemonic="a" shortcut="ctrl A" icon="images/doc-add.png" />
+        <invoker type="formActions" action="removeAttachment" caption="Remove" mnemonic="r" icon="images/doc-delete.png" />
     </invokers>
     <code lang="groovy">
 <![CDATA[
@@ -21,7 +23,7 @@ public class FAASAttachmentController {
     def binding
     
     @Service('FAASService')
-    def faasSVc
+    def faasSvc
 
     def faas 
     def selectedItem
@@ -30,6 +32,7 @@ public class FAASAttachmentController {
     
     
     void open() {
+        removeCachedDirectory()
         if( !faas.attachments ) {
             faas.attachments = []
         }
@@ -64,14 +67,36 @@ public class FAASAttachmentController {
         }
     }
 
+    void removeCachedDirectory() {
+        def cacheinitialized = OsirisContext.clientContext.properties.cache_initialized
+        if( cacheinitialized ) return 
+        try {
+            def cachedir = getCacheDirectory()
+            def file = new File( cachedir )
+            if( file.isDirectory() ) {
+                file.listFiles().each { f ->
+                    f.delete()
+                }
+            }
+        }
+        catch( e ) {
+            println 'removeCachedDirectory() error'
+            e.printStackTrace()
+        }
+    }
     
     def resolveFileName( filename ) {
-        def cachedir = System.properties['user.dir'] + '/cache' 
+        def cachedir = getCacheDirectory()
         def dir = new File( cachedir )
         if( !dir.exists() ) {
             dir.mkdir()
+            OsirisContext.clientContext.properties.cache_initialized = true 
         }
         return cachedir + '/' + filename 
+    }
+    
+    def getCacheDirectory() {
+        return System.properties['user.dir'] + '/cache' 
     }
     
     def getImageUrl() {
@@ -92,11 +117,19 @@ public class FAASAttachmentController {
     
     /*----------------------------------------------------------------------
     *
-    * AddAttachment Support 
+    * Attachment Support 
     *
     *-----------------------------------------------------------------------*/
     def attachment
     def file
+    
+    void removeAttachment() {
+        if( selectedItem == null || selectedItem.type == null )  return 
+        if( MsgBox.confirm('Delete attachment?') ) {
+            faasSvc.removeAttachment( faas.objid, selectedItem )
+            faas.attachments.remove( selectedItem )
+        }
+    }
     
     def addAttachment() {
         attachment = [:]
@@ -109,7 +142,6 @@ public class FAASAttachmentController {
     
     def upload() {
         def app = getAppInfo()
-            
         attachment.filename  = file.name 
         attachment.directory = makeSafeFileName( faas.objid )
         
@@ -120,6 +152,7 @@ public class FAASAttachmentController {
         FileTransfer ft = new FileTransfer();
         ft.transfer(fis, handler);
         
+        faasSvc.addAttachment( faas.objid, attachment )
         faas.attachments.add( attachment )
         listHandler.load()
         return 'default' 
