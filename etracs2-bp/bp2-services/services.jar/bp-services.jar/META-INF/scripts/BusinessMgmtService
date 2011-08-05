@@ -7,11 +7,16 @@ class BusinessMgmtService{
 	@Service("BPBillingService")
 	def billingSvc;
 	
+	@Service('SequenceService')
+	def sequenceSvc;
+	
 	@Service('DateService')
 	def dateService;
 	
 	@PersistenceContext('main')
 	def em;
+
+	def PERMIT_SCHEMA = 'bppermit:bppermit';
 	
 	def SCHEMANAME = 'bpapplication:bpapplication';
 	
@@ -68,41 +73,62 @@ class BusinessMgmtService{
 		return list;
 	}
 	
+	private def createBusinessPermit( def application ){
+		def permit = [
+			schemaname: PERMIT_SCHEMA,
+			schemaversion: 1.0,
+			docstate:'DRAFT',
+			taxpayerid: application.taxpayerid,
+			taxpayername: application.info.taxpayername,
+			taxpayeraddress: application.info.taxpayeraddress,
+			tradename: application.tradename,
+			businessaddress: application.businessaddress,
+			businessid: application.businessid,
+			applicationid: application.objid,
+			lobs: application.lobs
+		];
+		return permit;
+	}
+	
 	@ProxyMethod
 	public def releasePermit( def permit ){
-		def bp = em.read( 'bppermit:bppermit', [objid: permit.objid] );
-		if( !bp ) throw new Exception('Permit with objid '+ permit.objid +' is no longer exist.');
-		
-		def app = em.read('bpapplication:bpapplication', [objid: bp.applicationid]);
-		if( !bp ) throw new Exception('Application with objid '+ bp.applicationid +' is no longer exist.');
+		def app = em.read('bpapplication:bpapplication', [objid: permit.applicationid]);
 		if( app.docstate != 'PERMIT_PENDING' ) throw new Exception("Only permit pending transaction can be released.");
+		def bp = createBusinessPermit( app );
 		
+		bp.objid = "PERM" + new UID();
 		bp.plateno = permit.plateno;
+		bp.txnno = getNextPermitSeries();
 		bp.txndate = dateService.serverDate;
 		bp.docstate = 'ACTIVE';
-		
-		em.update('bppermit:bppermit', bp);
 		
 		app.docstate = 'ACTIVE';
 		em.update('bpapplication:bpapplication', app);
 		
-		em.sqlContext.createNamedExecutor('bpapplication:updateApplicationListingDocstate')
-		  .setParameter('objid', bp.applicationid) 
-		  .setParameter('docstate', 'ACTIVE')
-		  .execute();
+		em.validate( PERMIT_SCHEMA, bp );
+		em.create( PERMIT_SCHEMA, bp );
+		
+		def bplisting = em.read('bplisting:bpapplicationlisting', [objid: app.objid]);
+		bplisting.docstate = 'ACTIVE';
+		
+		em.update( 'bplisting:bpapplicationlisting', bplisting );
 		
 		return bp;
 	}
 	
 	@ProxyMethod
 	public def openPermit( def applicationid ){
+		def app = em.read('bpapplication:bpapplication', [objid:applicationid]);
+		if( !app ) throw new Exception('Application does not exist.');
 		def permit = em.sqlContext.createNamedQuery('bpmgmt:findPermitByApplicationId')
-					   .setParameter('applicationid', applicationid)
+		               .setParameter('applicationid', applicationid)
 					   .singleResult;
-		if( !permit ) throw new Exception('Permit with an applicationid '+ applicationid +' is no longer exist.');
-		permit.lobs = em.serializer.read( permit.lobs );
-		permit.txndate = (permit.docstate == 'ACTIVE') ? permit.txndate : null;
-		return permit;
+		if( permit ) {
+			permit.lobs = em.serializer.read( permit.lobs );
+			return permit;
+		}
+		
+		return createBusinessPermit( app );
 	}
 	
 	private def getBilling( def applicationid ){
@@ -167,6 +193,11 @@ class BusinessMgmtService{
 		em.update( SCHEMANAME, app );
 		
 		return app;
+	}
+	
+	private def getNextPermitSeries(){
+		def year = new java.text.SimpleDateFormat('yyyy').format( new Date() );
+		return year + sequenceSvc.getNextFormattedSeriesA( 'PERMIT'+year, 7 );
 	}
 	
 	@ProxyMethod

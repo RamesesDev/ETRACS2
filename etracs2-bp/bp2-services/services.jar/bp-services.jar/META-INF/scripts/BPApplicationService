@@ -120,7 +120,7 @@ class BPApplicationService{
 		application.objid = 'BP'+new UID();
 		application.txnno = getNextSeries();
 		application.schemaname = SCHEMANAME;
-		application.barcode = var.bp_barcode_key+application.txnno;
+		application.barcode = '01151'+application.txnno;
 		application.schemaversion = SCHEMAVERSION;
 		application.tradename = application.info.tradename;
 		application.businessaddress = application.info.businessaddress;
@@ -412,7 +412,6 @@ class BPApplicationService{
 			business.lastyearpaid = app.iyear - 1;
 		}
 		
-		createBusinessPermit( app );
 		updateParentApplication( app );
 		
 		em.update( BUSINESS_SCHEMA, business );
@@ -681,33 +680,6 @@ class BPApplicationService{
 											   complied: false,
 											   remarks: ''];
 		};
-	}
-	
-	private void createBusinessPermit( def application ){
-		def permit = [
-			schemaname: PERMIT_SCHEMA,
-			objid: "PERM" + new UID(),
-			schemaversion: SCHEMAVERSION,
-			txnno: getNextPermitSeries(),
-			taxpayerid: application.taxpayerid,
-			taxpayername: application.info.taxpayername,
-			taxpayeraddress: application.info.taxpayeraddress,
-			tradename: application.tradename,
-			businessaddress: application.businessaddress,
-			txndate: application.txndate,
-			docstate: 'DRAFT',
-			businessid: application.businessid,
-			applicationid: application.objid,
-			lobs: application.lobs
-		];
-		
-		em.validate( PERMIT_SCHEMA, permit );
-		em.create( PERMIT_SCHEMA, permit );
-	}
-	
-	private def getNextPermitSeries(){
-		def year = new java.text.SimpleDateFormat('yyyy').format( new Date() );
-		return year + sequenceSvc.getNextFormattedSeriesA( 'PERMIT'+year, 7 );
 	}
 	
 	private def getBilling( def applicationid ){
