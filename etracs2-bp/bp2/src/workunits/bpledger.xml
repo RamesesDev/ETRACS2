@@ -2,11 +2,10 @@
 <workunit>
     
     <invokers>
-        <invoker folderid="/menu/bp" action="init" caption="Business Ledger" permission="bpadmin.ledger"/>
-        <invoker type="home.action"  action="init" caption="Business Ledger" permission="bpadmin.ledger" index="60" target="window" icon="images/folder.png"/>/>
+        <invoker folderid="/menu/bp" caption="Business Ledger" permission="bpadmin.ledger"/>
+        <invoker type="home.action"  caption="Business Ledger" permission="bpadmin.ledger" index="60" target="window" icon="images/folder.png"/>/>
         
-        <invoker type="formActions" action="back" immediate="true" caption="Back" icon="images/back.png"/>
-        <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" caption="Next" mnemonic="n" icon="images/next.png"/>
+        <invoker type="formActions" action="_close" immediate="true" caption="Close" icon="images/close.png"/>
     </invokers>
     
     <code lang="groovy">
@@ -35,20 +34,19 @@
             def application;
             def receivable;
             def payment;
+            def business;
             
-            def init() {
-                return 'init';
-            }
-            
-            def back(){
-                mode = 'init';
-                return mode
-            }
-            
-            def next() {
-                entity = svc.openLedger( entity );
-                mode = 'main';
-                return 'main';
+            public void setBusiness( def val ){
+                this.business = val;
+                if( val ){
+                    entity = svc.openLedger( entity );
+                }else{
+                    entity = [:];
+                    application = null;
+                    payment = null;
+                    receivable = null;
+                    binding.refresh();
+                }
             }
             
             def onselectBusiness = { sb ->
@@ -69,8 +67,8 @@
                 binding.refresh();
             }
             
-            def lookupBusiness() {
-                return InvokerUtil.lookupOpener( 'business:lookup', [onselect:onselectBusiness, searchText:filter] );
+            def getLookupBusiness() {
+                return InvokerUtil.lookupOpener( 'business.lookupforledger', [onselect:onselectBusiness, searchText:filter] );
             }
             
             def appHandler = [
@@ -86,7 +84,10 @@
                         new Column( name:"docstate", caption:"Status")
                     ];
                 },
-                fetchList : {  return svc.getApplicationByBusiness( entity.businessid ); }
+                fetchList : {  
+                    if( entity.businessid ) return svc.getApplicationByBusiness( entity.businessid );
+                    return [];
+                }
             ] as SubListModel;
             
             def receivableHandler = [
@@ -155,7 +156,7 @@
                         amtpaid     : 0.0,
                         total       : 0.0
                     ];
-                    return new PopupOpener( name:"bp2:bpledgercapturepayment", action:"init", params:[entity:paymentInfo] );
+                    return new PopupOpener( name:"bp2:bpledgercapturepayment", caption:"Capture Payment", action:"init", params:[entity:paymentInfo] );
                 }
             }
             
@@ -171,8 +172,6 @@
     </code>
     
     <pages>
-        <page name="init" template="etracs2.bp.transaction.SelectBusinessPage" />
-        <page name="main" template="etracs2.bp.ledger.BPLedgerPage" />
-        <page name="item" template="etracs2.bp.ledger.BPLedgerItemPage" />
+        <page template="etracs2.bp.ledger.BPLedgerPage" />
     </pages>
 </workunit>

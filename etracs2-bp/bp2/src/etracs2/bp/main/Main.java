@@ -1,18 +1,18 @@
 package etracs2.bp.main;
 
 import com.rameses.osiris2.client.OsirisTestPlatform;
-import java.util.Calendar;
+import com.rameses.rcp.common.LookupModel;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.image.ImageObserver;
+import java.awt.image.ImageProducer;
 import java.util.HashMap;
 import java.util.Map;
+import javax.swing.ImageIcon;
 import javax.swing.UIManager;
 
-/**
- *
- * @author jzamora
- */
 public class Main {
     
-    /** Creates a new instance of Main */
     public Main() {
     }
     
