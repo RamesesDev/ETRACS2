@@ -33,18 +33,18 @@ public class PlantTreeRYSettingPage extends javax.swing.JPanel {
         jPanel3 = new javax.swing.JPanel();
         xLabel3 = new com.rameses.rcp.control.XLabel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
+        xLabel4 = new com.rameses.rcp.control.XLabel();
         xButton1 = new com.rameses.rcp.control.XButton();
         jPanel1 = new javax.swing.JPanel();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
+        xLabel5 = new com.rameses.rcp.control.XLabel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
         xCheckBox1 = new com.rameses.rcp.control.XCheckBox();
-        xLabel2 = new com.rameses.rcp.control.XLabel();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
 
         setLayout(new java.awt.BorderLayout());
 
-        xDataTable3.setDynamic(true);
         xDataTable3.setHandler("planttreeListHandler");
         xDataTable3.setImmediate(true);
         xDataTable3.setName("selectedPlantTree");
@@ -57,11 +57,16 @@ public class PlantTreeRYSettingPage extends javax.swing.JPanel {
         xLabel3.setFont(new java.awt.Font("Arial", 1, 14));
         xLabel3.setName("unitValueTitle");
 
-        xDataTable2.setDepends(new String[] {"selectedPlantTree"});
-        xDataTable2.setDynamic(true);
         xDataTable2.setHandler("unitvalueListHandler");
         xDataTable2.setImmediate(true);
+        xDataTable2.setName("selectedValue");
         xDataTable2.setShowRowHeader(true);
+
+        xLabel4.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        xLabel4.setForeground(new java.awt.Color(153, 0, 0));
+        xLabel4.setFont(new java.awt.Font("Arial", 1, 12));
+        xLabel4.setName("errorMsg");
+        xLabel4.setPadding(new java.awt.Insets(3, 3, 3, 3));
 
         org.jdesktop.layout.GroupLayout jPanel3Layout = new org.jdesktop.layout.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
@@ -70,8 +75,9 @@ public class PlantTreeRYSettingPage extends javax.swing.JPanel {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 382, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, xLabel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 382, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xLabel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 386, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xLabel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 386, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 386, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
@@ -80,6 +86,8 @@ public class PlantTreeRYSettingPage extends javax.swing.JPanel {
                 .add(xLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 309, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(xLabel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
@@ -94,7 +102,7 @@ public class PlantTreeRYSettingPage extends javax.swing.JPanel {
                 .addContainerGap()
                 .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(xDataTable3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 308, Short.MAX_VALUE))
+                    .add(xDataTable3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 299, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
@@ -106,16 +114,23 @@ public class PlantTreeRYSettingPage extends javax.swing.JPanel {
                 .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
-                        .add(xDataTable3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 340, Short.MAX_VALUE)
+                        .add(xDataTable3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 371, Short.MAX_VALUE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         jTabbedPane1.addTab("Plant/Tree Unit Value", jPanel2);
 
-        xDataTable1.setDynamic(true);
         xDataTable1.setHandler("assessLevelListHandler");
+        xDataTable1.setImmediate(true);
+        xDataTable1.setName("selectedAssessLevel");
         xDataTable1.setShowRowHeader(true);
+
+        xLabel5.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        xLabel5.setForeground(new java.awt.Color(153, 0, 0));
+        xLabel5.setFont(new java.awt.Font("Arial", 1, 12));
+        xLabel5.setName("errorMsg");
+        xLabel5.setPadding(new java.awt.Insets(3, 3, 3, 3));
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -123,14 +138,18 @@ public class PlantTreeRYSettingPage extends javax.swing.JPanel {
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(xDataTable1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 409, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(321, Short.MAX_VALUE))
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xLabel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 409, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 409, Short.MAX_VALUE))
+                .add(316, 316, 316))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel1Layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 369, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(xLabel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         jTabbedPane1.addTab("Assessment Levels", jPanel1);
@@ -149,17 +168,13 @@ public class PlantTreeRYSettingPage extends javax.swing.JPanel {
 
         xCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
         xCheckBox1.setText(" Apply Agricultural Adjustment Rate to Plant/Tree Improvements");
+        xCheckBox1.setCheckValue(1);
         xCheckBox1.setMargin(new java.awt.Insets(0, 5, 0, 0));
         xCheckBox1.setName("entity.applyagriadjustment");
         xCheckBox1.setPreferredSize(new java.awt.Dimension(400, 19));
         xCheckBox1.setShowCaption(false);
+        xCheckBox1.setUncheckValue(0);
         formPanel1.add(xCheckBox1);
-
-        xLabel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        xLabel2.setForeground(new java.awt.Color(153, 0, 0));
-        xLabel2.setFont(new java.awt.Font("Arial", 1, 12));
-        xLabel2.setName("errorMsg");
-        xLabel2.setPadding(new java.awt.Insets(3, 3, 3, 3));
 
         org.jdesktop.layout.GroupLayout jPanel7Layout = new org.jdesktop.layout.GroupLayout(jPanel7);
         jPanel7.setLayout(jPanel7Layout);
@@ -168,9 +183,8 @@ public class PlantTreeRYSettingPage extends javax.swing.JPanel {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel7Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel7Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jTabbedPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 745, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, xLabel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 745, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 745, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jTabbedPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 740, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 740, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel7Layout.setVerticalGroup(
@@ -179,9 +193,7 @@ public class PlantTreeRYSettingPage extends javax.swing.JPanel {
                 .addContainerGap()
                 .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 29, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jTabbedPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 419, Short.MAX_VALUE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(jTabbedPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 450, Short.MAX_VALUE)
                 .addContainerGap())
         );
         add(jPanel7, java.awt.BorderLayout.CENTER);
@@ -207,8 +219,9 @@ public class PlantTreeRYSettingPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XDataTable xDataTable2;
     private com.rameses.rcp.control.XDataTable xDataTable3;
-    private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
+    private com.rameses.rcp.control.XLabel xLabel4;
+    private com.rameses.rcp.control.XLabel xLabel5;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     // End of variables declaration//GEN-END:variables
     
