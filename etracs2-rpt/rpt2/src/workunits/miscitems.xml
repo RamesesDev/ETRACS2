@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
-        <invoker type="miscitem.create" action="createItem" caption="Create Miscellaneous Item" mnemonic="c" icon="images/doc-new.png" target="popup"/>
-        <invoker type="miscitem.open" action="openItem" caption="Edit Miscellaneous Item" mnemonic="e" icon="images/edit.png" target="popup"/>
+    
+    <invoker folderid="/menu/rpt/master" action="init" caption="Miscellaneous Items" index="12" />
+    <invoker type="rpt.master" action="init" caption="Miscellaneous Items" index="10" />
         
-        <invoker type="formActions" action="_close" shortcut="ctrl C" immediate="true" caption="Close" mnemonic="c" icon="images/cancel.png" />
-        <invoker type="formActions" action="createItem" shortcut="ctrl N" visibleWhen="#{mode == 'view' and entity.objid != null }" immediate="true" caption="New" mnemonic="n" icon="images/doc-new.png" />
-        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null }" immediate="true" caption="Edit" mnemonic="e" icon="images/edit.png" />
-        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save.png"/>
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" />
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null }" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
+        <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/delete24.png" />
     
     <code lang="groovy">
         <![CDATA[
@@ -14,64 +16,34 @@
         import com.rameses.rcp.common.*;
         import com.rameses.rcp.annotations.*;
         import com.rameses.osiris2.client.*;
+        import java.rmi.server.UID;
         
-        public class MiscellaneousItemsController {
-        
-            @Binding
-            def binding;
-            
+        public class MiscellaneousItemsController  extends etracs2.groovy.CRUDController  {
             @Service("MiscItemsService")
             def svc;
-            
-            def mode = "view" ;
-            def entity;
-            
-            /*---------------------------------------------------------------------
-            * FormAction Support
-            ---------------------------------------------------------------------*/
-            def createItem() {
-                mode = "create"; 
-                entity = createEntity();
-                
-                return "new";
-            }
 
-            void openItem() {
-                mode = "view";
-                entity = svc.open( entity.objid );
-            }
-
+            def getService() { return svc; }
+            def getCreateFocusComponent() { return "entity.misccode"; }
+            def getEditFocusComponent() { return "entity.misccode"; }
+            def getListHandler() { return listHandler; }
             
-            /*---------------------------------------------------------------------
-            * Main
-            ---------------------------------------------------------------------*/
             
             def createEntity() {
                 return [:];
             }
             
-            void save() {
-                if( mode == "create") entity = svc.create( entity );
-                else entity = svc.update( entity );
-                
-                mode = "view";
-                binding.refresh("entity.*");
-            }
-            
-            void edit() {
-                mode = "edit";
-                focus( "entity.misccode" );
-            }
-            
-            /*---------------------------------------------------------------------
-            * Support Methods
-            ---------------------------------------------------------------------*/
-            
-            void focus( name ) {
-                binding.refresh("entity.*");
-                binding.focus( name );
-            }
-
+            def listHandler = [
+                getRows    : { return 20; },
+                getColumns : {
+                    return [
+                        new Column(name:"misccode", caption:"Code", minWidth:40),
+                        new Column(name:"miscdesc", caption:"Description", minWidth:170),
+                    ];
+                },
+                fetchList : { 
+                    return list; 
+                },
+            ] as SubListModel;
         }
         
         
@@ -79,6 +51,6 @@
     </code>
     
     <pages>
-        <page name="new" template="etracs2.rpt.master.miscitems.MiscItemsPage" />
+        <page template="etracs2.rpt.master.miscitems.MiscItemsPage" />
     </pages>
 </workunit>

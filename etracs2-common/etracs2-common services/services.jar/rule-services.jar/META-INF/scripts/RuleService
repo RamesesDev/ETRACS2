@@ -13,9 +13,6 @@ class RuleService
 	@PersistenceContext('main')
 	def em
 	
-	@PersistenceContext('sys')
-	def sysem 
-	
 	@Service('LogService')
 	def logService
 	
@@ -106,6 +103,7 @@ class RuleService
 	
 	@ProxyMethod
 	public def undeploy( objid ) {
+        println 'undeploying...'
 		def rule = em.read(SCHEMA_NAME, [objid:objid])
 		rule.docstate = DRAFT_STATE
 		em.update( rule.schemaname, rule )

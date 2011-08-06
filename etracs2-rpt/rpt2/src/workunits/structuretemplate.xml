@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
-        <invoker type="structuretemplate.create" action="createItem" caption="Create Structure Template" mnemonic="c" icon="images/doc-new.png" target="popup"/>
-        <invoker type="structuretemplate.open" action="openItem" caption="Edit Structure Template" mnemonic="e" icon="images/edit.png" target="popup"/>
+    
+    <invoker folderid="/menu/rpt/master" action="init" caption="Structure Template" index="9" />
+    <invoker type="rpt.master" action="init" caption="Structure Template" index="7" />
         
-        <invoker type="formActions" action="_close" shortcut="ctrl C" immediate="true" caption="Close" mnemonic="c" icon="images/cancel.png" />
-        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null }" immediate="true" caption="Edit" mnemonic="e" icon="images/edit.png" />
-        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save.png"/>
+        <invoker type="formActions" action="close" shortcut="ctrl c"  immediate="true" caption="Close" mnemonic="c" />
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null }" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
     
     <code lang="groovy">
         <![CDATA[
@@ -23,28 +25,20 @@
             def svc;
             
             def structures;
+            def list;
             def mode = "view" ;
             def entity;
             
-            /*---------------------------------------------------------------------
-            * FormAction Support
-            ---------------------------------------------------------------------*/
-            def createItem() {
-                mode = 'create';
-                entity = createEntity();
-                
-                return "new";
-            }
-
-            void openItem() {
-                mode = "view";
+            void init(){
                 entity = svc.open();
+                mode = 'view';
+                
+                if( !entity ){ 
+                    mode = 'create';
+                    entity = createEntity();
+                }
+                
             }
-
-            
-            /*---------------------------------------------------------------------
-            * Main
-            ---------------------------------------------------------------------*/
             
             def createEntity() {
                 return [
@@ -66,7 +60,6 @@
                     return entity.structures; 
                 },
                 createItem : { return [:]; },
-                validate       : { li -> validateStructure( li.item ) },
                 onAddItem : { item ->
                     updateStructures( item );
                     entity.structures.add( item );
@@ -91,19 +84,6 @@
                 item.structure.remove('materials');
             }
             
-            void validateStructure( item ){
-                required( 'Code', item.structure );
-                checkDuplicate( item );
-            }
-            
-            void checkDuplicate( item ){
-                def data = entity.structures.find{ it.objid == item.objid }
-                if( data ){ 
-                    MsgBox.alert('Duplicate not allowed!');
-                    throw new Exception('Duplicate not allowed!');
-                }
-            }
-            
             void save(){
                 if( mode == 'create' ) svc.create( entity );
                 else svc.update( entity );
@@ -118,16 +98,19 @@
                 focus( "entity.structurecode" );
             }
             
+            void cancel() {
+                mode = "view";
+                binding.refresh("entity.*");
+                structuresHandler.load();
+            }
+            
             void focus( name ) {
                 binding.refresh("entity.*");
                 binding.focus( name );
             }
             
-            void required( caption, value ) {
-                if( !value ){ 
-                    MsgBox.alert( caption + ' is required.')
-                    throw new Exception( caption + ' is required.')
-                }
+            def close(){
+                return "_close";
             }
         }
         
@@ -136,6 +119,6 @@
     </code>
     
     <pages>
-        <page name="new" template="etracs2.rpt.master.structures.StructureTemplatePage" />
+        <page template="etracs2.rpt.master.structures.StructureTemplatePage" />
     </pages>
 </workunit>

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
-        <invoker type="rptsetting.create" action="createItem" caption="Create RPT Setting" mnemonic="c" icon="images/doc-new.png" target="popup"/>
-        <invoker type="rptsetting.open" action="openItem" caption="Edit RPT Setting" mnemonic="e" icon="images/edit.png" target="popup"/>
-        
-        <invoker type="formActions" action="_close" shortcut="ctrl C" immediate="true" caption="Close" mnemonic="c" icon="images/cancel.png" />
-        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save.png"/>
+    <invoker folderid="/menu/rpt/master" action="init" caption="RPT Setting" index="2" />
+    <invoker type="rpt.master" action="init"  caption="RPT Setting" index="17" />
+    
+    <invoker type="formActions" action="close" shortcut="ctrl c"  immediate="true" caption="Close" mnemonic="c" />
+    <invoker type="formActions" action="save" shortcut="ctrl S" caption="Save" mnemonic="s" icon="images/save24.png"/>
     
     <code lang="groovy">
         <![CDATA[
@@ -25,28 +25,19 @@
             def svcDate;
             
             def entity;
-            def mode = "view";
+            def mode;
             def selectedItem;
             
-            /*---------------------------------------------------------------------
-            * FormAction Support
-            ---------------------------------------------------------------------*/
-            def createItem() {
-                mode = "create"; 
-                entity = createEntity();
-                
-                return "new";
-            }
-
-            void openItem() {
-                mode = "edit";
+            void init(){
                 entity = svc.open();
+                mode = 'update';
+                
+                if( !entity ){ 
+                    mode = 'create';
+                    entity = createEntity();
+                }
+                
             }
-
-            
-            /*---------------------------------------------------------------------
-            * Main
-            ---------------------------------------------------------------------*/
             
             def createEntity(){
                 return [
@@ -78,7 +69,6 @@
                 else svc.update( entity );
                 
                 MsgBox.alert( "Settings saved." );
-                binding.refresh("entity.*");
             }
             
             def lookupAgricultural(){
@@ -109,7 +99,10 @@
             void remove(){
                 entity.propertyclassifications.remove( selectedItem );
             }
-
+            
+            def close(){
+                return "_close";
+            }
            
         }
         
@@ -118,6 +111,6 @@
     </code>
     
     <pages>
-        <page name="new" template="etracs2.rpt.master.rptsetting.RPTSettingPage" />
+        <page template="etracs2.rpt.master.rptsetting.RPTSettingPage" />
     </pages>
 </workunit>

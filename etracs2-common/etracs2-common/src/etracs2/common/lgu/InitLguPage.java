@@ -31,10 +31,6 @@ public class InitLguPage extends javax.swing.JPanel {
         jPanel1 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
-        xLabel2 = new com.rameses.rcp.control.XLabel();
-        xTextField1 = new com.rameses.rcp.control.XTextField();
-        xTextField2 = new com.rameses.rcp.control.XTextField();
-        xLabel1 = new com.rameses.rcp.control.XLabel();
         xTextField3 = new com.rameses.rcp.control.XTextField();
         xTextField4 = new com.rameses.rcp.control.XTextField();
 
@@ -57,32 +53,8 @@ public class InitLguPage extends javax.swing.JPanel {
         xComboBox1.setRequired(true);
         formPanel1.add(xComboBox1);
 
-        xLabel2.setText("Municipality Information");
-        xLabel2.setCaption("");
-        xLabel2.setFont(new java.awt.Font("Arial", 1, 12));
-        formPanel1.add(xLabel2);
-
-        xTextField1.setCaption("Index No");
-        xTextField1.setDepends(new String[] {"entity.lgutype"});
-        xTextField1.setName("entity.muniindexno");
-        xTextField1.setPreferredSize(new java.awt.Dimension(80, 18));
-        xTextField1.setRequired(true);
-        formPanel1.add(xTextField1);
-
-        xTextField2.setCaption("Name");
-        xTextField2.setDepends(new String[] {"entity.lgutype"});
-        xTextField2.setIndex(2);
-        xTextField2.setName("entity.munilguname");
-        xTextField2.setPreferredSize(new java.awt.Dimension(0, 18));
-        xTextField2.setRequired(true);
-        formPanel1.add(xTextField2);
-
-        xLabel1.setText("Domain Information");
-        xLabel1.setCaption("");
-        xLabel1.setFont(new java.awt.Font("Arial", 1, 12));
-        formPanel1.add(xLabel1);
-
         xTextField3.setCaption("Index No");
+        xTextField3.setCellPadding(new java.awt.Insets(10, 0, 0, 0));
         xTextField3.setDepends(new String[] {"entity.lgutype"});
         xTextField3.setName("entity.indexno");
         xTextField3.setPreferredSize(new java.awt.Dimension(80, 18));
@@ -121,10 +93,6 @@ public class InitLguPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
-    private com.rameses.rcp.control.XLabel xLabel1;
-    private com.rameses.rcp.control.XLabel xLabel2;
-    private com.rameses.rcp.control.XTextField xTextField1;
-    private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;
     private com.rameses.rcp.control.XTextField xTextField4;
     // End of variables declaration//GEN-END:variables
