@@ -247,7 +247,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         jPanel4.add(xDataTable1);
         xDataTable1.setBounds(5, 50, 580, 110);
 
-        xLookupField1.setExpression("lobname");
+        xLookupField1.setExpression("#{lobname}");
         xLookupField1.setHandler("lookupLob");
         xLookupField1.setHint("Search Line of Business");
         xLookupField1.setName("lobSearch");

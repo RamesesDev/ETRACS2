@@ -56,18 +56,18 @@ class BPLedgerService {
 		payment.formattedtotal = dcf.format( payment.total );
 		payment.items = [];
 		def app = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
-		
+		println payment.qtr;
 		if( !app.payments ) app.payments = [];
 		if( app.payments.find{ it.refno == payment.refno } )
 			throw new Exception("Payment reference number already exist.");
 			
 		def getUnpaidReceivables = { 
 			def list = app.receivables.findAll{ it.amount > it.amtpaid };
-			if( app.txntype.matches('NEW|ADDLOB') ) return list;
-			return list.findAll{ it.qtr <= payment.qtr || ( it.assessmentype.matches('NEW|ADDLOB')) }
+			return list.findAll{ it.iqtr <= payment.qtr || it.applicationtype.matches('ADDLOB|NEW|RETIRE|RETIRELOB')}.each{ println it.iqtr }
 		}
 		
 		def receivables = getUnpaidReceivables();
+		if( !receivables ) throw new Exception("There are no receivable(s) for the Qtr $payment.qtr");
 		receivables.each{
 			def acct = em.read("incomeacct:incomeacct", [objid: it.acctid]);
 			payment.items << [
@@ -230,10 +230,11 @@ class BPLedgerService {
 	}
 	
 	def isApplicationStatusForPermit( application ){
+		def qtr = dateService.serverQtr;
 		def getUnpaidReceivables = { 
 			def list = application.receivables.findAll{ it.amount > it.amtpaid };
 			if( application.txntype.matches('NEW|ADDLOB') ) return list;
-			return list.findAll{ it.qtr <= entity.qtr || ( it.assessmentype.matches('NEW|ADDLOB')) }
+			return list.findAll{ it.iqtr <= qtr || ( it.applicationtype.matches('NEW|ADDLOB')) }
 		}
 		
 		def taxfees = getUnpaidReceivables();
