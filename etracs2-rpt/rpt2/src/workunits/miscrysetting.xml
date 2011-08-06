@@ -29,6 +29,9 @@ public class MiscRYSettingController
     @Service('MiscRYSettingService')
     def svc
     
+    @Service('RPUService')
+    def rpuSvc
+    
     def entity
     def copyYear
     def settingType
@@ -67,13 +70,13 @@ public class MiscRYSettingController
         }
         else {
             entity = svc.copySetting( entity.ry, copyYear );
-            initVariables();
         }
+        initVariables();
         return 'default'
     }
     
     void initVariables() {
-        assessLevels = entity.assessLevels;
+        assessLevels = entity.assesslevels;
         selectedAssessLevel = ( assessLevels ? assessLevels[0] : null )
         miscItemValues = entity.miscitemvalues;
         
@@ -212,6 +215,7 @@ public class MiscRYSettingController
     * MiscItemValue Support
     *
     ---------------------------------------------------------------------*/
+    def selectedMiscItem 
     def miscItemValues = []
     
     void loadItems() {
@@ -231,12 +235,17 @@ public class MiscRYSettingController
         return items
     }
     
+    def getLookupEditor() {
+        def varlist = rpuSvc.variableList.collect{ it.name }
+        return InvokerUtil.lookupOpener('formula_editor', [variableList:varlist])
+    }
+    
     def miscItemValueListHandler = [
         getRows    : { return 50 },
         getColumns : { return [
             new Column(name:'miscitemcode', caption:'Code', maxWidth:80),
             new Column(name:'miscitemname', caption:'Name'),
-            new Column(name:'expr', caption:'Computation Expression', editable:true  ),
+            new Column(name:'expr', caption:'Computation Expression', editable:true, type:'lookup', handler:lookupEditor  ),
         ]},
         validate     : { li -> validateMiscItemValue( li.item ) },
         fetchList    : { return miscItemValues },
@@ -251,6 +260,8 @@ public class MiscRYSettingController
             showError( e )
         }
     }
+    
+    
     
     
     

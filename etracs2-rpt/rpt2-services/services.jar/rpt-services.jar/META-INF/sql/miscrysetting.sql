@@ -16,6 +16,10 @@ SELECT * FROM miscitemvalue WHERE miscrysettingid = $P{miscrysettingid} ORDER BY
 [getMiscItem]
 SELECT objid AS miscitemid, misccode AS miscitemcode, miscdesc AS miscitemname  FROM miscitems
 
+[getPropertyClassification]
+SELECT objid as classid, propertycode as classcode, propertydesc as classname FROM propertyclassification ORDER BY orderno
+
+
 
 [checkDuplicate]
 SELECT objid 
