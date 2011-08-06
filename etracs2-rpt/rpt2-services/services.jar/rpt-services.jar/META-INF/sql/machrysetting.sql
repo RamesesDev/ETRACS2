@@ -13,6 +13,9 @@ SELECT * FROM machassesslevel WHERE machrysettingid = $P{machrysettingid} ORDER 
 [getForex]
 SELECT * FROM machforex WHERE machrysettingid = $P{machrysettingid} ORDER BY iyear
 
+[getPropertyClassification]
+SELECT objid as classid, propertycode as classcode, propertydesc as classname FROM propertyclassification ORDER BY orderno
+
 
 [checkDuplicate]
 SELECT objid 
