@@ -33,6 +33,9 @@ public class LandAdjustmentController
     
     def mode 
     def entity
+    def errorMsg
+    def adjustments
+    def selectedItem
         
     void create() {
         mode = 'create'
@@ -56,14 +59,23 @@ public class LandAdjustmentController
     }
     
     def update() {
+        checkDuplicate( 'Code', 'adjustmentcode')
+        checkDuplicate( 'Name', 'adjustmentname')
         entity.expression = editor?.handle.formula
         if( updateHandler ) updateHandler( entity )
         return '_close' 
     }
     
     void invokeAddHandler() {
+        checkDuplicate( 'Code', 'adjustmentcode')
+        checkDuplicate( 'Name', 'adjustmentname')
         entity.expression = editor?.handle.formula
         if( addHandler ) addHandler( entity )
+    }
+    
+    void checkDuplicate(caption, fieldname) {
+        def data = adjustments.find{ it.objid != entity.objid && it[fieldname] == entity[fieldname] }
+        if( data ) throw new Exception( 'Duplicate ' + caption + ' is already defined.')
     }
     
     def createEntity() {
@@ -80,7 +92,7 @@ public class LandAdjustmentController
         getColumns : {
             return [
                 new Column(name:"propertyclass", caption:"Code", minWidth:50, editable:true, type:"lookup", handler:lookupClassifications, expression: '#{classcode}'),
-                new Column(name:"propertyname", caption:"Name", minWidth:200, editable:false)
+                new Column(name:"propertyname", caption:"Name", editable:false)
             ];
         },
         fetchList : { 
@@ -88,41 +100,43 @@ public class LandAdjustmentController
         },
         createItem : { return [:]; },
         validate     : { li -> doValidateLandAdjustment( li.item ) },
-        onAddItem : { item ->
-            updateClassifications( item );
-            entity.classifications.add( item );
-        },
-        onColumnUpdate : { item, colName ->
-            if( colName == 'propertyclass' ) {
-                updateClassifications( item );
-            }
-        },
+        onAddItem : { item ->entity.classifications.add( item ); },
         onRemoveItem : { item -> 
             if( mode == "view" ) return false;
             if( MsgBox.confirm("Remove selected item?") ) {
                 entity.classifications.remove( item );
             }
+            clearError()
         },
     ] as SubListModel;
     
     void doValidateLandAdjustment( item ){
         try{
-            checkDuplicateLandAdjustment( item );
-        }catch( e ){
-            MsgBox.err( e.message );
+            if( ! item.propertyclass ) throw new Exception('Code is required.')
+            
+            //check duplicate item 
+            def data = entity.classifications.find{ it.propertyid == item.propertyclass.classid }
+            if( data ) throw new Exception('Duplicate item is not allowed.')    
+            
+            //update classinfo
+            item.propertyid = item.propertyclass.classid;
+            item.propertycode = item.propertyclass.classcode;
+            item.propertyname = item.propertyclass.classname;
+            
+            clearError()
+        }
+        catch( e ){
+            errorMsg = e.message
+            binding.refresh( 'errorMsg' )
             throw e
         }
     }
     
-    void checkDuplicateLandAdjustment( item ) {
-        def data = entity.classifications.find{ it.propertyid != item.propertyid && ( it.propertyname == item.propertyname )  }
-        if( data ) throw new Exception('Duplicate item is not allowed.')    
-    }
-    
-    void updateClassifications( item ){
-        item.propertyid = item.propertyclass.classid;
-        item.propertycode = item.propertyclass.classcode;
-        item.propertyname = item.propertyclass.classname;
+    void clearError() {
+        if( errorMsg ) {
+            errorMsg = null
+            binding.refresh( 'errorMsg' )
+        }
     }
     
     
