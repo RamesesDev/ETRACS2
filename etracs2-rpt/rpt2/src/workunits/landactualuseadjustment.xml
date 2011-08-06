@@ -25,6 +25,9 @@ public class LandActualUseAdjustmentController
     @Binding 
     def binding
     
+    @Service('RPUService')
+    def rpuSvc
+    
     def addHandler
     def updateHandler
     
@@ -53,11 +56,13 @@ public class LandActualUseAdjustmentController
     }
     
     def update() {
+        entity.expression = editor?.handle.formula
         if( updateHandler ) updateHandler( entity )
         return '_close' 
     }
     
     void invokeAddHandler() {
+        entity.expression = editor?.handle.formula
         if( addHandler ) addHandler( entity )
     }
     
@@ -68,7 +73,7 @@ public class LandActualUseAdjustmentController
         ]
     }
     
-    def lookupClassifications = InvokerUtil.lookupOpener("propertyclass:lookup",[:]);
+    def lookupClassifications = InvokerUtil.lookupOpener("propertyclass.lookup",[:]);
 
     def classificationListHandler = [
         getRows    : { return 20; },
@@ -120,6 +125,15 @@ public class LandActualUseAdjustmentController
         item.propertyname = item.propertyclass.classname;
     }
     
+        
+    /*------------------------------------------------------------------ */
+    def editor 
+    def getFormulaEditor() {
+        def varlist = rpuSvc.variableList.collect{ it.name }
+        if( !varlist  ) varlist = []
+        editor = InvokerUtil.lookupOpener('formula_editor', [formula:entity.expression, variableList:varlist, functionList:rpuSvc.functionList ])
+        return editor 
+    }
 }
 
 
@@ -128,6 +142,6 @@ public class LandActualUseAdjustmentController
     </code>
     
     <pages>
-        <page template="etracs2.rpt.ry.land.LandActualUseAdjustmentPage"/>
+        <page template="etracs2.rpt.ry.land.LandAdjustmentPage"/>
     </pages>
 </workunit>

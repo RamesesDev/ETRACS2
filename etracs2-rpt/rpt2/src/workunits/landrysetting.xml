@@ -62,20 +62,20 @@ public class LandRYSettingController
     def createSetting() {
         if( settingType == 'newSetting' ) {
             entity = svc.create( entity );
-            lcuv = entity.lcuv;
-            entity.remove( "lcuv" );
+            //lcuv = entity.lcuv;
+            //entity.remove( "lcuv" );
         }
         else {
             entity = svc.copySetting( entity.ry, copyYear );
-            initVariables();
         }
+        initVariables();
         return 'default'
     }
     
     void initVariables() {
-        assessLevels = entity.assessLevels;
+        assessLevels = entity.assesslevels;
         selectedAssessLevel = ( assessLevels ? assessLevels[0] : null )
-        lcuv = enity.lcuv;
+        lcuv = entity.lcuv;
         selectedLCUV = ( lcuv ? lcuv[0] : null );
         selectedSpecificClass = ( selectedSpecificClass ? selectedSpecificClass[0] : null );
         selectedSubClass = ( selectedSubClass ? selectedSubClass[0] : null );
@@ -83,7 +83,7 @@ public class LandRYSettingController
         landadjustments = entity.landadjustments;
         landactualuseadjustments = entity.landactualuseadjustments;
         
-        entity.remove('assessLevels');
+        entity.remove('assesslevels');
         entity.remove('lcuv');
         entity.remove('landadjustments');
         entity.remove('landactualuseadjustments');
@@ -252,7 +252,7 @@ public class LandRYSettingController
             selectedLCUV.specificclass.add( item );
         },
         onRemoveItem   : { item -> doRemoveSpecificClassItem( item ) },
-        fetchList    : { return selectedLCUV.specificclass; },
+        fetchList    : { return selectedLCUV?.specificclass; },
     ] as SubListModel
     
     def subClassListHandler = [
@@ -264,13 +264,9 @@ public class LandRYSettingController
             new Column(name:'unitvalue', caption:'Unit Value', type:'decimal', editable:true, editableWhen:'#{root.allowSubClassColumnEdit[item]}' ),
         ]},
         validate     : { li -> doValidateSubClass( li.item ) },
-        onAddItem    : { item -> 
-            item.specificclassid = selectedSpecificClass.objid;
-            svc.saveLCUVSubClass( item );
-            selectedSpecificClass.subclass.add( item );
-        },
+        onAddItem    : { item -> selectedSpecificClass.subclass.add( item ); },
         onRemoveItem   : { item -> doRemoveSubClassItem( item ) },
-        fetchList    : { return selectedSpecificClass.subclass; },
+        fetchList    : { return selectedSpecificClass?.subclass; },
     ] as SubListModel
     
     def strippingListHandler = [
@@ -340,23 +336,35 @@ public class LandRYSettingController
     }
     
     void doRemoveSubClassItem( item ) {
-        selectedLCUV.subclass.remove( item );
-        svc.removeLCUVSubClass( item );
+        if( MsgBox.confirm('Delete selected item?') ) {
+            svc.removeLCUVSubClass( item );
+            selectedSpecificClass.subclass.remove( item );
+        }
     }
     
     void doValidateSubClass( sc ) {
+        println sc
+        if( existsSubclass( sc ) ) return 
         lcuvMsg = null
         try {
             required( sc.subclasscode, 'Code' );
             required( sc.subclassname, 'Name' );
             required( sc.unitvalue, 'unitvalue' );
-            svc.saveLCUVSubClass( item );
+            sc.specificclassid = selectedSpecificClass.objid 
+            svc.saveLCUVSubClass( sc );
         }
         catch( e ) {
             lcuvMsg = e.message 
             binding.refresh('lcuvMsg') 
             throw e 
         }
+    }
+    
+    boolean existsSubclass( sc ) {
+        if( selectedSpecificClass ) {
+            return selectedSpecificClass.subclass.findAll{ it.objid == sc.objid }.size() > 0
+        }
+        return false 
     }
     
     void doRemoveStrippingItem( item ) {
@@ -395,6 +403,7 @@ public class LandRYSettingController
         
         if( selectedSpecificClass ) selectedSpecificClass.subclass = svc.openSubClass( selectedSpecificClass.objid );
         else selectedSpecificClass.subclass = [];
+        subClassListHandler.load()
     }
     
     
@@ -441,7 +450,9 @@ public class LandRYSettingController
     }
     
     def openLandAdjustment() {
-        return InvokerUtil.lookupOpener('landadjustment.open', [entity:selectedLandAdjustment, updateHandler:updateLandAdjustmentHandler] )
+        if( selectedLandAdjustment ) {
+            return InvokerUtil.lookupOpener('landadjustment.open', [entity:selectedLandAdjustment, updateHandler:updateLandAdjustmentHandler] )
+        }
     }
     
     void removeLandAdjustment() {
@@ -472,11 +483,10 @@ public class LandRYSettingController
         getColumns : { return [
             new Column(name:'adjustmentcode', caption:'Code', maxWidth:60),
             new Column(name:'adjustmentname', caption:'Name'),
-            new Column(name:'unit', caption:'Unit', maxWidth:180),
             new Column(name:'appliedto', caption:'Applied To' ),
-            new Column(name:'computation', caption:'Expression'),
+            new Column(name:'expression', caption:'Expression'),
         ]},
-        onRemoveItem   : { item -> doRemoveLandActualUseAdjustmentItem( item ) },
+        onRemoveItem   : { item -> doRemoveLandActualUseAdjustment( item ) },
         fetchList      : { return landactualuseadjustments; },
     ] as SubListModel 
 
@@ -494,7 +504,6 @@ public class LandRYSettingController
         item.appliedto = item.classifications.propertycode.join(',');
         item.classids = item.classifications.propertyid.join('/');
         svc.saveLandActualUseAdjustment( item ) 
-        landactualuseadjustments.set( landactualuseadjustments.indexOf( selectedLandActualUseAdjustment ), item )
         binding.refresh('selectedLandActualUseAdjustment')
     }
     
@@ -508,14 +517,13 @@ public class LandRYSettingController
     
     void removeLandActualUseAdjustment() {
         if( selectedLandActualUseAdjustment ) {
-            doRemoveLandActualUseAdjustmentItem( selectedLandActualUseAdjustment )
+            doRemoveLandActualUseAdjustment( selectedLandActualUseAdjustment )
         }
     }
     
-    
-    void doRemoveLandActualUseAdjustmentItem( item ) {
+    void doRemoveLandActualUseAdjustment( item ) {
         if( MsgBox.confirm('Remove item?') ) {
-            svc.removeLandActualUseAdjustment( selectedLandActualUseAdjustment )
+            svc.removeActualUseLandAdjustment( selectedLandActualUseAdjustment  )
             landactualuseadjustments.remove( item )
         }
     }

@@ -25,6 +25,9 @@ public class LandAdjustmentController
     @Binding 
     def binding
     
+    @Service('RPUService')
+    def rpuSvc
+    
     def addHandler
     def updateHandler
     
@@ -53,11 +56,13 @@ public class LandAdjustmentController
     }
     
     def update() {
+        entity.expression = editor?.handle.formula
         if( updateHandler ) updateHandler( entity )
         return '_close' 
     }
     
     void invokeAddHandler() {
+        entity.expression = editor?.handle.formula
         if( addHandler ) addHandler( entity )
     }
     
@@ -68,7 +73,7 @@ public class LandAdjustmentController
         ]
     }
     
-    def lookupClassifications = InvokerUtil.lookupOpener("propertyclass:lookup",[:]);
+    def lookupClassifications = InvokerUtil.lookupOpener("propertyclass.lookup",[:]);
 
     def classificationListHandler = [
         getRows    : { return 20; },
@@ -118,6 +123,16 @@ public class LandAdjustmentController
         item.propertyid = item.propertyclass.classid;
         item.propertycode = item.propertyclass.classcode;
         item.propertyname = item.propertyclass.classname;
+    }
+    
+    
+    /*------------------------------------------------------------------ */
+    def editor 
+    def getFormulaEditor() {
+        def varlist = rpuSvc.variableList.collect{ it.name }
+        if( !varlist  ) varlist = []
+        editor = InvokerUtil.lookupOpener('formula_editor', [formula:entity.expression, variableList:varlist, functionList:rpuSvc.functionList ])
+        return editor 
     }
     
 }
