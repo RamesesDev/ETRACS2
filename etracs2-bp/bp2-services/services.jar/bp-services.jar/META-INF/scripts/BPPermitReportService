@@ -29,18 +29,12 @@ public class BPPermitReportService
 		bp.iyear = yearFormat.format( bp.txndate );
 		bp.validity = dateFormat.parse( bp.iyear + '-12-31' );
 		
-		bp.orlist = [];
-		
-		app.credits.each{ c ->
-			def o = bp.orlist.find{ it.orno == c.refno };
-			if( !o ) {
-				o = [orno: c.refno+'', 
-				     ordate: dateFormat.parse( c.refdate ),
-					 amount: 0.0];
-				bp.orlist << o;
-			}
-			o.amount = c.amount + c.surcharge + c.interest - c.discount;
-		}
+		def c = app.credits[0]
+		def or = [orno: c.refno+'', 
+				   ordate: dateFormat.parse( c.refdate ),
+				   amount: 0.0];
+		app.credits.findAll{ it.refno == or.orno }.each{ or.amount += it.amount + it.surcharge + it.interest - it.discount };
+		bp.orlist = [ or ];
 		
 		def sdf = new java.text.SimpleDateFormat("EEEEE MMMMM dd, yyyy");
 		def params = [
