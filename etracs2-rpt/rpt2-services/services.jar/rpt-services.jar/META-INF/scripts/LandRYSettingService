@@ -35,7 +35,8 @@ public class LandRYSettingService
         entity.schemaversion = '1.0'
         validate( entity )
         em.create( entity.schemaname, entity )
-	entity.lcuv = createLCUV( entity );
+        createAssessLevels( entity )
+        entity.lcuv = createLCUV( entity );
         logSvc.log('CREATE', 'LandRYSetting', entity.objid )
         return entity 
     }
@@ -176,6 +177,24 @@ public class LandRYSettingService
     public void removeAssessLevel( assessLevel ) {
         def schemaname = 'landrysetting:assesslevel'
         em.delete(schemaname, assessLevel );
+    }
+    
+    void createAssessLevels( entity ){
+        entity.assesslevels = []
+		em.sqlContext.createNamedQuery( 'landrysetting:getPropertyClassification' ).resultList.each{
+			def al = [
+                objid       : 'AL' + new UID(),
+                classcode   : it.classcode, 
+                classname   : it.classname,
+                fixrate     : true,
+                rate        : 0.0,
+                previd      : null,
+                landrysettingid : entity.objid ,
+                ranges      : [],
+            ]
+            saveAssessLevel( al )
+            entity.assesslevels.add( al ) 
+		}
     }
     
     /*----------------------------------------------------------
@@ -398,7 +417,7 @@ public class LandRYSettingService
         em.sqlContext.createNamedExecutor('landrysetting:deleteLandAdjustment').setParameter('objid', objid ).execute();
     }
 
-	void removeLandActualUseAdjustments( objid ) {
+	void removeLandActualUseAdjustment( objid ) {
         em.sqlContext.createNamedExecutor('landrysetting:deleteLandActualUseAdjustment').setParameter('objid', objid ).execute();
     }
 	
