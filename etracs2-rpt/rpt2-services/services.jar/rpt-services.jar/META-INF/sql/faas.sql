@@ -66,7 +66,7 @@ SELECT * FROM pin WHERE pin = $P{pin} AND claimno = $P{claimno}
 
 [getCurrentRY]
 SELECT ry FROM rptsetting  
-
+ 
 
 [getLedgerInfo]
 SELECT objid, docstate, lastyearpaid, lastqtrpaid FROM rptledger where objid = $P{objid} 
@@ -83,8 +83,11 @@ WHERE objid = $P{objid}
 [getTaxpayerInfo]
 SELECT taxpayerid, taxpayerno, taxpayername, taxpayeraddress FROM faaslist WHERE objid = $P{objid} 
 
-[getAttachmentsById]
-SELECT attachments FROM faas WHERE objid = $P{objid}
+[getAttachments]
+SELECT * FROM faasattachment WHERE faasid = $P{faasid}
+
+[getAttachmentForTransmittal]
+SELECT * FROM faasattachment WHERE docstate = 'FORTRANSMITTAL' 
 
 #----------------------------------------------------------------
 # INSERT
@@ -127,9 +130,19 @@ UPDATE faaslist SET tdno = $P{tdno} WHERE objid = $P{objid}
 [updateListLandReference]
 UPDATE faaslist SET landfaasid = $P{landfaasid}, landfaastaxpayerid = $P{landfaastaxpayerid} WHERE objid = $P{objid} 
 
+[updateMessage]
+UPDATE faas SET message = $P{message} WHERE objid = $P{objid} 
 
-[updateAttachmentsById]
-UPDATE faas SET attachments = $P{attachments} WHERE objid = $P{objid}
+[updateAttachmentState]
+UPDATE faasattachment SET docstate = $P{docstate} WHERE faasid = $P{faasid}
+
+[updateFaasAttachmentInfo]
+UPDATE faasattachment SET  
+    docstate = $P{docstate}, 
+    message = $P{message}  
+WHERE objid = $P{objid} 
+
+
 
 #----------------------------------------------------------------
 # CHECKS
@@ -173,6 +186,7 @@ SELECT objid, docstate, tdno, fullpin, rputype, txntype, taxpayername, cadastral
 
 [findByBlockNo]
 SELECT objid, docstate, tdno, fullpin, rputype, txntype, taxpayername, cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, totalareasqm, totalareaha, totalmv, totalav, barangay, totalareasqm, totalareaha FROM  faaslist WHERE blockno = $P{blockno} ORDER BY pin
+
 
 
 

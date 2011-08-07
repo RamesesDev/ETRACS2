@@ -27,15 +27,14 @@ public class FAASAttachmentController {
 
     def faas 
     def selectedItem
+    def attachments
     
     
     
     
     void open() {
         removeCachedDirectory()
-        if( !faas.attachments ) {
-            faas.attachments = []
-        }
+        attachments = faasSvc.getAttachments( faas.objid )
     }
     
     def listHandler = [
@@ -47,13 +46,13 @@ public class FAASAttachmentController {
             new Column(name:'remarks', caption:'Remarks'),
         ]},
         onRemoveItem : { item -> removeItem( item ) },
-        fetchList : { return faas.attachments },
+        fetchList : { return attachments },
     ] as SubListModel
     
     void removeItem( item ) {
         if( MsgBox.confirm('Delete selected item?') ) {
             faasSvc.removeAttachment( faas.objid, item ) 
-            faas.attachments.remove( item )
+            attachments.remove( item )
         }
     }
     
@@ -101,7 +100,7 @@ public class FAASAttachmentController {
     
     def getImageUrl() {
         if( ! selectedItem ) {
-            return null
+            return 'Select an attachment'
         }
         
         def file = new File( resolveFileName(selectedItem.filename ) )
@@ -127,7 +126,7 @@ public class FAASAttachmentController {
         if( selectedItem == null || selectedItem.type == null )  return 
         if( MsgBox.confirm('Delete attachment?') ) {
             faasSvc.removeAttachment( faas.objid, selectedItem )
-            faas.attachments.remove( selectedItem )
+            attachments.remove( selectedItem )
         }
     }
     
@@ -153,7 +152,7 @@ public class FAASAttachmentController {
         ft.transfer(fis, handler);
         
         faasSvc.addAttachment( faas.objid, attachment )
-        faas.attachments.add( attachment )
+        attachments.add( attachment )
         listHandler.load()
         return 'default' 
 

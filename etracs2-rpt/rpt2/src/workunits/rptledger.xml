@@ -157,7 +157,11 @@ public class RPTLedgerController  {
     }
     
     void removeFaas() {
-        if( MsgBox.confirm( 'Remove last entry?' )) {
+        if( ! selectedItem ) return 
+        if( selectedItem.systemcreated == true ) {
+            throw new Exception( 'Cannot delete a system created entry.' )
+        }
+        if( MsgBox.confirm( 'Remove last item?' )) {
             svc.removeLedgerItem( selectedItem.objid )
             listHandler.load()
         }

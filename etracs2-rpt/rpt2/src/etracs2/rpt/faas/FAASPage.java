@@ -80,12 +80,10 @@ public class FAASPage extends javax.swing.JPanel {
         xDateField4 = new com.rameses.rcp.control.XDateField();
         jLabel19 = new javax.swing.JLabel();
         xDateField5 = new com.rameses.rcp.control.XDateField();
-        xActionTextField3 = new com.rameses.rcp.control.XActionTextField();
-        xActionTextField4 = new com.rameses.rcp.control.XActionTextField();
-        xActionTextField5 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
+        xLookupField2 = new com.rameses.rcp.control.XLookupField();
+        xLookupField3 = new com.rameses.rcp.control.XLookupField();
         jPanel7 = new javax.swing.JPanel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
-        xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
         jLabel22 = new javax.swing.JLabel();
         jLabel23 = new javax.swing.JLabel();
         xLabel3 = new com.rameses.rcp.control.XLabel();
@@ -96,6 +94,8 @@ public class FAASPage extends javax.swing.JPanel {
         jLabel26 = new javax.swing.JLabel();
         jLabel27 = new javax.swing.JLabel();
         xTextField8 = new com.rameses.rcp.control.XTextField();
+        xLookupField4 = new com.rameses.rcp.control.XLookupField();
+        xLookupField5 = new com.rameses.rcp.control.XLookupField();
         jPanel8 = new javax.swing.JPanel();
         jPanel10 = new javax.swing.JPanel();
         jLabel32 = new javax.swing.JLabel();
@@ -403,24 +403,23 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel6.add(xDateField5);
         xDateField5.setBounds(384, 114, 94, 19);
 
-        xActionTextField3.setActionName("lookupAppraiser");
-        xActionTextField3.setCaption("Appraised By");
-        xActionTextField3.setName("appraiser");
-        xActionTextField3.setRequired(true);
-        jPanel6.add(xActionTextField3);
-        xActionTextField3.setBounds(100, 76, 238, 19);
+        xLookupField1.setExpression("#{name}");
+        xLookupField1.setHandler("lookupAppraiser");
+        xLookupField1.setName("appraiser");
+        jPanel6.add(xLookupField1);
+        xLookupField1.setBounds(100, 76, 238, 19);
 
-        xActionTextField4.setActionName("lookupRecommender");
-        xActionTextField4.setName("recommender");
-        jPanel6.add(xActionTextField4);
-        xActionTextField4.setBounds(100, 95, 238, 19);
+        xLookupField2.setExpression("#{name}");
+        xLookupField2.setHandler("lookupRecommender");
+        xLookupField2.setName("recommender");
+        jPanel6.add(xLookupField2);
+        xLookupField2.setBounds(100, 95, 238, 19);
 
-        xActionTextField5.setActionName("lookupApprover");
-        xActionTextField5.setCaption("Approved By");
-        xActionTextField5.setName("approver");
-        xActionTextField5.setRequired(true);
-        jPanel6.add(xActionTextField5);
-        xActionTextField5.setBounds(100, 114, 238, 19);
+        xLookupField3.setExpression("#{name}");
+        xLookupField3.setHandler("lookupApprover");
+        xLookupField3.setName("approver");
+        jPanel6.add(xLookupField3);
+        xLookupField3.setBounds(100, 114, 238, 19);
 
         jPanel4.add(jPanel6);
         jPanel6.setBounds(312, 22, 482, 138);
@@ -433,18 +432,6 @@ public class FAASPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Ownership Information");
         jPanel7.setBorder(xTitledBorder2);
-        xActionTextField1.setActionName("lookupTaxpayer");
-        xActionTextField1.setCaption("Taxpayer");
-        xActionTextField1.setName("taxpayername");
-        xActionTextField1.setRequired(true);
-        jPanel7.add(xActionTextField1);
-        xActionTextField1.setBounds(90, 24, 362, 19);
-
-        xActionTextField2.setActionName("lookupAdministrator");
-        xActionTextField2.setName("administratorname");
-        jPanel7.add(xActionTextField2);
-        xActionTextField2.setBounds(90, 62, 362, 19);
-
         jLabel22.setText("Taxpayer * :");
         jLabel22.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel22);
@@ -498,6 +485,18 @@ public class FAASPage extends javax.swing.JPanel {
         xTextField8.setRequired(true);
         jPanel7.add(xTextField8);
         xTextField8.setBounds(520, 43, 274, 19);
+
+        xLookupField4.setExpression("#{entityname}");
+        xLookupField4.setHandler("lookupTaxpayer");
+        xLookupField4.setName("taxpayer");
+        jPanel7.add(xLookupField4);
+        xLookupField4.setBounds(90, 24, 362, 19);
+
+        xLookupField5.setExpression("#{entityname}");
+        xLookupField5.setHandler("lookupAdministrator");
+        xLookupField5.setName("administrator");
+        jPanel7.add(xLookupField5);
+        xLookupField5.setBounds(90, 62, 362, 19);
 
         jPanel3.add(jPanel7);
         jPanel7.setBounds(8, 172, 802, 90);
@@ -769,11 +768,6 @@ public class FAASPage extends javax.swing.JPanel {
     private javax.swing.JScrollPane jScrollPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionBar xActionBar2;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField2;
-    private com.rameses.rcp.control.XActionTextField xActionTextField3;
-    private com.rameses.rcp.control.XActionTextField xActionTextField4;
-    private com.rameses.rcp.control.XActionTextField xActionTextField5;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XCheckBox xCheckBox1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
@@ -795,6 +789,11 @@ public class FAASPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel7;
     private com.rameses.rcp.control.XLabel xLabel8;
     private com.rameses.rcp.control.XLabel xLabel9;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
+    private com.rameses.rcp.control.XLookupField xLookupField2;
+    private com.rameses.rcp.control.XLookupField xLookupField3;
+    private com.rameses.rcp.control.XLookupField xLookupField4;
+    private com.rameses.rcp.control.XLookupField xLookupField5;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField2;
     private com.rameses.rcp.control.XNumberField xNumberField3;

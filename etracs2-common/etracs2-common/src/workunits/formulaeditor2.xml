@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker type="formula_editor2" caption="Formula Editor" target="popup"/>
+        
+        <invoker type="lookupActions" action="ok" caption="OK" mnemonic="o" visibleWhen="#{showToolbar == true}" default="true"/>
+        <invoker type="lookupActions" action="_close" caption="Cancel" mnemonic="c" visibleWhen="#{showToolbar == true}"/>
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class FormulaEditor2 extends LookupModel {
+            
+            @Binding
+            def binding;
+        
+            //handler
+            def onselect;
+            
+            def formula;
+            def showToolbar = true 
+            
+            def variable;
+            def variableList;
+            
+            def function;
+            def functionList;
+            
+            def handler = [
+                getKeywords: { variableList }
+            ] as FormulaEditorModel;
+        
+            void setSearch(String txt) {
+                formula = txt;
+            }
+            
+            def getSelectedValue() {
+                return formula;
+            }
+            
+            void selectVariable() {
+                handler.insert( variable );
+                binding.focus('formula');
+            }
+            
+            void selectFunction() {
+                handler.insert( function.expr );
+                binding.focus('formula');
+            }
+            
+            def ok() {
+                if( onselect ) onselect( formula )
+                return '_close' 
+            }
+        
+        }
+        
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.common.FormulaEditor"/>
+    </pages>
+</workunit>

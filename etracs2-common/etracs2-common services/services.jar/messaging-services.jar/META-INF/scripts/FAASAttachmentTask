@@ -1,0 +1,81 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import com.rameses.invoker.client.DynamicHttpTransfer
+import com.rameses.io.FileTransfer
+import java.io.*
+
+
+class FAASAttachmentTask
+{
+    @PersistenceContext('main')
+    def em 
+    
+    @Service('Var')
+    def var
+    
+    @ProxyMethod
+	public def deliverAttachment( task ) {
+        def attachmentList = em.sqlContext.createNamedQuery('faas:getAttachmentForTransmittal').resultList
+        attachmentList.each { attachment -> 
+            try {
+                uploadAttachment( attachment )
+            }
+            catch( e ) {
+                //log encountered error, just ignore and redeliver attachment 
+                println 'Delivery of attachment error -> ' + e.message 
+            }
+        }
+        return true 
+	}
+    
+    def uploadAttachment( attachment ) {
+        def sourceDir = var.faas_attachment_path
+        if( ! sourceDir.endsWith('/') ) {
+            sourceDir += '/'
+        }
+        sourceDir += attachment.directory + '/'
+        def file = new File( sourceDir + attachment.filename )
+        
+        println 'file -> ' + file 
+        println 'file -> ' + file.absolutePath
+        
+        if( ! file.exists() ) {
+            //file might be deleted or moved
+            //change status and log message 
+            updateFaasAttachmentStatus( attachment, 'ERROR', 'Attachment File ' + file.absolutePath + ' does not exists.')
+        }
+        else {
+            //transfer file 
+            println 'uploading now...'
+            def remotehost        = var.remote_host
+            def remotecontext     = var.remote_context
+            println '1'
+            FileTransfer.FileInputSource fis = new FileTransfer.FileInputSource( file )
+            println '2'
+            DynamicHttpTransfer.Out handler = new DynamicHttpTransfer.Out(remotehost , remotecontext, 'ETRACSFileTransferService', 'uploadAttachment')
+            println '3 ' + handler
+            handler.parameters.put('attachment', attachment )
+            println '4'
+        
+            FileTransfer ft = new FileTransfer();
+            println '5'
+            ft.transfer(fis, handler);
+            println '6'
+            
+            //successfully uploaded, update status 
+            updateFaasAttachmentStatus( attachment, 'SUBMITTED', 'Successfully uploaded.')        
+            println 'Attachment successfully uploaded to ' + remotehost + '.' 
+        }
+
+    }
+    
+    
+    void updateFaasAttachmentStatus( attachment, docstate, message ) {
+        def params = [objid:attachment.objid, docstate:docstate, message:message]
+        em.sqlContext.createNamedExecutor('faas:updateFaasAttachmentInfo').setParameters( params ).execute()
+    }
+    
+    String makeSafeFileName( strvalue ) {
+        return strvalue.replaceAll('[\\W]', '')
+    }
+}

@@ -13,6 +13,7 @@
         <invoker type="formActions" action="start" permission="etracstask.start" caption="Start" immediate="true" visibleWhen="#{mode=='read' and task.taskid!=null and task.status=='inactive'}" />
         <invoker type="formActions" action="suspend" permission="etracstask.suspend" caption="Suspend" immediate="true" visibleWhen="#{mode=='read' and task.taskid!=null and task.status=='queue'}" />
         <invoker type="formActions" action="resume" permission="etracstask.resume" caption="Resume" immediate="true" visibleWhen="#{mode=='read' and task.taskid!=null and task.status=='suspended'}" />
+        <invoker type="formActions" action="recover" caption="Recover" tooltip="Recover" immediate="true" mnemonic="r" visibleWhen="#{mode=='read' and task.taskid!=null and task.status=='error'}" icon="images/delete24.png" />
     </invokers>
     
     <code>
@@ -43,6 +44,12 @@
             void suspend() {
                 task.status = svc.suspend( task );
                 task.status = 'SUSPENDED';
+                binding.refresh("task.*");
+            }
+            
+            void recover() {
+                task.status = svc.recover( task );
+                task.status = 'PROCESSING';
                 binding.refresh("task.*");
             }
             

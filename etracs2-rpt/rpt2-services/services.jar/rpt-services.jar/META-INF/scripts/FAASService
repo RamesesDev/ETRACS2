@@ -195,6 +195,9 @@ class FAASService
         validateSubmitToProvince( faasinfo )
         def faas = open( faasinfo.objid )
         updateFaasState( faas, FORPROVAPPROVAL_STATE )
+        updateMessage(faas, null )
+        updateAttachmentStates( faas, 'FORTRANSMITTAL' )
+        sendToOutbox( faas )
         logSvc.log('SUBMIT_TO_PROVINCE','FAAS', faasid)
         return faas 
     }
@@ -206,6 +209,7 @@ class FAASService
         def faas = open( faasinfo.objid )
         updateAutonumberTdNo( faas  )
         invokeCommonApproveActions( faas )
+        logSvc.log('APPROVE','FAAS', faas.objid)
         return faas 
     }
     
@@ -216,6 +220,7 @@ class FAASService
         def faas = open( faasinfo.objid )
         updateAutonumberTdNo( faas )
         invokeCommonApproveActions( faas )
+        logSvc.log('APPROVEBYPROVINCE','FAAS', faas.objid)
         return faas 
     }
         
@@ -309,6 +314,7 @@ class FAASService
         cancelPreviousFaas( faas )
         deleteTxnReference( faas )
         ledgerSvc.post( faas.objid )
+        moveOutboxMessageToProcessed( faas.objid )
         logSvc.log('APPROVE','FAAS', faas.objid)
     }
     
@@ -519,8 +525,8 @@ class FAASService
     
     @ProxyMethod
     public void createPIN( faas ) {
-        def validTxnTypes = ['DC','ND','SD','CS']
-        if( validTxnTypes.contains( faas.info.txntype ) ) {
+        def validTxnTypes = ['ND','SD','CS']
+        if( faas.info.datacapture == true || validTxnTypes.contains( faas.info.txntype ) ) {
             def pin = [pin:faas.rpu.fullpin, claimno:faas.info.claimno, docstate:faas.docstate]
             em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
         }
@@ -568,33 +574,22 @@ class FAASService
     -----------------------------------------------------------------------*/
     @ProxyMethod
     public void addAttachment( faasid, attachment ) {
-        def attachmentList = getAttachmentList( faasid )
-        attachmentList.add( attachment )
-        def params = [objid:faasid, attachments:em.serializer.write(attachmentList)]
-        em.sqlContext.createNamedExecutor('faas:updateAttachmentsById').setParameters( params ).execute()
+        attachment.objid    = 'FA' + new UID()
+        attachment.faasid   = faasid 
+        attachment.docstate = 'INTERIM' 
+        em.validate('faas:faasattachment', attachment )
+        em.create('faas:faasattachment', attachment )
     }
     
     @ProxyMethod
     public void removeAttachment( faasid, attachment )  {
-        def attachmentList = getAttachmentList( faasid )
-        if( attachmentList ) {
-            //remove attachment from list 
-            attachmentList.remove( attachment )
-            //
-            //update attachments 
-            def params = [objid:faasid, attachments:em.serializer.write(attachmentList)]
-            em.sqlContext.createNamedExecutor('faas:updateAttachmentsById').setParameters( params ).execute()
-        }
+        em.delete( 'faas:faasattachment', attachment )
     }
     
-    List getAttachmentList( faasid ) {
-        def data = em.sqlContext.createNamedQuery('faas:getAttachmentsById').setParameter('objid', faasid).singleResult
-        if( data.attachments ) {
-            return em.serializer.read( data.attachments )
-        }
-        return []
+    @ProxyMethod
+    public List getAttachments( faasid ) {
+        return em.sqlContext.createNamedQuery('faas:getAttachments').setParameter('faasid', faasid).resultList
     }
-    
     
     
     
@@ -986,6 +981,43 @@ class FAASService
         return faas 
     }
     
+    void updateMessage( faas, message ) {
+        faas.message = message
+        def params = [objid:faas.objid, message:message]
+        em.sqlContext.createNamedExecutor('faas:updateMessage').setParameters( params ).execute() 
+    }
     
+    void sendToOutbox( faas ) {
+        def msg = [
+            objid           : 'MI' + new UID(),
+            schemaname      : 'message:outbox',
+            schemaversion   : '1.0',
+            refid           : faas.objid, 
+            fromlguindex    : var.lgu_index,
+            fromlguname     : var.lgu_name,
+            tolguindex      : faas.rp.provcityindex,
+            tolguname       : faas.rp.provcity, 
+            dtsent          : new Date(),
+            sentby          : ( env.USERNAME ? env.USERNAME : 'SYSTEM' ),
+            sentbytitle     : ( env.JOBTITLE ? env.JOBTITLE : 'SYSTEM' ),
+            action          : 'faas.receive',
+            data            : [ faas:faas, images:[] ],
+            messages        : [],
+        ]
+        em.create('message:outbox', msg )
+    }
+    
+    void moveOutboxMessageToProcessed( refid ) {
+        def msg = em.sqlContext.createNamedQuery('message:getOutboxMessageByRefId').setParameter('refid', refid).singleResult
+        if( msg ) {
+            msg = em.read('message:outbox', msg )
+            em.create('message:processedoutbox', msg )
+            em.delete('message:outbox', msg )
+        }
+    }
+    
+    void updateAttachmentStates( faas, docstate ) {
+        em.sqlContext.createNamedExecutor('faas:updateAttachmentState').setParameters([faasid:faas.objid, docstate:docstate]).execute()
+    }
 }
 
