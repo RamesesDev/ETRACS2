@@ -27,6 +27,8 @@ public class BldgBaseValueTypeFixController {
     def list = [] 
     def errorMsg
     
+    def errorMessageHandler;
+    
     void init() {
         list = svc.getBldgKindBuccList( bldgType.objid ) 
     }
@@ -49,15 +51,7 @@ public class BldgBaseValueTypeFixController {
         ]},
         validate     : { li -> validateItem( li.item ) },
         onRemoveItem : { item -> removeItem( item ) },
-        onAddItem    : { item -> 
-            list.add( item ) 
-            svc.saveBldgKindBucc( item )
-        },
-        onColumnUpdate : { item, colName -> 
-            if( colName == 'bldgkind') {
-                updateBldgKindInfo( item )
-            }
-        },
+        onAddItem    : { item ->  list.add( item ) },
         fetchList : { return list }
     ] as SubListModel
     
@@ -73,19 +67,17 @@ public class BldgBaseValueTypeFixController {
             errorMsg = null
             required(item.bldgkind, 'Code')
             checkDuplicate( item )
+            
+            item.bldgkindid = item.bldgkind?.objid
+            item.bldgkindcode = item.bldgkind?.bldgcode
+            item.bldgkindname = item.bldgkind?.bldgkind 
+            
             svc.saveBldgKindBucc( item ) 
-        }
-        catch( e ) {
-            println e.message 
-            errorMsg = e.message
+
+        }catch( e ) {
+            errorMessageHandler( e );
             throw e 
         }
-    }
-    
-    void updateBldgKindInfo( item ) {
-        item.bldgkindid = item.bldgkind.objid
-        item.bldgkindcode = item.bldgkind.bldgcode
-        item.bldgkindname = item.bldgkind.bldgkind 
     }
     
     void checkDuplicate( item ) {

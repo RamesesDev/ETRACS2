@@ -36,3 +36,6 @@ DELETE FROM bldgkindbucc WHERE bldgrysettingid = $P{objid}
 [deleteBldgType]
 DELETE FROM bldgtype WHERE bldgrysettingid = $P{objid} 
 
+[getPropertyClassifications] 
+SELECT * FROM propertyclassification 
+
