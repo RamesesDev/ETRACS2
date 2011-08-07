@@ -1,0 +1,166 @@
+import com.rameses.annotations.*
+import groovy.text.SimpleTemplateEngine
+
+class FAASHtmlService
+{
+
+	@PersistenceContext('main')
+	def em
+	
+	@Service('FAASService')
+	def faasSvc
+	
+	@Service('NumberService')
+	def numberSvc
+	
+	@Service('XTemplateTestService')
+	def htmlService
+	
+	@Service('LandHtmlService')
+	def landService
+	
+	@Service('BldgHtmlService')
+	def bldgService
+	
+   @Service('MachHtmlService')
+	def machService
+   
+	@Service('MiscHtmlService')
+	def miscService
+	
+	@Service('PlantTreeHtmlService')
+	def planttreeService
+   
+	@ProxyMethod
+	public def getHtml( faasid) {
+        if( ! faasid) {
+            return buildEmptyHtml()
+        }
+		def faas = faasSvc.open( faasid)
+		return buildHtml(faas)
+	}
+	
+	String buildHtml( faas ) {
+	   def html;
+      def faasViewHtml = [
+         warning:faas.message,
+         title:'TD No.: ' +  faas.info.tdno,
+         state:faas.docstate,
+         subheaders:[
+            [caption:'PIN', value:faas.rpu.fullpin],
+            [caption:'Type', value:faas.rpu.rputype],
+            [caption:'Transaction Type', value:faas.info.txntype],
+            [caption:'Cancel Reason', value:faas.info.cancelreason],
+            [caption:'Date Cancelled', value:faas.info.canceldate]
+         ],
+         items:[
+            [
+               title:'General Information',
+               cols:2,
+               items:[
+                  [caption:'TD No.', value:faas.info.tdno],
+                  [caption:'Title Type', value:faas.info.titletype],
+                  [caption:'Title No.', value:faas.info.titleno],
+                  [caption:'Title Date', value:faas.info.titledate],
+                  [caption:'Issued Date', value:faas.info.issuedate],
+                  [caption:'Effectivity Year', value:faas.info.effectivityyear],
+                  [caption:'Effectivity Qtr', value:faas.info.effectivityqtr],
+                  [caption:'Restriction', value:faas.info.restriction],
+                  [caption:'Back Tax Years', value:faas.info.backtaxyrs],
+                  [caption:'Claim No', value:faas.info.claimno],
+                  
+                  [caption:'Previous TD No.', value:faas.info.prevtdno],
+                  [caption:'Previous PIN', value:faas.info.prevpin],
+                  [caption:'Previous MV', value:faas.info.prevmv],
+                  [caption:'Previous Owner', value:faas.info.prevowner],
+                  [caption:'Prevoius AV', value:faas.info.prevav],
+                  [caption:'Appraised By', value:faas.info.appraisedby],
+                  [caption:'Appraised Date', value:faas.info.dtappraised],
+                  [caption:'Recommended By', value:faas.info.recommendedby],
+                  [caption:'Recommended Date', value:faas.info.dtrecommended],
+                  [caption:'Approved By', value:faas.info.approvedby],
+                  [caption:'Approved Date', value:faas.info.dtapproved]              
+               ]
+            ],
+            [
+               title:'Ownership Information',
+               cols:2,
+               items:[
+                  [caption:'Taxpayer', value:faas.info.taxpayername],
+                  [caption:'Owner', value:faas.info.ownername],
+                  [caption:'Administrator', value:faas.info.administratorname],
+                  [caption:'Taxpayer Address', value:faas.info.taxpayeraddress],
+                  [caption:'Owner Address', value:faas.info.owneraddress],
+                  [caption:'Administrator Address', value:faas.info.administratoraddress]
+               ]
+            ],
+            [
+               title:'Real Property Information',
+               cols:2,
+               items:[
+                  [caption:'Cadastral No.', value:faas.rp.cadastrallotno],
+                  [caption:'Block No.', value:faas.rp.blockno],
+                  [caption:'Survey No.', value:faas.rp.surveyno],
+                  [caption:'House No.', value:faas.rp.houseno],
+                  [caption:'Street', value:faas.rp.street],
+                  [caption:'Purok/Zone', value:faas.rp.purok],
+                  [caption:'North', value:faas.rp.north],
+                  [caption:'South', value:faas.rp.south],
+                  [caption:'East', value:faas.rp.east],
+                  [caption:'West', value:faas.rp.west]
+               ]
+            ],
+            [
+               title:'Assessment Information',
+               cols:1,
+               items:[
+                  [caption:'Revision Year', value:faas.rpu.ry],
+                  [caption:'Classification', value:faas.rpu.classname],
+                  [caption:'Market Value', value:faas.rpu.totalmv],
+                  [caption:'Assessed Value', value:faas.rpu.totalav],
+                  [caption:'Taxable', value:faas.rpu.taxable]
+
+               ]
+            ],
+         ]
+      ]
+        
+      if(faas.rpu.rputype == 'land') {
+         def land = landService.buildLandHTML(faas)
+         land.each {
+            faasViewHtml.items.add( it )
+         }
+      } else if(faas.rpu.rputype == 'bldg') {
+         def bldg = bldgService.buildBldgHTML(faas)
+         bldg.each{
+            faasViewHtml.items.add( it )
+         }
+      } else if(faas.rpu.rputype == 'mach') {
+         def mach = machService.buildMachHTML(faas)
+         mach.each{
+            faasViewHtml.items.add( it )
+         }
+      } else if(faas.rpu.rputype == 'planttree') {
+         def plantTree = planttreeService.buildPlantTreeHTML(faas)
+         plantTree.each{
+            faasViewHtml.items.add( it )
+         }
+      } else if(faas.rpu.rputype == 'misc') {
+         def misc = miscService.buildMiscHTML(faas)
+         misc.each{
+            faasViewHtml.items.add( it )
+         }
+      }
+      
+      return htmlService.buildDocHTML(faasViewHtml) 
+	}
+    
+    String buildEmptyHtml() {
+        String html = ''
+        html += '<html>'
+        html += '<head></head>'
+        html += '<body><h3>FAAS does not exists.</h3></body>'
+        html += '</html>'
+        return html 
+    }
+}
