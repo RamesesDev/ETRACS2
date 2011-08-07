@@ -27,6 +27,7 @@
             def entity;
             def mode;
             def selectedItem;
+            def agricultural 
             
             void init(){
                 entity = svc.open();
@@ -36,6 +37,7 @@
                     mode = 'create';
                     entity = createEntity();
                 }
+                agricultural = [classname:entity.agriculturaltitle]
                 
             }
             
@@ -68,11 +70,18 @@
                 if( mode == 'create' ) svc.create( entity );
                 else svc.update( entity );
                 
-                MsgBox.alert( "Settings saved." );
+                MsgBox.alert( "Record has been saved successfully." );
             }
             
-            def lookupAgricultural(){
-                return InvokerUtil.lookupOpener("propertyclass:lookup",[onselect:selectAgricultural]);
+            def getLookupAgricultural(){
+                return InvokerUtil.lookupOpener("propertyclass.lookup",[:]);
+            }
+            
+            void setAgricultural( agri ) {
+                this.agricultural = agri
+                entity.agriculturalid = agri?.classid
+                entity.agriculturaltitle = agri?.classname
+                binding.refresh('agricultural')
             }
             
             def selectAgricultural = { agri ->
@@ -82,7 +91,7 @@
             }
             
             def add(){
-                def opener = InvokerUtil.lookupOpener("propertyclass:lookup",[onselect:selectPropertyclass]);
+                def opener = InvokerUtil.lookupOpener("propertyclass.lookup",[onselect:selectPropertyclass]);
                 return opener;
             }
             

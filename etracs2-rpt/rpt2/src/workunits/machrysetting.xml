@@ -55,9 +55,9 @@ public class MachRYSettingController
     void open() {
         mode = 'view' 
         entity = svc.open( entity.objid )
-        assessLevels = entity.assessLevels 
+        assessLevels = entity.assesslevels 
         forexes = entity.forexes
-        entity.remove( 'assessLevels') 
+        entity.remove( 'assesslevels') 
         entity.remove( 'forexes' ) 
     }
     
@@ -68,6 +68,8 @@ public class MachRYSettingController
         else {
             entity = svc.copySetting( ry )
         }
+        assessLevels = entity.assesslevels 
+        entity.remove('assesslevels')
         return 'default'
     }
     
@@ -202,14 +204,15 @@ public class MachRYSettingController
     * Forex Support
     *
     ---------------------------------------------------------------------*/
+    def selectedForex 
     def forexes = []
     
     def forexListHandler  = [
         createItem : { return createForex() },
         getRows    : { return 50 },
         getColumns : { return [
-            new Column(name:'iyear', caption:'Year*', type:'integer', editableWhen:'#{root.allowYearColumnEdit[item]}' ),
-            new Column(name:'forex', caption:'Rate*', type:'decimal', editableWhen:'#{root.allowRateColumnEdit[item]}' ),
+            new Column(name:'iyear', caption:'Year*', type:'integer', editableWhen:'#{root.allowYearColumnEdit[item]}', format:'0000' ),
+            new Column(name:'forex', caption:'Rate*', type:'decimal', editable:true  ),
         ]},
         validate     : { li -> validateForex( li.item ) },
         onAddItem    : { item -> 
@@ -246,8 +249,8 @@ public class MachRYSettingController
         }
         if( ! forex.iyear ) forex.iyear = (lastItem ? lastItem.iyear + 1 : 1)
         try {
-            validateRate( forex.forex )
             svc.saveForex( forex )
+            clearError()
         }
         catch( e ) {
             showError( e )

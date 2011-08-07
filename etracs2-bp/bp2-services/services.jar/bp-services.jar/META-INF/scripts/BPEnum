@@ -2,6 +2,9 @@ import com.rameses.annotations.*
 
 public class BPEnum{
 	
+	@PersistenceContext("main")
+	def em;
+	
 	@ProxyMethod
 	public def getOrganizations(){
 		return ['SINGLE PROPRIETORSHIP', 'PARTNERSHIP',
@@ -37,11 +40,9 @@ public class BPEnum{
 	
 	@ProxyMethod
 	public def getBarangays(){
-		return [
-			[barangayid:041, barangayname:'POBLACION NORTH'],
-			[barangayid:041, barangayname:'POBLACION EAST'],
-			[barangayid:041, barangayname:'POBLACION WEST'],
-			[barangayid:041, barangayname:'POBLACION SOUTH']
-		];
+		def munis = em.sqlContext.createNamedQuery('lgu:getMuncipalities').resultList 
+        def brgys = []
+        munis.each { brgys.addAll( em.serializer.read(it.barangays ) ) }
+		return brgys.collect{ [barangayid:it.objid, barangayname:it.lguname]}.sort{ a,b -> a.name <=> b.name }
 	}
 }

@@ -77,9 +77,9 @@ public class MachRYSettingPage extends javax.swing.JPanel {
         );
         jTabbedPane1.addTab("Assessment Levels", jPanel1);
 
-        xDataTable3.setDynamic(true);
         xDataTable3.setHandler("forexListHandler");
         xDataTable3.setImmediate(true);
+        xDataTable3.setName("selectedForex");
         xDataTable3.setShowRowHeader(true);
 
         org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);

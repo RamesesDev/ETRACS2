@@ -8,7 +8,7 @@ SELECT objid FROM landrysetting WHERE ry = $P{ry}
 SELECT * FROM landrysetting WHERE ry = $P{ry}
 
 [getPropertyClassification]
-SELECT objid as classid, propertycode as classcode, propertydesc as classname FROM propertyclassification
+SELECT objid as classid, propertycode as classcode, propertydesc as classname FROM propertyclassification ORDER BY orderno
 
 [getAssessLevel]
 SELECT * FROM landassesslevel WHERE landrysettingid = $P{landrysettingid} 

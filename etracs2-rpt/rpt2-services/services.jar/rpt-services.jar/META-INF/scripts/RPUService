@@ -16,13 +16,23 @@ class RPUService
     @ProxyMethod
     public List getFieldList() {
         return [
-            [objid:'BASE_MARKET_VALUE', name:'BASE_MARKET_VALUE'],
-            [objid:'MARKET_VALUE', name:'MARKET_VALUE'],
-            [objid:'BASE_VALUE', name:'BASE_VALUE'],
-            [objid:'UNIT_VALUE', name:'UNIT_VALUE'],
-            [objid:'AREA', name:'AREA'],
-            [objid:'ASSESSED_VALUE', name:'ASSESSED_VALUE'],
+            [objid:'SYS_BASE_MARKET_VALUE', name:'SYS_BASE_MARKET_VALUE', caption:'BASE MARKET VALUE'],
+            [objid:'SYS_MARKET_VALUE', name:'SYS_MARKET_VALUE', caption:'MARKET VALUE'],
+            [objid:'SYS_BASE_VALUE', name:'SYS_BASE_VALUE', caption:'BASE VALUE'],
+            [objid:'SYS_UNIT_VALUE', name:'SYS_UNIT_VALUE', caption:'UNIT VALUE'],
+            [objid:'SYS_AREA', name:'SYS_AREA', caption:'AREA'],
+            [objid:'SYS_ASSESSED_VALUE', name:'SYS_ASSESSED_VALUE', caption:'ASSESSED VALUE'],
         ]
+    }
+    
+    @ProxyMethod
+    public List getVariableList() {
+        return getFieldList() + em.sqlContext.createNamedQuery('rpu:getParamaterList').resultList 
+    }
+    
+    @ProxyMethod 
+    public List getFunctionList() {
+        return ['IIF', 'FIXED']
     }
     
     @ProxyMethod
@@ -51,19 +61,6 @@ class RPUService
         rpu.info.useswornamount  = false
     }
     
-    
-    /*
 
-    String buildFullPin( faas ) {
-        String fullpin = faas.rp.pin 
-        if( faas.rpu.rputype != LAND_TYPE ) {
-            fullpin += '-' + faas.rpu.suffix 
-        }
-        if( faas.rpu.rputype == BLDG_TYPE && faas.rpu.info.iscondo ) {
-            fullpin += '-' + faas.rpu.info.subsuffix
-        }
-        return fullpin 
-    }
-    */
     
 }

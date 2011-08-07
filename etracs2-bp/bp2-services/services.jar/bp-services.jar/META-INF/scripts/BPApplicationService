@@ -456,7 +456,7 @@ class BPApplicationService{
 			objid: 'BPRC' + new UID(),
 			businessid: businessid,
 			applicationid: app.objid,
-			applicationtype: app.txntype,
+			applicationtype: it.assessmenttype,
 			appno: app.txnno,
 			iyear: app.iyear,
 			iqtr: qtr,
@@ -472,21 +472,20 @@ class BPApplicationService{
 	}
 	
 	void addReceivables( def business, def applist ){
-		def sdf = new java.text.SimpleDateFormat("MM");
-		def cMonth = Integer.parseInt( sdf.format( dateService.serverDate ) );
-		def cQtr = (Integer)(cMonth/3);
-		
 		applist.each{ a ->
 			def app = open( a.objid );
+			def cQtr = dateService.getQtr( app.txndate );
 			app.receivables = [];
 			app.taxfees.each{ 
 				def acct = em.read("incomeacct:incomeacct", [objid: it.acctid]); 
-				if( acct.systype == 'BUSINESS_TAX' && app.txntype == 'RENEW' ){
+				if( it.assessmenttype == 'RENEW' && acct.systype == 'BUSINESS_TAX' ){
 					for( int i=1; i <= 4; i++ ){
-						if( it.amountdue > 0 ){
-							app.receivables <<  createReceivable( i, 4, business.objid, app, it );
+						if( it.amountdue > 0 ){							
+							app.receivables <<  createReceivable( i , 4, business.objid, app, it );
 						}
 					}
+				}else if( it.assessmenttype == 'RENEW' || app.txntype == 'RENEW'){
+					app.receivables << createReceivable( 1, 1, business.objid, app, it );
 				}else{
 					app.receivables << createReceivable( cQtr, 1, business.objid, app, it );
 				}

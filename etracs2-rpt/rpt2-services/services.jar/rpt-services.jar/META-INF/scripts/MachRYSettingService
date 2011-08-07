@@ -32,6 +32,7 @@ public class MachRYSettingService
         entity.schemaversion = '1.0'
         validate( entity )
         em.create( entity.schemaname, entity )
+        createAssessLevels( entity )
         logSvc.log('CREATE', 'MachRYSetting', entity.objid )
         return entity 
     }
@@ -84,7 +85,7 @@ public class MachRYSettingService
     public Map open( objid ) {
         def entity = em.read('machrysetting', [objid:objid])
         if( !entity ) throw new Exception('Unable to load Revision Setting.\nVerify that the record still exists.' )
-        entity.assessLevels = getAssessLevels( entity.objid )
+        entity.assesslevels = getAssessLevels( entity.objid )
         entity.forexes = getForexes( entity.objid )
         return entity 
     }
@@ -131,6 +132,24 @@ public class MachRYSettingService
             it.fixrate = it.fixrate as boolean 
         }
         return list 
+    }
+    
+    void createAssessLevels( entity ){
+        entity.assesslevels = []
+		em.sqlContext.createNamedQuery( 'machrysetting:getPropertyClassification' ).resultList.each{
+			def al = [
+                objid       : 'AL' + new UID(),
+                code        : it.classcode, 
+                name        : it.classname,
+                fixrate     : true,
+                rate        : 0.0,
+                previd      : null,
+                machrysettingid : entity.objid ,
+                ranges      : [],
+            ]
+            saveAssessLevel( al )
+            entity.assesslevels.add( al ) 
+		}
     }
     
     /*----------------------------------------------------------

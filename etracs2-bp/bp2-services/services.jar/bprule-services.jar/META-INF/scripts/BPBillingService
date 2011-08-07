@@ -88,16 +88,25 @@ public class BPBillingService
 						if( it.qtr == 4 ) bill.fourth_qtr_total += it.total;
 					}
 					
+					bill.taxfees.sort{ a, b ->
+						def sa = a.year+'-'+a.qtr;
+						def sb = b.year+'-'+b.qtr;
+						return sa <=> sb;
+					}
+					
 					billing.grandtotal += bill.grandtotal;
 					billing.items << bill;
 				}
+		
 			}
 		}
 		
 		if( !billing.items ) throw new Exception("Registered businesses are fully paid.");
 		
+		billing.items.sort{ it.appno };
+		
 		def serverDate = dtService.serverDate;
-		def duedate  = getDueDate( bpsetting,  getQtr( serverDate ) );
+		def duedate  = getDueDate( bpsetting,  dtService.serverQtr);
 		
 		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
 		billing.expirydate = sdf.parse( dtService.serverYear+"-"+duedate.month+"-"+duedate.day );
