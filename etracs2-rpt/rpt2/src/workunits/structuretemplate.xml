@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
     
-    <invoker folderid="/menu/rpt/master" action="init" caption="Structure Template" index="9" />
-    <invoker type="rpt.master" action="init" caption="Structure Template" index="7" />
+    <invoker folderid="/menu/rpt/master" action="init" caption="Structure Template" index="9" permission='structuretemplates.view' />
+    <invoker type="rpt.master" action="init" caption="Structure Template" index="7" permission='structuretemplates.view'/>
         
         <invoker type="formActions" action="close" shortcut="ctrl c"  immediate="true" caption="Close" mnemonic="c" />
-        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null }" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png" />
-        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null }" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png" permission='structuretemplates.edit'/>
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save24.png" />
         <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/cancel24.png"/>
     
     <code lang="groovy">
@@ -78,6 +78,11 @@
             ] as SubListModel;
             
             void updateStructures( item ){
+                println item;
+                
+                if( entity.structures.find(){ it.objid == item.structure.objid } )
+                    throw new Exception("Structure:  ${item.structure.structuredesc} already exists. ");
+                    
                 item.objid = item.structure.objid;
                 item.structurecode = item.structure.structurecode;
                 item.structuredesc = item.structure.structuredesc;
