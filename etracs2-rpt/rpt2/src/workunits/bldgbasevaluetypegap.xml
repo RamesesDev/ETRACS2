@@ -23,6 +23,8 @@ public class BldgBaseValueTypeGapController {
     @Service('BldgRYSettingService')
     def svc 
     
+    def errorMessageHandler;
+    
     def bldgType
     def list = [] 
     def errorMsg
@@ -89,20 +91,16 @@ public class BldgBaseValueTypeGapController {
             if( item.maxbasevalue == null ) throw new Exception('Maximum Base Value is required.')
             if( item.maxbasevalue < item.minbasevalue ) throw new Exception('Maximum Base Value must be greater than or equal to Minimum Base Value.')
             
+            item.bldgkindid = item.bldgkind?.objid
+            item.bldgkindcode = item.bldgkind?.bldgcode
+            item.bldgkindname = item.bldgkind?.bldgkind 
             
             svc.saveBldgKindBucc( item ) 
         }
         catch( e ) {
-            println e.message 
-            errorMsg = e.message
+            errorMessageHandler( e );
             throw e 
         }
-    }
-    
-    void updateBldgKindInfo( item ) {
-        item.bldgkindid = item.bldgkind.objid
-        item.bldgkindcode = item.bldgkind.bldgcode
-        item.bldgkindname = item.bldgkind.bldgkind 
     }
     
     void checkDuplicate( item ) {

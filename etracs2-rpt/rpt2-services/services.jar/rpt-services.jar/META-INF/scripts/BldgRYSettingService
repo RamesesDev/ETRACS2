@@ -43,8 +43,26 @@ public class BldgRYSettingService
     public def create( entity ) {
         entity.schemaname = SCHEMA_NAME
         entity.schemaversion = SCHEMA_VERSION
-        validate( entity )
+		
+		entity.fixrate = ( entity.fixrate ) ? 1 : 0
+		entity.depreciatecoreanditemseparately = ( entity.depreciatecoreanditemseparately ) ? 1 : 0
+		entity.computedepreciationbasedonschedule = ( entity.computedepreciationbasedonschedule ) ? 1 : 0
+		
+        validate( entity )		
         em.create( entity.schemaname, entity )
+		
+		em.sqlContext.createNamedQuery("bldgrysetting:getPropertyClassifications").resultList.each{
+			def assesslevel = [
+				objid: 'AL' + new UID(),
+				code:  it.propertycode,
+				name: it.propertydesc,
+				fixrate: 0,
+				rate: 0.0,
+				bldgrysettingid: entity.objid
+			];
+			saveAssessLevel( assesslevel );
+		}
+		
         logSvc.log('CREATE', 'BldgRYSetting', entity.objid )
         return entity 
     }
@@ -102,10 +120,21 @@ public class BldgRYSettingService
     
     @ProxyMethod
     public def update( entity ) {
+		entity.predominant = ( entity.predominant ) ? 1 : 0
+		entity.fixrate = ( entity.fixrate ) ? 1 : 0
+		entity.depreciatecoreanditemseparately = ( entity.depreciatecoreanditemseparately ) ? 1 : 0
+		entity.computedepreciationbasedonschedule = ( entity.computedepreciationbasedonschedule ) ? 1 : 0
+
         validate( entity )
         em.update( entity.schemaname, entity, { diff ->
             logSvc.logB( 'UPDATE', 'BldgRYSetting', entity.objid, '', diff )
         } as UpdateChangeHandler )
+		
+		entity.predominant = ( entity.predominant == 1 )
+		entity.fixrate = ( entity.fixrate == 1 )
+		entity.depreciatecoreanditemseparately = ( entity.depreciatecoreanditemseparately == 1 )
+		entity.computedepreciationbasedonschedule = ( entity.computedepreciationbasedonschedule == 1)
+		
         return entity 
     }
     
@@ -113,12 +142,12 @@ public class BldgRYSettingService
     public Map open( objid ) {
         def entity = em.read('bldgrysetting', [objid:objid])
         if( !entity ) throw new Exception('Unable to load Revision Setting.\nVerify that the record still exists.' )
-        entity.predominant = entity.predominant as boolean 
-        entity.depreciatecoreanditemseparately = entity.depreciatecoreanditemseparately as boolean 
-        entity.computedepreciationbasedonschedule = entity.computedepreciationbasedonschedule as boolean 
-        entity.assessLevels = loadAssessLevels( objid )
+        entity.predominant = (entity.predominant == 1 )
+        entity.depreciatecoreanditemseparately = (entity.depreciatecoreanditemseparately  == 1)
+        entity.computedepreciationbasedonschedule = (entity.computedepreciationbasedonschedule == 1)
+        entity.assessLevels = loadAssessLevels( objid ) 
         entity.additionalItems = loadAdditionalItems( objid ) 
-        entity.bldgTypes = loadBldgTypes( objid )
+        entity.bldgTypes = loadBldgTypes( objid ) 
         return entity 
     }
     
@@ -136,12 +165,13 @@ public class BldgRYSettingService
     ----------------------------------------------------------*/
     @ProxyMethod
     public void saveAssessLevel( assessLevel ) {
-        def schemaname = 'bldgrysetting:assesslevel'
+        def schemaname = 'bldgrysetting:assesslevel';
+		assessLevel.fixrate = ( assessLevel.fixrate ) ? 1 : 0
         em.validate(schemaname, assessLevel )
         
         def old = em.read(schemaname, assessLevel )
         if( old ) {
-            if( assessLevel.fixrate ) {
+            if( assessLevel.fixrate == 1 ) {
                 assessLevel.ranges.clear()
             }
             em.update(schemaname, assessLevel )
@@ -242,8 +272,8 @@ public class BldgRYSettingService
     List loadAssessLevels( objid )  {
         def list = em.sqlContext.createNamedQuery('bldgrysetting:getAssessLevel').setParameter('bldgrysettingid', objid).resultList
         list.each {
-            it.ranges = em.serializer.read( it.ranges )
-            it.fixrate = it.fixrate as boolean 
+            it.ranges = ( it.ranges ) ?  em.serializer.read( it.ranges ) : []
+            it.fixrate = ( it.fixrate == 1 )
         }
         return list 
     }
