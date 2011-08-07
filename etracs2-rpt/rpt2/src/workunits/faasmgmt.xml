@@ -6,8 +6,7 @@
 <workunit>
     <invokers>
         <invoker folderid="menu/rpt/txn" caption="FAAS Management" mnemonic="f" />
-        
-        <invoker type="home.action" caption="FAAS Management" icon="images/folder.png"/>
+        <invoker type="home.action" caption="FAAS Management" icon="images/folder.png" index="0" target="window" />
         
         <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/doc-new.png" />
         <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null and selectedItem.objid != null}" immediate="true" caption="Open" mnemonic="o" icon="images/open.png"/>
@@ -79,6 +78,11 @@ public class FAASMgmtController
         return htmlSvc.getHtml( selectedItem?.objid ) 
     }
     
+    boolean getShowActions() {
+        if( ! selectedItem || selectedItem.objid == null ) 
+            return false
+        return true
+    }
 
 }
 

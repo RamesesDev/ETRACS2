@@ -28,7 +28,7 @@ class PlantTreeRPUService
     }
 	
     @ProxyMethod
-    public Map calculatePlantTreeAssessment( planttree ) {
+    public Map calculatePlantTreeAssessment( landfaasid, planttree ) {
         //reset values to 0.0
         planttree.basemarketvalue  = 0.0
         planttree.adjustment       = 0.0
@@ -38,7 +38,7 @@ class PlantTreeRPUService
         //calculate basemarketvalue
         planttree.basemarketvalue = numberSvc.round( planttree.bearing * planttree.unitvalue )
         //calculate adjustment 
-        def adj = calculateAdjustment( planttree );
+        def adj = calculateAdjustment( landfaasid, planttree );
         planttree.adjustmentrate = adj.adjustmentrate;
         planttree.adjustment = adj.adjustment;
         //calculate marketvalue 
@@ -97,9 +97,9 @@ class PlantTreeRPUService
         return range.rate 
     }
     
-    def calculateAdjustment( planttree ) {
-        def land = em.read('faas', [objid:planttree.landfaasid]);
-        def adjrate = getAgriculturalRate( land.rpu.info.landdetails );
+    def calculateAdjustment( landfaasid, planttree ) {
+        def faas = em.read('faas', [objid:landfaasid]);
+        def adjrate = getAgriculturalRate( faas.rpu.info.landdetails );
         
         def adjustment = planttree.basemarketvalue * adjrate;
         
