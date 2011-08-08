@@ -3,96 +3,206 @@ import groovy.text.SimpleTemplateEngine
 
 class MachHtmlService
 {
-   @ProxyMethod
-   def buildMachHTML(def faas) {
-      def machList = []
-      faas.rpu.info.machuses.each {
-         machList.add(
-            
-               title:it.actualusename,
-               cols:1,
-               headers:[   
-                  [name:'machinecode', caption:'Code'],
-                  [name:'machinename', caption:'Machine'],
-                  [name:'basemarketvalue', caption:'Base Market Value'],
-                  [name:'marketvalue', caption:'Market Value'],
-                  [name:'assessedvalue', caption:'Assessed Value'],
-                  [name:'yearacquired', caption:'Year Acquired'],
-                  [name:'yearinstalled', caption:'Year Installed'],
-                  [name:'operationyear', caption:'Operation Year'],
-                  [name:'estimatedlife', caption:'Estimated Life'],
-                  [name:'remaininglife', caption:'Remaining Life'],
-                  [name:'originalcost', caption:'Original Cost'],
-                  [name:'acquisitioncost', caption:'Acquisition Cost'],
-                  [name:'replacementcost', caption:'Replacement Cost'],
-                  [name:'depreciation', caption:'Depreciation'],
-                  [name:'depreciationvalue', caption:'Depreciation Value'],
-               ],
-               items:[
-                  [machinecode:it.machdetails.machinecode],
-                  [machinename:it.machdetails.machinename],
-                  [machinename:it.machdetails.basemarketvalue],
-                  [machinename:it.machdetails.marketvalue],
-                  [machinename:it.machdetails.assessedvalue],
-                  [machinename:it.machdetails.yearacquired],
-                  [machinename:it.machdetails.yearinstalled],
-                  [machinename:it.machdetails.operationyear],
-                  [machinename:it.machdetails.estimatedlife],
-                  [machinename:it.machdetails.remaininglife],
-                  [machinename:it.machdetails.originalcost],
-                  [machinename:it.machdetails.acquisitioncost],
-                  [machinename:it.machdetails.replacementcost],
-                  [machinename:it.machdetails.depreciation],
-                  [machinename:it.machdetails.depreciationvalue],
-               ],
-               leftItems:'',
-               data:'',
-               rightItems:''
-            
-         )
-      }
-   
-      def mach = [
-         [
-            title:'Assessment Detail',
-            cols:1,
-            tables:[
-               [
-                  title:'Machine Classifications',
-                  cols:1,
-                  headers:[
-                     [name:'actualusecode', caption:'Code'],
-                     [name:'actualusename', caption:'Actual Use'],
-                     [name:'basemarketvalue', caption:'Base Market Value'],
-                     [name:'marketvalue', caption:'Market Value'],
-                     [name:'assesslevel', caption:'Assess Level'],
-                     [name:'assessedvalue', caption:'Assessed Value'],
-                  ],
-                  items:[
-                     [actualusecode:faas.rpu.info.machuses.actualusecode],
-                     [actualusename:faas.rpu.info.machuses.actualusename],
-                     [basemarketvalue:faas.rpu.info.machuses.basemarketvalue],
-                     [marketvalue:faas.rpu.info.machuses.marketvalue],
-                     [assesslevel:faas.rpu.info.machuses.assesslevel],
-                     [assessedvalue:faas.rpu.info.machuses.assessedvalue],
-                  ],
-                  leftItems:'',
-                  data:'',
-                  rightItems:''
-               ]
-            ],
-            items:[
-               [caption:'Base Market Value', value:faas.rpu.totalbmv],
-               [caption:'Market Value', value:faas.rpu.totalmv],
-               [caption:'Assessed Value', value:faas.rpu.totalav],
-            ]
-         ]
-      ]
-      
-      mach.tables.each {
-         it.addAll(machList)
-      }
-      
-      return mach
-   }
+
+	@Service("NumberService")
+	def numberService
+
+	@ProxyMethod
+	public def buildMachHTML(def faas) {
+		def assessment = buildMachAssessment( faas )
+		return """
+			<table width="100%">
+				<tr>
+					<td valign="top">$assessment</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildMachAssessment( faas ) {
+		def info = faas.rpu.info
+		def machineUses = buildMachUses( info )
+		def machineDetails = buildMachDetails( info )
+		return """
+			<table width="100%">
+				<tr>
+					<td class="title">ASSESSMENT DETAIL</td>
+				</tr>
+				<tr>
+					<td>$machineUses</td>
+				</tr>
+				<tr>
+					<td>$machineDetails</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildMachUses( info ) {
+		def html = """
+			<div style="background-color:silver">
+			<table width="100%" cellspacing="1">
+				<tr>
+					<th>Actual Use</th>
+					<th>Special Level</th>
+					<th>Market Value</th>
+					<th>Adj. Market Value</th>
+					<th>Assess Level (%)</th>
+					<th>Assessed Value</th>
+				</tr>
+		"""
+		
+		info.machineUses.each{
+			def mv = numberService.format("#,##0.00", it.marketValue )
+			def amv = numberService.format("#,##0.00", it.adjMarketValue )
+			def al = numberService.format("#,##0.00", it.assessLevel )
+			def av = numberService.format("#,##0.00", it.assessedValue )
+			html += """
+				<tr>
+					<td>$it.actualUseTitle</td>
+					<td>$it.specialLevel</td>
+					<td class="numeric">$mv</td>
+					<td class="numeric">$amv</td>
+					<td class="numeric">$al</td>
+					<td class="numeric">$av</td>
+				</tr>
+			"""
+		}
+		
+		html += "</table></div>"
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>MACHINE USES:</u></b></td>
+				</tr>
+				<tr>
+					<td>$html</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildMachDetails( info ) {
+		def mach = ""
+		info.machineUses.each { mu ->
+			mu.machineDetails.each { md ->
+				def replacementCost = numberService.format("#,##0.00", md.replacementCost )
+				def depreciation = numberService.format("#,##0", md.depreciation )
+				def depreciationValue = numberService.format("#,##0.00", md.depreciationValue )
+				def originalCost = numberService.format("#,##0.00", md.originalCost )
+				def freightCost = numberService.format("#,##0.00", md.freightCost )
+				def insuranceCost = numberService.format("#,##0.00", md.insuranceCost )
+				def installationCost = numberService.format("#,##0.00", md.installationCost )
+				def brokerageCost = numberService.format("#,##0.00", md.brokerageCost )
+				def arrastreCost = numberService.format("#,##0.00", md.arrastreCost )
+				def otherCost = numberService.format("#,##0.00", md.otherCost )
+				def acquisitionCost = numberService.format("#,##0.00", md.acquisitionCost )
+				def ferac = numberService.format("#,##0.00", md.ferac )
+				def forex = numberService.format("#,##0.00", md.forex )
+				def swornAmount = numberService.format("#,##0.00", md.swornAmount )
+				def residualRate = numberService.format("#,##0.00", md.residualRate )
+				def localIndex = numberService.format("#,##0.00", md.localIndex )
+				def mv = numberService.format("#,##0.00", md.marketValue )
+				def amv = numberService.format("#,##0.00", md.adjMarketValue )
+				def av = numberService.format("#,##0.00", md.assessedValue )
+				mach += """
+					<tr>
+						<td>$md.machineCode</td>
+						<td>$md.machineTitle</td>
+						<td align="center">$md.operationYear</td>
+						<td>$replacementCost</td>
+						<td>$depreciation</td>
+						<td>$depreciationValue</td>
+						<td>$mv</td>
+						<td>$amv</td>
+						<td>$av</td>
+						<td>$md.brand</td>
+						<td>$md.capacity</td>
+						<td>$md.model</td>
+						<td>$md.serialNo</td>
+						<td>$md.status</td>
+						<td align="center">$md.yearAcquired</td>
+						<td align="center">$md.estimatedLife</td>
+						<td align="center">$md.remainingLife</td>
+						<td align="center">$md.yearInstalled</td>
+						<td align="center">$md.yearsUsed</td>
+						<td>$originalCost</td>
+						<td>$freightCost</td>
+						<td>$insuranceCost</td>
+						<td>$installationCost</td>
+						<td>$brokerageCost</td>
+						<td>$arrastreCost</td>
+						<td>$otherCost</td>
+						<td>$acquisitionCost</td>
+						<td>$ferac</td>
+						<td>$forex</td>
+						<td>$md.useSwornAmount</td>
+						<td>$swornAmount</td>
+						<td>$md.imported</td>
+						<td>$residualRate</td>
+						<td>$localIndex</td>
+						<td>$md.newlyInstalled</td>
+						<td>$md.autoDepreciate</td>
+					</tr>
+				"""
+			}
+		}
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>MACHINE DETAIL:</u></b></td>
+				</tr>
+				<tr>
+					<td>
+						<div style="background-color:silver">
+							<table width="100%" cellspacing="1">
+								<tr>
+									<th>Code</th>
+									<th>Title</th>
+									<th>Operation Year</th>
+									<th>Replacement Cost</th>
+									<th>Depreciation</th>
+									<th>Depreciation Value</th>
+									<th>Market Value</th>
+									<th>Adj. Market Value</th>
+									<th>Assessed Value</th>
+									<th>Brand</th>
+									<th>Capacity</th>
+									<th>Model</th>
+									<th>Serial No.</th>
+									<th>Status</th>
+									<th>Year Acquired</th>
+									<th>Estimated Life</th>
+									<th>Remaining Life</th>
+									<th>Year Installed</th>
+									<th>Years Used</th>
+									<th>Original Cost</th>
+									<th>Freight Cost</th>
+									<th>Insurance Cost</th>
+									<th>Installation Cost</th>
+									<th>Brokerage Cost</th>
+									<th>Arrastre Cost</th>
+									<th>Other Cost</th>
+									<th>Acquisition Cost</th>
+									<th>Ferac</th>
+									<th>Forex</th>
+									<th>Use Sworn Amount</th>
+									<th>Sworn Amount</th>
+									<th>Imported</th>
+									<th>Residual Rate</th>
+									<th>Local Index</th>
+									<th>Newly Installed</th>
+									<th>Auto Depreciate</th>
+								</tr>
+								$mach
+							</table>
+						</div>
+					</td>
+				</tr>
+			</table>
+		"""
+	}
+	
 }

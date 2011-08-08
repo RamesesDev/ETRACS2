@@ -3,110 +3,301 @@ import groovy.text.SimpleTemplateEngine
 
 class BldgHtmlService
 {
-   @ProxyMethod
-   def buildBldgHTML(def faas) {
-      def bldg = [
-         [
-            title:'Assessment Detail',
-            cols:1,
-            tables:[
-               [
-                  title:'Building Information',
-                  cols:1,
-                  headers:[[:]],
-                  items:[
-                     [caption:'PSIC', value:faas.rpu.info.psic],
-                     [caption:'Permit No', value:faas.rpu.info.permitno],
-                     [caption:'Permit Date', value:faas.rpu.info.permitdate],
-                     [caption:'Issued By', value:faas.rpu.info.permitissuedby],
-                     [caption:'Date Completed', value:faas.rpu.info.dtcompleted],
-                     [caption:'Date Occupied', value:faas.rpu.info.dtoccupied],
-                     [caption:'Age', value:faas.rpu.info.bldgage],
-                     [caption:'Depreciation (%)', value:faas.rpu.info.depreciation],
-                     [caption:'Depreciation Value', value:faas.rpu.info.depreciationvalue],
-                  ],
-                  leftItems:'',
-                  data:'',
-                  rightItems:''
-                ],
-                [
-                  title:'Building Characteristic',
-                  cols:1,
-                  headers:[
-                     [name:'actualuse', caption:'Actual Use'],
-                     [name:'area', caption:'Area'],
-                     [name:'basemarketvalue', caption:'Base Market Value'],
-                     [name:'adjustment', caption:'Adjusment'],
-                     [name:'marketvalue', caption:'Market Value'],
-                     [name:'assessedvalue', caption:'Assessed Value'],
-                  ],
-                  items:[
-                     [actualuse:faas.rpu.info.bldguses.actualuse.actualusename],
-                     [area:faas.rpu.info.bldguses.area],
-                     [basemarketvalue:faas.rpu.info.bldguses.basemarketvalue],
-                     [adjustment:faas.rpu.info.bldguses.adjustment],
-                     [marketvalue:faas.rpu.info.bldguses.marketvalue],
-                     [assessedvalue:faas.rpu.info.bldguses.assessedvalue],
-                     
-                  ],
-                  leftItems:'',
-                  data:'',
-                  rightItems:''
-                ],
-                [
-                  title:'Building Classification',
-                  cols:1,
-                  headers:[
-                     [name:'structurename', caption:'Structure'],
-                     [name:'materialname', caption:'Material'],
-                  ],
-                  items:[
-                     [structurename:faas.rpu.info.bldgstructures.structurename],
-                     [materialname:faas.rpu.info.bldguses.materialname],
-                  ],
-                  leftItems:'',
-                  data:'',
-                  rightItems:''
-                ],
-                [
-                  title:'',
-                  cols:1,
-                  headers:[[:]],
-                  items:[
-                     [caption:'Building Type', value:faas.rpu.info.bldgtype.bldgtypename],
-                     [caption:'Building Kind', value:faas.rpu.info.bldgkindbucc.bldgkindcode],
-                     [caption:'Building Class', value:faas.rpu.info.bldgclass],
-                     [caption:'Base Value', value:faas.rpu.info.basevalue],
-                     [caption:'Sworn Amount', value:faas.rpu.info.swornamount],
-                     [caption:'Uses Sworn Amount', value:faas.rpu.info.useswornamount],
-                     [caption:'Additional Information', value:faas.rpu.info.additionalinfo]
-                     
-                  ],
-                  leftItems:'',
-                  data:'',
-                  rightItems:''
-                ]
-            ],
-            items:[
-               [caption:'Base Market Value', value:faas.rpu.totalbmv],
-               [caption:'Market Value', value:faas.rpu.totalmv],
-               [caption:'Assessed Value', value:faas.rpu.totalav],
-            ]
-         ]
-      ]
-      
-      return bldg
-   }
+
+	@Service("NumberService")
+	def numberService
+
+	@ProxyMethod
+	public def buildBldgHTML(def faas) {
+		def info = buildBldgInfo( faas )
+		def assessment = buildBldgAssessment( faas )
+		return """
+			<table width="100%">
+				<tr>
+					<td valign="top">$info</td>
+				</tr>
+				<tr>
+					<td valign="top">$assessment</td>
+				</tr>
+			</table>
+		"""
+	}
    
-	def validateListOfMaps = { list ->
-      def l = []
-      list.each {
-         if( it ) l << list
-      }
-      
-      if( l )
-         return l
-      
-      return ''
-   }
+   private def buildBldgInfo( faas ) {
+		def info = faas.rpu.info
+		def structureList = ""
+		info.bldgStructures.each {
+			structureList += """
+				<tr>
+					<td>$it.structureTitle</td>
+					<td>$it.materialTitle</td>
+				</tr>
+			"""
+		}
+		
+		def html = """
+			<table width="100%">
+				<tr>
+					<td>
+						<table width="100%">
+							<tr>
+								<td class="title"><b>BUILDING INFORMATION</td>
+							</tr>
+							<tr>
+								<td>
+									<table width="50%">
+										<tr>
+											<td class="caption">Date Completed</td>
+											<td class="data">${info.dtBldgCompleted == null ? '' : info.dtBldgCompleted}</td>
+										</tr>
+										<tr>
+											<td class="caption">Date Occupied</td>
+											<td class="data">${info.dtBldgOccupied == null ? '' : info.dtBldgOccupied}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg Age</td>
+											<td class="data">${info.bldgAge == null ? '' : info.bldgAge}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg Class</td>
+											<td class="data">${info.bldgClass == null ? '' : info.bldgClass}</td>
+										</tr>
+										<tr>
+											<td class="caption">Is Condominium?</td>
+											<td class="data">${info.condominium == true ? 'YES' : 'NO'}</td>
+										</tr>
+										<tr>
+											<td class="caption">PSIC</td>
+											<td class="data">${info.psic == null ? '' : info.psic}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg. Permit No.</td>
+											<td class="data">${info.permitNo == null ? '' : info.permitno}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg. Permit Date</td>
+											<td class="data">${info.permitDate == null ? '' : info.permitdate}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg. Permit Issuer</td>
+											<td class="data">${info.permitIssuedBy == null ? '' : info.permitissuedby}</td>
+										</tr>
+										<tr>
+											<td class="caption">Additional Info</td>
+											<td class="data">${info.additionalInfo == null ? '' : info.additionalInfo}</td>
+										</tr>
+									</table>
+								</td>
+							</tr>
+						</table>
+					</td>
+					<td>
+						<table width="100%">
+							<tr>
+								<td class="title" colspan="2"><b>STRUCTURES</td>
+							</tr>
+							$structureList
+						</table>
+					</td>
+				</tr>
+			</table>			
+		"""
+	}	
+   
+	private def buildBldgAssessment( faas ) {
+		def info = faas.rpu.info
+		def bldgAssessmentInfo = buildBldgAssessmentInfo( info ) 
+		def actualUses = buildBldgActualUses( info )
+		def floors = buildBldgFloors( info )
+		def floorAdjustments = buildBldgFloorAdjustments( info )
+		return """
+			<table width="100%">
+				<tr>
+					<td class="title">ASSESSMENT DETAIL</td>
+				</tr>
+				<tr>
+					<td>$bldgAssessmentInfo</td>
+				</tr>
+				<tr>
+					<td>$actualUses</td>
+				</tr>
+				<tr>
+					<td>$floors</td>
+				</tr>
+				<tr>
+					<td>$floorAdjustments</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildBldgAssessmentInfo( info ) {
+		return """
+			<table>
+				<tr>
+					<td class="caption">Classification</td>
+					<td class="data">$info.classTitle</td>
+				</tr>
+				<tr>
+					<td class="caption">Building Type</td>
+					<td class="data">$info.bldgTypeTitle</td>
+				</tr>
+				<tr>
+					<td class="caption">Kind of Building</td>
+					<td class="data">$info.bldgKindTitle</td>
+				</tr>
+				<tr>
+					<td class="caption">Base Value</td>
+					<td class="data">$info.baseValue</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildBldgActualUses( info ) {
+		def html = """
+			<div style="background-color:silver">
+			<table width="100%" cellspacing="1">
+				<tr>
+					<th>Actual Use</th>
+					<th>Area</th>
+					<th>Adjustment</th>
+					<th>Market Value</th>
+					<th>Adj. Market Value</th>
+					<th>Assess Level (%)</th>
+					<th>Assessed Value</th>
+				</tr>
+		"""
+		
+		info.bldgUses.each {
+			def assessLevel = (info.predominant ? info.assessLevel : it.assessLevel )
+			
+			def area = numberService.format("#,##0.0000", it.area )
+			def adj = numberService.format("#,##0.00", it.adjustment )
+			def mv = numberService.format("#,##0.00", it.marketValue )
+			def amv = numberService.format("#,##0.00", it.adjMarketValue )
+			def al = numberService.format("#,##0", it.assessLevel )
+			def av = numberService.format("#,##0.00", it.assessedValue)
+				
+			html += """
+				<tr>
+					<td>$it.actualUseTitle</td>
+					<td class="numeric">$area</td>
+					<td class="numeric">$adj</td>
+					<td class="numeric">$mv</td>
+					<td class="numeric">$amv</td>
+					<td class="numeric">$al</td>
+					<td class="numeric">$av</td>
+				</tr>
+			"""
+		}
+		
+		html += "</table></div>"
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>ACTUAL USES:</u></b></td>
+				</tr>
+				<tr>
+					<td>$html</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildBldgFloors( info ) {
+		def floors = ""
+		info.bldgUses.each { bu ->
+			bu.bldgFloors.each { f ->
+				def area = numberService.format("#,##0.0000", f.area )
+				def adjustment = numberService.format("#,##0.00", f.adjustment )
+				def mv = numberService.format("#,##0.00", f.marketValue )
+				def amv = numberService.format("#,##0.00", f.adjMarketValue )
+				floors += """
+					<tr>
+						<td>$bu.actualUseTitle</td>
+						<td align="center">$f.floorNo</td>
+						<td class="numeric">$area</td>
+						<td class="numeric">$adjustment</td>
+						<td class="numeric">$mv</td>
+						<td class="numeric">$amv</td>
+					</tr>
+				"""
+			}
+		}
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>FLOOR DETAIL:</u></b></td>
+				</tr>
+				<tr>
+					<td>
+						<div style="background-color:silver">
+							<table width="100%" cellspacing="1">
+								<tr>
+									<th>Actual Use</th>
+									<th>Floor #</th>
+									<th>Area</th>
+									<th>Adjustment</th>
+									<th>Market Value</th>
+									<th>Adj. Market Value</th>
+								</tr>
+								$floors
+							</table>
+						</div>
+					</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildBldgFloorAdjustments( info ) {
+		def adjs = ""
+		info.bldgUses.each { bu ->
+			bu.bldgFloors.each { f ->
+				f.adjustments.each {
+					def params = buildParams( it.params )
+					adjs += """
+						<tr>
+							<td align="center">$f.floorNo</td>
+							<td align="center">$it.bldgAdditionalItemCode</td>
+							<td>$it.bldgAdditionalItemTitle</td>
+							<td>$it.unit</td>
+							<td class="numeric">$it.amount</td>
+							<td>$params</td>
+						</tr>
+					"""
+				}
+			}
+		}
+		
+		if( ! adjs ) return ""
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>FLOOR ADJUSTMENTS:</u></b></td>
+				</tr>
+				<tr>
+					<td>
+						<div style="background-color:silver">
+							<table cellspacing="1" width="100%">
+								<tr>
+									<th>Floor #</th>
+									<th>Code</th>
+									<th>Description</th>
+									<th>Unit</th>
+									<th>Amount</th>
+									<th>Parameters</th>
+								</tr>
+								$adjs
+							</table>
+						</div>
+					</td>
+				</tr>
+			</table>
+		"""
+	}
 }
