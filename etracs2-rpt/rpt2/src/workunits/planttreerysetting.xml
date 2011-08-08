@@ -93,6 +93,8 @@ public class PlantTreeRYSettingController
     * AssessLevel Support
     *
     ---------------------------------------------------------------------*/
+    def selectedAssessLevel
+    
     def assessLevelListHandler = [
         createItem : { return createAssessLevel() },
         getRows    : { return 50 },
@@ -117,6 +119,7 @@ public class PlantTreeRYSettingController
             validateRate( al.rate )
             checkDuplicateAssessLevel( al )
             svc.update( entity ) 
+            clearError()
         }
         catch( e ) {
             showError( e )
@@ -144,6 +147,7 @@ public class PlantTreeRYSettingController
     *
     ---------------------------------------------------------------------*/
     def selectedPlantTree
+    def selectedValue
     def unitValueTitle 
     
     void setSelectedPlantTree( selectedPlantTree ) {
@@ -154,6 +158,7 @@ public class PlantTreeRYSettingController
             unitValues = svc.getUnitValues( selectedPlantTree.planttreeid )
             unitValueTitle = selectedPlantTree.planttreename 
         }
+        unitvalueListHandler.load()
     }
     
     void loadPlantTree() {
@@ -199,7 +204,9 @@ public class PlantTreeRYSettingController
             required(uv.code, 'Code')
             required(uv.name, 'Name')
             checkDuplicateUnitValue( uv )
+            if( uv.unitvalue == null ) throw new Exception('Unit Value is required.')
             svc.saveUnitValue( uv )
+            clearError()
         }
         catch( e ) {
             showError( e )
@@ -230,7 +237,7 @@ public class PlantTreeRYSettingController
         return [
             objid       : 'TRY' + new UID(),
             ry          : null,
-            applyagriadjustment : true,
+            applyagriadjustment : 0,
             assesslevels    : [],
             planttreeunits  : [],
         ]

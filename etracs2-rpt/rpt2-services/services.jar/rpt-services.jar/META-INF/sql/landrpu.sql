@@ -1,6 +1,9 @@
 [getAssessLevelById]
 SELECT * FROM landassesslevel WHERE objid = $P{objid}
 
+[getRPTSetting]
+SELECT * FROM rptsetting 
+
 #----------------------------------------------------------------
 # Lookups
 #----------------------------------------------------------------

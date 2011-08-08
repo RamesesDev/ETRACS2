@@ -31,6 +31,7 @@ public class MiscRYSettingService
         entity.schemaversion = '1.0'
         validate( entity )
         em.create( entity.schemaname, entity )
+        createAssessLevels( entity )
         logSvc.log('CREATE', 'MiscRYSetting', entity.objid )
         return entity 
     }
@@ -131,6 +132,24 @@ public class MiscRYSettingService
             it.fixrate = it.fixrate as boolean 
         }
         return list 
+    }
+    
+    void createAssessLevels( entity ){
+        entity.assesslevels = []
+		em.sqlContext.createNamedQuery( 'miscrysetting:getPropertyClassification' ).resultList.each{
+			def al = [
+                objid       : 'AL' + new UID(),
+                code        : it.classcode, 
+                name        : it.classname,
+                fixrate     : true,
+                rate        : 0.0,
+                previd      : null,
+                miscrysettingid : entity.objid ,
+                ranges      : [],
+            ]
+            saveAssessLevel( al )
+            entity.assesslevels.add( al ) 
+		}
     }
     
     /*----------------------------------------------------------

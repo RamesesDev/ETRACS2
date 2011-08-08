@@ -118,7 +118,7 @@ public class HomePage extends javax.swing.JPanel {
 
         jLabel5.setFont(new java.awt.Font("Tahoma", 1, 14));
         jLabel5.setForeground(new java.awt.Color(102, 0, 0));
-        jLabel5.setText("   This System is Not for Sale.");
+        jLabel5.setText("   This Software is Not for Sale.");
 
         org.jdesktop.layout.GroupLayout jPanel5Layout = new org.jdesktop.layout.GroupLayout(jPanel5);
         jPanel5.setLayout(jPanel5Layout);

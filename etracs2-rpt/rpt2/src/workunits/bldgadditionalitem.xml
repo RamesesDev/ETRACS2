@@ -28,6 +28,9 @@ public class BldgAdditionalItemController
     @Binding 
     def binding
     
+    @Service('RPUService')
+    def rpuSvc
+    
     def addHandler
     def updateHandler
     
@@ -66,6 +69,21 @@ public class BldgAdditionalItemController
     
     def createEntity() {
         return [ objid : 'BI' + new UID()]
+    }
+    
+    /*------------------------------------------------------------------ */
+    def openFormulaEditor() {
+        def varlist = rpuSvc.variableList.collect{ it.name }
+        if( !varlist  ) varlist = []
+        return InvokerUtil.lookupOpener('formula_editor2', [
+            formula         : entity.expr, 
+            variableList    : varlist, 
+            functionList    : rpuSvc.functionList,
+            onselect        : { formula ->
+                entity.expr = formula
+                binding.refresh('entity.expr')
+            }
+        ])
     }
     
 }

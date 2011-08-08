@@ -8,7 +8,7 @@
         <invoker type="bldgrysetting.create" action="create" caption="Create Building" mnemonic="b" icon="images/doc-new.png" target="window"/>
         <invoker type="bldgrysetting.open" action="open" caption="Edit Building" mnemonic="b" icon="images/edit.png" target="window"/>
         
-        <invoker type="formActions" action="_close" caption="Close" icon="images/cancel.png"/>
+        <invoker type="formActions" action="_close" caption="Close" icon="images/cancel.png" immediate="true"/>
         <invoker type="formActions" action="save" shortcut="ctrl S" caption="Save" mnemonic="s" icon="images/save.png"/>
         <invoker type="formActions" action="remove" shortcut="ctrl D" immediate="true" caption="Delete" mnemonic="d" icon="images/doc-delete.png" />
     </invokers>
@@ -35,6 +35,10 @@ public class BldgRYSettingController
     def mode
     def errorMsg 
    
+    def errorMessageHandler = { message -> 
+        System.out.println( 'PASSING ERROR MESSAGE -> ' + message );
+        showError( message );
+    }
     
     /*---------------------------------------------------------------------
     * FormAction Support
@@ -254,7 +258,9 @@ public class BldgRYSettingController
     }
     
     def openAdditionalItem() {
-        return InvokerUtil.lookupOpener('bldgadditionalitem.open', [entity:selectedAdditionalItem, updateHandler:updateAdditionalItemHandler] )
+        if( selectedAdditionalItem ){
+            return InvokerUtil.lookupOpener('bldgadditionalitem.open', [entity:selectedAdditionalItem, updateHandler:updateAdditionalItemHandler] )
+        }
     }
     
     void removeAdditionalItem() {
@@ -463,7 +469,7 @@ public class BldgRYSettingController
         baseValueHandler = null
         if( baseValueType ) {
             def openerType = 'basevaluetype.' + baseValueType
-            baseValueHandler = InvokerUtil.lookupOpener(openerType, [bldgType:selectedBldgType] )
+            baseValueHandler = InvokerUtil.lookupOpener(openerType, [bldgType:selectedBldgType, errorMessageHandler:errorMessageHandler] )
         }
     }
     
@@ -486,9 +492,9 @@ public class BldgRYSettingController
         return [
             objid       : 'BRY' + new UID(),
             ry          : null,
-            predominant : 1,
-            depreciatecoreanditemseparately     : 0,
-            computedepreciationbasedonschedule  : 1,
+            predominant : true,
+            depreciatecoreanditemseparately     : false,
+            computedepreciationbasedonschedule  : true,
         ]
     }
     
@@ -569,6 +575,7 @@ public class BldgRYSettingController
         errorMsg = null
         binding.refresh('errorMsg') 
     }
+    
 }
 
 

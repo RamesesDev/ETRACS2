@@ -121,7 +121,6 @@ public class BldgRYSettingPage extends javax.swing.JPanel {
         xComboBox1.setRequired(true);
         formPanel2.add(xComboBox1);
 
-        xSubFormPanel1.setDepends(new String[] {"baseValueType"});
         xSubFormPanel1.setDynamic(true);
         xSubFormPanel1.setHandler("baseValueHandler");
         xSubFormPanel1.setName("baseValueSubform");

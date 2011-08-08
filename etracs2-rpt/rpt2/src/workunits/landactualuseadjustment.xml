@@ -61,7 +61,6 @@ public class LandActualUseAdjustmentController
     def update() {
         checkDuplicate( 'Code', 'adjustmentcode')
         checkDuplicate( 'Name', 'adjustmentname')
-        entity.expression = editor?.handle.formula
         if( updateHandler ) updateHandler( entity )
         return '_close' 
     }
@@ -69,7 +68,6 @@ public class LandActualUseAdjustmentController
     void invokeAddHandler() {
         checkDuplicate( 'Code', 'adjustmentcode')
         checkDuplicate( 'Name', 'adjustmentname')
-        entity.expression = editor?.handle.formula
         if( addHandler ) addHandler( entity )
     }
     
@@ -140,12 +138,18 @@ public class LandActualUseAdjustmentController
     }
     
     /*------------------------------------------------------------------ */
-    def editor 
-    def getFormulaEditor() {
+    def openFormulaEditor() {
         def varlist = rpuSvc.variableList.collect{ it.name }
         if( !varlist  ) varlist = []
-        editor = InvokerUtil.lookupOpener('formula_editor', [formula:entity.expression, variableList:varlist, functionList:rpuSvc.functionList ])
-        return editor 
+        return InvokerUtil.lookupOpener('formula_editor2', [
+            formula         : entity.expression, 
+            variableList    : varlist, 
+            functionList    : rpuSvc.functionList,
+            onselect        : { formula ->
+                entity.expression = formula
+                binding.refresh('entity.expression')
+            }
+        ])
     }
 }
 

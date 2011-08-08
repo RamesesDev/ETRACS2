@@ -80,6 +80,8 @@ public class MiscRYSettingPage extends javax.swing.JPanel {
         jTabbedPane1.addTab("Assessment Levels", jPanel1);
 
         xDataTable6.setHandler("miscItemValueListHandler");
+        xDataTable6.setImmediate(true);
+        xDataTable6.setName("selectedMiscItem");
         xDataTable6.setShowRowHeader(true);
 
         xButton1.setText("Load Items");
@@ -98,10 +100,10 @@ public class MiscRYSettingPage extends javax.swing.JPanel {
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel3Layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(xDataTable6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 337, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 13, Short.MAX_VALUE)
+                .add(xDataTable6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 344, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
@@ -113,6 +115,7 @@ public class MiscRYSettingPage extends javax.swing.JPanel {
         xNumberField1.setEditable(false);
         xNumberField1.setCaption("Revision Year");
         xNumberField1.setCaptionWidth(100);
+        xNumberField1.setEnabled(false);
         xNumberField1.setFieldType(Integer.class);
         xNumberField1.setName("entity.ry");
         xNumberField1.setPreferredSize(new java.awt.Dimension(80, 19));
