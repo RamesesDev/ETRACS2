@@ -45,12 +45,14 @@ public class BldgRYSettingService
         entity.schemaversion = SCHEMA_VERSION
 		
 		entity.fixrate = ( entity.fixrate ) ? 1 : 0
+        entity.predominant = ( entity.predominant ) ? 1 : 0
 		entity.depreciatecoreanditemseparately = ( entity.depreciatecoreanditemseparately ) ? 1 : 0
 		entity.computedepreciationbasedonschedule = ( entity.computedepreciationbasedonschedule ) ? 1 : 0
 		
         validate( entity )		
         em.create( entity.schemaname, entity )
 		
+        entity.assesslevels = []
 		em.sqlContext.createNamedQuery("bldgrysetting:getPropertyClassifications").resultList.each{
 			def assesslevel = [
 				objid: 'AL' + new UID(),
@@ -58,9 +60,11 @@ public class BldgRYSettingService
 				name: it.propertydesc,
 				fixrate: 0,
 				rate: 0.0,
-				bldgrysettingid: entity.objid
+				bldgrysettingid: entity.objid,
+                ranges : [],
 			];
 			saveAssessLevel( assesslevel );
+            entity.assesslevels.add( assesslevel )
 		}
 		
         logSvc.log('CREATE', 'BldgRYSetting', entity.objid )
@@ -145,9 +149,9 @@ public class BldgRYSettingService
         entity.predominant = (entity.predominant == 1 )
         entity.depreciatecoreanditemseparately = (entity.depreciatecoreanditemseparately  == 1)
         entity.computedepreciationbasedonschedule = (entity.computedepreciationbasedonschedule == 1)
-        entity.assessLevels = loadAssessLevels( objid ) 
-        entity.additionalItems = loadAdditionalItems( objid ) 
-        entity.bldgTypes = loadBldgTypes( objid ) 
+        entity.assesslevels = loadAssessLevels( objid ) 
+        entity.additionalitems = loadAdditionalItems( objid ) 
+        entity.bldgtypes = loadBldgTypes( objid ) 
         return entity 
     }
     

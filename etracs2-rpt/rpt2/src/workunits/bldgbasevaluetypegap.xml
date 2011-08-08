@@ -47,11 +47,11 @@ public class BldgBaseValueTypeGapController {
         getColumns : { return [
             new Column(name:'bldgkind', caption:'Bldg Code*', editable:true, type:'lookup', expression:'#{bldgcode}', handler:bldgKindLookup, maxWidth:80),
             new Column(name:'bldgkindname', caption:'Kind of Building' ),
-            new Column(name:'minarea', caption:'Min Area*', type:'decimal', editable:true, maxWidth:100 ),
-            new Column(name:'maxarea', caption:'Max Area*', type:'decimal', editable:true, maxWidth:100 ),
-            new Column(name:'gapvalue', caption:'Gap*', type:'integer', editable:true, maxWidth:100),
-            new Column(name:'minbasevalue', caption:'Min Base Value', type:'decimal', editable:true, maxWidth:100 ),
-            new Column(name:'maxbasevalue', caption:'Max Base Value', type:'decimal', editable:true, maxWidth:100 ),
+            new Column(name:'minarea', caption:'Min Area*', type:'decimal', editable:true),
+            new Column(name:'maxarea', caption:'Max Area*', type:'decimal', editable:true),
+            new Column(name:'gapvalue', caption:'Gap*', type:'integer', editable:true),
+            new Column(name:'minbasevalue', caption:'Min Base Value', type:'decimal', editable:true),
+            new Column(name:'maxbasevalue', caption:'Max Base Value', type:'decimal', editable:true ),
         ]},
         validate     : { li -> validateItem( li.item ) },
         onRemoveItem : { item -> removeItem( item ) },
@@ -61,7 +61,7 @@ public class BldgBaseValueTypeGapController {
         },
         onColumnUpdate : { item, colName -> 
             if( colName == 'bldgkind') {
-                updateBldgKindInfo( item )
+                updateColumnInfo( item )
             }
         },
         fetchList : { return list }
@@ -72,6 +72,12 @@ public class BldgBaseValueTypeGapController {
             svc.removeBldgKindBucc( item )
             list.remove( item )
         }
+    }
+    
+    void updateColumnInfo( item ){
+        item.bldgkindid = item.bldgkind?.objid
+        item.bldgkindcode = item.bldgkind?.bldgcode
+        item.bldgkindname = item.bldgkind?.bldgkind 
     }
     
     void validateItem( item ) {       
@@ -91,9 +97,7 @@ public class BldgBaseValueTypeGapController {
             if( item.maxbasevalue == null ) throw new Exception('Maximum Base Value is required.')
             if( item.maxbasevalue < item.minbasevalue ) throw new Exception('Maximum Base Value must be greater than or equal to Minimum Base Value.')
             
-            item.bldgkindid = item.bldgkind?.objid
-            item.bldgkindcode = item.bldgkind?.bldgcode
-            item.bldgkindname = item.bldgkind?.bldgkind 
+            updateColumnInfo( item ) 
             
             svc.saveBldgKindBucc( item ) 
         }

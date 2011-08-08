@@ -103,9 +103,9 @@ public class MachRYSettingPage extends javax.swing.JPanel {
         formPanel1.setCellpadding(new java.awt.Insets(0, 0, 0, 10));
         formPanel1.setCellspacing(0);
         formPanel1.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
-        xNumberField1.setEditable(false);
         xNumberField1.setCaption("Revision Year");
         xNumberField1.setCaptionWidth(100);
+        xNumberField1.setEnabled(false);
         xNumberField1.setFieldType(Integer.class);
         xNumberField1.setName("entity.ry");
         xNumberField1.setPreferredSize(new java.awt.Dimension(80, 19));
