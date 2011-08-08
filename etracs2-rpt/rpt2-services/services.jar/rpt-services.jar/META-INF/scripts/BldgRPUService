@@ -125,7 +125,7 @@ class BldgRPUService
         rpu.totalmv         = calculateSum('marketvalue', rpu.info.bldguses )
         rpu.info.depreciationvalue = calculateSum('depreciationvalue', rpu.info.bldguses )
         
-        if( rpu.info.predominant ) {
+        if( rpu.info.predominant || rpu.info.predoument == 1 ) {
             calculatePredominantAssessment( rpu )
         }
         else {
@@ -138,7 +138,7 @@ class BldgRPUService
     public Map calculateSplitAssessment( rpu ) {
         required('Classification', rpu.classid)
         rpu.info.bldguses.each { bu ->
-            bu.assesslevel      = determineAssessmentLevel( bu.marketvlaue, bu.actualuse  )
+            bu.assesslevel      = determineAssessmentLevel( bu.marketvalue, bu.actualuse  )
             bu.assessedvalue    = numberSvc.roundToTen( bu.marketvalue * bu.assesslevel / 100 )
         }
         rpu.totalav = calculateSum('assessedvalue', rpu.info.bldguses )
@@ -200,9 +200,7 @@ class BldgRPUService
     public def recalcAdditionalItemAmount( floor, addlitem ) {
         def binding = buildFieldBindings( floor ) 
         binding += buildParamBindings( addlitem )
-        println 'binding -> ' + binding + ' expr -> ' + addlitem.expr 
         def amt = numberSvc.round( evaluateExpr( addlitem.expr, binding ) )
-        println amt 
         return amt 
     }
     
@@ -317,7 +315,6 @@ class BldgRPUService
         
         //set firstfloorbasevalue
         rpu.info.firstfloorbasevalue = firstfloorbasevalue
-        println 'firstfloorbasevalue -> ' + firstfloorbasevalue
     }
     
     def determineMultiStoreyRate( bldgtype, floor ) {

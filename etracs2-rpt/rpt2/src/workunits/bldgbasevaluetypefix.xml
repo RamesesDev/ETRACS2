@@ -47,11 +47,16 @@ public class BldgBaseValueTypeFixController {
         getColumns : { return [
             new Column(name:'bldgkind', caption:'Bldg Code*', editable:true, type:'lookup', expression:'#{bldgcode}', handler:bldgKindLookup, maxWidth:80),
             new Column(name:'bldgkindname', caption:'Kind of Building' ),
-            new Column(name:'basevalue', caption:'Base Value', type:'decimal', editable:true, maxWidth:120 ),
+            new Column(name:'basevalue', caption:'Base Value', type:'decimal', editable:true),
         ]},
         validate     : { li -> validateItem( li.item ) },
         onRemoveItem : { item -> removeItem( item ) },
         onAddItem    : { item ->  list.add( item ) },
+        onColumnUpdate : { item, colname -> 
+            if( colname == 'bldgkind' ) {
+                updateColumnInfo( item )
+            }
+        },
         fetchList : { return list }
     ] as SubListModel
     
@@ -67,17 +72,19 @@ public class BldgBaseValueTypeFixController {
             errorMsg = null
             required(item.bldgkind, 'Code')
             checkDuplicate( item )
-            
-            item.bldgkindid = item.bldgkind?.objid
-            item.bldgkindcode = item.bldgkind?.bldgcode
-            item.bldgkindname = item.bldgkind?.bldgkind 
-            
+            updateColumnInfo( item )
             svc.saveBldgKindBucc( item ) 
 
         }catch( e ) {
             errorMessageHandler( e );
             throw e 
         }
+    }
+    
+    void updateColumnInfo( item ){
+        item.bldgkindid = item.bldgkind?.objid
+        item.bldgkindcode = item.bldgkind?.bldgcode
+        item.bldgkindname = item.bldgkind?.bldgkind 
     }
     
     void checkDuplicate( item ) {

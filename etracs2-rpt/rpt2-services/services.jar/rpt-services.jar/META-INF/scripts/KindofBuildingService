@@ -60,6 +60,13 @@ class KindofBuildingService{
 	public void delete( kindbldg ){
 		em.delete( kindbldg.schemaname, kindbldg );
 	}
+    
+    @ProxyMethod
+    public List lookupBldgKind( searchText, params) {
+        def searchValue = (searchText ? searchText+'%' : '%')
+        def criteria = [bldgcode:searchValue]
+        return getListByQuery('kindofbuilding:lookupBldgKindByCode', criteria, params)
+    }
 	
 	
 	private void validate( kindbldg ){

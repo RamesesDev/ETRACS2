@@ -68,25 +68,28 @@ public class BldgRYSettingController
         }
         else {
             entity = svc.copySetting( entity.ry, copyYear )
-            initVariables()
         }
+        initVariables()
         return 'default'
     }
     
     void initVariables() {
-        assessLevels = entity.assessLevels 
-        additionalItems = entity.additionalItems
+        assessLevels = entity.assesslevels 
+        additionalItems = entity.additionalitems
         selectedAssessLevel = ( assessLevels ? assessLevels[0] : null )
-        bldgTypes  = entity.bldgTypes
+        bldgTypes  = entity.bldgtypes
         
         if( bldgTypes ) {
             selectedBldgType = bldgTypes[0]
             setBaseValueType( selectedBldgType.basevaluetype )
         }
+        else {
+            bldgTypes = []
+        }
         
-        entity.remove('assessLevels')
-        entity.remove('additionalItems')
-        entity.remove('bldgTypes')
+        entity.remove('assesslevels')
+        entity.remove('additionalitems')
+        entity.remove('bldgtypes')
     }
     
     void save() {
@@ -243,6 +246,9 @@ public class BldgRYSettingController
     def addAdditionalItemHandler = { item -> 
         item.bldgrysettingid = entity.objid
         svc.saveAdditionalItem( item ) 
+        if( ! additionalItems )  {
+            additionalItems = []
+        }
         additionalItems.add( item )
         additionalItemListHandler.load()
     }

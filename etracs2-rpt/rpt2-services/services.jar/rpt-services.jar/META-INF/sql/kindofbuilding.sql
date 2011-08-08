@@ -16,3 +16,5 @@ SELECT COUNT(*) AS count FROM kindofbuilding WHERE bldgkind = $P{bldgkind}
 [checkDuplicateCode]
 SELECT COUNT(*) AS count FROM kindofbuilding WHERE bldgcode = $P{bldgcode}
 
+[lookupBldgKindByCode]
+SELECT objid, bldgcode, bldgkind FROM kindofbuilding WHERE bldgcode LIKE $P{bldgcode} 

@@ -47,12 +47,17 @@ public class BldgBaseValueTypeRangeController {
         getColumns : { return [
             new Column(name:'bldgkind', caption:'Bldg Code*', editable:true, type:'lookup', expression:'#{bldgcode}', handler:bldgKindLookup, maxWidth:80),
             new Column(name:'bldgkindname', caption:'Kind of Building' ),
-            new Column(name:'minbasevalue', caption:'Minimum Base Value*', type:'decimal', editable:true, maxWidth:120 ),
-            new Column(name:'maxbasevalue', caption:'Maximum Base Value*', type:'decimal', editable:true, maxWidth:120 ),
+            new Column(name:'minbasevalue', caption:'Minimum Base Value*', type:'decimal', editable:true ),
+            new Column(name:'maxbasevalue', caption:'Maximum Base Value*', type:'decimal', editable:true),
         ]},
         validate     : { li -> validateItem( li.item ) },
         onRemoveItem : { item -> removeItem( item ) },
         onAddItem    : { item -> list.add( item ) },
+        onColumnUpdate : { item, colname -> 
+            if( colname == 'bldgkind' ) {
+                updateColumnInfo( item )
+            }
+        },
         fetchList : { return list }
     ] as SubListModel
     
@@ -61,6 +66,12 @@ public class BldgBaseValueTypeRangeController {
             svc.removeBldgKindBucc( item )
             list.remove( item )
         }
+    }
+    
+    void updateColumnInfo( item ){
+        item.bldgkindid = item.bldgkind?.objid
+        item.bldgkindcode = item.bldgkind?.bldgcode
+        item.bldgkindname = item.bldgkind?.bldgkind 
     }
     
     void validateItem( item ) {       
@@ -72,9 +83,7 @@ public class BldgBaseValueTypeRangeController {
             if( item.maxbasevalue == null ) throw new Exception('Maximum Base Value is required.')
             if( item.maxbasevalue < item.minbasevalue ) throw new Exception('Maximum Base Value must be greater than or equal to Minimum Base Value.')
             
-            item.bldgkindid = item.bldgkind?.objid
-            item.bldgkindcode = item.bldgkind?.bldgcode
-            item.bldgkindname = item.bldgkind?.bldgkind 
+            updateColumnInfo( item )
             
             svc.saveBldgKindBucc( item ) 
         }
