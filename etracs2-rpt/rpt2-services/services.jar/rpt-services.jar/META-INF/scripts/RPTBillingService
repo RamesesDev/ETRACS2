@@ -275,14 +275,15 @@ public class RPTBillingService
     }
     
     void initBillToYearQtrInfo( bill ) {
-        if( bill.billtoyear == null || bill.billtoyear == 0 ) bill.billtoyear = dt.year 
-        if( bill.billtoqtr == null  || bill.billtoqtr == 0 ) bill.billtoqtr = dt.qtr 
         if( bill.billdate ) {
             bill.billdate = dateSvc.parse( 'yyyy-MM-dd', bill.billdate )
         }
         else {
             bill.billdate = dateSvc.serverDate 
         }
+        def dt = dateSvc.parseDate( bill.billdate, null )
+        if( bill.billtoyear == null || bill.billtoyear == 0 ) bill.billtoyear = dt.year 
+        if( bill.billtoqtr == null  || bill.billtoqtr == 0 ) bill.billtoqtr = dt.qtr 
     }
     
     void finalizeBillInfo( bill ) {

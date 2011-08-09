@@ -101,6 +101,7 @@ public class PlantTreeRPUController
             required('Assess Level', item.assesslevelid )
             if( item.bearing == null ) throw new Exception('Bearing must not be empty.')
             if( item.nonbearing == null ) throw new Exception('Non-Bearing must not be empty.')
+            checkDuplicate( item )
             calculatePlantTreeAssessment( item )
             if( ! newPlantTreeItem(item) ) {
                 calculateTotals()
@@ -110,6 +111,11 @@ public class PlantTreeRPUController
         catch( e ) {
             showError( e )
         }
+    }
+    
+    void checkDuplicate( item ) {
+        def data = rpu.info.planttreedetails.find{ it.objid != item.objid && it.unitvalueid == item.ptuv.unitvalueid }
+        if( data ) throw new Exception('Duplicate item is not allowed.')
     }
     
     void calculatePlantTreeAssessment( item ) {

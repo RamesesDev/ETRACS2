@@ -156,7 +156,7 @@ public class BldgRPUFloorAdjustmentController
     
     def convertParamValue( param ) {
         if( param.datatype == 'decimal' ) {
-            return Double.parseDouble( param.paramvalue )
+            return parseDouble( param.paramvalue )
         }
         else if( param.datatype == 'range_decimal' ) {
             def decvalue = parseDouble( param.paramvalue )
@@ -176,7 +176,7 @@ public class BldgRPUFloorAdjustmentController
     
     def parseDouble( value ) {
         try {
-            return Double.parseDouble( value )
+            return Double.parseDouble( value+'' )
         }
         catch( e ) {
             throw new Exception('Invalid parameter value.')

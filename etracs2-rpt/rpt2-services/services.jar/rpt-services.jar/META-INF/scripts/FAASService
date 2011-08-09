@@ -560,12 +560,11 @@ class FAASService
         values.keySet().each {
             tdno = tdno.replace( it, values[it] )
         }
-        
-        faas.info.tdno = tdno + '-' + seqSvc.getNextFormattedSeries( tdno )
+        tdno = tdno + '-' + seqSvc.getNextFormattedSeries( tdno )
+        checkDuplicateTdNo( faas.objid, tdno )
+        faas.info.tdno = tdno 
         em.update(faas.schemaname, faas )
         em.update(LISTSCHEMA_NAME, faas )
-        //update faaslisttdno 
-        //em.sqlContext.createNamedExecutor('faas:updateListTdNo').setParameters([tdno:faas.info.tdno, objid:faas.objid]).execute()
     }
     
     

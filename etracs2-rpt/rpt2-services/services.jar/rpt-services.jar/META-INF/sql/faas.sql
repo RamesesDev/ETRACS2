@@ -2,10 +2,10 @@
 # GETTERS
 #----------------------------------------------------------------
 [getInfoByTdno]
-SELECT objid, docstate, schemaname, tdno, fullpin, claimno FROM faaslist WHERE tdno = $P{tdno} 
+SELECT objid, docstate, schemaname, tdno, fullpin, claimno, ledgerid FROM faaslist WHERE tdno = $P{tdno} 
 
 [getInfoByPin]
-SELECT objid, docstate, schemaname, tdno, fullpin, claimno FROM faaslist WHERE pin = $P{pin} 
+SELECT objid, docstate, schemaname, tdno, fullpin, claimno, ledgerid FROM faaslist WHERE pin = $P{pin} 
 
 [getLandReferenceByPin]
 SELECT objid, schemaname, taxpayerid FROM faaslist WHERE fullpin = $P{pin} 

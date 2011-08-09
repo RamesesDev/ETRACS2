@@ -328,6 +328,7 @@ public class FAASController
     *
     -----------------------------------------------------------------------------*/
     def prevtdno
+    def prevtd
     boolean autonumber = false
     def txntitle
     def txntype
@@ -337,6 +338,20 @@ public class FAASController
     def reassessment()  { initTxn( 'RE', 'Re-Assessment Transaction' ) }
     def correction()    { initTxn( 'CE', 'Correction of Entry Transaction' ) }
     def multipleclaim() { initTxn( 'MC', 'Multiple Claim Transaction' ) }
+    
+    def getLookupCurrentFaas() {
+        return InvokerUtil.lookupOpener( 'faas.lookup', [:] )
+    }
+    
+    void setPrevtd( prevtd ) {
+        if( prevtd ) {
+            if( prevtd.docstate != 'CURRENT' ) {
+                throw new Exception('FAAS state is ' + prevtd.docstate + '.\nOnly current record is allowed.')
+            }
+            prevtdno = prevtd.tdno 
+        }
+        this.prevtd = prevtd 
+    }
     
     def initTxn( txntype, txntitle ) { 
         this.mode = 'create' 

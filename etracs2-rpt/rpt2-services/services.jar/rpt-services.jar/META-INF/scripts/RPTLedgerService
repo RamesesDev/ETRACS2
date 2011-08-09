@@ -288,6 +288,7 @@ class RPTLedgerService
     List getLedgerItemList( ledgerid ) {
         def list = em.sqlContext.createNamedQuery('rptledger:getLedgerItemList').setParameter('parentid', ledgerid).resultList
         list.each {
+            it.taxable       = it.taxable as boolean 
             it.systemcreated = it.systemcreated as boolean 
         }
         return list 

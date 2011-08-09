@@ -30,7 +30,7 @@ public class FAASTxnInitPage extends javax.swing.JPanel {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xLabel1 = new com.rameses.rcp.control.XLabel();
         xSeparator1 = new com.rameses.rcp.control.XSeparator();
-        xTextField1 = new com.rameses.rcp.control.XTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xTextField2 = new com.rameses.rcp.control.XTextField();
         xButton1 = new com.rameses.rcp.control.XButton();
         xButton2 = new com.rameses.rcp.control.XButton();
@@ -57,12 +57,15 @@ public class FAASTxnInitPage extends javax.swing.JPanel {
         );
         formPanel1.add(xSeparator1);
 
-        xTextField1.setCaption("TD No. to process");
-        xTextField1.setCaptionWidth(120);
-        xTextField1.setName("prevtdno");
-        xTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
-        xTextField1.setRequired(true);
-        formPanel1.add(xTextField1);
+        xLookupField1.setCaption("Property to process");
+        xLookupField1.setCaptionWidth(120);
+        xLookupField1.setExpression("#{tdno}");
+        xLookupField1.setHandler("lookupCurrentFaas");
+        xLookupField1.setHint("Search Property");
+        xLookupField1.setName("prevtd");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField1.setRequired(true);
+        formPanel1.add(xLookupField1);
 
         xTextField2.setCaption("Claim No.");
         xTextField2.setCaptionWidth(120);
@@ -113,8 +116,8 @@ public class FAASTxnInitPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
     private com.rameses.rcp.control.XLabel xLabel1;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XSeparator xSeparator1;
-    private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
     // End of variables declaration//GEN-END:variables
     
