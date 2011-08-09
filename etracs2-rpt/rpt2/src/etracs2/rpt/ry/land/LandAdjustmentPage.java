@@ -65,7 +65,7 @@ public class LandAdjustmentPage extends javax.swing.JPanel {
         formPanel1.add(xTextField2);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("Applied To");
+        xTitledBorder1.setTitle("Applied to the following classifications");
         jPanel3.setBorder(xTitledBorder1);
         xDataTable1.setHandler("classificationListHandler");
         xDataTable1.setImmediate(true);

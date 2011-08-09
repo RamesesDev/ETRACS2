@@ -40,7 +40,8 @@ public class FAASMgmtPage extends javax.swing.JPanel {
         setLayout(new java.awt.BorderLayout());
 
         setPreferredSize(new java.awt.Dimension(748, 396));
-        jSplitPane1.setDividerLocation(400);
+        jSplitPane1.setDividerLocation(200);
+        jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jPanel1.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -51,7 +52,7 @@ public class FAASMgmtPage extends javax.swing.JPanel {
         jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 1, 3, 5));
         xActionTextField1.setActionName("search");
         xActionTextField1.setName("searchText");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(150, 19));
+        xActionTextField1.setPreferredSize(new java.awt.Dimension(200, 19));
         jPanel3.add(xActionTextField1, java.awt.BorderLayout.WEST);
 
         jPanel1.add(jPanel3, java.awt.BorderLayout.NORTH);

@@ -89,7 +89,7 @@ public class BldgRPUFloorAdjustmentController
     void validateItem( item ) {
         try  {
             println 'item -> ' + item  
-            //required('Code', item.addlitem )
+            required('Code', item.addlitem )
             checkDuplicate( item )
         }
         catch( e ) {
@@ -98,7 +98,7 @@ public class BldgRPUFloorAdjustmentController
     }
     
     void checkDuplicate( item ) {
-        def items = bldgFloor.additionalitems.findAll{ it.addlitemid == item.addlitem.addlitemid  }
+        def items = bldgFloor.additionalitems.findAll{ it.addlitemid == item.addlitem?.addlitemid  }
         if( items && items.size() == 1 && item.objid == null) throw new Exception('Duplicate item is not allowed.')    
         if( items && items.size() > 1 && item.objid != null) throw new Exception('Duplicate item is not allowed.')    
     }
@@ -147,6 +147,7 @@ public class BldgRPUFloorAdjustmentController
         try {
             item.paramvalue = convertParamValue( item ) 
             recalcAdditionalItemAmount( selectedItem )
+            binding.refresh('selectedItem')
         }
         catch( e ) {
             showError(e)

@@ -8,7 +8,7 @@ class MachHtmlService
 	def numberService
 
 	@ProxyMethod
-	public def buildMachHTML(def faas) {
+	public def buildMachHtml(def faas) {
 		def assessment = buildMachAssessment( faas )
 		return """
 			<table width="100%">
@@ -44,7 +44,6 @@ class MachHtmlService
 			<table width="100%" cellspacing="1">
 				<tr>
 					<th>Actual Use</th>
-					<th>Special Level</th>
 					<th>Market Value</th>
 					<th>Adj. Market Value</th>
 					<th>Assess Level (%)</th>
@@ -52,17 +51,16 @@ class MachHtmlService
 				</tr>
 		"""
 		
-		info.machineUses.each{
-			def mv = numberService.format("#,##0.00", it.marketValue )
-			def amv = numberService.format("#,##0.00", it.adjMarketValue )
-			def al = numberService.format("#,##0.00", it.assessLevel )
-			def av = numberService.format("#,##0.00", it.assessedValue )
+		info.machuses.each{
+			def bmv = numberService.format("#,##0.00", it.basemarketvalue )
+			def mv = numberService.format("#,##0.00", it.marketvalue )
+			def al = numberService.format("#,##0.00", it.assesslevel )
+			def av = numberService.format("#,##0.00", it.assessedvalue )
 			html += """
 				<tr>
-					<td>$it.actualUseTitle</td>
-					<td>$it.specialLevel</td>
+					<td>$it.actualusename</td>
+					<td class="numeric">$bmv</td>
 					<td class="numeric">$mv</td>
-					<td class="numeric">$amv</td>
 					<td class="numeric">$al</td>
 					<td class="numeric">$av</td>
 				</tr>
@@ -85,65 +83,65 @@ class MachHtmlService
 	
 	private def buildMachDetails( info ) {
 		def mach = ""
-		info.machineUses.each { mu ->
-			mu.machineDetails.each { md ->
-				def replacementCost = numberService.format("#,##0.00", md.replacementCost )
+		info.machuses.each { mu ->
+			mu.machdetails.each { md ->
+				def replacementcost = numberService.format("#,##0.00", md.replacementcost )
 				def depreciation = numberService.format("#,##0", md.depreciation )
-				def depreciationValue = numberService.format("#,##0.00", md.depreciationValue )
-				def originalCost = numberService.format("#,##0.00", md.originalCost )
-				def freightCost = numberService.format("#,##0.00", md.freightCost )
-				def insuranceCost = numberService.format("#,##0.00", md.insuranceCost )
-				def installationCost = numberService.format("#,##0.00", md.installationCost )
-				def brokerageCost = numberService.format("#,##0.00", md.brokerageCost )
-				def arrastreCost = numberService.format("#,##0.00", md.arrastreCost )
-				def otherCost = numberService.format("#,##0.00", md.otherCost )
-				def acquisitionCost = numberService.format("#,##0.00", md.acquisitionCost )
+				def depreciationvalue = numberService.format("#,##0.00", md.depreciationvalue )
+				def originalcost = numberService.format("#,##0.00", md.originalcost )
+				def freightcost = numberService.format("#,##0.00", md.freightcost )
+				def insurancecost = numberService.format("#,##0.00", md.insurancecost )
+				def installationcost = numberService.format("#,##0.00", md.installationcost )
+				def brokeragecost = numberService.format("#,##0.00", md.brokeragecost )
+				def arrastrecost = numberService.format("#,##0.00", md.arrastrecost )
+				def othercost = numberService.format("#,##0.00", md.othercost )
+				def acquisitioncost = numberService.format("#,##0.00", md.acquisitioncost )
 				def ferac = numberService.format("#,##0.00", md.ferac )
 				def forex = numberService.format("#,##0.00", md.forex )
-				def swornAmount = numberService.format("#,##0.00", md.swornAmount )
-				def residualRate = numberService.format("#,##0.00", md.residualRate )
-				def localIndex = numberService.format("#,##0.00", md.localIndex )
-				def mv = numberService.format("#,##0.00", md.marketValue )
-				def amv = numberService.format("#,##0.00", md.adjMarketValue )
-				def av = numberService.format("#,##0.00", md.assessedValue )
+				def swornamount = numberService.format("#,##0.00", md.swornamount )
+				def residualrate = numberService.format("#,##0.00", md.residualrate )
+				def conversionfactor = numberService.format("#,##0.00", md.conversionfactor )
+				def bmv = numberService.format("#,##0.00", md.basemarketvalue )
+				def mv = numberService.format("#,##0.00", md.marketvalue )
+				def av = numberService.format("#,##0.00", md.assessedvalue )
 				mach += """
 					<tr>
-						<td>$md.machineCode</td>
-						<td>$md.machineTitle</td>
-						<td align="center">$md.operationYear</td>
-						<td>$replacementCost</td>
+						<td>$md.machinecode</td>
+						<td>$md.machinetitle</td>
+						<td align="center">$md.operationyear</td>
+						<td>$replacementcost</td>
 						<td>$depreciation</td>
-						<td>$depreciationValue</td>
+						<td>$depreciationvalue</td>
+						<td>$bmv</td>
 						<td>$mv</td>
-						<td>$amv</td>
 						<td>$av</td>
 						<td>$md.brand</td>
 						<td>$md.capacity</td>
 						<td>$md.model</td>
-						<td>$md.serialNo</td>
+						<td>$md.serialno</td>
 						<td>$md.status</td>
-						<td align="center">$md.yearAcquired</td>
-						<td align="center">$md.estimatedLife</td>
-						<td align="center">$md.remainingLife</td>
-						<td align="center">$md.yearInstalled</td>
-						<td align="center">$md.yearsUsed</td>
-						<td>$originalCost</td>
-						<td>$freightCost</td>
-						<td>$insuranceCost</td>
-						<td>$installationCost</td>
-						<td>$brokerageCost</td>
-						<td>$arrastreCost</td>
-						<td>$otherCost</td>
-						<td>$acquisitionCost</td>
+						<td align="center">$md.yearacquired</td>
+						<td align="center">$md.estimatedlife</td>
+						<td align="center">$md.remaininglife</td>
+						<td align="center">$md.yearinstalled</td>
+						<td align="center">$md.yearsused</td>
+						<td>$originalcost</td>
+						<td>$freightcost</td>
+						<td>$insurancecost</td>
+						<td>$installationcost</td>
+						<td>$brokeragecost</td>
+						<td>$arrastrecost</td>
+						<td>$othercost</td>
+						<td>$acquisitioncost</td>
 						<td>$ferac</td>
 						<td>$forex</td>
-						<td>$md.useSwornAmount</td>
-						<td>$swornAmount</td>
+						<td>$md.useswornamount</td>
+						<td>$swornamount</td>
 						<td>$md.imported</td>
-						<td>$residualRate</td>
-						<td>$localIndex</td>
-						<td>$md.newlyInstalled</td>
-						<td>$md.autoDepreciate</td>
+						<td>$residualrate</td>
+						<td>$conversionfactor</td>
+						<td>$md.newlyinstalled</td>
+						<td>$md.autodepreciate</td>
 					</tr>
 				"""
 			}

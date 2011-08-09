@@ -8,8 +8,8 @@
     <invokers>
         <invoker type="bldgrpufloor.open" action="init" caption="Open" target="popup" icon="images/open.png"/>
         
+        <invoker type="formActions" action="ok" caption="OK" mnemonic="o" default="true" icon="images/approve.png" />
         <invoker type="formActions" action="openFloorDetail" caption="Floor Detail" mnemonic="d" visibleWhen="#{selectedFloor!=null and selectedFloor.objid!=null}" icon="images/doc-add.png"/>
-        <invoker type="formActions" action="ok" caption="OK" mnemonic="o" default="true" icon="images/approve.png"/>
         
     </invokers>
     <code lang="groovy">
@@ -25,9 +25,6 @@ public class BldgRPUFloorController
     @Binding
     def binding
     
-    @Service('BldgRPUService')
-    def svc
-    
     def onupdate //handler 
     def rpu 
     def bldguse
@@ -39,7 +36,7 @@ public class BldgRPUFloorController
     }
     
     def ok() {
-        if( onupdate) onupdate()
+        if( onupdate) onupdate( )
         return '_close' 
     }
     

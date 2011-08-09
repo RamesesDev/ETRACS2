@@ -8,7 +8,7 @@ class BldgHtmlService
 	def numberService
 
 	@ProxyMethod
-	public def buildBldgHTML(def faas) {
+	public def buildBldgHtml(def faas) {
 		def info = buildBldgInfo( faas )
 		def assessment = buildBldgAssessment( faas )
 		return """
@@ -48,19 +48,19 @@ class BldgHtmlService
 									<table width="50%">
 										<tr>
 											<td class="caption">Date Completed</td>
-											<td class="data">${info.dtBldgCompleted == null ? '' : info.dtBldgCompleted}</td>
+											<td class="data">${info.dtcompleted == null ? '' : info.dtcompleted}</td>
 										</tr>
 										<tr>
 											<td class="caption">Date Occupied</td>
-											<td class="data">${info.dtBldgOccupied == null ? '' : info.dtBldgOccupied}</td>
+											<td class="data">${info.dtoccupied == null ? '' : info.dtoccupied}</td>
 										</tr>
 										<tr>
 											<td class="caption">Bldg Age</td>
-											<td class="data">${info.bldgAge == null ? '' : info.bldgAge}</td>
+											<td class="data">${info.bldgage == null ? '' : info.bldgage}</td>
 										</tr>
 										<tr>
 											<td class="caption">Bldg Class</td>
-											<td class="data">${info.bldgClass == null ? '' : info.bldgClass}</td>
+											<td class="data">${info.bldgclass == null ? '' : info.bldgclass}</td>
 										</tr>
 										<tr>
 											<td class="caption">Is Condominium?</td>
@@ -72,19 +72,19 @@ class BldgHtmlService
 										</tr>
 										<tr>
 											<td class="caption">Bldg. Permit No.</td>
-											<td class="data">${info.permitNo == null ? '' : info.permitno}</td>
+											<td class="data">${info.permitno == null ? '' : info.permitno}</td>
 										</tr>
 										<tr>
 											<td class="caption">Bldg. Permit Date</td>
-											<td class="data">${info.permitDate == null ? '' : info.permitdate}</td>
+											<td class="data">${info.permitdate == null ? '' : info.permitdate}</td>
 										</tr>
 										<tr>
 											<td class="caption">Bldg. Permit Issuer</td>
-											<td class="data">${info.permitIssuedBy == null ? '' : info.permitissuedby}</td>
+											<td class="data">${info.permitissuedby == null ? '' : info.permitissuedby}</td>
 										</tr>
 										<tr>
 											<td class="caption">Additional Info</td>
-											<td class="data">${info.additionalInfo == null ? '' : info.additionalInfo}</td>
+											<td class="data">${info.additionalinfo == null ? '' : info.additionalinfo}</td>
 										</tr>
 									</table>
 								</td>
@@ -106,7 +106,7 @@ class BldgHtmlService
    
 	private def buildBldgAssessment( faas ) {
 		def info = faas.rpu.info
-		def bldgAssessmentInfo = buildBldgAssessmentInfo( info ) 
+		def bldgAssessmentInfo = buildBldgAssessmentInfo( faas, info ) 
 		def actualUses = buildBldgActualUses( info )
 		def floors = buildBldgFloors( info )
 		def floorAdjustments = buildBldgFloorAdjustments( info )
@@ -131,24 +131,24 @@ class BldgHtmlService
 		"""
 	}
 	
-	private def buildBldgAssessmentInfo( info ) {
+	private def buildBldgAssessmentInfo( faas, info ) {
 		return """
 			<table>
 				<tr>
 					<td class="caption">Classification</td>
-					<td class="data">$info.classTitle</td>
+					<td class="data">$faas.rpu.classname</td>
 				</tr>
 				<tr>
 					<td class="caption">Building Type</td>
-					<td class="data">$info.bldgTypeTitle</td>
+					<td class="data">$info.bldgtype.bldgtypecode</td>
 				</tr>
 				<tr>
 					<td class="caption">Kind of Building</td>
-					<td class="data">$info.bldgKindTitle</td>
+					<td class="data">$info.bldgkindbucc.bldgkindname</td>
 				</tr>
 				<tr>
 					<td class="caption">Base Value</td>
-					<td class="data">$info.baseValue</td>
+					<td class="data">$info.firstfloorbasevalue</td>
 				</tr>
 			</table>
 		"""
@@ -162,26 +162,26 @@ class BldgHtmlService
 					<th>Actual Use</th>
 					<th>Area</th>
 					<th>Adjustment</th>
+					<th>Base Market Value</th>
 					<th>Market Value</th>
-					<th>Adj. Market Value</th>
 					<th>Assess Level (%)</th>
 					<th>Assessed Value</th>
 				</tr>
 		"""
 		
-		info.bldgUses.each {
+		info.bldguses.each {
 			def assessLevel = (info.predominant ? info.assessLevel : it.assessLevel )
 			
 			def area = numberService.format("#,##0.0000", it.area )
 			def adj = numberService.format("#,##0.00", it.adjustment )
-			def mv = numberService.format("#,##0.00", it.marketValue )
-			def amv = numberService.format("#,##0.00", it.adjMarketValue )
-			def al = numberService.format("#,##0", it.assessLevel )
-			def av = numberService.format("#,##0.00", it.assessedValue)
+			def mv = numberService.format("#,##0.00", it.basemarketvalue )
+			def amv = numberService.format("#,##0.00", it.marketvalue )
+			def al = numberService.format("#,##0", it.assesslevel )
+			def av = numberService.format("#,##0.00", it.assessedvalue)
 				
 			html += """
 				<tr>
-					<td>$it.actualUseTitle</td>
+					<td>$it.actualuse.actualusename</td>
 					<td class="numeric">$area</td>
 					<td class="numeric">$adj</td>
 					<td class="numeric">$mv</td>
@@ -208,20 +208,20 @@ class BldgHtmlService
 	
 	private def buildBldgFloors( info ) {
 		def floors = ""
-		info.bldgUses.each { bu ->
-			bu.bldgFloors.each { f ->
+		info.bldguses.each { bu ->
+			bu.floors.each { f ->
 				def area = numberService.format("#,##0.0000", f.area )
 				def adjustment = numberService.format("#,##0.00", f.adjustment )
-				def mv = numberService.format("#,##0.00", f.marketValue )
-				def amv = numberService.format("#,##0.00", f.adjMarketValue )
+				def bmv = numberService.format("#,##0.00", f.basemarketvalue )
+				def mv = numberService.format("#,##0.00", f.marketvalue )
 				floors += """
 					<tr>
-						<td>$bu.actualUseTitle</td>
-						<td align="center">$f.floorNo</td>
+						<td>$bu.actualuse.actualusename</td>
+						<td align="center">$f.floorno</td>
 						<td class="numeric">$area</td>
 						<td class="numeric">$adjustment</td>
+						<td class="numeric">$bmv</td>
 						<td class="numeric">$mv</td>
-						<td class="numeric">$amv</td>
 					</tr>
 				"""
 			}
@@ -255,16 +255,16 @@ class BldgHtmlService
 	
 	private def buildBldgFloorAdjustments( info ) {
 		def adjs = ""
-		info.bldgUses.each { bu ->
-			bu.bldgFloors.each { f ->
-				f.adjustments.each {
+		info.bldguses.each { bu ->
+			bu.floors.each { f ->
+				f.additionalitems.each {
 					def params = buildParams( it.params )
 					adjs += """
 						<tr>
-							<td align="center">$f.floorNo</td>
-							<td align="center">$it.bldgAdditionalItemCode</td>
-							<td>$it.bldgAdditionalItemTitle</td>
-							<td>$it.unit</td>
+							<td align="center">$f.floorno</td>
+							<td align="center">$it.addlitemcode</td>
+							<td>$it.addlitemname</td>
+							<td>$it.addlitemunit</td>
 							<td class="numeric">$it.amount</td>
 							<td>$params</td>
 						</tr>
@@ -297,6 +297,25 @@ class BldgHtmlService
 						</div>
 					</td>
 				</tr>
+			</table>
+		"""
+	}
+    
+    
+	private def buildParams( params ) {
+		def paramList = ""
+		params.each {
+			paramList += """
+				<tr>
+					<td>$it.paramname</td>
+					<td>:</td>
+					<td>$it.paramvalue</td>
+				</tr>
+			"""
+		}
+		return """
+			<table>
+				$paramList
 			</table>
 		"""
 	}

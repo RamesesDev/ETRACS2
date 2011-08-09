@@ -99,10 +99,13 @@ class PlantTreeRPUService
     
     def calculateAdjustment( landfaasid, planttree ) {
         def faas = em.read('faas', [objid:landfaasid]);
-        def adjrate = getAgriculturalRate( faas.rpu.info.landdetails );
+        def adjrate = 0.00
+        def adjustment = 0.0 
         
-        def adjustment = planttree.basemarketvalue * adjrate;
-        
+        if( faas ) {
+            adjrate = getAgriculturalRate( faas.rpu.info.landdetails );
+            adjustment = planttree.basemarketvalue * adjrate;
+        }
         return [adjustment:adjustment, adjustmentrate:adjrate];
     }
     

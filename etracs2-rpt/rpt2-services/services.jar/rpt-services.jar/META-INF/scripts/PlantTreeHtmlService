@@ -3,58 +3,78 @@ import groovy.text.SimpleTemplateEngine
 
 class PlantTreeHtmlService
 {
-   @ProxyMethod
-   def buildPlantTreeHTML(def faas) {
-      def plantTree = [
-         [
-            title:'Assessment Detail',
-            cols:1,
-            tables:[
-                [
-                  title:'Tree Detail',
-                  cols:1,
-                  headers:[
-                     [name:'unitvaluecode', caption:'Code'],
-                     [name:'planttreename', caption:'Plant Tree'],
-                     [name:'unitvalue', caption:'Unit Value'],
-                     [name:'assesslevelcode', caption:'Assess Level'],
-                     [name:'bearing', caption:'Bearing'],
-                     [name:'nonbearing', caption:'Non Bearing'],
-                     [name:'basemarketvalue', caption:'Base Market Value'],
-                     [name:'adjustmentrate', caption:'Adjustment Rate'],
-                     [name:'adjustment', caption:'Adjustment'],
-                     [name:'marketvalue', caption:'Market Value'],
-                     [name:'assessedvalue', caption:'Assessed Value'],
-                  ],
-                  items:[
-                     [unitvaluecode:faas.rpu.info.planttreedetails.unitvaluecode],
-                     [planttreename:faas.rpu.info.planttreedetails.planttreename],
-                     [unitvalue:faas.rpu.info.planttreedetails.unitvalue],
-                     [assesslevelcode:faas.rpu.info.planttreedetails.assesslevelcode],
-                     [bearing:faas.rpu.info.planttreedetails.bearing],
-                     [nonbearing:faas.rpu.info.planttreedetails.nonbearing],
-                     [basemarketvalue:faas.rpu.info.planttreedetails.basemarketvalue],
-                     [adjustmentrate:faas.rpu.info.planttreedetails.adjustmentrate],
-                     [adjustment:faas.rpu.info.planttreedetails.adjustment],
-                     [marketvalue:faas.rpu.info.planttreedetails.marketvalue],
-                     [assessedvalue:faas.rpu.info.planttreedetails.assessedvalue],
-                     
-                  ],
-                  leftItems:'',
-                  data:'',
-                  rightItems:''
-                ],
-            ],
-            items:[
-               [caption:'Total Bearing', value:faas.rpu.info.totalbearing],
-               [caption:'Total Non Bearing', value:faas.rpu.info.totalnonbearing],
-               [caption:'Base Market Value', value:faas.rpu.totalbmv],
-               [caption:'Market Value', value:faas.rpu.totalmv],
-               [caption:'Assessed Value', value:faas.rpu.totalav],
-            ]
-         ]
-      ]
-      
-      return plantTree
-   }
+   
+	@Service("NumberService")
+	def numberService
+
+	@ProxyMethod
+	public def buildHtml(def faas){
+		def planttree = buildPlantTree( faas )
+		return """
+			<table>
+				<tr><td>$planttree</td></tr>
+			</table>
+		"""
+	}
+   
+    private def buildPlantTree( faas ) {
+		def rpuInfo = faas.rpu.info
+        if( ! rpuInfo.planttreedetails ) {
+            return ""
+        }
+        
+		def html = """
+		<table>
+			<tr>
+                <td><b><u>Plant/Tree Assessment</u></b></td>
+            </tr>
+		"""
+		
+		html += """
+            <tr>
+			<td width="100%">
+				<div style="background-color:silver">
+				<table width="100%" cellspacing="1">
+					<tr>
+						<th>Assessment</th>
+                        <th>Plant/Tree</th>
+						<th>Bearing</th>
+						<th>Non-Bearing</th>
+						<th>Unit Value</th>
+						<th>Base Market Value</th>
+                        <th>Adjustment</th>
+						<th>Market Value</th>
+						<th>Assess Level</th>
+						<th>Assessed Value</th>
+					</tr>			
+		"""
+		
+		rpuInfo.planttreedetails.each {
+			def bearing = numberService.format("#,##0", it.bearing )
+			def nonbearing = numberService.format("#,##0", it.nonbearing)
+			def unitvalue = numberService.format("#,##0.00", it.unitvalue )
+			def adjustment = numberService.format("#,##0.00", it.adjustment )
+			def basemarketvalue = numberService.format("#,##0.00", it.basemarketvalue )
+			def marketvalue  = numberService.format("#,##0.00", it.marketvalue )
+			def assesslevel = numberService.format("#,##0", it.assesslevel )
+			def assessedvalue = numberService.format("#,##0.00", it.assessedvalue)
+			
+			html += """
+				<tr>
+					<td>$it.assesslevelname</td>
+					<td>$it.planttreename</td>
+					<td class="numeric">$bearing</td>
+					<td class="numeric">$nonbearing</td>
+					<td class="numeric">$unitvalue</td>
+					<td class="numeric">$basemarketvalue</td>
+                    <td class="numeric">$adjustment</td>
+					<td class="numeric">$marketvalue</td>
+					<td align="center" class="numeric">$assesslevel</td>
+					<td class="numeric">$assessedvalue</td>
+				</tr>
+			"""
+		}
+		
+		return html
+	}
 }

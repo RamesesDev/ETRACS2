@@ -15,11 +15,11 @@ class FAASHtmlService
 	@Service('BldgHtmlService')
 	def bldgSvc
 	
-	@Service('BldgHtmlService')
-	def bldgSvc
-	
 	@Service('MachHtmlService')
 	def machSvc
+    
+    @Service('PlantTreeHtmlService')
+	def planttreeSvc
 	
 	@ProxyMethod
 	public def getHtml( faasid ) {
@@ -31,8 +31,8 @@ class FAASHtmlService
 			ownershipInfo : buildOwnershipInfo( faas ),
 			pinInfo       : buildPinInfo( faas ),
 			rpuInfo       : buildRpuInfo( faas ),
-			//signatories   : buildSignatories( faas ),
-			//attachments   : buildAttachments( faas ),
+			signatories   : '',  //buildSignatories( faas ),
+			attachments   : '',  //buildAttachments( faas ),
 		]
 		return doBuildHtml( data )
 	}
@@ -43,7 +43,9 @@ class FAASHtmlService
 		else if( faas.rpu.rputype == 'bldg' )
 			return bldgSvc.buildBldgHtml( faas )
 		else if( faas.rpu.rputype == 'mach' )
-			return mach.buildMachHtml( faas )
+			return machSvc.buildMachHtml( faas )
+        else if( faas.rpu.rputype == 'planttree' )
+			return planttreeSvc.buildHtml( faas )
 		return ""
 	}
 	
@@ -185,14 +187,20 @@ class FAASHtmlService
 				<tr>
 					<td  class="caption">Taxpayer</td>
 					<td><b>$faas.info.taxpayername</b></td>
-					<td  class="caption">Administrator</td>
-					<td><b></b></td>
+					<td  class="caption">Address</td>
+					<td>$faas.info.taxpayeraddress</td>
+				</tr>
+                <tr>
+					<td  class="caption">Owner</td>
+					<td><b>$faas.info.ownername</b></td>
+					<td  class="caption">Address</td>
+					<td>$faas.info.owneraddress</td>
 				</tr>
 				<tr>
+					<td  class="caption">Adminisrator</td>
+					<td><b>${faas.info.administratorname ? faas.info.administratorname : ''}</b></td>
 					<td  class="caption">Address</td>
-					<td><b>$faas.info.taxpayeraddress</b></td>
-					<td  class="caption">Address</td>
-					<td><b></b></td>
+					<td>${faas.info.administratoraddress ?faas.info.administratoraddress : ''}</td>
 				</tr>
 			</table>
 		"""
@@ -246,7 +254,7 @@ class FAASHtmlService
 							</tr>
 							<tr>
 								<td class="caption">Claim No.</td>
-								<td class="data">${rp.claimno == 0 ? '' : rp.claimno}</td>
+								<td class="data">${faas.info.claimno}</td>
 							</tr>
 						</table>
 					</td>

@@ -30,11 +30,12 @@ public class VariableInfoPage extends javax.swing.JPanel {
 
         setPreferredSize(new java.awt.Dimension(488, 306));
         xDataTable1.setHandler("infoListHandler");
-        xDataTable1.setIndex(-10);
+        xDataTable1.setIndex(-100);
         xDataTable1.setName("selectedInfo");
 
         xButton2.setText("OK");
         xButton2.setDefaultCommand(true);
+        xButton2.setIndex(-10);
         xButton2.setName("okInfo");
 
         jLabel1.setFont(new java.awt.Font("Tahoma", 1, 14));

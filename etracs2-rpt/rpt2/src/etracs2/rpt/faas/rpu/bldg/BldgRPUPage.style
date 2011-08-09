@@ -28,19 +28,29 @@
     enabled:true;
 }
 
+"depreciation|bldgage" [ autoDepreciation == false ] {
+    enabled:true;
+}
 
 "depreciation|bldgage" [ autoDepreciation == true ] {
     enabled:false;
-}
-
-"depreciation|bldgage" [ autoDepreciation == false ] {
-    enabled:true;
 }
 
 "rpu.*|classification|exemption|selectedStructure|bldgtype|bldgkind"  [allowEdit == false] {
     enabled:false;
 }
 
-"rpu.info.depreciationvalue" [true == true ]{
+"rpu.info.depreciationvalue|bldgage" [true == true ]{
     enabled:false;
 }
+
+
+"defineFloorInfo" [ selectedBldgUse != null && selectedBldgUse.actualuse  != null ] {
+    enabled:true;
+}
+
+"defineFloorInfo" [ selectedBldgUse == null || selectedBldgUse.actualuse == null] {
+    enabled:false;
+}
+
+

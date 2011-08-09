@@ -451,8 +451,8 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xComboBox4.setItems("classificationList");
         xComboBox4.setName("classification");
 
-        xDataTable2.setDynamic(true);
         xDataTable2.setHandler("bldguseListHandler");
+        xDataTable2.setImmediate(true);
         xDataTable2.setName("selectedBldgUse");
         xDataTable2.setShowRowHeader(true);
 
@@ -465,6 +465,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
 
         xButton1.setMnemonic('d');
         xButton1.setText("Define Floor Information");
+        xButton1.setDepends(new String[] {"selectedBldgUse"});
         xButton1.setName("defineFloorInfo");
 
         org.jdesktop.layout.GroupLayout jPanel5Layout = new org.jdesktop.layout.GroupLayout(jPanel5);

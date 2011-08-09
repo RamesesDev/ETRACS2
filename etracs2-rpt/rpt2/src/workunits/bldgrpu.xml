@@ -77,6 +77,9 @@ public class BldgRPUController
         if( rpu.info.bldgtype?.basevaluetype == 'range' ) {
             def minvalue = rpu.info.bldgkindbucc.minbasevalue
             def maxvalue = rpu.info.bldgkindbucc.maxbasevalue
+            if( ! firstfloorbasevalue && firstfloorbasevalue == 0.0 ) {
+                firstfloorbasevalue = minvalue
+            }
             if( firstfloorbasevalue <  minvalue || firstfloorbasevalue > maxvalue ) {
                 throw new Exception('Base value must be between ' + minvalue + ' and ' + maxvalue + '.')
             }
@@ -221,7 +224,7 @@ public class BldgRPUController
     *
     ----------------------------------------------------------------*/
     
-    def floorUpdateHandler = { 
+    def floorUpdateHandler = {
         recalc()
     }
     
@@ -237,6 +240,7 @@ public class BldgRPUController
         faas.rpu.clear()
         faas.rpu.putAll( data )
         depreciation = rpu.info.depreciation 
+        bldguseListHandler.load()
         binding.refresh()
     }
     
