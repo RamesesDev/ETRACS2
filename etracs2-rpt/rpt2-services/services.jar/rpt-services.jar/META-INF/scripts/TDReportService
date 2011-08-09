@@ -7,6 +7,9 @@ class TDReportService
     @PersistenceContext('main')
     def em
     
+	@Service('RPTSettingService')
+	def rptSettingSvc;
+	
     @Service('NumberService')
     def numberSvc
     
@@ -30,6 +33,12 @@ class TDReportService
     	else if( faas.rpu.rputype == 'misc' ) td.miscitems = getMiscDetails( faas.rpu )
     	else throw new Exception( 'Invalid RPU Type.' )
     	
+		def setting = rptSettingSvc.open();
+		if( setting ){
+			td.ordinanceno = setting.ordinanceno;
+			println setting.ordinancedate.class;
+			td.ordinancedate = new java.text.SimpleDateFormat("yyyy-MM-dd").parse( setting.ordinancedate );
+		}
     	return td;
     }
     
