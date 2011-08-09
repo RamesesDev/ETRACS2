@@ -269,6 +269,8 @@ class SubdivisionService
     
     @ProxyMethod
     public Map updateSubdividedLand( subdividedland ) {
+        subdividedland.rp = em.serializer.read( subdividedland.rp )
+        subdividedland.rpu = em.serializer.read( subdividedland.rpu )
         em.validate( SUBDIVISIONLAND_SCHEMANAME, subdividedland )
         em.update( SUBDIVISIONLAND_SCHEMANAME, subdividedland )
         return subdividedland 
@@ -345,16 +347,6 @@ class SubdivisionService
     
     @ProxyMethod
     public void updateAffectedRpu( affectedrpu  ) {
-        def newfaas = affectedrpu.newfaas 
-        newfaas.info.tdno       = affectedrpu.newtdno 
-        if( affectedrpu.newsuffix ) {
-            faasSvc.checkSuffix( affectedrpu.rputype, affectedrpu.newsuffix )
-        }
-        if( affectedrpu.newpin && affectedrpu.newsuffix) {
-            newfaas.rp.pin      = affectedrpu.newpin 
-            newfaas.rpu.fullpin = affectedrpu.newpin + '-' + affectedrpu.newsuffix 
-        }
-        newfaas.info.memoranda  = affectedrpu.memoranda 
         em.validate( AFFECTEDRPU_SCHEMANAME, affectedrpu )
         em.update( AFFECTEDRPU_SCHEMANAME, affectedrpu )
     }
@@ -405,7 +397,7 @@ class SubdivisionService
             affectedrpu.newpin  = newfaas.rp.pin 
             em.update( AFFECTEDRPU_SCHEMANAME, affectedrpu )
             //cancel previous faas 
-            def prevfaas                = em.read(affectedrpu.newfaas.schemaname, [objid:affectedrpu.prevfaasid] )
+            def prevfaas                = em.read(FAAS_SCHEMANAME, [objid:affectedrpu.prevfaasid] )
             prevfaas.cancelreason       = SUBDIVISION_TXNTYPE
             prevfaas.canceldate         = new Date()
             prevfaas.cancelledbytdnos   = newfaas.info.tdno 
@@ -598,7 +590,7 @@ class SubdivisionService
             em.create(newfaas.schemaname, newfaas )
             em.create(FAASLIST_SCHEMANAME, newfaas )
             
-            apru.newfaasid = newfaas.objid 
+            arpu.newfaasid = newfaas.objid 
             em.update( AFFECTEDRPU_SCHEMANAME, arpu )
         }
     }
