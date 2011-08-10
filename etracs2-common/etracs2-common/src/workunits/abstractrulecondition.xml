@@ -77,9 +77,11 @@ public class AbstractRuleConditionController
     void add() {
         if( !field ) throw new Exception('Field is required.')
         if( fieldvar == null && operator == null ) throw new Exception('A variable name or condition is required.')
+        if( fieldvar == null && operator == null ) throw new Exception('A variable name or condition is required.')
         
         def constraint = buildConstraint()
         if( fieldvar == null && constraint.value == null ) throw new Exception('Value is required.')
+        if( operator && constraint.value == null) throw new Exception('Value is required.')
         
         condition.constraints.add( constraint )
         resetConstraintInfo()

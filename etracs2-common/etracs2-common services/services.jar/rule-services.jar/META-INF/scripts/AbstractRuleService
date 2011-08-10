@@ -104,6 +104,7 @@ public class AbstractRuleService
 		def rule = open( objid )
 		if( ! rule ) return // probably deleted already 
 		if( rule.docstate != DRAFT_STATE ) throw new Exception('Only Draft rule can be deleted.')
+        undeploy( objid )
 		em.delete(rule.schemaname, rule)
 	}
 	

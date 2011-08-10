@@ -87,11 +87,7 @@ abstract class AbstractRuleController
     
     def addConditionHandler = { condition ->
         rule.conditions.add( condition )
-        buildVarList().each {
-            if( ! rule.varlist.contains( it ) ) {
-                rule.varlist.add( it )
-            }
-        }
+        doBuildVarList()
         conditionListHandler.load()
     }
     
@@ -109,7 +105,16 @@ abstract class AbstractRuleController
     def updateConditionHandler = { condition ->
         rule.conditions.set(editedIndex, condition )
         selectedCondition = condition
+        doBuildVarList()
         binding.refresh('selectedCondition') 
+    }
+    
+    void doBuildVarList() {
+        buildVarList().each {
+            if( ! rule.varlist.contains( it ) ) {
+                rule.varlist.add( it )
+            }
+        }   
     }
     
     def openCondition() {
@@ -180,7 +185,7 @@ abstract class AbstractRuleController
     def openAction() {
         editedIndex = rule.actions.indexOf( selectedAction )
         def actionOpener = selectedAction.opener + '.open'
-        def opener = InvokerUtil.lookupOpener(actionOpener, [rule:rule, action:selectedAction])
+        def opener = InvokerUtil.lookupOpener(actionOpener, [rule:rule, varlist:rule.varlist, action:selectedAction])
         return InvokerUtil.lookupOpener('abstractruleaction.open', [
                 abstractRuleSvc : abstractRuleService, 
                 ruleSvc         : ruleService, 
