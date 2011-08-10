@@ -36,9 +36,6 @@ class FAASAttachmentTask
         sourceDir += attachment.directory + '/'
         def file = new File( sourceDir + attachment.filename )
         
-        println 'file -> ' + file 
-        println 'file -> ' + file.absolutePath
-        
         if( ! file.exists() ) {
             //file might be deleted or moved
             //change status and log message 
@@ -46,21 +43,13 @@ class FAASAttachmentTask
         }
         else {
             //transfer file 
-            println 'uploading now...'
             def remotehost        = var.remote_host
             def remotecontext     = var.remote_context
-            println '1'
             FileTransfer.FileInputSource fis = new FileTransfer.FileInputSource( file )
-            println '2'
             DynamicHttpTransfer.Out handler = new DynamicHttpTransfer.Out(remotehost , remotecontext, 'ETRACSFileTransferService', 'uploadAttachment')
-            println '3 ' + handler
             handler.parameters.put('attachment', attachment )
-            println '4'
-        
             FileTransfer ft = new FileTransfer();
-            println '5'
             ft.transfer(fis, handler);
-            println '6'
             
             //successfully uploaded, update status 
             updateFaasAttachmentStatus( attachment, 'SUBMITTED', 'Successfully uploaded.')        
