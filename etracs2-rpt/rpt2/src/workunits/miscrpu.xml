@@ -83,14 +83,15 @@ public class MiscRPUController
             calculateTotals();
         },
         onColumnUpdate : { item, colName -> 
-            if( colName == 'misc' ) updateMiscItemInfo( item )
+            if( colName == 'misc' && item.misc  ) updateMiscItemInfo( item )
         },
         fetchList      : { return rpu.info.miscrpuitems  },
     ] as SubListModel
     
     void validateMiscItem( item ) {
         try {
-            required( 'Item Name', item.miscitemname );
+            required( 'Code', item.miscitemname );
+            checkDuplicate( item )
             validateRate( item.depreciation );
             calculateMiscItemAssessment( item )
             if( ! newMiscItem( item )  ) {
@@ -101,6 +102,11 @@ public class MiscRPUController
         catch( Throwable e ) {
             showError( e )
         }
+    }
+    
+    void checkDuplicate( item ) {
+        def data = rpu.info.miscrpuitems.find{ it.objid != item.objid && it.miscitemvalueid == item.misc?.objid }
+        if( data ) throw new Exception( 'Duplicate item is not allowed.' )
     }
     
     void removeMiscItem( item ) {
@@ -120,6 +126,7 @@ public class MiscRPUController
             item.params.addAll( item.misc?.params );
             item.misc?.remove( 'params' );
         }
+        calculateMiscItemAssessment(item )
     }
     
     void calculateMiscItemAssessment( item ) {
@@ -221,7 +228,8 @@ public class MiscRPUController
     }
     
     void showError( e ) {
-        println e.message
+        println '-'*50
+        e.printStackTrace()
         errorMsg = e.message
         binding.refresh('errorMsg')
         throw e
