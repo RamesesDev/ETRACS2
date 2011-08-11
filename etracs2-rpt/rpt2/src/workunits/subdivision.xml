@@ -19,6 +19,7 @@
         <invoker type="formActions" action="submitToProvince" shortcut="ctrl M" visibleWhen="#{showSubmitToProvinceAction == true}" caption="Submit To Province" mnemonic="m" icon="images/doc-submit.png" permission="subdivision.submitToProvince"/>
         <invoker type="formActions" action="disapproveByProvince" visibleWhen="#{showDisapproveByProvinceAction == true}" caption="Disapprove" icon="images/disapprove.png" permission="subdivision.disapproveByProvince" />
         <invoker type="formActions" action="approveByProvince" shortcut="ctrl A" visibleWhen="#{showApprovedByProvinceAction == true}" caption="Approve" mnemonic="a" icon="images/approve.png" permission="subdivision.approveByProvince" />
+        <invoker type="formActions" action="viewTaxDeclarations" shortcut="ctrl A" visibleWhen="#{subdivision.docstate == 'APPROVED'}" caption="View Taxdeclarations" mnemonic="v" icon="images/doc-view.png"/>
         
         <invoker type="subdividedlandActions" action="addSubdividedLand" caption="Add" mnemonic="a" icon="images/doc-add.png" />
         <invoker type="subdividedlandActions" action="editSubdividedLand" caption="Edit" mnemonic="e" icon="images/edit.png" />
@@ -382,6 +383,12 @@ public class SubdivisionController
         return true
     }
     
+    def viewTaxDeclarations(){
+        def list = [];
+        subdividedlands.each{ list << [tdno: it.newtdno, objid:it.newfaasid] }
+        affectedrpus.each{ list << [tdno: it.newtdno, objid: it.newfaasid] }
+        return InvokerUtil.lookupOpener('batchtd.report', [faaslist:list])
+    }
     
 }
 

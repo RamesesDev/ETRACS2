@@ -1,9 +1,12 @@
 <workunit>
     <invokers>
         <invoker type="assessorreports.td" action="init" caption="Tax Declaration" target="popup" icon="images/doc-view.png" />
+        <invoker type="assessorreports.printtd" action="print" caption="Print"/>
+        
         <invoker type="faasmgmt.action" action="init" caption="Tax Declaration" index="102" icon="images/doc-view.png" target="popup" visibleWhen="#{showActions == true}"/>
         
         <invoker type="formActions" action="_close" caption="Back" mnemonic="b" shortcut="ctrl B" icon="images/back.png"/>
+        
     </invokers>
     <code>
 <![CDATA[
@@ -45,8 +48,14 @@ class TaxDeclarationReportController
         getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
     ] as ServerReportModel;
     
+    def print(){
+        try {
+            init();
+            ReportUtil.print( report.report, true )
+        }catch( e ) { MsgBox.alert( e.message ) }
+        return '_close';
+    }
 }
-
 ]]>        
         
     </code>

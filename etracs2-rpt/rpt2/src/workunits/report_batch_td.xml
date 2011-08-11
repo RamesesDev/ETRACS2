@@ -1,0 +1,45 @@
+<workunit>
+    <invokers>
+        <invoker type="batchtd.report" caption="Taxdeclarations" target="popup"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class BatchTaxDeclarationReportController
+{
+
+    def faaslist;
+    def faas;
+
+    def view() {
+       return InvokerUtil.lookupOpener('assessorreports.td', [faasid:faas.objid]);
+    }
+    
+    def listHandler = [
+        getRows   : { return 10 },
+        getColumns: { return new Column(name:'tdno', caption:'TD No.') },
+        fetchList : { return faaslist; }
+    ] as SubListModel
+    
+    def print(){
+        return InvokerUtil.lookupOpener('assessorreports.printtd', [faasid:faas.objid]);
+    }
+    
+    def printAll(){
+        throw new Exception('Print all not yet supported.');
+    }
+
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.rpt.BatchPreviewPage" />
+    </pages>
+</workunit>
