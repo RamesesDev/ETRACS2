@@ -47,7 +47,9 @@ public class FAASMgmtController
     }
     
     def open() {
-        return InvokerUtil.lookupOpener('faas.open', [faas:selectedItem])
+        if( selectedItem ) {
+            return InvokerUtil.lookupOpener('faas.open', [faas:selectedItem])
+        }
     }
     
     void search() {
@@ -71,15 +73,14 @@ public class FAASMgmtController
             new Column( name:'totalareaha', caption:'Area (ha)', type:'decimal', minWidth:100, format:'#,##0.000000' ),
             new Column( name:'totalmv', caption:'Market Value', type:'decimal', minWidth:100),
             new Column( name:'totalav', caption:'Assessed Value', type:'decimal', minWidth:100),
-            
-            
         ]},
         fetchList  : {
             if( ! list  ) {
                 list = svc.getList( searchText, it )
             }
             return list 
-        }
+        },
+        onOpenItem : { item, colname -> open() },
     ] as PageListModel
     
     

@@ -19,6 +19,8 @@ SELECT * FROM subdivision WHERE mothercadastrallotno = $P{mothercadastrallotno} 
 [getListByTaxpayer]
 SELECT * FROM subdivision WHERE mothertaxpayername LIKE $P{taxpayername} ORDER BY mothertdno 
 
+[getListByDocno]
+SELECT * FROM subdivision WHERE docno LIKE $P{docno} ORDER BY mothertdno 
 
 
 [getAffectedRpusByLandId]
@@ -40,7 +42,7 @@ SELECT ry FROM rptsetting
 
 
 [getSubdividedLands]
-SELECT *  FROM subdivisionland WHERE subdivisionid = $P{subdivisionid} ORDER BY newtdno 
+SELECT *  FROM subdivisionland WHERE subdivisionid = $P{subdivisionid} ORDER BY itemno
 
 [getAffectedRpus]
 SELECT *  FROM subdivisionaffectedrpu WHERE subdivisionid = $P{subdivisionid}  ORDER BY rputype, prevfullpin 
@@ -48,6 +50,9 @@ SELECT *  FROM subdivisionaffectedrpu WHERE subdivisionid = $P{subdivisionid}  O
 
 [getImprovementIds]
 SELECT objid FROM faaslist WHERE landfaasid = $P{landfaasid} AND docstate <> 'CANCELLED' AND rputype <> 'land' 
+
+[getImprovementInfo]
+SELECT objid, tdno, fullpin, rputype FROM faaslist WHERE landfaasid = $P{landfaasid} AND docstate <> 'CANCELLED' AND rputype <> 'land' 
 
 
 [getImprovementStates] 
@@ -75,6 +80,9 @@ SELECT newpin FROM subdivisionland WHERE objid = $P{objid}
 [cancelMotherLandLedger]
 UPDATE rptledger SET docstate = 'CANCELLED' WHERE faasid = $P{faasid} 
 
+
+[resetAffectedRpuSubdividedLandInfo]
+UPDATE subdivisionaffectedrpu SET subdivisionlandid = null, newpin = null WHERE subdivisionlandid = $P{subdivisionlandid}
 
 #--------------------------------------------------------------------
 # DELETES

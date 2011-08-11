@@ -50,7 +50,9 @@ public class SubdivisionPage extends javax.swing.JPanel {
         xLabel9 = new com.rameses.rcp.control.XLabel();
         xLabel11 = new com.rameses.rcp.control.XLabel();
         formPanel3 = new com.rameses.rcp.util.FormPanel();
-        xLabel13 = new com.rameses.rcp.control.XLabel();
+        formPanel14 = new com.rameses.rcp.util.FormPanel();
+        xLabel14 = new com.rameses.rcp.control.XLabel();
+        xLabel15 = new com.rameses.rcp.control.XLabel();
         xLabel3 = new com.rameses.rcp.control.XLabel();
         formPanel13 = new com.rameses.rcp.util.FormPanel();
         xDateField1 = new com.rameses.rcp.control.XDateField();
@@ -234,14 +236,30 @@ public class SubdivisionPage extends javax.swing.JPanel {
         xTitledBorder2.setTitle("Subdivision Detail");
         formPanel3.setBorder(xTitledBorder2);
         formPanel3.setCaptionWidth(95);
-        xLabel13.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        xLabel13.setForeground(new java.awt.Color(153, 0, 0));
-        xLabel13.setCaption("State");
-        xLabel13.setCaptionWidth(115);
-        xLabel13.setFont(new java.awt.Font("Arial", 1, 14));
-        xLabel13.setName("subdivision.docstate");
-        xLabel13.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel3.add(xLabel13);
+
+        formPanel14.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
+        formPanel14.setPadding(new java.awt.Insets(0, 0, 0, 0));
+        formPanel14.setShowCaption(false);
+        xLabel14.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        xLabel14.setForeground(new java.awt.Color(153, 0, 0));
+        xLabel14.setCaption("State");
+        xLabel14.setCaptionWidth(115);
+        xLabel14.setCellPadding(new java.awt.Insets(0, 0, 0, 5));
+        xLabel14.setFont(new java.awt.Font("Arial", 1, 14));
+        xLabel14.setName("subdivision.docstate");
+        xLabel14.setPreferredSize(new java.awt.Dimension(240, 19));
+        formPanel14.add(xLabel14);
+
+        xLabel15.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        xLabel15.setForeground(new java.awt.Color(153, 0, 0));
+        xLabel15.setCaption("Doc No.");
+        xLabel15.setCaptionWidth(60);
+        xLabel15.setFont(new java.awt.Font("Arial", 1, 14));
+        xLabel15.setName("subdivision.docno");
+        xLabel15.setPreferredSize(new java.awt.Dimension(112, 19));
+        formPanel14.add(xLabel15);
+
+        formPanel3.add(formPanel14);
 
         xLabel3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel3.setCaption("Revision Year");
@@ -395,6 +413,7 @@ public class SubdivisionPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel11;
     private com.rameses.rcp.util.FormPanel formPanel12;
     private com.rameses.rcp.util.FormPanel formPanel13;
+    private com.rameses.rcp.util.FormPanel formPanel14;
     private com.rameses.rcp.util.FormPanel formPanel3;
     private com.rameses.rcp.util.FormPanel formPanel4;
     private com.rameses.rcp.util.FormPanel formPanel7;
@@ -420,7 +439,8 @@ public class SubdivisionPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel10;
     private com.rameses.rcp.control.XLabel xLabel11;
     private com.rameses.rcp.control.XLabel xLabel12;
-    private com.rameses.rcp.control.XLabel xLabel13;
+    private com.rameses.rcp.control.XLabel xLabel14;
+    private com.rameses.rcp.control.XLabel xLabel15;
     private com.rameses.rcp.control.XLabel xLabel3;
     private com.rameses.rcp.control.XLabel xLabel4;
     private com.rameses.rcp.control.XLabel xLabel5;

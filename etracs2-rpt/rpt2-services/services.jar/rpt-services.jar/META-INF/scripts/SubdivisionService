@@ -29,6 +29,9 @@ class SubdivisionService
     @Service('LandRPUService')
     def landrpuSvc
     
+    @Service('TxnReference')
+    def txnSvc
+    
     def FAAS_SCHEMANAME = 'faas:faas'
     def FAASLIST_SCHEMANAME = 'faas:faaslist'
     
@@ -50,6 +53,7 @@ class SubdivisionService
     public List getList( searchText, params ) {
         searchText = (searchText ? searchText : '')
         def criteria = [
+            docno               : '%'+searchText,
             mothertdno          : searchText,
             motherpin           : searchText,
             mothercadastrallotno: searchText,
@@ -57,6 +61,7 @@ class SubdivisionService
         ]
         def result = null
 		if( (result = getListByQuery('subdivision:getList', criteria, params)) ) return result
+        if( (result = getListByQuery('subdivision:getListByDocno', criteria, params)) ) return result
 		if( (result = getListByQuery('subdivision:getListByTdno', criteria, params)) ) return result
 		if( (result = getListByQuery('subdivision:getListByPIN', criteria, params)) ) return result
 		if( (result = getListByQuery('subdivision:getListByCadastral', criteria, params)) ) return result
@@ -67,21 +72,30 @@ class SubdivisionService
     
     @ProxyMethod
     public Map create( subdivision) {
+        txnSvc.checkReference( subdivision.motherfaasid )
         subdivision.objid           = 'SD' + new UID()
         subdivision.schemaname      = SCHEMA_NAME
         subdivision.schemaversion   = SCHEMA_VERSION 
         subdivision.docstate        = DRAFT_STATE
+        subdivision.docno           = seqSvc.getNextFormattedSeries( 'SUBDIVISION' )
         subdivision.ry              = getCurrentRy()
         subdivision.txntype         = SUBDIVISION_TXNTYPE
         subdivision.autonumber      = var.td_autonumber
         subdivision.issuedate       = dateSvc.serverDate
         subdivision.effectivityyear = dateSvc.getYear( new Date() )
         subdivision.effectivityqtr  = 1
+        
+        def currdate                = dateSvc.serverDate
+        subdivision.dtappraised     = currdate 
+        subdivision.dtrecommended   = currdate 
+        subdivision.dtapproved      = currdate 
+        
         def faas = faasSvc.getFaasInfo( subdivision.motherfaasid )
         faasSvc.checkLedgerBalance( faas )
         validateInfo( subdivision )
         em.validate( subdivision.schemaname, subdivision )
         em.create( subdivision.schemaname, subdivision )
+        txnSvc.insert( subdivision.motherfaasid, subdivision.objid, 'Subdivision', 'FAAS is currently referenced by Subdivision No. ' + subdivision.docno + '.' )
         logSvc.log('CREATE', 'Subdivision', subdivision.objid )
         return subdivision 
     }
@@ -103,20 +117,6 @@ class SubdivisionService
         def subdivision  = em.read(SCHEMA_NAME, [objid:objid] )
         if( ! subdivision ) throw new Exception('Cannot open Subdivision with ID No. ' + objid +'.\nVerify that it is existing or not deleted.')
         return subdivision
-        /*
-        subdivision.subdividedlands = []
-        def subdividedlandIds = em.sqlContext.createNamedQuery('subdivision:getSubdividedLandIds').setParameter('subdivisionid', objid).resultList
-        subdividedlandIds.each { 
-            subdivision.subdividedlands.add( em.read( SUBDIVISIONLAND_SCHEMANAME, it ) )
-        }
-        
-        subdivision.affectedrpus = []
-        def affectedrpuIds = em.sqlContext.createNamedQuery('subdivision:getAffectedRpuIds').setParameter('subdivisionid', objid).resultList
-        affectedrpuIds.each {
-            subdivision.affectedrpus.add( em.read(AFFECTEDRPU_SCHEMANAME, it ) )
-        }
-        return subdivision 
-        */
     }
     
     @ProxyMethod
@@ -154,6 +154,7 @@ class SubdivisionService
         if( subdivision.docstate == APPROVED_STATE ) throw new Exception('Subdivision has already been approved.')      
         validateInfo( subdivision )
         validateArea( subdivision )
+        validateAffectedRpu( subdivision )
         createSubdividedLandsFaas( subdivision )
         subdivision.docstate = FORPROVAPPROVAL_STATE
         em.update( subdivision.schemaname, subdivision )
@@ -214,6 +215,7 @@ class SubdivisionService
         approveAffectedRpus( subdivision )
         cancelMotherLand( subdivision )
         moveMessageToProcessedOutbox( subdivision.objid  )
+        txnSvc.delete( subdivision.motherfaasid )
         subdivision.docstate = APPROVED_STATE
         em.update( subdivision.schemaname, subdivision )
     }
@@ -244,7 +246,7 @@ class SubdivisionService
         ]
         rp.putAll( brgyinfo )
         
-        def rpu = [rputype:'land', ry:getCurrentRy(), classid:'RES', classcode:'RES', classname:'RES',suffix:0,info:[:]] 
+        def rpu = [rputype:'land', ry:getCurrentRy(), classid:'RES', classcode:'RES', classname:'RES', taxable:true, suffix:0,info:[:]] 
         rpu     = landrpuSvc.initLandRpu( rpu ) 
         def sland =  [
             objid           : 'SL' + new UID(), 
@@ -269,8 +271,10 @@ class SubdivisionService
     
     @ProxyMethod
     public Map updateSubdividedLand( subdividedland ) {
-        subdividedland.rp = em.serializer.read( subdividedland.rp )
-        subdividedland.rpu = em.serializer.read( subdividedland.rpu )
+        if( subdividedland.rp instanceof String ) {
+            subdividedland.rp  = em.serializer.read( subdividedland.rp )
+            subdividedland.rpu = em.serializer.read( subdividedland.rpu )
+        }
         em.validate( SUBDIVISIONLAND_SCHEMANAME, subdividedland )
         em.update( SUBDIVISIONLAND_SCHEMANAME, subdividedland )
         return subdividedland 
@@ -279,6 +283,7 @@ class SubdivisionService
     @ProxyMethod
     public void removeSubdividedLand( objid ) {
         em.sqlContext.createNamedExecutor('subdivision:deleteSubdividedLand').setParameter('objid', objid ).execute()
+        em.sqlContext.createNamedExecutor('subdivision:resetAffectedRpuSubdividedLandInfo').setParameter('subdivisionlandid', objid ).execute()
     }
     
     @ProxyMethod
@@ -307,40 +312,23 @@ class SubdivisionService
     public List loadAffectedRpus( subdivision ) {
         def affectedrpus = []
         
-        def affectedrpuIds = em.sqlContext.createNamedQuery('subdivision:getImprovementIds').setParameter('landfaasid', subdivision.motherfaasid ).resultList 
-        affectedrpuIds.each { arpu ->
-            def newfaas = em.read( 'faas:faas', arpu )
-            if( !newfaas ) throw new Exception('Cannot load affected RPU with ID No. ' + affectedid )
-            
+        def improvements = em.sqlContext.createNamedQuery('subdivision:getImprovementInfo').setParameter('landfaasid', subdivision.motherfaasid ).resultList 
+        improvements.each { arpu ->
             def affectedrpu = [
                 objid           : 'AR' + new UID(),
                 subdivisionid   : subdivision.objid,
-                rputype         : newfaas.rpu.rputype,
-                prevfaasid      : newfaas.objid,
-                prevtdno        : newfaas.info.tdno,
-                prevfullpin     : newfaas.rpu.fullpin,
+                rputype         : arpu.rputype,
+                prevfaasid      : arpu.objid,
+                prevtdno        : arpu.tdno,
+                prevfullpin     : arpu.fullpin,
                 newtdno         : null,
                 newpin          : null,
-                newsuffix       : newfaas.rpu.suffix,
+                newsuffix       : Integer.parseInt( arpu.fullpin[-4..-1] ),
                 memoranda       : subdivision.memoranda,
             ]
-            
-            newfaas.previousfaases  = []
-            newfaas.previousfaases.add( [faasid:newfaas.objid, tdno:newfaas.info.tdno] )
-            newfaas.objid               = 'FA' + new UID()
-            newfaas.docstate            = 'PENDING'
-            newfaas.info.txntype        = 'SD'
-            newfaas.info.txn            = faasSvc.resolveTxnType( 'SD' )
-            newfaas.info.issuedate      = subdivision.issuedate 
-            newfaas.info.effectivityyear = subdivision.effectivityyear
-            newfaas.info.effectivityqtr = subdivision.effectivityqtr
-            newfaas.info.autonumber     = subdivision.autonumber as boolean 
-            newfaas.rp.autonumber        = var.pin_autonumber
-            
-            affectedrpu.newfaas = newfaas 
             em.create( AFFECTEDRPU_SCHEMANAME, affectedrpu )
+            txnSvc.insert( arpu.objid, affectedrpu.objid, 'SubdivisionAffectedRpu', 'FAAS is currently referenced by Subdivision No. ' + subdivision.docno + '.')
             affectedrpus.add( affectedrpu )
-            
         }
         return affectedrpus 
     }
@@ -396,12 +384,16 @@ class SubdivisionService
             affectedrpu.newtdno = newfaas.info.tdno 
             affectedrpu.newpin  = newfaas.rp.pin 
             em.update( AFFECTEDRPU_SCHEMANAME, affectedrpu )
+            
             //cancel previous faas 
             def prevfaas                = em.read(FAAS_SCHEMANAME, [objid:affectedrpu.prevfaasid] )
             prevfaas.cancelreason       = SUBDIVISION_TXNTYPE
             prevfaas.canceldate         = new Date()
             prevfaas.cancelledbytdnos   = newfaas.info.tdno 
             em.update( prevfaas.schemaname, prevfaas )
+            
+            //remove txnreference 
+            txnSvc.delete( affectedrpu.prevfaasid )
         }
     }
     
@@ -490,6 +482,12 @@ class SubdivisionService
         if( unapprovedledgers ) {
             throw new Exception('Ledger for affected RPU with TD No. ' + unapprovedledgers[0].tdno + ' is not yet approved.')
         }
+        
+        //check land reference 
+        affectedrpus = getAffectedRpus( subdivision.objid )
+        affectedrpus.each {
+            if( ! it.subdivisionlandid ) throw new Exception('Land Reference for Affected RPU ' + it.prevfullpin + ' is not set.')
+        }
     }
     
     
@@ -545,6 +543,12 @@ class SubdivisionService
                 newfaas.info.taxpayername   = sland.taxpayer.entityname 
                 newfaas.info.taxpayeraddress= sland.taxpayer.entityaddress 
             }
+            newfaas.info.prevtdno       = subdivision.mothertdno 
+            newfaas.info.prevpin        = subdivision.motherpin 
+            newfaas.info.prevowner      = subdivision.mothertaxpayername
+            newfaas.info.prevav         = subdivision.mothermv 
+            newfaas.info.prevmv         = subdivision.motherav 
+            
             sland.rpu.fullpin = sland.rp.pin 
             newfaas.rp   = sland.rp 
             newfaas.rpu  = sland.rpu 
@@ -613,6 +617,10 @@ class SubdivisionService
         faas.info.approvedby            = subdivision.approvedby
         faas.info.approvedbytitle       = subdivision.approvedbytitle
         faas.info.dtapproved            = subdivision.dtapproved
+        
+        faas.previousfaases  = [
+            [ faasid:subdivision.motherfaasid, tdno:subdivision.mothertdno ]
+        ]
         return faas 
     }
     

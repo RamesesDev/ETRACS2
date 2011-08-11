@@ -223,19 +223,21 @@ public class BldgRPUController
     * BldgFloor Support
     *
     ----------------------------------------------------------------*/
-    
-    def floorUpdateHandler = {
+    def index 
+    def floorUpdateHandler = {bu ->
+        rpu.info.bldguses.set( index, bu )
         recalc()
     }
     
     def defineFloorInfo() {
         if( ! selectedBldgUse ) return 
+        index = rpu.info.bldguses.indexOf( selectedBldgUse )
         return InvokerUtil.lookupOpener('bldgrpufloor.open',[rpu:rpu, bldguse:selectedBldgUse, onupdate:floorUpdateHandler])
     }
     
     void recalc() {
         def data = svc.calculateAssessment( rpu );
-        rpu = [:]
+        rpu.clear()
         rpu.putAll(data)
         faas.rpu.clear()
         faas.rpu.putAll( data )
@@ -359,6 +361,12 @@ public class BldgRPUController
         if( rpu.info.bldgkindbucc == null ) return false
         if( rpu.info.bldgtype?.basevaluetype == 'fix' ) return false
         if( rpu.info.bldgtype?.basevaluetype == 'gap' ) return false
+        return true 
+    }
+    
+    boolean getEnableFloorInfo() {
+        if( selectedBldgUse == null ) return false
+        if( selectedBldgUse.actualuse == null && rpu.info.bldguses.size() > 0 ) return false
         return true 
     }
 }

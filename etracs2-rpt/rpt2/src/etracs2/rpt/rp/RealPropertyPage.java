@@ -12,7 +12,7 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  *
  * @author  rameses
  */
-@StyleSheet("etracs2/rpt/rp/RealProperty.style")
+@StyleSheet("etracs2/rpt/rp/RealPropertyPage.style")
 public class RealPropertyPage extends javax.swing.JPanel {
     
     /** Creates new form RealPropertyInfoPage */

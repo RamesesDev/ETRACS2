@@ -36,7 +36,7 @@ public class BldgRPUFloorController
     }
     
     def ok() {
-        if( onupdate) onupdate( )
+        if( onupdate) onupdate( bldguse  )
         return '_close' 
     }
     
@@ -66,7 +66,6 @@ public class BldgRPUFloorController
         onAddItem    : { item -> 
             item.objid = 'BF' + new UID()
             bldguse.floors.add(item ) 
-            binding.refresh('totalarea')
         },
         validate     : { li -> validateItem( li.item ) },
         onRemoveItem : { item -> removeItem( item ) },
@@ -83,6 +82,7 @@ public class BldgRPUFloorController
         try  {
             required('Floor No.', floor.floorno )
             required('Area', floor.area )
+            binding.refresh('totalarea')
             clearError()
         }
         catch( e ) {

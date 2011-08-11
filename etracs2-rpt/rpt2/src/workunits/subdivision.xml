@@ -168,6 +168,7 @@ public class SubdivisionController
         return InvokerUtil.lookupOpener('subdivisionland.create', [
             subdivision : subdivision,
             onadd : { sland ->
+                sland.itemno = '' + (subdividedlands.size()+1) 
                 svc.createSubdividedLand( sland  )
                 subdividedlands.add( sland )
                 landListHandler.load()
@@ -179,6 +180,11 @@ public class SubdivisionController
     def editSubdividedLand() {
         if( selectedLand == null || selectedLand.newpin == null ) {
             return null
+        }
+        
+        if( selectedLand.rp instanceof String ) {
+            selectedLand.rp = GroovyObjectDeserializer.instance.deserialize( selectedLand.rp )
+            selectedLand.rpu = GroovyObjectDeserializer.instance.deserialize( selectedLand.rpu )
         }
         return InvokerUtil.lookupOpener('subdivisionland.open', [
             subdivision    : subdivision,
@@ -196,7 +202,13 @@ public class SubdivisionController
         if( MsgBox.confirm('Delete selected subdivision land?') ) {
             svc.removeSubdividedLand( selectedLand.objid )
             subdividedlands.remove( selectedLand )
+            def arpus = affectedrpus.findAll{ it.subdivisionlandid == selectedLand.objid }
+            arpus.each{
+                it.subdivisionlandid = null
+                it.newpin = null
+            }
             landListHandler.load()
+            affectedrpuListHandler.load()
         }
     }
     
@@ -205,14 +217,14 @@ public class SubdivisionController
     def landListHandler = [
         getRows     : { return 50 },
         getColumns  : { return [
+            new Column(name:'itemno', caption:'Item No.*', editable:true ),
             new Column(name:'newpin', caption:'New PIN'),
             new Column(name:'areasqm', caption:'Area (Sqm)', type:'decimal', format:'#,##0.00'),
             new Column(name:'areaha', caption:'Area (Ha.)', type:'decimal', format:'#,#00.000000' ),
-            new Column(name:'itemno', caption:'Land Ref No.', editable:true ),
             new Column(name:'newtdno', caption:'New TD No.', editable:true ),
             new Column(name:'newtitletype', caption:'New Title Type', editable:true ),
             new Column(name:'newtitleno', caption:'New Title No.', editable:true ),
-            new Column(name:'newtitledate', caption:'New Title Date', type:'date', editable:true ),
+            new Column(name:'newtitledate', caption:'New Title Date', editable:true ),
             new Column(name:'memoranda', caption:'Memoranda*', editable:true),
             new Column(name:'taxpayer', caption:'Taxpayer', editable:true, type:'lookup', handler:lookupTaxpayer, expression:'#{entityname}'),
         ]},
@@ -227,6 +239,7 @@ public class SubdivisionController
             item.taxpayername       = item.taxpayer.entityname
             item.taxpayeraddress    = item.taxpayer.entityaddress
         }
+        
         svc.updateSubdividedLand( item )
     }
     
@@ -248,7 +261,7 @@ public class SubdivisionController
             new Column( name:'itemno', caption:'New Land Ref No.', editable:true),
             new Column( name:'newpin', caption:'New PIN'),
             new Column( name:'newtdno', caption:'New TD No.', editable:true),
-            new Column( name:'newsuffix', caption:'New Suffix', type:'integer', editable:true),
+            new Column( name:'newsuffix', caption:'New Suffix', type:'integer', editable:true, format:'0000'),
             new Column( name:'memoranda', caption:'Memoranda*', editable:true),
         ]},
         validate  : { li -> validateAffectedRpu( li.item ) },

@@ -61,6 +61,7 @@ public class SubdivisionInitPage extends javax.swing.JPanel {
         xTextArea1.setCaptionWidth(145);
         xTextArea1.setName("subdivision.memoranda");
         xTextArea1.setRequired(true);
+        xTextArea1.setTextCase(com.rameses.rcp.constant.TextCase.UPPER);
         jScrollPane1.setViewportView(xTextArea1);
 
         formPanel1.add(jScrollPane1);
