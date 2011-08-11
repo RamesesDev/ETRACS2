@@ -20,6 +20,7 @@
         <invoker type="formActions" action="submitToProvince" shortcut="ctrl M" visibleWhen="#{showSubmitToProvinceAction == true}" caption="Submit To Province" mnemonic="m" icon="images/doc-submit.png" permission="consolidation.submitToProvince" />
         <invoker type="formActions" action="disapproveByProvince" visibleWhen="#{showDisapproveByProvinceAction == true}" caption="Disapprove" icon="images/disapprove.png" permission="consolidation.disapproveByProvince" />
         <invoker type="formActions" action="approveByProvince" shortcut="ctrl A" visibleWhen="#{showApprovedByProvinceAction == true}" caption="Approve" mnemonic="a" icon="images/approve.png" permission="consolidation.approveByProvince" />
+        <invoker type="formActions" action="viewTaxdeclaration" shortcut="ctrl V" visibleWhen="#{consolidation.docstate == 'APPROVED'}" caption="View Taxdeclarations" mnemonic="a" icon="images/doc-view.png"/>
         
         <invoker type="realpropertyActions" action="validateRealProperty" caption="Next" mnemonic="n" icon="images/next.png" permission="consolidation.view" />
         
@@ -448,9 +449,12 @@ public class ConsolidationController
         }
     }
     
-    
-    
-    
+    def viewTaxdeclaration(){
+        def list = []
+        list << [tdno:consolidation.newtdno, objid:consolidation.newfaasid];
+        affectedrpus.each{ list << [tdno: it.newtdno, objid: it.newfaasid] }
+        return InvokerUtil.lookupOpener('batchtd.report', [faaslist:list])
+    }
 }
 
 ]]>
