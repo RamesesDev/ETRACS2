@@ -4,7 +4,7 @@
  * Created on August 1, 2011, 6:28 PM
  */
 
-package etracs2.rpt.faas;
+package etracs2.prov.faas;
 
 /**
  *
@@ -44,14 +44,13 @@ public class FAASAttachmentPage extends javax.swing.JPanel {
         xDataTable1.setName("selectedItem");
         jPanel1.add(xDataTable1, java.awt.BorderLayout.CENTER);
 
-        xActionBar1.setName("formActions");
+        xActionBar1.setName("attachmentActions");
         xActionBar1.setPadding(new java.awt.Insets(2, 2, 2, 2));
         xActionBar1.setUseToolBar(false);
         jPanel1.add(xActionBar1, java.awt.BorderLayout.NORTH);
 
         jSplitPane1.setLeftComponent(jPanel1);
 
-        jScrollPane1.setName("imageUrl");
         xEditorPane1.setDepends(new String[] {"selectedItem"});
         xEditorPane1.setName("imageUrl");
         jScrollPane1.setViewportView(xEditorPane1);

@@ -17,6 +17,8 @@ SELECT * FROM pin WHERE pin = $P{pin} AND claimno = $P{claimno}
 [getExchangePinList]
 SELECT objid, pin FROM faaslist WHERE objid <> $P{objid}  AND docstate = 'FORAPPROVAL' ORDER BY pin 
 
+[getAttachments]
+SELECT * FROM faasattachment WHERE faasid = $P{faasid}
 
 #----------------------------------------------------------------
 # CHECKS

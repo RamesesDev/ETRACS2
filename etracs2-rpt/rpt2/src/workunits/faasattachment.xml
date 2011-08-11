@@ -151,11 +151,23 @@ public class FAASAttachmentController {
         FileTransfer ft = new FileTransfer();
         ft.transfer(fis, handler);
         
+        copyToCache( file )
+        
         faasSvc.addAttachment( faas.objid, attachment )
         attachments.add( attachment )
         listHandler.load()
         return 'default' 
 
+    }
+    
+    void copyToCache( file ) {
+        FileTransfer.FileInputSource fis = new FileTransfer.FileInputSource( file )
+        
+        File f = new File( resolveFileName(attachment.filename) );
+        FileTransfer.FileOutputHandler output = new FileTransfer.FileOutputHandler( f );
+        
+        FileTransfer ft = new FileTransfer();
+        ft.transfer( fis, output );
     }
     
     void downloadFile( attachment ) {

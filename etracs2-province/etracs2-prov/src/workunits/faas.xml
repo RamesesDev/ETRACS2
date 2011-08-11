@@ -6,9 +6,13 @@
         <invoker type="formActions" action="submit" permission="faas.submit" caption="Submit" mnemonic="s" visibleWhen="#{faas.docstate == 'FORPROVAPPROVAL'}" icon="images/submit24.png" />
         <invoker type="formActions" action="approve" permission="faas.approve" caption="Approve"  mnemonic="a" visibleWhen="#{faas.docstate == 'FORAPPROVAL'}" icon="images/approve24.png" />
         <invoker type="formActions" action="doDisapprove" permission="faas.disapprove" caption="Disapprove" mnemonic="d" visibleWhen="#{faas.docstate == 'FORPROVAPPROVAL' or faas.docstate == 'FORAPPROVAL'}" icon="images/disapprove24.png"/>
+        <invoker type="formActions" action="viewAttachments" caption="Attachments" />
+        
+        <invoker type="attachmentActions" action="back" caption="Back" />
         
         <invoker type="formActions" action="assignPin" permission="faas.assignpin" caption="Assign New PIN" mnemonic="p" visibleWhen="#{faas.docstate == 'FORPROVAPPROVAL' and faas.rpu.rputype == 'land' and faas.info.txntype == 'ND'}" />
         <invoker type="formActions" action="exchangePin" permission="faas.exchangepin" caption="Exchange PIN" mnemonic="x" visibleWhen="#{faas.docstate == 'FORPROVAPPROVAL' and faas.rpu.rputype == 'land' and faas.info.txntype == 'ND'}" />
+        
     </invokers>
     
     <code>
@@ -17,8 +21,12 @@
         import com.rameses.rcp.common.*
         import com.rameses.rcp.annotations.*
         import com.rameses.osiris2.client.*
+        import com.rameses.io.FileTransfer
+        import com.rameses.invoker.client.DynamicHttpTransfer
+        import java.io.*
+
         
-        public class FAASController 
+        public class ProvFAASController 
         {
             @Service("ProvinceFAASService")
             def svc
@@ -113,6 +121,96 @@
                     listRefreshHandler()
                 }
             }
+            
+            
+            /*----------------------------------------------------------------------
+            *
+            * Attachment Support
+            *----------------------------------------------------------------------*/
+            def attachments = []
+            def selectedItem
+            
+            
+            def viewAttachments() {
+                attachments = svc.getAttachments( faas.objid )
+                return 'attachment'
+            }
+            
+            void setSelectedItem( selectedItem ) {
+                this.selectedItem = selectedItem
+                if( selectedItem ) {
+                    def file = new File( resolveFileName( selectedItem.filename ) )
+                    if( ! file.exists() ) {
+                        downloadFile( selectedItem )
+                    }
+                }
+            }
+            
+            
+            def getImageUrl() {
+                if( ! selectedItem ) {
+                    return 'Select an attachment'
+                }
+                def file = new File( resolveFileName( selectedItem.filename ) )
+                def url = file.toURL().toString()
+                return """
+                    <html>
+                        <body>
+                            <img src="$url">
+                        </body>
+                    </html>
+                """
+            }            
+            
+            def resolveFileName( filename ) {
+                def cachedir = System.properties['user.dir'] + '/cache' 
+                def dir = new File( cachedir )
+                if( !dir.exists() ) {
+                    dir.mkdirs()
+                    OsirisContext.clientContext.properties.cache_initialized = true 
+                }
+                return cachedir + '/' + filename 
+            }
+
+            void downloadFile( attachment ) {
+                def app = getAppInfo()
+
+                DynamicHttpTransfer.In handler = new DynamicHttpTransfer.In( app.host, app.context, 'ETRACSFileTransferService', 'downloadAttachment');
+                handler.getParameters().put('attachment', attachment);
+
+                File f = new File( resolveFileName(attachment.filename) );
+                FileTransfer.FileOutputHandler output = new FileTransfer.FileOutputHandler( f );
+
+                FileTransfer ft = new FileTransfer();
+                ft.transfer( handler, output );
+            }
+
+            def getAppInfo() {
+                def host        = OsirisContext.clientContext?.appEnv['default.host']
+                host            = ( host ? host : 'localhost:8080' )
+                def context     = OsirisContext.clientContext?.appEnv['app.context']
+                context         = (context ? context : 'maribojoc' )
+                return [host:host, context:context]
+            }
+
+            
+            def listHandler = [
+                getRows    : { return 25 },
+                getColumns : { return [
+                    new Column(name:'type', caption:'Attachment'),
+                    new Column(name:'refno', caption:'Ref. No.'),
+                    new Column(name:'refdate', caption:'Ref. Date'),
+                    new Column(name:'remarks', caption:'Remarks'),
+                ]},
+                fetchList : { return attachments },
+            ] as SubListModel
+            
+            
+            def back() {
+                return 'default' 
+            }
+
+
         }
         
         ]]>
@@ -121,5 +219,6 @@
     
     <pages>
         <page template="etracs2.prov.faas.FAASPage"/>
+        <page name="attachment" template="etracs2.prov.faas.FAASAttachmentPage"/>
     </pages>
 </workunit>
