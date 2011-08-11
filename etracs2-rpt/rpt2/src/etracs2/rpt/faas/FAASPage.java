@@ -381,6 +381,7 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel6.add(jLabel17);
         jLabel17.setBounds(338, 76, 46, 19);
 
+        xDateField3.setCaption("Date Appraised");
         xDateField3.setName("faas.info.dtappraised");
         jPanel6.add(xDateField3);
         xDateField3.setBounds(384, 76, 94, 19);
@@ -390,6 +391,7 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel6.add(jLabel18);
         jLabel18.setBounds(338, 95, 46, 19);
 
+        xDateField4.setCaption("Date Recommended");
         xDateField4.setName("faas.info.dtrecommended");
         jPanel6.add(xDateField4);
         xDateField4.setBounds(384, 95, 94, 19);
@@ -399,6 +401,7 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel6.add(jLabel19);
         jLabel19.setBounds(338, 114, 46, 19);
 
+        xDateField5.setCaption("Date Approved");
         xDateField5.setName("faas.info.dtapproved");
         jPanel6.add(xDateField5);
         xDateField5.setBounds(384, 114, 94, 19);

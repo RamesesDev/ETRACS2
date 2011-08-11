@@ -28,8 +28,7 @@ public class FAASAttachmentPage extends javax.swing.JPanel {
         jPanel1 = new javax.swing.JPanel();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        xEditorPane2 = new com.rameses.rcp.control.XEditorPane();
+        xImageViewer1 = new com.rameses.rcp.control.XImageViewer();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -51,12 +50,9 @@ public class FAASAttachmentPage extends javax.swing.JPanel {
 
         jSplitPane1.setLeftComponent(jPanel1);
 
-        jScrollPane2.setName("imageUrl");
-        xEditorPane2.setDepends(new String[] {"selectedItem"});
-        xEditorPane2.setName("imageUrl");
-        jScrollPane2.setViewportView(xEditorPane2);
-
-        jSplitPane1.setRightComponent(jScrollPane2);
+        xImageViewer1.setDepends(new String[] {"selectedItem"});
+        xImageViewer1.setName("imageUrl");
+        jSplitPane1.setRightComponent(xImageViewer1);
 
         add(jSplitPane1, java.awt.BorderLayout.CENTER);
 
@@ -65,11 +61,10 @@ public class FAASAttachmentPage extends javax.swing.JPanel {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
-    private com.rameses.rcp.control.XEditorPane xEditorPane2;
+    private com.rameses.rcp.control.XImageViewer xImageViewer1;
     // End of variables declaration//GEN-END:variables
     
 }
