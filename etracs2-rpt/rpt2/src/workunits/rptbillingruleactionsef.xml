@@ -61,6 +61,10 @@ class RPTBillingActionSefController
         return InvokerUtil.lookupOpener('rptincomeacct_sef.lookup', [searchText:accttitle, onselect:selectAcctHandler])
     }
     
+    def onselect = { action.expr = it; }
+    def getFormulaEditor(){
+        return InvokerUtil.lookupOpener('formula_editor2', [formula:action.expr, variableList:varlist, onselect:onselect, showToolbar:false]);
+    }
     
 }
 
