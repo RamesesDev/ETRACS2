@@ -8,14 +8,11 @@ class LguService
 	@PersistenceContext("main")
 	def em;
 	
-	@Service('ETRACSUtilService')
-	def util
-	
 	@Service('LogService')
     def logSvc
 	
-	def schemaname = "lgu:lgu"
-	def schemaversion = "1.0"
+	def SCHEMA_NAME = "lgu"
+	def SCHEMA_VERSION = "1.0"
 	
     @ProxyMethod
     public List lookupMunicipality( searchText ) {
@@ -27,69 +24,52 @@ class LguService
     
 	@ProxyMethod
 	public def getParent(){
-		return em.sqlContext.createNamedQuery( 'lgu:getList' ).singleResult;
+		def parent =  em.sqlContext.createNamedQuery( 'lgu:getParent' ).singleResult
+		if( ! parent ) { 
+			parent = [ :]
+		}
+		parent.munidistricts = getMunicipalityDistricts( parent )
+		println parent
+		return parent 
 	}
 	
 	@ProxyMethod
-	public def getMuniDist( lgutype ){
-		def data = [];
-		
-		if( lgutype != 'CITY' ){
-			data = getListByQuery( 'lgu:getMuncipalities', [:], [:] );
-			data.each{
-				it.barangays = em.serializer.read( it.barangays );	
-			}	
-		}else{ 
-			data = getListByQuery( 'lgu:getDistricts', [:], [:] );
-			data.each{
-				it.barangays = em.serializer.read( it.barangays );	
-			}	
-		}
-		return data;
+	public List getMunicipalityDistricts( parentlgu ) {
+		return em.sqlContext.createNamedQuery('lgu:getLgusByParent').setParameter('parentid', parentlgu.objid).resultList
 	}
 	
+	@ProxyMethod 
+	public List getLgusByType( lgutype) {
+		return em.sqlContext.createNamedQuery('lgu:getLgusByType').setParameter('lgutype', lgutype).resultList
+	}
+	
+	@ProxyMethod 
+	public List getLgusByParent( parentid ) {
+		return em.sqlContext.createNamedQuery('lgu:getLgusByParent').setParameter('parentid', parentid).resultList
+	}
 	
 	@ProxyMethod
 	public def createParentLgu( parentlgu ){
-		parentlgu.schemaname = schemaname;
-		parentlgu.schemaversion = schemaversion;
+		parentlgu.schemaname = SCHEMA_NAME;
+		parentlgu.schemaversion = SCHEMA_VERSION;
 		parentlgu.docstate = 'DRAFT';
 		
-		em.validate( schemaname, parentlgu );
-		em.create( schemaname, parentlgu );
-		
-		if( parentlgu.selectedlgutype == 'MUNICIPALITY' ){
-			def municipality = [
-				schemaname		: schemaname,
-				schemaversion	: schemaversion,
-				docstate		: 'DRAFT',
-				indexno			: parentlgu.muniindexno,
-				pin 			: parentlgu.indexno + "-" + parentlgu.muniindexno,
-				objid 			: parentlgu.indexno + "-" + parentlgu.muniindexno,
-				lguname			: parentlgu.munilguname,
-				lgutype 		: 'MUNICIPALITY',
-				formalname 		: 'MUNICIPALITY OF ' + parentlgu.munilguname,
-				parentid 		: parentlgu.objid,
-				barangays		: []
-			];
-			
-			em.validate( schemaname, municipality );
-			em.create( schemaname, municipality );
-		}
-		
+		em.validate( SCHEMA_NAME, parentlgu );
+		em.create( SCHEMA_NAME, parentlgu );
+		logSvc.log("CREATE", "LGU", parentlgu.objid);	
 		return parentlgu;
 	}
 	
 	@ProxyMethod
 	public def save( lgu ){
-		def old = em.read(schemaname, lgu )
-        if( old ) em.update(schemaname, lgu );
+		def old = em.read(SCHEMA_NAME, lgu )
+        if( old ) em.update(SCHEMA_NAME, lgu );
         else{ 
-        	lgu.schemaname = schemaname;
-			lgu.schemaversion = schemaversion;
+        	lgu.schemaname = SCHEMA_NAME;
+			lgu.schemaversion = SCHEMA_VERSION;
 			lgu.docstate = 'DRAFT';
 			
-        	em.create( schemaname, lgu );
+        	em.create( SCHEMA_NAME, lgu );
         }
 		
 		return lgu;
@@ -98,21 +78,21 @@ class LguService
 	@ProxyMethod
 	public def approve( lgu ){
 		lgu.each{
-			def item = em.read( schemaname, [objid:it.objid] );
+			def item = em.read( SCHEMA_NAME, [objid:it.objid] );
 			item.docstate = 'APPROVED';
-			em.update( schemaname, item );
+			em.update( SCHEMA_NAME, item );
 		}
 		
 		def parent = getParent();
 		parent.docstate = 'APPROVED';
-		em.update( schemaname, parent );
+		em.update( SCHEMA_NAME, parent );
 		
 		return lgu;
 	}
 	
 	@ProxyMethod
     public def update( lgu ) {
-        em.update( schemaname, lgu, { diff ->
+        em.update( SCHEMA_NAME, lgu, { diff ->
             logSvc.logB( 'UPDATE', 'LGU', lgu.objid, '', diff )
         } as UpdateChangeHandler )
         return lgu;
@@ -125,6 +105,17 @@ class LguService
 					.setMaxResults( params._limit )
 					.resultList
 	}
+	
+	@ProxyMethod
+	public void removeBarangay( brgy ) {
+		em.delete( SCHEMA_NAME, brgy )
+	}
+	
+	@ProxyMethod
+	public void removeMuniDistrict( munidistrict ) {
+		em.sqlContext.createNamedExecutor('lgu:deleteBarangayByParentId').setParameter('parentid', munidistrict.objid).execute()
+		em.delete(SCHEMA_NAME, munidistrict )
+	}
     
     @ProxyMethod
 	public def openProvince() {
@@ -135,13 +126,6 @@ class LguService
     
     @ProxyMethod
 	public def getBarangays() {
-        def munis = em.sqlContext.createNamedQuery('lgu:getMuncipalities').resultList 
-        
-        def brgys = []
-        munis.each {
-            brgys.addAll( em.serializer.read(it.barangays ) )
-        }
-		return brgys.collect{ [objid:it.objid, name:it.lguname, toString:it.lguname]}.sort{ a,b -> a.name <=> b.name }
-		//println lgu.municipalities.barangays.flatten().collect{[objid:it.objid, name:it.name] }.sort{ a,b -> a.name <=> b.name }
+        return em.sqlContext.createNamedQuery('lgu:getBarangays').resultList 
 	}
 }

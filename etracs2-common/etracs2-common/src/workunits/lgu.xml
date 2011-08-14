@@ -4,11 +4,8 @@
     <invoker type="home.action" action="init" caption="LGU Management" index="1" permission="lgu.management" target="window" icon="images/folder.png"/>
     
     <invoker type="formActions" action="_close" caption="Close" immediate="true" />
-    <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'init' and parentlgu.docstate == 'DRAFT' }" caption="Save" mnemonic="s" icon="images/save24.png"/>
+    <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'init'}" caption="Save" mnemonic="s" icon="images/save24.png"/>
     <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" immediate="true" caption="Next" mnemonic="N" />
-    <!-- 
-    <invoker type="formActions" action="approve" shortcut="ctrl A" visibleWhen="#{mode != 'init' and parentlgu.docstate == 'DRAFT'}" immediate="true" caption="Approve" mnemonic="a" icon="images/approve24.png"/>
-    -->
     
     <code lang="groovy">
         <![CDATA[
@@ -28,46 +25,29 @@
             def mode = "view";
             def entity;
             def selectedItem;
+            def barangayList
             def selectedBarangay
-            def list = [];
-            def parentlgu;
             def errorMsg 
             
             def init(){
-                parentlgu = svc.getParent();
-                
-                if( !parentlgu ){ 
-                    entity = createEntity();
-                    mode = "init";
-                    return "init";
-                }
-                
-                list = svc.getMuniDist( parentlgu.lgutype );
-                list.each { it._objid = 'L' + new UID() }
-                
-                if( parentlgu.lgutype == 'PROVINCE' ) return 'provmuni';
-                else return 'city';
+                entity = svc.getParent();
+                mode = 'init' 
+                if( ! entity.objid ) 
+                    return 'init'
+                else if( entity.lgutype == 'PROVINCE' ) 
+                    return 'prov'
+                else 
+                    return 'city'
             }
             
-            def createEntity(){
-                return [
-                    barangays    : []
-                ];
-            }
-            
-            def getLguTypes(){
-                return ['PROVINCE', 'CITY'];
-            }
             
             def next(){
                 createParentLGU();
-            
                 mode = "create";
-                if( entity.lgutype == 'PROVINCE' || entity.lgutype == 'MUNICIPALITY' )
-                    return 'provmuni';
+                if( entity.lgutype == 'PROVINCE'  )
+                    return 'prov';
                 else
                     return 'city';
-                binding.refresh();
             }
             
             void createParentLGU(){
@@ -86,10 +66,42 @@
                     entity.selectedlgutype = entity.lgutype;
                 }
                 
-                parentlgu = svc.createParentLgu( entity );
+                entity = svc.createParentLgu( entity );
             }
             
-            def listHandler = [
+            
+            void save(){
+                entity.munidistricts.each{
+                    svc.update( it );
+                }
+                MsgBox.alert( "Saved." );
+            }
+            
+            void approve(){
+                if( MsgBox.confirm( "Are you sure you want to approve?" ) ){
+                    def data = svc.approve( entity.munidistricts );
+                    entity.docstate = data.docstate 
+                    mode = "view";
+                }
+                
+                muniDistrictsHandler.refresh();
+                barangayHandler.refresh();
+                binding.refresh();
+                binding.focus( "selectedItem" );
+            }
+            
+            
+            /*----------------------------------------------------------------------------------
+            *
+            * Municipality District Support
+            *
+            *----------------------------------------------------------------------------------*/
+            def allowLGUColumnEdit = { item ->
+                if( entity.docstate != 'DRAFT' ) return false;
+                return true;
+            } as Map
+            
+            def muniDistrictsHandler = [
                 getRows    : { return 15; },
                 getColumns : {
                     return [
@@ -97,49 +109,17 @@
                         new Column(name:"lguname", caption:"Name", editable:true, minWidth:150, editableWhen:'#{root.allowLGUColumnEdit[item]}')
                     ];
                 },
-                fetchList : { return list; },
-                createItem : { return createLGU(); },
-                onAddItem  : { item -> list.add( item ); },
+                fetchList : { return entity.munidistricts },
+                createItem : { return createLGU() },
+                onAddItem  : { item -> entity.munidistricts.add( item ); },
                 validate     : { li -> doValidateLGU( li.item ) },
                 onRemoveItem : { item -> 
                     if( MsgBox.confirm("Remove selected item?") ) {
-                        list.remove( item );
-                        listHandler.load();
+                        svc.removeMuniDistrict( item )
+                        entity.munidistricts.remove( item );
                     }
                 },
             ] as SubListModel;
-            
-            def barangayHandler = [
-                getRows    : { return 15; },
-                getColumns : {
-                    return [
-                        new Column(name:"indexno", caption:"Index No.", editable:true, minWidth:60, editableWhen:'#{root.allowBarangayColumnEdit[item]}'),
-                        new Column(name:"lguname", caption:"Name", editable:true, minWidth:150, editableWhen:'#{root.allowBarangayColumnEdit[item]}')
-                    ];
-                },
-                fetchList : { return selectedItem?.barangays; },
-                createItem : { return [_objid: 'B' + new UID()]; },
-                onAddItem  : { item -> selectedItem.barangays.add( item ); },
-                validate     : { li -> doValidateBarangay( li.item ) },
-                onRemoveItem : { item -> 
-                    if( MsgBox.confirm("Remove selected item?") ) {
-                        selectedItem.barangays.remove( item );
-                        barangayHandler.load();
-                    }
-                },
-            ] as SubListModel;
-            
-            def allowLGUColumnEdit = { item ->
-                if( parentlgu.docstate != 'DRAFT' ) return false;
-                return true;
-            } as Map
-            
-            def allowBarangayColumnEdit = { item ->
-                if( !selectedItem ) return false;
-                if( parentlgu.docstate != 'DRAFT' ) return false;
-                return true;
-            } as Map
-            
             
             void doValidateLGU( item ) {
                 try {
@@ -158,33 +138,75 @@
                 }
             }
             
+                        
+            void checkDuplicateLGU( lgu ) {
+                def item = entity.munidistricts.find{ it._objid != lgu._objid &&  it.indexno == lgu.indexno  }
+                if( item ) throw new Exception('Duplicate Index No. is not allowed.');
+                item = entity.munidistricts.find{ it._objid != lgu._objid &&  it.lguname == lgu.lguname }
+                if( item ) throw new Exception('Duplicate Name is not allowed.');
+            }
+            
             void updateMuniDist( item ){
-                if( parentlgu.lgutype != 'CITY' ){
-                    item.pin = parentlgu.indexno + "-" + item.indexno;
+                if( entity.lgutype != 'CITY' ){
+                    item.pin = entity.indexno + "-" + item.indexno;
                     item.objid = item.pin;
                     item.lgutype = 'MUNICIPALITY';
                     item.formalname = 'MUNICIPALITY OF ' + item.lguname;
-                    item.parentid = parentlgu.objid;
+                    item.parentid = entity.objid;
                 } else{
-                    item.pin = parentlgu.indexno + "-" + item.indexno;
+                    item.pin = entity.indexno + "-" + item.indexno;
                     item.objid = item.pin;
                     item.lgutype = 'DISTRICT';
                     item.formalname = 'DISTRICT OF ' + item.lguname;
-                    item.parentid = parentlgu.objid;
+                    item.parentid = entity.objid;
                 }
             }
             
-            void clearError() {
-                errorMsg = null
-                binding.refresh('errorMsg')
+            
+            def createLGU(){
+                return [ _objid : 'L' + new UID() ];
             }
+            
+            void setSelectedItem( item ) {
+                selectedItem = item;
+                barangayList = svc.getLgusByParent( item.objid )
+                barangayHandler.load()
+            }
+            
+            
+            
+            /*----------------------------------------------------------------------------------
+            *
+            * Barangay Support
+            *
+            *----------------------------------------------------------------------------------*/
+                        
+            def barangayHandler = [
+                getRows    : { return 15; },
+                getColumns : {
+                    return [
+                        new Column(name:"indexno", caption:"Index No.", editable:true, minWidth:60, editable:true ),
+                        new Column(name:"lguname", caption:"Name", editable:true, minWidth:150, editable:true )
+                    ];
+                },
+                fetchList : { return  barangayList },
+                createItem : { return [_objid: 'B' + new UID()]; },
+                onAddItem  : { item -> barangayList.add( item ); },
+                validate     : { li -> doValidateBarangay( li.item ) },
+                onRemoveItem : { item -> 
+                    if( MsgBox.confirm("Remove selected item?") ) {
+                        svc.removeBarangay( item )
+                        barangayList.remove( item );
+                    }
+                },
+            ] as SubListModel;
             
             void doValidateBarangay( item ) {
                 try {
                     if( item.indexno.length() < 3 || item.indexno.length() > 4 ) throw new Exception( 'Invalid Index No.' );
                     required( item.indexno, 'Index No.' );
                     required( item.lguname, 'Name' );
-                    updateBarangay( item )
+                    updateBarangayInfo( item )
                     checkDuplicateBarangay( item );
                     svc.save( item );
                     clearError()
@@ -196,7 +218,7 @@
                 }
             }
             
-            void updateBarangay( item ){
+            void updateBarangayInfo( item ){
                 item.pin = selectedItem.pin + "-" + item.indexno;
                 item.objid = item.pin;
                 item.lgutype = 'BARANGAY';
@@ -207,57 +229,27 @@
             void required( value, caption ) {
                 if( ! value ) throw new Exception(caption + ' is required.') 
             }
-            
-            void checkDuplicateLGU( lgu ) {
-                def item = list.find{ it._objid != lgu._objid &&  it.indexno == lgu.indexno  }
-                if( item ) throw new Exception('Duplicate Index No. is not allowed.');
-                item = list.find{ it._objid != lgu._objid &&  it.lguname == lgu.lguname }
-                if( item ) throw new Exception('Duplicate Name is not allowed.');
-            }
+
             
             void checkDuplicateBarangay( lgu ) {
-                def item = selectedItem.barangays.findAll{ it._objid != lgu._objid && it.indexno == lgu.indexno  }
+                def item = barangayList.findAll{ it._objid != lgu._objid && it.indexno == lgu.indexno  }
                 if( item.size() >= 1 ) throw new Exception('Duplicate Index No. is not allowed.')    
                 
-                item = selectedItem.barangays.find{ it.objid != lgu.objid && it.lguname == lgu.lguname }
+                item = barangayList.find{ it.objid != lgu.objid && it.lguname == lgu.lguname }
                 if( item ) throw new Exception('Duplicate Name is not allowed.')    
             }
             
-            void setSelectedItem( item ) {
-                selectedItem = item;
-                barangayHandler.load()
+            
+            
+            
+            
+            void clearError() {
+                errorMsg = null
+                binding.refresh('errorMsg')
             }
             
-            def createLGU(){
-                return [
-                    _objid      : 'L' + new UID(),
-                    barangays    : []
-                ];
-            }
-            
-            void save(){
-                list.each{
-                    svc.update( it );
-                }
-                
-                MsgBox.alert( "Saved." );
-                
-                listHandler.refresh();
-                barangayHandler.refresh();
-                binding.focus( "selectedItem" );
-            }
-            
-            void approve(){
-                if( MsgBox.confirm( "Are you sure you want to approve?" ) ){
-                    def data = svc.approve( list );
-                    parentlgu.docstate = data.docstate 
-                    mode = "view";
-                }
-                
-                listHandler.refresh();
-                barangayHandler.refresh();
-                binding.refresh();
-                binding.focus( "selectedItem" );
+            def getLguTypes(){
+                return ['PROVINCE', 'CITY'];
             }
             
         }
@@ -268,7 +260,7 @@
     
     <pages>
         <page name="init" template="etracs2.common.lgu.InitLguPage" />
-        <page name="provmuni" template="etracs2.common.lgu.ProvinceMuniPage" />
+        <page name="prov" template="etracs2.common.lgu.ProvincePage" />
         <page name="city" template="etracs2.common.lgu.CityPage" />
     </pages>
 </workunit>

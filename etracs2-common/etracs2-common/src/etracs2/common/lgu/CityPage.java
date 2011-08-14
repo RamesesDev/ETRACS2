@@ -49,7 +49,7 @@ public class CityPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("District Information");
         jPanel2.setBorder(xTitledBorder1);
-        xDataTable1.setHandler("listHandler");
+        xDataTable1.setHandler("muniDistrictsHandler");
         xDataTable1.setImmediate(true);
         xDataTable1.setName("selectedItem");
 
@@ -129,7 +129,7 @@ public class CityPage extends javax.swing.JPanel {
                         .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .add(22, 22, 22)
                         .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(26, Short.MAX_VALUE))
+                .addContainerGap(28, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
