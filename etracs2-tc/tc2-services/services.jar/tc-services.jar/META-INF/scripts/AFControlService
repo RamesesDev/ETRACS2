@@ -72,6 +72,27 @@ class AFControlService
 		return p + (series+'').padLeft(serieslength, '0') + s  
 	}
 	
+	@ProxyMethod
+	public List getOpenAFControlList( collectorid, afid ) {
+		def params = [
+			collectorid : collectorid, 
+			afid		: ( afid ? afid : '%' )
+		]
+		return em.sqlContext.createNamedQuery('afcontrol:getOpenAFControlList').setParameters( params ).resultList 
+	}
+	
+	@ProxyMethod
+	public List getAFList() {
+		return em.sqlContext.createNamedQuery('afcontrol:getAFList').resultList 
+	}
+	
+	@ProxyMethod
+	public void changeMode( afcontrolid, newmode ) { 
+		//set to new mode and reset active to 0
+		def params = [ objid:afcontrolid, newmode:newmode ]
+		em.sqlContext.createNamedExecutor('afcontrol:changeMode').setParameters( params ).execute()
+	}
+	
 	void checkHasActive( afcontrol ) {
 		def data = getActiveAFControl( afcontrol.collectorid, afcontrol.afid, afcontrol.mode )
 		if( data ) throw new Exception('Cannot activate selected form.\nAccountable Form with Stub No. ' + data.stubno + ' is still active for collector ' + afcontrol.collectorname + '.')

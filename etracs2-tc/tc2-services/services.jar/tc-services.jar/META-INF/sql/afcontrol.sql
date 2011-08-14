@@ -24,10 +24,27 @@ WHERE collectorid = $P{collectorid}
   AND active = 0 
   AND balance > 0 
 ORDER BY dtissued, stubno   
-  
+
+[getAFList]
+ SELECT objid, aftype FROM af WHERE docstate = 'APPROVED' ORDER BY objid 
+ 
+[getOpenAFControlList]
+SELECT * FROM AFControl 
+WHERE collectorid = $P{collectorid} 
+  AND afid LIKE $P{afid} 
+  AND docstate = 'APPROVED' 
+  AND balance > 0 
+ORDER BY afid   
+ 
+ 
 [activateControl]  
 UPDATE afcontrol SET active = 1 WHERE objid = $P{objid} 
 
+[changeMode]
+UPDATE afcontrol SET 
+	mode = $P{newmode}, active = 0 
+WHERE objid = $P{objid}  
+
 
   
   
@@ -36,3 +53,5 @@ UPDATE afcontrol SET active = 1 WHERE objid = $P{objid}
 
 
 
+
+  

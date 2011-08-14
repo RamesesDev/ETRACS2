@@ -1,0 +1,93 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/tc/txn" action="init" caption="AF Control" />
+    </invokers>
+    <code>
+<![CDATA[        
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+class AFControlController
+{
+    @Binding
+    def binding
+    
+    
+    @Service('AFControlService')
+    def svc
+    
+    @Service('ETRACSUserService')
+    def userSvc
+    
+    def collector
+    def af
+    def selectedItem
+    def list
+    
+    void init() {
+    }
+    
+    def changeMode() {
+        return InvokerUtil.lookupOpener( 'changemode', [
+            oldmode  : selectedItem.mode,
+            onselect : { newmode ->
+                svc.changeMode( selectedItem.objid, newmode )
+                selectedItem.mode   = newmode
+                selectedItem.active = 0
+                binding.refresh( 'selectedItem' )
+            }
+        ])
+    }
+    
+    void setCollector( collector ) {
+        this.collector = collector 
+        loadOpenAFControlList()
+    }
+    
+    void setAf( af ) {
+        this.af = af
+        loadOpenAFControlList()
+    }
+    
+    void loadOpenAFControlList() {
+        list = []
+        if( collector ) {
+            list = svc.getOpenAFControlList( collector?.objid, af?.objid )
+        }
+        listHandler.load()
+    }
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : { 
+            return [
+                new Column(name:'afid', caption:'AF No.', maxWidth:80),
+                new Column(name:'stubno', caption:'Stub No.', maxWidth:120),
+                new Column(name:'startseries', caption:'Start Series', format:'0000000'),
+                new Column(name:'endseries', caption:'End Series', format:'0000000'),
+                new Column(name:'mode', caption:'Mode'),
+            ]
+        },
+        fetchList : {
+            return list
+        },
+    ] as SubListModel
+    
+    
+    List getCollectorlist() {
+        return userSvc.getCollectorList()
+    }
+    
+    List getAflist() {
+        return svc.getAFList()
+    }
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.tc.af.AFControlPage"/>
+    </pages>
+</workunit>
