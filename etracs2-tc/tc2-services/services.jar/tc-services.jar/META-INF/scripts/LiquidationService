@@ -97,20 +97,21 @@ class LiquidationService {
 	
 	private void createListingItem( liq ) {
 		def cal = Calendar.instance;
-		cal.time = dtsvc.parse( "yyyy-MM-dd", liq.info.txndate );
+		def pd = dtsvc.parseDate( liq.info.txndate, null )
 		em.create( LISTSCHEMANAME, [
-			objid : liq.objid,
-			docstate : liq.docstate,
-			txnno : liq.info.txnno,
-			txndate : liq.info.txndate,
-			iyear : cal.get( Calendar.YEAR ),
-			imonth : cal.get( Calendar.MONTH ),
-			iday : cal.get( Calendar.DATE ),
-			liquidatingofficerid : liq.info.liquidatingofficerid,
-			liquidatingofficername : liq.info.liquidatingofficername,
-			amount : liq.info.amount,
-			totalcash : liq.info.totalcash,
-			totalotherpayment : liq.info.totalotherpayment
+			objid 		: liq.objid,
+			docstate 	: liq.docstate,
+			txnno 		: liq.info.txnno,
+			txndate 	: liq.info.txndate,
+			iyear 		: pd.year, 
+			imonth 		: pd.month,
+			iday 		: pd.day, 
+			txntimestamp: pd.year +''+ pd.qtr +'' + pd.month + '' + pd.day ,
+			liquidatingofficerid 	: liq.info.liquidatingofficerid,
+			liquidatingofficername 	: liq.info.liquidatingofficername,
+			amount 					: liq.info.amount,
+			totalcash 				: liq.info.totalcash,
+			totalotherpayment 		: liq.info.totalotherpayment
 		] );
 	}
 	

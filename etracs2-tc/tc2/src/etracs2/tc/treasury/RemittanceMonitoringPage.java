@@ -51,7 +51,7 @@ public class RemittanceMonitoringPage extends javax.swing.JPanel {
         xComboBox1.setCaption("Collector");
         xComboBox1.setCaptionWidth(80);
         xComboBox1.setEmptyText("Select a collector");
-        xComboBox1.setExpression("#{collectorname}");
+        xComboBox1.setExpression("#{formalname}");
         xComboBox1.setImmediate(true);
         xComboBox1.setIndex(-50);
         xComboBox1.setItems("collectorList");
