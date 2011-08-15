@@ -47,6 +47,7 @@ class EntityService
 		entity.entityname = buildName( entity )
 		
 		em.validate( entity.schemaname, entity )
+		checkDuplicateEntityName( entity )
 		checkDuplicateEntityNo( entity.entityno )
 		
 		em.create( entity.schemaname, entity )
@@ -141,6 +142,12 @@ class EntityService
 		if( result.icount >= 1 ) {
 			throw new Exception('Duplicate entity no. found. Please save the record again.');
 		}
+	}
+	
+	void checkDuplicateEntityName( entity ) {
+		def params = [ objid:entity.objid, entityname:entity.entityname ]
+		def data = em.sqlContext.createNamedQuery('entity:checkDuplicateName').setParameters( params ).singleResult 
+		if( data ) throw new Exception( entity.entityname + ' already exists with Entity No. ' + data.entityno +'.\nDuplicate name is not allowed.')
 	}
 	
 	def buildName( entity ) {
