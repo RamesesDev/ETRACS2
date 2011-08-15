@@ -14,6 +14,9 @@ FROM entity
 WHERE entityname LIKE $P{entityname} 
 ORDER BY entityname 
 
+[getMemberList]
+SELECT * FROM entitymember WHERE entityid = $P{entityid} ORDER BY itemno 
+
 [checkDuplicateNo]
 SELECT COUNT(*) AS icount FROM entity WHERE entityno = $P{entityno} 
 

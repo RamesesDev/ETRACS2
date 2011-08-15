@@ -1,7 +1,8 @@
 <workunit>
     <invokers>
-        <invoker type="entity.multiple" caption="Entity (Multiple)" />        
-        <invoker type="entity.type" caption="Multiple" action="init" target="popup" permission="multiple.create" />        
+        <invoker folderid="/menu/domain"    action="init"   caption="Multiple Ownership"    target="popup" />        
+        <invoker type="entity.multiple"     action="open"   caption="Entity (Multiple)" />        
+        <invoker type="entity.type"         action="init"   caption="Multiple"              target="popup" permission="multiple.create" />        
         
         <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/addnew24.png" target="popup" permission="multiple.create"/>
         <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Edit" mnemonic="e" icon="images/edit24.png" permission="multiple.edit"/>
@@ -16,15 +17,31 @@
 import com.rameses.rcp.common.*
 import com.rameses.rcp.annotations.*
 import com.rameses.osiris2.client.*
+import java.rmi.server.UID;
 
 class EntityMultipleController extends etracs2.groovy.AbstractEntityController 
 {
     @Service("EntityService")
     def svc
     
+    def selectedMember
+    def members
+    def errorMsg 
     
     void init() {
+        members  = []
         super.create()
+    }
+    
+    void open() {
+        members = svc.getMemberList( entity.objid )
+        members.each {
+            it.entity = [ 
+                objid           : it.taxpayerid,
+                entityname      : it.taxpayername ,
+                entityaddress   : it.taxpayeraddress,
+            ]
+        }
     }
     
     def getService() { return svc }
@@ -35,13 +52,12 @@ class EntityMultipleController extends etracs2.groovy.AbstractEntityController
         return [
             entitytype : 'multiple',
             info       : [
-                fullname : '',
-                members  : []
+                fullname : ''
             ],
         ]
     } 
     
-    def selectedMember
+    
     def lookupEntity = InvokerUtil.lookupOpener("entity.lookup",[:]);
 
     def membersListHandler = [
@@ -54,37 +70,47 @@ class EntityMultipleController extends etracs2.groovy.AbstractEntityController
                 new Column(name:"suffix", caption:"Suffix", editable:true, maxWidth:100)
             ];
         },
-        fetchList : { return entity.info.members; },
-        createItem : { return [:]; },
-        onAddItem  : { item ->
-            updateEntity( item );
-            if( entity.info.members == null ) entity.info.members = [];
-            entity.info.members.add( item );
-        },
+        fetchList : { return members },
+        createItem : { return [ objid:'EM'+ new UID() ] },
+        onAddItem  : { item -> members.add( item ) },
         validate     : { li -> doValidateEntity( li.item ) },
         onRemoveItem : { item -> doRemoveEntity( item ) },
-        onColumnUpdate : { item, colName ->
-            if( colName == 'entity' ) updateEntity( item );
-        },
     ] as SubListModel;
     
     void doValidateEntity( item ) {
-        required(item.taxpayername, 'Taxpayer Name');
-        updateFullName( item, 'add' );
+        try {
+            required(item.entity, 'Taxpayer Name');
+            checkDuplicate( item )
+
+            item.entityid       = entity.objid
+            item.itemno         = getItemNo();
+            item.taxpayerid     = item.entity?.objid;
+            item.taxpayername   = item.entity?.entityname;
+            item.taxpayeraddress = item.entity?.entityaddress
+            updateFullName( item, 'add' );
+            svc.saveMember( item )
+            clearError()
+        }
+        catch( e ) {
+            e.printStackTrace()
+            errorMsg = e.message
+            binding.refresh( 'errorMsg' )
+            throw e 
+        }
+        
     }
     
-    void updateEntity( item ) {
-        item.itemno = getItemNo();
-        item.taxpayerid = item.entity.objid;
-        item.taxpayername = item.entity.entityname;
+    void checkDuplicate( item ) {
+        def data = members.find{ it.objid != item.objid && it.taxpayerid == item.entity.objid }
+        if( data ) throw new Exception('Duplicate member is not allowed.')
     }
     
     void doRemoveEntity( item ) {
         if( MsgBox.confirm("Remove selected item?") ) {
-            entity.info.members.remove( item );
-            membersListHandler.load();
+            svc.deleteMember( item ) 
+            members.remove( item );
+            updateFullName( item, 'remove' );
         }
-        updateFullName( item, 'remove' );
     }
     
     void updateFullName( item, state ) {
@@ -97,7 +123,7 @@ class EntityMultipleController extends etracs2.groovy.AbstractEntityController
             else entity.info.fullname += ", $prefix $item.taxpayername $suffix";
         } else {
             entity.info.fullname = '';
-            entity.info?.members.each {
+            members.each {
                 def prefix = ( it.prefix ? it.prefix : "" ).toString();
                 def suffix = ( it.suffix ? it.suffix : "" ).toString();
 
@@ -109,7 +135,7 @@ class EntityMultipleController extends etracs2.groovy.AbstractEntityController
         binding.refresh('entity.info.fullname');
     }
     
-    void copyfullname() {
+    void copyFullName() {
         entity.entityname = entity.info.fullname;
         binding.refresh('entity.entityname');
     }
@@ -117,9 +143,9 @@ class EntityMultipleController extends etracs2.groovy.AbstractEntityController
     def getItemNo() {
         def num;
         
-        if( entity.info.members.size() == 0 ) num = 1;
+        if( members.size() == 0 ) num = 1;
         else {
-            def last = entity.info.members.last();
+            def last = members.last();
             num = last.itemno + 1;
         }
         
@@ -128,6 +154,11 @@ class EntityMultipleController extends etracs2.groovy.AbstractEntityController
     
     void required( caption, value ) {
         if( !value ) throw new Exception( caption + ' is required.')
+    }
+    
+    void clearError() {
+        errorMsg = null
+        binding.refresh( 'errorMsg' )
     }
 }        
 

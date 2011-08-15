@@ -16,6 +16,8 @@ class EntityService
 	
 	def SCHEMANAME = 'entity:entity'
 	def SCHEMAVERSION = '1.0'
+	def MEMBER_SCHEMA = 'entity:member'
+	
 	def INDIVIDUAL_TYPE = 'individual'
 	def JURIDICAL_TYPE = 'juridical'
 	def MULTIPLE_TYPE = 'multiple'
@@ -88,7 +90,29 @@ class EntityService
 		}
 		return entity
 	}
+	 
+	@ProxyMethod
+	public List getMemberList( entityid ) {
+		return em.sqlContext.createNamedQuery('entity:getMemberList').setParameter('entityid', entityid).resultList 
+	}
 	
+	@ProxyMethod 
+	public void saveMember( member ) {
+		em.validate( MEMBER_SCHEMA, member )
+		
+		def oldmember = em.read( MEMBER_SCHEMA, member )
+		if( oldmember )  {
+			em.update( MEMBER_SCHEMA, member )
+		}
+		else {
+			em.create( MEMBER_SCHEMA, member )
+		}
+	}
+	
+	@ProxyMethod
+	public void deleteMember( member ) {
+		em.delete( MEMBER_SCHEMA, member ) 
+	}
 	
 	@ProxyMethod
 	public List getCitizenshipList() {

@@ -31,7 +31,6 @@ class TreasuryReportService
 	public def generateStatementOfRevenue( def year, def qtr, def month, def fundid ){
 		def dtime = parsetime( year, qtr, month );
 		def list = [];
-		println "TS> " + dtime;
 		em.sqlContext.createNamedQuery("treasuryreport:getChartList").resultList.each{
             list.addAll( em.sqlContext.createNamedQuery("treasuryreport:getRevenueByGLAccount$it.acctcode")
 			               .setParameters( [fundid:fundid, liqtimestamp:dtime] )
