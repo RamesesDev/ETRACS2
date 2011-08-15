@@ -2,11 +2,11 @@
 SELECT * FROM remittancelist 
 ORDER BY txndate DESC, txnno DESC
 
-[getRemittanceByTxnNo]
+[getRemittanceByTxnNo] 
 SELECT * 
 FROM remittancelist 
-WHERE txnno = $P{txnno} 
-ORDER BY txndate DESC, txnno DESC
+WHERE txnno = $P{txnno}  
+ORDER BY txndate DESC, txnno DESC 
 
 [getRemittanceByCollector]
 SELECT * FROM remittancelist 
@@ -129,6 +129,8 @@ ORDER BY rl.afid, rl.serialno, ri.accttitle
 
 [getIncomeAccuntSummaryByAllFund] 
 SELECT 
+	ri.fundid AS fundid, 
+	ri.fundname as fundname, 
 	ri.acctid AS acctid, 
 	ri.accttitle AS acctname, 
 	SUM( ri.amount ) AS amount 
@@ -136,10 +138,12 @@ FROM receiptlist rl, receiptitem ri
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
 GROUP BY ri.acctid, ri.accttitle 
-ORDER BY ri.accttitle 
+ORDER BY ri.fundname, ri.accttitle 
 
-[getIncomeAccuntSummaryByFund]
+[getIncomeAccuntSummaryByFund] 
 SELECT 
+    ri.fundid as fundid, 
+    ri.fundname as fundname, 
 	ri.acctid AS acctid, 
 	ri.accttitle AS acctname, 
 	SUM( ri.amount ) AS amount 
@@ -148,7 +152,7 @@ WHERE rl.objid = ri.receiptid
 	AND rl.remittanceid = $P{remittanceid} 
 	AND ri.fundid = $P{fundid} 
 GROUP BY ri.acctid, ri.accttitle 
-ORDER BY ri.accttitle
+ORDER BY ri.fundname, ri.accttitle 
 
 [getSerialReceiptDetailsByAllFund]
 SELECT 
