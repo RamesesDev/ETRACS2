@@ -40,17 +40,7 @@ public class LiquidationReportServices{
 		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
 		
 		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
-		def reportData = [
-			txndate: liquidation.dtposted,
-			txnno: liquidation.info.txnno,
-			liquidatingofficername: liquidation.info.liquidatingofficername,
-			liquidatingofficertitle: liquidation.info.liquidatingofficertitle,
-			treasurername: liquidation.info.treasurername,
-			treasurertitle: liquidation.info.treasurertitle,
-			amountinwords: numsvc.convertString( liquidation.info.amount + "" ),
-			amountformatted: decformat.format( liquidation.info.amount )
-		];
-		
+		def reportData = buildLiquidationData( liquidation )
 		def map = [liquidationid: liquidationid, fundid: fundid];
 
 		reportData.list = em.sqlContext.createNamedQuery("liquidationreport:getRemittanceFundTotalByLiquidationAndFund")
@@ -64,17 +54,8 @@ public class LiquidationReportServices{
 	public def buildReportCData( def liquidationid, def chart, def fundid ){
 		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
 		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
-		def reportData = [
-			txndate: liquidation.dtposted,
-			txnno: liquidation.info.txnno,
-			liquidatingofficername: liquidation.info.liquidatingofficername,
-			liquidatingofficertitle: liquidation.info.liquidatingofficertitle,
-			treasurername: liquidation.info.treasurername,
-			treasurertitle: liquidation.info.treasurertitle,
-			amountinwords: numsvc.convertString( liquidation.info.amount + "" ),
-			amountformatted: decformat.format( liquidation.info.amount )
-		];
 		
+		def reportData = buildLiquidationData( liquidation )
 		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByGLAccount$chart")
 		             .setParameters([liquidationid: liquidationid, fundid: fundid])
 					 .resultList;
@@ -96,17 +77,7 @@ public class LiquidationReportServices{
 		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
 		
 		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
-		def reportData = [
-			txndate: liquidation.dtposted,
-			txnno: liquidation.info.txnno,
-			liquidatingofficername: liquidation.info.liquidatingofficername,
-			liquidatingofficertitle: liquidation.info.liquidatingofficertitle,
-			treasurername: liquidation.info.treasurername,
-			treasurertitle: liquidation.info.treasurertitle,
-			amountinwords: numsvc.convertString( liquidation.info.amount + "" ),
-			amountformatted: decformat.format( liquidation.info.amount )
-		];
-
+		def reportData = buildLiquidationData( liquidation )
 		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByIncomeAccount$chart")
 		                    .setParameters([liquidationid: liquidationid, fundid: fundid])
 							.resultList.each{
@@ -197,5 +168,20 @@ public class LiquidationReportServices{
 		}
 
 		return results;
+	}
+	
+	def buildLiquidationData( liquidation ) {
+		return [
+			txndate: liquidation.dtposted,
+			txnno: liquidation.info.txnno,
+			liquidatingofficername: liquidation.info.liquidatingofficername,
+			liquidatingofficertitle: liquidation.info.liquidatingofficertitle,
+			treasurername: liquidation.info.treasurername,
+			treasurertitle: liquidation.info.treasurertitle,
+			depositedbyname: liquidation.info.depositedbyname,
+			depositedbytitle: liquidation.info.depositedbytitle,
+			amountinwords: numsvc.convertString( liquidation.info.amount + "" ),
+			amountformatted: decformat.format( liquidation.info.amount )
+		];
 	}
 }
