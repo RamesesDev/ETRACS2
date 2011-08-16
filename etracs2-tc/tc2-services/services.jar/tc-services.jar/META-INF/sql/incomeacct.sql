@@ -41,10 +41,10 @@ SELECT COUNT(*) AS count FROM receiptitem WHERE acctid = $P{acctid}
 
 [getNGASData]
 SELECT 
-	CONCAT( COALESCE(p2.acctcode, 'UNMAPPED'), '-' , COALESCE(p2.accttitle,'UNMAPPED') ) as parent2, 
-	CONCAT( COALESCE(p1.acctcode, 'UNMAPPED'), '-' , COALESCE(p1.accttitle,'UNMAPPED') ) as parent1, 
-	CONCAT( COALESCE(p.acctcode, 'UNMAPPED'), '-' , COALESCE(p.accttitle,'UNMAPPED') ) as parent, 
-	CONCAT( COALESCE(ic.acctno, 'UNMAPPED'), '-' , COALESCE(ic.accttitle,'UNMAPPED') ) as account 
+	CONCAT( COALESCE(p2.acctcode, ''), ' - ' , COALESCE(p2.accttitle,'UNMAPPED') ) as parent2, 
+	CONCAT( COALESCE(p1.acctcode, ''), ' - ' , COALESCE(p1.accttitle,'UNMAPPED') ) as parent1, 
+	CONCAT( COALESCE(p.acctcode, ''), ' - ' , COALESCE(p.accttitle,'UNMAPPED') ) as parent, 
+	CONCAT( COALESCE(ic.acctno, ''), ' - ' , COALESCE(ic.accttitle,'UNMAPPED') ) as account 
 FROM incomeaccount ic  
 LEFT JOIN account p ON ic.ngasid = p.objid 
 LEFT JOIN account p1 ON p.parentid = p1.objid 
@@ -55,10 +55,10 @@ GROUP BY p2.acctcode, p2.accttitle, p1.acctcode, p1.accttitle, p.acctcode, p.acc
 
 [getSREData]
 SELECT 
-	CONCAT( COALESCE(p2.acctcode, 'UNMAPPED'), '-' , COALESCE(p2.accttitle,'UNMAPPED') ) as parent2, 
-	CONCAT( COALESCE(p1.acctcode, 'UNMAPPED'), '-' , COALESCE(p1.accttitle,'UNMAPPED') ) as parent1, 
-	CONCAT( COALESCE(p.acctcode, 'UNMAPPED'), '-' , COALESCE(p.accttitle,'UNMAPPED') ) as parent, 
-	CONCAT( COALESCE(ic.acctno, 'UNMAPPED'), '-' , COALESCE(ic.accttitle,'UNMAPPED') ) as account 
+	CONCAT( COALESCE(p2.acctcode, ''), '-' , COALESCE(p2.accttitle,'UNMAPPED') ) as parent2, 
+	CONCAT( COALESCE(p1.acctcode, ''), '-' , COALESCE(p1.accttitle,'UNMAPPED') ) as parent1, 
+	CONCAT( COALESCE(p.acctcode, ''), '-' , COALESCE(p.accttitle,'UNMAPPED') ) as parent, 
+	CONCAT( COALESCE(ic.acctno, ''), '-' , COALESCE(ic.accttitle,'UNMAPPED') ) as account 
 FROM incomeaccount ic  
 LEFT JOIN account p ON ic.sreid = p.objid 
 LEFT JOIN account p1 ON p.parentid = p1.objid 

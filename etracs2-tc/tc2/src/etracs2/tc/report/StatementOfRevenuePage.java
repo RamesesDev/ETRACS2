@@ -25,6 +25,7 @@ public class StatementOfRevenuePage extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
+        xComboBox4 = new com.rameses.rcp.control.XComboBox();
         xComboBox3 = new com.rameses.rcp.control.XComboBox();
         xDateField1 = new com.rameses.rcp.control.XDateField();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
@@ -38,9 +39,20 @@ public class StatementOfRevenuePage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("Statement Of Revenue");
         formPanel1.setBorder(xTitledBorder1);
+        xComboBox4.setAllowNull(false);
+        xComboBox4.setCaption("Chart");
+        xComboBox4.setImmediate(true);
+        xComboBox4.setIndex(-100);
+        xComboBox4.setItems("chartList");
+        xComboBox4.setName("entity.chart");
+        xComboBox4.setPreferredSize(new java.awt.Dimension(130, 23));
+        xComboBox4.setRequired(true);
+        formPanel1.add(xComboBox4);
+
         xComboBox3.setCaption("Fund");
         xComboBox3.setExpression("#{fundname}");
         xComboBox3.setImmediate(true);
+        xComboBox3.setIndex(-10);
         xComboBox3.setItems("fundList");
         xComboBox3.setName("entity.fund");
         xComboBox3.setPreferredSize(new java.awt.Dimension(130, 23));
@@ -57,7 +69,8 @@ public class StatementOfRevenuePage extends javax.swing.JPanel {
         formPanel1.add(xDateField1);
 
         xComboBox2.setCaption("Qtr");
-        xComboBox2.setExpression("#{name}");
+        xComboBox2.setExpression("#{value}");
+        xComboBox2.setImmediate(true);
         xComboBox2.setItems("qtrList");
         xComboBox2.setName("entity.qtr");
         xComboBox2.setPreferredSize(new java.awt.Dimension(60, 20));
@@ -87,6 +100,7 @@ public class StatementOfRevenuePage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XComboBox xComboBox3;
+    private com.rameses.rcp.control.XComboBox xComboBox4;
     private com.rameses.rcp.control.XDateField xDateField1;
     // End of variables declaration//GEN-END:variables
     

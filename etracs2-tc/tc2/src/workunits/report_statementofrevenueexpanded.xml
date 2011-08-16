@@ -71,7 +71,7 @@ class StatementOfRevenue
     }
     
     def view(){
-        data = svc.generateStatementOfRevenueExpanded( entity.year, entity.qtr?.value, entity.month?.value, entity.fund.objid );
+        data = svc.generateStatementOfRevenueExpanded( entity.chart, entity.year, entity.qtr?.value, entity.month?.value, entity.fund.objid );
         param = svcParams.getStandardParameter( OsirisContext.env.USERNAME );
         param.put("FUND", entity.fund.fundname);
         def period = entity.year;
@@ -83,6 +83,10 @@ class StatementOfRevenue
         report.viewReport();
         mode = "view";
         return "preview";
+    }
+    
+    List getChartList() {
+        return ['NGAS','SRE']
     }
 }
 
