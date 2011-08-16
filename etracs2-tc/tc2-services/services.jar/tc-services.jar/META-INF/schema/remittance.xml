@@ -8,12 +8,10 @@
 		<field name="docstate" required="true" />
 		<field name="dtposted" required="true" />
 		<field name="collectorid" required="true" />
+		<field name="liquidatingofficerid"  required="true" />
 		<field name="liquidationid" />
 		<field name="liquidationno" />
 		<field name="liquidationdate" />
-		<field name="liquidatingofficerid" />
-		<field name="liquidatingofficername" />
-		<field name="liquidatingofficertitle" />
 		<complex name="info" ref="info" serializer="default" />
 	</element>
 
@@ -21,7 +19,9 @@
 		<field name="txnno" required="true" />
 		<field name="txndate" required="true" />
 		<field name="collectorname" required="true" />
-		<field name="collectortitle" />
+		<field name="collectortitle" required="true" />
+		<field name="liquidatingofficername" required="true" />
+		<field name="liquidatingofficertitle" required="true" />
 		<field name="amount" type="decimal" />
 		<field name="totalcash" type="decimal" />
 		<field name="totalotherpayment" type="decimal" />
@@ -62,19 +62,22 @@
 	<element name="remittancelist" tablename="remittancelist">
 		<field name="objid" primary="true" />
 		<field name="docstate" required="true" />
-		<field name="txnno" required="true" />
-		<field name="txndate" required="true" />
-		<!--field name="iyear" type="integer" />
-		<field name="imonth" type="integer" />
-		<field name="iday" type="integer" /-->
+		<field name="txnno" required="true" mapfield="info.txnno"/>
+		<field name="txndate" required="true" mapfield="info.txndate" />
 		<field name="txntimestamp" required="true" />
 		<field name="collectorid" required="true" />
-		<field name="collectorname" required="true" />
+		<field name="collectorname" required="true" mapfield="info.collectorname" />
+		<field name="collectortitle" required="true" mapfield="info.collectortitle" />
+		<field name="liquidatingofficerid" />
+		<field name="liquidatingofficername" mapfield="info.liquidatingofficername"/>
+		<field name="liquidatingofficertitle" mapfield="info.liquidatingofficertitle" />
 		<field name="liquidationid" />
 		<field name="liquidationno" />
-		<field name="amount" type="decimal" />
-		<field name="totalcash" type="decimal" />
-		<field name="totalotherpayment" type="decimal" />
+		<field name="liquidationdate" />
+		<field name="amount" type="decimal" mapfield="info.amount" />
+		<field name="totalcash" type="decimal" mapfield="info.totalcash" />
+		<field name="totalotherpayment" type="decimal"  mapfield="info.totalotherpayment"/>
 	</element>
 	
 </schema>
+

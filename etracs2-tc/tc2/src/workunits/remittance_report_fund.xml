@@ -36,8 +36,10 @@
                 getReportData : { return svc.generateReportByFund( entity, selectedfund ) }, 
                 getParameters : { 
                     def params = paramSvc.getStandardParameter( OsirisContext.env.USERNAME );
-                    if (selectedfund)
-                        params.SUBTITLE = selectedfund.fundname;
+                    params.SUBTITLE = 'SUMMARY OF COLLECTION'
+                    if (selectedfund) {
+                        params.SUBTITLE = params.SUBTITLE + ' BY ' + selectedfund.fundname + ' FUND ' ;
+                    }
                     return params;
                 }
             ] as ServerReportModel;

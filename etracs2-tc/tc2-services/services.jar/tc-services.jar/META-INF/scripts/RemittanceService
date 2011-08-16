@@ -93,6 +93,7 @@ class RemittanceService {
 		rem.info.txnno = generateRemNo();
 		rem.dtposted = dtsvc.getServerDate()
 		rem.info.txndate = dtsvc.format( "yyyy-MM-dd", rem.dtposted );
+		updateLiquidatingOfficerInfo( rem )
 		closeReceipts( rem );
 		updateAfControls( rem );
 		em.validate( SCHEMANAME, rem );
@@ -101,6 +102,14 @@ class RemittanceService {
 		createListingItem( rem );
 		
 		return rem;
+	}
+	
+	void updateLiquidatingOfficerInfo( rem ) {
+		def lq = em.sqlContext.createNamedQuery('remittance:getLiquidatingOfficer').setParameter('collectorid', rem.collectorid).singleResult 
+		if( ! lq ) throw new Exception('Liquidating Officer for this collector is not set.')
+		rem.liquidatingofficerid 		= lq.objid 
+		rem.info.liquidatingofficername 	= lq.formalname
+		rem.info.liquidatingofficertitle 	= lq.jobtitle 
 	}
 	
 	private validate( rem ) {
@@ -120,18 +129,8 @@ class RemittanceService {
 	
 	private void createListingItem( rem ) {
 		def dt = dtsvc.parseDate( rem.info.txndate, null );
-		em.create( LISTSCHEMANAME, [
-			objid : rem.objid,
-			docstate : rem.docstate,
-			txnno : rem.info.txnno,
-			txndate : rem.info.txndate,
-			txntimestamp : dtsvc.buildCustomTimeStamp( rem.info.txndate ),
-			collectorid : rem.collectorid,
-			collectorname : rem.info.collectorname,
-			amount : rem.info.amount,
-			totalcash : rem.info.totalcash,
-			totalotherpayment : rem.info.totalotherpayment
-		]);
+		rem.txntimestamp = dtsvc.buildCustomTimeStamp( rem.info.txndate )
+		em.create( LISTSCHEMANAME, rem)
 	}
 	
 	private void closeReceipts( rem ) {

@@ -58,10 +58,7 @@ UPDATE remittance SET
 	docstate = 'CLOSED', 
 	liquidationid = $P{liquidationid}, 
 	liquidationno = $P{liquidationno}, 
-	liquidationdate = $P{liquidationdate}, 
-	liquidatingofficerid = $P{liquidatingofficerid}, 
-	liquidatingofficername = $P{liquidatingofficername}, 
-	liquidatingofficertitle = $P{liquidatingofficertitle} 
+	liquidationdate = $P{liquidationdate} 
 WHERE docstate = 'OPEN' 
 AND collectorid = $P{collectorid}
 

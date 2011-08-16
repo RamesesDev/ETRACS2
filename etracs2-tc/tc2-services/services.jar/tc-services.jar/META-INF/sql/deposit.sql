@@ -21,7 +21,7 @@ SELECT docstate FROM deposit WHERE objid = $P{objid}
 [getOpenLiquidations] 
 SELECT 
 	objid, txnno, txndate, amount, 
-	liquidatingofficerid, liquidatingofficername, '<NOTSET>' AS liquidatingofficertitle 
+	liquidatingofficerid, liquidatingofficername, liquidatingofficertitle 
 FROM liquidationlist 
 WHERE docstate = 'OPEN'  
 

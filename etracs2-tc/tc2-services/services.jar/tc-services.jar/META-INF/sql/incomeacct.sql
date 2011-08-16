@@ -5,19 +5,19 @@ SELECT * FROM incomeaccount WHERE objid = $P{objid}
 SELECT * FROM incomeaccount ORDER BY accttitle   
 
 [getListByAcctNo]
-SELECT * FROM incomeaccount WHERE acctno LIKE $P{acctno}  ORDER BY acctno 
+SELECT * FROM incomeaccount WHERE acctno LIKE $P{acctno}  ORDER BY acctno, accttitle  
 
 [getListByTitle]
-SELECT * FROM incomeaccount WHERE accttitle LIKE $P{accttitle} ORDER BY accttitle   
+SELECT * FROM incomeaccount WHERE accttitle LIKE $P{accttitle} ORDER BY acctno, accttitle   
 
 [getIncomeAccountList]
-SELECT objid, acctno, acctcode, accttitle, fundid, fundname  FROM incomeaccount WHERE docstate = 'APPROVED'
+SELECT objid, acctno, acctcode, accttitle, fundid, fundname  FROM incomeaccount WHERE docstate = 'APPROVED' ORDER BY acctno, accttitle 
 
 [getIncomeAccountListByNo]
-SELECT objid, acctno, acctcode, accttitle, fundid, fundname  FROM incomeaccount WHERE docstate = 'APPROVED' AND acctno = $P{acctno}
+SELECT objid, acctno, acctcode, accttitle, fundid, fundname  FROM incomeaccount WHERE docstate = 'APPROVED' AND acctno = $P{acctno} ORDER BY acctno, accttitle 
 
 [getIncomeAccountListByTitle]
-SELECT objid, acctno, acctcode, accttitle, fundid, fundname FROM incomeaccount WHERE docstate = 'APPROVED' AND accttitle LIKE $P{accttitle}
+SELECT objid, acctno, acctcode, accttitle, fundid, fundname FROM incomeaccount WHERE docstate = 'APPROVED' AND accttitle LIKE $P{accttitle} ORDER BY acctno, accttitle 
 
 [getFund]
 SELECT * FROM fund WHERE docstate = "APPROVED"

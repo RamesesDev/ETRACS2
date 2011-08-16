@@ -36,8 +36,9 @@
                 getReportData : { return svc.generateReportByCollectionType( entity, selectedcollectiontype ) }, 
                 getParameters : { 
                     def params = paramSvc.getStandardParameter( OsirisContext.env.USERNAME );
+                    params.SUBTITLE = 'SUMMARY OF COLLECTION'
                     if (selectedcollectiontype)
-                        params.SUBTITLE = selectedcollectiontype.name;
+                        params.SUBTITLE = params.SUBTITLE + ' (' + selectedcollectiontype.name + ')';
                     return params;
                 }
             ] as ServerReportModel;
