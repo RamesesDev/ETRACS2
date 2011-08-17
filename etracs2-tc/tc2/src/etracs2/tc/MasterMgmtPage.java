@@ -4,7 +4,7 @@
  * Created on June 8, 2011, 10:50 AM
  */
 
-package etracs2.rpt.master;
+package etracs2.tc;
 
 /**
  *
@@ -41,7 +41,7 @@ public class MasterMgmtPage extends javax.swing.JPanel {
         xList1.setExpression("#{caption}");
         xList1.setItems("openers");
         xList1.setName("selectedOpener");
-        xList1.setPreferredSize(new java.awt.Dimension(150, 100));
+        xList1.setPreferredSize(new java.awt.Dimension(180, 100));
         jScrollPane1.setViewportView(xList1);
 
         add(jScrollPane1, java.awt.BorderLayout.WEST);
@@ -53,7 +53,7 @@ public class MasterMgmtPage extends javax.swing.JPanel {
         xSubFormPanel1.setLayout(xSubFormPanel1Layout);
         xSubFormPanel1Layout.setHorizontalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 354, Short.MAX_VALUE)
+            .add(0, 324, Short.MAX_VALUE)
         );
         xSubFormPanel1Layout.setVerticalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
