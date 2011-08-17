@@ -26,11 +26,26 @@ class TDReportService
     	td.propertytype = faas.rpu.rputype 
     	td.avinwords = numberSvc.convertDouble( faas.rpu.totalav )
     	
-    	if( faas.rpu.rputype == 'land' ) td.lands = getLandDetails( faas.rpu )
-    	else if( faas.rpu.rputype == 'bldg' ) td.buildings = getBldgDetails( faas.rpu )
-    	else if( faas.rpu.rputype == 'mach' ) td.machines = getMachDetails( faas.rpu )
-    	else if( faas.rpu.rputype == 'planttree' ) td.plants = getPlantTreeDetails( faas.rpu )
-    	else if( faas.rpu.rputype == 'misc' ) td.miscitems = getMiscDetails( faas.rpu )
+    	if( faas.rpu.rputype == 'land' ) {
+			td.lands = getLandDetails( faas.rpu )
+			td.plants = getPlantTreeDetails( faas.rpu )
+		}
+    	else if( faas.rpu.rputype == 'bldg' ) {
+			td.bldgdesc  	= faas.rpu.info.bldgtype.bldgtypename + ' - ' + faas.rpu.info.bldgkindbucc.bldgkindname
+			td.floorcount 	= faas.rpu.info.floorcount 
+			td.buildings 	= getBldgDetails( faas.rpu )
+		}
+    	else if( faas.rpu.rputype == 'mach' ) {
+			td.machinedesc = getMachineDescriptions( faas.rpu )
+			td.machines = getMachDetails( faas.rpu )
+		}
+    	else if( faas.rpu.rputype == 'planttree' ) {
+			td.plants = getPlantTreeDetails( faas.rpu )
+		}
+    	else if( faas.rpu.rputype == 'misc' ) {
+			td.miscdesc  = getMiscDescriptions( faas.rpu )
+			td.miscitems = getMiscDetails( faas.rpu )
+		}
     	else throw new Exception( 'Invalid RPU Type.' )
     	
 		def setting = rptSettingSvc.open();
@@ -40,6 +55,14 @@ class TDReportService
 		}
     	return td;
     }
+	
+	def getMachineDescriptions( machrpu ) {
+		return machrpu.info.machuses.machdetails.machinename.flatten().join(',')
+	}
+	
+	def getMiscDescriptions( miscrpu ) {
+		return miscrpu.info.miscrpuitems.miscitemname.join(',')
+	}
     
     private def getLandDetails( rpu ) {
     	def data = [];
@@ -121,8 +144,11 @@ class TDReportService
     
     private def getPlantTreeDetails( rpu ) {
     	def data = [];
-    	
-    	def planttreedetails = rpu.info.planttreedetails;
+		def planttreedetails= []
+    	if( rpu.info.planttrees ) 
+			planttreedetails = rpu.info.planttrees
+		else 
+			planttreedetails = rpu.info.planttreedetails;
 			
 		planttreedetails.each {
 			def item = [
