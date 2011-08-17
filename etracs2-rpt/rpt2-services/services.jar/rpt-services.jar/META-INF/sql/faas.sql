@@ -79,7 +79,7 @@ SELECT objid FROM faaslist WHERE landfaasid = $P{landfaasid} AND docstate NOT IN
 SELECT provcity, munidistrict, barangay, barangayid, provcityindex, munidistrictindex, barangayindex 
 FROM faaslist 
 WHERE objid = $P{objid} 
-
+ 
 [getTaxpayerInfo]
 SELECT taxpayerid, taxpayerno, taxpayername, taxpayeraddress FROM faaslist WHERE objid = $P{objid} 
 
@@ -88,6 +88,10 @@ SELECT * FROM faasattachment WHERE faasid = $P{faasid}
 
 [getAttachmentForTransmittal]
 SELECT * FROM faasattachment WHERE docstate = 'FORTRANSMITTAL' 
+
+[getBarangays]
+SELECT * FROM lgu WHERE parentid = $P{parentid} ORDER BY lguname 
+
 
 #----------------------------------------------------------------
 # INSERT

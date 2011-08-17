@@ -465,13 +465,10 @@ class FAASService
         ]
         //return ['DC','GR','RL','ND','IL','LI','TR','MU','SD','CS','PR','PC','CC','AR','CT','CD','CE','BI','CTD','RE','MC','CP']
     }
-    
+     
     @ProxyMethod
     public List getBarangays() {
-        String lguindex = var.lgu_index 
-        def lgu = em.read('lgu', [objid:lguindex] )
-        if( !lgu) throw new Exception('LGU ' + lguindex + ' not found.')
-        return lgu.barangays 
+        return em.sqlContext.createNamedQuery('faas:getBarangays').setParameter('parentid', var.lgu_index  ).resultList 
     }
     
     @ProxyMethod

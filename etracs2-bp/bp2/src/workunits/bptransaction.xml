@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="home.action" caption="Business Transactions" index="0" target="window" icon="images/assess.png" permission="bptransaction.view" />
+    </invokers>
+        
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import java.rmi.server.UID;
+
+public class BPTransactionController  {
+    def opener 
+    
+    def process() {
+        def openername = opener.properties.type +'.' + opener.action
+        return InvokerUtil.lookupOpener( openername, [:] )
+    }
+    
+    List getOpenerList() {
+        return InvokerUtil.lookupOpeners('bptransaction', [:])
+    }
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.bp.BPTransactionPage" />
+    </pages>
+</workunit>
