@@ -67,7 +67,7 @@
                 getRows    : { return 20; },
                 getColumns : {
                     return [
-                        new Column(name:"material", caption:"Code", minWidth:50, editable:true, type:"lookup", handler:lookupMaterials, expression: '#{materialcode}'),
+                        new Column(name:"material", caption:"Code*", minWidth:50, editable:true, type:"lookup", handler:lookupMaterials, expression: '#{materialcode}'),
                         new Column(name:"materialdesc", caption:"Material", minWidth:200, editable:false)
                     ];
                 },
@@ -104,7 +104,7 @@
             }
             
             void checkDuplicate( item ) {
-                def list = entity.materials.findAll{ it._objid != item.material._objid && it.materialcode == item.material.materialcode }
+                def list = entity.materials.findAll{ it.objid == item.material.objid }
                 if( list ) throw new Exception('Duplicate material is not allowed.')
             }
             

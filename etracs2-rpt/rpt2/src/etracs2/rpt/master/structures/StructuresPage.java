@@ -106,6 +106,7 @@ public class StructuresPage extends javax.swing.JPanel {
         xTitledBorder4.setTitle("Applicable Materials");
         jPanel6.setBorder(xTitledBorder4);
         xDataTable2.setDepends(new String[] {"selectedItem"});
+        xDataTable2.setDynamic(true);
         xDataTable2.setHandler("materialsHandler");
         xDataTable2.setImmediate(true);
         xDataTable2.setName("materials");

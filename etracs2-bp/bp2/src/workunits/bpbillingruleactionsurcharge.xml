@@ -22,8 +22,9 @@ class BPBillingSurchargeRuleController
     def varlist 
     def selectedVariable
     def title = 'Calculate Surcharge Action'
-    def accttitle 
+    def account 
     def rule
+
     
     void create() {
         action = [
@@ -35,11 +36,12 @@ class BPBillingSurchargeRuleController
     }
     
     void open() {
-        accttitle = action?.accttitle
+        account = [ accttitle: action?.accttitle ]
     }
     
     //must be implemented by a handler
     void accept() {
+        action.expr = editor?.handle?.formula 
         if( ! action.acctid ) throw new Exception('Account is required.')
         if( ! action.expr ) throw new Exception('Surcharge Computation Expression is required.')
         action.displaytext = buildDisplayText()
@@ -50,15 +52,20 @@ class BPBillingSurchargeRuleController
         return 'Calculate ' + action.accttitle + ' using the formula: ' + action.expr 
     }
     
-    def selectAcctHandler = { acct ->
-        action.acctid = acct.objid 
-        action.accttitle = acct.accttitle
-        accttitle = acct.accttitle 
-        binding.refresh('accttitle')
+    void setAccount( account ) {
+        this.account        = account
+        action.acctid       = account?.objid 
+        action.accttitle    = account?.accttitle
     }
     
-    def lookupAccount() {
-        return InvokerUtil.lookupOpener('incomeacct:lookup', [searchText:accttitle, onselect:selectAcctHandler])
+    def getLookupAccount() {
+        return InvokerUtil.lookupOpener('incomeacct:lookup', [:])
+    }
+    
+    def editor 
+    def getFormulaEditor(){
+        editor = InvokerUtil.lookupOpener('formula_editor2', [formula:action.expr, variableList:varlist, showToolbar:false]);
+        return editor 
     }
     
     
