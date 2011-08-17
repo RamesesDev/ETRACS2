@@ -219,6 +219,7 @@ class FAASService
         validateProvinceApproval( faasinfo )
         def faas = open( faasinfo.objid )
         updateAutonumberTdNo( faas )
+		assignNextPin( faas ) 
         invokeCommonApproveActions( faas )
         logSvc.log('APPROVEBYPROVINCE','FAAS', faas.objid)
         return faas 
@@ -309,13 +310,13 @@ class FAASService
     
     void invokeCommonApproveActions( faas ) {
         validateRPUInfo( faas )
-        updateFaasState( faas, CURRENT_STATE )
-        updateImprovementLandReference( faas ) 
-        cancelPreviousFaas( faas )
-        deleteTxnReference( faas )
-        ledgerSvc.post( faas.objid )
-        moveOutboxMessageToProcessed( faas.objid )
-        logSvc.log('APPROVE','FAAS', faas.objid)
+		updateFaasState( faas, CURRENT_STATE )
+		updateImprovementLandReference( faas ) 
+		cancelPreviousFaas( faas )
+		deleteTxnReference( faas )
+		ledgerSvc.post( faas.objid )
+		moveOutboxMessageToProcessed( faas.objid )
+		logSvc.log('APPROVE','FAAS', faas.objid)
     }
     
     @ProxyMethod
@@ -362,16 +363,24 @@ class FAASService
     @ProxyMethod
     public void assignNextPin( faas  ) {
         def autonumber = faas.rp.autonumber as boolean 
-        if( !autonumber || faas.rp.pin == '-' || faas.rpu.rputype != LAND_TYPE) return 
-        
+		def datacapture = faas.info.datacapture as boolean 
+		if( ! autonumber ) return 
+		if( faas.rp.pin == '-' ) return 
+		if( faas.rpu.rputype != LAND_TYPE ) return 
+		if( datacapture ) return 
+		if( 'MC,ND,SD,CS'.indexOf( faas.info.txntype ) < 0 ) return 
+		
         def key =   faas.rp.provcityindex + '-' + 
                     faas.rp.munidistrictindex + '-' + 
                     faas.rp.barangayindex + '-' + faas.rp.section 
+					
         def nextparcel      = seqSvc.getNextSeries( key )
         faas.rp.pin         = key + '-' + buildParcelNo( nextparcel )
         faas.rpu.fullpin    = faas.rp.pin 
         checkDuplicatePin( faas.info.txntype, faas.info.datacapture, faas.rpu.fullpin, faas.info.claimno  )
 		createPIN( faas ) 
+		em.update( faas.schemaname, faas )
+		em.update( LISTSCHEMA_NAME, faas )
     }
     
     @ProxyMethod
@@ -535,10 +544,10 @@ class FAASService
     @ProxyMethod
     public void createPIN( faas ) {
         def validTxnTypes = ['ND','SD','CS','MC']
-        if( faas.info.datacapture == true || validTxnTypes.contains( faas.info.txntype ) ) {
-            def pin = [pin:faas.rpu.fullpin, claimno:faas.info.claimno, docstate:faas.docstate]
-            em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
-        }
+		if( faas.info.datacapture == true || validTxnTypes.contains( faas.info.txntype ) ) {
+			def pin = [pin:faas.rpu.fullpin, claimno:faas.info.claimno, docstate:faas.docstate]
+			em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
+		}
     }
     
     
