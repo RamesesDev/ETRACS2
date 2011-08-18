@@ -1,0 +1,111 @@
+<workunit>
+    <invokers>
+        <invoker type="rpt.report" action="init" caption="Notice of Assessment" target="window" permission="rptreport.notice" />
+        
+        <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl + N" icon="images/doc-new.png"/>
+        <invoker type="previewActions" action="back" caption="Back" icon="images/back.png" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class NoticeReportController
+{
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('RPTReportService') 
+    def svc 
+    
+    def taxpayer
+    def faas 
+    def notice
+    def list 
+    def selectedItem
+    
+    void init() {
+        list = svc.getNoticeList( null )
+    }
+    
+    def create() {
+        notice = [:]
+        return 'init'
+    }
+    
+    void setTaxpayer( taxpayer ) {
+        this.taxpayer = taxpayer 
+        notice.taxpayerid       = taxpayer?.objid
+        notice.taxpayername     = taxpayer?.entityname
+        notice.taxpayeraddress  = taxpayer?.entityaddress
+    }
+    
+    void setFaas( faas  ) {
+        if( faas?.docstate != 'CURRENT' ) throw new Exception( 'Only current FAAS is allowed.' )
+        this.faas       = faas
+        notice.faasid   = faas?.objid
+        notice.ry       = faas?.ry 
+    }
+    
+    def preview() {
+        notice = svc.generateNotice( notice )
+        list.add( notice )
+        listHandler.load()
+        report.viewReport()
+        return 'preview' 
+    }
+    
+    void print(){
+        notice = svc.generateNotice( notice )
+        report.viewReport()
+        ReportUtil.print( report.report, true )
+    }
+
+    def report =[
+        getReportName : { "notice" },
+        getReportData : { return notice },
+        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+    ] as ServerReportModel;
+    
+    def getLookupTaxpayer() {
+        return InvokerUtil.lookupOpener( 'entity.lookup', [:] )
+    }
+    
+    def getLookupFAAS() {
+        return InvokerUtil.lookupOpener( 'faas.lookup', [:] )
+    }
+    
+    def back() {
+        return 'default' 
+    }
+    
+    def listHandler = [
+        getColumns   : { return [
+            new Column(name:'docstate', caption:'State'),
+            new Column(name:'docno', caption:'Notice No.'),
+            new Column(name:'taxpayername', caption:'Taxpayer'),
+            new Column(name:'taxpayeraddress', caption:'Address'),
+            new Column(name:'preparedby', caption:'Prepared By'),
+            new Column(name:'approvedby', caption:'Approved By'),
+            new Column(name:'receivedby', caption:'Received By'),
+            new Column(name:'dtdelivered', caption:'Date Delivered'),
+            new Column(name:'remarks', caption:'Remarks'),
+        ]},
+        fetchList  : { return list },
+    ] as SubListModel
+    
+    
+    
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.rpt.ListPage" />
+        <page name="init" template="etracs2.rpt.report.NoticeReportPage" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>

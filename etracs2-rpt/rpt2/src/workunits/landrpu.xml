@@ -63,6 +63,7 @@ public class LandRPUController
     *
     ---------------------------------------------------------------*/
     def onupdateLandAdjustment = { 
+        recalcPlantTrees()
         calculateTotals()
         binding.refresh('selectedLand')
     }
@@ -73,6 +74,7 @@ public class LandRPUController
     
     def onupdateActualUseAdjustment = { 
         recalcLandDetails()
+        recalcPlantTrees()
         calculateTotals()        
         binding.refresh('selectedLand')
     }
@@ -85,6 +87,12 @@ public class LandRPUController
         def lds = svc.recalcLandDetails( rpu.info.landdetails )
         rpu.info.landdetails.clear()
         rpu.info.landdetails.addAll( lds )
+    }
+    
+    void recalcPlantTrees() {
+        rpu.info.planttrees.each { pt ->
+            calculatePlantTreeAssessment( pt )        
+        }
     }
     
     /*---------------------------------------------------------------
@@ -343,7 +351,7 @@ public class LandRPUController
     }
     
     void calculatePlantTreeAssessment( item ) {
-        def data = plantTreeSvc.calculatePlantTreeAssessment( faas.objid, item )
+        def data = plantTreeSvc.calculatePlantTreeAssessment( rpu.info.landdetails, item )
         item.putAll( data ) 
     }
     

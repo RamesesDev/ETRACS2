@@ -1,0 +1,58 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class RPTReportService
+{
+    @PersistenceContext('main')
+    def em
+    
+	@Service('DateService')
+    def dateSvc
+	
+	@Service('SequenceService')
+	def seqSvc
+	
+	@Service('Var')
+	def var 
+	
+	@Env
+	def env
+    
+    @ProxyMethod
+	public def generateNotice( notice ) {
+		notice.items = []
+		if(  notice.faasid ) {
+			notice.items = em.sqlContext.createNamedQuery('rptreport:getNoticeItemsByFaasid').setParameter('objid', notice.faasid).resultList
+		}
+		else {
+			def rptsetting 	= em.sqlContext.createNamedQuery('rptreport:getRPTSetting').singleResult
+			notice.ry 		= rptsetting?.ry 
+			notice.items 	= em.sqlContext.createNamedQuery( 'rptreport:getNoticeItemsByTaxpayerId' ).setParameter('taxpayerid', notice.taxpayerid).resultList
+		}
+		if( ! notice.items ) throw new Exception('Records not found.\nPleas verify that FAAS records are current.')
+		
+		notice.docno 			= seqSvc.getNextFormattedSeries( 'NOTICEOFASSESSMENT' )
+		notice.objid			= notice.docno 
+		notice.docstate			= 'OPEN'
+		
+		notice.issuedate 		= dateSvc.serverDate
+		notice.preparedby 		= env.USERFORMALNAME
+		notice.preparedbytitle	= (env.JOBTITLE ? env.JOBTITLE : '-' )
+		notice.approvedby		= var.assessor_name
+		notice.approvedbytitle  = var.assessor_title
+		notice.lgutype			= var.lgu_type
+		notice.parentlguname	= var.parent_lgu_formal_name
+		notice.lguname			= var.lgu_formal_name
+		
+		em.validate( 'rptreport:noticeofassessment', notice )
+		em.create( 'rptreport:noticeofassessment', notice )
+		return notice 
+	}
+	
+	@ProxyMethod
+	public List getNoticeList( searchText ) {
+		return em.sqlContext.createNamedQuery('rptreport:getNoticeList').setMaxResults(50).resultList 
+	}
+}

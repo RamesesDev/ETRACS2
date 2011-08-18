@@ -31,7 +31,7 @@ public class MasterMgmtPage extends javax.swing.JPanel {
         setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("List of Master Files");
+        xTitledBorder1.setTitle("Select Information");
         jScrollPane1.setBorder(xTitledBorder1);
         xList1.setModel(new javax.swing.AbstractListModel() {
             String[] strings = { "Item 1", "Item 2" };

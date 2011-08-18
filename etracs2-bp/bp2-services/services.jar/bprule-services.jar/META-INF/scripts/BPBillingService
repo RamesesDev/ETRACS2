@@ -226,7 +226,10 @@ public class BPBillingService
 			tffact.monthsfromqtr = calculateNoOfMonthsFromQtr( cyfact, it.year, it.qtr )
 			tffact.daysfromjan = calculateNoOfDaysFromJan( cyfact, it.year, it.qtr )
 			tffact.daysfromqtr = calculateNoOfDaysFromQtr( cyfact, it.year, it.qtr )
-			tffact.applysurcharge = isApplySurcharge( cyfact, it.year, it.qtr )
+			tffact.applysurcharge = false 
+			if( bill.txntype != 'NEW' ) {
+				tffact.applysurcharge = isApplySurcharge( cyfact, it.year, it.qtr )
+			}
 			tffact.applydiscount = isApplyDiscount( cyfact, it.year, it.qtr )
 			facts += tffact
 		}

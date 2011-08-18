@@ -46,6 +46,7 @@ public class MasterMgmtPage extends javax.swing.JPanel {
 
         add(jScrollPane1, java.awt.BorderLayout.WEST);
 
+        xSubFormPanel1.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)), javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5)));
         xSubFormPanel1.setDepends(new String[] {"selectedOpener"});
         xSubFormPanel1.setDynamic(true);
         xSubFormPanel1.setHandler("selectedOpener");
@@ -53,11 +54,11 @@ public class MasterMgmtPage extends javax.swing.JPanel {
         xSubFormPanel1.setLayout(xSubFormPanel1Layout);
         xSubFormPanel1Layout.setHorizontalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 324, Short.MAX_VALUE)
+            .add(0, 312, Short.MAX_VALUE)
         );
         xSubFormPanel1Layout.setVerticalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 464, Short.MAX_VALUE)
+            .add(0, 452, Short.MAX_VALUE)
         );
         add(xSubFormPanel1, java.awt.BorderLayout.CENTER);
 
