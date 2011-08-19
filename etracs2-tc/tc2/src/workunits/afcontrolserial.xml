@@ -1,0 +1,111 @@
+<workunit>
+    <invokers>
+        <invoker type="serialafcontrol.create" action="init" caption="Serial AF Control (New)" target="popup" />
+        <invoker type="serialafcontrol.open" action="open" caption="Serial AF Control (Edit)" target="popup" />
+        
+        <invoker type="formActions" action="_close"     caption="Close"    mnemonic="c" icon="images/cancel.png" />
+        <invoker type="formActions" action="create"     caption="Save"     mnemonic="s" icon="images/deploy.png" shortcut="ctrl+S" visibleWhen="#{mode=='create'}" />
+        <invoker type="formActions" action="approve"    caption="Approve" mnemonic="a" icon="images/approve.png" shortcut="ctrl+A" visibleWhen="#{mode=='view' and afcontrol.docstate == 'PENDING'}" />
+    </invokers>
+    <code>
+<![CDATA[        
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import java.rmi.server.UID
+
+class SerialAFControlController
+{
+    @Binding
+    def binding
+    
+    
+    @Service('AFControlService')
+    def svc
+    
+    @Service('ETRACSUserService')
+    def userSvc
+    
+    def oncreate //handler
+    
+    def collector
+    def af
+    def afcontrol
+    def startseries 
+    def mode
+    
+    void init() {
+        mode = 'create'
+        afcontrol = [ 
+            objid       : 'AF' + new UID(), 
+            qtyreceived : 50 ,
+        ]
+    }
+    
+    void open() {
+        collector = collectorlist.find{ it.objid == afcontrol.collectorid }
+        af        = aflist.find{ it.objid == afcontrol.afid }
+        startseries = afcontrol.startseries
+        mode        = 'view'
+    }
+    
+    void create(){
+        afcontrol.startseries = startseries 
+        afcontrol = svc.createAFControl( afcontrol )
+        if( oncreate ) oncreate( afcontrol )
+        mode = 'view' 
+    }
+    
+    void approve() {
+        if( MsgBox.confirm( 'Approve record?' ) ) {
+            afcontrol = svc.approveAFControl( afcontrol )
+            mode = 'view'
+        }
+    }
+    
+    
+    void setStartseries( startseries ) {
+        this.startseries = startseries
+        afcontrol.endseries = startseries + afcontrol.qtyreceived - 1
+        binding.refresh( 'afcontrol.endseries' )
+    }
+    
+    
+    void setCollector( collector ) {
+        println '-'*50
+        println collector
+        this.collector = collector
+        afcontrol.collectorid       = collector?.objid
+        afcontrol.collectorname     = collector?.name
+        afcontrol.collectortitle    = collector?.jobtitle
+    }
+    
+    void setAf( af ) {
+        this.af = af 
+        afcontrol.afid          = af?.objid
+        afcontrol.aftype        = af?.aftype
+        afcontrol.serieslength  = af?.serieslength 
+    }
+    
+    List getModelist() {
+        return ['ONLINE', 'OFFLINE', 'CAPTURE']
+    }
+    
+    
+    List getCollectorlist() {
+        return userSvc.getCollectorList()
+    }
+    
+    List getAflist() {
+        def list = svc.getAFList()
+        return list.findAll{ it.aftype == 'serial' }
+    }
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.tc.af.AFControlSerialPage"/>
+    </pages>
+</workunit>

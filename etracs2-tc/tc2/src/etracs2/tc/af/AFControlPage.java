@@ -27,93 +27,85 @@ public class AFControlPage extends javax.swing.JPanel {
      */
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
-        xDataTable1 = new com.rameses.rcp.control.XDataTable();
-        xButton1 = new com.rameses.rcp.control.XButton();
-        xButton2 = new com.rameses.rcp.control.XButton();
-        formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xComboBox1 = new com.rameses.rcp.control.XComboBox();
-        xComboBox2 = new com.rameses.rcp.control.XComboBox();
+        xActionBar1 = new com.rameses.rcp.control.XActionBar();
+        jPanel1 = new javax.swing.JPanel();
+        xDataTable2 = new com.rameses.rcp.control.XDataTable();
+        formPanel2 = new com.rameses.rcp.util.FormPanel();
+        xComboBox3 = new com.rameses.rcp.control.XComboBox();
+        xComboBox4 = new com.rameses.rcp.control.XComboBox();
+
+        setLayout(new java.awt.BorderLayout());
 
         setPreferredSize(new java.awt.Dimension(547, 457));
+        xActionBar1.setBorder(new com.rameses.rcp.control.border.XUnderlineBorder());
+        xActionBar1.setDepends(new String[] {"selectedItem"});
+        xActionBar1.setName("formActions");
+        add(xActionBar1, java.awt.BorderLayout.NORTH);
+
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setPadding(new java.awt.Insets(25, 10, 10, 10));
         xTitledBorder1.setTitle("Assigned Accountable Forms");
-        xDataTable1.setBorder(xTitledBorder1);
-        xDataTable1.setDepends(new String[] {"collector", "af"});
-        xDataTable1.setHandler("listHandler");
-        xDataTable1.setImmediate(true);
-        xDataTable1.setIndex(-10);
-        xDataTable1.setName("selectedItem");
+        xDataTable2.setBorder(xTitledBorder1);
+        xDataTable2.setDepends(new String[] {"collector", "af"});
+        xDataTable2.setHandler("listHandler");
+        xDataTable2.setImmediate(true);
+        xDataTable2.setIndex(-10);
+        xDataTable2.setName("selectedItem");
 
-        xButton1.setMnemonic('c');
-        xButton1.setText("Cancel");
-        xButton1.setName("_close");
+        xComboBox3.setAllowNull(false);
+        xComboBox3.setCaption("Collector");
+        xComboBox3.setExpression("#{name}");
+        xComboBox3.setImmediate(true);
+        xComboBox3.setIndex(-100);
+        xComboBox3.setItems("collectorlist");
+        xComboBox3.setName("collector");
+        xComboBox3.setPreferredSize(new java.awt.Dimension(0, 22));
+        xComboBox3.setRequired(true);
+        formPanel2.add(xComboBox3);
 
-        xButton2.setMnemonic('m');
-        xButton2.setText("Change Mode");
-        xButton2.setDepends(new String[] {"collector", "selectedItem"});
-        xButton2.setName("changeMode");
+        xComboBox4.setCaption("AF No.");
+        xComboBox4.setDepends(new String[] {"collector"});
+        xComboBox4.setDynamic(true);
+        xComboBox4.setEmptyText("ALL");
+        xComboBox4.setExpression("#{objid}");
+        xComboBox4.setImmediate(true);
+        xComboBox4.setItems("aflist");
+        xComboBox4.setName("af");
+        xComboBox4.setPreferredSize(new java.awt.Dimension(0, 22));
+        formPanel2.add(xComboBox4);
 
-        xComboBox1.setAllowNull(false);
-        xComboBox1.setCaption("Collector");
-        xComboBox1.setExpression("#{name}");
-        xComboBox1.setImmediate(true);
-        xComboBox1.setIndex(-100);
-        xComboBox1.setItems("collectorlist");
-        xComboBox1.setName("collector");
-        xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));
-        xComboBox1.setRequired(true);
-        formPanel1.add(xComboBox1);
-
-        xComboBox2.setCaption("AF No.");
-        xComboBox2.setDepends(new String[] {"collector"});
-        xComboBox2.setDynamic(true);
-        xComboBox2.setEmptyText("ALL");
-        xComboBox2.setExpression("#{objid}");
-        xComboBox2.setImmediate(true);
-        xComboBox2.setItems("aflist");
-        xComboBox2.setName("af");
-        xComboBox2.setPreferredSize(new java.awt.Dimension(0, 22));
-        formPanel1.add(xComboBox2);
-
-        org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
+        org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                        .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                    .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 512, Short.MAX_VALUE)
-                    .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(25, Short.MAX_VALUE))
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(xDataTable2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 757, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 470, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(29, Short.MAX_VALUE))
         );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xDataTable1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 344, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(21, Short.MAX_VALUE))
+                .add(xDataTable2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 404, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(37, Short.MAX_VALUE))
         );
+        add(jPanel1, java.awt.BorderLayout.CENTER);
+
     }// </editor-fold>//GEN-END:initComponents
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private com.rameses.rcp.util.FormPanel formPanel1;
-    private com.rameses.rcp.control.XButton xButton1;
-    private com.rameses.rcp.control.XButton xButton2;
-    private com.rameses.rcp.control.XComboBox xComboBox1;
-    private com.rameses.rcp.control.XComboBox xComboBox2;
-    private com.rameses.rcp.control.XDataTable xDataTable1;
+    private com.rameses.rcp.util.FormPanel formPanel2;
+    private javax.swing.JPanel jPanel1;
+    private com.rameses.rcp.control.XActionBar xActionBar1;
+    private com.rameses.rcp.control.XComboBox xComboBox3;
+    private com.rameses.rcp.control.XComboBox xComboBox4;
+    private com.rameses.rcp.control.XDataTable xDataTable2;
     // End of variables declaration//GEN-END:variables
     
 }

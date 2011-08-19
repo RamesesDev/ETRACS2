@@ -2,6 +2,13 @@
     <invokers>
         <invoker folderid="menu/tc/txn" action="init" caption="AF Control" permission="afcontrol.changemode" />
         <invoker type="home.action" action="init" caption="AF Control" target="window" icon="images/folder.png" permission="afcontrol.changemode" />
+        
+        <invoker type="formActions" action="_close"          caption="Close"            mnemonic="c" icon="images/cancel.png" />
+        <invoker type="formActions" action="createSerial"    caption="New Serial"       mnemonic="n" icon="images/doc-new.png"   />
+        <invoker type="formActions" action="createNonSerial" caption="New Non-Serial"   mnemonic="r" icon="images/doc-new.png"  />
+        <invoker type="formActions" action="open"            caption="Open"             mnemonic="o" icon="images/deploy.png" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'PENDING' }"/>
+        <invoker type="formActions" action="remove"          caption="Delete"           mnemonic="d" icon="images/doc-delete.png" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'PENDING' }"/>
+        <invoker type="formActions" action="changeMode"      caption="Change Mode"      mnemonic="m" icon="images/deploy.png" visibleWhen="#{selectedItem != null and selectedItem.docstate != 'PENDING' }"/>/>
     </invokers>
     <code>
 <![CDATA[        
@@ -26,8 +33,33 @@ class AFControlController
     def af
     def selectedItem
     def list
+    def afcontrol
     
     void init() {
+    }
+    
+    def oncreateControl = { afcontrol ->
+        loadOpenAFControlList()
+    }
+    
+    def createSerial() {
+        return InvokerUtil.lookupOpener( 'serialafcontrol.create', [oncreate:oncreateControl] )
+    }
+    
+    def createNonSerial() {
+        return InvokerUtil.lookupOpener( 'nonserialafcontrol.create', [oncreate:oncreateControl] )
+    }
+    
+    def open() {
+        return InvokerUtil.lookupOpener( selectedItem.aftype+'afcontrol.open' , [afcontrol:selectedItem] )
+    }
+    
+    void remove() {
+        if( MsgBox.confirm('Delete selected control?') ) {
+            svc.deleteAFControl( selectedItem )
+            list.remove( selectedItem )
+            listHandler.load()
+        }
     }
     
     def changeMode() {
@@ -65,9 +97,13 @@ class AFControlController
         getColumns : { 
             return [
                 new Column(name:'afid', caption:'AF No.', maxWidth:80),
+                new Column(name:'aftype', caption:'Type', maxWidth:80),
+                new Column(name:'docstate', caption:'State', maxWidth:150),
                 new Column(name:'stubno', caption:'Stub No.', maxWidth:120),
                 new Column(name:'startseries', caption:'Start Series', format:'0000000'),
                 new Column(name:'endseries', caption:'End Series', format:'0000000'),
+                new Column(name:'qtyreceived', caption:'Qty. Received', type:'integer'),
+                new Column(name:'balance', caption:'Balance', type:'integer'),
                 new Column(name:'mode', caption:'Mode'),
             ]
         },

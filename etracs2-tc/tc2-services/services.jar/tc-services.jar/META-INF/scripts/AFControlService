@@ -1,5 +1,6 @@
 import com.rameses.annotations.*
 import com.rameses.common.*
+import java.rmi.server.UID
 
 class AFControlService
 {
@@ -12,14 +13,230 @@ class AFControlService
 	@Service('LogService')
 	def logService
 	
+	@Service('DateService')
+	def dateSvc
+	
 	def SCHEMANAME = 'afcontrol:afcontrol'
 	def SCHEMAVERSION = '1.0'
 	
+	def PENDING_STATE = 'PENDING'
 	def APPROVED_STATE = 'APPROVED'
 	def CLOSED_STATE = 'CLOSED'
 	def SERIAL_TYPE = 'serial'
 	def NONSERIAL_TYPE = 'nonserial'
 	
+	@ProxyMethod
+	public def createAFControl( afcontrol ) {
+		afcontrol.schemaname 	= SCHEMANAME
+		afcontrol.schemaversion	= SCHEMAVERSION
+		afcontrol.docstate		= PENDING_STATE
+		afcontrol.active		= 0
+		afcontrol.afinventorycreditid = '-'
+		if( afcontrol.aftype == 'serial' ) {
+			afcontrol.beginseries	= afcontrol.currentseries
+			afcontrol.beginqty		= afcontrol.endseries - afcontrol.currentseries + 1
+			afcontrol.balance		= afcontrol.beginqty  
+		}
+		else {
+			afcontrol.startseries = 0
+			afcontrol.endseries   = 0
+			afcontrol.currentseries = 0
+			afcontrol.beginseries	= 0
+			afcontrol.issuedfrom	= 0
+			afcontrol.issuedto		= 0
+		}
+		afcontrol.txndate		= new Date()
+		validateAFControl( afcontrol )
+		em.create( afcontrol.schemaname, afcontrol )
+		return afcontrol 
+	}
+	
+	@ProxyMethod 
+	public def approveAFControl( afcontrol ) { 
+		afcontrol.docstate = 'APPROVED' 
+		em.update( afcontrol.schemaname, afcontrol )
+		postToAFInventory( afcontrol )
+		return afcontrol 
+	}	
+	
+	@ProxyMethod
+	public void deleteAFControl( afcontrol ) {
+		em.delete( SCHEMANAME, afcontrol ) 
+	}
+	
+	void postToAFInventory( afcontrol ) {
+		//since this is a manually issued receipt
+		//post a corresponding entry into the inventory and credit 
+		def inventory =  [
+			objid  			: 'AI' + new UID(),
+			schemaname 		: 'afinventory',
+			schemaversion 	: '1.0',
+			docstate		: 'CLOSED',
+			irafid			: '-',
+			iraftype		: 'LGU',
+			irafno			: afcontrol.afid + '-' + afcontrol.stubno,
+			afid 			: afcontrol.afid ,
+			aftype			: afcontrol.aftype,
+			afunit			: 'stub',
+			aflength		: afcontrol.serieslength,
+			stubfrom		: afcontrol.stubno,
+			stubto			: afcontrol.stubno,
+			currentstub		: afcontrol.stubno,
+			stubprefix		: afcontrol.prefix,
+			qtyonhand		: 1,
+			qtyissued		: 1,
+			prefix			: afcontrol.prefix ,
+			suffix			: afcontrol.suffix,
+			startserialno	: afcontrol.startseries ,
+			startseries		: afcontrol.startseries,
+			endseries		: afcontrol.endseries, 
+			issuedfrom		: afcontrol.startseries,
+			issuedto		: afcontrol.endseries,
+			dtposted		: afcontrol.txndate,
+		]
+		em.create( 'afinventory', inventory )
+		
+		def qtyissued = afcontrol.qtyissued 
+		if( afcontrol.aftype == 'serial' ) {
+			qtyissued = afcontrol.qtyreceived - afcontrol.balance 
+		}
+		
+		def credit = [
+			objid			: 'AC' + new UID(),
+			schemaname		: 'afinventorycredit',
+			schemaversion	: '1.0',
+			docstate		: 'OPEN',
+			afinventoryid 	: inventory.objid,
+			irafid			: inventory.irafid,
+			irafno			: inventory.irafno,
+			iraftype		: 'COLLECTOR',
+			afid			: afcontrol.afid ,
+			aftype			: afcontrol.aftype,
+			afunit			: inventory.afunit,
+			aflength		: inventory.aflength,
+			prefix			: inventory.prefix,
+			suffix			: inventory.suffix,
+			startseries		: inventory.startseries,
+			endseries		: inventory.endseries,
+			stubno			: afcontrol.stubno ,
+			qtyissued		: qtyissued,
+			balance			: afcontrol.balance ,
+		]
+		em.create('afinventorycredit', credit )
+		
+		postToCraaf( afcontrol, inventory, credit )
+		
+		afcontrol.afinventorycreditid = credit.objid
+		em.update( afcontrol.schemaname, afcontrol )
+		
+	}
+	
+	void postToCraaf( afcontrol, inventory, credit  ) {
+		def parsedate = dateSvc.parseDate( inventory.dtposted, null )
+		def craaf = [
+			objid 				: 'C' + new UID(),
+			schemaname			: 'craaf',
+			schemaversion		: '1.0',
+			afinventoryid		: inventory.objid, 
+			afinventorycreditid : null,
+			craafyear			: parsedate.year,
+			craafmonth			: parsedate.month,
+			collectorid			: null,
+			collectorname		: null,
+			collectortitle		: null,
+			afid				: afcontrol.afid,
+			beginqty			: null,
+			beginfrom			: null,
+			beginto				: null,
+			receivedqty			: afcontrol.qtyreceived,
+			receivedfrom		: afcontrol.startseries,
+			receivedto			: afcontrol.endseries,
+			issuedqty			: afcontrol.qtyreceived,
+			issuedfrom			: afcontrol.startseries,
+			issuedto			: afcontrol.endseries,
+			canceledqty			: null,
+			canceledfrom		: null,
+			canceledto			: null,
+			cancelreason		: null,
+			endingqty			: 0,
+			endingfrom			: 0,
+			endingto			: 0,
+		]
+		em.create( craaf.schemaname, craaf )
+		
+		def issuedqty  = afcontrol.qtyissued 
+		def issuedfrom = null 
+		def issuedto   = null 
+		if( afcontrol.aftype == 'serial' ) {
+			issuedqty 	= ( afcontrol.currentseries > afcontrol.startseries ? afcontrol.currentseries - afcontrol.startseries : null )
+			issuedfrom 	= ( afcontrol.currentseries > afcontrol.startseries ? afcontrol.startseries: null )
+			issuedto	= ( afcontrol.currentseries > afcontrol.startseries ? afcontrol.currentseries - 1 : null )
+		}
+		
+		def craafcredit = [
+			objid 				: 'CC' + new UID(),
+			schemaname			: 'craaf',
+			schemaversion		: '1.0',
+			afinventoryid		: null,
+			afinventorycreditid : credit.objid, 
+			craafyear			: parsedate.year,
+			craafmonth			: parsedate.month,
+			collectorid			: afcontrol.collectorid,
+			collectorname		: afcontrol.collectorname,
+			collectortitle		: afcontrol.collectortitle,
+			afid				: afcontrol.afid,
+			beginqty			: null,
+			beginfrom			: null,
+			beginto				: null,
+			receivedqty			: afcontrol.qtyreceived,
+			receivedfrom		: afcontrol.startseries,
+			receivedto			: afcontrol.endseries,
+			issuedqty			: issuedqty,
+			issuedfrom			: issuedfrom,
+			issuedto			: issuedto,
+			canceledqty			: null,
+			canceledfrom		: null,
+			canceledto			: null,
+			cancelreason		: null,
+			endingqty			: afcontrol.balance ,
+			endingfrom			: afcontrol.currentseries,
+			endingto			: afcontrol.endseries,
+		]
+		em.create( craaf.schemaname, craafcredit )
+		
+		//post craaf credit  automatically 
+		em.create( 'craafcredit', [
+			objid			: 'CC' + new UID(),
+			schemaname		: 'craafcredit',
+			schemaversion 	: '1.0',
+			craafid			: craaf.objid,
+			reftype			: 'AFCONTROL',
+			refno			: afcontrol.stubno ,
+			refdate			: afcontrol.dtissued,
+			qty				: (afcontrol.aftype == 'serial'  ? 1 : afcontrol.qtyissued ),
+		])
+	}
+	
+	
+	void validateAFControl( afcontrol ) {
+		//validate
+		def dtissued = dateSvc.parse('yyyy-MM-dd', afcontrol.dtissued )
+		if( dtissued > dateSvc.serverDate ) 
+			throw new Exception('Date Issued must be less than or equal current date.')
+			
+		if( afcontrol.aftype == 'serial' ) {
+			if( afcontrol.currentseries < afcontrol.startseries || afcontrol.currentseries > afcontrol.endseries )
+				throw new Exception('Current Series must be between ' + afcontrol.startseries +  ' and ' + afcontrol.endseries + '.' )
+				
+			//check overlapping series 
+			def overlap = em.sqlContext.createNamedQuery('afcontrol:checkOverlapSeries').setParameters( afcontrol ).singleResult 
+			if( overlap ) throw new Exception('Series overlaps with Stub No. ' + overlap.stubno + '.') 
+		}
+		else {
+			if( afcontrol.qtyissued > afcontrol.qtyreceived )
+				throw new Exception('Qty. Issued must not exceed qty. received.')
+		}
+	}
 	
 	@ProxyMethod
 	public def open( objid ) {

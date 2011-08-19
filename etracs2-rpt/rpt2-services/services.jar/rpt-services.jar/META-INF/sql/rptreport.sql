@@ -6,7 +6,7 @@ SELECT
 FROM faaslist 
 WHERE taxpayerid = $P{taxpayerid}
   AND docstate = 'CURRENT' 
-ORDER BY rputype, fullpin   
+ORDER BY fullpin   
   
 [getNoticeItemsByFaasid]
 SELECT 
@@ -16,7 +16,7 @@ SELECT
 FROM faaslist 
 WHERE objid = $P{objid} 
   AND docstate = 'CURRENT'  
-ORDER BY rputype, fullpin   
+ORDER BY fullpin   
   
   
 [getNoticeList]
