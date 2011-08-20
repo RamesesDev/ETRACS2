@@ -28,7 +28,7 @@ ORDER BY docno
 
 [fetchData]
 SELECT 
-	objid, tdno, taxpayername, owner, titleno, cadastrallotno, barangay, fullpin, rputype,
+	objid, tdno, taxpayername, titleno, cadastrallotno, barangay, fullpin, rputype,
 	totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
 FROM faaslist 
 WHERE taxpayerid = $P{taxpayerid} 
@@ -37,7 +37,7 @@ WHERE taxpayerid = $P{taxpayerid}
 
 [getLandHolding]
 SELECT 
-	objid, tdno, taxpayername, owner, titleno, cadastrallotno, barangay, fullpin, rputype,
+	objid, tdno, taxpayername, titleno, cadastrallotno, barangay, fullpin, rputype,
 	totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
 FROM faaslist 
 WHERE taxpayerid = $P{taxpayerid} 
@@ -47,7 +47,7 @@ WHERE taxpayerid = $P{taxpayerid}
 
 [getMultipleProperty]  
 SELECT	
-	objid, tdno, taxpayername, owner, titleno, cadastrallotno, barangay, fullpin, rputype,
+	objid, tdno, taxpayername, titleno, cadastrallotno, barangay, fullpin, rputype,
 	totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
 FROM faaslist 
 WHERE taxpayerid = $P{taxpayerid} 
@@ -56,7 +56,7 @@ WHERE taxpayerid = $P{taxpayerid}
 
 [getNoImprovements]
 SELECT 
-	objid, tdno, taxpayername, owner, titleno, cadastrallotno, barangay, fullpin, rputype,
+	objid, tdno, taxpayername, titleno, cadastrallotno, barangay, fullpin, rputype,
 	totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
 FROM faaslist 
 WHERE taxpayerid = $P{taxpayerid} 
@@ -66,7 +66,7 @@ WHERE taxpayerid = $P{taxpayerid}
 	
 [getImprovementsTDNo]
 SELECT 
-	objid, tdno, taxpayername, owner, titleno, cadastrallotno, barangay, fullpin, rputype,
+	objid, tdno, taxpayername, titleno, cadastrallotno, barangay, fullpin, rputype,
 	totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
 FROM faaslist 
 WHERE tdno = $P{tdno} 
@@ -74,7 +74,7 @@ WHERE tdno = $P{tdno}
 
 [getWImproveLand]
 SELECT	
-	objid, tdno, taxpayername, owner, titleno, cadastrallotno, barangay, fullpin, rputype,
+	objid, tdno, taxpayername, titleno, cadastrallotno, barangay, fullpin, rputype,
 	totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
 FROM faaslist
 WHERE taxpayerid = $P{taxpayerid}

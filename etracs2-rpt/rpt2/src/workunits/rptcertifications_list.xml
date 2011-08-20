@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
     <invokers>
+        <invoker folderid="menu/rpt/txn" caption="RPT Certifications List" mnemonic="C" permission1="rptledger.view" action="init" />
         
-        <invoker folderid="menu/rpt/txn" caption="RPT Certifications List" mnemonic="C" permission1="rptledger.view" />
-        <!--<invoker type="home.action" caption="RPT Ledgers" index="202" target="window" icon="images/folder.png" permission="rptledger.view" />-->
-        
-        <invoker type="formActions" action="doOpen" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" immediate="true" caption="Open" mnemonic="o" icon="images/open.png" />
     </invokers>
     <code lang="groovy">
 <![CDATA[
@@ -32,15 +29,14 @@ public class RPTCertificationListController
     def opener
     List list
     
+    void init(){
+        doPreview( selectedItem )
+    }
+    
     void search() {
         list = null
         listHandler.load()
         binding.refresh('html')
-    }
-    
-    def doOpen() {
-        entity = svc.getDataById( selectedItem );
-        return InvokerUtil.lookupOpener( entity.opener + '.view', [certification:entity]);
     }
     
     def listHandler =[
@@ -61,9 +57,17 @@ public class RPTCertificationListController
         }
     ] as PageListModel
     
+    def getHtml(){
+        svc.getHtml()
+    }
+    
     def doPreview( o ){
         entity = svc.getDataById( o );
-        opener = InvokerUtil.lookupOpener( entity.opener + '.view', [certification:entity]);
+        if( entity )
+            opener = InvokerUtil.lookupOpener( entity.opener + '.view', [certification:entity]);
+        else
+            opener = new PopupOpener( outcome:'html' );
+         
     }
     
     void setSelectedItem( o ){
@@ -76,6 +80,6 @@ public class RPTCertificationListController
     
     <pages>
         <page template="etracs2.rpt.certification.CertificationListPage" />
-        <page name="preview" template="etracs2.common.PreviewPage" />
+        <page name="html" template="etracs2.rpt.certification.HtmlPage" />
     </pages>
 </workunit>
