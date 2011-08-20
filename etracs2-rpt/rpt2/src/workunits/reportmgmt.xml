@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
     <invokers>
-        <invoker type="home.action" caption="Assessor Reports" index="500" icon="images/otherReports.png" target="window" permission="rptreportmgmt.open"  />
+        <invoker type="home.action" caption="Assessor Reports" index="500" icon="images/folder.png" target="window" permission="rptreportmgmt.open"  />
     </invokers>
     
     <code lang="groovy">
@@ -11,12 +11,20 @@
         import com.rameses.rcp.annotations.*;
         import com.rameses.osiris2.client.*;
         
-        public class MasterManagement {
+        public class ReportManagement {
             
-            def selectedOpener;
-            
-            def getOpeners(){
-                return InvokerUtil.lookupOpeners("rpt.report",[:]);
+            def opener 
+    
+            def process() {
+                if( !opener ) {
+                    return null
+                }
+                def openername= opener.properties.type + '.' + opener.properties.opener
+                return InvokerUtil.lookupOpener( openername, [:])
+            }
+
+            List getOpenerList() {
+                return InvokerUtil.lookupOpeners('rptreport', [:])
             }
         
         }
@@ -26,7 +34,7 @@
     </code>
     
     <pages>
-        <page template="etracs2.rpt.master.MasterMgmtPage" />
+        <page template="etracs2.rpt.RPTTransactionPage" />
     </pages>
 </workunit>
 
