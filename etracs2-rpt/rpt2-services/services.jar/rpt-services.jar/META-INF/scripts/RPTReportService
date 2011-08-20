@@ -7,7 +7,7 @@ class RPTReportService
 {
     @PersistenceContext('main')
     def em
-    
+     
 	@Service('DateService')
     def dateSvc
 	
@@ -51,8 +51,49 @@ class RPTReportService
 		return notice 
 	}
 	
+	@ProxyMethod 
+	public def openNotice( noticeid ) {
+		return em.read('rptreport:noticeofassessment', [objid:noticeid] )
+	}
+	
 	@ProxyMethod
 	public List getNoticeList( searchText ) {
 		return em.sqlContext.createNamedQuery('rptreport:getNoticeList').setMaxResults(50).resultList 
+	}
+	
+	
+	@ProxyMethod
+	public def generateAssessmentRollTaxable( params )  {
+		resolveSection( params )
+		def list = em.sqlContext.createNamedQuery('rptreport:getAssessmentRollTaxable').setParameters( params ).resultList
+		if( ! list ) throw new Exception('Records not found.')
+		return list 
+	}
+	
+	@ProxyMethod
+	public def generateAssessmentRollExempt( params )  {
+		resolveSection( params )
+		def list = em.sqlContext.createNamedQuery('rptreport:getAssessmentRollExempt').setParameters( params ).resultList
+		if( ! list ) throw new Exception('Records not found.')
+		return list 
+	}
+	
+	
+	
+	
+	@ProxyMethod
+	public List getBarangayList() {
+		return em.sqlContext.createNamedQuery('rptreport:getBarangayList').setParameter('parentid', var.lgu_index ).resultList 
+	}
+	
+	
+	void resolveSection( params ) {
+		if( ! params.section || params.section == 0 ) {
+			params.section = '%' 
+		}
+		else {
+			def sectionlen = var.pin_section_length
+			params.section = (params.section+'').padLeft( sectionLen, '0' )
+		}
 	}
 }

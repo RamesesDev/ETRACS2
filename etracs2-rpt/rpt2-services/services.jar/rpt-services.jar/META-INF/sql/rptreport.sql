@@ -1,3 +1,13 @@
+[getRPTSetting]  
+SELECT * FROM rptsetting 
+
+[getBarangayList]
+SELECT objid, lguname AS barangay FROM lgu 
+WHERE parentid = $P{parentid} AND lgutype = 'BARANGAY'
+ORDER BY lguname 
+
+ 
+
 [getNoticeItemsByTaxpayerId]
 SELECT 
 	objid, tdno, fullpin, barangay, classcode, 
@@ -28,6 +38,38 @@ SELECT
 FROM noticeofassessment 
 ORDER BY objid DESC 
 
+[getAssessmentRollTaxable]
+SELECT
+	ry, section,  
+	provcity AS parentlguname, provcityindex AS parentlguindex,   
+	munidistrict AS lguname, munidistrictindex AS lguindex,  
+	barangay, barangayindex, 
+	ownername, owneraddress, tdno, effectivityyear, 
+	cadastrallotno, classcode, rputype, totalav, 
+	CASE WHEN claimno = '-' THEN fullpin ELSE CONCAT(fullpin, '-', claimno) END AS fullpin, 
+	prevtdno, memoranda, barangayid 
+FROM faaslist   
+WHERE barangayid = $P{barangayid} 
+  AND docstate = 'CURRENT'  
+  AND section LIKE $P{section} 
+  AND taxable = 1 
+ORDER BY fullpin   
+  
+[getAssessmentRollExempt]
+SELECT
+	ry, section,  
+	provcity AS parentlguname, provcityindex AS parentlguindex,   
+	munidistrict AS lguname, munidistrictindex AS lguindex,  
+	barangay, barangayindex, 
+	ownername, owneraddress, tdno, effectivityyear, 
+	cadastrallotno, classcode, rputype, totalav, 
+	CASE WHEN claimno = '-' THEN fullpin ELSE CONCAT(fullpin, '-', claimno) END AS fullpin,  
+	memoranda, barangayid, exemptcode AS legalbasis  
+FROM faaslist   
+WHERE barangayid = $P{barangayid} 
+  AND docstate = 'CURRENT'   
+  AND section LIKE $P{section}  
+  AND taxable = 0  
+ORDER BY fullpin     
 
-[getRPTSetting]  
-SELECT * FROM rptsetting 
+  

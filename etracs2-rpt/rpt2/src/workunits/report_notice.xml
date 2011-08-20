@@ -1,9 +1,12 @@
 <workunit>
     <invokers>
-        <invoker type="rpt.report" action="init" caption="Notice of Assessment" target="window" permission="rptreport.notice" />
+        <invoker type="rptreport" action="init" opener="notice" caption="Notice of Assessment" target="window" permission="rptreport.notice"  />
+        <invoker type="rptreport.notice" action="init" caption="Notice of Assessment" target="window" permission="rptreport.notice" />
         <invoker folderid="/menu/rpt/txn" action="init" caption="Notice of Assessment" target="window" permission="rptreport.notice" />
         
         <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl + N" icon="images/doc-new.png"/>
+        <invoker type="formActions" action="doPreview" caption="Preview" mnemonic="v" icon="images/doc-view.png" visibleWhen="#{selectedItem != null}"/>
+        
         <invoker type="previewActions" action="back" caption="Back" icon="images/back.png" immediate="true" />
     </invokers>
     <code>
@@ -51,6 +54,12 @@ class NoticeReportController
         notice.ry       = faas?.ry 
     }
     
+    def doPreview() {
+        notice = svc.openNotice( selectedItem.objid  )
+        report.viewReport()
+        return 'preview' 
+    }
+
     def preview() {
         notice = svc.generateNotice( notice )
         list.add( notice )

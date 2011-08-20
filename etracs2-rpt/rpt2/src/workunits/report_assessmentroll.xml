@@ -1,0 +1,98 @@
+<workunit>
+    <invokers>
+        <invoker type="rptreport"                   action="init" opener="assessmentroll" caption="Assessment Roll" target="window" permission="rptreport.assessmentroll"/>
+        <invoker type="rptreport.assessmentroll"    action="init" caption="Assessment Roll" target="window" permission="rptreport.assessmentroll"/>
+        <invoker type="previewActions"              action="back" caption="Back" icon="images/back.png" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class AssessmentRollController
+{
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('RPTReportService') 
+    def svc 
+    
+    def taxability
+    def barangay
+    def section
+    def reportdata
+    def reportname 
+    
+    void init() {
+        taxability = 'TAXABLE'
+    }
+
+    def preview() {
+        generateReport()
+        return 'preview' 
+    }
+    
+    void generateReport() {
+        def params = [ barangayid : barangay.objid, section : section ]
+        if( taxability == 'TAXABLE' ) {
+            reportdata = svc.generateAssessmentRollTaxable( params )
+            reporttaxable.viewReport()
+        }
+        else {
+            reportdata = svc.generateAssessmentRollExempt( params )
+            reportexempt.viewReport()
+        }
+        
+    }
+    
+    void print(){
+        if( taxability == 'TAXABLE' ) 
+            ReportUtil.print( reporttaxable.report, true )
+        else
+            ReportUtil.print( reportexempt.report, true )
+    }
+    
+    def getReport() {
+        if( taxability == 'TAXABLE' )
+            return reporttaxable
+        return reportexempt
+    }
+
+    def reporttaxable =[
+        getReportName : { 'assessmentroll/taxable' },
+        getReportData : { return reportdata },
+        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+    ] as ServerReportModel;
+    
+    def reportexempt =[
+        getReportName : { 'assessmentroll/exempt' },
+        getReportData : { return reportdata },
+        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+    ] as ServerReportModel;
+    
+    
+    def back() {
+        return 'default' 
+    }
+    
+    List getBarangaylist() {
+        return svc.getBarangayList()
+    }
+    
+    List getTaxabilitylist() {
+        return ['TAXABLE', 'EXEMPT']
+    }
+    
+    
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.rpt.report.AssessmentRollPage" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>
