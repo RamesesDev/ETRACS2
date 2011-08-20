@@ -339,13 +339,14 @@ class RPTCertificationsService
 	}
 	
     @ProxyMethod
-    public def doSave( def param ){
-    	param.faasid = param.objid;
-        param.objid = 'C' + new java.rmi.server.UID();
-        param.schemaname = SCHEMA_NAME;
-        param.schemaversion = SCHEMA_VERSION;
+    public def doSave( def certification ){
+    	certification.faasid = certification.objid;
+        certification.objid = 'C' + new java.rmi.server.UID();
+        certification.schemaname = SCHEMA_NAME;
+        certification.schemaversion = SCHEMA_VERSION;
 		
-        em.create( 'rptcertification', param );
+		em.validate( 'rptcertification', certification );
+        em.create( 'rptcertification', certification );
     }
 	
 	@ProxyMethod
