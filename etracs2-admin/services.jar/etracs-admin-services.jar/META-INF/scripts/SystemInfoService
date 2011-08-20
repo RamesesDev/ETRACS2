@@ -1,0 +1,19 @@
+import com.rameses.annotations.*;
+
+class SystemInfoService{
+
+	@PersistenceContext("system")
+	def em;
+		
+	@ProxyMethod
+	public def getList() {	
+		return em.sqlContext.createNamedQuery('systeminfo:getList').resultList
+	}
+	
+	@ProxyMethod
+	public def updateVar( def param ){
+		em.sqlContext.createNamedExecutor('systeminfo:updateVar').setParameters( param ).execute()
+	}
+	
+	
+}

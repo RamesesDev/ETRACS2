@@ -9,6 +9,22 @@ class ReportParameterService{
 	@Service('DateService')
 	def dateService;
 	
+	private def getFDate( def fdt ){
+		def dt = new java.text.SimpleDateFormat( fdt ).format(dateService.serverDate).toString();
+		
+		if( 'dd'.equals(fdt) ){
+			if( dt.matches('1|21|31') )
+				return dt + 'st';
+			else if( dt.matches('2|22') )
+				return dt + 'nd';
+			else if(dt.matches('3|23')) 
+				return dt + 'rd';
+			else return dt + 'th';
+		}
+		
+		return dt;
+	}
+	
 	@Env
 	def env 
 	
@@ -24,11 +40,11 @@ class ReportParameterService{
         
         def parentlguname = var.get('parent_lgu_name');
         if( parentlguname ) parentlguname = 'PROVINCE OF ' + parentlguname;
-	
+		
 		return [
 			DOMAIN		: var.get('lgu_name'),
 			SANGGUNIANG : var.get('sangguinan_name'), 
-            LOGOLGU     : var.get('url_logo_lgu'),                    
+            LGULOGO     : var.get('url_logo_lgu'),                    
             LOGOBLGF    : var.get('url_logo_blgf'),                    
             LGUNAME     : lguname,
 			LGUFORMALNAME : var.lgu_formal_name, 
@@ -36,16 +52,22 @@ class ReportParameterService{
             PARENTLGUNAME : parentlguname,
             TREASURERNAME   : var.get('treasurer_name'),
             TREASURERTITLE  : var.get('treasurer_title'),
+
             TREASUREROFFICENAME  : var.get('treasury_officename'),
 			ASSESSORNAME : var.get('assessor_name'),
 			ASSESSORTITLE : var.get('assessor_title'),
 			ASSESSOROFFICETITLE: var.get('assessor_officename'),
+			GIVENAT 	: lguname,
 			USERNAME	 : env.USERFORMALNAME,
 			USERJOBTITLE : env.JOBTITLE, 
 			PRINTEDBY   : (username) ? username : 'SYSTEM' ,
+
             PRINTDATE   : dateService.serverDate,
 			MAYORNAME   : var.get('mayorname'),
-			MAYORTITLE  : var.get('mayortitle')
+			MAYORTITLE  : var.get('mayortitle'),
+			DATE : getFDate( 'dd' ), 
+			MONTH : getFDate( 'MM' ) ,
+			YEAR : getFDate( 'yyyy' )
 		];
 	}
 	

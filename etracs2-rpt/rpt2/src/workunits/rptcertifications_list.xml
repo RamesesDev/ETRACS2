@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        
+        <invoker folderid="menu/rpt/txn" caption="RPT Certifications List" mnemonic="C" permission1="rptledger.view" />
+        <!--<invoker type="home.action" caption="RPT Ledgers" index="202" target="window" icon="images/folder.png" permission="rptledger.view" />-->
+        
+        <invoker type="formActions" action="doOpen" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" immediate="true" caption="Open" mnemonic="o" icon="images/open.png" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+import com.rameses.osiris2.reports.*;
+
+public class RPTCertificationListController 
+{
+    @Binding 
+    def binding
+    
+    @Service('RPTCertificationsService')
+    def svc 
+    
+    @Service('ReportParameterService')
+    def svcParams;
+    
+    def searchText
+    def selectedItem
+    def entity
+    def opener
+    List list
+    
+    void search() {
+        list = null
+        listHandler.load()
+        binding.refresh('html')
+    }
+    
+    def doOpen() {
+        entity = svc.getDataById( selectedItem );
+        return InvokerUtil.lookupOpener( entity.opener + '.view', [certification:entity]);
+    }
+    
+    def listHandler =[
+        getRows    : { return 25 },
+        getColumns : { return [
+            new Column( name:'title', caption:' Type ', maxWidth:300 ),
+            new Column( name:'taxpayername', caption:' Taxpayer ', maxWidth:600 ),
+            new Column( name:'taxpayeraddress', caption:'Address', maxWidth:1000 ),
+        ]},
+        onOpenItem : { obj, col ->
+            doOpen();
+        },
+        fetchList  : {
+            if( ! list  ) {
+                list = svc.getList( searchText, it );
+            }
+            return list
+        }
+    ] as PageListModel
+    
+    def doPreview( o ){
+        entity = svc.getDataById( o );
+        opener = InvokerUtil.lookupOpener( entity.opener + '.view', [certification:entity]);
+    }
+    
+    void setSelectedItem( o ){
+        doPreview( o )
+    }
+}
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.certification.CertificationListPage" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>

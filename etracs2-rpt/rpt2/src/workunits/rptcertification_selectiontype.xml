@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker folderid="menu/rpt/txn" caption="RPT Certifications" />
+        
+        <invoker type="formActions" action="doNext" caption="Next"    shorcut="n" mnemonic="n"  index="1"  icon="images/next.png" />
+        <invoker type="formActions" action="_close" caption="Cancel"  shortcut="c" mnemonic="c"  index="0"  icon="images/cancel.png" />
+        
+    </invokers>
+    <code lang="groovy">
+
+    <![CDATA[
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+        import com.rameses.osiris2.client.*;
+        import com.rameses.osiris2.reports.*;
+        
+        public class RPTCertificationSelectionController 
+        {
+            @Service('RPTCertificationsService')
+            def svc;
+            
+            @Service('DateService')
+            def dtSvc;
+            
+            @Binding
+            def binding;
+            
+            def selection = [:];
+            def selected;
+            
+            public def getSelectionList(){
+                
+                return InvokerUtil.lookupOpeners("rptcertifications", [:] );
+            }
+            
+            public def doNext(){
+                selected = ( !selected ) ? selectionList[0] : selected;
+                
+                //selection.certifiedby = "Angelina Jolie"; //env
+                //selection.certifiedbytitle = "Municipal Assessor"; //env
+                selection.purpose = "Whatever legal purposes it may serve him/her. "; 
+                selection.serverDate = new java.sql.Date( dtSvc.serverDate.getTime() );
+                selection.caption = selected.caption;
+                selected.params = [ certification:selection ];
+                
+                return selected;
+            }
+            
+        }
+    ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.certification.RPTCertificationSelectPage" />
+        
+    </pages>
+</workunit>
