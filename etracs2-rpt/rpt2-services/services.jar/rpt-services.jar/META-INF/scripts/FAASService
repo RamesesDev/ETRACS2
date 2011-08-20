@@ -134,6 +134,7 @@ class FAASService
         validateRpu( faas )
         em.validate( faas.schemaname, faas )
         em.validate( LISTSCHEMA_NAME, faas )
+		faas.txntimestamp = dateSvc.buildCustomTimeStamp( faas.info.issuedate ) 
         em.create( faas.schemaname, faas )
         em.create( LISTSCHEMA_NAME, faas )
         createPIN( faas ) 
@@ -1061,5 +1062,6 @@ class FAASService
     void updateAttachmentStates( faas, docstate ) {
         em.sqlContext.createNamedExecutor('faas:updateAttachmentState').setParameters([faasid:faas.objid, docstate:docstate]).execute()
     }
+	
 }
 

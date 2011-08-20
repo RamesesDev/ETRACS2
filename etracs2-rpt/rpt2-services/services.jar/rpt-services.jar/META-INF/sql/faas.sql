@@ -168,28 +168,75 @@ DELETE FROM txnreference WHERE refid = $P{refid}
 # FINDERS
 #----------------------------------------------------------------
 [findByState]
-SELECT objid, docstate, ry, tdno, fullpin, rputype, txntype, taxpayerid, taxpayername, cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha FROM faaslist 
+SELECT 
+	objid, docstate, ry, tdno, fullpin, rputype, txntype, 
+	taxpayerid, taxpayername, ownername, owneraddress, 
+	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
+	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
+FROM faaslist 
 
 [findByTdNo]
-SELECT objid, docstate, ry, tdno, fullpin, rputype, txntype, taxpayerid, taxpayername, cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha FROM  faaslist WHERE tdno = $P{tdno} 
+SELECT 
+	objid, docstate, ry, tdno, fullpin, rputype, txntype, 
+	taxpayerid, taxpayername, ownername, owneraddress, 
+	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
+	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
+FROM  faaslist 
+WHERE tdno = $P{tdno} 
 
 [findByTaxpayerName]
-SELECT objid, docstate, ry, tdno, fullpin, rputype, txntype, taxpayerid, taxpayername, cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha FROM  faaslist WHERE taxpayername LIKE $P{taxpayername} 
+SELECT 
+	objid, docstate, ry, tdno, fullpin, rputype, txntype, 
+	taxpayerid, taxpayername, ownername, owneraddress, 
+	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
+	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
+FROM  faaslist 
+WHERE taxpayername LIKE $P{taxpayername} 
 
 [findByPin] 
-SELECT objid, docstate, ry, tdno, fullpin, rputype, txntype, taxpayerid, taxpayername, cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha FROM  faaslist WHERE pin LIKE $P{pin} 
+SELECT 
+	objid, docstate, ry, tdno, fullpin, rputype, txntype, 
+	taxpayerid, taxpayername, ownername, owneraddress, 
+	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
+	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
+FROM  faaslist 
+WHERE pin LIKE $P{pin} 
 
 [findByBarangay]
-SELECT objid, docstate, ry, tdno, fullpin, rputype, txntype, taxpayerid, taxpayername, cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha FROM  faaslist WHERE barangay = $P{barangay} 
+SELECT 
+	objid, docstate, ry, tdno, fullpin, rputype, txntype, 
+	taxpayerid, taxpayername, ownername, owneraddress, 
+	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
+	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
+FROM  faaslist 
+WHERE barangay = $P{barangay} 
 
 [findByCadastralLotNo]
-SELECT objid, docstate, ry, tdno, fullpin, rputype, txntype, taxpayerid, taxpayername, cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha FROM  faaslist WHERE cadastrallotno = $P{cadastrallotno} 
+SELECT 
+	objid, docstate, ry, tdno, fullpin, rputype, txntype, 
+	taxpayerid, taxpayername, ownername, owneraddress, 
+	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
+	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
+FROM  faaslist 
+WHERE cadastrallotno = $P{cadastrallotno} 
 
 [findBySurveyNo]
-SELECT objid, docstate, ry, tdno, fullpin, rputype, txntype, taxpayerid, taxpayername, cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha FROM  faaslist WHERE surveyno = $P{surveyno} 
+SELECT 
+	objid, docstate, ry, tdno, fullpin, rputype, txntype, 
+	taxpayerid, taxpayername, ownername, owneraddress, 
+	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
+	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
+FROM  faaslist 
+WHERE surveyno = $P{surveyno} 
 
 [findByBlockNo]
-SELECT objid, docstate, ry, tdno, fullpin, rputype, txntype, taxpayerid, taxpayername, cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha FROM  faaslist WHERE blockno = $P{blockno} 
+SELECT 
+	objid, docstate, ry, tdno, fullpin, rputype, txntype, 
+	taxpayerid, taxpayername, ownername, owneraddress, 
+	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
+	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
+FROM  faaslist 
+WHERE blockno = $P{blockno} 
 
 
 
