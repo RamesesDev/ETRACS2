@@ -1,25 +1,50 @@
 [getList]
-SELECT objid, docstate, tdno, fullpin, taxpayerid, taxpayername, rputype, cadastrallotno, lastyearpaid, lastqtrpaid FROM rptledger WHERE docstate LIKE $P{docstate} 
+SELECT 
+	objid, docstate, tdno, fullpin, 
+	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
+	lastyearpaid, lastqtrpaid, assessedvalue , classcode 
+FROM rptledger  
+WHERE docstate LIKE $P{docstate} 
 
 [getListByTdno]
-SELECT objid, docstate, tdno, fullpin, taxpayerid, taxpayername, rputype, cadastrallotno, lastyearpaid, lastqtrpaid FROM rptledger 
+SELECT 
+	objid, docstate, tdno, fullpin, 
+	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
+	lastyearpaid, lastqtrpaid, assessedvalue  , classcode 
+FROM rptledger 
 WHERE docstate LIKE $P{docstate} AND tdno LIKE $P{tdno} 
 
 [getListByPin]
-SELECT objid, docstate, tdno, fullpin, taxpayerid, taxpayername, rputype, cadastrallotno, lastyearpaid, lastqtrpaid FROM rptledger 
+SELECT 
+	objid, docstate, tdno, fullpin, 
+	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
+	lastyearpaid, lastqtrpaid , assessedvalue , classcode 
+FROM rptledger 
 WHERE docstate LIKE $P{docstate} AND fullpin LIKE $P{fullpin} 
 
 [getListByTaxpayer]
-SELECT objid, docstate, tdno, fullpin, taxpayerid, taxpayername, rputype, cadastrallotno, lastyearpaid, lastqtrpaid FROM rptledger 
+SELECT 
+	objid, docstate, tdno, fullpin, 
+	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
+	lastyearpaid, lastqtrpaid , assessedvalue , classcode 
+FROM rptledger 
 WHERE docstate LIKE $P{docstate} AND taxpayername LIKE  $P{taxpayername} 
 
 
 [getListByCadastral]
-SELECT objid, docstate, tdno, fullpin, taxpayerid, taxpayername, rputype, cadastrallotno, lastyearpaid, lastqtrpaid FROM rptledger 
+SELECT 
+	objid, docstate, tdno, fullpin, 
+	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
+	lastyearpaid, lastqtrpaid , assessedvalue , classcode 
+FROM rptledger 
 WHERE docstate LIKE $P{docstate} AND cadastrallotno = $P{cadastrallotno} 
 
 [getListByBlock]
-SELECT objid, docstate, tdno, fullpin, taxpayerid, taxpayername, rputype, cadastrallotno, lastyearpaid, lastqtrpaid FROM rptledger 
+SELECT 
+	objid, docstate, tdno, fullpin, 
+	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
+	lastyearpaid, lastqtrpaid , assessedvalue , classcode 
+FROM rptledger 
 WHERE docstate LIKE $P{docstate} AND blockno = $P{blockno} 
 
 

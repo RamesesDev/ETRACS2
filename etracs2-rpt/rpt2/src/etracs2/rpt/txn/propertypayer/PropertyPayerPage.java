@@ -4,7 +4,7 @@
  * Created on February 27, 2011, 12:48 PM
  */
 
-package etracs2.rpt.txn.propertypayers;
+package etracs2.rpt.txn.propertypayer;
 
 import com.rameses.rcp.ui.annotations.StyleSheet;
 
@@ -12,11 +12,11 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  *
  * @author  jzamss
  */
-@StyleSheet("etracs2/rpt/txn/propertypayers/PropertyPayersPage.style")
-public class PropertyPayersPage extends javax.swing.JPanel {
+@StyleSheet("etracs2/rpt/txn/propertypayer/PropertyPayerPage.style")
+public class PropertyPayerPage extends javax.swing.JPanel {
     
     /** Creates new form AccountPage */
-    public PropertyPayersPage() {
+    public PropertyPayerPage() {
         initComponents();
     }
     
@@ -36,9 +36,10 @@ public class PropertyPayersPage extends javax.swing.JPanel {
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
         jPanel4 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xLabel4 = new com.rameses.rcp.control.XLabel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
+        xLabel1 = new com.rameses.rcp.control.XLabel();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -83,13 +84,14 @@ public class PropertyPayersPage extends javax.swing.JPanel {
         xTitledBorder3.setTitle("Property Payer Information");
         jPanel4.setBorder(xTitledBorder3);
 
-        xActionTextField2.setActionName("lookupEntity");
-        xActionTextField2.setCaption("Taxpayer");
-        xActionTextField2.setDepends(new String[] {"selectedItem"});
-        xActionTextField2.setName("entity.taxpayername");
-        xActionTextField2.setPreferredSize(new java.awt.Dimension(0, 18));
-        xActionTextField2.setRequired(true);
-        formPanel1.add(xActionTextField2);
+        xLookupField1.setCaption("Taxpayer");
+        xLookupField1.setDepends(new String[] {"selectedItem"});
+        xLookupField1.setExpression("#{entityname}");
+        xLookupField1.setHandler("lookupEntity");
+        xLookupField1.setName("taxpayer");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField1.setRequired(true);
+        formPanel1.add(xLookupField1);
 
         xLabel4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel4.setCaption("Address");
@@ -99,9 +101,12 @@ public class PropertyPayersPage extends javax.swing.JPanel {
         formPanel1.add(xLabel4);
 
         xDataTable2.setDepends(new String[] {"selectedItem"});
-        xDataTable2.setDynamic(true);
-        xDataTable2.setHandler("ownersListHandler");
-        xDataTable2.setName("selectedOwner");
+        xDataTable2.setHandler("propertyListHandler");
+        xDataTable2.setName("selectedProperty");
+
+        xLabel1.setForeground(new java.awt.Color(153, 0, 0));
+        xLabel1.setFont(new java.awt.Font("Arial", 1, 11));
+        xLabel1.setName("errorMsg");
 
         org.jdesktop.layout.GroupLayout jPanel4Layout = new org.jdesktop.layout.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
@@ -110,8 +115,9 @@ public class PropertyPayersPage extends javax.swing.JPanel {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 339, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 339, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 348, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 348, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 348, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel4Layout.setVerticalGroup(
@@ -119,7 +125,9 @@ public class PropertyPayersPage extends javax.swing.JPanel {
             .add(jPanel4Layout.createSequentialGroup()
                 .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+                .add(xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 241, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(xLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         jPanel2.add(jPanel4, java.awt.BorderLayout.CENTER);
@@ -140,10 +148,11 @@ public class PropertyPayersPage extends javax.swing.JPanel {
     private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField2;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XDataTable xDataTable2;
+    private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel4;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
     // End of variables declaration//GEN-END:variables
     
 }
