@@ -1,0 +1,62 @@
+
+<workunit>
+    <invokers>
+        <invoker folderid="menu/domain" caption="System Information" target="window"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.rcp.constant.*;
+        
+        public class SystemInofController
+        {
+            @Binding
+            def binding;
+            
+            @Service("SystemInfoService")
+            def svc;
+            
+            def selected;
+            
+            def listHandler = [
+                getRows : { return 50 },
+                getColumns : { 
+                    return [
+                        new Column(name:"name", caption:" Name"),
+                        new Column(name:"value", caption:" Value " ),
+                        new Column(name:"description", caption:" Description "),
+                    ];
+                },
+                
+                fetchList : { 
+                    svc.getList();
+                },
+                
+                onOpenItem: { obj, col ->
+                    if( obj ) return new PopupOpener( outcome:'vars' );
+                }
+            ] as SubListModel; 
+            
+            public def doUpdate(){
+                svc.updateVar( selected );
+                listHandler.load();
+                
+                return '_close';
+            }
+            
+            public def doClose(){
+                return '_close';
+            }
+        }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.admin.task.SystemInfoPage"/>
+        <page name="vars" template="etracs2.admin.task.VarsPage"/>
+    </pages>
+</workunit>
