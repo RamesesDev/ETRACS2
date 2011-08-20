@@ -75,23 +75,22 @@ public class RPTCertificationByTDNoPage extends javax.swing.JPanel {
         jLabel14.setText("Payment Detail");
         jLabel14.setPreferredSize(new java.awt.Dimension(0, 18));
         xPanel1.add(jLabel14);
-        jLabel14.setBounds(10, 280, 100, 19);
+        jLabel14.setBounds(14, 254, 100, 19);
 
         org.jdesktop.layout.GroupLayout xSeparator1Layout = new org.jdesktop.layout.GroupLayout(xSeparator1);
         xSeparator1.setLayout(xSeparator1Layout);
         xSeparator1Layout.setHorizontalGroup(
             xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 420, Short.MAX_VALUE)
+            .add(0, 432, Short.MAX_VALUE)
         );
         xSeparator1Layout.setVerticalGroup(
             xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(0, 30, Short.MAX_VALUE)
         );
         xPanel1.add(xSeparator1);
-        xSeparator1.setBounds(110, 280, 420, 30);
+        xSeparator1.setBounds(96, 250, 430, 30);
 
         xLookupField1.setCaption("TD No.");
-        xLookupField1.setCaptionFont(new java.awt.Font("Times New Roman", 0, 14));
         xLookupField1.setCaptionWidth(135);
         xLookupField1.setExpression("#{tdno}");
         xLookupField1.setHandler("lookupFaas");
@@ -100,35 +99,35 @@ public class RPTCertificationByTDNoPage extends javax.swing.JPanel {
         xLookupField1.setRequired(true);
         formPanel1.add(xLookupField1);
 
-        xLabel4.setBorder(new com.rameses.rcp.control.border.XLineBorder());
+        com.rameses.rcp.control.border.XLineBorder xLineBorder1 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder1.setLineColor(new java.awt.Color(153, 153, 153));
+        xLabel4.setBorder(xLineBorder1);
         xLabel4.setCaption("Taxpayer");
-        xLabel4.setCaptionFont(new java.awt.Font("Times New Roman", 0, 14));
         xLabel4.setCaptionWidth(135);
         xLabel4.setExpression("#{certification.taxpayername}");
         xLabel4.setPreferredSize(new java.awt.Dimension(0, 21));
         formPanel1.add(xLabel4);
 
-        xLabel3.setBorder(new com.rameses.rcp.control.border.XLineBorder());
+        com.rameses.rcp.control.border.XLineBorder xLineBorder2 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder2.setLineColor(new java.awt.Color(153, 153, 153));
+        xLabel3.setBorder(xLineBorder2);
         xLabel3.setCaption("Address");
-        xLabel3.setCaptionFont(new java.awt.Font("Times New Roman", 0, 14));
         xLabel3.setCaptionWidth(135);
         xLabel3.setExpression("#{certification.taxpayeraddress}");
         xLabel3.setPreferredSize(new java.awt.Dimension(0, 21));
         formPanel1.add(xLabel3);
 
         xTextField2.setCaption("Requested By");
-        xTextField2.setCaptionFont(new java.awt.Font("Times New Roman", 0, 14));
         xTextField2.setCaptionWidth(135);
         xTextField2.setName("certification.requestedby");
         xTextField2.setPreferredSize(new java.awt.Dimension(0, 21));
         xTextField2.setRequired(true);
         formPanel1.add(xTextField2);
 
-        jScrollPane1.setPreferredSize(new java.awt.Dimension(0, 77));
+        jScrollPane1.setPreferredSize(new java.awt.Dimension(0, 50));
         xTextArea1.setColumns(20);
         xTextArea1.setRows(5);
         xTextArea1.setCaption("Purpose");
-        xTextArea1.setCaptionFont(new java.awt.Font("Times New Roman", 0, 14));
         xTextArea1.setCaptionWidth(135);
         xTextArea1.setName("certification.purpose");
         xTextArea1.setPreferredSize(new java.awt.Dimension(120, 60));
@@ -138,7 +137,6 @@ public class RPTCertificationByTDNoPage extends javax.swing.JPanel {
         formPanel1.add(jScrollPane1);
 
         xTextField3.setCaption("<html><u>C</u>ertified By:<font color=\"red\">*</font></html>");
-        xTextField3.setCaptionFont(new java.awt.Font("Times New Roman", 0, 14));
         xTextField3.setCaptionWidth(135);
         xTextField3.setName("certification.certifiedby");
         xTextField3.setPreferredSize(new java.awt.Dimension(0, 21));
@@ -146,7 +144,6 @@ public class RPTCertificationByTDNoPage extends javax.swing.JPanel {
         formPanel1.add(xTextField3);
 
         xTextField4.setCaption("Position/Job Title");
-        xTextField4.setCaptionFont(new java.awt.Font("Times New Roman", 0, 14));
         xTextField4.setCaptionWidth(135);
         xTextField4.setName("certification.certifiedbytitle");
         xTextField4.setPreferredSize(new java.awt.Dimension(0, 21));
@@ -154,27 +151,26 @@ public class RPTCertificationByTDNoPage extends javax.swing.JPanel {
         formPanel1.add(xTextField4);
 
         xTextField5.setCaption("Authority of");
-        xTextField5.setCaptionFont(new java.awt.Font("Times New Roman", 0, 14));
         xTextField5.setCaptionWidth(135);
         xTextField5.setName("certification.byauthority");
         xTextField5.setPreferredSize(new java.awt.Dimension(0, 21));
-        xTextField5.setRequired(true);
         formPanel1.add(xTextField5);
 
         xPanel1.add(formPanel1);
-        formPanel1.setBounds(10, 30, 520, 250);
+        formPanel1.setBounds(10, 22, 520, 228);
 
         xCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         xCheckBox1.setText(" is for Official Use?");
         xCheckBox1.setCaptionFont(new java.awt.Font("Times New Roman", 0, 12));
+        xCheckBox1.setCellPadding(new java.awt.Insets(0, 0, 10, 0));
         xCheckBox1.setFont(new java.awt.Font("Dialog", 1, 12));
         xCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
         xCheckBox1.setName("officialuse");
+        xCheckBox1.setOpaque(false);
         xCheckBox1.setShowCaption(false);
         formPanel2.add(xCheckBox1);
 
         xTextField6.setCaption("O.R. No.");
-        xTextField6.setCaptionFont(new java.awt.Font("Times New Roman", 0, 12));
         xTextField6.setCaptionWidth(117);
         xTextField6.setDepends(new String[] {"officialuse"});
         xTextField6.setName("certification.orno");
@@ -183,7 +179,6 @@ public class RPTCertificationByTDNoPage extends javax.swing.JPanel {
         formPanel2.add(xTextField6);
 
         xDateField1.setCaption("O.R. Date");
-        xDateField1.setCaptionFont(new java.awt.Font("Times New Roman", 0, 12));
         xDateField1.setCaptionWidth(117);
         xDateField1.setDepends(new String[] {"officialuse"});
         xDateField1.setName("certification.ordate");
@@ -192,7 +187,6 @@ public class RPTCertificationByTDNoPage extends javax.swing.JPanel {
         formPanel2.add(xDateField1);
 
         xNumberField1.setCaption("O.R. Amount");
-        xNumberField1.setCaptionFont(new java.awt.Font("Times New Roman", 0, 12));
         xNumberField1.setCaptionWidth(117);
         xNumberField1.setDepends(new String[] {"officialuse"});
         xNumberField1.setFieldType(java.math.BigDecimal.class);
@@ -203,7 +197,6 @@ public class RPTCertificationByTDNoPage extends javax.swing.JPanel {
         formPanel2.add(xNumberField1);
 
         xNumberField2.setCaption("Stamp Amount");
-        xNumberField2.setCaptionFont(new java.awt.Font("Times New Roman", 0, 12));
         xNumberField2.setCaptionWidth(117);
         xNumberField2.setDepends(new String[] {"officialuse"});
         xNumberField2.setFieldType(java.math.BigDecimal.class);
@@ -214,10 +207,10 @@ public class RPTCertificationByTDNoPage extends javax.swing.JPanel {
         formPanel2.add(xNumberField2);
 
         xPanel1.add(formPanel2);
-        formPanel2.setBounds(30, 300, 500, 120);
+        formPanel2.setBounds(30, 274, 500, 140);
 
         jPanel1.add(xPanel1);
-        xPanel1.setBounds(10, 30, 550, 430);
+        xPanel1.setBounds(10, 36, 542, 422);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
