@@ -40,6 +40,7 @@ SELECT DISTINCT u.*
 FROM etracsuser u, user_role ur  
 WHERE u.objid = ur.userid  
   AND ur.role = $P{role} 
+ORDER BY u.name   
 
 
 [getLiquidatingOfficers]

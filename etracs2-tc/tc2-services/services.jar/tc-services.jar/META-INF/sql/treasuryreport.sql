@@ -10,9 +10,10 @@ FROM revenue r
 INNER JOIN account c ON c.objid = 'NGAS' 
 INNER JOIN account a ON a.objid = r.ngasid 
 WHERE r.fundid = $P{fundid} 
-AND r.liquidationtimestamp LIKE $P{liqtimestamp} 
+  AND r.liquidationtimestamp LIKE $P{liqtimestamp} 
+  AND r.voided = 0 
 GROUP BY a.acctcode, a.accttitle, a.target 
-ORDER BY a.acctcode 
+ORDER BY a.acctcode  
 
 [getRevenueByGLAccountSRE]   
 SELECT  
@@ -26,7 +27,8 @@ FROM revenue r
 INNER JOIN account c ON c.objid = 'SRE' 
 INNER JOIN account a ON a.objid = r.sreid 
 WHERE r.fundid = $P{fundid} 
-AND r.liquidationtimestamp LIKE $P{liqtimestamp} 
+  AND r.liquidationtimestamp LIKE $P{liqtimestamp} 
+  AND r.voided = 0 
 GROUP BY a.acctcode, a.accttitle, a.target 
 ORDER BY a.acctcode 
 
@@ -37,13 +39,14 @@ SELECT
 	a.acctcode AS glcode,   
 	a.accttitle AS gltitle,  
 	a.target as gltarget,
-	r.acctno AS slcode, 
+	CASE WHEN r.acctno IS NULL THEN '' ELSE r.acctno END AS slcode, 
 	r.accttitle AS sltitle,
 	SUM(r.amount) AS slamount 
 FROM revenue r  
 INNER JOIN account a ON a.objid = r.sreid    
 WHERE r.fundid = $P{fundid} 
-AND r.liquidationtimestamp LIKE $P{liqtimestamp}  
+  AND r.liquidationtimestamp LIKE $P{liqtimestamp}  
+  AND r.voided = 0 
 GROUP BY a.acctcode, a.accttitle, r.acctno, r.accttitle, a.target 
 ORDER BY a.acctcode 
 
@@ -54,13 +57,14 @@ SELECT
 	a.acctcode AS glcode,   
 	a.accttitle AS gltitle,  
 	a.target as gltarget, 
-	r.acctno AS slcode, 
+	CASE WHEN r.acctno IS NULL THEN '' ELSE r.acctno END AS slcode, 
 	r.accttitle AS sltitle, 
 	SUM(r.amount) AS slamount  
 FROM revenue r 
 INNER JOIN account a ON a.objid = r.ngasid   
 WHERE r.fundid = $P{fundid}  
-AND r.liquidationtimestamp LIKE $P{liqtimestamp} 
+  AND r.liquidationtimestamp LIKE $P{liqtimestamp} 
+  AND r.voided = 0 
 GROUP BY a.acctcode, a.accttitle, r.acctno, r.accttitle, a.target 
 ORDER BY a.acctcode 
 

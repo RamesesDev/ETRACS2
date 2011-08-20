@@ -4,12 +4,10 @@
 		<field name="objid" primary="true" />
 		<field name="schemaname" required="true" />
 		<field name="schemaversion" required="true" />
-		
 		<field name="docstate" required="true" />
 		<field name="dtposted" required="true" />
 		<field name="depositid"/>
-		<field name="depositedbyname"/>
-		<field name="depositedbytitle"/>
+		<field name="dtdeposited"/>
 		<complex name="info" ref="info" serializer="default" />
 	</element>
 	
@@ -18,7 +16,12 @@
 		<field name="txndate" required="true" />
 		<field name="liquidatingofficerid" required="true" />
 		<field name="liquidatingofficername" required="true" />
-		<field name="liquidatingofficertitle" />
+		<field name="liquidatingofficertitle"/>
+		
+		<field name="depositedbyid" required="true" />
+		<field name="depositedbyname" required="true" />
+		<field name="depositedbytitle" required="true" />
+		
 		<field name="treasurerid" />
 		<field name="treasurername" />
 		<field name="treasurertitle" />
@@ -32,19 +35,25 @@
 	<element name="liquidationlist" tablename="liquidationlist">
 		<field name="objid" primary="true" />
 		<field name="docstate" required="true" />
-		<field name="txnno" required="true" />
-		<field name="txndate" required="true" />
-		<field name="iyear" type="integer" />
-		<field name="imonth" type="integer" />
-		<field name="iday" type="integer" />
-		<field name="liquidatingofficerid" required="true" />
-		<field name="liquidatingofficername" required="true" /> 
-		<field name="amount" type="decimal" />
-		<field name="totalcash" type="decimal" />
-		<field name="totalotherpayment" type="decimal" />
-		<field name="depositid"/>
-		<field name="depositedbyname"/>
-		<field name="depositedbytitle"/>
+		<field name="txnno" required="true" mapfield="info.txnno" />
+		<field name="txndate" required="true" mapfield="info.txndate" />
+		<field name="depositid" />
+		<field name="dtdeposited" />
+		<field name="txntimestamp" required="true" />
+		<field name="liquidatingofficerid" required="true" mapfield="info.liquidatingofficerid" />
+		<field name="liquidatingofficername" required="true" mapfield="info.liquidatingofficername" /> 
+		<field name="liquidatingofficertitle" required="true" mapfield="info.liquidatingofficertitle" /> 
+		
+		<field name="depositedbyid" mapfield="info.depositedbyid" />
+		<field name="depositedbyname" mapfield="info.depositedbyname" />
+		<field name="depositedbytitle" mapfield="info.depositedbytitle" />
+		<field name="amount" type="decimal" mapfield="info.amount" />
+		<field name="totalcash" type="decimal" mapfield="info.totalcash" />
+		<field name="totalotherpayment" type="decimal" mapfield="info.totalotherpayment" />
+		<field name="iyear" type="integer" required="true" />
+		<field name="iqtr" type="integer" required="true" />
+		<field name="imonth" type="integer" required="true" />
+		<field name="iday" type="integer" required="true" />
 	</element>
 
 </schema>

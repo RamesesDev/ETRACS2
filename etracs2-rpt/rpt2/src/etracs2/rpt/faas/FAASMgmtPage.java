@@ -31,9 +31,9 @@ public class FAASMgmtPage extends javax.swing.JPanel {
         jPanel1 = new javax.swing.JPanel();
         jPanel3 = new javax.swing.JPanel();
         xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        xActionBar2 = new com.rameses.rcp.control.XActionBar();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         jPanel2 = new javax.swing.JPanel();
-        xActionBar1 = new com.rameses.rcp.control.XActionBar();
         jScrollPane1 = new javax.swing.JScrollPane();
         xEditorPane1 = new com.rameses.rcp.control.XEditorPane();
 
@@ -55,6 +55,12 @@ public class FAASMgmtPage extends javax.swing.JPanel {
         xActionTextField1.setPreferredSize(new java.awt.Dimension(200, 19));
         jPanel3.add(xActionTextField1, java.awt.BorderLayout.WEST);
 
+        xActionBar2.setBorder(new com.rameses.rcp.control.border.XUnderlineBorder());
+        xActionBar2.setDepends(new String[] {"selectedItem"});
+        xActionBar2.setName("formActions");
+        xActionBar2.setPadding(new java.awt.Insets(0, 5, 0, 0));
+        jPanel3.add(xActionBar2, java.awt.BorderLayout.CENTER);
+
         jPanel1.add(jPanel3, java.awt.BorderLayout.NORTH);
 
         xDataTable1.setHandler("listHandler");
@@ -66,15 +72,7 @@ public class FAASMgmtPage extends javax.swing.JPanel {
 
         jPanel2.setLayout(new java.awt.BorderLayout());
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder2.setTitle("Document");
-        jPanel2.setBorder(xTitledBorder2);
-        xActionBar1.setBorder(new com.rameses.rcp.control.border.XUnderlineBorder());
-        xActionBar1.setDepends(new String[] {"selectedItem"});
-        xActionBar1.setName("formActions");
-        xActionBar1.setPadding(new java.awt.Insets(0, 5, 0, 0));
-        jPanel2.add(xActionBar1, java.awt.BorderLayout.NORTH);
-
+        jPanel2.setBorder(javax.swing.BorderFactory.createEmptyBorder(2, 2, 2, 2));
         jScrollPane1.setName("html");
         xEditorPane1.setDepends(new String[] {"selectedItem"});
         xEditorPane1.setName("html");
@@ -95,7 +93,7 @@ public class FAASMgmtPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSplitPane jSplitPane1;
-    private com.rameses.rcp.control.XActionBar xActionBar1;
+    private com.rameses.rcp.control.XActionBar xActionBar2;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XEditorPane xEditorPane1;

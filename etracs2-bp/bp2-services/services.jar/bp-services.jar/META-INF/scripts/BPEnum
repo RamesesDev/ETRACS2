@@ -5,6 +5,9 @@ public class BPEnum{
 	@PersistenceContext("main")
 	def em;
 	
+	@Service('Var')
+	def var 
+	
 	@ProxyMethod
 	public def getOrganizations(){
 		return ['SINGLE PROPRIETORSHIP', 'PARTNERSHIP',
@@ -39,10 +42,8 @@ public class BPEnum{
 	}
 	
 	@ProxyMethod
-	public def getBarangays(){
-		def munis = em.sqlContext.createNamedQuery('lgu:getMuncipalities').resultList 
-        def brgys = []
-        munis.each { brgys.addAll( em.serializer.read(it.barangays ) ) }
-		return brgys.collect{ [barangayid:it.objid, barangayname:it.lguname]}.sort{ a,b -> a.name <=> b.name }
-	}
+    public List getBarangays() {
+        def brgys =  em.sqlContext.createNamedQuery('faas:getBarangays').setParameter('parentid', var.lgu_index  ).resultList 
+		return brgys.collect{ [barangayid:it.objid, barangayname:it.lguname] }
+    }
 }

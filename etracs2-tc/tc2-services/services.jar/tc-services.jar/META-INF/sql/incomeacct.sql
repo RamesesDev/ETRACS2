@@ -5,19 +5,19 @@ SELECT * FROM incomeaccount WHERE objid = $P{objid}
 SELECT * FROM incomeaccount ORDER BY accttitle   
 
 [getListByAcctNo]
-SELECT * FROM incomeaccount WHERE acctno LIKE $P{acctno}  ORDER BY acctno 
+SELECT * FROM incomeaccount WHERE acctno LIKE $P{acctno}  ORDER BY acctno, accttitle  
 
 [getListByTitle]
-SELECT * FROM incomeaccount WHERE accttitle LIKE $P{accttitle} ORDER BY accttitle   
+SELECT * FROM incomeaccount WHERE accttitle LIKE $P{accttitle} ORDER BY acctno, accttitle   
 
 [getIncomeAccountList]
-SELECT objid, acctno, acctcode, accttitle, fundid, fundname  FROM incomeaccount WHERE docstate = 'APPROVED'
+SELECT objid, acctno, acctcode, accttitle, fundid, fundname  FROM incomeaccount WHERE docstate = 'APPROVED' ORDER BY acctno, accttitle 
 
 [getIncomeAccountListByNo]
-SELECT objid, acctno, acctcode, accttitle, fundid, fundname  FROM incomeaccount WHERE docstate = 'APPROVED' AND acctno = $P{acctno}
+SELECT objid, acctno, acctcode, accttitle, fundid, fundname  FROM incomeaccount WHERE docstate = 'APPROVED' AND acctno = $P{acctno} ORDER BY acctno, accttitle 
 
 [getIncomeAccountListByTitle]
-SELECT objid, acctno, acctcode, accttitle, fundid, fundname FROM incomeaccount WHERE docstate = 'APPROVED' AND accttitle LIKE $P{accttitle}
+SELECT objid, acctno, acctcode, accttitle, fundid, fundname FROM incomeaccount WHERE docstate = 'APPROVED' AND accttitle LIKE $P{accttitle} ORDER BY acctno, accttitle 
 
 [getFund]
 SELECT * FROM fund WHERE docstate = "APPROVED"
@@ -41,10 +41,10 @@ SELECT COUNT(*) AS count FROM receiptitem WHERE acctid = $P{acctid}
 
 [getNGASData]
 SELECT 
-	CONCAT( COALESCE(p2.acctcode, 'UNMAPPED'), '-' , COALESCE(p2.accttitle,'UNMAPPED') ) as parent2, 
-	CONCAT( COALESCE(p1.acctcode, 'UNMAPPED'), '-' , COALESCE(p1.accttitle,'UNMAPPED') ) as parent1, 
-	CONCAT( COALESCE(p.acctcode, 'UNMAPPED'), '-' , COALESCE(p.accttitle,'UNMAPPED') ) as parent, 
-	CONCAT( COALESCE(ic.acctno, 'UNMAPPED'), '-' , COALESCE(ic.accttitle,'UNMAPPED') ) as account 
+	CONCAT( COALESCE(p2.acctcode, ''), ' - ' , COALESCE(p2.accttitle,'UNMAPPED') ) as parent2, 
+	CONCAT( COALESCE(p1.acctcode, ''), ' - ' , COALESCE(p1.accttitle,'UNMAPPED') ) as parent1, 
+	CONCAT( COALESCE(p.acctcode, ''), ' - ' , COALESCE(p.accttitle,'UNMAPPED') ) as parent, 
+	CONCAT( COALESCE(ic.acctno, ''), ' - ' , COALESCE(ic.accttitle,'UNMAPPED') ) as account 
 FROM incomeaccount ic  
 LEFT JOIN account p ON ic.ngasid = p.objid 
 LEFT JOIN account p1 ON p.parentid = p1.objid 
@@ -55,10 +55,10 @@ GROUP BY p2.acctcode, p2.accttitle, p1.acctcode, p1.accttitle, p.acctcode, p.acc
 
 [getSREData]
 SELECT 
-	CONCAT( COALESCE(p2.acctcode, 'UNMAPPED'), '-' , COALESCE(p2.accttitle,'UNMAPPED') ) as parent2, 
-	CONCAT( COALESCE(p1.acctcode, 'UNMAPPED'), '-' , COALESCE(p1.accttitle,'UNMAPPED') ) as parent1, 
-	CONCAT( COALESCE(p.acctcode, 'UNMAPPED'), '-' , COALESCE(p.accttitle,'UNMAPPED') ) as parent, 
-	CONCAT( COALESCE(ic.acctno, 'UNMAPPED'), '-' , COALESCE(ic.accttitle,'UNMAPPED') ) as account 
+	CONCAT( COALESCE(p2.acctcode, ''), '-' , COALESCE(p2.accttitle,'UNMAPPED') ) as parent2, 
+	CONCAT( COALESCE(p1.acctcode, ''), '-' , COALESCE(p1.accttitle,'UNMAPPED') ) as parent1, 
+	CONCAT( COALESCE(p.acctcode, ''), '-' , COALESCE(p.accttitle,'UNMAPPED') ) as parent, 
+	CONCAT( COALESCE(ic.acctno, ''), '-' , COALESCE(ic.accttitle,'UNMAPPED') ) as account 
 FROM incomeaccount ic  
 LEFT JOIN account p ON ic.sreid = p.objid 
 LEFT JOIN account p1 ON p.parentid = p1.objid 

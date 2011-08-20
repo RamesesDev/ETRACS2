@@ -25,6 +25,12 @@ WHERE txnno = $P{txnno}
 AND collectorid = $P{collectorid} 
 ORDER BY txndate DESC, txnno DESC
 
+[getLiquidatingOfficer]
+SELECT lq.* FROM etracsuser lq WHERE lq.objid IN (	
+	select c.lqofficerid from etracsuser c WHERE c.objid = $P{collectorid}
+)
+
+
 
 
 [getReceiptsByRemittance]
@@ -129,6 +135,7 @@ ORDER BY rl.afid, rl.serialno, ri.accttitle
 
 [getIncomeAccuntSummaryByAllFund] 
 SELECT 
+	ri.fundname, 
 	ri.acctid AS acctid, 
 	ri.accttitle AS acctname, 
 	SUM( ri.amount ) AS amount 
@@ -136,19 +143,21 @@ FROM receiptlist rl, receiptitem ri
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
 GROUP BY ri.acctid, ri.accttitle 
-ORDER BY ri.accttitle 
+ORDER BY ri.fundname, ri.accttitle 
 
 [getIncomeAccuntSummaryByFund]
 SELECT 
+	ri.fundname,
 	ri.acctid AS acctid, 
 	ri.accttitle AS acctname, 
 	SUM( ri.amount ) AS amount 
 FROM receiptlist rl, receiptitem ri 
 WHERE rl.objid = ri.receiptid 
-	AND rl.remittanceid = $P{remittanceid} 
-	AND ri.fundid = $P{fundid} 
-GROUP BY ri.acctid, ri.accttitle 
-ORDER BY ri.accttitle
+  AND rl.remittanceid = $P{remittanceid} 
+  AND ri.fundid LIKE $P{fundid} 
+  AND rl.voided = 0 
+GROUP BY ri.fundname, ri.acctid, ri.accttitle 
+ORDER BY ri.fundname, ri.accttitle
 
 [getSerialReceiptDetailsByAllFund]
 SELECT 
@@ -235,7 +244,7 @@ UPDATE afinventorycredit c, afcontrol af SET
 	c.docstate = CASE WHEN c.balance - $P{qtyissued} = 0 THEN 'CLOSED' ELSE 'OPEN' end 
 WHERE c.objid = af.afinventorycreditid 
   AND af.objid = $P{afcontrolid} 
-
+ 
 
 [closeAfControl]
 UPDATE afcontrol SET 

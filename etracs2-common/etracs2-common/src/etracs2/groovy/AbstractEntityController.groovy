@@ -45,7 +45,7 @@ abstract class AbstractEntityController {
     }
     
     void save() {
-        if( okPossibleDuplicate() ) {
+        //if( okPossibleDuplicate() ) {
             if( mode == 'create' ) {
                 entity = service.create( entity );
                 invokeInsertHandler();
@@ -54,8 +54,8 @@ abstract class AbstractEntityController {
                 entity = service.update( entity );
                 invokeUpdateHandler();
             }
-        }
-        mode = "view";
+            mode = "view";
+        //}
     }
     
     void delete() {
@@ -117,7 +117,7 @@ abstract class AbstractEntityController {
     boolean okPossibleDuplicate() {
         def dupEntity = service.getPossibleDuplicateName( entity )
         if( dupEntity ) {
-            return MsgBox.confirm('Possible duplicate for ' + dupEntity.entityname + ' from ' + dupEntity.address +' with Entity No. ' + dupEntity.entityno + '.\nSave anyway?') 
+            return MsgBox.confirm('Possible duplicate for ' + dupEntity.entityname + ' from ' + dupEntity.entityaddress +' with Entity No. ' + dupEntity.entityno + '.\nSave anyway?') 
         }    
         return true
     }

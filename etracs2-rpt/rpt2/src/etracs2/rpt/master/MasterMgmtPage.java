@@ -30,6 +30,9 @@ public class MasterMgmtPage extends javax.swing.JPanel {
 
         setLayout(new java.awt.BorderLayout());
 
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder1.setTitle("Select Information");
+        jScrollPane1.setBorder(xTitledBorder1);
         xList1.setModel(new javax.swing.AbstractListModel() {
             String[] strings = { "Item 1", "Item 2" };
             public int getSize() { return strings.length; }
@@ -50,7 +53,7 @@ public class MasterMgmtPage extends javax.swing.JPanel {
         xSubFormPanel1.setLayout(xSubFormPanel1Layout);
         xSubFormPanel1Layout.setHorizontalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 355, Short.MAX_VALUE)
+            .add(0, 354, Short.MAX_VALUE)
         );
         xSubFormPanel1Layout.setVerticalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)

@@ -4,6 +4,7 @@ package etracs2.common.groovy
 import com.rameses.rcp.annotations.*
 import com.rameses.rcp.common.*
 import com.rameses.osiris2.client.*
+import java.rmi.server.UID
 
 public abstract class AbstractRulesetController 
 {
@@ -25,6 +26,16 @@ public abstract class AbstractRulesetController
         return InvokerUtil.lookupOpener(openerName+'.create', [ruleset:ruleset])
     }
     
+    def copy() {
+        def newrulename = MsgBox.prompt('Enter Rule Name:')
+        if( !newrulename ) return null
+        def rule = abstractRuleService.open( selectedItem.objid )
+        rule.objid    = 'R' + new UID()
+        rule.rulename = newrulename
+        rule.docstate = 'DRAFT'
+        return InvokerUtil.lookupOpener(openerName+'.copy', [rule:rule, ruleset:ruleset])
+    }
+    
     def updateHandler = {
         binding.refresh('html')
     }
@@ -32,7 +43,6 @@ public abstract class AbstractRulesetController
     def open() {
         def rule = abstractRuleService.open( selectedItem.objid )
         def opener = rule.opener + '.open' 
-        println 'Opener -> ' + opener
         return InvokerUtil.lookupOpener(opener, [rule:rule, updateHandler:updateHandler])
     }
     

@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="home.action" action="init" caption="Bank Account" permission="bankacct.view" target="window" icon="images/folder.png" index="5"/>
+        <invoker type="tc.master" action="init" caption="Bank Account" permission="bankacct.view" target="window" icon="images/folder.png" index="11"/>
         <invoker folderid="/menu/tc/master" action="init" caption="Bank Account" permission="bankacct.view" target="window" index="5"/>
         
         <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/doc-new.png"  permission="bankacct.create" />
@@ -35,6 +35,11 @@ class BankAcctController extends etracs2.groovy.CRUDController
     void open( objid ) {
         super.open( objid )
         bank = [bankcode:entity.bankcode]
+    }
+    
+    void create() {
+        super.create()
+        bank = [:]
     }
     
     def listHandler = [

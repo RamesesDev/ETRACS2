@@ -26,6 +26,8 @@ class LiquidationService {
 	@Service("Var")
 	def var;
 	
+	def CASHIER_ROLE = 'CASHIER'
+	
 	def SCHEMANAME = "liquidation:liquidation";
 	def SCHEMAVERSION = "1.0";
 	def LISTSCHEMANAME = "liquidation:liquidationlist";
@@ -48,6 +50,7 @@ class LiquidationService {
 		liq.dtposted = dtsvc.getServerDate()
 		liq.info.txnno = generateLiqNo();
 		liq.info.txndate = dtsvc.format( "yyyy-MM-dd", liq.dtposted);
+		updateCashierInfo( liq )
 		closeRemittance( liq );
 		liq.fundsummaries = getFundSummaries( liq.objid );
 		em.validate( SCHEMANAME, liq );
@@ -55,6 +58,15 @@ class LiquidationService {
 		createListingItem( liq );
 		return liq;
 		} catch (ex) { throw ex; }
+	}
+	
+	void updateCashierInfo( liq ) {
+		def cashiers = usrsvc.getUsersByRole( CASHIER_ROLE )
+		if( ! cashiers ) throw new Exception('Cashier is not defined.')
+		def cashier = cashiers[0]
+		liq.info.depositedbyid 		= cashier.objid 
+		liq.info.depositedbyname 	= cashier.formalname 
+		liq.info.depositedbytitle 	= cashier.jobtitle 
 	}
 	
 	private void validate( liq ) {
@@ -86,8 +98,6 @@ class LiquidationService {
 				liquidationno : liq.info.txnno,
 				liquidationdate : liq.info.txndate,
 				liquidatingofficerid : liq.info.liquidatingofficerid,
-				liquidatingofficername : liq.info.liquidatingofficername,
-				liquidatingofficertitle : liq.info.liquidatingofficertitle,
 				collectorid : collector.objid
 			];
 			em.sqlContext.createNamedExecutor( "liquidation:closeRemittances" ).setParameters( params ).execute();
@@ -97,21 +107,13 @@ class LiquidationService {
 	
 	private void createListingItem( liq ) {
 		def cal = Calendar.instance;
-		cal.time = dtsvc.parse( "yyyy-MM-dd", liq.info.txndate );
-		em.create( LISTSCHEMANAME, [
-			objid : liq.objid,
-			docstate : liq.docstate,
-			txnno : liq.info.txnno,
-			txndate : liq.info.txndate,
-			iyear : cal.get( Calendar.YEAR ),
-			imonth : cal.get( Calendar.MONTH ),
-			iday : cal.get( Calendar.DATE ),
-			liquidatingofficerid : liq.info.liquidatingofficerid,
-			liquidatingofficername : liq.info.liquidatingofficername,
-			amount : liq.info.amount,
-			totalcash : liq.info.totalcash,
-			totalotherpayment : liq.info.totalotherpayment
-		] );
+		def pd = dtsvc.parseDate( liq.info.txndate, null )
+		liq.txntimestamp = pd.year +''+ pd.qtr +'' + pd.month + '' + pd.day 
+		liq.iyear  = pd.year 
+		liq.iqtr   = pd.qtr 
+		liq.imonth = pd.month 
+		liq.iday   = pd.day 
+		em.create( LISTSCHEMANAME, liq )
 	}
 	
 	@ProxyMethod

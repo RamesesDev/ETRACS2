@@ -33,6 +33,11 @@ abstract class AbstractRuleController
         mode = 'create' 
     }
     
+    void copy() {
+        mode = 'create' 
+        binding?.focus('rule.rulename')
+    }
+    
     void edit() {
         mode = 'edit' 
     }

@@ -25,25 +25,27 @@ public class AccountActionPage extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xLabel1 = new com.rameses.rcp.control.XLabel();
         xSubFormPanel1 = new com.rameses.rcp.control.XSubFormPanel();
 
         setPreferredSize(new java.awt.Dimension(450, 321));
 
         formPanel1.setIndex(-10);
-        xActionTextField1.setActionName("lookupAccount");
-        xActionTextField1.setCaption("Account");
-        xActionTextField1.setIndex(-100);
-        xActionTextField1.setName("account");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
-        xActionTextField1.setRequired(true);
-        formPanel1.add(xActionTextField1);
+        xLookupField1.setCaption("Account");
+        xLookupField1.setExpression("#{accttitle}");
+        xLookupField1.setHandler("lookupAccount");
+        xLookupField1.setIndex(-100);
+        xLookupField1.setName("account");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField1.setRequired(true);
+        formPanel1.add(xLookupField1);
 
         xLabel1.setFont(new java.awt.Font("Arial", 1, 14));
         xLabel1.setName("title");
 
         xSubFormPanel1.setHandler("formulaEditor");
+        xSubFormPanel1.setIndex(-10);
         org.jdesktop.layout.GroupLayout xSubFormPanel1Layout = new org.jdesktop.layout.GroupLayout(xSubFormPanel1);
         xSubFormPanel1.setLayout(xSubFormPanel1Layout);
         xSubFormPanel1Layout.setHorizontalGroup(
@@ -82,8 +84,8 @@ public class AccountActionPage extends javax.swing.JPanel {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.rameses.rcp.util.FormPanel formPanel1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XLabel xLabel1;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XSubFormPanel xSubFormPanel1;
     // End of variables declaration//GEN-END:variables
     

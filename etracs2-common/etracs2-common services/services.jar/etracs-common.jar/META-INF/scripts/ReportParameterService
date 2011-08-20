@@ -25,6 +25,9 @@ class ReportParameterService{
 		return dt;
 	}
 	
+	@Env
+	def env 
+	
 	@ProxyMethod
 	public def getStandardParameter( def username ){
 		def lguname = var.get('lgu_name');
@@ -39,19 +42,26 @@ class ReportParameterService{
         if( parentlguname ) parentlguname = 'PROVINCE OF ' + parentlguname;
 		
 		return [
+			DOMAIN		: var.get('lgu_name'),
 			SANGGUNIANG : var.get('sangguinan_name'), 
             LGULOGO     : var.get('url_logo_lgu'),                    
             LOGOBLGF    : var.get('url_logo_blgf'),                    
             LGUNAME     : lguname,
+			LGUFORMALNAME : var.lgu_formal_name, 
+			LGUTYPE		  : var.lgu_type, 
             PARENTLGUNAME : parentlguname,
             TREASURERNAME   : var.get('treasurer_name'),
             TREASURERTITLE  : var.get('treasurer_title'),
-            TREASUREROFFICENAME  : var.get('treasurer_office'),
+
+            TREASUREROFFICENAME  : var.get('treasury_officename'),
 			ASSESSORNAME : var.get('assessor_name'),
 			ASSESSORTITLE : var.get('assessor_title'),
 			ASSESSOROFFICETITLE: var.get('assessor_officename'),
 			GIVENAT 	: lguname,
-            PRINTEDBY   : (username) ? username : 'SYSTEM' ,
+			USERNAME	 : env.USERFORMALNAME,
+			USERJOBTITLE : env.JOBTITLE, 
+			PRINTEDBY   : (username) ? username : 'SYSTEM' ,
+
             PRINTDATE   : dateService.serverDate,
 			MAYORNAME   : var.get('mayorname'),
 			MAYORTITLE  : var.get('mayortitle'),

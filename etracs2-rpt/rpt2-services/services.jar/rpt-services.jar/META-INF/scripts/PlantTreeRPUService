@@ -28,8 +28,8 @@ class PlantTreeRPUService
     }
 	
     @ProxyMethod
-    public Map calculatePlantTreeAssessment( landfaasid, planttree ) {
-        //reset values to 0.0
+    public Map calculatePlantTreeAssessment( landdetails, planttree ) {
+		//reset values to 0.0
         planttree.basemarketvalue  = 0.0
         planttree.adjustment       = 0.0
         planttree.marketvalue      = 0.0
@@ -37,11 +37,29 @@ class PlantTreeRPUService
         
         //calculate basemarketvalue
         planttree.basemarketvalue = numberSvc.round( planttree.bearing * planttree.unitvalue )
+		
         //calculate adjustment 
-        def adj = calculateAdjustment( landfaasid, planttree );
-        planttree.adjustmentrate = adj.adjustmentrate;
-        planttree.adjustment = adj.adjustment;
-        //calculate marketvalue 
+		planttree.adjustmentrate = 0.0
+		planttree.adjustment 	 = 0.0
+        
+		def rysetting = em.sqlContext.createNamedQuery( 'landrpu:getRPTSetting' ).singleResult;
+    	if( rysetting.adjustplanttree == 1 ){
+			def totallandbmv 	  = landdetails.basemarketvalue.sum()
+			def totalvalueadj     = landdetails.landvalueadjustment.sum()
+			def totalactualuseadj = landdetails.actualuseadjustment.sum()
+		
+			totallandbmv 		= ( totallandbmv ? totallandbmv : 0.0 )
+			totalvalueadj 		= ( totalvalueadj ? totalvalueadj : 0.0 )
+			totalactualuseadj 	= ( totalactualuseadj ? totalactualuseadj : 0.0 )
+			def totallandadj  	= totalvalueadj + totalactualuseadj 
+			
+			if( totallandbmv > 0 ){
+				planttree.adjustmentrate = ( totallandadj / totallandbmv ) * 100;
+				planttree.adjustment 	 = numberSvc.round( planttree.basemarketvalue * planttree.adjustmentrate / 100 )
+			}
+		}
+        
+		//calculate marketvalue 
         planttree.marketvalue = numberSvc.round( planttree.basemarketvalue + planttree.adjustment )
         //calculate assessedvalue
         planttree.assessedvalue = numberSvc.roundToTen(planttree.marketvalue * planttree.assesslevel / 100.0 )

@@ -85,6 +85,7 @@ public class CollectionSummaryPage extends javax.swing.JPanel {
         xActionBar1.setDynamic(true);
         xActionBar1.setName("formActions");
         xActionBar1.setPreferredSize(new java.awt.Dimension(61, 28));
+        xActionBar1.setUseToolBar(false);
         jPanel3.add(xActionBar1, java.awt.BorderLayout.CENTER);
 
         formPanel2.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));

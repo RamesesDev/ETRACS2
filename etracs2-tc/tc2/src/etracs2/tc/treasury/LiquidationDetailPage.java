@@ -36,9 +36,6 @@ public class LiquidationDetailPage extends javax.swing.JPanel {
         xLabel1 = new com.rameses.rcp.control.XLabel();
         xLabel2 = new com.rameses.rcp.control.XLabel();
         xLabel3 = new com.rameses.rcp.control.XLabel();
-        jPanel3 = new javax.swing.JPanel();
-        formPanel2 = new com.rameses.rcp.util.FormPanel();
-        xLabel4 = new com.rameses.rcp.control.XLabel();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -107,26 +104,6 @@ public class LiquidationDetailPage extends javax.swing.JPanel {
 
         jPanel2.add(formPanel1, java.awt.BorderLayout.NORTH);
 
-        jPanel3.setLayout(new java.awt.BorderLayout());
-
-        formPanel2.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
-        formPanel2.setCaptionFont(new java.awt.Font("Arial", 1, 14));
-        formPanel2.setPreferredSize(new java.awt.Dimension(280, 32));
-        xLabel4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        xLabel4.setForeground(new java.awt.Color(153, 0, 0));
-        xLabel4.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        xLabel4.setCaption("Total Collection");
-        xLabel4.setCaptionWidth(130);
-        xLabel4.setFont(new java.awt.Font("Arial", 1, 14));
-        xLabel4.setName("amount");
-        xLabel4.setPadding(new java.awt.Insets(1, 3, 1, 5));
-        xLabel4.setPreferredSize(new java.awt.Dimension(0, 22));
-        formPanel2.add(xLabel4);
-
-        jPanel3.add(formPanel2, java.awt.BorderLayout.EAST);
-
-        jPanel2.add(jPanel3, java.awt.BorderLayout.SOUTH);
-
         jPanel1.add(jPanel2, java.awt.BorderLayout.CENTER);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
@@ -136,10 +113,8 @@ public class LiquidationDetailPage extends javax.swing.JPanel {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.rameses.rcp.util.FormPanel formPanel1;
-    private com.rameses.rcp.util.FormPanel formPanel2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private com.rameses.rcp.control.XDataTable xDataTable1;
@@ -147,7 +122,6 @@ public class LiquidationDetailPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
-    private com.rameses.rcp.control.XLabel xLabel4;
     // End of variables declaration//GEN-END:variables
     
 }

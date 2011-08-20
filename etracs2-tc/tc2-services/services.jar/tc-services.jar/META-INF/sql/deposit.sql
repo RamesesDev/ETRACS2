@@ -21,7 +21,7 @@ SELECT docstate FROM deposit WHERE objid = $P{objid}
 [getOpenLiquidations] 
 SELECT 
 	objid, txnno, txndate, amount, 
-	liquidatingofficerid, liquidatingofficername, '<NOTSET>' AS liquidatingofficertitle 
+	liquidatingofficerid, liquidatingofficername, liquidatingofficertitle 
 FROM liquidationlist 
 WHERE docstate = 'OPEN'  
 
@@ -66,17 +66,15 @@ ORDER BY paytype, particulars
 [depositOpenLiquidation]
 UPDATE liquidation SET 
 	docstate  = 'CLOSED', 
-	depositid = $P{depositid}, 
-	depositedbyname = $P{depositedbyname}, 
-	depositedbytitle = $P{depositedbytitle}  
+	depositid = $P{depositid},
+	dtdeposited = $P{dtdeposited}  
 WHERE docstate = 'OPEN'	 
 
 [depositOpenLiquidationList]
 UPDATE liquidationlist SET 
 	docstate  = 'CLOSED', 
 	depositid = $P{depositid}, 
-	depositedbyname = $P{depositedbyname}, 
-	depositedbytitle = $P{depositedbytitle}  
+	dtdeposited = $P{dtdeposited} 
 WHERE docstate = 'OPEN'	 
 
-[]
+
