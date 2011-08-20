@@ -40,6 +40,7 @@ public class RPTBillingController  {
     
     def parsedate
     def bill
+    def taxpayer 
     
     void init() {
         parsedate = dateSvc.parseCurrentDate()
@@ -63,17 +64,18 @@ public class RPTBillingController  {
         return 'default' 
     }
     
-    def lookupTaxpayer() {
-        return InvokerUtil.lookupOpener('entity.lookup', [
-            searchText : bill.taxpayername,
-            onselect   : { entity ->
-                bill.taxpayerid         = entity.objid
-                bill.taxpayername       = entity.entityname
-                bill.taxpayeraddress    = entity.entityaddress
-                binding.refresh('bill.taxpayer.*')
-            }
-        ]) 
+    def getLookupTaxpayer() {
+        return InvokerUtil.lookupOpener('entity.lookup', [:] )
     }
+    
+    void setTaxpayer( entity ) {
+        this.taxpayer           = entity 
+        bill.taxpayerid         = entity?.objid
+        bill.taxpayername       = entity?.entityname
+        bill.taxpayeraddress    = entity?.entityaddress
+        binding.refresh('bill.taxpayer.*')
+    }
+    
     void buildBillReportInfo(){
         if( bill.billdate ) bill.billdate = dateSvc.parse( 'yyyy-MM-dd', bill.billdate )
         if( bill.advancepayment && bill.billdate <= (parsedate.date - 1 ))  {

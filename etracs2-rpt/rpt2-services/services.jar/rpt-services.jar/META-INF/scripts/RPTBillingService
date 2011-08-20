@@ -44,7 +44,11 @@ public class RPTBillingService
     public List getOpenLedgersByTaxpayerId( bill ) {
         def dt = dateSvc.parseDate( bill.billdate, null )
         def params = [ taxpayerid:bill.taxpayerid, currentyr:dt.year ]
-        return em.sqlContext.createNamedQuery('rptbill:getOpenLedgersByTaxpayerId').setParameters( params ).resultList
+        def list = em.sqlContext.createNamedQuery('rptbill:getOpenLedgersByTaxpayerId').setParameters( params ).resultList
+		//
+		//include properties paid for this taxpayer  ( property payer )
+		list += em.sqlContext.createNamedQuery('rptbill:getOpenLedgersByPropertyPayer').setParameters( params ).resultList 
+		return list 
     }
     
     @ProxyMethod

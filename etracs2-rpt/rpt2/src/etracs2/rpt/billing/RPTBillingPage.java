@@ -30,7 +30,7 @@ public class RPTBillingPage extends javax.swing.JPanel {
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
         jPanel1 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xLabel1 = new com.rameses.rcp.control.XLabel();
         xSeparator1 = new com.rameses.rcp.control.XSeparator();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
@@ -48,14 +48,15 @@ public class RPTBillingPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("Initial Billing Information");
         formPanel1.setBorder(xTitledBorder1);
-        xActionTextField1.setActionName("lookupTaxpayer");
-        xActionTextField1.setCaption("Taxpayer");
-        xActionTextField1.setCaptionWidth(90);
-        xActionTextField1.setIndex(-100);
-        xActionTextField1.setName("bill.taxpayername");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
-        xActionTextField1.setRequired(true);
-        formPanel1.add(xActionTextField1);
+        xLookupField1.setCaption("Taxpayer");
+        xLookupField1.setCaptionWidth(90);
+        xLookupField1.setExpression(" #{entityname}");
+        xLookupField1.setHandler("lookupTaxpayer");
+        xLookupField1.setIndex(-100);
+        xLookupField1.setName("taxpayer");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField1.setRequired(true);
+        formPanel1.add(xLookupField1);
 
         xLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel1.setCaption("Address");
@@ -152,11 +153,11 @@ public class RPTBillingPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel1;
     private javax.swing.JPanel jPanel1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XCheckBox xCheckBox1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XDateField xDateField1;
     private com.rameses.rcp.control.XLabel xLabel1;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XSeparator xSeparator1;
     private com.rameses.rcp.control.XSeparator xSeparator2;
