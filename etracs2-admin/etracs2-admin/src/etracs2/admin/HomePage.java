@@ -46,30 +46,30 @@ public class HomePage extends javax.swing.JPanel {
         setBackground(new java.awt.Color(255, 255, 255));
         jPanel2.setLayout(null);
 
-        jPanel2.setPreferredSize(new java.awt.Dimension(100, 110));
+        jPanel2.setPreferredSize(new java.awt.Dimension(100, 130));
         jLabel1.setFont(new java.awt.Font("Tahoma", 1, 18));
         jLabel1.setForeground(new java.awt.Color(0, 51, 153));
         jLabel1.setText("Welcome to");
         jPanel2.add(jLabel1);
-        jLabel1.setBounds(132, 24, 206, 22);
+        jLabel1.setBounds(124, 26, 206, 26);
 
         jLabel3.setBackground(new java.awt.Color(0, 51, 153));
         jLabel3.setOpaque(true);
         jLabel3.setPreferredSize(new java.awt.Dimension(300, 14));
         jPanel2.add(jLabel3);
-        jLabel3.setBounds(-2, 94, 1532, 6);
+        jLabel3.setBounds(-2, 104, 1532, 6);
 
-        jLabel2.setFont(new java.awt.Font("Tahoma", 1, 48));
+        jLabel2.setFont(new java.awt.Font("Tahoma", 1, 56));
         jLabel2.setForeground(new java.awt.Color(0, 51, 153));
         jLabel2.setText("ETRACS");
         jPanel2.add(jLabel2);
-        jLabel2.setBounds(126, 40, 210, 58);
+        jLabel2.setBounds(118, 42, 290, 66);
 
         jLabel4.setFont(new java.awt.Font("Tahoma", 1, 14));
         jLabel4.setForeground(new java.awt.Color(0, 51, 153));
         jLabel4.setText("version 2.0");
         jPanel2.add(jLabel4);
-        jLabel4.setBounds(326, 72, 206, 22);
+        jLabel4.setBounds(344, 78, 206, 22);
 
         jPanel2.add(jPanel4);
         jPanel4.setBounds(174, -48, 10, 10);
