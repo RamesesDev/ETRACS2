@@ -86,3 +86,13 @@ WHERE barangayid = $P{barangayid}
 ORDER BY fullpin   
 
   
+[getORF]  
+SELECT
+	barangay, cadastrallotno, classcode, 
+	CASE WHEN claimno = '-' THEN fullpin ELSE CONCAT(fullpin, '-', claimno) END AS fullpin, 
+	prevtdno, taxpayeraddress, taxpayername, tdno, 
+	totalareasqm, totalareaha, totalav, txntype 
+FROM faaslist   
+WHERE taxpayerid = $P{taxpayerid} 
+  AND docstate = 'CURRENT'  
+ORDER BY fullpin   

@@ -86,7 +86,20 @@ class RPTReportService
 		return list 
 	}
 	
+	@ProxyMethod
+	public def generateORF( taxpayerid )  {
+		def list = em.sqlContext.createNamedQuery('rptreport:getORF').setParameter( 'taxpayerid', taxpayerid ).resultList
+		if( ! list ) throw new Exception('Records not found.')
+		def total = 0
+		list.each {
+			total += it.totalav 
+			it.runningtotal = total 
+		}
+		return list 
+	}
 	
+	
+
 	
 	
 	@ProxyMethod
