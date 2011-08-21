@@ -62,6 +62,7 @@ public class RPTLedgerMgmtPage extends javax.swing.JPanel {
         formPanel1.setPadding(new java.awt.Insets(0, 0, 0, 0));
         xComboBox1.setCaption("State");
         xComboBox1.setCaptionWidth(50);
+        xComboBox1.setImmediate(true);
         xComboBox1.setItems("states");
         xComboBox1.setName("docstate");
         xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));
