@@ -32,9 +32,6 @@ public class RPTTransactionPage extends javax.swing.JPanel {
         xButton1.setText("Process");
         xButton1.setName("process");
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("Real Property Transactions");
-        jScrollPane1.setBorder(xTitledBorder1);
         xList1.setExpression("#{caption}");
         xList1.setItems("openerList");
         xList1.setName("opener");

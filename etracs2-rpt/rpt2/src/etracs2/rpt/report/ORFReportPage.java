@@ -37,6 +37,7 @@ public class ORFReportPage extends javax.swing.JPanel {
         xLookupField1.setHandler("lookupTaxpayer");
         xLookupField1.setName("taxpayer");
         xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField1.setRequired(true);
         formPanel1.add(xLookupField1);
 
         com.rameses.rcp.control.border.XLineBorder xLineBorder1 = new com.rameses.rcp.control.border.XLineBorder();
