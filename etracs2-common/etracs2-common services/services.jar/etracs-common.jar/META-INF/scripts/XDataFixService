@@ -1,0 +1,20 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class XDataFixService
+{
+	@PersistenceContext("main")
+	def em;
+
+	@ProxyMethod
+	public void updateFaasListInfo() {
+		//update memoranda, exemptid, exemptcode from faasid
+		def faaslist = em.sqlContext.createQuery('SELECT objid FROM faaslist WHERE LENGTH(memoranda) = 0 ' ).resultList
+		faaslist.each{ 
+			println it
+			def faas = em.read('faas:faas', it )
+			em.update('faas:faaslist', faas )
+		}
+	} 
+}
+	
