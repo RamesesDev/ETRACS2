@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
     <invokers>
-        <invoker type="rptcertifications" caption="Latest And Existing Propery" target="window" index="6" />
-        <invoker type="latestexistproperty.view"  caption="Latest And Existing Propery" index="6" action="doPreview" />
+        <invoker type="rptcertifications" caption="Latest And Existing Propery" target="window" index="6" permission="latestexistproperty.open" />
+        <invoker type="latestexistproperty.view"  caption="Latest And Existing Propery" index="6" action="doPreview" permission="latestexistproperty.view" />
         
        <!-- default -->
         <invoker type="formActions" action="_close"     caption="Cancel"    shourtcut="c" mnemonic="c"  index="0"  visibleWhen="#{mode == '_default'}" immediate="true" icon="images/cancel.png" />
         <invoker type="formActions" action="doPreview"  caption="Preview"   shourtcut="v" mnemonic="v"  index="2"  visibleWhen="#{mode == 'certified'}" icon="images/preview.png" />
-        <invoker type="formActions" action="doSave"     caption="Save"      shourtcut="s" mnemonic="s"  index="3"  visibleWhen="#{mode == '_default'}" icon="images/save.png" />
+        <invoker type="formActions" action="doSave"     caption="Save"      shourtcut="s" mnemonic="s"  index="3"  visibleWhen="#{mode == '_default'}" icon="images/save.png" permission="latestexistproperty.create"/>
         
         <!-- print preview -->
         <invoker type="formActions" action="doClose"  caption="Close"  shortcut="ctrl c" mnemonic="c"  index="0" visibleWhen="#{mode != '_default'}" icon="images/cancel.png" />
@@ -40,8 +40,8 @@
             
             void setTdno( o ){
                 tdno = o;
-                certification.tdno = tdno;
                 certification.putAll( o );
+                certification.requestedby = o.taxpayername;
                 binding.refresh("certification.*");
             }
             
@@ -75,11 +75,10 @@
                 return "preview";
             }
             
-            public def doSave(){
+            public void doSave(){
                 certification.putAll( svc.fetchDataLatestExistTDNoProperty(certification) );
                 svc.doSave( certification );
                 mode = 'certified'
-                MsgBox.alert( 'Data Succesfuly Saved. ' );
             }
             
             public def doClose(){
