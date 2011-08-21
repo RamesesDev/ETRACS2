@@ -2,6 +2,11 @@
     <invokers>
         <invoker type="rptreport"                   action="init" opener="assessmentroll" caption="Assessment Roll" target="window" permission="rptreport.assessmentroll"/>
         <invoker type="rptreport.assessmentroll"    action="init" caption="Assessment Roll" target="window" permission="rptreport.assessmentroll"/>
+        
+        <invoker type="formActions" action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
+        <invoker type="formActions" action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
+        <invoker type="formActions" action="preview" caption="Preview" mnemonic="v"             icon="images/doc-view.png"/>
+        
         <invoker type="previewActions"              action="back" caption="Back" icon="images/back.png" immediate="true" />
     </invokers>
     <code>
@@ -49,10 +54,13 @@ class AssessmentRollController
     }
     
     void print(){
-        if( taxability == 'TAXABLE' ) 
+        generateReport()
+        if( taxability == 'TAXABLE' ) {
             ReportUtil.print( reporttaxable.report, true )
-        else
+        }
+        else {
             ReportUtil.print( reportexempt.report, true )
+        }
     }
     
     def getReport() {
