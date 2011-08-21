@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
     <invokers>
-        <invoker type="rptcertifications" caption="With Improvement ( Land )" target="window" index="7" permission1="" />
-        <invoker type="withimproveland.view"  caption="With Improvement ( Land )" index="7" action="doPreview" />
+        <invoker type="rptcertifications" caption="With Improvement ( Land )" target="window" index="7" permission="withimproveland.open" />
+        <invoker type="withimproveland.view"  caption="With Improvement ( Land )" index="7" action="doPreview" permission="withimproveland.view" />
         
         <!-- default -->
         <invoker type="formActions" action="_close"     caption="Cancel"    shourtcut="c" mnemonic="c"  index="0"  visibleWhen="#{mode == '_default'}" immediate="true" icon="images/cancel.png" />
         <invoker type="formActions" action="doPreview"  caption="Preview"   shourtcut="v" mnemonic="v"  index="2"  visibleWhen="#{mode == 'certified'}" icon="images/preview.png" />
-        <invoker type="formActions" action="doSave"     caption="Save"      shourtcut="s" mnemonic="s"  index="3"  visibleWhen="#{mode == '_default'}" icon="images/save.png" />
+        <invoker type="formActions" action="doSave"     caption="Save"      shourtcut="s" mnemonic="s"  index="3"  visibleWhen="#{mode == '_default'}" icon="images/save.png" permission="withimproveland.create" />
         
         <!-- print preview -->
         <invoker type="formActions" action="doClose"  caption="Close"  shortcut="ctrl c" mnemonic="c"  index="0" visibleWhen="#{mode != '_default'}" icon="images/cancel.png" />
@@ -78,11 +78,10 @@
                 return "print";
             }
             
-            public def doSave(){
+            public void doSave(){
                 certification.putAll( svc.fetchDataWImproveLand(certification) );
                 svc.doSave( certification );
                 mode='certified'
-                MsgBox.alert( 'Data Successfuly Saved. ' );
             }
             
             public def doClose(){

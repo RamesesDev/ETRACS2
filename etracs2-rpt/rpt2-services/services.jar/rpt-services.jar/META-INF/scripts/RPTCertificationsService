@@ -51,7 +51,6 @@ class RPTCertificationsService
 			param.td.tdno = param.tdno;
 			param.td.rpu.totalAMV = param.totalmv; //total market value.
 			param.td.rpu.pin = param.fullpin;
-			param.td.each(){ println it}
 			param.putAll( fetchItemHeaders(param) );
 		}
 		else
@@ -93,7 +92,7 @@ class RPTCertificationsService
         return param;
     }
     
-    @ProxyMethod /** get Land Holding **/
+    @ProxyMethod /** Land Holding **/
 	public def fetchDataLandHolding( param ) {
 		doValiDate( param ); 
 		def taxpayer = em.sqlContext.createNamedQuery( 'rptcertification:searchByTaxpayerid' ).setParameters( param ).singleResult;        

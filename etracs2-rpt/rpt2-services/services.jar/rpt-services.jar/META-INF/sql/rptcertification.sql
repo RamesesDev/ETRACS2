@@ -28,8 +28,8 @@ ORDER BY docno
 
 [fetchData]
 SELECT 
-	objid, tdno, taxpayername, titleno, cadastrallotno, barangay, fullpin, rputype,
-	totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
+	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
 FROM faaslist 
 WHERE taxpayerid = $P{taxpayerid} 
 	AND docstate = 'CURRENT' 
@@ -37,8 +37,8 @@ WHERE taxpayerid = $P{taxpayerid}
 
 [getLandHolding]
 SELECT 
-	objid, tdno, taxpayername, titleno, cadastrallotno, barangay, fullpin, rputype,
-	totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
+	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
 FROM faaslist 
 WHERE taxpayerid = $P{taxpayerid} 
   AND docstate = 'CURRENT' 
@@ -47,8 +47,8 @@ WHERE taxpayerid = $P{taxpayerid}
 
 [getMultipleProperty]  
 SELECT	
-	objid, tdno, taxpayername, titleno, cadastrallotno, barangay, fullpin, rputype,
-	totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
+	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
 FROM faaslist 
 WHERE taxpayerid = $P{taxpayerid} 
 	AND docstate = 'CURRENT'  
@@ -56,8 +56,8 @@ WHERE taxpayerid = $P{taxpayerid}
 
 [getNoImprovements]
 SELECT 
-	objid, tdno, taxpayername, titleno, cadastrallotno, barangay, fullpin, rputype,
-	totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
+	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
 FROM faaslist 
 WHERE taxpayerid = $P{taxpayerid} 
 	AND docstate = 'CURRENT' 
@@ -66,16 +66,16 @@ WHERE taxpayerid = $P{taxpayerid}
 	
 [getImprovementsTDNo]
 SELECT 
-	objid, tdno, taxpayername, titleno, cadastrallotno, barangay, fullpin, rputype,
-	totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
+	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
 FROM faaslist 
 WHERE tdno = $P{tdno} 
 	AND landfaasid = $P{objid}  
 
 [getWImproveLand]
 SELECT	
-	objid, tdno, taxpayername, titleno, cadastrallotno, barangay, fullpin, rputype,
-	totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
+	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
 FROM faaslist
 WHERE taxpayerid = $P{taxpayerid}
 	AND docstate = 'CURRENT' 

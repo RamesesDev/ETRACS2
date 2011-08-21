@@ -30,6 +30,9 @@ public class SystemInfoPage extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
+        xPanel1 = new com.rameses.rcp.control.XPanel();
+        xButton1 = new com.rameses.rcp.control.XButton();
+        xButton2 = new com.rameses.rcp.control.XButton();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -43,11 +46,40 @@ public class SystemInfoPage extends javax.swing.JPanel {
         xDataTable1.setShowRowHeader(true);
         add(xDataTable1, java.awt.BorderLayout.CENTER);
 
+        xButton1.setMnemonic('o');
+        xButton1.setText("Open");
+        xButton1.setName("doOpen");
+
+        xButton2.setMnemonic('c');
+        xButton2.setText("Close");
+        xButton2.setName("_close");
+
+        org.jdesktop.layout.GroupLayout xPanel1Layout = new org.jdesktop.layout.GroupLayout(xPanel1);
+        xPanel1.setLayout(xPanel1Layout);
+        xPanel1Layout.setHorizontalGroup(
+            xPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(xPanel1Layout.createSequentialGroup()
+                .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(286, Short.MAX_VALUE))
+        );
+        xPanel1Layout.setVerticalGroup(
+            xPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(xPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+        );
+        add(xPanel1, java.awt.BorderLayout.NORTH);
+
     }// </editor-fold>//GEN-END:initComponents
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private com.rameses.rcp.control.XButton xButton1;
+    private com.rameses.rcp.control.XButton xButton2;
     private com.rameses.rcp.control.XDataTable xDataTable1;
+    private com.rameses.rcp.control.XPanel xPanel1;
     // End of variables declaration//GEN-END:variables
     
 }

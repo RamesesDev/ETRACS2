@@ -68,7 +68,7 @@ public class VarsPage extends javax.swing.JPanel {
         xButton2.setMnemonic('u');
         xButton2.setToolTipText("Cancel");
         xButton2.setImmediate(true);
-        xButton2.setName("doClose");
+        xButton2.setName("_close");
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
