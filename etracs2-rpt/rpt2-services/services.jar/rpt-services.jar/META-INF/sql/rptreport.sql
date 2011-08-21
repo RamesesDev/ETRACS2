@@ -72,4 +72,17 @@ WHERE barangayid = $P{barangayid}
   AND taxable = 0  
 ORDER BY fullpin     
 
+
+[getTmcrList]
+SELECT
+	barangay, cadastrallotno, classcode, docstate,  
+	CASE WHEN claimno = '-' THEN fullpin ELSE CONCAT(fullpin, '-', claimno) END AS fullpin, 
+	memoranda, ownername, owneraddress, rputype, section, surveyno, 
+	tdno, titleno, totalareasqm, totalareasqm, totalav, totalmv 
+FROM faaslist   
+WHERE barangayid = $P{barangayid} 
+  AND docstate = 'CURRENT'  
+  AND section LIKE $P{section} 
+ORDER BY fullpin   
+
   

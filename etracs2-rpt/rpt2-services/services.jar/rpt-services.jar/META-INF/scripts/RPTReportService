@@ -78,6 +78,14 @@ class RPTReportService
 		return list 
 	}
 	
+	@ProxyMethod
+	public def generateTMCR( params )  {
+		resolveSection( params )
+		def list = em.sqlContext.createNamedQuery('rptreport:getTmcrList').setParameters( params ).resultList
+		if( ! list ) throw new Exception('Records not found.')
+		return list 
+	}
+	
 	
 	
 	
@@ -92,8 +100,14 @@ class RPTReportService
 			params.section = '%' 
 		}
 		else {
-			def sectionlen = var.pin_section_length
-			params.section = (params.section+'').padLeft( sectionLen, '0' )
+			int sectionlen  = 0
+			try {
+				sectionlen = Integer.parseInt( var.pin_section_length )
+			}
+			catch( e ) {
+				sectionlen = 3 
+			}
+			params.section = (params.section+'').padLeft( sectionlen, '0' )
 		}
 	}
 }

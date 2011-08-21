@@ -1,0 +1,73 @@
+<workunit>
+    <invokers>
+        <invoker type="rptreport"         action="init" opener="tmcr" caption="Tax Mapping Control Roll" target="window" permission="rptreport.tmcr" index="3" />
+        <invoker type="rptreport.tmcr"    action="init" caption="Tax Mapping Control Roll" permission="rptreport.tmcr"/>
+        
+        <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
+        <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
+        <invoker type="formActions"     action="preview" caption="Preview" mnemonic="v"             icon="images/doc-view.png"/>
+        
+        <invoker type="previewActions"  action="back" caption="Back" icon="images/back.png" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class TMCRController
+{
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('RPTReportService') 
+    def svc 
+    
+    def barangay
+    def section
+    def reportdata
+    
+    void init() {
+    }
+
+    def preview() {
+        generateReport()
+        return 'preview' 
+    }
+    
+    void generateReport() {
+        def params = [ barangayid : barangay.objid, section : section ]
+        reportdata = svc.generateTMCR( params )
+        report.viewReport()
+    }
+    
+    void print(){
+        generateReport()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def report = [
+        getReportName : { 'tmcr' },
+        getReportData : { return reportdata },
+        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+    ] as ServerReportModel;
+        
+    def back() {
+        return 'default' 
+    }
+    
+    List getBarangaylist() {
+        return svc.getBarangayList()
+    }
+    
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.rpt.report.TMCRReportPage" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>
