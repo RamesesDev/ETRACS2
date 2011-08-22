@@ -6,10 +6,13 @@
 
 package etracs2.bp;
 
+import com.rameses.rcp.ui.annotations.StyleSheet;
+
 /**
  *
  * @author  jzamora
  */
+@StyleSheet("etracs2/bp/BPTransactionPage.style")
 public class BPTransactionPage extends javax.swing.JPanel {
     
     /** Creates new form RPTTransactionPage */
@@ -30,6 +33,7 @@ public class BPTransactionPage extends javax.swing.JPanel {
 
         xButton1.setMnemonic('p');
         xButton1.setText("Process");
+        xButton1.setDepends(new String[] {"opener"});
         xButton1.setName("process");
 
         xList1.setExpression("#{caption}");
