@@ -87,11 +87,11 @@ public class RPTCertificationPage extends javax.swing.JPanel {
         xPanel1.add(xSeparator1);
         xSeparator1.setBounds(90, 252, 440, 30);
 
-        xLookupField1.setCaption("Tax payer");
+        xLookupField1.setCaption("Taxpayer");
         xLookupField1.setCaptionWidth(135);
         xLookupField1.setExpression("#{entityname}");
         xLookupField1.setHandler("lookupEntity");
-        xLookupField1.setName("taxpayername");
+        xLookupField1.setName("taxpayer");
         xLookupField1.setPreferredSize(new java.awt.Dimension(0, 21));
         xLookupField1.setRequired(true);
         formPanel1.add(xLookupField1);

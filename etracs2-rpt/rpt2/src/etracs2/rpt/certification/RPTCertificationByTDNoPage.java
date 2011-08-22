@@ -81,7 +81,7 @@ public class RPTCertificationByTDNoPage extends javax.swing.JPanel {
         xSeparator1.setLayout(xSeparator1Layout);
         xSeparator1Layout.setHorizontalGroup(
             xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 432, Short.MAX_VALUE)
+            .add(0, 430, Short.MAX_VALUE)
         );
         xSeparator1Layout.setVerticalGroup(
             xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -94,7 +94,7 @@ public class RPTCertificationByTDNoPage extends javax.swing.JPanel {
         xLookupField1.setCaptionWidth(135);
         xLookupField1.setExpression("#{tdno}");
         xLookupField1.setHandler("lookupFaas");
-        xLookupField1.setName("tdno");
+        xLookupField1.setName("faas");
         xLookupField1.setPreferredSize(new java.awt.Dimension(0, 21));
         xLookupField1.setRequired(true);
         formPanel1.add(xLookupField1);

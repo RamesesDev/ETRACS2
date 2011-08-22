@@ -99,8 +99,8 @@ class RPTCertificationsService
 		if( !taxpayer ) 
 			throw new Exception( "There are no Property defined for taxpayer: ${param.taxpayername}. " );
 		
-		def getLandData = em.sqlContext.createNamedQuery('rptcertification:getLandHolding').setParameters( param ).resultList
-		if( !getLandData )
+		def getData = em.sqlContext.createNamedQuery('rptcertification:getLandHolding').setParameters( param ).resultList
+		if( !getData )
 			throw new Exception( "There are no registered lands for taxpayer: ${param.taxpayername}. " );
 				
 		/** header **/
@@ -111,14 +111,23 @@ class RPTCertificationsService
 		param.putAll( fetchItemHeaders(param) );
 		
     	/** items **/
-		param.items = doSerializeData( getLandData );
-		param.footnotes = param.items.findAll{ !it.ownername.equals(param.taxpayerName) }
-		param.footnotes.groupBy{ it.ownername }
 		def i = 0;
+		param.items = doSerializeData( getData );
+		param.footnote = param.items.findAll{ it.owner != param.taxpayerName }.groupBy{ it.ownername}
+		param.footnote = param.footnote.collect{ [footnote: ++i, ownername: it.key] }
+		println param.footnote
+		param.items = param.items.each(){ o ->
+			param.footnote.each(){
+				if( o.ownername == it.ownername && o.ownername != param.taxpayerName )
+					o.footnote = it.footnote + ''
+			}  
+		}
+		i = 0
+		
+		param.footnotes = param.items.findAll{ !it.ownername.equals(param.taxpayerName) }
+		param.footnotes = param.footnotes.groupBy{ it.ownername }.collect{ [footnote: it.key] }
 		param.footnotes.each(){
-			i = ++i;
-			it.footno = i.toString();
-			it.footnote = it.ownername;
+			it.footno = ++i + '';
 		}
 		
 		return param 
@@ -133,7 +142,8 @@ class RPTCertificationsService
 		if( !taxpayer ) 
 			throw new Exception( "There are no Property defined for taxpayer: ${param.taxpayername}. " );
         
-        def getMultipleData = em.sqlContext.createNamedQuery( 'rptcertification:getMultipleProperty' ).setParameters( param ).resultList;
+        def getData = em.sqlContext.createNamedQuery( 'rptcertification:getMultipleProperty' ).setParameters( param ).resultList;
+		
 		/** header **/
 		param.opener = 'multipleproperty';
 		param.title = 'MULTIPLE_PROPERTY';
@@ -142,15 +152,24 @@ class RPTCertificationsService
 		param.putAll( fetchItemHeaders(param) );
 				
 		/** items **/
-		param.items = doSerializeData( getMultipleData );
-		param.footnotes = param.items.findAll{ !it.ownername.equals(param.taxpayerName) }
-		param.footnotes.groupBy{ it.ownername }
 		def i = 0;
+		param.items = doSerializeData( getData );
+		param.footnote = param.items.findAll{ it.owner != param.taxpayerName }.groupBy{ it.ownername}
+		param.footnote = param.footnote.collect{ [footnote: ++i, ownername: it.key] }
+		println param.footnote
+		param.items = param.items.each(){ o ->
+			param.footnote.each(){
+				if( o.ownername == it.ownername)
+					o.footnote = it.footnote + ''
+			}  
+		}
+		i = 0
+		
+		param.footnotes = param.items.findAll{ !it.ownername.equals(param.taxpayerName) }
+		param.footnotes = param.footnotes.groupBy{ it.ownername }.collect{ [footnote: it.key] }
 		param.footnotes.each(){
-			i = ++i;
-			it.footno = i.toString();
-			it.footnote = it.ownername;
-		} 
+			it.footno = ++i + '';
+		}
 		
         return param;
 	}
@@ -166,10 +185,7 @@ class RPTCertificationsService
     	
     	def getData = em.sqlContext.createNamedQuery( 'rptcertification:getNoImprovements' ).setParameters( param ).resultList;
     	if( !getData )
-		    throw new Exception( "There are no registered lands for taxpayer: ${param.taxpayername}. " );
-		
-		if( !getData.findAll(){ !it.landfaasid } )
-			throw new Exception( "There are no Land Properties with no improvements for taxpayer: ${param.taxpayername}. " ); 
+		    throw new Exception( "There are no Land Properties with no improvements for taxpayer: ${param.taxpayername}. " ); 
 		
 		/** header **/
 		param.opener = 'noimprovement';
@@ -179,16 +195,24 @@ class RPTCertificationsService
 		param.putAll( fetchItemHeaders(param) );
 		
 		/** items **/
-		getData = getData.findAll(){ !it.landfaasid }; 
-		param.items = doSerializeData( getData );
-		param.footnotes = param.items.findAll{ !it.ownername.equals(param.taxpayerName) }
-		param.footnotes.groupBy{ it.ownername }
 		def i = 0;
+		param.items = doSerializeData( getData );
+		param.footnote = param.items.findAll{ it.owner != param.taxpayerName }.groupBy{ it.ownername}
+		param.footnote = param.footnote.collect{ [footnote: ++i, ownername: it.key] }
+		println param.footnote
+		param.items = param.items.each(){ o ->
+			param.footnote.each(){
+				if( o.ownername == it.ownername)
+					o.footnote = it.footnote + ''
+			}  
+		}
+		i = 0
+		
+		param.footnotes = param.items.findAll{ !it.ownername.equals(param.taxpayerName) }
+		param.footnotes = param.footnotes.groupBy{ it.ownername }.collect{ [footnote: it.key] }
 		param.footnotes.each(){
-			i = ++i;
-			it.footno = i.toString();
-			it.footnote = it.ownername;
-		}  
+			it.footno = ++i + '';
+		}
 		
 		return param;
 	}
@@ -204,17 +228,16 @@ class RPTCertificationsService
 			if( !'CURRENT'.equals(param.docstate) )
 				throw new Exception( "TD No. ${param.tdno} docstate: is ${param.docstate}. Only CURRENT is allowed." );    
 			
-			if( !'land'.equals(param.rputype) ) 
-				throw new Exception( "TD No. ${param.tdno} is a ${param.rputype}. Only LAND property is allowed." );    
+			def getData = em.sqlContext.createNamedQuery( 'rptcertification:getNoImprovementsTDNo' ).setParameters( param ).singleResult;	
+			if( !getData )
+				throw new Exception( "There's an Improvement of Property for taxpayer: ${param.taxpayername}. with TD No.: ${param.tdno} " );
 			
-			def getData = em.sqlContext.createNamedQuery( 'rptcertification:getImprovementsTDNo' ).setParameters( param ).singleResult;	
-			if( getData )
-				throw new Exception( "There's an Improvement of Property for taxpayer: ${param.taxpayername}. " );
 		}
 		
 		/** header **/
 		param.opener = 'noimprovementbytdno';
 		param.title = 'NO_IMPROVEMENT_TDNO';
+		param.faasid = param.objid;
 		param.docno = seqSvc.getNextFormattedSeries( SEQUENCE_KEY );
 		param.putAll( fetchDataHeaders(param) );
 
@@ -239,10 +262,9 @@ class RPTCertificationsService
 		}
 		
 		/** header **/
-		param.objid = getData.bjid;
 		param.opener = 'noencumbrancebytdno';
 		param.title = 'NO_ENCUMBRANCE_TDNO';
-		param.taxpayerName = param.taxpayername;
+		param.faasid = param.objid;
 		param.docno = seqSvc.getNextFormattedSeries( SEQUENCE_KEY );
 		param.putAll( fetchDataHeaders(param) );			
 
@@ -260,10 +282,13 @@ class RPTCertificationsService
 			
 			if( !'CURRENT'.equals(param.docstate) )
 				throw new Exception( "TD No. ${param.tdno} docstate: is ${param.docstate}. Only CURRENT is allowed." );    
+			
 		}
+		
 		/** header **/
 		param.opener = 'latestexistproperty';	
 		param.title = 'LATEST_EXIST_PROPERTY';
+		param.faasid = param.objid;
 		param.taxpayerName = param.taxpayername;
 		param.docno = seqSvc.getNextFormattedSeries( SEQUENCE_KEY );
 		param.putAll( fetchDataHeaders(param) );
@@ -273,20 +298,16 @@ class RPTCertificationsService
 	
 	@ProxyMethod /** With Improvement ( Land ) **/
 	public def fetchDataWImproveLand( def param ){
-		
 		doValiDate( param );        
 		def taxpayer = em.sqlContext.createNamedQuery( 'rptcertification:searchByTaxpayerid' ).setParameters( param ).singleResult;        
 		if( !taxpayer ) 
 			throw new Exception( "There are no Properties defined for taxpayer: ${param.taxpayername}. " );
 		
-		def getData = em.sqlContext.createNamedQuery( 'rptcertification:fetchData' ).setParameters( param ).resultList;
+		def getData = em.sqlContext.createNamedQuery( 'rptcertification:getWImproveLand' ).setParameters( param ).resultList;
 		
-		if( !getData )
-		    throw new Exception( "There are no registered lands for this taxpayer. " );
-		
-		if( !getData.findAll(){ it.landfaasid } )  
-            throw new Exception( "There's no Land Property with improvements for taxpayer: ${param.taxpayername}. " );
-		
+		if( !getData )  
+			throw new Exception( "There's no Land Property with improvements for taxpayer: ${param.taxpayername}. " );
+			
 	    /** header**/
 		param.opener = 'withimproveland';
 		param.title = 'WITH_IMPROVEMENT_LAND';
@@ -295,16 +316,25 @@ class RPTCertificationsService
 		param.putAll( fetchItemHeaders(param) );
 		
         /** items **/
-        getData = getData.findAll(){ it.landfaasid };
-		param.items = doSerializeData( getData );
-		param.footnotes = param.items.findAll{ !it.ownername.equals(param.taxpayerName) }
-		param.footnotes.groupBy{ it.ownername }
 		def i = 0;
+		param.items = doSerializeData( getData );
+		param.footnote = param.items.findAll{ it.owner != param.taxpayerName }.groupBy{ it.ownername}
+		param.footnote = param.footnote.collect{ [footnote: ++i, ownername: it.key] }
+		println param.footnote
+		param.items = param.items.each(){ o ->
+			param.footnote.each(){
+				if( o.ownername == it.ownername)
+					o.footnote = it.footnote + ''
+			}  
+		}
+		i = 0
+		
+		param.footnotes = param.items.findAll{ !it.ownername.equals(param.taxpayerName) }
+		param.footnotes = param.footnotes.groupBy{ it.ownername }.collect{ [footnote: it.key] }
 		param.footnotes.each(){
-			i = ++i;
-			it.footno = i.toString();
-			it.footnote = it.ownername;
-		}  
+			it.footno = ++i + '';
+		}
+			
 		return param;
 	}
 	
@@ -318,18 +348,17 @@ class RPTCertificationsService
 			
 			if( !'CURRENT'.equals(param.docstate) )
 				throw new Exception( "TD No. ${param.tdno} docstate: is ${param.docstate}. Only CURRENT is allowed." );    
-				
-			if( !'land'.equals(param.rputype) ) 
-				throw new Exception( "TD No. ${param.tdno} is a ${param.rputype}. Only LAND property is allowed." );    
 			
 			def getData = em.sqlContext.createNamedQuery( 'rptcertification:getImprovementsTDNo' ).setParameters( param ).singleResult;	
 			if( !getData )
-				throw new Exception( "There's no Improvement of Property for taxpayer: ${param.taxpayername}. " );
+				throw new Exception( "There's no Improvement of Property for taxpayer: ${param.taxpayername}. with TD No.: ${param.tdno} " );
+			
 		}
+		
 		/** header **/
-		param.objid = getData.objid;
 		param.opener = 'wimprovebytdno';
 		param.title = 'WITH_IMPROVEMENT_TDNO';
+		param.faasid = param.objid;
 		param.taxpayerName = param.taxpayername;
 		param.docno = seqSvc.getNextFormattedSeries( SEQUENCE_KEY );
 		param.putAll( fetchDataHeaders(param) );
@@ -339,7 +368,6 @@ class RPTCertificationsService
 	
     @ProxyMethod
     public def doSave( def certification ){
-    	certification.faasid = certification.objid;
         certification.objid = 'C' + new java.rmi.server.UID();
         certification.schemaname = SCHEMA_NAME;
         certification.schemaversion = SCHEMA_VERSION;
@@ -388,7 +416,7 @@ class RPTCertificationsService
 		def html = """
 			<html>
 				<body>
-					<h1> Select an Item(s). </h1>
+					<h1> Select an Item. </h1>
 				<body>
 			</html>
 		"""

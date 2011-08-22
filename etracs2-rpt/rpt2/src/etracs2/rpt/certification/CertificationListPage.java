@@ -77,11 +77,11 @@ public class CertificationListPage extends javax.swing.JPanel {
         xSubFormPanel1.setLayout(xSubFormPanel1Layout);
         xSubFormPanel1Layout.setHorizontalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 345, Short.MAX_VALUE)
+            .add(0, 0, Short.MAX_VALUE)
         );
         xSubFormPanel1Layout.setVerticalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 358, Short.MAX_VALUE)
+            .add(0, 243, Short.MAX_VALUE)
         );
         jPanel2.add(xSubFormPanel1, java.awt.BorderLayout.CENTER);
 
@@ -90,7 +90,8 @@ public class CertificationListPage extends javax.swing.JPanel {
         add(jSplitPane1, java.awt.BorderLayout.CENTER);
 
         xPanel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        xButton1.setText("xButton1");
+        xButton1.setMnemonic('c');
+        xButton1.setText("Close");
         xButton1.setName("_close");
 
         org.jdesktop.layout.GroupLayout xPanel1Layout = new org.jdesktop.layout.GroupLayout(xPanel1);
@@ -99,7 +100,7 @@ public class CertificationListPage extends javax.swing.JPanel {
             xPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(xPanel1Layout.createSequentialGroup()
                 .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(678, Short.MAX_VALUE))
+                .addContainerGap(337, Short.MAX_VALUE))
         );
         xPanel1Layout.setVerticalGroup(
             xPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)

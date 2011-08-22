@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="rptcertifications" caption="With Improvement ( Land )" target="window" index="7" permission="withimproveland.open" />
+        <invoker type="withimproveland.view"  caption="With Improvement ( Land )" index="7" action="doPreview" permission="withimproveland.view" />
+        
+        <!-- default -->
+        <invoker type="formActions" action="_close"     caption="Cancel"    shourtcut="c" mnemonic="c"  index="0"  visibleWhen="#{mode == '_default'}" immediate="true" icon="images/cancel.png" />
+        <invoker type="formActions" action="doPreview"  caption="Preview"   shourtcut="v" mnemonic="v"  index="2"  visibleWhen="#{mode == 'certified'}" icon="images/preview.png" />
+        <invoker type="formActions" action="doSave"     caption="Save"      shourtcut="s" mnemonic="s"  index="3"  visibleWhen="#{mode == '_default'}" icon="images/save.png" permission="withimproveland.create" />
+        
+        <!-- print preview -->
+        <invoker type="formActions" action="doClose"  caption="Close"  shortcut="ctrl c" mnemonic="c"  index="0" visibleWhen="#{mode != '_default'}" icon="images/cancel.png" />
+        
+    </invokers>
+    <code lang="groovy">
+
+    <![CDATA[
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+        import com.rameses.osiris2.client.*;
+        import com.rameses.osiris2.reports.*;
+        
+        public class RPTCertificationsWImprvmntLandController 
+        {
+            @Service('ReportParameterService')
+            def svcParams;
+        
+            @Service('RPTCertificationsService')
+            def svc;
+        
+            @Binding 
+            def binding;
+            
+            def certification = [:];
+            def list = [];
+            def mode = '_default';
+            def taxpayer;
+            
+            def getLookupEntity(){
+                return InvokerUtil.lookupOpener("entity.lookup", [:] );
+            }
+
+            void setTaxpayer( entity ){
+                if( entity ){
+                    taxpayer = entity;
+                    certification.taxpayerid = entity.objid;
+                    certification.taxpayername = entity.entityname;
+                    certification.requestedby = entity.entityname;
+                    certification.taxpayerno = entity.entityno;
+                    certification.taxpayeraddress = entity.entityaddress;
+                    binding.refresh("certification.*");
+               }
+            }
+            
+            public void setOfficialuse( o ){
+                certification.official = o;
+                certification.orno = ( o ) ? 'Official Use' : '';
+                certification.ordate = ( o ) ? null : certification.serverDate;
+                certification.oramount = ( o ) ? 0.0 : 0.0;
+                certification.stampamount = ( o ) ? 0.0 : 0.0;
+            }
+            
+            public def getOfficialuse(){
+                return certification.official;
+            }
+            
+            def report =[
+                    getReportName : { "rpt/td/certification/WithImprovementLandCertification" },
+                    getReportData : { return certification; },
+                    getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+                ] as ServerReportModel;
+            
+            public def doPreview(){
+                certification.putAll( svc.fetchDataWImproveLand(certification) );
+                report.viewReport();
+                mode='_default'
+                return "print";
+            }
+            
+            public void doSave(){
+                certification.putAll( svc.fetchDataWImproveLand(certification) );
+                svc.doSave( certification );
+                mode='certified'
+            }
+            
+            public def doClose(){
+                mode = '_default';
+                certification = [:];
+                taxpayer = null;
+                
+                return '_close';
+            }
+        }
+    ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.certification.RPTCertificationPage" />
+        <page name="print" template="etracs2.common.PreviewPage" />
+        
+    </pages>
+</workunit>

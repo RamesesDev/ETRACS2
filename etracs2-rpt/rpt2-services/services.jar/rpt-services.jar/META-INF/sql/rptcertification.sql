@@ -29,7 +29,7 @@ ORDER BY docno
 [fetchData]
 SELECT 
 	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
-	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode 
 FROM faaslist 
 WHERE taxpayerid = $P{taxpayerid} 
 	AND docstate = 'CURRENT' 
@@ -38,7 +38,7 @@ WHERE taxpayerid = $P{taxpayerid}
 [getLandHolding]
 SELECT 
 	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
-	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode 
 FROM faaslist 
 WHERE taxpayerid = $P{taxpayerid} 
   AND docstate = 'CURRENT' 
@@ -48,7 +48,7 @@ WHERE taxpayerid = $P{taxpayerid}
 [getMultipleProperty]  
 SELECT	
 	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
-	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode 
 FROM faaslist 
 WHERE taxpayerid = $P{taxpayerid} 
 	AND docstate = 'CURRENT'  
@@ -57,30 +57,41 @@ WHERE taxpayerid = $P{taxpayerid}
 [getNoImprovements]
 SELECT 
 	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
-	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
-FROM faaslist 
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode 
+FROM faaslist f 
 WHERE taxpayerid = $P{taxpayerid} 
 	AND docstate = 'CURRENT' 
 	AND rputype = 'land' 
+	AND NOT EXISTS ( 
+		SELECT landfaasid FROm faaslist  
+		WHERE landfaasid = f.objid AND docstate <> 'CANCELLED' 
+	) 
 	ORDER BY fullpin 
+
+[getNoImprovementsTDNo]
+SELECT 
+	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode 
+FROM faaslist 
+WHERE tdno = $P{tdno} 
+	AND landfaasid IS NULL  
 	
 [getImprovementsTDNo]
 SELECT 
 	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
-	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode 
 FROM faaslist 
 WHERE tdno = $P{tdno} 
-	AND landfaasid = $P{objid}  
+	AND landfaasid IS NOT NULL  
 
 [getWImproveLand]
-SELECT	
+SELECT 
 	objid, tdno, taxpayername, ownername, titleno, cadastrallotno, barangay, fullpin, 
-	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode, landfaasid 
-FROM faaslist
-WHERE taxpayerid = $P{taxpayerid}
+	rputype, totalmv, totalav, totalareaha, totalareasqm, classcode 
+FROM faaslist f 
+WHERE taxpayerid = $P{taxpayerid} 
 	AND docstate = 'CURRENT' 
-	AND rputype = 'land' 
-	ORDER BY fullpin
+	AND landfaasid IS NOT NULL 
 	
 [searchByTaxpayerid]
 select taxpayerid from faaslist where taxpayerid = $P{taxpayerid}  
