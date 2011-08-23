@@ -56,6 +56,7 @@ class BldgAdditionalItemTypeLookupController extends LookupModel
     }
     
     def convertParamValue( param ) {
+        if( ! param.paramvalue ) throw new Exception('Value is required.')
         if( param.datatype == 'decimal' ) {
             return Double.parseDouble( param.paramvalue )
         }
@@ -117,7 +118,7 @@ class BldgAdditionalItemTypeLookupController extends LookupModel
         getRows    : { return 25 },
         getColumns : { return [
             new Column( name:'paramcaption', caption:'Parameter' ),
-            new Column( name:'paramvalue', caption:'Value', editable:true, maxWidth:150 ),
+            new Column( name:'paramvalue', caption:'Value', editable:true),
         ]},
         fetchList  : { return params }
     ] as PageListModel

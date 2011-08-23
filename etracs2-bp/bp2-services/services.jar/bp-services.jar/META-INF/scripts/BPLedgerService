@@ -56,7 +56,6 @@ class BPLedgerService {
 		payment.formattedtotal = dcf.format( payment.total );
 		payment.items = [];
 		def app = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
-		println payment.qtr;
 		if( !app.payments ) app.payments = [];
 		if( app.payments.find{ it.refno == payment.refno } )
 			throw new Exception("Payment reference number already exist.");
@@ -73,7 +72,7 @@ class BPLedgerService {
 			payment.items << [
 				bpreceivableid: it.objid,
 				amount: it.amount,
-				amtpaid: new BigDecimal('0.0'),
+				amtpaid: it.amount, 
 				surcharge: new BigDecimal('0.0'),
 				interest: new BigDecimal('0.0'),
 				discount: new BigDecimal('0.0'),

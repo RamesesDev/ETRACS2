@@ -80,13 +80,19 @@
         /* ------------------------------------------------------------
         * LIST SUPPORT
         -------------------------------------------------------------- */
+        def allowAmountEdit = { item ->
+            if( item.acct?.amounttype == 'FIX' ) return false
+            if( item.acct?.amounttype == 'FIXUNIT' ) return false
+            return true
+        } as Map
+    
         def incomeAcctLookup = InvokerUtil.lookupOpener( 'incomeacct:lookup', [:] )
 
         def listHandler = [
             getColumns : {
                 return [
-                    new Column( name:'acct', caption:'Account', editable:true, type:'lookup', handler:incomeAcctLookup, expression: '#{accttitle}' ),
-                    new Column( name:'amount', caption:'Amount', editable:true, type:'decimal' ),
+                    new Column( name:'acct', caption:'Account*', editable:true, type:'lookup', handler:incomeAcctLookup, expression: '#{accttitle}' ),
+                    new Column( name:'amount', caption:'Amount*', type:'decimal', editableWhen:'#{root.allowAmountEdit[item]}' ),
                     new Column( name:'remarks', caption:'Remarks', editable:true ),
                 ]
             },
@@ -103,13 +109,20 @@
                 }
             },
             onAddItem  : { item -> 
-                updateIncomeAcctInfo( item )
+                //updateIncomeAcctInfo( item )
                 entity.items.add( item ) 
                 updateItemInfo()
             },
             onColumnUpdate : { item, colName ->
-                if( colName == 'amount' && listItem?.state != 0 ) {
+                if( colName =='acct' )  {
                     updateIncomeAcctInfo( item )
+                    if( item.acct?.amounttype == 'FIXUNIT') {
+                        def unitcount = MsgBox.prompt('Enter Quantity:')
+                        unitcount = parseInt( unitcount )
+                        item.amount = item.acct.defaultvalue * unitcount 
+                    }
+                }
+                else if( colName == 'amount' && listItem?.state != 0 ) {
                     updateItemInfo()
                 }
             },
@@ -146,16 +159,26 @@
         }
 
         void updateIncomeAcctInfo( item ) {
-            item.acctid = item.acct.objid
-            item.acctno = item.acct.acctno
-            item.accttitle = item.acct.accttitle
-            item.fundid = item.acct.fundid
-            item.fundname = item.acct.fundname
+            item.acctid = item.acct?.objid
+            item.acctno = item.acct?.acctno
+            item.accttitle = item.acct?.accttitle
+            item.fundid = item.acct?.fundid
+            item.fundname = item.acct?.fundname
+            item.amount = item.acct?.defaultvalue
         }
 
         void required( name, value ) {
             if( ! value ) {
                 throw new Exception(name + ' is required.')
+            }
+        }
+        
+        int parseInt( value ) {
+            try {
+                return Integer.parseInt( value )
+            }
+            catch( e ) {
+                return 1 
             }
         }
 
