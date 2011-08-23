@@ -22,7 +22,7 @@ class RPTBillingActionSefPrevController
     def varlist 
     def selectedVariable
     def title = 'Calculate SEF Previous Tax'
-    def accttitle 
+    def account
     def rule
     
     void create() {
@@ -35,11 +35,12 @@ class RPTBillingActionSefPrevController
     }
     
     void open() {
-       accttitle = action?.accttitle
+       account = [ accttitle: action?.accttitle]
     }
     
     //must be implemented by a handler
     void accept() {
+        action.expr = editor.handle.formula
         if( ! action.acctid ) throw new Exception('Account is required.')
         if( ! action.expr ) throw new Exception('Tax Computation Expression is required.')
         action.displaytext = buildDisplayText()
@@ -50,20 +51,20 @@ class RPTBillingActionSefPrevController
         return 'Calculate ' + action.accttitle + ' using the formula: ' + action.expr 
     }
     
-    def selectAcctHandler = { acct ->
-        action.acctid = acct.objid 
-        action.accttitle = acct.accttitle
-        accttitle = acct.accttitle 
-        binding.refresh('accttitle')
+    void setAccount( account ) {
+        this.account        = account 
+        action.acctid       = account?.objid 
+        action.accttitle    = account?.accttitle
     }
     
-    def lookupAccount() {
-        return InvokerUtil.lookupOpener('rptincomeacct_sefprev.lookup', [searchText:accttitle, onselect:selectAcctHandler])
+    def getLookupAccount() {
+        return InvokerUtil.lookupOpener('rptincomeacct_sefprev.lookup', [:])
     }
     
-    def onselect = { action.expr = it; }
+    def editor 
     def getFormulaEditor(){
-        return InvokerUtil.lookupOpener('formula_editor2', [formula:action.expr, variableList:varlist, onselect:onselect, showToolbar:false]);
+        editor = InvokerUtil.lookupOpener('formula_editor2', [formula:action.expr, variableList:varlist, showToolbar:false]);
+        return editor
     }
     
 }

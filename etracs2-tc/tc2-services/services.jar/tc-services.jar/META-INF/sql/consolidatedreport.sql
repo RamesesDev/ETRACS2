@@ -8,7 +8,11 @@ SELECT * FROM craaf WHERE afinventoryid = $P{afinventoryid} OR afinventorycredit
 SELECT objid FROM afinventory WHERE irafid = $P{irafid} AND afid = $P{afid}
 
 [getAFInventoryCredit]
-SELECT * FROM afinventorycredit WHERE irafid = $P{irafid} AND afid = $P{afid}
+SELECT * FROM afinventorycredit 
+WHERE irafid = $P{irafid} 
+  AND afid = $P{afid} 
+  AND startseries = $P{startseries}
+
 
 [getAF]
 SELECT * FROM af WHERE objid = $P{afid}
@@ -34,15 +38,17 @@ AND craafyear = $P{craafyear}
 ORDER BY afid, beginfrom, receivedfrom
 
 [getReportDataCollector]
-SELECT c.collectorname, a.stubno, c.afid, c.beginqty, c.beginfrom, c.beginto,  
+SELECT a.collectorname, c.stubno, c.afid, c.beginqty, c.beginfrom, c.beginto,  
 	c.receivedqty, c.receivedfrom, c.receivedto,  
 	c.issuedqty, c.issuedfrom, c.issuedto,  
 	c.endingqty, c.endingfrom, c.endingto   
-FROM craaf c, afcontrol a   
-WHERE c.afinventorycreditid = a.afinventorycreditid   
-AND craafmonth = $P{craafmonth}   
-AND craafyear = $P{craafyear}   
-ORDER BY c.collectorname, c.afid, c.beginfrom, c.receivedfrom
+FROM craaf c , afcontrol a 
+WHERE c.afinventorycreditid = a.afinventorycreditid 
+  AND c.afinventorycreditid IS NOT NULL  
+  AND craafmonth = $P{craafmonth}   
+  AND craafyear = $P{craafyear}    
+ORDER BY c.collectorname, c.afid, c.beginfrom, c.receivedfrom 
+
 
 [getReportDataCanceledSeries]
 SELECT c.collectorname, a.stubno, c.afid, c.canceledqty AS beginqty,   
@@ -55,7 +61,7 @@ AND canceledqty != 0
 
 [updateCRAAFbyIRAFCol]
 UPDATE craaf SET
-	issuedqty = $P{issuedqty},
+	issuedqty = issuedqty + $P{qtyreceived},
 	issuedfrom = $P{issuedfrom},
 	issuedto = $P{issuedto},
 	endingqty = $P{endingqty},

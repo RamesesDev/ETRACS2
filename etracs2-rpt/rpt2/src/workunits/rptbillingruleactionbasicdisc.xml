@@ -22,7 +22,6 @@ class RPTBillingActionBasicDiscController
     def varlist 
     def selectedVariable
     def title = 'Calculate Basic Discount'
-    def accttitle 
     def rule
     
     void create() {
@@ -35,7 +34,6 @@ class RPTBillingActionBasicDiscController
     }
     
     void open() {
-       accttitle = action?.accttitle
     }
     
     //must be implemented by a handler
@@ -48,23 +46,6 @@ class RPTBillingActionBasicDiscController
     def buildDisplayText() {
         return 'Calculate Basic Discount using the formula: ' + action.expr 
     }
-    
-    def selectAcctHandler = { acct ->
-        action.acctid = acct.objid 
-        action.accttitle = acct.accttitle
-        accttitle = acct.accttitle 
-        binding.refresh('accttitle')
-    }
-    
-    def lookupAccount() {
-        return InvokerUtil.lookupOpener('rptincomeacct_basic.lookup', [searchText:accttitle, onselect:selectAcctHandler])
-    }
-    
-    def onselect = { action.expr = it; }
-    def getFormulaEditor(){
-        return InvokerUtil.lookupOpener('formula_editor2', [formula:action.expr, variableList:varlist, onselect:onselect, showToolbar:false]);
-    }
-    
     
 }
 

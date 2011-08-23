@@ -22,7 +22,7 @@ class RPTBillingActionSefDiscController
     def varlist 
     def selectedVariable
     def title = 'Calculate SEF Discount'
-    def accttitle 
+    def account
     def rule
     
     void create() {
@@ -35,7 +35,7 @@ class RPTBillingActionSefDiscController
     }
     
     void open() {
-       accttitle = action?.accttitle
+       account = [accttitle:action?.accttitle]
     }
     
     //must be implemented by a handler
@@ -48,18 +48,7 @@ class RPTBillingActionSefDiscController
     def buildDisplayText() {
         return 'Calculate SEF Discount using the formula: ' + action.expr 
     }
-    
-    def selectAcctHandler = { acct ->
-        action.acctid = acct.objid 
-        action.accttitle = acct.accttitle
-        accttitle = acct.accttitle 
-        binding.refresh('accttitle')
-    }
-    
-    def onselect = { action.expr = it; }
-    def getFormulaEditor(){
-        return InvokerUtil.lookupOpener('formula_editor2', [formula:action.expr, variableList:varlist, onselect:onselect, showToolbar:false]);
-    }
+
     
 }
 

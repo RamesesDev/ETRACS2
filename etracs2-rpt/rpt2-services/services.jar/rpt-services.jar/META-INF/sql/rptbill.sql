@@ -15,7 +15,7 @@ WHERE taxpayerid = $P{taxpayerid} AND docstate = 'APPROVED' AND taxable = 1
 [getOpenLedgersByPropertyPayer]
 SELECT 
 	rl.objid, rl.taxpayerid, rl.fullpin AS pin, rl.tdno , rl.rputype, rl.assessedvalue, 
-    rl.barangay, rl.classcode, rl.txntype, rl.cadastrallotno, taxpayername, 
+    rl.barangay, rl.classcode, rl.txntype, rl.cadastrallotno, rl.taxpayername, 
 	CASE WHEN rl.lastqtrpaid = 4 THEN rl.lastyearpaid +1 ELSE rl.lastyearpaid END AS fromyear, 
 	CASE WHEN rl.lastqtrpaid = 4 THEN 1 ELSE rl.lastqtrpaid + 1 END AS fromqtr, 
     rl.lastyearpaid, rl.lastqtrpaid, 

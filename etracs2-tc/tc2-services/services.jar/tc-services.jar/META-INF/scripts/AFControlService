@@ -36,6 +36,9 @@ class AFControlService
 			afcontrol.beginseries	= afcontrol.currentseries
 			afcontrol.beginqty		= afcontrol.endseries - afcontrol.currentseries + 1
 			afcontrol.balance		= afcontrol.beginqty  
+			afcontrol.qtyissued		= 0
+			afcontrol.issuedfrom	= 0
+			afcontrol.issued		= 0
 		}
 		else {
 			afcontrol.startseries = 0
@@ -121,6 +124,7 @@ class AFControlService
 			stubno			: afcontrol.stubno ,
 			qtyissued		: qtyissued,
 			balance			: afcontrol.balance ,
+			stubno			: afcontrol.stubno, 
 		]
 		em.create('afinventorycredit', credit )
 		
@@ -149,11 +153,11 @@ class AFControlService
 			beginfrom			: null,
 			beginto				: null,
 			receivedqty			: afcontrol.qtyreceived,
-			receivedfrom		: afcontrol.startseries,
-			receivedto			: afcontrol.endseries,
+			receivedfrom		: formatSeries( afcontrol.startseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
+			receivedto			: formatSeries( afcontrol.endseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
 			issuedqty			: afcontrol.qtyreceived,
-			issuedfrom			: afcontrol.startseries,
-			issuedto			: afcontrol.endseries,
+			issuedfrom			: formatSeries( afcontrol.startseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
+			issuedto			: formatSeries( afcontrol.endseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
 			canceledqty			: null,
 			canceledfrom		: null,
 			canceledto			: null,
@@ -165,12 +169,14 @@ class AFControlService
 		em.create( craaf.schemaname, craaf )
 		
 		def issuedqty  = afcontrol.qtyissued 
-		def issuedfrom = null 
+		def issuedfrom = null
 		def issuedto   = null 
 		if( afcontrol.aftype == 'serial' ) {
 			issuedqty 	= ( afcontrol.currentseries > afcontrol.startseries ? afcontrol.currentseries - afcontrol.startseries : null )
 			issuedfrom 	= ( afcontrol.currentseries > afcontrol.startseries ? afcontrol.startseries: null )
 			issuedto	= ( afcontrol.currentseries > afcontrol.startseries ? afcontrol.currentseries - 1 : null )
+			issuedfrom  = formatSeries( issuedfrom, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength )
+			issuedto    = formatSeries( issuedto, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength )
 		}
 		
 		def craafcredit = [
@@ -189,8 +195,8 @@ class AFControlService
 			beginfrom			: null,
 			beginto				: null,
 			receivedqty			: afcontrol.qtyreceived,
-			receivedfrom		: afcontrol.startseries,
-			receivedto			: afcontrol.endseries,
+			receivedfrom		: formatSeries( afcontrol.startseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
+			receivedto			: formatSeries( afcontrol.endseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
 			issuedqty			: issuedqty,
 			issuedfrom			: issuedfrom,
 			issuedto			: issuedto,
@@ -199,8 +205,8 @@ class AFControlService
 			canceledto			: null,
 			cancelreason		: null,
 			endingqty			: afcontrol.balance ,
-			endingfrom			: afcontrol.currentseries,
-			endingto			: afcontrol.endseries,
+			endingfrom			: formatSeries( afcontrol.currentseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
+			endingto			: formatSeries( afcontrol.endseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
 		]
 		em.create( craaf.schemaname, craafcredit )
 		

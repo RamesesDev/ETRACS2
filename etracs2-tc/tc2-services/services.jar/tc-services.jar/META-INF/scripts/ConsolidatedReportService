@@ -79,11 +79,15 @@ class ConsolidatedReportService {
 			craafyear		: cal.get(Calendar.YEAR),
 			craafmonth		: cal.get(Calendar.MONTH) + 1,
 			afid			: ri.afid,
-			beginqty		: ri.qtyreceived,
-			beginfrom		: ri.prefix + ri.startseries + ri.suffix,
-			beginto			: ri.prefix + ri.endseries + ri.suffix,
-			receivedqty		: 0,
+			beginqty		: 0, 
+			beginfrom		: null,
+			beginto			: null,
+			receivedqty		: ri.qtyreceived,
+			receivedfrom	: ri.prefix + ri.startseries + ri.suffix,
+			receivedto		: ri.prefix + ri.endseries + ri.suffix,
 			issuedqty		: 0,
+			issuedfrom		: null,
+			issuedto		: null,
 			canceledqty		: 0,
 			endingqty		: ri.qtyreceived,
 			endingfrom		: ri.prefix + ri.startseries + ri.suffix,
@@ -169,7 +173,7 @@ class ConsolidatedReportService {
 	private void updateCRAAFbyIRAF( iraf ){
 		
 		iraf.rcvitems.each{ ri ->
-			def afic = getAFInventoryCredit( iraf.objid, ri.afid );
+			def afic = getAFInventoryCredit( iraf.objid, ri.afid, ri.startseries );
 			def series = getSeries( iraf.objid, ri.afid );
 			def craafitem = getCRAAFItem( afic.afinventoryid, ri.afid, "" );
 			def af = getAF( ri.afid );
@@ -183,25 +187,48 @@ class ConsolidatedReportService {
 			if( afic.suffix.length() != 0 ) afic.suffix = "-" + afic.suffix;
 			else afic.suffix = "";
 			
-			em.sqlContext.createNamedExecutor( 'consolidatedreport:updateCRAAFbyIRAFCol' )
-					.setParameters(
-						[
-							afinventoryid	: afic.afinventoryid,
-							afid			: afic.afid,
-							issuedqty		: craafitem.issuedqty + ri.qtyreceived,
-							issuedfrom		: afic.prefix + series.startseries + afic.suffix,
-							issuedto		: afic.prefix + series.endseries + afic.suffix,
-							endingqty		: craafitem.endingqty - ri.qtyreceived,
-							endingfrom		: afic.prefix + (series.endseries + 1) + afic.suffix,
-							endingto		: craafitem.endingto
-						]
-					).execute();
+			def creditinfo = [
+				afinventoryid	: afic.afinventoryid,
+				afid			: afic.afid,
+				qtyreceived		: ri.qtyreceived,
+				issuedfrom		: afic.prefix + series.startseries + afic.suffix,
+				issuedto		: afic.prefix + series.endseries + afic.suffix,
+				endingqty		: craafitem.endingqty - ri.qtyreceived,
+				endingfrom		: afic.prefix + (series.endseries + 1) + afic.suffix,
+				endingto		: craafitem.endingto
+			]
+			em.sqlContext.createNamedExecutor( 'consolidatedreport:updateCRAAFbyIRAFCol' ).setParameters( creditinfo ).execute();
 			createCRAAFCredit( iraf.objid, craafitem.objid, 'IRAF', iraf.txndate, ri.qtyreceived );
+		
+			def craafcredit = [
+				objid 				: 'CC' + new UID(),
+				schemaname			: 'craaf',
+				schemaversion		: '1.0',
+				afinventoryid		: null,
+				afinventorycreditid : afic.objid, 
+				craafyear			: cal.get(Calendar.YEAR),
+				craafmonth			: cal.get(Calendar.MONTH) + 1,
+				collectorid			: iraf.info.rivrequestedbyid,
+				collectorname		: iraf.info.rivrequestedby,
+				collectortitle		: iraf.info.rivrequestedbytitle,
+				afid				: creditinfo.afid, 
+				beginqty			: null,
+				beginfrom			: null,
+				beginto				: null,
+				receivedqty			: ri.qtyreceived,
+				receivedfrom		: ri.prefix + ri.startseries + ri.suffix,
+				receivedto			: ri.prefix + ri.endseries + ri.suffix,
+				endingqty			: null,
+				endingfrom			: null,
+				endingto			: null,
+				stubno				: afic.stubno, 
+			]
+			em.create( 'craaf', craafcredit )
 		}
 	}
 	
-	private def getAFInventoryCredit( irafid, afid ){
-		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryCredit' ).setParameters([irafid:irafid, afid:afid]).singleResult;
+	private def getAFInventoryCredit( irafid, afid, startseries  ){
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryCredit' ).setParameters([irafid:irafid, afid:afid, startseries:startseries]).singleResult;
 	}
 	
 	private def getSeries( irafid, afid ){

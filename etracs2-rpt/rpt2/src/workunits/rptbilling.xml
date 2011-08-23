@@ -81,10 +81,7 @@ public class RPTBillingController  {
         if( bill.advancepayment && bill.billdate <= (parsedate.date - 1 ))  {
             throw new Exception('Advance Billing Date must be greater than todays date.')
         }
-        else {
-            bill.billdate = parsedate.date 
-            binding.refresh('bill.billdate')
-        }
+        
         bill = billingSvc.generateBill( bill )
         report.viewReport()
     }

@@ -128,7 +128,7 @@ public class IRAFPage extends javax.swing.JPanel {
         formPanel1.add(xLabel9);
 
         jPanel5.add(formPanel1);
-        formPanel1.setBounds(2, 26, 286, 80);
+        formPanel1.setBounds(276, 26, 282, 80);
 
         formPanel3.setIndex(1);
         xLookupField1.setCaption("RIV No.");
@@ -158,7 +158,7 @@ public class IRAFPage extends javax.swing.JPanel {
         formPanel3.add(xLabel8);
 
         jPanel5.add(formPanel3);
-        formPanel3.setBounds(292, 26, 266, 80);
+        formPanel3.setBounds(4, 26, 270, 82);
 
         xLabel1.setForeground(new java.awt.Color(204, 0, 0));
         xLabel1.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
@@ -200,6 +200,7 @@ public class IRAFPage extends javax.swing.JPanel {
 
         jPanel11.setOpaque(false);
         jPanel11.setPreferredSize(new java.awt.Dimension(100, 34));
+        xButton2.setMnemonic('c');
         xButton2.setText("Cancelled Series");
         xButton2.setDepends(new String[] {"receivedItem"});
         xButton2.setName("viewCancelledSeries");
@@ -207,6 +208,7 @@ public class IRAFPage extends javax.swing.JPanel {
         xButton2.setVisibleWhen("#{entity.docstate == 'APPROVED' && entity.info.rivtype == 'LGU' && receivedItem != null && receivedItem.aftype == 'serial'}");
         jPanel11.add(xButton2);
 
+        xButton1.setMnemonic('a');
         xButton1.setText("Add");
         xButton1.setName("add");
         xButton1.setPreferredSize(new java.awt.Dimension(70, 30));

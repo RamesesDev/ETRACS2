@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="home.action" caption="Business Reports" index="501" icon="images/folder.png" target="window" permission="bpreportmgmt.open" />
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class ReportManagement {
+            
+            def opener 
+    
+            def process() {
+                if( !opener ) {
+                    return null
+                }
+                def openername= opener.properties.type + '.' + opener.properties.opener
+                return InvokerUtil.lookupOpener( openername, [:])
+            }
+
+            List getOpenerList() {
+                return InvokerUtil.lookupOpeners('bpreport', [:])
+            }
+        
+        }
+        
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.bp.BPTransactionPage" />
+    </pages>
+</workunit>
+
