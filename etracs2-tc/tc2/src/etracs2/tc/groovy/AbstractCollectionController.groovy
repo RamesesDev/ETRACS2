@@ -37,6 +37,7 @@ abstract class AbstractCollectionController
     abstract def getService()
     abstract def getHtmlService()
     abstract def getCollectionTitle() 
+    abstract def getParameters()
     
     void init() {
         mode = 'create'
@@ -137,6 +138,7 @@ abstract class AbstractCollectionController
     def report = [
         getReportName : { return getReportName() },
         getReportData : { return entity } ,
+        getParameters : { return getParameters() }
     ] as ServerReportModel;
         
     def detailReport = [

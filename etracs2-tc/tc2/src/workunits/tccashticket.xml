@@ -28,14 +28,17 @@ class CashTicketCollectionController extends AbstractCollectionController
     
     @Service('CashTicketHtmlService')
     def htmlSvc
-
+    
+    @Service('ReportParameterService')
+    def svcParams;
+    
     def listItem
     def message = ''
     def selectedItem
     
     int qtyissued = 0
     
-    
+    def getParameters() { return svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
     def getService() { return svc }
     def getHtmlService() { return htmlSvc }
     def getCollectionTitle() { return 'Cash Ticket Collection' }

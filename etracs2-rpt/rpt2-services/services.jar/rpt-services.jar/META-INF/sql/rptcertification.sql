@@ -63,7 +63,7 @@ WHERE taxpayerid = $P{taxpayerid}
 	AND docstate = 'CURRENT' 
 	AND rputype = 'land' 
 	AND NOT EXISTS ( 
-		SELECT landfaasid FROm faaslist  
+		SELECT landfaasid FROM faaslist  
 		WHERE landfaasid = f.objid AND docstate <> 'CANCELLED' 
 	) 
 	ORDER BY fullpin 

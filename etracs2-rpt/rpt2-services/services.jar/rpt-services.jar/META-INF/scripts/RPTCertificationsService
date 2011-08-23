@@ -135,14 +135,15 @@ class RPTCertificationsService
 	
 	@ProxyMethod /** Multiple Property **/
 	public def fetchDataMultipleProperty( def param ){
-		
 		doValiDate( param );
         
         def taxpayer = em.sqlContext.createNamedQuery( 'rptcertification:searchByTaxpayerid' ).setParameters( param ).singleResult;        
 		if( !taxpayer ) 
 			throw new Exception( "There are no Property defined for taxpayer: ${param.taxpayername}. " );
-        
+
         def getData = em.sqlContext.createNamedQuery( 'rptcertification:getMultipleProperty' ).setParameters( param ).resultList;
+		if( !getData )
+			throw new Exception( "There's no Property for Taxpayer: ${param.taxpayername} with CURRENT state. " );
 		
 		/** header **/
 		param.opener = 'multipleproperty';
@@ -164,13 +165,12 @@ class RPTCertificationsService
 			}  
 		}
 		i = 0
-		
 		param.footnotes = param.items.findAll{ !it.ownername.equals(param.taxpayerName) }
 		param.footnotes = param.footnotes.groupBy{ it.ownername }.collect{ [footnote: it.key] }
 		param.footnotes.each(){
 			it.footno = ++i + '';
 		}
-		
+
         return param;
 	}
 	
@@ -304,7 +304,6 @@ class RPTCertificationsService
 			throw new Exception( "There are no Properties defined for taxpayer: ${param.taxpayername}. " );
 		
 		def getData = em.sqlContext.createNamedQuery( 'rptcertification:getWImproveLand' ).setParameters( param ).resultList;
-		
 		if( !getData )  
 			throw new Exception( "There's no Land Property with improvements for taxpayer: ${param.taxpayername}. " );
 			
