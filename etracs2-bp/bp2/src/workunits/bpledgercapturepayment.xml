@@ -30,8 +30,8 @@
             def qtrList = [1, 2, 3, 4];
 
             def entity = [:];
-            
             def selectedItem;
+            def errorMsg 
             
             def dcf = new DecimalFormat("#,##0.00");
             
@@ -46,6 +46,7 @@
             
             def next() {
                 entity = svc.buildCapturePayment( entity );
+                calcTotal()
                 mode = 'main';
                 return 'main';
             }
@@ -58,7 +59,7 @@
                         new Column( name:"lobname", caption:"Line of Business" ),
                         new Column( name:"accttitle", caption:"Account" ),
                         new Column( name:"amount", caption:"Amount" ),
-                        new Column( name:"amtpaid", caption:"Amount Paid", editable:true, type:"decimal"),
+                        new Column( name:"amtpaid", caption:"Amount Paid*", editable:true, type:"decimal"),
                         new Column( name:"surcharge", caption:"Surcharge", editable:true, type:"decimal"), 
                         new Column( name:"interest", caption:"Interest", editable:true, type:"decimal"),
                         new Column( name:"discount", caption:"Discount", editable:true, type:"decimal")
@@ -67,19 +68,41 @@
                 
                 onColumnUpdate : { value, colname ->
                     entity.total = 0.0;
-                    def eval = { amt -> return (amt) ? amt : 0.0; }
-                    for (item in entity.items) {
-                        entity.total += eval( item.amtpaid ) + eval( item.surcharge ) + eval( item.interest ) - eval( item.discount );
-                    }
-                    entity.formattedtotal = dcf.format( entity.total );
-                    binding.refresh();
+                    calcTotal()
                 },
+                
+                validate  : { li -> validateItem( li.item ) },
                 
                 fetchList : { 
                     return entity.items;
                 }
 
-            ] as PageListModel;
+            ] as SubListModel
+            
+            void validateItem( item ) {
+                try {
+                    println item.amtpaid 
+                    if( item.amtpaid == null) throw new Exception('Amount Paid is required.')
+                    if( item.amtpaid < 0.0 ) throw new Exception('Amount paid must be greater than or equal to zero.')
+                    if( item.amtpaid > item.amount ) throw new Exception('Amount Paid must be less than or equal to Amount.')
+                    errorMsg = null
+                    binding.refresh( 'errorMsg')
+                }
+                catch ( e) {
+                    e.printStackTrace()
+                    errorMsg = e.message
+                    binding.refresh( 'errorMsg' ) 
+                    throw e
+                }
+            }
+            
+            void calcTotal() {
+                def eval = { amt -> return (amt) ? amt : 0.0; }
+                for (item in entity.items) {
+                    entity.total += eval( item.amtpaid ) + eval( item.surcharge ) + eval( item.interest ) - eval( item.discount );
+                }
+                entity.formattedtotal = dcf.format( entity.total );
+            }
             
             def post() {
                 if ( !MsgBox.confirm("Are you sure you want to post this document?\nDocument cannot be editted once posted.") )

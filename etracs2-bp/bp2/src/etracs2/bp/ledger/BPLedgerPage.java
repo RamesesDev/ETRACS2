@@ -54,6 +54,7 @@ public class BPLedgerPage extends javax.swing.JPanel {
         xLookupField1.setExpression("#{tradename}");
         xLookupField1.setHandler("lookupBusiness");
         xLookupField1.setHint("Search Business");
+        xLookupField1.setIndex(-100);
         xLookupField1.setName("business");
         xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
         xLookupField1.setRequired(true);
