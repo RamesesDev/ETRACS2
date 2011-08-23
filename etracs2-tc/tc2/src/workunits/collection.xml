@@ -33,6 +33,9 @@ class CollectionController
     @Service('CollectionTypeService')
     def collTypeService
     
+    @Service('CollectionSettingService')
+    def csSvc
+    
     @Service('ETRACSUserService')
     def userService
     
@@ -61,6 +64,12 @@ class CollectionController
     }
 	
     def doNext() {
+        def vals = 'cattle_ownership|cattle_transfer|marriage_license|burial_permit';
+        if( collectiontype.appcode.matches(vals) ){
+            def cs = csSvc.getCS();
+            if( !cs ) throw new Exception('Accounts: Collection Setting not yet set. ');
+        }
+        
         try {
             CommonUtil.required('AF Control', afcontrol)
             lookupOpener()
@@ -151,6 +160,7 @@ class CollectionController
     }
 
     List getCollectionTypeList() {
+        
         return collTypeService.getListByAfId( af.objid )
     }    
     
