@@ -45,6 +45,9 @@
         @Service('CollectionSettingService')
         def collSvc
         
+        @Service('ReportParameterService')
+        def svcParams;
+        
         def getService() { return svc }
         def getHtmlService() { return htmlSvc }
         def getCollectionTitle() { return 'Burial Permit and Fee Collection' }
@@ -81,11 +84,14 @@
             }
         }
         
-        
         def getReportName() {
             return 'receipt/af58'
         }
-
+        
+        def getParameters(){
+            return svcParams.getStandardParameter( OsirisContext.env.USERNAME );
+        }
+        
         void addReceiptItem() {
             def cs = collSvc.open()
             def ia = acctSvc.open( cs.info.burialacctid )
