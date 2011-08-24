@@ -39,8 +39,9 @@ public class IncomeAcctListingPage extends javax.swing.JPanel {
         xComboBox1.setCaption("Chart Type");
         xComboBox1.setImmediate(true);
         xComboBox1.setItems("chartTypeList");
-        xComboBox1.setName("chartType");
+        xComboBox1.setName("charttype");
         xComboBox1.setPreferredSize(new java.awt.Dimension(130, 23));
+        xComboBox1.setRequired(true);
         formPanel1.add(xComboBox1);
 
         add(formPanel1, java.awt.BorderLayout.CENTER);

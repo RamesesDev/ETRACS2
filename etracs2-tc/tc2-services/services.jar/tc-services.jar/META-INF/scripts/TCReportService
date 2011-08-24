@@ -11,6 +11,81 @@ class TDReportService {
 	@Service("DateService")
 	def dtsvc;
 	
+	
+	/*------------------------------------------------------------------------
+	*
+	* LISTING REPORTS
+	*
+	*------------------------------------------------------------------------*/
+	@ProxyMethod
+	public List generateIncomeAccountListing( charttype ) {
+		//get chart 
+		def chart = em.sqlContext.createQuery('''
+			SELECT objid FROM account WHERE charttype = $P{charttype} AND parentid IS NULL 
+		''')
+		.setParameter('charttype', charttype).singleResult 
+		if( !chart ) throw new Exception('Chart Type ' + charttype + ' is invalid.')
+		def list = []
+		buildAccounts( charttype, list, chart.objid , 1 )
+		return list 
+	}	
+	
+	void buildAccounts( charttype, list, parentid , level ){
+		def accounts = em.sqlContext.createQuery('''
+			SELECT objid, acctcode, accttitle, acctlevel 
+			FROM account 
+			WHERE parentid = $P{parentid}
+			ORDER BY acctcode 
+		''')
+		.setParameter('parentid', parentid )
+		.resultList 
+		
+		accounts.each { acct ->
+			if( level == 1) list.add([charttype:charttype, account:''])
+			def acctcode = ( acct.acctcode ? acct.acctcode : '***' ).padRight( 10, ' ' )
+			list.add([
+				charttype : charttype, 
+				account   : ( ' '*(level-1)*15 ) + acctcode + '  ' + acct.accttitle ,
+			])
+			buildAccounts( charttype, list, acct.objid, level+1 )
+		}
+		
+		// parentid is the glaccount, populate the incomeaccount
+		if( !accounts ) {
+			def incomeaccts = []
+			if( charttype == 'NGAS' ) {
+				incomeaccts = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE ngasid = $P{ngasid}')
+								.setParameter( 'ngasid', parentid ).resultList 
+			}
+			else {
+				incomeaccts = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE sreid = $P{sreid}')
+								.setParameter( 'sreid', parentid ).resultList 
+
+			}
+			
+			incomeaccts.each { acct ->
+				def acctno = ( acct.acctno ? acct.acctno : '***' ).padRight( 10, ' ' )
+				list.add([
+					charttype : charttype,
+					account   : ( ' '*level* 12 ) + acctno + ' - ' + acct.accttitle ,
+				])
+			}
+		}
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	/*------------------------------------------------------------------------
+	*
+	* TREASURY REPORTS
+	*
+	*------------------------------------------------------------------------*/
+	
 	@ProxyMethod
 	public def generateAbstractOfCollectionDaily( txndate ) {
 		txndate = dtsvc.parse( "yyyy-MM-dd", txndate );
