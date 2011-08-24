@@ -136,6 +136,7 @@ public class IRAFPage extends javax.swing.JPanel {
         xLookupField1.setDepends(new String[] {"selectedItem"});
         xLookupField1.setExpression("#{txnno}");
         xLookupField1.setHandler("lookupRiv");
+        xLookupField1.setIndex(-100);
         xLookupField1.setName("riv");
         xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
         xLookupField1.setRequired(true);
