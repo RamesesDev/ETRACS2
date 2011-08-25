@@ -464,7 +464,7 @@ class BPApplicationService{
 			acctid: it.acctid,
 			acctno: it.acctno,
 			accttitle: it.accttitle,
-			amount: getAmount( ( qtr > qtrCount) ? 1 : qtr , qtrCount , it.amountdue ),
+			amount: getAmount( ( qtr > qtrCount ? 1 : qtr ), qtrCount , it.amountdue ),
 			amtpaid: 0.0
 		];
 		return brc;
@@ -477,13 +477,15 @@ class BPApplicationService{
 			app.receivables = [];
 			app.taxfees.each{ 
 				def acct = em.read("incomeacct:incomeacct", [objid: it.acctid]); 
-				if( it.assessmenttype == 'RENEW' && acct.systype == 'BUSINESS_TAX' ){
+				
+				def assessmenttype = getAssessmentType( app, it )
+				if( assessmenttype == 'RENEW' && acct.systype == 'BUSINESS_TAX' ){
 					for( int i=1; i <= 4; i++ ){
 						if( it.amountdue > 0 ){							
 							app.receivables <<  createReceivable( i , 4, business.objid, app, it );
 						}
 					}
-				}else if( it.assessmenttype == 'RENEW' || app.txntype == 'RENEW'){
+				}else if( assessmenttype == 'RENEW' || app.txntype == 'RENEW'){
 					app.receivables << createReceivable( 1, 1, business.objid, app, it );
 				}else{
 					app.receivables << createReceivable( cQtr, 1, business.objid, app, it );
@@ -491,6 +493,14 @@ class BPApplicationService{
 			}
 			em.update( SCHEMANAME, app );
 		}
+	}
+	
+	def getAssessmentType( app, taxfee ) {
+		def lob = app.lobs.find{ it.lobid == taxfee.lobid }
+		if( lob ) 
+			return lob.assessmenttype 
+		return app.txntype 
+		
 	}
 	
 	def getBusiness( def app){
