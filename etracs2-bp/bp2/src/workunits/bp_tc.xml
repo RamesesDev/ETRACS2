@@ -38,6 +38,9 @@
         @Service('ReceiptHtmlService')
         def htmlSvc;
         
+        @Service('ReportParameterService')
+        def svcParams;
+
         def bp = [:];
         def years = [];
         
@@ -89,7 +92,8 @@
                 listHandler.load();
             }
         }
-        
+
+        def getParameters() { return svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
         def getService() { return svc; }
         def getHtmlService() { return htmlSvc; }
         def getCollectionTitle() { return 'Business Liscence Fee'; }
