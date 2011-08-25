@@ -48,9 +48,17 @@ class EntityService
 		
 		em.validate( entity.schemaname, entity )
 		checkDuplicateEntityName( entity )
-		checkDuplicateEntityNo( entity.entityno )
+		//checkDuplicateEntityNo( entity )
 		
 		em.create( entity.schemaname, entity )
+		if( entity._members ) {
+			//this is multiple, insert members 
+			entity._members.each{ member -> 
+				member.entityid = entity.objid 
+				em.validate('entity:member', member)
+				em.create('entity:member', member)
+			}
+		}
 		logService.log( 'CREATE', 'Entity', entity.objid ) 
 		return entity
 	}
@@ -137,8 +145,8 @@ class EntityService
 	
 	
 	
-	void checkDuplicateEntityNo( entityno ) {
-		def result = em.sqlContext.createNamedQuery('entity:checkDuplicateNo').setParameters([entityno:entityno]).singleResult
+	void checkDuplicateEntityNo( entity ) {
+		def result = em.sqlContext.createNamedQuery('entity:checkDuplicateNo').setParameters([objid:entity.objid, entityno:entity.entityno]).singleResult
 		if( result.icount >= 1 ) {
 			throw new Exception('Duplicate entity no. found. Please save the record again.');
 		}
