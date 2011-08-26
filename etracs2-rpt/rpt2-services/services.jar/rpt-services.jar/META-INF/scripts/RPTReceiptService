@@ -36,14 +36,22 @@ class RPTReceiptService
             }
             updateLedgerLastYearQtrPaid([ objid:item.objid, lastyearpaid:item.toyear, lastqtrpaid:item.toqtr ] )
         }
-        receipt._items = items 
+
+        receipt._items = items.each(){
+			println it.taxpayername
+			it.taxpayername = ( it.taxpayername != receipt.info.payorname ) ? it.taxpayername : '';
+		}
+		
         return receipt 
     }
     
     @ProxyMethod
     public Map open( receiptid ) {
         def receipt = em.read('receipt', [objid:receiptid])
-        receipt._items = loadRPTPayments( receiptid )
+        receipt._items = loadRPTPayments( receiptid ).each(){
+			it.taxpayername = ( it.taxpayername != receipt.info.payorname ) ? it.taxpayername : '';
+		}
+		
         return receipt 
     }
     
