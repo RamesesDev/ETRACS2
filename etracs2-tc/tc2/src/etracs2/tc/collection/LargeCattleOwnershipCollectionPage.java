@@ -240,18 +240,18 @@ public class LargeCattleOwnershipCollectionPage extends javax.swing.JPanel {
         jPanel7.setBorder(xTitledBorder1);
 
         formPanel3.setCaption("Record of Ownership");
-        formPanel3.setCaptionFont(new java.awt.Font("Arial", 0, 14));
+        formPanel3.setCaptionFont(new java.awt.Font("Arial", 0, 12));
         xTextField3.setCaption("Registered Owner of");
         xTextField3.setCaptionWidth(170);
-        xTextField3.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField3.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField3.setName("entity.ownerof");
-        xTextField3.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField3.setPreferredSize(new java.awt.Dimension(0, 20));
         xTextField3.setRequired(true);
         formPanel3.add(xTextField3);
 
         xComboBox1.setCaption("Sex of Cattle");
         xComboBox1.setCaptionWidth(170);
-        xComboBox1.setFont(new java.awt.Font("Arial", 0, 14));
+        xComboBox1.setFont(new java.awt.Font("Arial", 0, 12));
         xComboBox1.setItems("sexList");
         xComboBox1.setName("entity.sex");
         xComboBox1.setPreferredSize(new java.awt.Dimension(130, 22));
@@ -261,25 +261,25 @@ public class LargeCattleOwnershipCollectionPage extends javax.swing.JPanel {
         xNumberField4.setCaption("Age of Cattle (Yrs)");
         xNumberField4.setCaptionWidth(170);
         xNumberField4.setFieldType(Integer.class);
-        xNumberField4.setFont(new java.awt.Font("Arial", 0, 14));
+        xNumberField4.setFont(new java.awt.Font("Arial", 0, 12));
         xNumberField4.setName("entity.age");
         xNumberField4.setPattern("#,##0");
-        xNumberField4.setPreferredSize(new java.awt.Dimension(130, 22));
+        xNumberField4.setPreferredSize(new java.awt.Dimension(130, 20));
         xNumberField4.setRequired(true);
         formPanel3.add(xNumberField4);
 
         xTextField4.setCaption("Brand of Municipality");
         xTextField4.setCaptionWidth(170);
-        xTextField4.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField4.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField4.setName("entity.municipalitybrand");
-        xTextField4.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField4.setPreferredSize(new java.awt.Dimension(0, 20));
         formPanel3.add(xTextField4);
 
         xTextField5.setCaption("Brand of Owner");
         xTextField5.setCaptionWidth(170);
-        xTextField5.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField5.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField5.setName("entity.ownerbrand");
-        xTextField5.setPreferredSize(new java.awt.Dimension(0, 22));
+        xTextField5.setPreferredSize(new java.awt.Dimension(0, 20));
         formPanel3.add(xTextField5);
 
         xSeparator1.setPreferredSize(new java.awt.Dimension(0, 20));
@@ -300,7 +300,7 @@ public class LargeCattleOwnershipCollectionPage extends javax.swing.JPanel {
         xTextArea1.setRows(5);
         xTextArea1.setCaption("Remarks");
         xTextArea1.setCaptionWidth(170);
-        xTextArea1.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextArea1.setFont(new java.awt.Font("Arial", 0, 12));
         xTextArea1.setName("entity.remarks");
         xTextArea1.setPreferredSize(new java.awt.Dimension(229, 100));
         jScrollPane1.setViewportView(xTextArea1);
@@ -320,7 +320,7 @@ public class LargeCattleOwnershipCollectionPage extends javax.swing.JPanel {
             jPanel7Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel7Layout.createSequentialGroup()
                 .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 250, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(47, Short.MAX_VALUE))
         );
 
         org.jdesktop.layout.GroupLayout jPanel6Layout = new org.jdesktop.layout.GroupLayout(jPanel6);
@@ -331,7 +331,7 @@ public class LargeCattleOwnershipCollectionPage extends javax.swing.JPanel {
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 199, Short.MAX_VALUE)
+            .add(jPanel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         jPanel5.add(jPanel6, java.awt.BorderLayout.CENTER);
 

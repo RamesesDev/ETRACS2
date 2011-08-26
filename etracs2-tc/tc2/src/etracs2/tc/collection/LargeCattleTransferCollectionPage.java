@@ -258,7 +258,7 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         formPanel3.setAddCaptionColon(false);
         formPanel3.setCaption("Record of Ownership");
         formPanel3.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
-        formPanel3.setCaptionFont(new java.awt.Font("Arial", 1, 12));
+        formPanel3.setCaptionFont(new java.awt.Font("Arial", 1, 11));
         formPanel3.setCaptionForeground(new java.awt.Color(0, 0, 102));
         formPanel3.setPreferredSize(new java.awt.Dimension(600, 354));
         xSeparator2.setCaption("Purchase Information");
@@ -277,19 +277,17 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         );
         formPanel3.add(xSeparator2);
 
-        formPanel4.setCaptionFont(new java.awt.Font("Arial", 0, 12));
         formPanel4.setPadding(new java.awt.Insets(0, 25, 0, 0));
-        formPanel4.setPreferredSize(new java.awt.Dimension(680, 75));
+        formPanel4.setPreferredSize(new java.awt.Dimension(680, 65));
         formPanel4.setShowCaption(false);
         xTextField3.setCaption("Purchased By");
         xTextField3.setCaptionWidth(130);
         xTextField3.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField3.setName("entity.purchasedby");
-        xTextField3.setPreferredSize(new java.awt.Dimension(0, 20));
+        xTextField3.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField3.setRequired(true);
         formPanel4.add(xTextField3);
 
-        formPanel8.setCaptionFont(new java.awt.Font("Arial", 0, 12));
         formPanel8.setCellspacing(20);
         formPanel8.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
         formPanel8.setPadding(new java.awt.Insets(0, 0, 0, 0));
@@ -298,7 +296,7 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         xTextField11.setCaptionWidth(130);
         xTextField11.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField11.setName("entity.citymuni");
-        xTextField11.setPreferredSize(new java.awt.Dimension(200, 20));
+        xTextField11.setPreferredSize(new java.awt.Dimension(200, 19));
         xTextField11.setRequired(true);
         formPanel8.add(xTextField11);
 
@@ -306,7 +304,7 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         xTextField12.setCaptionWidth(80);
         xTextField12.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField12.setName("entity.province");
-        xTextField12.setPreferredSize(new java.awt.Dimension(200, 20));
+        xTextField12.setPreferredSize(new java.awt.Dimension(200, 19));
         xTextField12.setRequired(true);
         formPanel8.add(xTextField12);
 
@@ -318,7 +316,7 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         xNumberField4.setFont(new java.awt.Font("Arial", 0, 12));
         xNumberField4.setName("entity.price");
         xNumberField4.setPattern("#,##0.00");
-        xNumberField4.setPreferredSize(new java.awt.Dimension(200, 20));
+        xNumberField4.setPreferredSize(new java.awt.Dimension(200, 19));
         xNumberField4.setRequired(true);
         formPanel4.add(xNumberField4);
 
@@ -340,9 +338,8 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         );
         formPanel3.add(xSeparator3);
 
-        formPanel5.setCaptionFont(new java.awt.Font("Arial", 0, 12));
         formPanel5.setPadding(new java.awt.Insets(0, 25, 0, 0));
-        formPanel5.setPreferredSize(new java.awt.Dimension(700, 95));
+        formPanel5.setPreferredSize(new java.awt.Dimension(700, 90));
         formPanel5.setShowCaption(false);
         xComboBox1.setCaption("Sex of Cattle");
         xComboBox1.setCaptionWidth(130);
@@ -359,7 +356,7 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         xNumberField5.setFont(new java.awt.Font("Arial", 0, 12));
         xNumberField5.setName("entity.age");
         xNumberField5.setPattern("#,##0");
-        xNumberField5.setPreferredSize(new java.awt.Dimension(200, 20));
+        xNumberField5.setPreferredSize(new java.awt.Dimension(200, 19));
         xNumberField5.setRequired(true);
         formPanel5.add(xNumberField5);
 
@@ -367,14 +364,14 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         xTextField4.setCaptionWidth(130);
         xTextField4.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField4.setName("entity.municipalitybrand");
-        xTextField4.setPreferredSize(new java.awt.Dimension(0, 20));
+        xTextField4.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel5.add(xTextField4);
 
         xTextField5.setCaption("Brand of Owner");
         xTextField5.setCaptionWidth(130);
         xTextField5.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField5.setName("entity.ownerbrand");
-        xTextField5.setPreferredSize(new java.awt.Dimension(0, 20));
+        xTextField5.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel5.add(xTextField5);
 
         formPanel3.add(formPanel5);
@@ -395,12 +392,10 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         );
         formPanel3.add(xSeparator4);
 
-        formPanel6.setCaptionFont(new java.awt.Font("Arial", 0, 12));
         formPanel6.setPadding(new java.awt.Insets(0, 25, 0, 0));
         formPanel6.setPreferredSize(new java.awt.Dimension(700, 80));
         formPanel6.setShowCaption(false);
 
-        formPanel7.setCaptionFont(new java.awt.Font("Arial", 0, 12));
         formPanel7.setCellspacing(20);
         formPanel7.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
         formPanel7.setPadding(new java.awt.Insets(0, 0, 0, 0));
@@ -409,20 +404,19 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         xTextField6.setCaptionWidth(130);
         xTextField6.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField6.setName("entity.certificateno");
-        xTextField6.setPreferredSize(new java.awt.Dimension(200, 20));
+        xTextField6.setPreferredSize(new java.awt.Dimension(200, 19));
         xTextField6.setRequired(true);
         formPanel7.add(xTextField6);
 
         xDateField2.setCaption("Issue Date");
         xDateField2.setFont(new java.awt.Font("Arial", 0, 12));
         xDateField2.setName("entity.issuedate");
-        xDateField2.setPreferredSize(new java.awt.Dimension(200, 20));
+        xDateField2.setPreferredSize(new java.awt.Dimension(200, 19));
         xDateField2.setRequired(true);
         formPanel7.add(xDateField2);
 
         formPanel6.add(formPanel7);
 
-        formPanel9.setCaptionFont(new java.awt.Font("Arial", 0, 12));
         formPanel9.setCellspacing(20);
         formPanel9.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
         formPanel9.setPadding(new java.awt.Insets(0, 0, 0, 0));
@@ -431,7 +425,7 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         xTextField7.setCaptionWidth(130);
         xTextField7.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField7.setName("entity.issuedcitymuni");
-        xTextField7.setPreferredSize(new java.awt.Dimension(200, 20));
+        xTextField7.setPreferredSize(new java.awt.Dimension(200, 19));
         xTextField7.setRequired(true);
         formPanel9.add(xTextField7);
 
@@ -439,13 +433,12 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         xTextField9.setCaptionWidth(80);
         xTextField9.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField9.setName("entity.issuedprovince");
-        xTextField9.setPreferredSize(new java.awt.Dimension(200, 20));
+        xTextField9.setPreferredSize(new java.awt.Dimension(200, 19));
         xTextField9.setRequired(true);
         formPanel9.add(xTextField9);
 
         formPanel6.add(formPanel9);
 
-        formPanel10.setCaptionFont(new java.awt.Font("Arial", 0, 12));
         formPanel10.setCellspacing(20);
         formPanel10.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
         formPanel10.setPadding(new java.awt.Insets(0, 0, 0, 0));
@@ -454,7 +447,7 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         xTextField8.setCaptionWidth(130);
         xTextField8.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField8.setName("entity.attestedby");
-        xTextField8.setPreferredSize(new java.awt.Dimension(200, 20));
+        xTextField8.setPreferredSize(new java.awt.Dimension(200, 19));
         xTextField8.setRequired(true);
         formPanel10.add(xTextField8);
 
@@ -462,7 +455,7 @@ public class LargeCattleTransferCollectionPage extends javax.swing.JPanel {
         xTextField10.setCaptionWidth(80);
         xTextField10.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField10.setName("entity.treasurer");
-        xTextField10.setPreferredSize(new java.awt.Dimension(200, 20));
+        xTextField10.setPreferredSize(new java.awt.Dimension(200, 19));
         xTextField10.setRequired(true);
         formPanel10.add(xTextField10);
 
