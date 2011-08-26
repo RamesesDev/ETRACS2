@@ -29,7 +29,7 @@ public class MachDetailPage extends javax.swing.JPanel {
     private void initComponents() {
         jPanel1 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xLabel2 = new com.rameses.rcp.control.XLabel();
         jPanel2 = new javax.swing.JPanel();
         xCheckBox1 = new com.rameses.rcp.control.XCheckBox();
@@ -77,13 +77,13 @@ public class MachDetailPage extends javax.swing.JPanel {
 
         formPanel1.setCaptionWidth(90);
         formPanel1.setPadding(new java.awt.Insets(0, 0, 0, 0));
-        xActionTextField1.setActionName("lookupMachine");
-        xActionTextField1.setCaption("Machine Code");
-        xActionTextField1.setIndex(-100);
-        xActionTextField1.setName("machcode");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(100, 18));
-        xActionTextField1.setRequired(true);
-        formPanel1.add(xActionTextField1);
+        xLookupField1.setCaption("Machine Code");
+        xLookupField1.setExpression("#{machinecode}");
+        xLookupField1.setHandler("lookupMachine");
+        xLookupField1.setName("machine");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(100, 19));
+        xLookupField1.setRequired(true);
+        formPanel1.add(xLookupField1);
 
         xLabel2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel2.setCaption("Machine Name");
@@ -259,7 +259,7 @@ public class MachDetailPage extends javax.swing.JPanel {
                 .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 250, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(xCheckBox3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(18, Short.MAX_VALUE))
+                .addContainerGap(31, Short.MAX_VALUE))
         );
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -430,7 +430,7 @@ public class MachDetailPage extends javax.swing.JPanel {
                 .add(xCheckBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(formPanel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(19, Short.MAX_VALUE))
+                .addContainerGap(32, Short.MAX_VALUE))
         );
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
@@ -489,12 +489,12 @@ public class MachDetailPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XCheckBox xCheckBox1;
     private com.rameses.rcp.control.XCheckBox xCheckBox2;
     private com.rameses.rcp.control.XCheckBox xCheckBox3;
     private com.rameses.rcp.control.XCheckBox xCheckBox4;
     private com.rameses.rcp.control.XLabel xLabel2;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField10;
     private com.rameses.rcp.control.XNumberField xNumberField11;

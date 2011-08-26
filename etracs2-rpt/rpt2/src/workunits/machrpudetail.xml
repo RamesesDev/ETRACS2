@@ -61,6 +61,8 @@ public class MachRPUDetailController
         arrastrecost        = machdetail.arrastrecost
         othercost           = machdetail.othercost
         depreciation        = machdetail.depreciation
+        
+        machine = [ machinecode:machdetail.machinecode]
     }
     
     def ok() {
@@ -204,18 +206,18 @@ public class MachRPUDetailController
     
     
     
-    def machcode
+    def machine
     
-    def onselectMachine = { mach -> 
-        machdetail.machineid    = mach.objid
-        machdetail.machinecode  = mach.machinecode
-        machdetail.machinename  = mach.machinedesc
-        machcode  = mach.machinecode 
+    void setMachine( mach ) {
+        this.machine = mach 
+        machdetail.machineid    = mach?.objid
+        machdetail.machinecode  = mach?.machinecode
+        machdetail.machinename  = mach?.machinedesc
         binding.refresh( 'machcode|machdetail.machinename' )
     }
     
-    def lookupMachine() {
-        return InvokerUtil.lookupOpener('machine.lookup', [onselect:onselectMachine, searchText:machcode] )
+    def getLookupMachine() {
+        return InvokerUtil.lookupOpener('machine.lookup', [:] )
     }
     
     
