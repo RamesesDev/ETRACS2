@@ -8,6 +8,9 @@ class BPLedgerService {
 	@Service("DateService")
 	def dateService;
 	
+	@Service('NumberService')
+	def numberSvc 
+	
 	@PersistenceContext('main')
 	def em;
 	
@@ -62,7 +65,7 @@ class BPLedgerService {
 			
 		def getUnpaidReceivables = { 
 			def list = app.receivables.findAll{ it.amount > it.amtpaid };
-			return list.findAll{ it.iqtr <= payment.qtr || it.applicationtype.matches('ADDLOB|NEW|RETIRE|RETIRELOB')}.each{ println it.iqtr }
+			return list.findAll{ it.iqtr <= payment.qtr || it.applicationtype?.matches('ADDLOB|NEW|RETIRE|RETIRELOB')}.each{ println it.iqtr }
 		}
 		
 		def receivables = getUnpaidReceivables();
@@ -113,7 +116,7 @@ class BPLedgerService {
 	}
 	
 	private void validateCapturePayment( payment ) {
-		if ( payment.amtpaid != payment.total )
+		if ( numberSvc.round( payment.amtpaid ) != numberSvc.round( payment.total)  )
 			throw new IllegalStateException( "Total must be equal to Amount Paid." );
 	}
 	
@@ -233,7 +236,7 @@ class BPLedgerService {
 		def getUnpaidReceivables = { 
 			def list = application.receivables.findAll{ it.amount > it.amtpaid };
 			if( application.txntype.matches('NEW|ADDLOB') ) return list;
-			return list.findAll{ it.iqtr <= qtr || ( it.applicationtype.matches('NEW|ADDLOB')) }
+			return list.findAll{ it.iqtr <= qtr || ( it.applicationtype?.matches('NEW|ADDLOB')) }
 		}
 		
 		def taxfees = getUnpaidReceivables();
