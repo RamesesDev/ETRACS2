@@ -12,6 +12,11 @@ SELECT o.* FROM bpapplicationlisting o
 WHERE o.tradename LIKE $P{search}  
 AND   o.docstate = $P{docstate} 
 
+[getListByBusinessName]  
+SELECT o.* FROM bpapplicationlisting o  
+WHERE o.tradename LIKE $P{search}  
+AND   o.docstate = $P{docstate} 
+
 [getListByBusinessAddress]  
 SELECT o.* FROM bpapplicationlisting o 
 WHERE o.businessaddress LIKE $P{search}  

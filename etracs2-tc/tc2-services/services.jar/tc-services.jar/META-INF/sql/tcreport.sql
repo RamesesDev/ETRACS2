@@ -1,24 +1,20 @@
 [getReceiptsByDate]
-SELECT 
-	afid AS afid, 
-	serialno AS serialno, 
-	payorname AS payor, 
-	accttitle AS particulars, 
-	amount AS amount 
-FROM revenue 
-WHERE voided = 0 
-AND remittancetimestamp = $P{txntimestamp} 
-ORDER BY afid, serialno, accttitle
+SELECT  afid, serialno, payorname, 
+	CASE WHEN voided = 1 THEN '*** VOIDED ***' ELSE accttitle END AS particulars ,  
+	CASE WHEN voided = 1 THEN 0.0 ELSE amount END as amount 
+FROM revenue  
+WHERE voided = 0  
+AND remittancetimestamp = $P{txntimestamp}  
+ORDER BY afid, serialno, accttitle 
 
 [getReceiptSummaryByDate]
 SELECT 
-	accttitle AS acctname, 
-	SUM(amount) AS amount 
+	fundname, accttitle, SUM(amount) AS amount 
 FROM revenue 
-WHERE voided = 0 
-AND remittancetimestamp = $P{txntimestamp} 
-GROUP BY accttitle 
-ORDER BY accttitle
+WHERE remittancetimestamp = $P{txntimestamp} 
+  AND voided = 0 
+GROUP BY fundname, accttitle 
+ORDER BY fundname, accttitle 
 
 
 

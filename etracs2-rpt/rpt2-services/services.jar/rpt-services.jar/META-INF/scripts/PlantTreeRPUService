@@ -27,6 +27,13 @@ class PlantTreeRPUService
         return faas 
     }
 	
+	@ProxyMethod
+	public Map calculatePlantTreeAssessmentByLandId( landfaasid, planttree ) {
+		def landfaas = em.read('faas', [objid:landfaasid] )
+		if( !landfaas ) throw new Exception('Land Reference cannot be loaded.\nPlease verify that the land where the property is located still exists.')
+		return calculatePlantTreeAssessment( landfaas.rpu.info.landdetails, planttree ) 
+	}
+	
     @ProxyMethod
     public Map calculatePlantTreeAssessment( landdetails, planttree ) {
 		//reset values to 0.0
@@ -43,7 +50,7 @@ class PlantTreeRPUService
 		planttree.adjustment 	 = 0.0
         
 		def rysetting = em.sqlContext.createNamedQuery( 'landrpu:getRPTSetting' ).singleResult;
-    	if( rysetting.adjustplanttree == 1 ){
+		if( rysetting.adjustplanttree == 1 || rysetting.adjustplanttree == true  ){
 			def totallandbmv 	  = landdetails.basemarketvalue.sum()
 			def totalvalueadj     = landdetails.landvalueadjustment.sum()
 			def totalactualuseadj = landdetails.actualuseadjustment.sum()

@@ -42,6 +42,7 @@ public class BldgRPUController
     def exemption
     def classification
     def errorMsg 
+    def useswornamount
     
     void init() {
         rpu.issuedate       = faas.info.issuedate 
@@ -56,6 +57,7 @@ public class BldgRPUController
         bldgage             = rpu.info.bldgage
         depreciation        = rpu.info.depreciation 
         firstfloorbasevalue = rpu.info.firstfloorbasevalue 
+        useswornamount      = rpu.info.useswornamount
     }
     
     def ok() {
@@ -129,6 +131,12 @@ public class BldgRPUController
         return svc.getClassList()
     }
     
+    
+    void setUseswornamount( useswornamount ) {
+        this.useswornamount = useswornamount
+        rpu.info.useswornamount = useswornamount
+        recalc()
+    }
     
     /*---------------------------------------------------------------
     *
@@ -345,6 +353,7 @@ public class BldgRPUController
     }
     
     boolean getAllowEdit() {
+        if( faas.info.datacapture == true ) return true
         if( faas.docstate == 'FORPROVAPPROVAL' ) return false
         if( faas.docstate == 'CURRENT' ) return false
         if( faas.docstate == 'CANCELLED' ) return false

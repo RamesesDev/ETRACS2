@@ -96,3 +96,17 @@ FROM faaslist
 WHERE taxpayerid = $P{taxpayerid} 
   AND docstate = 'CURRENT'  
 ORDER BY fullpin   
+
+
+[getJAT]
+SELECT 
+	barangay, issuedate, tdno, fullpin, 
+	txntype, ownername, rputype, classcode, 
+	totalareaha, totalmv, totalav, docstate 
+FROM faaslist  
+WHERE barangayid = $P{barangayid} 
+ AND docstate IN ( 'CURRENT', 'CANCELLED' ) 
+ORDER BY convert(replace(tdno,'-',''), UNSIGNED ) 
+
+
+

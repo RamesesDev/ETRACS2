@@ -177,7 +177,9 @@ class ConsolidatedReportService {
 			def series = getSeries( iraf.objid, ri.afid );
 			def craafitem = getCRAAFItem( afic.afinventoryid, ri.afid, "" );
 			def af = getAF( ri.afid );
-		
+			
+			if( ! craafitem ) throw new Exception('No available stock for AF ' + ri.afid + ' in the inventory.' )
+			
 			if( afic.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
 			if( afic.aftype == 'nonserial' ) ri.qtyreceived = ri.qtyreceived * af.pcsperunit;
 			
@@ -334,7 +336,7 @@ class ConsolidatedReportService {
 				.setParameters(
 					[
 						objid		: craaf.objid,
-						issuedqty	: craaf.issuedqty + rf.issuedqty,
+						issuedqty	: (craaf.issuedqty ? craaf.issuedqty : 0) + (rf.issuedqty ? rf.issuedqty : 0 ), 
 						issuedfrom	: rf.issuedfrom,
 						issuedto	: rf.issuedto,
 						endingqty	: rf.endingqty,

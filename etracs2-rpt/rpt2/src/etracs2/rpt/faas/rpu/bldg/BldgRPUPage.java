@@ -303,7 +303,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xCheckBox2.setText("Use Sworn Amount?");
         xCheckBox2.setCaption("");
         xCheckBox2.setDepends(new String[] {"rpu.info.swornstatement"});
-        xCheckBox2.setName("rpu.info.useswornamount");
+        xCheckBox2.setName("useswornamount");
         xCheckBox2.setPreferredSize(new java.awt.Dimension(200, 19));
         xCheckBox2.setShowCaption(false);
         xCheckBox2.setValue(0);

@@ -18,7 +18,7 @@ ORDER BY entityname
 SELECT * FROM entitymember WHERE entityid = $P{entityid} ORDER BY itemno 
 
 [checkDuplicateNo]
-SELECT COUNT(*) AS icount FROM entity WHERE entityno = $P{entityno} 
+SELECT COUNT(*) AS icount FROM entity WHERE objid <> $P{objid} AND entityno = $P{entityno} 
 
 [checkDuplicateName]
 SELECT * FROM entity WHERE objid <> $P{objid} AND entityname = $P{entityname} 

@@ -169,6 +169,7 @@ public class RPTSettingPage extends javax.swing.JPanel {
         xCheckBox14.setMargin(new java.awt.Insets(0, 0, 0, 0));
         xCheckBox14.setName("entity.adjustplanttree");
         xCheckBox14.setShowCaption(false);
+        xCheckBox14.setUncheckValue(0);
         formPanel10.add(xCheckBox14);
 
         org.jdesktop.layout.GroupLayout jPanel14Layout = new org.jdesktop.layout.GroupLayout(jPanel14);

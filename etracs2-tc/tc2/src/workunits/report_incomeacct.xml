@@ -16,33 +16,26 @@ import com.rameses.osiris2.reports.*;
 class IncomeAcctListingController
 {   
     @Service("ReportParameterService")
-    def svcParams;
+    def svcParams
 
-    @Service("IncomeAcctListingService")
-    def svc;
+    @Service("TCReportService")
+    def svc
     
-    def mode = "build";
-    def entity = [];
-    def data = [];
-
-    def chartType;
+    def data = []
+    def charttype
+    def mode 
     
     void init(){
-        entity = [
-            charttype : 'NGAS'
-        ];
+        charttype = 'NGAS' 
+        mode = 'build'
     }
     
     def getChartTypeList(){
         return [ 'NGAS', 'SRE' ];
     }
     
-    void setChartType( chartType ){
-        entity.charttype = chartType;
-    }
-    
     def view() {
-       data = svc.buildReport( entity );
+       data = svc.generateIncomeAccountListing( charttype )
        if( !data ) throw new Exception("No results found.");
        report.viewReport();
        mode = 'view';
@@ -55,16 +48,14 @@ class IncomeAcctListingController
     }
         
     def report =[
-        getReportName : { "incomeaccount/incomeacct" },
-        getReportData : { return data; },
-        getParameters : { getStandardParameter(); }
+        getReportName : { "incomeaccount" },
+        getReportData : { return data },
+        getParameters : { getStandardParameter() }
     ] as ServerReportModel;
     
     
     def getStandardParameter(){
-        return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [ 
-            charttype   : entity.charttype
-        ]; 
+        return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) 
     }
 }
 

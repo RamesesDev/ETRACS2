@@ -120,7 +120,7 @@ public class PlantTreeRPUController
     
     void calculatePlantTreeAssessment( item ) {
         item.landfaasid = faas.info.landfaasid;
-        def data = svc.calculatePlantTreeAssessment( item.landfaasid, item )
+        def data = svc.calculatePlantTreeAssessmentByLandId( item.landfaasid, item )
         item.putAll( data ) 
     }
     
@@ -246,6 +246,7 @@ public class PlantTreeRPUController
     }
     
     boolean getAllowEdit() {
+        if( faas.info.datacapture == true ) return true
         if( faas.docstate == 'FORPROVAPPROVAL' ) return false
         if( faas.docstate == 'CURRENT' ) return false
         if( faas.docstate == 'CANCELLED' ) return false

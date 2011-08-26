@@ -12,10 +12,13 @@ class TDReportService
 	
     @Service('NumberService')
     def numberSvc
+	
+	@Service('Var')
+	def var 
     
     @ProxyMethod
     public def getReportData( faasid ) {
-    	def faas = em.read('faas', [objid:faasid]);
+		def faas = em.read('faas', [objid:faasid]);
     	
     	def td =[:]
     	td.putAll( faas.info )
@@ -24,7 +27,11 @@ class TDReportService
     	td.docstate = faas.docstate
     	td.munidistprovince = faas.rp.munidistrict + ', ' + faas.rp.provcity
     	td.propertytype = faas.rpu.rputype 
-    	td.avinwords = numberSvc.convertDouble( faas.rpu.totalav )
+		td.avinwords = numberSvc.convertDouble( faas.rpu.totalav )
+		
+		if( faas.rpu.rputype != 'land' ) {
+			clearRealPropertyInfo( td )
+		}
     	
     	if( faas.rpu.rputype == 'land' ) {
 			td.lands = getLandDetails( faas.rpu )
@@ -55,6 +62,23 @@ class TDReportService
 		}
     	return td;
     }
+	
+	void clearRealPropertyInfo( td ) {
+		println 'var.td_show_landinfo_on_improvements -> ' + var.td_show_landinfo_on_improvements 
+		int showlandinfo =  toInt(var.td_show_landinfo_on_improvements, 1 ) 
+		if( showlandinfo == 1 ) return 
+		
+		td.titleno 		= ''
+		td.cct			= ''
+		td.cctdate		= null
+		td.surveyno		= ''
+		td.cadastrallotno = ''
+		td.blockno		= ''
+		td.north		= ''
+		td.south		= ''
+		td.east			= ''
+		td.west			= ''
+	}
 	
 	def getMachineDescriptions( machrpu ) {
 		return machrpu.info.machuses.machdetails.machinename.flatten().join(',')
@@ -187,4 +211,12 @@ class TDReportService
     	return data;
     }
     
+	int toInt( val, defval  ) {
+		try {
+			return Integer.parseInt( val ) 
+		}
+		catch( e ) {
+			return defval
+		}
+	}
 }

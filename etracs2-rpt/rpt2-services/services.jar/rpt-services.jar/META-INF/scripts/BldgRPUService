@@ -122,16 +122,26 @@ class BldgRPUService
         
         //calculate rpu market value
         rpu.totalareasqm    = calculateSum('area', rpu.info.bldguses )
-        rpu.totalbmv        = calculateSum('basemarketvalue', rpu.info.bldguses )
-        rpu.totalmv         = calculateSum('marketvalue', rpu.info.bldguses )
-        rpu.info.depreciationvalue = calculateSum('depreciationvalue', rpu.info.bldguses )
+		
+		if( rpu.info.useswornamount == true  ) {
+			rpu.totalbmv        = rpu.info.swornamount 
+			rpu.info.depreciationvalue = numberSvc.round( rpu.totalbmv * rpu.info.depreciation / 100 )
+			rpu.totalmv         = rpu.totalbmv - rpu.info.depreciationvalue
+			calculatePredominantAssessment( rpu )
+		}
+		else {
+			rpu.totalbmv        = calculateSum('basemarketvalue', rpu.info.bldguses )
+			rpu.totalmv         = calculateSum('marketvalue', rpu.info.bldguses )
+			rpu.info.depreciationvalue = calculateSum('depreciationvalue', rpu.info.bldguses )
+			
+			if( rpu.info.predominant || rpu.info.predoument == 1 ) {
+				calculatePredominantAssessment( rpu )
+			}
+			else {
+				calculateSplitAssessment( rpu )
+			}
+		}
         
-        if( rpu.info.predominant || rpu.info.predoument == 1 ) {
-            calculatePredominantAssessment( rpu )
-        }
-        else {
-            calculateSplitAssessment( rpu )
-        }
         return rpu 
     }
     
@@ -149,11 +159,7 @@ class BldgRPUService
     @ProxyMethod
     public Map calculatePredominantAssessment( rpu ) {
         required('Classification', rpu.classid)
-        
         def mv = rpu.totalmv 
-        if( rpu.info.swornstatement && rpu.info.useswornamount ) {
-            mv = rpu.info.swornamount
-        }
         def assesslevel = getBldgAssessmentLevel( rpu.ry, rpu.classcode )
         rpu.info.assesslevelid     = assesslevel.actualuseid 
         rpu.info.assesslevelcode   = assesslevel.actualusecode

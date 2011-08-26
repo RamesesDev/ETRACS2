@@ -35,14 +35,16 @@ class LookupBusinessListController extends LookupModel
     }
 
     public List  fetchList(Map param) { 
+        def s = search
+        if( !s ) s = searchText 
         def list = [];
-        if( txntype ) list = svc.lookupApplicationByTxnType( searchText, txntype );
-        else list = svc.lookupApproveApplication( searchText );
+        list = svc.lookupApproveApplication( s );
         if( !list ) throw new Exception( 'There are no records found.' );
         return list;
     }
     
     def ok(){
+        search = null
         if( onselect ) onselect( selected );
         return select();
     }

@@ -29,7 +29,7 @@ class EntityMultipleController extends etracs2.groovy.AbstractEntityController
     def errorMsg 
     
     void init() {
-        members  = []
+        members = []
         super.create()
     }
     
@@ -42,6 +42,14 @@ class EntityMultipleController extends etracs2.groovy.AbstractEntityController
                 entityaddress   : it.taxpayeraddress,
             ]
         }
+    }
+    
+    void save() {
+        updateFullName()
+        if( mode == 'create') {
+            entity._members = members 
+        }
+        super.save()        
     }
     
     def getService() { return svc }
@@ -87,8 +95,9 @@ class EntityMultipleController extends etracs2.groovy.AbstractEntityController
             item.taxpayerid     = item.entity?.objid;
             item.taxpayername   = item.entity?.entityname;
             item.taxpayeraddress = item.entity?.entityaddress
-            updateFullName( item, 'add' );
-            svc.saveMember( item )
+            if( mode != 'create' ) {
+                svc.saveMember( item )
+            }
             clearError()
         }
         catch( e ) {
@@ -109,33 +118,28 @@ class EntityMultipleController extends etracs2.groovy.AbstractEntityController
         if( MsgBox.confirm("Remove selected item?") ) {
             svc.deleteMember( item ) 
             members.remove( item );
-            updateFullName( item, 'remove' );
+            updateFullName();
         }
     }
     
-    void updateFullName( item, state ) {
-        if( state == 'add' ) {
-            def prefix = ( item.prefix ? item.prefix : "" ).toString();
-            def suffix = ( item.suffix ? item.suffix : "" ).toString();
-
-            if( entity.info.fullname == null || entity.info.fullname == '' ) 
-                entity.info.fullname = "$prefix $item.taxpayername $suffix";
-            else entity.info.fullname += ", $prefix $item.taxpayername $suffix";
-        } else {
-            entity.info.fullname = '';
-            members.each {
-                def prefix = ( it.prefix ? it.prefix : "" ).toString();
-                def suffix = ( it.suffix ? it.suffix : "" ).toString();
-
-                if( entity.info.fullname == null || entity.info.fullname == '' ) 
-                    entity.info.fullname = "$prefix $it.taxpayername $suffix";
-                else entity.info.fullname += ", $prefix $it.taxpayername $suffix";
-            }
+    void updateFullName() {
+        String fullname = ''
+        
+        members.each { 
+            String prefix = ( it.prefix ? it.prefix : '' )
+            String suffix = ( it.suffix ? it.suffix : '' )
+            fullname += prefix
+            if( prefix.length()  > 0 ) fullname += ' ' 
+            fullname += it.taxpayername 
+            if( suffix.length() > 0 ) fullname += ' '
+            fullname += suffix + ' '
         }
+        entity.info.fullname = fullname 
         binding.refresh('entity.info.fullname');
     }
     
     void copyFullName() {
+        updateFullName()
         entity.entityname = entity.info.fullname;
         binding.refresh('entity.entityname');
     }
