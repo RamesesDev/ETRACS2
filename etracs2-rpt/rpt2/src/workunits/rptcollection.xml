@@ -109,6 +109,7 @@
         def errorMsg
         def selectedItem
         def bill
+        def billtoyear 
         
         def getLookupPayor(){
             return InvokerUtil.lookupOpener('entity.lookup', [:])
@@ -137,6 +138,12 @@
                 parsedate = dateSvc.parseCurrentDate()
             }
             if( payoption == 'all' ) {
+                loadBill()
+                return 'main'
+            }
+            else if( payoption == 'advance' ) {
+                if( billtoyear == null ) throw new Exception('Year is required.')
+                if( billtoyear <= parsedate.year ) throw new Exception('Year must be greater than ' + (parsedate.year) + '.' )
                 loadBill()
                 return 'main'
             }
@@ -173,7 +180,7 @@
                 ledgerids      : [],
                 advancepayment : false,
                 billdate       : parsedate.date,
-                billtoyear     : parsedate.year,
+                billtoyear     : ( payoption == 'advance' ? billtoyear : parsedate.year),
                 billtoqtr      : 4,
                 fullpayment    : true,
                 qtrlypaymentavailed : false, 

@@ -36,6 +36,8 @@ public class RPTReceiptInitPage extends javax.swing.JPanel {
         formPanel2 = new com.rameses.rcp.util.FormPanel();
         xRadio1 = new com.rameses.rcp.control.XRadio();
         xRadio2 = new com.rameses.rcp.control.XRadio();
+        xRadio3 = new com.rameses.rcp.control.XRadio();
+        xNumberField1 = new com.rameses.rcp.control.XNumberField();
         jLabel1 = new javax.swing.JLabel();
         xButton1 = new com.rameses.rcp.control.XButton();
 
@@ -112,6 +114,27 @@ public class RPTReceiptInitPage extends javax.swing.JPanel {
         xRadio2.setShowCaption(false);
         formPanel2.add(xRadio2);
 
+        xRadio3.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        xRadio3.setMnemonic('l');
+        xRadio3.setText("Advance Payment");
+        xRadio3.setCellPadding(new java.awt.Insets(10, 30, 0, 0));
+        xRadio3.setFont(new java.awt.Font("Arial", 0, 12));
+        xRadio3.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        xRadio3.setName("payoption");
+        xRadio3.setOpaque(false);
+        xRadio3.setOptionValue("advance");
+        xRadio3.setShowCaption(false);
+        formPanel2.add(xRadio3);
+
+        xNumberField1.setCaption("Year");
+        xNumberField1.setCaptionWidth(50);
+        xNumberField1.setCellPadding(new java.awt.Insets(0, 70, 0, 0));
+        xNumberField1.setDepends(new String[] {"payoption"});
+        xNumberField1.setFieldType(Integer.class);
+        xNumberField1.setName("billtoyear");
+        xNumberField1.setPreferredSize(new java.awt.Dimension(60, 19));
+        formPanel2.add(xNumberField1);
+
         formPanel1.add(formPanel2);
 
         jLabel1.setBackground(new java.awt.Color(1, 47, 8));
@@ -160,8 +183,10 @@ public class RPTReceiptInitPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XDateField xDateField1;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLookupField xLookupField1;
+    private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XRadio xRadio1;
     private com.rameses.rcp.control.XRadio xRadio2;
+    private com.rameses.rcp.control.XRadio xRadio3;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
     // End of variables declaration//GEN-END:variables

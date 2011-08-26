@@ -435,71 +435,71 @@ public class FAASPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Ownership Information");
         jPanel7.setBorder(xTitledBorder2);
-        jLabel22.setText("Taxpayer * :");
+        jLabel22.setText("Owner * :");
         jLabel22.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel22);
-        jLabel22.setBounds(10, 24, 80, 18);
+        jLabel22.setBounds(10, 24, 96, 18);
 
         jLabel23.setText("Administrator :");
         jLabel23.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel23);
-        jLabel23.setBounds(10, 62, 80, 18);
+        jLabel23.setBounds(10, 62, 96, 18);
 
         xLabel3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel3.setName("faas.info.taxpayeraddress");
         xLabel3.setPreferredSize(new java.awt.Dimension(42, 19));
         jPanel7.add(xLabel3);
-        xLabel3.setBounds(520, 24, 274, 19);
+        xLabel3.setBounds(528, 24, 266, 19);
 
         xLabel4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         xLabel4.setName("faas.info.administratoraddress");
         xLabel4.setPreferredSize(new java.awt.Dimension(42, 19));
         jPanel7.add(xLabel4);
-        xLabel4.setBounds(520, 62, 274, 19);
+        xLabel4.setBounds(528, 62, 266, 19);
 
-        jLabel24.setText("Owner * :");
+        jLabel24.setText("Declared Owner* :");
         jLabel24.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel24);
-        jLabel24.setBounds(10, 43, 80, 18);
+        jLabel24.setBounds(10, 43, 96, 18);
 
         xTextField7.setCaption("Owner");
         xTextField7.setName("faas.info.ownername");
         xTextField7.setRequired(true);
         jPanel7.add(xTextField7);
-        xTextField7.setBounds(90, 43, 362, 19);
+        xTextField7.setBounds(104, 43, 360, 19);
 
         jLabel25.setText("Address :");
         jLabel25.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel25);
-        jLabel25.setBounds(458, 24, 62, 18);
+        jLabel25.setBounds(468, 24, 60, 18);
 
         jLabel26.setText("Address :");
         jLabel26.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel26);
-        jLabel26.setBounds(458, 62, 62, 18);
+        jLabel26.setBounds(468, 62, 60, 18);
 
         jLabel27.setText("Address * :");
         jLabel27.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel27);
-        jLabel27.setBounds(458, 43, 62, 18);
+        jLabel27.setBounds(468, 43, 60, 18);
 
         xTextField8.setCaption("Owner Address");
         xTextField8.setName("faas.info.owneraddress");
         xTextField8.setRequired(true);
         jPanel7.add(xTextField8);
-        xTextField8.setBounds(520, 43, 274, 19);
+        xTextField8.setBounds(528, 43, 266, 19);
 
         xLookupField4.setExpression("#{entityname}");
         xLookupField4.setHandler("lookupTaxpayer");
         xLookupField4.setName("taxpayer");
         jPanel7.add(xLookupField4);
-        xLookupField4.setBounds(90, 24, 362, 19);
+        xLookupField4.setBounds(104, 24, 360, 19);
 
         xLookupField5.setExpression("#{entityname}");
         xLookupField5.setHandler("lookupAdministrator");
         xLookupField5.setName("administrator");
         jPanel7.add(xLookupField5);
-        xLookupField5.setBounds(90, 62, 362, 19);
+        xLookupField5.setBounds(104, 62, 360, 19);
 
         jPanel3.add(jPanel7);
         jPanel7.setBounds(8, 172, 802, 90);

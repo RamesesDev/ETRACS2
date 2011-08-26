@@ -72,6 +72,7 @@
         void addReceiptItem() {
             def cs = collSvc.open()
             def ia = acctSvc.open( cs.info.marriageacctid )
+            if( ! ia ) throw new Exception('Marriage License and Fee account is not set in collection setting.')
             def item = [
                 acctid    : ia.objid,
                 acctno    : ia.acctno,
