@@ -4,7 +4,7 @@ SELECT * FROM rptsetting
 [getBarangayList]
 SELECT objid, lguname AS barangay FROM lgu 
 WHERE parentid = $P{parentid} AND lgutype = 'BARANGAY'
-ORDER BY lguname 
+ORDER BY indexno
 
  
 
@@ -109,4 +109,71 @@ WHERE barangayid = $P{barangayid}
 ORDER BY convert(replace(tdno,'-',''), UNSIGNED ) 
 
 
+#----------------------------------------------------------------------
+#
+# Real Property Assessment Accomplishment Report 
+#
+#----------------------------------------------------------------------
+[getPreceedingRPAAccomplishment]
+SELECT  
+	l.objid AS barangayid, 
+	l.lguname AS barangay, 
+	SUM( CASE WHEN f.taxable = 1 THEN 1 ELSE 0 END ) AS preceedingtaxablecount, 
+	SUM( CASE WHEN f.taxable = 1 THEN f.totalav ELSE 0 END ) AS preceedingtaxableav, 
+	SUM( CASE WHEN f.taxable = 0 THEN 1 ELSE 0 END ) AS preceedingexemptcount, 
+	SUM( CASE WHEN f.taxable = 0 THEN f.totalav ELSE 0 END ) AS preceedingexemptav 
+FROM faaslist f 
+	LEFT JOIN lgu l ON l.objid = f.barangayid 
+WHERE f.txntimestamp < $P{txntimestamp} 
+  AND f.docstate IN ( 'CURRENT', 'CANCELLED' ) 
+  AND l.parentid = $P{lguindex} 
+GROUP BY l.objid, l.lguname  
+ORDER BY l.indexno 	 
 
+[getCurrentRPAAccomplishment]
+SELECT  
+	l.objid AS barangayid, 
+	l.lguname AS barangay, 
+	SUM( IFNULL(CASE WHEN f.taxable = 1 THEN 1 ELSE 0 END,0) ) AS currenttaxablecount, 
+	SUM( CASE WHEN f.taxable = 1 THEN f.totalav ELSE 0 END ) AS currenttaxableav, 
+	SUM( CASE WHEN f.taxable = 0 THEN 1 ELSE 0 END ) AS currentexemptcount, 
+	SUM( CASE WHEN f.taxable = 0 THEN f.totalav ELSE 0 END ) AS currentexemptav 
+FROM faaslist f 
+	LEFT JOIN lgu l ON l.objid = f.barangayid 
+WHERE f.txntimestamp LIKE $P{txntimestamp} 
+  AND f.docstate = 'CURRENT' 
+  AND l.parentid = $P{lguindex} 
+GROUP BY l.objid, l.lguname  
+ORDER BY l.indexno  
+
+[getCancelledRPAAccomplishment]
+SELECT  
+	l.objid AS barangayid, 
+	l.lguname AS barangay, 
+	SUM( CASE WHEN f.taxable = 1 THEN 1 ELSE 0 END ) AS cancelledtaxablecount, 
+	SUM( CASE WHEN f.taxable = 1 THEN f.totalav ELSE 0 END ) AS cancelledtaxableav, 
+	SUM( CASE WHEN f.taxable = 0 THEN 1 ELSE 0 END ) AS cancelledexemptcount, 
+	SUM( CASE WHEN f.taxable = 0 THEN f.totalav ELSE 0 END ) AS cancelledexemptav 
+FROM faaslist f 
+	LEFT JOIN lgu l ON l.objid = f.barangayid 
+WHERE f.txntimestamp LIKE $P{txntimestamp}  
+  AND f.docstate = 'CANCELLED' 
+  AND l.parentid = $P{lguindex} 
+GROUP BY l.objid, l.lguname  
+ORDER BY l.indexno 	 
+
+[getEndingRPAAccomplishment]
+SELECT  
+	l.objid AS barangayid, 
+	l.lguname AS barangay, 
+	SUM( CASE WHEN f.taxable = 1 THEN 1 ELSE 0 END ) AS endingtaxablecount, 
+	SUM( CASE WHEN f.taxable = 1 THEN f.totalav ELSE 0 END ) AS endingtaxableav, 
+	SUM( CASE WHEN f.taxable = 0 THEN 1 ELSE 0 END ) AS endingexemptcount, 
+	SUM( CASE WHEN f.taxable = 0 THEN f.totalav ELSE 0 END ) AS endingexemptav 
+FROM faaslist f 
+	LEFT JOIN lgu l ON l.objid = f.barangayid  
+WHERE f.txntimestamp < $P{txntimestamp} 
+  AND f.docstate = 'CURRENT' 
+  AND l.parentid = $P{lguindex} 
+GROUP BY l.objid, l.lguname  
+ORDER BY l.indexno 	 

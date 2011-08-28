@@ -1,10 +1,7 @@
 <workunit>
     <invokers>
-        <invoker type="rptreport"       action="init" opener="jat" caption="Journal of Assessment Transaction" target="window" permission="rptreport.jat" index="5" />
-        <invoker type="rptreport.jat"   action="init" caption="Journal of Assessment Transaction" permission="rptreport.jat" />
-        
-        
-        <invoker folderid="menu/rpt/txn" action="init" caption="Journal of Assessment Transaction" permission="rptreport.jat"/>
+        <invoker type="rptreport"         action="init" opener="accomplishmentrpa" caption="Accomplishment of Real Property Assessment" target="window" permission="rptreport.accomplishmentrpa" index="6" />
+        <invoker type="rptreport.accomplishmentrpa"    action="init"               caption="Accomplishment of Real Property Assessment" />
         
         <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png" immediate="true"/>
         <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
@@ -20,7 +17,7 @@ import com.rameses.rcp.annotations.*;
 import com.rameses.osiris2.client.*;
 import com.rameses.osiris2.reports.*;
 
-class JATController
+class AccomplishmentRPAController
 {
     @Service("ReportParameterService")
     def svcParams;
@@ -28,10 +25,18 @@ class JATController
     @Service('RPTReportService') 
     def svc 
     
-    def barangay
-    def reportdata
+    @Service('DateService')
+    def dateSvc
+    
+    def year
+    def qtr
+    def month
+    
+    
+    def data
     
     void init() {
+        year = dateSvc.serverYear 
     }
 
     def preview() {
@@ -40,7 +45,7 @@ class JATController
     }
     
     void generateReport() {
-        reportdata = svc.generateJAT( barangay.objid  )
+        data = svc.generateAccomplishmentRPA( year, qtr, month?.month )
         report.viewReport()
     }
     
@@ -50,17 +55,25 @@ class JATController
     }
     
     def report = [
-        getReportName : { 'jat' },
-        getReportData : { return reportdata },
-        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+        getReportName : { 'accomplishmentrpa' },
+        getReportData : { return data.reportdata },
+        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [
+                            TITLE       : data.title, 
+                            PERIOD      : data.period,
+                            PERIODTYPE  : data.periodtype,
+                        ]}
     ] as ServerReportModel;
         
     def back() {
         return 'default' 
     }
     
-    List getBarangaylist() {
-        return svc.getBarangayList()
+    List getQuarterlist() {
+        return [1,2,3,4]
+    }
+    
+    List getMonthlist() {
+        return svc.getMonthList( qtr )
     }
     
 }
@@ -68,7 +81,7 @@ class JATController
         
     </code>
     <pages>
-        <page template="etracs2.rpt.report.JATReportPage" />
+        <page template="etracs2.rpt.report.RPTReportInitialPage" />
         <page name="preview" template="etracs2.common.PreviewPage" />
     </pages>
 </workunit>
