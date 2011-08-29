@@ -1,0 +1,67 @@
+<workunit>
+    <invokers>
+        <invoker type="afcontrol.lookup" action="init" caption="AF Control Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+
+class AFControlLookupController extends LookupModel 
+{
+    @Service("AFControlService")
+    def svc;
+    
+    def onselect;
+    def searchText;
+    def selected;
+    def collectorid
+    def afid
+    def mode 
+    
+    void init(){
+    }
+    
+    
+    def ok() {
+        search = null
+        if( onselect ) onselect( selected )
+        return select();
+    }
+    
+    def getListHandler() {
+        return this;
+    }
+    
+    int getRows() { return 20; }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"afid", caption:"AF No."),
+            new Column(name:"stubno", caption:"Stub No"),
+            new Column(name:"startseries", caption:"Start Series", format:'0000000'),
+            new Column(name:"endseries", caption:"End Series", format:'0000000'),
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getInactiveList( collectorid, afid, mode );
+        if( list ) return list;
+        throw new Exception("Record not found.");
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.LookupPage"/>
+    </pages>
+</workunit>

@@ -13,6 +13,12 @@ class ReceiptService
 	@Service('DateService')
 	def dateService
 	
+	@Service('ETRACSUserService')
+	def userSvc
+	
+	@Service('Var')
+	def var 
+	
 	def SCHEMANAME = 'receipt:receipt'
 	def SCHEMAVERSION = '1.0'
 	def RECEIPTITEM_SCHEMA = 'receipt:receiptitem'
@@ -129,7 +135,117 @@ class ReceiptService
         if( daysdiff > 60 ) throw new Exception('Stale check is not allowed.')
     }
 	
+	@ProxyMethod
+	public def saveBookletCollection( entity ) {
+		
+		if( entity.amttendered < entity.amount ) throw new Exception('Amount Tendered must be greater than or equal to amount.')
+		def collector = userSvc.getUser( entity.collectorid )
+		if( !collector ) throw new Exception('Cannot open collector information with userid ' + entity.collectorid + '.' )
+		
+		def fund = em.sqlContext.createNamedQuery('receipt:getFundName').setParameter('objid', entity.fundid).singleResult
+		if( ! fund ) throw new Exception('Cannot open fund information with key ' + entity.fundid + '.' )
+		
+		entity.collector 	= collector 
+		entity.fundname 	= fund.fundname 
+		
+		entity.afcontrol.startseries.upto( entity.afcontrol.endseries ) { currentseries ->
+			def receipt = [
+				objid 			: 'BR' + new UID(),
+				schemaname		: SCHEMANAME,
+				schemaversion	: SCHEMAVERSION,
+				docstate		: OPEN_STATE,
+				doctype			: entity.doctype,
+				opener			: entity.opener,
+				collectorid		: entity.collectorid,
+				voided			: 0,
+				info			: buildBookletCollectionInfo( entity, currentseries ),
+				items			: buildBookletCollectionItem( entity ),
+				payments		: buildBookletCollectionPayments( entity ),
+			]
+			create( receipt )
+		}
+		return entity 
+	}
 	
+	def buildBookletCollectionInfo( entity, currentseries ){
+		def afcontrol = entity.afcontrol 
+		def info = [
+			mode		: 'ONLINE',
+			txndate		: dateService.serverDate,
+			dtposted	: dateService.serverDate, 
+			afid		: entity.af.objid ,
+			afcontrolid	: entity.afcontrol.objid, 
+			series		: currentseries,
+			serialno	: formatSeries( currentseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength),
+			stubno		: afcontrol.stubno,
+			collectiontypeid 	: entity.collectiontype.objid,
+			collectiontype	 	: entity.collectiontype.name,
+			payorrequired    	: false,
+			payorid			 	: null,
+			payorname		 	: entity.paidby,
+			payoraddress	  	: entity.paidbyaddress,
+			paidby				: entity.paidby,
+			paidbyaddress		: entity.paidbyaddress,
+			collectorid			: entity.collectorid,
+			collectorname		: entity.collector.formalname,
+			collectortitle 		: entity.collector.jobtitle,
+			totalpayment		: entity.unitvalue,
+			cash				: entity.unitvalue,
+			otherpayment		: 0.0,
+			amount				: entity.unitvalue,
+		]
+		
+		if( entity.af.objid == '52' ) {
+			info.putAll([
+				purchasedby		: '-',
+				citymuni		: var.lgu_name,
+				province		: var.parent_lgu_name,
+				price			: 0.0,
+				sex				: '-',
+				age				: 0,
+				certificateno	: '-',
+				issuedcitymuni	: var.lgu_name,
+				attestedby		: '-',
+				issuedate		: dateService.serverDate,
+				issuedprovince	: var.parent_lgu_name,
+				treasurer		: var.treasurer_name,
+			])
+		}
+		else {
+			info.putAll([
+				ownerof		: '-',
+				sex			: '-',
+				age			: 0,
+			])
+		}
+		return info 
+	}
+	
+	def buildBookletCollectionItem( entity ) {
+		return [[
+			objid 		: 'BRI' + new UID(),
+			acctid		: entity.acctid,
+			accttitle	: entity.accttitle,
+			fundid		: entity.fundid, 
+			fundname	: entity.fundname ,
+			amount		: entity.unitvalue,
+		]]
+	}
+	
+	List buildBookletCollectionPayments( entity ) {
+		def payment = [
+			paytype 	: 'CASH',
+			amount		: entity.unitvalue,
+			particulars	: 'CASH',
+		]
+		return [ payment ]
+	}
+	
+	def formatSeries( series, prefix, suffix, serieslength ) {
+		def p = (prefix ? prefix + '-' : '')
+		def s  = (suffix ? '-' + suffix : '')
+		return p + (series+'').padLeft(serieslength, '0') + s  
+	}
 	
 	
 	/*=========================================================================
