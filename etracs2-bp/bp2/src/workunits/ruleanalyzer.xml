@@ -147,7 +147,7 @@ class RuleAnalyzerController
         ]},
         createItem : { return [objid:'I' + new UID()] },
         validate   : { li -> validateLobItem( li.item ) },
-        onAddItem  : { item -> doAddItem( item ) },
+        onAddItem  : { item -> entity.lobs.add( item ) },
         onRemoveItem : { item -> 
             if( MsgBox.confirm('Delete selected line of business?') ) {
                 entity.lobs.remove( item )
@@ -166,8 +166,9 @@ class RuleAnalyzerController
             def dup = entity.lobs.find{ it.objid != item.objid && it.lob.name == item.lob?.name }
             if( dup ) throw new Exception('Duplicate line of business is not allowed.')
             
+            def lobitem = entity.lobs.find{ it.objid == item.objid }
+            if( lobitem ) lobitem.lob = item.lob 
             errorMsg = null
-            binding.refresh( 'errorMsg' ) 
         }
         catch( e ) {
             errorMsg = e.message
@@ -206,10 +207,6 @@ class RuleAnalyzerController
     
     def displayRuleInfo( item ) {
         return InvokerUtil.lookupOpener('rule.htmlinfo', [rulename:item.rulename])
-    }
-    
-    void doAddItem( item ) {
-        entity.lobs.add( item )
     }
     
     void calculateTotalAssessment() {
