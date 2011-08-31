@@ -6,6 +6,13 @@ SELECT objid, lguname AS barangay FROM lgu
 WHERE parentid = $P{parentid} AND lgutype = 'BARANGAY'
 ORDER BY indexno
 
+[getClassificationList] 
+SELECT objid, propertydesc AS classname, special  
+FROM propertyclassification  ORDER BY orderno  
+
+[getExemptionList]
+SELECT objid, exemptdesc AS classname, 0 AS special 
+FROM exemptiontype ORDER BY orderno  
  
 
 [getNoticeItemsByTaxpayerId]
@@ -125,7 +132,7 @@ SELECT
 FROM faaslist f 
 	LEFT JOIN lgu l ON l.objid = f.barangayid 
 WHERE f.txntimestamp < $P{txntimestamp} 
-  AND f.docstate IN ( 'CURRENT', 'CANCELLED' ) 
+  AND f.docstate = 'CURRENT' 
   AND l.parentid = $P{lguindex} 
 GROUP BY l.objid, l.lguname  
 ORDER BY l.indexno 	 
@@ -177,3 +184,154 @@ WHERE f.txntimestamp < $P{txntimestamp}
   AND l.parentid = $P{lguindex} 
 GROUP BY l.objid, l.lguname  
 ORDER BY l.indexno 	 
+
+
+
+#----------------------------------------------------------------------
+#
+# COMPARATIVE DATA ON AV
+#
+#----------------------------------------------------------------------
+[getPreceedingComparativeAV]
+SELECT
+	'TAXABLE' AS taxability, 
+	c.objid AS classid, 
+	c.propertydesc AS classname, 
+	c.special AS special, 
+	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS preceedinglandav, 
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS preceedingimpav, 
+	SUM( f.totalav ) AS preceedingtotal 
+FROM faaslist f 
+	INNER JOIN propertyclassification c ON f.classid = c.objid  
+WHERE f.txntimestamp < $P{preceedingtimestamp}   
+  AND f.docstate = 'CURRENT'  
+  AND f.taxable = 1 
+GROUP BY c.objid, c.propertydesc, c.special 
+ORDER BY c.orderno 
+
+
+[getCurrentComparativeAV]
+SELECT 
+	'TAXABLE' AS taxability, 
+	c.objid AS classid, 
+	c.propertydesc AS classname, 
+	c.special AS special, 
+	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS currentlandav, 
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS currentimpav, 
+	SUM( f.totalav ) AS currenttotal 
+FROM faaslist f 
+	INNER JOIN propertyclassification c ON f.classid = c.objid  
+WHERE f.txntimestamp LIKE $P{txntimestamp}    
+  AND f.docstate = 'CURRENT'  
+  AND f.taxable = 1 
+GROUP BY c.objid, c.propertydesc, c.special 
+ORDER BY c.orderno 
+
+
+[getCancelledComparativeAV]
+SELECT 
+	'TAXABLE' AS taxability, 
+	c.objid AS classid, 
+	c.propertydesc AS classname, 
+	c.special AS special, 
+	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS cancelledlandav, 
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS cancelledimpav,  
+	SUM( f.totalav ) AS cancelledtotal  
+FROM faaslist f 
+	INNER JOIN propertyclassification c ON f.classid = c.objid  
+WHERE f.txntimestamp LIKE $P{txntimestamp}    
+  AND f.docstate = 'CANCELLED'  
+  AND f.taxable = 1 
+GROUP BY c.objid, c.propertydesc, c.special 
+ORDER BY c.orderno 
+
+
+[getEndingComparativeAV]
+SELECT  
+	'TAXABLE' AS taxability, 
+	c.objid AS classid, 
+	c.propertydesc AS classname, 
+	c.special AS special, 
+	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS endinglandav, 
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS endingimpav, 
+	SUM( f.totalav ) AS endingtotal 
+FROM faaslist f 
+	INNER JOIN propertyclassification c ON f.classid = c.objid  
+WHERE f.txntimestamp < $P{endingtimestamp}   
+  AND f.docstate = 'CURRENT'   
+  AND f.taxable = 1 
+GROUP BY c.objid, c.propertydesc, c.special 
+ORDER BY c.orderno 
+
+
+
+[getPreceedingComparativeAVExempt]
+SELECT 
+	'EXEMPT' AS taxability,  
+	e.objid AS classid,  
+	e.exemptdesc AS classname,  
+	0 AS special,  
+	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS preceedinglandav,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS preceedingimpav,  
+	SUM( f.totalav ) AS preceedingtotal  
+FROM faaslist f  
+	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
+WHERE f.txntimestamp < $P{preceedingtimestamp}    
+  AND f.docstate = 'CURRENT'   
+  AND f.taxable = 0 
+GROUP BY e.objid, e.exemptdesc 
+ORDER BY e.orderno  
+
+[getCurrentComparativeAVExempt]
+SELECT 
+	'EXEMPT' AS taxability,  
+	e.objid AS classid,  
+	e.exemptdesc AS classname,  
+	0 AS special,  
+	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS preceedinglandav,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS preceedingimpav,  
+	SUM( f.totalav ) AS preceedingtotal  
+FROM faaslist f  
+	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
+WHERE f.txntimestamp LIKE $P{txntimestamp}    
+  AND f.docstate = 'CURRENT'   
+  AND f.taxable = 0 
+GROUP BY e.objid, e.exemptdesc 
+ORDER BY e.orderno  
+
+
+[getCancelledComparativeAVExempt]
+SELECT 
+	'EXEMPT' AS taxability,  
+	e.objid AS classid,  
+	e.exemptdesc AS classname,  
+	0 AS special,  
+	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS preceedinglandav,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS preceedingimpav,  
+	SUM( f.totalav ) AS preceedingtotal  
+FROM faaslist f  
+	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
+WHERE f.txntimestamp LIKE $P{txntimestamp}    
+  AND f.docstate = 'CANCELLED'   
+  AND f.taxable = 0 
+GROUP BY e.objid, e.exemptdesc 
+ORDER BY e.orderno  
+
+
+[getEndingComparativeAVExempt]
+SELECT 
+	'EXEMPT' AS taxability,  
+	e.objid AS classid,  
+	e.exemptdesc AS classname,  
+	0 AS special,  
+	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS preceedinglandav,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS preceedingimpav,  
+	SUM( f.totalav ) AS preceedingtotal  
+FROM faaslist f  
+	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
+WHERE f.txntimestamp < $P{endingtimestamp}    
+  AND f.docstate = 'CURRENT'   
+  AND f.taxable = 0 
+GROUP BY e.objid, e.exemptdesc 
+ORDER BY e.orderno  
+

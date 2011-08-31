@@ -167,21 +167,21 @@ class RPTReportService
 		lgulist.add([
 			barangay	: 'TOTAL',
 			preceedingtaxablecount	: lgulist.preceedingtaxablecount.sum(),
-			preceedingtaxableav	: lgulist.preceedingtaxableav.sum(),
+			preceedingtaxableav		: lgulist.preceedingtaxableav.sum(),
 			preceedingexemptcount	: lgulist.preceedingexemptcount.sum(),
-			preceedingexemptav	: lgulist.preceedingexemptav.sum(),
-			currenttaxablecount	: lgulist.currenttaxablecount.sum(),
-			currenttaxableav	: lgulist.currenttaxableav.sum(),
-			currentexemptcount	: lgulist.currentexemptcount.sum(),
-			currentexemptav	: lgulist.currentexemptav.sum(),
+			preceedingexemptav		: lgulist.preceedingexemptav.sum(),
+			currenttaxablecount		: lgulist.currenttaxablecount.sum(),
+			currenttaxableav		: lgulist.currenttaxableav.sum(),
+			currentexemptcount		: lgulist.currentexemptcount.sum(),
+			currentexemptav			: lgulist.currentexemptav.sum(),
 			cancelledtaxablecount	: lgulist.cancelledtaxablecount.sum(),
-			cancelledtaxableav	: lgulist.cancelledtaxableav.sum(),
+			cancelledtaxableav		: lgulist.cancelledtaxableav.sum(),
 			cancelledexemptcount	: lgulist.cancelledexemptcount.sum(),
-			cancelledexemptav	: lgulist.cancelledexemptav.sum(),
-			endingtaxablecount	: lgulist.endingtaxablecount.sum(),
-			endingtaxableav	: lgulist.endingtaxableav.sum(),
-			endingexemptcount	: lgulist.endingexemptcount.sum(),
-			endingexemptav	: lgulist.endingexemptav.sum(),
+			cancelledexemptav		: lgulist.cancelledexemptav.sum(),
+			endingtaxablecount		: lgulist.endingtaxablecount.sum(),
+			endingtaxableav			: lgulist.endingtaxableav.sum(),
+			endingexemptcount		: lgulist.endingexemptcount.sum(),
+			endingexemptav			: lgulist.endingexemptav.sum(),
 		])
 		
 		return [
@@ -194,11 +194,112 @@ class RPTReportService
 	
 		
 	
+	@ProxyMethod
+	public Map generateComparativeAV( year, qtr, month ) {
+		def title 		= 'QUARTERLY COMPARATIVE DATA ON ASSESSED VALUE OF REAL PROPERTY'
+		def period 		= 'FOR THE ' + getQuarterName( qtr ) + ' OF ' + year 
+		def periodtype 	= 'QUARTER'
+		if( month && month > 0 ) {
+			title = 'MONTHLY COMPARATIVE DATA ON ASSESSED VALUE OF REAL PROPERTY'
+			period = 'FOR THE MONTH OF ' + getMonthName( month ) + ', ' + year 
+			periodtype = 'MONTH' 
+		}
+		
+		def params = [ lguindex:var.lgu_index ]
+		params.preceedingtimestamp 	= resolveTimeStamp( year, qtr, month, (month ? 1 : null)  )
+		params.txntimestamp 		= resolveTimeStamp( year, qtr, month, null )
+		params.endingtimestamp 		= resolveTimeStamp( year, qtr, (month ? month+1 : null ), (month ? 1 : null) )
+		
+		def taxablepreceedings 	= em.sqlContext.createNamedQuery('rptreport:getPreceedingComparativeAV').setParameters( params ).resultList 
+		def taxablecurrents 	= em.sqlContext.createNamedQuery('rptreport:getCurrentComparativeAV').setParameters( params ).resultList 
+		def taxablecancelleds 	= em.sqlContext.createNamedQuery('rptreport:getCancelledComparativeAV').setParameters( params ).resultList 
+		def taxableendings 		= em.sqlContext.createNamedQuery('rptreport:getEndingComparativeAV').setParameters( params ).resultList 
+		
+		def exemptpreceedings 	= em.sqlContext.createNamedQuery('rptreport:getPreceedingComparativeAVExempt').setParameters( params ).resultList 
+		def exemptcurrents 	= em.sqlContext.createNamedQuery('rptreport:getCurrentComparativeAVExempt').setParameters( params ).resultList 
+		def exemptcancelleds 	= em.sqlContext.createNamedQuery('rptreport:getCancelledComparativeAVExempt').setParameters( params ).resultList 
+		def exemptendings 		= em.sqlContext.createNamedQuery('rptreport:getEndingComparativeAVExempt').setParameters( params ).resultList 
+		
+		def loadSumaryInfo = { data, list ->
+			def info = list.find{ it.classid == data.classid }
+			if( info ) data.putAll( info )
+		}
+	
+		int lineno = 1
+		int charindex = 'a' 
+		def classifications = getClassificationList()
+		def firstspecial = classifications.find{ it.special == 1 }
+		classifications.add( classifications.indexOf( firstspecial), [objid:'SPECIAL', classname:'SPECIAL', special:0] )
+		def taxables = classifications.collect{ buildComparativeInfo(it, 'TAXABLE') }
+		taxables.each { data ->
+			loadSumaryInfo( data, taxablepreceedings )
+			loadSumaryInfo( data, taxablecurrents )
+			loadSumaryInfo( data, taxablecancelleds )
+			loadSumaryInfo( data, taxableendings )
+			if( data.special == 0 ) {
+				data.classname = lineno + '. ' + data.classname 
+				lineno += 1
+			}
+			else {
+				data.classname = '   ' + ((char)charindex) + '. ' + data.classname 
+				charindex += 1
+			}
+		}
+		
+		lineno = 1 
+		def exempts  = getExemptionList().collect{ buildComparativeInfo(it, 'EXEMPT') }
+		exempts.each { data -> 
+			loadSumaryInfo( data, exemptpreceedings )
+			loadSumaryInfo( data, exemptcurrents )
+			loadSumaryInfo( data, exemptcancelleds )
+			loadSumaryInfo( data, exemptendings )
+			data.classname = lineno + '. ' + data.classname 
+			lineno += 1
+		}
+		
+		return [
+			period 		: period,
+			periodtype 	: periodtype,
+			title 		: title,
+			reportdata  : taxables + exempts ,
+		]
+	}
+	
+	def buildComparativeInfo( info, taxability ) {
+		return [ classid	: info.objid, 
+				classname	: info.classname, 
+				special		: info.special ,
+				taxability	: taxability,
+				preceedinglandav 	: 0.0,
+				preceedingimpav 	: 0.0,
+				preceedingtotal 	: 0.0,
+				currentlandav 	: 0.0,
+				currentimpav 	: 0.0,
+				currenttotal 	: 0.0,
+				cancelledlandav : 0.0,
+				cancelledimpav 	: 0.0,
+				cancelledtotal 	: 0.0,
+				endinglandav 	: 0.0,
+				endingimpav 	: 0.0,
+				endingtotal 	: 0.0,
+			]
+	}	
+	
 	
 	
 	@ProxyMethod
 	public List getBarangayList() {
 		return em.sqlContext.createNamedQuery('rptreport:getBarangayList').setParameter('parentid', var.lgu_index ).resultList 
+	}
+	
+	@ProxyMethod
+	public List getClassificationList() {
+		return em.sqlContext.createNamedQuery('rptreport:getClassificationList').resultList
+	}
+	
+	@ProxyMethod
+	public List getExemptionList() {
+		return em.sqlContext.createNamedQuery('rptreport:getExemptionList').resultList
 	}
 	
 	@ProxyMethod
@@ -271,4 +372,5 @@ class RPTReportService
 		return timestamp
 		
 	}
+	
 }
