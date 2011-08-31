@@ -287,6 +287,103 @@ class RPTReportService
 	
 	
 	
+	
+	
+	
+	@ProxyMethod
+	public Map generateComparativeRpuCount( year, qtr, month ) {
+		def title 		= 'QUARTERLY COMPARATIVE DATA ON NUMBER OF RPUs'
+		def period 		= 'FOR THE ' + getQuarterName( qtr ) + ' OF ' + year 
+		def periodtype 	= 'QUARTER'
+		if( month && month > 0 ) {
+			title = 'MONTHLY COMPARATIVE DATA ON NUMBER OF RPUs'
+			period = 'FOR THE MONTH OF ' + getMonthName( month ) + ', ' + year 
+			periodtype = 'MONTH' 
+		}
+		
+		def params = [ lguindex:var.lgu_index ]
+		params.preceedingtimestamp 	= resolveTimeStamp( year, qtr, month, (month ? 1 : null)  )
+		params.txntimestamp 		= resolveTimeStamp( year, qtr, month, null )
+		params.endingtimestamp 		= resolveTimeStamp( year, qtr, (month ? month+1 : null ), (month ? 1 : null) )
+		
+		def taxablepreceedings 	= em.sqlContext.createNamedQuery('rptreport:getPreceedingComparativeRpuCount').setParameters( params ).resultList 
+		def taxablecurrents 	= em.sqlContext.createNamedQuery('rptreport:getNewDiscoveryComparativeRpuCount').setParameters( params ).resultList 
+		def taxablecancelleds 	= em.sqlContext.createNamedQuery('rptreport:getCancelledComparativeRpuCount').setParameters( params ).resultList 
+		def taxableendings 		= em.sqlContext.createNamedQuery('rptreport:getEndingComparativeRpuCount').setParameters( params ).resultList 
+		
+		def exemptpreceedings 	= em.sqlContext.createNamedQuery('rptreport:getPreceedingComparativeRpuCountExempt').setParameters( params ).resultList 
+		def exemptcurrents 	= em.sqlContext.createNamedQuery('rptreport:getNewDiscoveryComparativeRpuCountExempt').setParameters( params ).resultList 
+		def exemptcancelleds 	= em.sqlContext.createNamedQuery('rptreport:getCancelledComparativeRpuCountExempt').setParameters( params ).resultList 
+		def exemptendings 		= em.sqlContext.createNamedQuery('rptreport:getEndingComparativeRpuCountExempt').setParameters( params ).resultList 
+		
+		def loadSumaryInfo = { data, list ->
+			def info = list.find{ it.classid == data.classid }
+			if( info ) data.putAll( info )
+		}
+	
+		int lineno = 1
+		int charindex = 'a' 
+		def classifications = getClassificationList()
+		def firstspecial = classifications.find{ it.special == 1 }
+		classifications.add( classifications.indexOf( firstspecial), [objid:'SPECIAL', classname:'SPECIAL', special:0] )
+		def taxables = classifications.collect{ buildComparativeRpuCountInfo(it, 'TAXABLE') }
+		taxables.each { data ->
+			loadSumaryInfo( data, taxablepreceedings )
+			loadSumaryInfo( data, taxablecurrents )
+			loadSumaryInfo( data, taxablecancelleds )
+			loadSumaryInfo( data, taxableendings )
+			if( data.special == 0 ) {
+				data.classname = lineno + '. ' + data.classname 
+				lineno += 1
+			}
+			else {
+				data.classname = '   ' + ((char)charindex) + '. ' + data.classname 
+				charindex += 1
+			}
+		}
+		
+		lineno = 1 
+		def exempts  = getExemptionList().collect{ buildComparativeRpuCountInfo(it, 'EXEMPT') }
+		exempts.each { data -> 
+			loadSumaryInfo( data, exemptpreceedings )
+			loadSumaryInfo( data, exemptcurrents )
+			loadSumaryInfo( data, exemptcancelleds )
+			loadSumaryInfo( data, exemptendings )
+			data.classname = lineno + '. ' + data.classname 
+			lineno += 1
+		}
+		
+		return [
+			period 		: period,
+			periodtype 	: periodtype,
+			title 		: title,
+			reportdata  : taxables + exempts ,
+		]
+	}
+	
+	def buildComparativeRpuCountInfo( info, taxability ) {
+		return [ classid	: info.objid, 
+			classname	: info.classname, 
+			special		: info.special ,
+			taxability	: taxability,
+			preceedinglandcount 	: 0.0,
+			preceedingimpcount 		: 0.0,
+			preceedingtotal 		: 0.0,
+			newdiscoverylandcount 	: 0.0,
+			newdiscoveryimpcount 	: 0.0,
+			newdiscoverytotal 		: 0.0,
+			cancelledlandcount 		: 0.0,
+			cancelledimpcount 		: 0.0,
+			cancelledtotal 			: 0.0,
+			endinglandcount 		: 0.0,
+			endingimpcount 			: 0.0,
+			endingtotal 			: 0.0,
+		]
+	}	
+	
+	
+	
+	
 	@ProxyMethod
 	public List getBarangayList() {
 		return em.sqlContext.createNamedQuery('rptreport:getBarangayList').setParameter('parentid', var.lgu_index ).resultList 

@@ -335,3 +335,156 @@ WHERE f.txntimestamp < $P{endingtimestamp}
 GROUP BY e.objid, e.exemptdesc 
 ORDER BY e.orderno  
 
+
+
+
+#----------------------------------------------------------------------
+#
+# COMPARATIVE DATA ON NUMBER OF RPU
+#
+#----------------------------------------------------------------------
+[getPreceedingComparativeRpuCount]
+SELECT
+	'TAXABLE' AS taxability, 
+	c.objid AS classid, 
+	c.propertydesc AS classname, 
+	c.special AS special, 
+	SUM( CASE WHEN f.rputype = 'land' THEN 1.0 ELSE 0.0 END ) AS preceedinglandcount, 
+	SUM( CASE WHEN f.rputype <> 'land' THEN 1.0 ELSE 0.0 END ) AS preceedingimpcount, 
+	SUM( 1 ) AS preceedingtotal 
+FROM faaslist f 
+	INNER JOIN propertyclassification c ON f.classid = c.objid  
+WHERE f.txntimestamp < $P{preceedingtimestamp}   
+  AND f.docstate = 'CURRENT'  
+  AND f.taxable = 1 
+GROUP BY c.objid, c.propertydesc, c.special 
+ORDER BY c.orderno 
+
+
+[getNewDiscoveryComparativeRpuCount]
+SELECT
+	'TAXABLE' AS taxability, 
+	c.objid AS classid, 
+	c.propertydesc AS classname, 
+	c.special AS special, 
+	SUM( CASE WHEN f.rputype = 'land' THEN 1.0 ELSE 0.0 END ) AS newdiscoverylandcount, 
+	SUM( CASE WHEN f.rputype <> 'land' THEN 1.0 ELSE 0.0 END ) AS newdiscoveryimpcount, 
+	SUM( 1 ) AS newdiscoverytotal  
+FROM faaslist f 
+	INNER JOIN propertyclassification c ON f.classid = c.objid  
+WHERE f.txntimestamp LIKE $P{txntimestamp}    
+  AND f.docstate = 'CURRENT'  
+  AND f.taxable = 1 
+  AND f.txntype = 'ND' 
+GROUP BY c.objid, c.propertydesc, c.special 
+ORDER BY c.orderno 
+
+
+[getCancelledComparativeRpuCount]
+SELECT
+	'TAXABLE' AS taxability, 
+	c.objid AS classid, 
+	c.propertydesc AS classname, 
+	c.special AS special, 
+	SUM( CASE WHEN f.rputype = 'land' THEN 1.0 ELSE 0.0 END ) AS cancelledlandcount, 
+	SUM( CASE WHEN f.rputype <> 'land' THEN 1.0 ELSE 0.0 END ) AS cancelledimpcount,  
+	SUM( 1 ) AS cancelledtotal  
+FROM faaslist f 
+	INNER JOIN propertyclassification c ON f.classid = c.objid   
+WHERE f.txntimestamp LIKE $P{txntimestamp}    
+  AND f.docstate = 'CANCELLED'  
+  AND f.taxable = 1 
+GROUP BY c.objid, c.propertydesc, c.special 
+ORDER BY c.orderno 
+
+
+[getEndingComparativeRpuCount]
+SELECT
+	'TAXABLE' AS taxability, 
+	c.objid AS classid, 
+	c.propertydesc AS classname, 
+	c.special AS special, 
+	SUM( CASE WHEN f.rputype = 'land' THEN 1.0 ELSE 0.0 END ) AS endinglandcount, 
+	SUM( CASE WHEN f.rputype <> 'land' THEN 1.0 ELSE 0.0 END ) AS endingimpcount, 
+	SUM( 1 ) AS endingtotal 
+FROM faaslist f 
+	INNER JOIN propertyclassification c ON f.classid = c.objid  
+WHERE f.txntimestamp < $P{endingtimestamp}   
+  AND f.docstate = 'CURRENT'   
+  AND f.taxable = 1 
+GROUP BY c.objid, c.propertydesc, c.special 
+ORDER BY c.orderno 
+
+
+
+[getPreceedingComparativeRpuCountExempt]
+SELECT 
+	'EXEMPT' AS taxability,  
+	e.objid AS classid,  
+	e.exemptdesc AS classname,  
+	0 AS special,  
+	SUM( CASE WHEN f.rputype = 'land' THEN 1.0 ELSE 0.0 END ) AS preceedinglandcount,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN 1.0 ELSE 0.0 END ) AS preceedingimpcount,  
+	SUM( 1.0 ) AS preceedingtotal     
+FROM faaslist f  
+	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
+WHERE f.txntimestamp < $P{preceedingtimestamp}    
+  AND f.docstate = 'CURRENT'   
+  AND f.taxable = 0 
+GROUP BY e.objid, e.exemptdesc 
+ORDER BY e.orderno  
+
+[getNewDiscoveryComparativeRpuCountExempt]
+SELECT 
+	'EXEMPT' AS taxability,  
+	e.objid AS classid,  
+	e.exemptdesc AS classname,  
+	0 AS special,  
+	SUM( CASE WHEN f.rputype = 'land' THEN 1.0 ELSE 0.0 END ) AS newdiscoverylandcount,   
+	SUM( CASE WHEN f.rputype <> 'land' THEN 1.0 ELSE 0.0 END ) AS newdiscoveryimpcount,  
+	SUM( 1.0 ) AS newdiscoverytotal     
+FROM faaslist f  
+	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
+WHERE f.txntimestamp LIKE $P{txntimestamp}    
+  AND f.docstate = 'CURRENT'   
+  AND f.txntype = 'ND' 
+  AND f.taxable = 0 
+GROUP BY e.objid, e.exemptdesc 
+ORDER BY e.orderno  
+
+
+[getCancelledComparativeRpuCountExempt]
+SELECT 
+	'EXEMPT' AS taxability,  
+	e.objid AS classid,  
+	e.exemptdesc AS classname,  
+	0 AS special,  
+	SUM( CASE WHEN f.rputype = 'land' THEN 1.0 ELSE 0.0 END ) AS cancelledlandcount,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN 1.0 ELSE 0.0 END ) AS cancelledimpcount,  
+	SUM( 1.0 ) AS cancelledtotal     
+FROM faaslist f  
+	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
+WHERE f.txntimestamp LIKE $P{txntimestamp}    
+  AND f.docstate = 'CANCELLED'   
+  AND f.taxable = 0 
+GROUP BY e.objid, e.exemptdesc 
+ORDER BY e.orderno  
+
+
+[getEndingComparativeRpuCountExempt]
+SELECT 
+	'EXEMPT' AS taxability,  
+	e.objid AS classid,  
+	e.exemptdesc AS classname,  
+	0 AS special,  
+	SUM( CASE WHEN f.rputype = 'land' THEN 1.0 ELSE 0.0 END ) AS endinglandcount,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN 1.0 ELSE 0.0 END ) AS endingimpcount,  
+	SUM( 1.0 ) AS endingtotal     
+FROM faaslist f  
+	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
+WHERE f.txntimestamp < $P{endingtimestamp}    
+  AND f.docstate = 'CURRENT'   
+  AND f.taxable = 0 
+GROUP BY e.objid, e.exemptdesc 
+ORDER BY e.orderno  
+
