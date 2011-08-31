@@ -154,8 +154,8 @@ public class ApplicationForAssessmentPage extends javax.swing.JPanel {
         jLabel1.setText("Total Assessment :");
         jLabel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 2, 1, 2));
 
-        xNumberField1.setEditable(false);
         xNumberField1.setDepends(new String[] {"appdata"});
+        xNumberField1.setEnabled(false);
         xNumberField1.setFieldType(BigDecimal.class);
         xNumberField1.setFont(new java.awt.Font("Arial", 1, 12));
         xNumberField1.setName("totalAssessment");

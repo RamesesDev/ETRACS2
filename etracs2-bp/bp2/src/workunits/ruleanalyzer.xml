@@ -73,6 +73,9 @@ class RuleAnalyzerController
     def inputHandler = { app ->
         additionalInfos.clear()
         additionalInfos = determineAdditionalInfos(app)
+        
+        boolean done = true 
+        
         if( additionalInfos ) {
             //preserve currently inputted values
             inputtedValues.addAll( app.infos )
@@ -80,14 +83,20 @@ class RuleAnalyzerController
             //remove additional infos to avoid infinite loop
             app.infos.clear()
             app.infos.addAll( additionalInfos )
-            app = svc.buildInfos( app )
+            def newapp = svc.buildInfos( app )
+            app.clear()
+            app.putAll( newapp) 
             
             //exclude previous infos from result 
             removeAllInfos( app, additionalInfos )
             removeAllInfos( app, inputtedValues ) 
-            return false
+            
+            done = false 
+            if( ! app.infos )  {
+                done = true 
+            }
         }
-        return true
+        return done 
     }
     
     def removeAllInfos( app, list ) {
