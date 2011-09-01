@@ -104,6 +104,8 @@ class BldgRPUService
     
     @ProxyMethod
     public Map calculateAssessment( rpu ) {
+		if( ! rpu.info.bldgtype  ) return rpu 
+		
         required( 'Building Type', rpu.info.bldgtype )
         required( 'Building Kind', rpu.info.bldgkindbucc )
         required( 'Classification', rpu.classid )
@@ -258,7 +260,7 @@ class BldgRPUService
     public List getClassList(){
         return ['CLASS A', 'CLASS B', 'CLASS C', 'CLASS D', 'CLASS E']
     }
-    
+	
     
     
     
@@ -385,13 +387,11 @@ class BldgRPUService
     }
     
     def populateBldgStructures() {
-        def template = templateSvc.open()
-        if( template )  {
-            return template.structures.collect {
-                [ objid:'BS' + new UID(), structureid:it.objid, structurecode:it.structurecode, structurename:it.structuredesc ]
-            }
-        }
-        return []
+        def structures = em.sqlContext.createNamedQuery('bldgrpu:getStructures').resultList
+		structures.each {
+			it.objid = 'BS' + new UID()
+		}
+		return structures 
     }
     
     def getCurrentRYSetting() {

@@ -34,6 +34,9 @@ public class BldgRPUController
     @Service('ExemptionTypesService')
     def exemptSvc
     
+    @Service('StructuresService')
+    def structSvc
+    
     
     def onupdate
     def faas
@@ -238,7 +241,6 @@ public class BldgRPUController
     }
     
     def defineFloorInfo() {
-        if( ! selectedBldgUse ) return 
         index = rpu.info.bldguses.indexOf( selectedBldgUse )
         return InvokerUtil.lookupOpener('bldgrpufloor.open',[rpu:rpu, bldguse:selectedBldgUse, onupdate:floorUpdateHandler])
     }
@@ -269,21 +271,18 @@ public class BldgRPUController
     def lookupMaterial
     
     def getLookupMaterial() {
-        return InvokerUtil.lookupOpener('structurematerial.lookup',[structureid:selectedStructure?.structureid])
+        return InvokerUtil.lookupOpener('structurematerial.lookup',[item:selectedStructure])
     }
 
     def structureListHandler = [
         getColumns   : { return [
             new Column(name:'structurename', caption:'Structure' ),
-            new Column(name:'material', caption:'Material*', editable:true, type:'lookup', handler:lookupMaterial, expression:"#{materialname}" ),
+            new Column(name:'materialname', caption:'Material', editable:true ),
         ]},
-        onColumnUpdate : { item, colname  ->
-            item.materialid = item.material?.materialid 
-            item.materialcode = item.material?.materialcode  
-            item.materialname = item.material?.materialname
-        },
         fetchList : { return rpu.bldgstructures },
     ] as SubListModel
+    
+    
     
     /*---------------------------------------------------------------
     *
@@ -375,7 +374,7 @@ public class BldgRPUController
     
     boolean getEnableFloorInfo() {
         if( selectedBldgUse == null ) return false
-        if( selectedBldgUse.actualuse == null && rpu.info.bldguses.size() > 0 ) return false
+        if( selectedBldgUse.actualuse == null  ) return false
         return true 
     }
 }
