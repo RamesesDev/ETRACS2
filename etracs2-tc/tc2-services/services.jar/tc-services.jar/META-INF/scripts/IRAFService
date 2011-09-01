@@ -154,7 +154,7 @@ class IRAFService
 		}
 		
 		iraf.rcvitems.each{
-			if( it.afid == item.afid ){
+			if( it.afid == item.afid && it.startseries > 0){
 				if( it.prefix == item.prefix && it.suffix == item.suffix ){
 					if( isBeetween( it.starseries, it.endseries, item.startseries ) ){
 						throw new Exception("Conflict in issuance of series in $it.startseries - $it.endseries");
@@ -322,7 +322,7 @@ class IRAFService
 				stubfrom: (prevAf) ? prevAf.stubto + 1 : 1,
 				aflength: (af.serieslength) ? af.serieslength : 7,
 				stubto: (prevAf) ? (prevAf.stubto + ri.qtyreceived) : ri.qtyreceived,
-				currentstub: 1,
+				currentstub: (prevAf) ? prevAf.stubto + 1 : 1,
 				stubprefix: iraf.txnno,
 				qtyonhand: ri.qtyreceived,
 				qtyissued: 0,
@@ -334,6 +334,9 @@ class IRAFService
 				endseries: ri.endseries,
 				dtposted: dateService.serverDate
 			];
+			
+			ri.afinventoryid = afinventory.objid 
+			ri.stubfrom = afinventory.stubfrom 
 			
 			def pattern = '';
 			for( int i=0; i < afinventory.aflength; i++) pattern += "0";
@@ -366,15 +369,13 @@ class IRAFService
 	}
 	
 	private void postToAFInventoryCredit( def iraf ){
-
 		iraf.requesteditems.each{ ri ->	
 			for( int i=0; i < ri.qtyreceived; i++){
-
 				def afinventory = getNextAFInventory( ri.afid );
 				def af =  em.sqlContext.createNamedQuery("af:getById")
 							.setParameters( [objid: ri.afid] )
 							.singleResult;
-				
+						
 				def afinventorycredit = [
 					objid: "AFIC" + new UID(),
 					schemaname: 'afinventorycredit:afinventorycredit',
@@ -417,7 +418,6 @@ class IRAFService
 					afinventory.docstate = 'CLOSED';
 				
 				em.update( afinventory.schemaname, afinventory );
-				
 				em.validate( afinventorycredit.schemaname, afinventorycredit );
 				em.save( afinventorycredit.schemaname, afinventorycredit );
 
@@ -462,6 +462,7 @@ class IRAFService
 				
 				def rcvitem = [
 					afid: afinventorycredit.afid,
+					afinventoryid : afinventory.objid, 
 					startseries: afinventorycredit.startseries,
 					endseries: afinventorycredit.endseries,
 					prefix: afinventory.prefix,
@@ -506,7 +507,7 @@ class IRAFService
 		return currentseries;
 	}
 
-	private def getNextAFInventory( def afid ){
+	private def getNextAFInventory( def afid  ){
 		def afinventory = em.sqlContext.createNamedQuery("iraf:getNextOpenAFInventory")
 				     .setParameters([afid: afid])
 					 .singleResult;

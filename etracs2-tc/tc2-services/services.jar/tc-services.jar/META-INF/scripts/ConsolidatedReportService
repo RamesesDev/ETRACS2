@@ -49,10 +49,8 @@ class ConsolidatedReportService {
 		if( iraf.info.rivtype == 'LGU' ){
 			iraf.rcvitems.each{ ri ->
 				def craaf = getList( ri.afid );
-				def afinventoryid = getAFInventoryId( iraf.objid, ri.afid );
-				
 				if( !craaf ) init( iraf.objid, ri );
-				else if( craaf.afinventoryid != afinventoryid ) createCRAAFByIRAF( iraf.objid, ri );
+				else createCRAAFByIRAF( iraf.objid, ri );
 			}
 		}
 		else updateCRAAFbyIRAF( iraf );
@@ -60,7 +58,7 @@ class ConsolidatedReportService {
 	
 	private void init( irafid, ri ){
 		def af = getAF( ri.afid );
-		def afinventoryid = getAFInventoryId( irafid, ri.afid );
+		def afinventoryid = ri.afinventoryid // getAFInventoryId( irafid, ri.afid, ri.startseries, ri.stubfrom );
 		
 		if( ri.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
 		if( ri.aftype == 'nonserial' ) ri.qtyreceived = ri.qtyreceived * af.pcsperunit;
@@ -113,8 +111,15 @@ class ConsolidatedReportService {
 		return em.sqlContext.createNamedQuery('consolidatedreport:getList').setParameter("afid", afid ).singleResult;
 	}
 	
-	private def getAFInventoryId( irafid, afid ){
-		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryId' ).setParameters([irafid:irafid, afid:afid]).singleResult.objid;
+	private def getAFInventoryId( irafid, afid, startseries, stubfrom ){
+		if( startseries && startseries > 0 )
+			return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryIdSeries' )
+				.setParameters([irafid:irafid, afid:afid, startseries:startseries])
+				.singleResult.objid;
+		else 
+			return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryIdStubfrom' )
+				.setParameters([irafid:irafid, afid:afid, startseries:startseries])
+				.singleResult.objid;
 	}
 	
 	private def getAF( afid ){
@@ -124,7 +129,7 @@ class ConsolidatedReportService {
 	private void createCRAAFByIRAF( irafid, ri ){
 		
 		def af = getAF( ri.afid );
-		def afinventoryid = getAFInventoryId( irafid, ri.afid );
+		def afinventoryid = ri.afinventoryid //getAFInventoryId( irafid, ri.afid, ri.startseries, ri.stubfrom );
 		
 		if( ri.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
 		if( ri.aftype == 'nonserial' ) ri.qtyreceived = ri.qtyreceived * af.pcsperunit;
@@ -173,9 +178,9 @@ class ConsolidatedReportService {
 	private void updateCRAAFbyIRAF( iraf ){
 		
 		iraf.rcvitems.each{ ri ->
-			def afic = getAFInventoryCredit( iraf.objid, ri.afid, ri.startseries );
+			def afic = getAFInventoryCredit( iraf.objid, ri.afid, ri.stubno);
 			def series = getSeries( iraf.objid, ri.afid );
-			def craafitem = getCRAAFItem( afic.afinventoryid, ri.afid, "" );
+			def craafitem = getCRAAFItem( ri.afinventoryid, ri.afid, "" );
 			def af = getAF( ri.afid );
 			
 			if( ! craafitem ) throw new Exception('No available stock for AF ' + ri.afid + ' in the inventory.' )
@@ -229,8 +234,8 @@ class ConsolidatedReportService {
 		}
 	}
 	
-	private def getAFInventoryCredit( irafid, afid, startseries  ){
-		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryCredit' ).setParameters([irafid:irafid, afid:afid, startseries:startseries]).singleResult;
+	private def getAFInventoryCredit( irafid, afid, stubno  ){
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryCredit' ).setParameters([irafid:irafid, afid:afid, stubno:stubno]).singleResult;
 	}
 	
 	private def getSeries( irafid, afid ){

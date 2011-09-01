@@ -1,16 +1,16 @@
 [getList]
 SELECT * FROM etracsuser u 
-ORDER BY u.uid
+ORDER BY u.name
 
 [findByUid]
 SELECT * FROM etracsuser u 
 WHERE u.uid LIKE $P{uid}
-ORDER BY u.uid  
+ORDER BY u.name
 
 [findByLastName]
 SELECT * FROM etracsuser u 
 WHERE u.lastname LIKE $P{lastname} 
-ORDER BY u.uid  
+ORDER BY u.name
 
 [findById]
 SELECT * FROM etracsuser u  

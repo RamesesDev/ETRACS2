@@ -4,14 +4,23 @@ SELECT * FROM craaf WHERE afid = $P{afid}
 [getCRAAFItem]
 SELECT * FROM craaf WHERE afinventoryid = $P{afinventoryid} OR afinventorycreditid = $P{afinventorycreditid} AND afid = $P{afid} 
 
-[getAFInventoryId] 
-SELECT objid FROM afinventory WHERE irafid = $P{irafid} AND afid = $P{afid} 
+[getAFInventoryIdStubfrom]
+SELECT objid FROM afinventory 
+WHERE irafid = $P{irafid} 
+  AND afid = $P{afid}  
+  AND stubfrom = $P{stubfrom} 
+  
+[getAFInventoryIdSeries]
+SELECT objid FROM afinventory 
+WHERE irafid = $P{irafid} 
+  AND afid = $P{afid}  
+  AND startseries = $P{startseries}
 
 [getAFInventoryCredit]
 SELECT * FROM afinventorycredit  
 WHERE irafid = $P{irafid}  
   AND afid = $P{afid}  
-  AND startseries = $P{startseries} 
+  AND stubno = $P{stubno} 
 
 
 [getAF]

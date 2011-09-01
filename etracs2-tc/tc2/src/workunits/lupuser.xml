@@ -10,7 +10,7 @@
 import com.rameses.rcp.common.*;
 import com.rameses.rcp.annotations.*;
 
-class UserLookupController 
+class UserLookupController extends LookupModel 
 {
     @Service("ETRACSUserService")
     def svc;
@@ -20,27 +20,34 @@ class UserLookupController
     def selected;
     
     def ok() {
+        search = null 
         if( onselect ) {
             onselect( selected );
         }
-        return "_close";
+        return select()
     }
     
-    def listHandler = [
-        getRows    : { return 50; },
-        getColumns : {
-            return [
-                new Column(name:"uid", caption:"User Id"),
-                new Column(name:"name", caption:"Name"),
-                new Column(name:"jobtitle", caption:"Job Title"),
-            ]
-        },
-        fetchList : { 
-                def list = svc.getList(searchText, it);
-                if( list ) return list;
-                throw new Exception("Record not found.");
-	},
-    ] as PageListModel;
+    def getListHandler() {
+        return this;
+    }
+    
+    int getRows() { return 25 }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"name", caption:"Name"),
+            new Column(name:"jobtitle", caption:"Job Title"),
+            new Column(name:"uid", caption:"User Id"),
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getList( s, params );
+        if( list ) return list;
+        throw new Exception("Record not found.");
+    }
 }  
 
 
