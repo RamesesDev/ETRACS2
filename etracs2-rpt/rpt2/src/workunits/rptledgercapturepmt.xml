@@ -5,7 +5,7 @@
 -->
 <workunit>
     <invokers>
-        <invoker type="rptledgercapturepmt.create" action="create" target="popup" />        
+        <invoker type="rptledgercapturepmt.create" caption="Capture Realty Tax Payment" action="create" target="popup" />        
     </invokers>
     
     <code lang="groovy">
@@ -66,6 +66,8 @@ public class RPTLedgerCapturePmtController  {
         if( payment.basicdisc > payment.basic ) throw new Exception('Basic Dmust be less than Basic.')
         if( payment.sefdisc > payment.sef ) throw new Exception('SEF Discount must be less than SEF.')
         
+        payment.period = determinePaidPeriod( payment )
+        
         if( MsgBox.confirm('Posted payment could no longer be edited.\nPlease verify the information is correct.\n\nPost?') ) {
             if( onadd ) {
                 onadd( payment )
@@ -73,6 +75,18 @@ public class RPTLedgerCapturePmtController  {
             return '_close' 
         }
         return 'default' 
+    }
+    
+    def determinePaidPeriod( item ) {
+        if( item.fromyear == item.toyear && item.fromqtr == 1 && item.toqtr == 4 ) 
+            return 'Full ' + item.fromyear 
+        if( item.fromyear == item.toyear && item.fromqtr == item.toqtr  ) 
+            return item.fromqtr + 'Q, ' + item.fromyear 
+        if( item.fromyear == item.toyear ) 
+            return item.fromqtr + '-' + item.toqtr + 'Q, ' + item.fromyear 
+        if(  item.fromqtr == 1 && item.toqtr == 4 ) 
+            return 'Full ' + item.fromyear + '-' + item.toyear 
+        return item.fromqtr + 'Q,' + item.fromyear + '-' + item.toqtr + 'Q,' + item.toyear 
     }
     
     List getQuarters() {
