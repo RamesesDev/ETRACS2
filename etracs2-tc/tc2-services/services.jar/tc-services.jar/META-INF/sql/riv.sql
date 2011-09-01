@@ -1,5 +1,6 @@
 [getList]
-SELECT objid, txnno, docstate, requestedby, rivtype FROM riv WHERE rivtype = $P{rivtype} ORDER BY txnno DESC 
+SELECT objid, txnno, docstate, requestedby, rivtype 
+FROM riv WHERE rivtype = $P{rivtype} ORDER BY txnno DESC 
 
 [getListByTxnno]
 SELECT objid, txnno, docstate, requestedby, rivtype FROM riv WHERE txnno = $P{txnno} AND rivtype = $P{rivtype}

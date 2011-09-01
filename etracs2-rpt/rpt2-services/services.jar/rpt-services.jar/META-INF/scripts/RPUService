@@ -37,17 +37,18 @@ class RPUService
     
     @ProxyMethod
     public List getVariables( expr ) {  
-        def pattern = ~/[A-Z_]+/ 
+		def pattern = ~/[A-Z0-9_]+/ 
         def matcher = pattern.matcher( expr )
         List tokens = matcher.collect{ it }
         List vars = tokens - getFieldList().objid 
-        List list = []
+		List list = []
         if( vars ) {
             vars.each {
-                list += em.sqlContext.createNamedQuery('rpu:getRPTParameter').setParameter('name', it).singleResult 
+                def var = em.sqlContext.createNamedQuery('rpu:getRPTParameter').setParameter('name', it).singleResult 
+				if( var ) list.add( var ) 
             }
         }
-        return list 
+		return list 
     }
     
     @ProxyMethod

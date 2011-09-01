@@ -169,20 +169,35 @@ class RIVController
     
     def createEntity() {
         if( !env.USERID ) dummyCol = svcUser.getCollector( env.USERID );
+        def afo = getAFO()
         return [
             docstate    : "DRAFT",
             rivtype     : rivType,
             requestedby : (env.USERNAME ? env.USERNAME : dummyCol.collectorname ),
             requestedbytitle : (env.JOBTITLE ? env.JOBTITLE : "-" ),
-            info    : [ treasuryname: var.treasurer_office,
+            info    : [ treasuryname: 'LGU ' + var.lgu_name,
                         lgu: var.lgu_name,
                         requestedbyid: (env.USERID ? env.USERID : dummyCol.collectorid ),
                         requestedby: (env.USERNAME ? env.USERNAME : dummyCol.collectorname ),
-                        requestedbytitle : (env.JOBTITLE ? env.JOBTITLE : "-" )
+                        requestedbytitle : (env.JOBTITLE ? env.JOBTITLE : "-" ),
+                        approvedbyid    : afo?.objid,
+                        approvedby      : afo?.name,
+                        approvedbytitle : afo?.jobtitle,
                       ],
             items  : [],
         ];
     }
+    
+    def getAFO() {
+        if( rivType == 'COLLECTOR' ) {
+            def afos = svcUser.getUsersByRole( 'AFO')
+            if( afos ) {
+                return afos[0]
+            }
+        }
+        return null
+    }
+    
     
     def createItem() {
         return [ objid: "I" + new UID(),

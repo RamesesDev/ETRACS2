@@ -106,7 +106,282 @@ class RPTReportService
 	}
 	
 	
-
+	@ProxyMethod
+	public Map generateAccomplishmentRPA( year, qtr, month ) {
+		def title 		= 'QUARTERLY ACCOMPLISHMENT REPORT ON REAL PROPERTY ASSESSMENTS'
+		def period 		= 'FOR THE ' + getQuarterName( qtr ) + ' OF ' + year 
+		def periodtype 	= 'QUARTER'
+		if( month && month > 0 ) {
+			title = 'MONTHLY ACCOMPLISHMENT REPORT ON REAL PROPERTY ASSESSMENTS'
+			period = 'FOR THE MONTH OF ' + getMonthName( month ) + ', ' + year 
+			periodtype = 'MONTH' 
+		}
+		
+		def params = [ lguindex:var.lgu_index ]
+		params.txntimestamp = resolveTimeStamp( year, qtr, month, (month ? 1 : null)  )
+		def preceedingassessments = em.sqlContext.createNamedQuery('rptreport:getPreceedingRPAAccomplishment').setParameters( params ).resultList 
+		
+		params.txntimestamp = resolveTimeStamp( year, qtr, month, null )
+		def currentassessments = em.sqlContext.createNamedQuery('rptreport:getCurrentRPAAccomplishment').setParameters( params ).resultList 
+		def cancelledassessments = em.sqlContext.createNamedQuery('rptreport:getCancelledRPAAccomplishment').setParameters( params ).resultList 
+		
+		params.txntimestamp = resolveTimeStamp( year, qtr, (month ? month+1 : null ), (month ? 1 : null) )
+		def endingassessments = em.sqlContext.createNamedQuery('rptreport:getEndingRPAAccomplishment').setParameters( params ).resultList 
+		
+		def loadSumaryInfo = { lgu, list ->
+			def info = list.find{ it.barangayid == lgu.objid }
+			if( info ) lgu.putAll( info )
+		}
+	
+		def lgulist = getBarangayList().collect { 
+			[ 	objid 		: it.objid, 
+				barangay	: it.barangay, 
+				preceedingtaxablecount 	: 0.0,
+				preceedingtaxableav 	: 0.0,
+				preceedingexemptcount 	: 0.0,
+				preceedingexemptav 		: 0.0,
+				
+				currenttaxablecount 	: 0.0,
+				currenttaxableav 		: 0.0,
+				currentexemptcount 		: 0.0,
+				currentexemptav 		: 0.0,
+				
+				cancelledtaxablecount 	: 0.0,
+				cancelledtaxableav 		: 0.0,
+				cancelledexemptcount 	: 0.0,
+				cancelledexemptav 		: 0.0,
+				
+				endingtaxablecount 		: 0.0,
+				endingtaxableav 		: 0.0,
+				endingexemptcount 		: 0.0,
+				endingexemptav 			: 0.0,
+			]
+		}
+		lgulist.each { lgu ->
+			loadSumaryInfo( lgu, preceedingassessments )
+			loadSumaryInfo( lgu, currentassessments )
+			loadSumaryInfo( lgu, cancelledassessments )
+			loadSumaryInfo( lgu, endingassessments )
+		}
+		
+		lgulist.add([
+			barangay	: 'TOTAL',
+			preceedingtaxablecount	: lgulist.preceedingtaxablecount.sum(),
+			preceedingtaxableav		: lgulist.preceedingtaxableav.sum(),
+			preceedingexemptcount	: lgulist.preceedingexemptcount.sum(),
+			preceedingexemptav		: lgulist.preceedingexemptav.sum(),
+			currenttaxablecount		: lgulist.currenttaxablecount.sum(),
+			currenttaxableav		: lgulist.currenttaxableav.sum(),
+			currentexemptcount		: lgulist.currentexemptcount.sum(),
+			currentexemptav			: lgulist.currentexemptav.sum(),
+			cancelledtaxablecount	: lgulist.cancelledtaxablecount.sum(),
+			cancelledtaxableav		: lgulist.cancelledtaxableav.sum(),
+			cancelledexemptcount	: lgulist.cancelledexemptcount.sum(),
+			cancelledexemptav		: lgulist.cancelledexemptav.sum(),
+			endingtaxablecount		: lgulist.endingtaxablecount.sum(),
+			endingtaxableav			: lgulist.endingtaxableav.sum(),
+			endingexemptcount		: lgulist.endingexemptcount.sum(),
+			endingexemptav			: lgulist.endingexemptav.sum(),
+		])
+		
+		return [
+			period 		: period,
+			periodtype 	: periodtype,
+			title 		: title,
+			reportdata  : lgulist,
+		]
+	}
+	
+		
+	
+	@ProxyMethod
+	public Map generateComparativeAV( year, qtr, month ) {
+		def title 		= 'QUARTERLY COMPARATIVE DATA ON ASSESSED VALUE OF REAL PROPERTY'
+		def period 		= 'FOR THE ' + getQuarterName( qtr ) + ' OF ' + year 
+		def periodtype 	= 'QUARTER'
+		if( month && month > 0 ) {
+			title = 'MONTHLY COMPARATIVE DATA ON ASSESSED VALUE OF REAL PROPERTY'
+			period = 'FOR THE MONTH OF ' + getMonthName( month ) + ', ' + year 
+			periodtype = 'MONTH' 
+		}
+		
+		def params = [ lguindex:var.lgu_index ]
+		params.preceedingtimestamp 	= resolveTimeStamp( year, qtr, month, (month ? 1 : null)  )
+		params.txntimestamp 		= resolveTimeStamp( year, qtr, month, null )
+		params.endingtimestamp 		= resolveTimeStamp( year, qtr, (month ? month+1 : null ), (month ? 1 : null) )
+		
+		def taxablepreceedings 	= em.sqlContext.createNamedQuery('rptreport:getPreceedingComparativeAV').setParameters( params ).resultList 
+		def taxablecurrents 	= em.sqlContext.createNamedQuery('rptreport:getCurrentComparativeAV').setParameters( params ).resultList 
+		def taxablecancelleds 	= em.sqlContext.createNamedQuery('rptreport:getCancelledComparativeAV').setParameters( params ).resultList 
+		def taxableendings 		= em.sqlContext.createNamedQuery('rptreport:getEndingComparativeAV').setParameters( params ).resultList 
+		
+		def exemptpreceedings 	= em.sqlContext.createNamedQuery('rptreport:getPreceedingComparativeAVExempt').setParameters( params ).resultList 
+		def exemptcurrents 	= em.sqlContext.createNamedQuery('rptreport:getCurrentComparativeAVExempt').setParameters( params ).resultList 
+		def exemptcancelleds 	= em.sqlContext.createNamedQuery('rptreport:getCancelledComparativeAVExempt').setParameters( params ).resultList 
+		def exemptendings 		= em.sqlContext.createNamedQuery('rptreport:getEndingComparativeAVExempt').setParameters( params ).resultList 
+		
+		def loadSumaryInfo = { data, list ->
+			def info = list.find{ it.classid == data.classid }
+			if( info ) data.putAll( info )
+		}
+	
+		int lineno = 1
+		int charindex = 'a' 
+		def classifications = getClassificationList()
+		def firstspecial = classifications.find{ it.special == 1 }
+		classifications.add( classifications.indexOf( firstspecial), [objid:'SPECIAL', classname:'SPECIAL', special:0] )
+		def taxables = classifications.collect{ buildComparativeInfo(it, 'TAXABLE') }
+		taxables.each { data ->
+			loadSumaryInfo( data, taxablepreceedings )
+			loadSumaryInfo( data, taxablecurrents )
+			loadSumaryInfo( data, taxablecancelleds )
+			loadSumaryInfo( data, taxableendings )
+			if( data.special == 0 ) {
+				data.classname = lineno + '. ' + data.classname 
+				lineno += 1
+			}
+			else {
+				data.classname = '   ' + ((char)charindex) + '. ' + data.classname 
+				charindex += 1
+			}
+		}
+		
+		lineno = 1 
+		def exempts  = getExemptionList().collect{ buildComparativeInfo(it, 'EXEMPT') }
+		exempts.each { data -> 
+			loadSumaryInfo( data, exemptpreceedings )
+			loadSumaryInfo( data, exemptcurrents )
+			loadSumaryInfo( data, exemptcancelleds )
+			loadSumaryInfo( data, exemptendings )
+			data.classname = lineno + '. ' + data.classname 
+			lineno += 1
+		}
+		
+		return [
+			period 		: period,
+			periodtype 	: periodtype,
+			title 		: title,
+			reportdata  : taxables + exempts ,
+		]
+	}
+	
+	def buildComparativeInfo( info, taxability ) {
+		return [ classid	: info.objid, 
+				classname	: info.classname, 
+				special		: info.special ,
+				taxability	: taxability,
+				preceedinglandav 	: 0.0,
+				preceedingimpav 	: 0.0,
+				preceedingtotal 	: 0.0,
+				currentlandav 	: 0.0,
+				currentimpav 	: 0.0,
+				currenttotal 	: 0.0,
+				cancelledlandav : 0.0,
+				cancelledimpav 	: 0.0,
+				cancelledtotal 	: 0.0,
+				endinglandav 	: 0.0,
+				endingimpav 	: 0.0,
+				endingtotal 	: 0.0,
+			]
+	}	
+	
+	
+	
+	
+	
+	
+	@ProxyMethod
+	public Map generateComparativeRpuCount( year, qtr, month ) {
+		def title 		= 'QUARTERLY COMPARATIVE DATA ON NUMBER OF RPUs'
+		def period 		= 'FOR THE ' + getQuarterName( qtr ) + ' OF ' + year 
+		def periodtype 	= 'QUARTER'
+		if( month && month > 0 ) {
+			title = 'MONTHLY COMPARATIVE DATA ON NUMBER OF RPUs'
+			period = 'FOR THE MONTH OF ' + getMonthName( month ) + ', ' + year 
+			periodtype = 'MONTH' 
+		}
+		
+		def params = [ lguindex:var.lgu_index ]
+		params.preceedingtimestamp 	= resolveTimeStamp( year, qtr, month, (month ? 1 : null)  )
+		params.txntimestamp 		= resolveTimeStamp( year, qtr, month, null )
+		params.endingtimestamp 		= resolveTimeStamp( year, qtr, (month ? month+1 : null ), (month ? 1 : null) )
+		
+		def taxablepreceedings 	= em.sqlContext.createNamedQuery('rptreport:getPreceedingComparativeRpuCount').setParameters( params ).resultList 
+		def taxablecurrents 	= em.sqlContext.createNamedQuery('rptreport:getNewDiscoveryComparativeRpuCount').setParameters( params ).resultList 
+		def taxablecancelleds 	= em.sqlContext.createNamedQuery('rptreport:getCancelledComparativeRpuCount').setParameters( params ).resultList 
+		def taxableendings 		= em.sqlContext.createNamedQuery('rptreport:getEndingComparativeRpuCount').setParameters( params ).resultList 
+		
+		def exemptpreceedings 	= em.sqlContext.createNamedQuery('rptreport:getPreceedingComparativeRpuCountExempt').setParameters( params ).resultList 
+		def exemptcurrents 	= em.sqlContext.createNamedQuery('rptreport:getNewDiscoveryComparativeRpuCountExempt').setParameters( params ).resultList 
+		def exemptcancelleds 	= em.sqlContext.createNamedQuery('rptreport:getCancelledComparativeRpuCountExempt').setParameters( params ).resultList 
+		def exemptendings 		= em.sqlContext.createNamedQuery('rptreport:getEndingComparativeRpuCountExempt').setParameters( params ).resultList 
+		
+		def loadSumaryInfo = { data, list ->
+			def info = list.find{ it.classid == data.classid }
+			if( info ) data.putAll( info )
+		}
+	
+		int lineno = 1
+		int charindex = 'a' 
+		def classifications = getClassificationList()
+		def firstspecial = classifications.find{ it.special == 1 }
+		classifications.add( classifications.indexOf( firstspecial), [objid:'SPECIAL', classname:'SPECIAL', special:0] )
+		def taxables = classifications.collect{ buildComparativeRpuCountInfo(it, 'TAXABLE') }
+		taxables.each { data ->
+			loadSumaryInfo( data, taxablepreceedings )
+			loadSumaryInfo( data, taxablecurrents )
+			loadSumaryInfo( data, taxablecancelleds )
+			loadSumaryInfo( data, taxableendings )
+			if( data.special == 0 ) {
+				data.classname = lineno + '. ' + data.classname 
+				lineno += 1
+			}
+			else {
+				data.classname = '   ' + ((char)charindex) + '. ' + data.classname 
+				charindex += 1
+			}
+		}
+		
+		lineno = 1 
+		def exempts  = getExemptionList().collect{ buildComparativeRpuCountInfo(it, 'EXEMPT') }
+		exempts.each { data -> 
+			loadSumaryInfo( data, exemptpreceedings )
+			loadSumaryInfo( data, exemptcurrents )
+			loadSumaryInfo( data, exemptcancelleds )
+			loadSumaryInfo( data, exemptendings )
+			data.classname = lineno + '. ' + data.classname 
+			lineno += 1
+		}
+		
+		return [
+			period 		: period,
+			periodtype 	: periodtype,
+			title 		: title,
+			reportdata  : taxables + exempts ,
+		]
+	}
+	
+	def buildComparativeRpuCountInfo( info, taxability ) {
+		return [ classid	: info.objid, 
+			classname	: info.classname, 
+			special		: info.special ,
+			taxability	: taxability,
+			preceedinglandcount 	: 0.0,
+			preceedingimpcount 		: 0.0,
+			preceedingtotal 		: 0.0,
+			newdiscoverylandcount 	: 0.0,
+			newdiscoveryimpcount 	: 0.0,
+			newdiscoverytotal 		: 0.0,
+			cancelledlandcount 		: 0.0,
+			cancelledimpcount 		: 0.0,
+			cancelledtotal 			: 0.0,
+			endinglandcount 		: 0.0,
+			endingimpcount 			: 0.0,
+			endingtotal 			: 0.0,
+		]
+	}	
+	
+	
 	
 	
 	@ProxyMethod
@@ -114,6 +389,58 @@ class RPTReportService
 		return em.sqlContext.createNamedQuery('rptreport:getBarangayList').setParameter('parentid', var.lgu_index ).resultList 
 	}
 	
+	@ProxyMethod
+	public List getClassificationList() {
+		return em.sqlContext.createNamedQuery('rptreport:getClassificationList').resultList
+	}
+	
+	@ProxyMethod
+	public List getExemptionList() {
+		return em.sqlContext.createNamedQuery('rptreport:getExemptionList').resultList
+	}
+	
+	@ProxyMethod
+	public List getMonthList( qtr ) {
+		def months = [
+			[name:'JANUARY', 	month:1, qtr:1 ],
+			[name:'FEBRUARY', 	month:2, qtr:1 ],
+			[name:'MARCH', 		month:3, qtr:1 ],
+			
+			[name:'APRIL', 	month:4, qtr:2 ],
+			[name:'MAY', 	month:5, qtr:2 ],
+			[name:'JUNE', 	month:6, qtr:2 ],
+			
+			[name:'JULY', 		month:7, qtr:3 ],
+			[name:'AUG', 		month:8, qtr:3 ],
+			[name:'SEPTEMBER', 	month:9, qtr:3 ],
+			
+			[name:'OCTOBER', 	month:10, qtr:4 ],
+			[name:'NOVEMBER', 	month:11, qtr:4 ],
+			[name:'DECEMBER', 	month:12, qtr:4 ],
+		]
+		
+		if( ! qtr ) return months 
+		return months.findAll{ it.qtr == qtr }
+	}
+	
+	def getMonthName( month ) {
+		def months = getMonthList( null )
+		def mon = months.find{ it.month = month }
+		if( mon ) return mon.name 
+		throw new Exception("Month $month is not defined." )
+	}
+	
+	def getQuarterName( qtr ) {
+		if( qtr == 1 ) return '1ST QUARTER'
+		else if( qtr == 2 ) return '2ND QUARTER'
+		else if( qtr == 3 ) return '3RD QUARTER'
+		return '4TH QUARTER'
+	}
+	
+	
+	String padLeft( val, len ) {
+		return "$val".padLeft( len, '0' )
+	}
 	
 	void resolveSection( params ) {
 		if( ! params.section || params.section == 0 ) {
@@ -130,4 +457,17 @@ class RPTReportService
 			params.section = (params.section+'').padLeft( sectionlen, '0' )
 		}
 	}
+	
+	def resolveTimeStamp( year, qtr, month, day ) {
+		//build timestamp progressively based on the passed values, e.g.,
+		//if month is null then timestamp is resolve upto the qtr info, such as "20111%" for 1st qtr
+		//if month is notnull thne it is resolve upto the month, such as "2011102%" for 2nd qtr 
+		def timestamp = year + '' + qtr 
+		if( month != null ) timestamp += padLeft( month, 2 )
+		if( day != null ) timestamp += padLeft( day, 2 )
+		if( month == null  || day == null ) timestamp += '%'
+		return timestamp
+		
+	}
+	
 }

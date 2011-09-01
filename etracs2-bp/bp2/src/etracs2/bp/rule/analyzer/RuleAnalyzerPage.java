@@ -99,6 +99,7 @@ public class RuleAnalyzerPage extends javax.swing.JPanel {
         xTitledBorder2.setTitle("Line of Business ");
         xDataTable1.setBorder(xTitledBorder2);
         xDataTable1.setHandler("lobListHandler");
+        xDataTable1.setImmediate(true);
         xDataTable1.setIndex(-100);
         xDataTable1.setName("selectedLob");
         xDataTable1.setPreferredSize(new java.awt.Dimension(450, 80));
@@ -126,7 +127,7 @@ public class RuleAnalyzerPage extends javax.swing.JPanel {
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 158, Short.MAX_VALUE)
+                .add(jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 158, Short.MAX_VALUE)
                 .addContainerGap())
         );
         add(jPanel1, java.awt.BorderLayout.NORTH);

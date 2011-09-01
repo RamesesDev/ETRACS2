@@ -30,7 +30,7 @@ public class RuleConditionPage extends javax.swing.JPanel {
 
         setLayout(new java.awt.BorderLayout());
 
-        setPreferredSize(new java.awt.Dimension(606, 466));
+        setPreferredSize(new java.awt.Dimension(502, 346));
         xSubFormPanel1.setDynamic(true);
         xSubFormPanel1.setHandler("opener");
         xSubFormPanel1.setName("opener");
@@ -38,11 +38,11 @@ public class RuleConditionPage extends javax.swing.JPanel {
         xSubFormPanel1.setLayout(xSubFormPanel1Layout);
         xSubFormPanel1Layout.setHorizontalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 400, Short.MAX_VALUE)
+            .add(0, 502, Short.MAX_VALUE)
         );
         xSubFormPanel1Layout.setVerticalGroup(
             xSubFormPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 265, Short.MAX_VALUE)
+            .add(0, 311, Short.MAX_VALUE)
         );
         add(xSubFormPanel1, java.awt.BorderLayout.CENTER);
 

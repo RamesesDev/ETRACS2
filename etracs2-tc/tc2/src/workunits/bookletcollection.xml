@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="home.action" action="init" caption="Booklet Collection" target="window" icon="images/cash.png" index="104" permission="bookletcollection.create"/>
+        
+        <invoker type="formActions" action="_close" caption="Close" mnemonic="c" icon="images/cancel.png" immediate="true" />
+        <invoker type="formActions" action="next" caption="Next" mnemonic="n" icon="images/next.png" />
+        
+        <invoker type="mainActions" action="_close" caption="Close" mnemonic="c" icon="images/cancel.png" immediate="true" />
+        <invoker type="mainActions" action="create" caption="New" mnemonic="n" icon="images/new.png" immediate="true" visibleWhen="#{mode=='view'}" />
+        <invoker type="mainActions" action="save" caption="Save" mnemonic="s" shortcut="ctrl + S" icon="images/doc-save.png" visibleWhen="#{mode == 'create'}"/>
+        
+    </invokers>
+    
+<code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+public class BookletCollectionController {
+    @Binding
+    def binding
+    
+    @Service('AFService')
+    def afSvc
+    
+    @Service('CollectionTypeService')
+    def colltypeSvc
+    
+    @Service('CollectionSettingService') 
+    def settingSvc
+    
+    @Service('ReceiptService')
+    def svc
+    
+    def mode 
+    
+    /*---------------------------------------------------------
+    *
+    * Init Page
+    *
+    ---------------------------------------------------------*/
+    
+    def af
+    def collectiontype 
+    def setting
+    
+    def init () {
+        mode = 'create' 
+        setting = settingSvc.open()
+        return 'init'
+    }
+    
+    def next() {
+        entity = [
+            af             : af,
+            collectiontype : collectiontype,
+            unitvalue      : 0.0,
+            amount         : 0.0,
+            change         : 0.0,
+            amttendered    : 0.0,
+            collectorid    : OsirisContext.env.USERID,
+        ]
+        return 'default'
+    }
+    
+    List getAflist() {
+        return afSvc.getAF5253()
+    }
+    
+    List getCollectiontypes() {
+        return colltypeSvc.getListByAfId( af?.objid) 
+    }
+    
+    
+    /*---------------------------------------------------------
+    *
+    * Main Page
+    *
+    ---------------------------------------------------------*/
+    def afcontrol
+    def amttendered
+    def entity
+    
+    void save() {
+        if( MsgBox.confirm('Save collection?') ) {
+            svc.saveBookletCollection( entity )
+            mode = 'view' 
+        }
+    }
+    
+    def create() {
+        af              = null
+        collectiontype  = null
+        afcontrol       = null
+        amttendered     = null
+        entity          = [:]
+        mode            = 'create'
+        return 'init'
+    }
+    
+    def getLookupAFControl() {
+        return InvokerUtil.lookupOpener('afcontrol.lookup', [
+            afid : af.objid,
+            mode : 'ONLINE',
+            collectorid : OsirisContext.env.USERID,
+        ])
+    }
+    
+    void setAfcontrol( afcontrol ) {
+        this.afcontrol          = afcontrol
+        entity.afcontrol        = afcontrol
+        afcontrol.startseries   = afcontrol?.startseries
+        afcontrol.endseries     = afcontrol?.endseries
+        if( afcontrol && afcontrol.afid == '52' ) {
+            entity.unitvalue    = setting.info.lctamount
+            entity.acctid       = setting.info.lctacctid 
+            entity.accttitle    = setting.info.lctaccttitle 
+            entity.acctno       = setting.info.lctacctno
+            entity.fundid       = setting.info.lctfundid 
+            entity.amount       = entity.unitvalue * af.pcsperunit 
+            entity.doctype      = 'CATTLE_TRANSFER'
+            entity.opener       = 'tc:cattle_transfer'
+        }
+        else if( afcontrol && afcontrol.afid == '53' ) {
+            entity.unitvalue    = setting.info.lcoamount
+            entity.acctid       = setting.info.lcoacctid 
+            entity.accttitle    = setting.info.lcoaccttitle 
+            entity.acctno       = setting.info.lcoacctno
+            entity.fundid       = setting.info.lcofundid 
+            entity.amount       = entity.unitvalue * af.pcsperunit 
+            entity.doctype      = 'CATTLE_OWNERSHIP'
+            entity.opener       = 'tc:cattle_ownership'
+        }
+        binding.refresh()
+    }
+    
+    void setAmttendered( amttendered ) {
+        this.amttendered   = amttendered
+        entity.amttendered = amttendered
+        calcChange()
+    }
+    
+    void calcChange() {
+        if( amttendered && amttendered >= entity.amount ) {
+            entity.change = amttendered - entity.amount 
+            binding.refresh( 'entity.change' )
+        }
+    }
+    
+    
+}
+
+
+]]>
+</code>
+
+    <pages>
+        <page name="init" template="etracs2.tc.collection.BookletCollectionInitPage"/>
+        <page template="etracs2.tc.collection.BookletCollectionPage"/>
+    </pages>
+</workunit>

@@ -47,6 +47,10 @@ SELECT voided FROM receipt WHERE objid = $P{objid}
 [getSerialNo]
 SELECT serialno FROM receiptlist WHERE objid = $P{objid} 
 
+[getFundName]
+SELECT fundname FROM fund WHERE objid = $P{objid} 
+
+
 [checkDuplicateSerialNo]
 SELECT objid, serialno FROM receiptlist WHERE serialno = $P{serialno} AND afid = $P{afid} 
 
@@ -70,5 +74,7 @@ DELETE FROM receiptitem WHERE receiptid = $P{receiptid}
 
 [deletePaymentItem]
 DELETE FROM paymentitem WHERE receiptid = $P{receiptid}
+
+
 
 

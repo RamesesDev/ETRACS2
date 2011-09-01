@@ -151,6 +151,7 @@ public class AssessmentMainPage extends javax.swing.JPanel {
 
         xNumberField1.setEditable(false);
         xNumberField1.setDepends(new String[] {"appdata"});
+        xNumberField1.setEnabled(false);
         xNumberField1.setFieldType(BigDecimal.class);
         xNumberField1.setFont(new java.awt.Font("Arial", 1, 12));
         xNumberField1.setName("totalAssessment");

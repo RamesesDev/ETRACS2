@@ -231,6 +231,11 @@ class AFControlService
 			throw new Exception('Date Issued must be less than or equal current date.')
 			
 		if( afcontrol.aftype == 'serial' ) {
+			def sstartseries = afcontrol.startseries +''
+			if( ! sstartseries.endsWith('1') )
+				throw new Exception('Start Series must end with 1.')
+			if( afcontrol.startseries >= 10 && afcontrol.startseries % 50 > 1 ) 
+				throw new Exception('Start Series must be divisible by 50.')
 			if( afcontrol.currentseries < afcontrol.startseries || afcontrol.currentseries > afcontrol.endseries )
 				throw new Exception('Current Series must be between ' + afcontrol.startseries +  ' and ' + afcontrol.endseries + '.' )
 				
@@ -290,6 +295,7 @@ class AFControlService
 	
 	@ProxyMethod
 	public def formatSeries( series, prefix, suffix, serieslength ) {
+		if( ! series || ! serieslength ) return '-' 
 		def p = (prefix ? prefix + '-' : '')
 		def s  = (suffix ? '-' + suffix : '')
 		return p + (series+'').padLeft(serieslength, '0') + s  

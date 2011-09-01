@@ -36,7 +36,7 @@ public class RPTBillingService
         ruleService.execute( RULESET, facts, [actionList:actionList], 'PENALTY' )
         ruleService.execute( RULESET, facts, [actionList:actionList], 'DISCOUNT' )
         ruleService.execute( RULESET, facts, [actionList:actionList], 'SUMMARY' )
-        finalizeBillInfo( bill )
+        summarizeBillInfo( bill )
         return bill
 	}	
     
@@ -295,7 +295,7 @@ public class RPTBillingService
         if( bill.billtoqtr == null  || bill.billtoqtr == 0 ) bill.billtoqtr = dt.qtr 
     }
     
-    void finalizeBillInfo( bill ) {
+    void summarizeBillInfo( bill ) {
         bill.items.each { item ->
             item.basic      = 0.0
             item.basicint   = 0.0

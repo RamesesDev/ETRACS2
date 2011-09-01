@@ -6,7 +6,7 @@ ORDER BY txndate DESC, txnno DESC
 SELECT * 
 FROM remittancelist 
 WHERE txnno = $P{txnno} 
-ORDER BY txndate DESC, txnno DESC
+ORDER BY txndate DESC, txnno DESC 
 
 [getRemittanceByCollector]
 SELECT * FROM remittancelist 
@@ -42,7 +42,7 @@ ORDER BY afid, serialno DESC, txndate DESC
 SELECT pi.* FROM paymentitem pi, receiptlist rl 
 WHERE rl.objid = pi.receiptid 
 AND NOT pi.paytype = 'CASH' 
-AND rl.objid = $P{remittanceid}
+AND rl.objid = $P{remittanceid} 
 
 [getRemittedFormsByRemittance]
 SELECT * FROM remittedform 
