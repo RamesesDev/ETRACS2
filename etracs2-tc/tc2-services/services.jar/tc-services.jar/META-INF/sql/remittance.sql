@@ -270,5 +270,15 @@ UPDATE receiptlist SET
 	remittancedate = $P{remittancedate}
 WHERE collectorid = $P{collectorid} 
   AND docstate = 'OPEN' 
-  
-  
+ 
+
+[getCollectionType] 
+SELECT 
+	afid, stubno, 
+	MIN(serialno) AS fromserialno, 
+	MAX(serialno) AS toserialno, 
+	SUM(amount) AS amount 
+FROM receiptlist 
+WHERE remittanceid = $P{remittanceid} 
+ AND voided=0 
+GROUP BY afid, stubno 

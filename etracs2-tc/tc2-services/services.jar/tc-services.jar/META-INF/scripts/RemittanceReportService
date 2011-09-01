@@ -24,6 +24,7 @@ class RemittanceReportService {
 			amount				: rem.info.amount,
 			liquidatingOfficerName	: rem.info.liquidatingofficername,
 			liquidatingOfficerTitle	: rem.info.liquidatingofficertitle,
+			collectiontype			: getCollectionType( rem.objid ), 
 			remittedforms			: getSerialRemittedFormsByRemittance( rem.objid ),
 			nonserialremittances 	: getNonSerialRemittedFormsByRemittance( rem.objid ),
 			otherpayments		: rem.otherpayments,
@@ -32,6 +33,10 @@ class RemittanceReportService {
 		
 		return data;
 		
+	}
+	
+	private def getCollectionType( remid ){
+		return em.sqlContext.createNamedQuery("remittance:getCollectionType").setParameters( [remittanceid:remid] ).resultList;
 	}
 	
 	private def getSerialRemittedFormsByRemittance( remid ) {

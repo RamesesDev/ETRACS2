@@ -35,6 +35,9 @@
 	<parameter name="ReportNSAForms" isForPrompting="false" class="java.lang.Object"/>
 	<parameter name="TREASUREROFFICENAME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="ReportADenominations" isForPrompting="false" class="java.lang.Object"/>
+	<parameter name="ReportCollectionType" isForPrompting="false" class="java.lang.Object"/>
+	<parameter name="TREASURERNAME" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="TREASURERTITLE" isForPrompting="false" class="java.lang.String"/>
 
 	<field name="otherpayments" class="java.lang.Object"/>
 	<field name="collectorName" class="java.lang.String"/>
@@ -50,8 +53,61 @@
 	<field name="totalDenomination" class="java.math.BigDecimal"/>
 	<field name="nonserialremittances" class="java.lang.Object"/>
 	<field name="denominations" class="java.lang.Object"/>
+	<field name="collectiontype" class="java.lang.Object"/>
 
 
+		<group  name="TYPE_GROUP" >
+			<groupExpression><![CDATA[]]></groupExpression>
+			<groupHeader>
+			<band height="43"  isSplitAllowed="true" >
+				<subreport  isUsingCache="true">
+					<reportElement
+						mode="Transparent"
+						x="0"
+						y="1"
+						width="552"
+						height="13"
+						forecolor="#000000"
+						backcolor="#FFFFFF"
+						key="subreport-6"/>
+					<dataSourceExpression><![CDATA[$F{collectiontype}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{ReportCollectionType}]]></subreportExpression>
+				</subreport>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="86"
+						y="26"
+						width="157"
+						height="13"
+						key="textField"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$P{TREASURERNAME}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="289"
+						y="26"
+						width="157"
+						height="13"
+						key="textField-8"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$P{TREASURERTITLE}]]></textFieldExpression>
+				</textField>
+			</band>
+			</groupHeader>
+			<groupFooter>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+			</groupFooter>
+		</group>
 		<group  name="AF_GROUP" >
 			<groupExpression><![CDATA[null]]></groupExpression>
 			<groupHeader>
@@ -65,7 +121,8 @@
 						height="13"
 						forecolor="#000000"
 						backcolor="#FFFFFF"
-						key="subreport-3"/>
+						key="subreport-3"
+						positionType="Float"/>
 					<dataSourceExpression><![CDATA[$F{remittedforms}]]></dataSourceExpression>
 					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{ReportAForms}]]></subreportExpression>
 				</subreport>
@@ -601,8 +658,8 @@
 				<image  scaleImage="FillFrame" vAlign="Top" hAlign="Left" isUsingCache="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						mode="Opaque"
-						x="62"
-						y="34"
+						x="49"
+						y="42"
 						width="69"
 						height="62"
 						forecolor="#000000"
