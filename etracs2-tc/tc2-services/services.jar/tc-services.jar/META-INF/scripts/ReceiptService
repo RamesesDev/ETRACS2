@@ -401,6 +401,7 @@ class ReceiptService
 			afcontrol.issuedto = afcontrol.currentseries
 		}
 		
+		if( afcontrol.balance == 0 ) afcontrol.active = false 
 		afcontrol.currentseries = getNextCurrentSeries( afcontrol );
 		
 		em.update(AFCONTROL_SCHEMA, afcontrol )
@@ -432,6 +433,7 @@ class ReceiptService
 			afcontrol.qtyissued += receipt.qtyissued 
 			afcontrol.balance -= receipt.qtyissued
 		}
+		if( afcontrol.balance == 0 ) afcontrol.active = false 
 		em.update(AFCONTROL_SCHEMA, afcontrol)
 	}	
 	

@@ -2,6 +2,9 @@
     <invokers>
         <invoker folderid="menu/tc/txn" action="init" caption="Activate AF Control" permission="afcontrol.activate" />
         <invoker type="afcontrol:activate" caption="Activate AF Control" target="popup" permission="afcontrol.activate" />
+        
+        <invoker type="formActions" action="_close" caption="Close" mnemonic="c" />
+        <invoker type="formActions" action="activate" caption="Activate" mnemonic="a" shortcut="ctrl + A" />
     </invokers>
     <code>
 <![CDATA[        
@@ -31,12 +34,13 @@ class AFControlActivateController
     def activate() {
         if( ! selectedItem ) throw new Exception('Select an accountable form.')        
         if( MsgBox.confirm('Activate selected AF Control?') ) {
-            def afcontrol = svc.activateAFControl( selectedItem.objid, mode ) 
+            def afcontrol = svc.activateAFControl( selectedItem.objid, selectedItem?.mode  ) 
             if( onselectHandler ) {
                 onselectHandler( afcontrol )
+                MsgBox.alert('Stub No. ' + selectedItem.stubno + ' has been successsfully activated.')
             }
-            return '_close' 
         }
+        return '_close'
     }
     
     def listHandler = [
@@ -47,6 +51,7 @@ class AFControlActivateController
                 new Column(name:'stubno', caption:'Stub No.', maxWidth:120),
                 new Column(name:'startseries', caption:'Start Series', format:'0000000'),
                 new Column(name:'endseries', caption:'End Series', format:'0000000'),
+                new Column(name:'currentseries', caption:'Current Series', format:'0000000'),
                 new Column(name:'mode', caption:'Mode'),
             ]
         },
