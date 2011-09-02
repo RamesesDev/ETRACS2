@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="rptmanualcollectiondetail" action="init" caption="Realty Tax Manual Collection Detail" target="popup" />
+    </invokers>
+    
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+
+public class RPTManualCollectionDetailPage {
+    @Binding
+    def binding
+    
+    @Service('RPTReceiptService')
+    def svc 
+    
+    def onadd  //handler 
+    
+    def receipt
+    def item
+    
+    
+    def basic           = 0.0
+    def basicdisc       = 0.0
+    def basicint        = 0.0
+    def basicprev       = 0.0
+    def basicprevint    = 0.0   
+    def basicprior      = 0.0
+    def basicpriorint   = 0.0
+    
+    void init() {
+        item= [
+            taxpayername       : receipt.info.payorname,
+            taxpayeraddress    : receipt.info.payoraddress,
+            fromqtr : 1, toqtr : 4,
+            basic   : 0.0,      basicdisc : 0.0,        basicint : 0.0,
+            basicprev : 0.0,    basicprevint : 0.0,     basicprior :0.0,        basicpriorint :0.0,
+            sef : 0.0,          sefdisc : 0.0,          sefint : 0.0,
+            sefprev : 0.0,      sefprevint : 0.0,       sefprior :0.0,          sefpriorint :0.0,
+        ]
+    }
+    
+    
+    def ok() {
+        if( item.fromyear > item.toyear ) throw new Exception('From Year must be less than or equal to To Year.')
+        if( item.fromyear == item.toyear && item.fromqtr > item.toqtr ) throw new Exception('From Qtr must be less than or equal to To Qtr.')
+        calculateTotals()
+        buildPeriod()
+        if( onadd ) onadd( item )
+        return '_close'
+    }
+    
+    void buildPeriod() {
+        if( item.fromyear == item.toyear && item.fromqtr == 1 && item.toqtr == 4 ) 
+            item.period = 'Full ' + item.fromyear 
+        if( item.fromyear == item.toyear && item.fromqtr == item.toqtr  ) 
+            item.period = item.fromqtr + 'Q, ' + item.fromyear 
+        if( item.fromyear == item.toyear ) 
+            item.period = item.fromqtr + '-' + item.toqtr + 'Q, ' + item.fromyear 
+        if(  item.fromqtr == 1 && item.toqtr == 4 ) 
+            item.period = 'Full ' + item.fromyear + '-' + item.toyear 
+        item.period = item.fromqtr + 'Q,' + item.fromyear + '-' + item.toqtr + 'Q,' + item.toyear 
+    }
+    
+    
+    void calculateTotals() {
+        item.basicnet   = item.basic + item.basicprev + item.basicprior 
+        item.basicdp    = item.basicint + item.basicprevint + item.basicpriorint - item.basicdisc 
+        item.sefnet     = item.sef + item.sefprev + item.sefprior 
+        item.sefdp      = item.sefint + item.sefprevint + item.sefpriorint - item.sefdisc 
+        item.amount     = item.basicnet + item.basicdp + item.sefnet + item.sefdp 
+        binding.refresh('item.amount')
+    }
+    
+    
+    
+    
+    
+    
+    
+    void setBasic( basic ) {
+        this.basic = basic
+        item.basic = basic
+        item.sef = basic
+        calculateTotals()
+    }
+    
+    void setBasicdisc( basicdisc ) {
+        this.basicdisc = basicdisc
+        item.basicdisc = basicdisc
+        item.sefdisc = basicdisc
+        calculateTotals()
+    }
+    
+    void setBasicint( basicint ) {
+        this.basicint = basicint
+        item.basicint = basicint
+        item.sefint = basicint
+        calculateTotals()
+    }
+    
+    void setBasicprev( basicprev ) {
+        this.basicprev = basicprev
+        item.basicprev = basicprev
+        item.sefprev = basicprev
+        calculateTotals()
+    }
+    
+    void setBasicprevint( basicprevint ) {
+        this.basicprevint = basicprevint
+        item.basicprevint = basicprevint
+        item.sefprevint = basicprevint
+        calculateTotals()
+    }
+    
+    void setBasicprior( basicprior ) {
+        this.basicprior = basicprior
+        item.basicprior = basicprior
+        item.sefprior = basicprior
+        calculateTotals()
+    }
+    
+    void setBasicpriorint( basicpriorint ) {
+        this.basicpriorint = basicpriorint
+        item.basicpriorint = basicpriorint
+        item.sefpriorint = basicpriorint
+        calculateTotals()
+    }
+    
+    List getQuarters() {
+        return [1,2,3,4]
+    }
+    
+    
+    List getBarangays() {
+        return svc.getBarangays().lguname
+    }
+    
+    List getRputypes() {
+        return ['LAND', 'BLDG', 'MACH', 'PLANT/TREE', 'MISC']
+    }
+    
+    List getClassifications() {
+        return svc.getClassifications().classcode 
+    }
+    
+    
+}
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.collection.RPTManualCollectionDetailPage" />
+    </pages>
+</workunit>

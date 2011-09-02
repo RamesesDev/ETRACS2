@@ -364,11 +364,13 @@ public class FAASPage extends javax.swing.JPanel {
 
         xNumberField2.setFieldType(BigDecimal.class);
         xNumberField2.setName("faas.info.prevmv");
+        xNumberField2.setPattern("#,##0.00");
         jPanel6.add(xNumberField2);
         xNumberField2.setBounds(100, 38, 130, 19);
 
         xNumberField3.setFieldType(BigDecimal.class);
         xNumberField3.setName("faas.info.prevav");
+        xNumberField3.setPattern("#,##0.00");
         jPanel6.add(xNumberField3);
         xNumberField3.setBounds(298, 38, 180, 19);
 
