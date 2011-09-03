@@ -61,6 +61,7 @@ public class BldgRPUController
         depreciation        = rpu.info.depreciation 
         firstfloorbasevalue = rpu.info.firstfloorbasevalue 
         useswornamount      = rpu.info.useswornamount
+        percentcompleted    = (rpu.info.percentcompleted ? rpu.info.percentcompleted : 100.0 )
     }
     
     def ok() {
@@ -151,6 +152,7 @@ public class BldgRPUController
     def bldgage
     def depreciation
     def selectedBldgUse
+    def percentcompleted
     
     void setDtcompleted( dtcompleted ) {
         this.dtcompleted = dtcompleted
@@ -163,8 +165,7 @@ public class BldgRPUController
         this.dtoccupied = dtoccupied
         rpu.info.dtoccupied = dtoccupied 
         calcBldgAge()
-        recalc()
-        
+        recalc()   
     }
     
     void calcBldgAge() {
@@ -182,6 +183,12 @@ public class BldgRPUController
     void setDepreciation( depreciation) {
         this.depreciation = depreciation
         rpu.info.depreciation = depreciation
+        recalc()
+    }
+    
+    void setPercentcompleted( percentcompleted ) {
+        this.percentcompleted = percentcompleted
+        rpu.info.percentcompleted = percentcompleted
         recalc()
     }
     
@@ -352,11 +359,11 @@ public class BldgRPUController
     }
     
     boolean getAllowEdit() {
-        if( faas.info.datacapture == true ) return true
         if( faas.docstate == 'FORPROVAPPROVAL' ) return false
         if( faas.docstate == 'CURRENT' ) return false
         if( faas.docstate == 'CANCELLED' ) return false
-        if( faas.info.txntype == 'TR') return false
+        if( faas.info.datacapture == false && faas.info.txntype == 'TR') return false
+        if( faas.info.datacapture == true ) return true
         return true
     }
     

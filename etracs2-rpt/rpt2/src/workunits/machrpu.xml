@@ -201,11 +201,11 @@ public class MachRPUController
     }
     
     boolean getAllowEdit() {
-        if( faas.info.datacapture == true ) return true;
         if( faas.docstate == 'FORPROVAPPROVAL' ) return false
         if( faas.docstate == 'CURRENT' ) return false
         if( faas.docstate == 'CANCELLED' ) return false
-        if( faas.info.txntype == 'TR') return false
+        if( faas.info.datacapture == false && faas.info.txntype == 'TR') return false
+        if( faas.info.datacapture == true ) return true;
         return true
     }
     
