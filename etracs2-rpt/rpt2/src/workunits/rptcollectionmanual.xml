@@ -16,6 +16,8 @@
         <invoker type="receipt.actions:tc:real_property_manual" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" />
         <invoker type="receipt.actions:tc:real_property_manual" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" />
         <invoker type="receipt.actions:tc:real_property_manual" action="doVoid" caption="Void" mnemonic="v" icon="images/doc-void.png"/>   
+        
+        <invoker type="previewActions" action="backToMain" caption="Back" mnemonic="b" immediate="true" icon="images/back.png"/>
     </invokers>
     <code>
 <![CDATA[
@@ -40,7 +42,8 @@
         def dateSvc
         
         @Service('ReportParameterService')
-        def svcParams;
+        def svcParams
+        
         
         def currdate 
         def parsedate 
@@ -57,6 +60,7 @@
         def rptitems 
         
         void init() {
+            parsedate = dateSvc.parseCurrentDate()
             super.init()
             entity.doctype = 'RPT'
             currdate = dateSvc.parseCurrentDate()    
@@ -70,6 +74,10 @@
             paymentSummary.handle.reload()
         }
         
+        
+        def backToMain() {
+            return 'default'
+        }
         
         /*================================================================================================
         *
@@ -104,24 +112,37 @@
             getColumns  : { return [
                 new Column(name:'taxpayername', caption:'Declared Owner', width:200),
                 new Column(name:'tdno', caption:'TD No.', width:150),
-                new Column(name:'pin', caption:'PIN', width:150),
+                new Column(name:'fullpin', caption:'PIN', width:150),
                 new Column(name:'fromyear', caption:'From Year', format:'0000', type:'integer'),
                 new Column(name:'fromqtr', caption:'From Qtr', format:'0', type:'integer'),
                 new Column(name:'toyear', caption:'To Year', type:'integer', format:'0000'),
                 new Column(name:'toqtr', caption:'To Qtr', type:'integer', format:'0'),
-                new Column(name:'basicnet', caption:'Basic', type:'integer', format:'0'),
-                new Column(name:'sefnet', caption:'SEF', type:'integer', format:'0'),
-                new Column(name:'amount', caption:'Total', type:'decimal'),
+                new Column(name:'basicgross', caption:'Basic', type:'decimal', format:'#,##0.00' ),
+                new Column(name:'basicdp', caption:'D/P', type:'decimal', format:'#,##0.00' ),
+                new Column(name:'sefgross', caption:'SEF', type:'decimal', format:'#,##0.00' ),
+                new Column(name:'sefdp', caption:'D/P', type:'decimal', format:'#,##0.00' ),
+                new Column(name:'amount', caption:'Total', type:'decimal', format:'#,##0.00' ),
             ]},
             fetchList   : { return rptitems }
         ] as SubListModel
         
         
         def addItem() {
-            return InvokerUtil.lookupOpener('rptmanualcollectiondetail', [
+            return InvokerUtil.lookupOpener('rptmanualcollectiondetail.add', [
                 receipt : entity,
                 onadd   : { item ->
                     rptitems.add( item )
+                    calculateReceiptAmount()
+                    listHandler.load()
+                }
+            ])
+        }
+        
+        def editItem() {
+            return InvokerUtil.lookupOpener('rptmanualcollectiondetail.edit', [
+                receipt : entity,
+                item    : selectedItem ,
+                onedit  : { item ->
                     calculateReceiptAmount()
                     listHandler.load()
                 }
@@ -145,7 +166,29 @@
             updatePaymentInfo( payments )
             binding.refresh('entity.info.amount|entity.info.totalpayment|entity.info.change')
         }
-
+        
+        def previewManualBill() {
+            if( ! rptitems ) throw new Exception('At least one item for payment must be specified. ')
+            if( rptitems.size() > 5 ) throw new Exception('Only a maximum of 5 items are allowed.')
+            billreport.viewReport()
+            return 'preview'
+        }
+        
+        def billreport = [
+            getReportName : { return 'rptbilling/rptmanualbilling' },
+            getReportData : { return rptitems },
+            getParameters : { 
+                def params = svcParams.getStandardParameter( OsirisContext?.env?.USERNAME )
+                params.putAll([
+                    TAXPAYERNAME        : entity.info.payorname,
+                    TAXPAYERADDRESS     : entity.info.payoraddress,
+                    BILLDATE            : parsedate.date,
+                    GRANDTOTAL          : entity.info.amount, 
+                    EXPIRYDATE          : dateSvc.getMonthEndDate( parsedate.date ),
+                ])
+                return params 
+            },
+        ] as ServerReportModel
     }
 ]]>        
     </code>
@@ -153,5 +196,6 @@
         <page template="etracs2.rpt.collection.RPTManualCollectionPage" />
         <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
         <page name="html" template="etracs2.tc.HtmlPage"/>
+        <page name="preview" template="etracs2.rpt.collection.PreviewPage"/>
     </pages>
 </workunit>

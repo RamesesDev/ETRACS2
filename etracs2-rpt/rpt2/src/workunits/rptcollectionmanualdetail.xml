@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
     <invokers>
-        <invoker type="rptmanualcollectiondetail" action="init" caption="Realty Tax Manual Collection Detail" target="popup" />
+        <invoker type="rptmanualcollectiondetail.add" action="initAdd" caption="Realty Tax Manual Collection Detail" target="popup" />
+        <invoker type="rptmanualcollectiondetail.edit" action="initEdit" caption="Realty Tax Manual Collection Detail Update" target="popup" />
     </invokers>
     
     <code lang="groovy">
@@ -19,7 +20,14 @@ public class RPTManualCollectionDetailPage {
     @Service('RPTReceiptService')
     def svc 
     
+    @Service('RPTBillingService')
+    def billingSvc
+    
+    @Service('DateService')
+    def dateSvc
+    
     def onadd  //handler 
+    def onedit //handler 
     
     def receipt
     def item
@@ -33,7 +41,10 @@ public class RPTManualCollectionDetailPage {
     def basicprior      = 0.0
     def basicpriorint   = 0.0
     
-    void init() {
+    def parsedate
+    
+    void initAdd() {
+        parsedate = dateSvc.parseCurrentDate()
         item= [
             taxpayername       : receipt.info.payorname,
             taxpayeraddress    : receipt.info.payoraddress,
@@ -45,13 +56,18 @@ public class RPTManualCollectionDetailPage {
         ]
     }
     
+    void initEdit() {
+        parsedate = dateSvc.parseCurrentDate()
+        populateBasicVariables()
+    }
+    
     
     def ok() {
-        if( item.fromyear > item.toyear ) throw new Exception('From Year must be less than or equal to To Year.')
-        if( item.fromyear == item.toyear && item.fromqtr > item.toqtr ) throw new Exception('From Qtr must be less than or equal to To Qtr.')
+        validateInfo()
         calculateTotals()
         buildPeriod()
         if( onadd ) onadd( item )
+        if( onedit) onedit( item )
         return '_close'
     }
     
@@ -69,17 +85,69 @@ public class RPTManualCollectionDetailPage {
     
     
     void calculateTotals() {
-        item.basicnet   = item.basic + item.basicprev + item.basicprior 
-        item.basicdp    = item.basicint + item.basicprevint + item.basicpriorint - item.basicdisc 
-        item.sefnet     = item.sef + item.sefprev + item.sefprior 
+        item.basicgross   = item.basic + item.basicprev + item.basicprior 
+        item.basicdp      = item.basicint + item.basicprevint + item.basicpriorint - item.basicdisc 
+        item.basicnet     = item.basicgross 
+        
+        item.sefgross   = item.sef + item.sefprev + item.sefprior 
         item.sefdp      = item.sefint + item.sefprevint + item.sefpriorint - item.sefdisc 
-        item.amount     = item.basicnet + item.basicdp + item.sefnet + item.sefdp 
+        item.sefnet     = item.sefgross 
+        
+        item.amount     = item.basicnet + item.basicdp + item.sefnet  + item.sefdp 
         binding.refresh('item.amount')
     }
     
+    void compute() {
+        validateInfo()
+        def bill = [
+            billdate       : parsedate.date,
+            billtoyear     : item.toyear,
+            billtoqtr      : item.toqtr,
+            fullpayment    : determineFullPayment(),
+            qtrlypaymentavailed : determineQtrlyPayment(),
+            advancepayment : ( item.toyear > parsedate.year ),
+            item           : item,
+            items          : []
+        ]
+        
+        bill = billingSvc.generateManualBill( bill )
+        item.putAll( bill.item )
+        populateBasicVariables()
+        calculateTotals()
+        binding.refresh()
+    }
     
+    void validateInfo() {
+        required( 'From Year', item.fromyear )
+        required( 'To Year', item.toyear )
+        required( 'Assessed Value', item.assessedvalue )
+        
+        if( item.fromyear > item.toyear ) throw new Exception('From Year must be less than or equal to To Year.')
+        if( item.fromyear == item.toyear && item.fromqtr > item.toqtr ) throw new Exception('From Qtr must be less than or equal to To Qtr.')
+        if( item.toyear > (parsedate.year + 5) ) throw new Exception('To Year must not be greater than ' + (parsedate.year + 3) + '.' )   
+    }
     
+    boolean determineFullPayment() {
+        if( item.toyear > item.fromyear && item.toqtr == 4 ) return true
+        if( item.toyear == item.fromyear && item.fromqtr == 1 && item.toqtr == 4 ) return true 
+        return false
+    }
     
+    boolean determineQtrlyPayment() {
+        if( item.toqtr < 4 ) return true 
+        if( item.toqtr == 4 && item.fromqtr != 1 ) return true
+        return false
+    }
+    
+    void populateBasicVariables() {
+        basic       = item.basic
+        basicint    = item.basicint
+        basicdisc   = item.basicdisc
+        basicprev       = item.basicprev
+        basicprevint    = item.basicprevint
+        basicprior       = item.basicprior
+        basicpriorint    = item.basicpriorint
+    }
     
     
     
@@ -150,6 +218,15 @@ public class RPTManualCollectionDetailPage {
     }
     
     
+    boolean getAllowEditCurrent() {
+        if( item.toyear < parsedate.year ) 
+            return false
+        return true;
+    }
+    
+    void required( caption, val ) {
+        if( ! val ) throw new Exception( caption + ' is required.' )
+    }
 }
 
 ]]>

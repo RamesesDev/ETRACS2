@@ -6,12 +6,14 @@
 
 package etracs2.rpt.collection;
 
+import com.rameses.rcp.ui.annotations.StyleSheet;
 import java.math.BigDecimal;
 
 /**
  *
  * @author  jzamora
  */
+@StyleSheet("etracs2/rpt/collection/RPTManualCollectionDetailPage.style")
 public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
     
     /** Creates new form RPTManualCollectionDetailPage */
@@ -46,6 +48,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xNumberField19 = new com.rameses.rcp.control.XNumberField();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
+        xButton3 = new com.rameses.rcp.control.XButton();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
         xNumberField2 = new com.rameses.rcp.control.XNumberField();
         xNumberField8 = new com.rameses.rcp.control.XNumberField();
@@ -67,7 +70,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xNumberField17 = new com.rameses.rcp.control.XNumberField();
         jLabel1 = new javax.swing.JLabel();
 
-        setPreferredSize(new java.awt.Dimension(598, 526));
+        setPreferredSize(new java.awt.Dimension(598, 555));
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("Manual Collection Information");
@@ -138,7 +141,6 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xComboBox4.setItems("classifications");
         xComboBox4.setName("item.classcode");
         xComboBox4.setPreferredSize(new java.awt.Dimension(160, 22));
-        xComboBox4.setRequired(true);
         formPanel8.add(xComboBox4);
 
         xComboBox5.setCaption("RPU Type");
@@ -146,7 +148,6 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xComboBox5.setItems("rputypes");
         xComboBox5.setName("item.rputype");
         xComboBox5.setPreferredSize(new java.awt.Dimension(200, 22));
-        xComboBox5.setRequired(true);
         formPanel8.add(xComboBox5);
 
         formPanel1.add(formPanel8);
@@ -221,11 +222,19 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xNumberField1.setRequired(true);
         formPanel1.add(xNumberField1);
 
+        xButton3.setMnemonic('m');
+        xButton3.setText("Compute");
+        xButton3.setImmediate(true);
+        xButton3.setName("compute");
+        xButton3.setShowCaption(false);
+        formPanel1.add(xButton3);
+
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("BASIC Breakdown");
         formPanel2.setBorder(xTitledBorder2);
         xNumberField2.setCaption("Basic Current");
         xNumberField2.setCaptionWidth(140);
+        xNumberField2.setDepends(new String[] {"item.toyear"});
         xNumberField2.setFieldType(BigDecimal.class);
         xNumberField2.setName("basic");
         xNumberField2.setPattern("#,##0.00");
@@ -235,6 +244,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
 
         xNumberField8.setCaption("Basic Discount");
         xNumberField8.setCaptionWidth(140);
+        xNumberField8.setDepends(new String[] {"item.toyear"});
         xNumberField8.setFieldType(BigDecimal.class);
         xNumberField8.setName("basicdisc");
         xNumberField8.setPattern("#,##0.00");
@@ -244,6 +254,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
 
         xNumberField3.setCaption("Basic Current Penalty");
         xNumberField3.setCaptionWidth(140);
+        xNumberField3.setDepends(new String[] {"item.toyear"});
         xNumberField3.setFieldType(BigDecimal.class);
         xNumberField3.setName("basicint");
         xNumberField3.setPattern("#,##0.00");
@@ -292,7 +303,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         formPanel3.setBorder(xTitledBorder3);
         xNumberField9.setCaption("SEF Current");
         xNumberField9.setCaptionWidth(140);
-        xNumberField9.setDepends(new String[] {"basic"});
+        xNumberField9.setDepends(new String[] {"basic", "item.toyear"});
         xNumberField9.setFieldType(BigDecimal.class);
         xNumberField9.setName("item.sef");
         xNumberField9.setPattern("#,##0.00");
@@ -302,7 +313,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
 
         xNumberField10.setCaption("SEF Discount");
         xNumberField10.setCaptionWidth(140);
-        xNumberField10.setDepends(new String[] {"basicdisc"});
+        xNumberField10.setDepends(new String[] {"basicdisc", "item.toyear"});
         xNumberField10.setFieldType(BigDecimal.class);
         xNumberField10.setName("item.sefdisc");
         xNumberField10.setPattern("#,##0.00");
@@ -312,7 +323,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
 
         xNumberField11.setCaption("SEF Current Penalty");
         xNumberField11.setCaptionWidth(140);
-        xNumberField11.setDepends(new String[] {"basicint"});
+        xNumberField11.setDepends(new String[] {"basicint", "item.toyear"});
         xNumberField11.setFieldType(BigDecimal.class);
         xNumberField11.setName("item.sefint");
         xNumberField11.setPattern("#,##0.00");
@@ -409,9 +420,9 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
                 .addContainerGap()
                 .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 189, Short.MAX_VALUE)
-                    .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 189, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, formPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
                     .add(jLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -420,7 +431,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
+                .add(19, 19, 19))
         );
     }// </editor-fold>//GEN-END:initComponents
     
@@ -437,6 +448,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel1;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
+    private com.rameses.rcp.control.XButton xButton3;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XComboBox xComboBox3;

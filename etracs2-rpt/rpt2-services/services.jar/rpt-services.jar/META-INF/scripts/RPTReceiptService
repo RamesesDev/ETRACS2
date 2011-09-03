@@ -61,13 +61,23 @@ class RPTReceiptService
 		}
 		
 		receipt.items = rctitems 
-		summarizeManualReceiptInfo( receipt, items )
+		calculateManualReceiptTotals( receipt, items )
 		receiptSvc.create( receipt )
+		
+		//save items to rptpaymentmanual 
+		items.each { item ->
+			item.objid 			= 'RM' + new UID()
+			item.schemaname 	= 'rptreceipt:rptpaymentmanual'
+			item.schemaversion 	= '1.0'
+			item.receiptid 		= receipt.objid 
+			em.create( 'rptreceipt:rptpaymentmanual', item )
+		}
+		
 		receipt._items = items 
         return receipt 
     }
 	
-	void summarizeManualReceiptInfo( receipt, items ) {
+	void calculateManualReceiptTotals( receipt, items ) {
         receipt.checknos   =  ''
         receipt.checkbank  = ''
         
