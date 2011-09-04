@@ -50,6 +50,7 @@ class BldgRPUService
         rpuinfo.bldgstructures      = []
         rpuinfo.residualrate        = 0.0
         rpuinfo.assesslevel         = 0.0
+		rpuinfo.percentcompleted    = 0.0
         return faas 
     }
     
@@ -79,6 +80,10 @@ class BldgRPUService
 				}
 			}
 		}
+		
+		def maxdepreciation = 100.0 - bldgtype.residualrate 
+		if( maxdepreciation < depreciationrate) 
+			return maxdepreciation
 		return depreciationrate
 	}
 	
@@ -119,7 +124,7 @@ class BldgRPUService
         }
         //calculate market value
         rpu.info.bldguses.each { bldguse ->
-            calculateBldgUseMarketValue( rpu.info.bldgtype, rpu.info.bldgkind, rpu.info.firstfloorbasevalue, rpu.info.depreciation, bldguse )
+            calculateBldgUseMarketValue( rpu, rpu.info.bldgtype, rpu.info.bldgkind, rpu.info.firstfloorbasevalue, rpu.info.depreciation, bldguse )
         }        
         
         //calculate rpu market value
@@ -172,9 +177,9 @@ class BldgRPUService
     }
     
     @ProxyMethod
-    public Map calculateBldgUseMarketValue( bldgtype, bldgkindbucc, firstfloorbasevalue, depreciation, bldguse ) {
+    public Map calculateBldgUseMarketValue( rpu, bldgtype, bldgkindbucc, firstfloorbasevalue, depreciation, bldguse ) {
         bldguse.floors.each { floor ->
-            calculateFloorMarketValue( bldgtype, bldgkindbucc, firstfloorbasevalue, depreciation, floor  )
+            calculateFloorMarketValue( rpu, bldgtype, bldgkindbucc, firstfloorbasevalue, depreciation, floor  )
         }
         bldguse.area            = calculateSum( 'area', bldguse.floors )
         bldguse.basemarketvalue = calculateSum( 'basemarketvalue', bldguse.floors )
@@ -185,12 +190,15 @@ class BldgRPUService
     }
     
     @ProxyMethod
-    public Map calculateFloorMarketValue( bldgtype, bldgkindbucc, firstfloorbasevalue, depreciation, floor ) {
+    public Map calculateFloorMarketValue( rpu, bldgtype, bldgkindbucc, firstfloorbasevalue, depreciation, floor ) {
         def storeyrate          = determineMultiStoreyRate( bldgtype, floor )
         floor.storeyrate        = storeyrate
         floor.basevalue         = firstfloorbasevalue
         floor.unitvalue         = numberSvc.round( firstfloorbasevalue * ( storeyrate / 100 ) )
-        floor.basemarketvalue   = numberSvc.round( floor.area * floor.unitvalue )
+		
+		def percentcompleted    = ( rpu.info.percentcompleted ? rpu.info.percentcompleted  : 100.0 ) / 100 
+		
+        floor.basemarketvalue   = numberSvc.round( floor.area * floor.unitvalue * percentcompleted )
         floor.adjustment        = calculateTotalFloorAdditionals( floor )
         floor.depreciationvalue = 0.0
         if( bldgtype.depreciatecoreanditemseparately ){

@@ -29,7 +29,57 @@ public class RPTBillingService
     @ProxyMethod
 	public def generateBill( bill ) {
         createBillItems( bill )
-        def facts = createFacts( bill  )
+		executeBillingRules( bill )
+        return bill
+	}	
+	
+	@ProxyMethod
+	public def generateManualBill( bill ) {
+		createManualBillItems( bill )
+		executeBillingRules( bill )
+		//
+		//update item totals for basic, basicprev, basicprior ( also sef )
+		//by grouping the details in revtype :( current, previous, prior )
+		def details = []
+		bill.items.each{ details.addAll( it.details ) }
+		
+		def revtypegroup = details.groupBy{ it.revtype }
+		
+		//summarize current 
+		def current = revtypegroup.current 
+		if( current ) {
+			bill.item.basic 	= current.basic.sum()
+			bill.item.basicdisc	= current.basicdisc.sum()
+			bill.item.basicint	= current.basicint.sum()
+			bill.item.sef 		= current.sef.sum()
+			bill.item.sefdisc	= current.sefdisc.sum()
+			bill.item.sefint	= current.sefint.sum()
+		}
+		
+		//summarize previous 
+		def previous = revtypegroup.previous 
+		if( previous ) {
+			bill.item.basicprev 	= previous.basic.sum()
+			bill.item.basicprevint	= previous.basicint.sum()
+			bill.item.sefprev 		= previous.sef.sum()
+			bill.item.sefprevint	= previous.sefint.sum()
+		}
+		
+		//summarize prior
+		def prior = revtypegroup.prior
+		if( prior) {
+			bill.item.basicprior 	= prior.basic.sum()
+			bill.item.basicpriorint	= prior.basicint.sum()
+			bill.item.sefprior 		= prior.sef.sum()
+			bill.item.sefpriorint	= prior.sefint.sum()
+		}
+		
+		bill.items.clear()
+		return bill 
+	}
+	
+	void executeBillingRules( bill ) {
+		def facts = createFacts( bill  )
         def actionList = ruleService.createRuleAction()
 		buildActionCommands( bill, facts, actionList )
 		ruleService.execute( RULESET, facts, [actionList:actionList], 'TAX' )
@@ -37,8 +87,8 @@ public class RPTBillingService
         ruleService.execute( RULESET, facts, [actionList:actionList], 'DISCOUNT' )
         ruleService.execute( RULESET, facts, [actionList:actionList], 'SUMMARY' )
         summarizeBillInfo( bill )
-        return bill
-	}	
+	}
+	
     
     @ProxyMethod
     public List getOpenLedgersByTaxpayerId( bill ) {
@@ -93,7 +143,7 @@ public class RPTBillingService
             item.details.each { detail ->
                 def lfact = ruleService.createFact(RULESET, FACTS_PACKAGE + '.RPTLedgerFact')
                 detail.keySet().each {
-                    try { lfact[it] = detail[it] } catch( e ) {;}
+					try { lfact[it] = detail[it] } catch( e ) { ;}
                 }
                 lfact.factname               = 'RPTLedgerFact'
                 lfact.rptledgerid            = item.rptledgerid
@@ -177,6 +227,32 @@ public class RPTBillingService
             billitem.toyear = bill.billtoyear
             billitem.toqtr  = bill.billtoqtr
             createBillItemDetailList( bill, billitem)
+        }
+    }
+	
+	void createManualBillItems( bill ) {
+		def currdate = dateSvc.parseDate( bill.billdate, null )
+		def billitem = [:]
+		billitem.putAll( bill.item )
+		bill.items = [ billitem ] 
+		billitem.lastyearpaid = ( billitem.fromqtr == 1 ? billitem.fromyear - 1 : billitem.fromyear )
+		billitem.lastqtrpaid  = ( billitem.fromqtr == 1 ? 4 : billitem.fromqtr - 1 )
+        def firstitem = true  
+        billitem.details = []
+        for( int yr = billitem.fromyear; yr <= billitem.toyear; yr++) {
+            def ledgeritem = [ assessedvalue : billitem.assessedvalue, basic:0.0, basicint:0.0, basicdisc:0.0, sef:0.0, sefint:0.0, sefdisc:0.0 ]
+            if( ledgeritem ) { //possible null if there is a gap in the ledgeritems due to nontaxability
+                if( yr < currdate.year ) {
+                    def av = adjustAssessedValue( bill, billitem, ledgeritem, firstitem, yr )
+                    def lastitem = ( yr == billitem.toyear )
+                    billitem.details.add( createBillItemDetail( bill, billitem, ledgeritem, av, yr, 0, firstitem , lastitem ) )
+                    firstitem = false 
+                }
+                else {
+                    billitem.details.addAll( createQtrlyItemDetails( bill, billitem, ledgeritem, yr, firstitem, false ) )
+                    firstitem = false 
+                }
+            }
         }
     }
     
@@ -311,10 +387,10 @@ public class RPTBillingService
             
             item.period    = determinePaidPeriod( item )
             
-            item.details.each { detail ->
-                detail.basicdp  = detail.basicint - detail.basicdisc 
+			item.details.each { detail ->
+				detail.basicdp  = detail.basicint - detail.basicdisc 
                 detail.basicnet = detail.basic + detail.basicdp 
-                detail.sefdp    = detail.sefint - detail.sefdisc 
+                detail.sefdp    = detail.sefint - detail.sefdisc
                 detail.sefnet   = detail.sef + detail.sefdp 
                 detail.total    = detail.basicnet + detail.sefnet 
                 
@@ -337,12 +413,12 @@ public class RPTBillingService
                 
                 item.basic      += detail.basic
                 item.basicint   += detail.basicint 
-                item.basicdisc  += detail.basicdisc 
+                item.basicdisc  += detail.basicdisc
                 item.basicdp    += detail.basicdp 
                 item.basicnet   += detail.basicnet 
                 item.sef        += detail.sef
                 item.sefint     += detail.sefint 
-                item.sefdisc    += detail.sefdisc 
+                item.sefdisc    += detail.sefdisc
                 item.sefdp      += detail.sefdp 
                 item.sefnet     += detail.sefnet
                 item.total      += detail.total 

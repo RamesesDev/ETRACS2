@@ -132,7 +132,7 @@ class ReceiptService
         checkdate = dateService.parse( 'yyyy-MM-dd',checkdate)
         if( checkdate > currdate ) throw new Exception('Post dated check is not allowed.')
         def daysdiff = dateService.getDaysDiff( checkdate, currdate ) 
-        if( daysdiff > 60 ) throw new Exception('Stale check is not allowed.')
+        if( daysdiff > 180 ) throw new Exception('Stale check is not allowed.')
     }
 	
 	@ProxyMethod
@@ -401,6 +401,7 @@ class ReceiptService
 			afcontrol.issuedto = afcontrol.currentseries
 		}
 		
+		if( afcontrol.balance == 0 ) afcontrol.active = false 
 		afcontrol.currentseries = getNextCurrentSeries( afcontrol );
 		
 		em.update(AFCONTROL_SCHEMA, afcontrol )
@@ -432,6 +433,7 @@ class ReceiptService
 			afcontrol.qtyissued += receipt.qtyissued 
 			afcontrol.balance -= receipt.qtyissued
 		}
+		if( afcontrol.balance == 0 ) afcontrol.active = false 
 		em.update(AFCONTROL_SCHEMA, afcontrol)
 	}	
 	

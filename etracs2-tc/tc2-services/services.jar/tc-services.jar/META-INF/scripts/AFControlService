@@ -279,7 +279,7 @@ class AFControlService
 		if( afcontrol.docstate != APPROVED_STATE ) throw new Exception('AF Control is already ' + afcontrol.state + '.')
 		if( afcontrol.mode != mode ) throw new Exception('AF Control is already in  ' + afcontrol.mode + ' mode.' )
 		if( afcontrol.active == false ) throw new Exception('AF Control is already ACTIVE.')
-		checkHasActive( afcontrol )
+		deactivateCurrentControl( afcontrol )
 		em.sqlContext.createNamedExecutor('afcontrol:activateControl').setParameter('objid', objid).execute()
 		buildSerialNo( afcontrol)
 		return afcontrol 
@@ -322,9 +322,13 @@ class AFControlService
 		em.sqlContext.createNamedExecutor('afcontrol:changeMode').setParameters( params ).execute()
 	}
 	
-	void checkHasActive( afcontrol ) {
-		def data = getActiveAFControl( afcontrol.collectorid, afcontrol.afid, afcontrol.mode )
-		if( data ) throw new Exception('Cannot activate selected form.\nAccountable Form with Stub No. ' + data.stubno + ' is still active for collector ' + afcontrol.collectorname + '.')
+	void deactivateCurrentControl( afcontrol ) {
+		def activeafcontrol = getActiveAFControl( afcontrol.collectorid, afcontrol.afid, afcontrol.mode )
+		println 'activeafcontrol -> ' + activeafcontrol
+		if( activeafcontrol )  {
+			activeafcontrol.active = false
+			em.update( activeafcontrol.schemaname, activeafcontrol )
+		}
 	}
 	
 }

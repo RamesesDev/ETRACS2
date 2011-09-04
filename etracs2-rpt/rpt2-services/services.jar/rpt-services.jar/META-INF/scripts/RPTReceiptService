@@ -18,7 +18,7 @@ class RPTReceiptService
     
     @ProxyMethod
     public def create( receipt, items ) {
-        if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
+		if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
         
         buildReceiptItems( receipt, items )
         updateReceiptInfos( receipt, items )
@@ -43,7 +43,123 @@ class RPTReceiptService
 		
         return receipt 
     }
+	
+	@ProxyMethod
+    public def createManualCollection( receipt, items ) {
+		if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
+        
+		// each item contain the following payment details :
+		//    basic, basicdisc, basicint, basicprev, basicprevint, basicprior, basicpriorint 
+		//    sef, sefdisc, sefint, sefprev, sefprevint, sefprior, sefpriorint 
+		// summarize the items by account for current, previous and prior
+		// and create receiptitem for each account summary 
+		
+		def rctitems = em.sqlContext.createNamedQuery('rptreceipt:getRPTIncomeAccounts').resultList 
+		items.each { itm ->
+			summarizeBasicAccounts( rctitems, itm )
+			summarizeSEFAccounts( rctitems, itm )
+		}
+		
+		receipt.items = rctitems 
+		calculateManualReceiptTotals( receipt, items )
+		receiptSvc.create( receipt )
+		
+		//save items to rptpaymentmanual 
+		items.each { item ->
+			item.objid 			= 'RM' + new UID()
+			item.schemaname 	= 'rptreceipt:rptpaymentmanual'
+			item.schemaversion 	= '1.0'
+			item.receiptid 		= receipt.objid 
+			em.create( 'rptreceipt:rptpaymentmanual', item )
+		}
+		
+		receipt._items = items 
+        return receipt 
+    }
+	
+	void calculateManualReceiptTotals( receipt, items ) {
+        receipt.checknos   =  ''
+        receipt.checkbank  = ''
+        
+        def noncashpmts = receipt.payments.findAll{ it.paytype == 'CHECK' } 
+        if( noncashpmts ){
+            receipt.checknos    = noncashpmts.checkno.join(',')
+            receipt.checkbanks  = noncashpmts.bank.join(',')
+            receipt.checkamount = noncashpmts.amount.sum()
+        }
+        
+        receipt.basic       = 0.0          
+        receipt.basicint    = 0.0
+        receipt.basicdisc   = 0.0
+        receipt.basicdp     = 0.0
+        receipt.basicnet    = 0.0
+        receipt.sef         = 0.0
+        receipt.sefint      = 0.0
+        receipt.sefdisc     = 0.0
+        receipt.sefdp       = 0.0
+        receipt.sefnet      = 0.0
+        
+        items.each { 
+            receipt.basic       += it.basic + it.basicprev + it.basicprior     
+            receipt.basicint    += it.basicint+ it.basicprevint + it.basicpriorint 
+            receipt.basicdisc   += it.basicdisc
+            receipt.basicdp     += (it.basicint - it.basicdisc )
+            receipt.basicnet    += (it.basic + it.basicint - it.basicdisc )
+            receipt.sef         += it.sef + it.sefprev + it.sefprior 
+            receipt.sefint      += it.sefint + it.sefprevint + it.sefpriorint 
+            receipt.sefdisc     += it.sefdisc 
+            receipt.sefdp       += (it.sefint - it.sefdisc)
+            receipt.sefnet      += (it.sef + it.sefint - it.sefdisc )
+        }
+    }
     
+    
+	void summarizeBasicAccounts( rctitems, itm ) {
+		def basicitem  			= rctitems.find{ it.systype == 'RPT_BASIC'}
+		def basicintitem  		= rctitems.find{ it.systype == 'RPT_BASICINT'}
+		def basicprevitem  		= rctitems.find{ it.systype == 'RPT_BASICPREV'}
+		def basicprevintitem  	= rctitems.find{ it.systype == 'RPT_BASICPREVINT'}
+		def basicprioritem  	= rctitems.find{ it.systype == 'RPT_BASICPRIOR'}
+		def basicpriorintitem  	= rctitems.find{ it.systype == 'RPT_BASICPRIORINT'}
+		
+		basicitem.amount += itm.basic 
+		basicintitem.amount += itm.basicint
+		basicprevitem.amount += itm.basicprev 
+		basicprevintitem.amount += itm.basicprevint
+		if( basicprioritem ) 
+			basicprioritem.amount += itm.basicprior
+		else
+			basicprevitem.amount += itm.basicprior 
+			
+		if( basicpriorintitem ) 
+			basicpriorintitem.amount += itm.basicpriorint
+		else
+			basicprevintitem.amount += itm.basicpriorint 
+	}
+	
+	void summarizeSEFAccounts( rctitems, itm ) {
+		def sefitem  			= rctitems.find{ it.systype == 'RPT_SEF'}
+		def sefintitem  		= rctitems.find{ it.systype == 'RPT_SEFINT'}
+		def sefprevitem  		= rctitems.find{ it.systype == 'RPT_SEFPREV'}
+		def sefprevintitem  	= rctitems.find{ it.systype == 'RPT_SEFPREVINT'}
+		def sefprioritem  		= rctitems.find{ it.systype == 'RPT_SEFPRIOR'}
+		def sefpriorintitem  	= rctitems.find{ it.systype == 'RPT_SEFPRIORINT'}
+		
+		sefitem.amount += itm.sef 
+		sefintitem.amount += itm.sefint
+		sefprevitem.amount += itm.sefprev 
+		sefprevintitem.amount += itm.sefprevint
+		if( sefprioritem ) 
+			sefprioritem.amount += itm.sefprior
+		else
+			sefprevitem.amount += itm.sefprior 
+			
+		if( sefpriorintitem ) 
+			sefpriorintitem.amount += itm.sefpriorint
+		else
+			sefprevintitem.amount += itm.sefpriorint 
+	}
+	
     @ProxyMethod
     public Map open( receiptid ) {
         def receipt = em.read('receipt', [objid:receiptid])
@@ -60,7 +176,18 @@ class RPTReceiptService
         receiptSvc.voidReceipt( receiptid, reason )
         voidRPTPayments( receiptid )
     }
-    
+	
+	
+	@ProxyMethod
+	public List getBarangays() {
+		return em.sqlContext.createNamedQuery('rptreceipt:getBarangays').resultList 
+	}
+	
+	@ProxyMethod
+	public List getClassifications() {
+		return em.sqlContext.createNamedQuery('rptreceipt:getClassifications').resultList
+	}
+	
     /*===========================================================================================
     *
     * SUPPORT METHODS

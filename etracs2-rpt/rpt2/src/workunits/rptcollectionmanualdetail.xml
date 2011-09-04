@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="rptmanualcollectiondetail.add" action="initAdd" caption="Realty Tax Manual Collection Detail" target="popup" />
+        <invoker type="rptmanualcollectiondetail.edit" action="initEdit" caption="Realty Tax Manual Collection Detail Update" target="popup" />
+    </invokers>
+    
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+
+public class RPTManualCollectionDetailPage {
+    @Binding
+    def binding
+    
+    @Service('RPTReceiptService')
+    def svc 
+    
+    @Service('RPTBillingService')
+    def billingSvc
+    
+    @Service('DateService')
+    def dateSvc
+    
+    def onadd  //handler 
+    def onedit //handler 
+    
+    def receipt
+    def item
+    
+    
+    def basic           = 0.0
+    def basicdisc       = 0.0
+    def basicint        = 0.0
+    def basicprev       = 0.0
+    def basicprevint    = 0.0   
+    def basicprior      = 0.0
+    def basicpriorint   = 0.0
+    
+    def parsedate
+    
+    void initAdd() {
+        parsedate = dateSvc.parseCurrentDate()
+        item= [
+            taxpayername       : receipt.info.payorname,
+            taxpayeraddress    : receipt.info.payoraddress,
+            fromqtr : 1, toqtr : 4,
+            basic   : 0.0,      basicdisc : 0.0,        basicint : 0.0,
+            basicprev : 0.0,    basicprevint : 0.0,     basicprior :0.0,        basicpriorint :0.0,
+            sef : 0.0,          sefdisc : 0.0,          sefint : 0.0,
+            sefprev : 0.0,      sefprevint : 0.0,       sefprior :0.0,          sefpriorint :0.0,
+        ]
+    }
+    
+    void initEdit() {
+        parsedate = dateSvc.parseCurrentDate()
+        populateBasicVariables()
+    }
+    
+    
+    def ok() {
+        validateInfo()
+        calculateTotals()
+        buildPeriod()
+        if( onadd ) onadd( item )
+        if( onedit) onedit( item )
+        return '_close'
+    }
+    
+    void buildPeriod() {
+        if( item.fromyear == item.toyear && item.fromqtr == 1 && item.toqtr == 4 ) 
+            item.period = 'Full ' + item.fromyear 
+        if( item.fromyear == item.toyear && item.fromqtr == item.toqtr  ) 
+            item.period = item.fromqtr + 'Q, ' + item.fromyear 
+        if( item.fromyear == item.toyear ) 
+            item.period = item.fromqtr + '-' + item.toqtr + 'Q, ' + item.fromyear 
+        if(  item.fromqtr == 1 && item.toqtr == 4 ) 
+            item.period = 'Full ' + item.fromyear + '-' + item.toyear 
+        item.period = item.fromqtr + 'Q,' + item.fromyear + '-' + item.toqtr + 'Q,' + item.toyear 
+    }
+    
+    
+    void calculateTotals() {
+        item.basicgross   = item.basic + item.basicprev + item.basicprior 
+        item.basicdp      = item.basicint + item.basicprevint + item.basicpriorint - item.basicdisc 
+        item.basicnet     = item.basicgross 
+        
+        item.sefgross   = item.sef + item.sefprev + item.sefprior 
+        item.sefdp      = item.sefint + item.sefprevint + item.sefpriorint - item.sefdisc 
+        item.sefnet     = item.sefgross 
+        
+        item.amount     = item.basicnet + item.basicdp + item.sefnet  + item.sefdp 
+        binding.refresh('item.amount')
+    }
+    
+    void compute() {
+        validateInfo()
+        def bill = [
+            billdate       : parsedate.date,
+            billtoyear     : item.toyear,
+            billtoqtr      : item.toqtr,
+            fullpayment    : determineFullPayment(),
+            qtrlypaymentavailed : determineQtrlyPayment(),
+            advancepayment : ( item.toyear > parsedate.year ),
+            item           : item,
+            items          : []
+        ]
+        
+        bill = billingSvc.generateManualBill( bill )
+        item.putAll( bill.item )
+        populateBasicVariables()
+        calculateTotals()
+        binding.refresh()
+    }
+    
+    void validateInfo() {
+        required( 'From Year', item.fromyear )
+        required( 'To Year', item.toyear )
+        required( 'Assessed Value', item.assessedvalue )
+        
+        if( item.fromyear > item.toyear ) throw new Exception('From Year must be less than or equal to To Year.')
+        if( item.fromyear == item.toyear && item.fromqtr > item.toqtr ) throw new Exception('From Qtr must be less than or equal to To Qtr.')
+        if( item.toyear > (parsedate.year + 5) ) throw new Exception('To Year must not be greater than ' + (parsedate.year + 3) + '.' )   
+    }
+    
+    boolean determineFullPayment() {
+        if( item.toyear > item.fromyear && item.toqtr == 4 ) return true
+        if( item.toyear == item.fromyear && item.fromqtr == 1 && item.toqtr == 4 ) return true 
+        return false
+    }
+    
+    boolean determineQtrlyPayment() {
+        if( item.toqtr < 4 ) return true 
+        if( item.toqtr == 4 && item.fromqtr != 1 ) return true
+        return false
+    }
+    
+    void populateBasicVariables() {
+        basic       = item.basic
+        basicint    = item.basicint
+        basicdisc   = item.basicdisc
+        basicprev       = item.basicprev
+        basicprevint    = item.basicprevint
+        basicprior       = item.basicprior
+        basicpriorint    = item.basicpriorint
+    }
+    
+    
+    
+    void setBasic( basic ) {
+        this.basic = basic
+        item.basic = basic
+        item.sef = basic
+        calculateTotals()
+    }
+    
+    void setBasicdisc( basicdisc ) {
+        this.basicdisc = basicdisc
+        item.basicdisc = basicdisc
+        item.sefdisc = basicdisc
+        calculateTotals()
+    }
+    
+    void setBasicint( basicint ) {
+        this.basicint = basicint
+        item.basicint = basicint
+        item.sefint = basicint
+        calculateTotals()
+    }
+    
+    void setBasicprev( basicprev ) {
+        this.basicprev = basicprev
+        item.basicprev = basicprev
+        item.sefprev = basicprev
+        calculateTotals()
+    }
+    
+    void setBasicprevint( basicprevint ) {
+        this.basicprevint = basicprevint
+        item.basicprevint = basicprevint
+        item.sefprevint = basicprevint
+        calculateTotals()
+    }
+    
+    void setBasicprior( basicprior ) {
+        this.basicprior = basicprior
+        item.basicprior = basicprior
+        item.sefprior = basicprior
+        calculateTotals()
+    }
+    
+    void setBasicpriorint( basicpriorint ) {
+        this.basicpriorint = basicpriorint
+        item.basicpriorint = basicpriorint
+        item.sefpriorint = basicpriorint
+        calculateTotals()
+    }
+    
+    List getQuarters() {
+        return [1,2,3,4]
+    }
+    
+    
+    List getBarangays() {
+        return svc.getBarangays().lguname
+    }
+    
+    List getRputypes() {
+        return ['LAND', 'BLDG', 'MACH', 'PLANT/TREE', 'MISC']
+    }
+    
+    List getClassifications() {
+        return svc.getClassifications().classcode 
+    }
+    
+    
+    boolean getAllowEditCurrent() {
+        if( item.toyear < parsedate.year ) 
+            return false
+        return true;
+    }
+    
+    void required( caption, val ) {
+        if( ! val ) throw new Exception( caption + ' is required.' )
+    }
+}
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.collection.RPTManualCollectionDetailPage" />
+    </pages>
+</workunit>

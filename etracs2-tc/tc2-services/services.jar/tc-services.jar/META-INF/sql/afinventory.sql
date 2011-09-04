@@ -49,10 +49,15 @@ SELECT afid, aftype, SUM(qtyonhand) AS totalqty FROM afinventory WHERE docstate 
 GROUP BY afid, aftype
 
 [getInventoryCreditByAFInventoryId]
-SELECT ivc.* , i.rivrequestedby, i.rivrequestedbytitle 
-FROM afinventorycredit ivc	
-	LEFT JOIN iraf i ON ivc.irafid = i.objid  
-WHERE ivc.afinventoryid = $P{afinventoryid} 
+SELECT ivc.* , a.collectorname AS rivrequestedby, a.collectortitle AS rivrequestedbytitle , a.currentseries  
+FROM afinventorycredit ivc	 
+	LEFT JOIN iraf i ON ivc.irafid = i.objid   
+	INNER JOIN afcontrol a ON ivc.objid = a.afinventorycreditid  
+WHERE ivc.afinventoryid = $P{afinventoryid}  
+
+
+
+
 
 
 

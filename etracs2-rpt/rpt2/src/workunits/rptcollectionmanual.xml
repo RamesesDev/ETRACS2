@@ -1,0 +1,201 @@
+<workunit>
+    <invokers>
+        <invoker type="collection" caption="Real Property Tax" afid="56" appcode="real_property_manual"  />
+        <invoker type="tc:real_property_manual" action="init" caption="Real Property" afid="56"/>
+        <invoker type="inquiry:tc:real_property_manual" action="initInquiry" caption="Inquiry" />
+        
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}" icon="images/doc-new.png"/>
+        <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}" icon="images/back.png"/>
+        <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}" icon="images/save.png"/>
+        <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}" icon="images/save.png"/>
+        <invoker type="formActions" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" visibleWhen="#{mode == 'view'}" />
+        <invoker type="formActions" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" visibleWhen="#{mode == 'view'}"/>
+        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view' and entity.voided == 0}" icon="images/doc-void.png"/>
+
+        <invoker type="receipt.actions:tc:real_property_manual" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" icon="images/edit.png"/>
+        <invoker type="receipt.actions:tc:real_property_manual" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" />
+        <invoker type="receipt.actions:tc:real_property_manual" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" />
+        <invoker type="receipt.actions:tc:real_property_manual" action="doVoid" caption="Void" mnemonic="v" icon="images/doc-void.png"/>   
+        
+        <invoker type="previewActions" action="backToMain" caption="Back" mnemonic="b" immediate="true" icon="images/back.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+    import com.rameses.rcp.common.*
+    import com.rameses.rcp.annotations.*
+    import com.rameses.osiris2.client.*
+    import com.rameses.osiris2.reports.*
+    import etracs2.groovy.*
+    import etracs2.tc.groovy.*
+    import java.text.DecimalFormat;
+
+    class RPTCollectionManualController extends AbstractCollectionController
+    {
+        @Service('RPTReceiptService')
+        def svc
+        
+        @Service('RPTReceiptHtmlService')
+        def htmlSvc
+        
+        @Service('DateService')
+        def dateSvc
+        
+        @Service('ReportParameterService')
+        def svcParams
+        
+        
+        def currdate 
+        def parsedate 
+        def payments = []
+        
+        def getParameters() { return svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+        def getService() { return svc }
+        def getHtmlService() { return htmlSvc }
+        def getCollectionTitle() { return 'Real Property Tax Collection' }
+        def getReportName() { return 'rptreceipt/af56' }
+        def getDetailReportName() { return 'rptreceipt/af56' }
+        
+        
+        def rptitems 
+        
+        void init() {
+            parsedate = dateSvc.parseCurrentDate()
+            super.init()
+            entity.doctype = 'RPT'
+            currdate = dateSvc.parseCurrentDate()    
+            if( entity.info.mode == 'CAPTURE' ) entity.info.txndate = currdate.date 
+            rptitems = []
+        }
+        
+        void newRecord() {
+            init()
+            listHandler.load()
+            paymentSummary.handle.reload()
+        }
+        
+        
+        def backToMain() {
+            return 'default'
+        }
+        
+        /*================================================================================================
+        *
+        * Receipt Actions Support 
+        *
+        ================================================================================================*/
+        
+        def create() {
+            if( rptitems.size() == 0 ) {
+                throw new Exception('At least one ledger for payment is required.')
+            }
+            
+            if( MsgBox.confirm("Save collection?") ) {
+                validateTxnDate()
+                entity = svc.createManualCollection( entity, rptitems )
+                print()
+                mode = 'view'
+                return 'view'
+            }
+            return null
+        }
+        
+        /*================================================================================================
+        *
+        * Main Page Support 
+        *
+        ================================================================================================*/
+        def selectedItem 
+        
+        def listHandler = [
+            getRows     : { return 50 },
+            getColumns  : { return [
+                new Column(name:'taxpayername', caption:'Declared Owner', width:200),
+                new Column(name:'tdno', caption:'TD No.', width:150),
+                new Column(name:'fullpin', caption:'PIN', width:150),
+                new Column(name:'fromyear', caption:'From Year', format:'0000', type:'integer'),
+                new Column(name:'fromqtr', caption:'From Qtr', format:'0', type:'integer'),
+                new Column(name:'toyear', caption:'To Year', type:'integer', format:'0000'),
+                new Column(name:'toqtr', caption:'To Qtr', type:'integer', format:'0'),
+                new Column(name:'basicgross', caption:'Basic', type:'decimal', format:'#,##0.00' ),
+                new Column(name:'basicdp', caption:'D/P', type:'decimal', format:'#,##0.00' ),
+                new Column(name:'sefgross', caption:'SEF', type:'decimal', format:'#,##0.00' ),
+                new Column(name:'sefdp', caption:'D/P', type:'decimal', format:'#,##0.00' ),
+                new Column(name:'amount', caption:'Total', type:'decimal', format:'#,##0.00' ),
+            ]},
+            fetchList   : { return rptitems }
+        ] as SubListModel
+        
+        
+        def addItem() {
+            return InvokerUtil.lookupOpener('rptmanualcollectiondetail.add', [
+                receipt : entity,
+                onadd   : { item ->
+                    rptitems.add( item )
+                    calculateReceiptAmount()
+                    listHandler.load()
+                }
+            ])
+        }
+        
+        def editItem() {
+            return InvokerUtil.lookupOpener('rptmanualcollectiondetail.edit', [
+                receipt : entity,
+                item    : selectedItem ,
+                onedit  : { item ->
+                    calculateReceiptAmount()
+                    listHandler.load()
+                }
+            ])
+        }
+        
+        void removeItem() {
+            if( ! selectedItem ) return 
+            if( MsgBox.confirm( 'Remove selected item?' ) ) {
+                rptitems.remove( selectedItem )
+                calculateReceiptAmount()
+            }
+        }
+        
+        void calculateReceiptAmount() {
+            def amt = rptitems.amount.sum()
+            amt = ( amt ? amt : 0.0 )
+            entity.info.amount = amt
+            def payments = []
+            payments.addAll( entity.payments )
+            updatePaymentInfo( payments )
+            binding.refresh('entity.info.amount|entity.info.totalpayment|entity.info.change')
+        }
+        
+        def previewManualBill() {
+            if( ! rptitems ) throw new Exception('At least one item for payment must be specified. ')
+            if( rptitems.size() > 5 ) throw new Exception('Only a maximum of 5 items are allowed.')
+            billreport.viewReport()
+            return 'preview'
+        }
+        
+        def billreport = [
+            getReportName : { return 'rptbilling/rptmanualbilling' },
+            getReportData : { return rptitems },
+            getParameters : { 
+                def params = svcParams.getStandardParameter( OsirisContext?.env?.USERNAME )
+                params.putAll([
+                    TAXPAYERNAME        : entity.info.payorname,
+                    TAXPAYERADDRESS     : entity.info.payoraddress,
+                    BILLDATE            : parsedate.date,
+                    GRANDTOTAL          : entity.info.amount, 
+                    EXPIRYDATE          : dateSvc.getMonthEndDate( parsedate.date ),
+                ])
+                return params 
+            },
+        ] as ServerReportModel
+    }
+]]>        
+    </code>
+    <pages>
+        <page template="etracs2.rpt.collection.RPTManualCollectionPage" />
+        <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
+        <page name="html" template="etracs2.tc.HtmlPage"/>
+        <page name="preview" template="etracs2.rpt.collection.PreviewPage"/>
+    </pages>
+</workunit>

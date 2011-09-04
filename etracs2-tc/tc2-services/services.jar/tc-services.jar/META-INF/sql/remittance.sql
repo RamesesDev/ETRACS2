@@ -95,29 +95,43 @@ AND collectorid = $P{collectorid}
 ORDER BY afid, stubno
 
 [getReceiptsByRemittanceAllCollectionType]
-SELECT * FROM receiptlist 
+SELECT 
+	afid, 
+	serialno, 
+	txndate, 
+	CASE WHEN voided = 0 THEN collectiontype ELSE '***VOIDED***' END AS collectiontype, 
+	CASE WHEN voided = 0 THEN amount ELSE 0.0 END AS amount 
+FROM receiptlist 
 WHERE remittanceid = $P{remittanceid} 
-ORDER BY afid, serialno DESC, txndate DESC 
+ORDER BY afid, serialno 
 
 [getReceiptsByRemittanceCollectionType]
-SELECT * FROM receiptlist 
+SELECT 
+	afid, 
+	serialno, 
+	txndate, 
+	CASE WHEN voided = 0 THEN collectiontype ELSE '***VOIDED***' END AS collectiontype, 
+	CASE WHEN voided = 0 THEN amount ELSE 0.0 END AS amount 
+FROM receiptlist 
 WHERE remittanceid = $P{remittanceid} 
 	AND collectiontypeid = $P{collectiontypeid} 
-ORDER BY afid, serialno DESC, txndate DESC
+ORDER BY afid, serialno 
 
 [getReceiptDetailsByAllFund]
 SELECT 
 	rl.afid AS afid, 
 	rl.serialno AS serialno, 
 	rl.txndate AS txndate, 
-	rl.paidby AS payer, 
 	ri.fundname AS fundname, 
-	ri.accttitle AS particulars, 
+	CASE WHEN rl.voided = 0 THEN rl.paidby ELSE '***VOIDED***' END AS payer, 
+	CASE WHEN rl.voided = 0 THEN ri.accttitle ELSE '***VOIDED***' END AS particulars, 
 	CASE WHEN rl.voided = 0 THEN ri.amount ELSE 0.0 END AS amount 
 FROM receiptlist rl, receiptitem ri 
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
-ORDER BY rl.afid, rl.serialno, ri.accttitle 
+GROUP BY rl.afid, rl.serialno, 
+	CASE WHEN rl.voided = 0 THEN rl.paidby ELSE '***VOIDED***' END,
+	CASE WHEN rl.voided = 0 THEN ri.accttitle ELSE '***VOIDED***' END
 
 [getReceiptDetailsByFund]
 SELECT 
@@ -126,13 +140,16 @@ SELECT
 	rl.txndate AS txndate, 
 	rl.paidby AS payer, 
 	ri.fundname AS fundname, 
-	ri.accttitle AS particulars, 
+	CASE WHEN rl.voided = 0 THEN rl.paidby ELSE '***VOIDED***' END AS payer, 
+	CASE WHEN rl.voided = 0 THEN ri.accttitle ELSE '***VOIDED***' END AS particulars, 
 	CASE WHEN rl.voided = 0 THEN ri.amount ELSE 0.0 END AS amount 
 FROM receiptlist rl, receiptitem ri 
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
 	AND ri.fundid = $P{fundid} 
-ORDER BY rl.afid, rl.serialno, ri.accttitle
+GROUP BY rl.afid, rl.serialno, 
+	CASE WHEN rl.voided = 0 THEN rl.paidby ELSE '***VOIDED***' END,
+	CASE WHEN rl.voided = 0 THEN ri.accttitle ELSE '***VOIDED***' END
 
 [getIncomeAccuntSummaryByAllFund] 
 SELECT 
@@ -143,6 +160,7 @@ SELECT
 FROM receiptlist rl, receiptitem ri 
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
+	AND rl.voided = 0 
 GROUP BY ri.acctid, ri.accttitle 
 ORDER BY ri.fundname, ri.accttitle 
 
@@ -278,7 +296,7 @@ SELECT
 	afid, stubno, 
 	MIN(serialno) AS fromserialno, 
 	MAX(serialno) AS toserialno, 
-	SUM(CASE WHEN voided = 0 THEN amount ELSE 0.0 END) AS amount 
+	SUM(CASE WHEN voided =0 THEN amount ELSE 0 END ) AS amount 
 FROM receiptlist 
 WHERE remittanceid = $P{remittanceid} 
 GROUP BY afid, stubno 

@@ -65,13 +65,13 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xTextField2 = new com.rameses.rcp.control.XTextField();
         xDateField1 = new com.rameses.rcp.control.XDateField();
         xTextField3 = new com.rameses.rcp.control.XTextField();
-        xTextField4 = new com.rameses.rcp.control.XTextField();
         xSeparator4 = new com.rameses.rcp.control.XSeparator();
         xDateField2 = new com.rameses.rcp.control.XDateField();
         xDateField3 = new com.rameses.rcp.control.XDateField();
         xNumberField6 = new com.rameses.rcp.control.XNumberField();
         xNumberField7 = new com.rameses.rcp.control.XNumberField();
         xNumberField8 = new com.rameses.rcp.control.XNumberField();
+        xNumberField10 = new com.rameses.rcp.control.XNumberField();
         xSeparator5 = new com.rameses.rcp.control.XSeparator();
         xNumberField9 = new com.rameses.rcp.control.XNumberField();
         jPanel4 = new javax.swing.JPanel();
@@ -353,8 +353,8 @@ public class BldgRPUPage extends javax.swing.JPanel {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 276, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 276, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 290, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 290, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jTabbedPane1.addTab("Building Characteristic", jPanel2);
@@ -385,12 +385,6 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xTextField3.setName("rpu.info.issuedby");
         xTextField3.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel11.add(xTextField3);
-
-        xTextField4.setCaption("Title");
-        xTextField4.setCaptionWidth(110);
-        xTextField4.setName("rpu.info.title");
-        xTextField4.setPreferredSize(new java.awt.Dimension(0, 18));
-        formPanel11.add(xTextField4);
 
         xSeparator4.setPreferredSize(new java.awt.Dimension(0, 15));
         org.jdesktop.layout.GroupLayout xSeparator4Layout = new org.jdesktop.layout.GroupLayout(xSeparator4);
@@ -443,6 +437,15 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xNumberField8.setPattern("#,##0.00");
         xNumberField8.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel11.add(xNumberField8);
+
+        xNumberField10.setCaption("Percent Completed");
+        xNumberField10.setCaptionWidth(110);
+        xNumberField10.setDepends(new String[] {"bldgtype", "bldgkind", "dtcompleted", "dtoccupied"});
+        xNumberField10.setFieldType(java.math.BigDecimal.class);
+        xNumberField10.setName("percentcompleted");
+        xNumberField10.setPattern("#,##0.00");
+        xNumberField10.setPreferredSize(new java.awt.Dimension(0, 18));
+        formPanel11.add(xNumberField10);
 
         xSeparator5.setPreferredSize(new java.awt.Dimension(0, 15));
         org.jdesktop.layout.GroupLayout xSeparator5Layout = new org.jdesktop.layout.GroupLayout(xSeparator5);
@@ -517,7 +520,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
                     .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 20, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(xComboBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 173, Short.MAX_VALUE)
+                .add(xDataTable2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 187, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
@@ -542,8 +545,8 @@ public class BldgRPUPage extends javax.swing.JPanel {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel6Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 276, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel11, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 276, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 290, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel11, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 290, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jTabbedPane1.addTab("Building Information", jPanel6);
@@ -566,7 +569,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
                 .addContainerGap()
                 .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 80, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jTabbedPane1)
+                .add(jTabbedPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 340, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
@@ -616,6 +619,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel4;
     private com.rameses.rcp.control.XLabel xLabel6;
     private com.rameses.rcp.control.XNumberField xNumberField1;
+    private com.rameses.rcp.control.XNumberField xNumberField10;
     private com.rameses.rcp.control.XNumberField xNumberField2;
     private com.rameses.rcp.control.XNumberField xNumberField3;
     private com.rameses.rcp.control.XNumberField xNumberField4;
@@ -633,7 +637,6 @@ public class BldgRPUPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;
-    private com.rameses.rcp.control.XTextField xTextField4;
     // End of variables declaration//GEN-END:variables
     
 }
