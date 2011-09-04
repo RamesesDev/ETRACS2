@@ -157,127 +157,199 @@ class LiquidationService {
 		return liq;
 	}
 	
-	
-	@ProxyMethod
-	public def getHtml( liq ) {
-		def html = "";
-		if ( !liq )
-			return html;
-		
-		def decformat = new DecimalFormat("#,##0.00");
-		def numformat = new DecimalFormat("#,##0");
-		
-		def style = htmlsvc.getStyle();
-		/* HTML Header */
-		html = """
-			<html>
-			<head>
-				<style>
-					${style}
-				</style>
-			</head>
-			<body>
-		""";
-		
-		/* Liquidation Info */
-		def amount = decformat.format( liq.info.amount );
-		html += """
-			<div class='data-group'>
-				<div class='data-header'>Info</div>
-				<table class='data-field'>
-					<tr>
-						<td class='caption'>Liquidation No. :</td>
-						<td class='blue-header'>${liq.info.txnno}</td>
-					</tr>
-					<tr>
-						<td class='caption'>Status :</td>
-						<td class='status'>${liq.docstate}</td>
-					</tr>
-					<tr>
-						<td class='caption'>Date :</td>
-						<td class='value'>${liq.info.txndate}</td>
-					</tr>
-					<tr>
-						<td class='caption'>Liquidating Officer :</td>
-						<td class='value'>${liq.info.liquidatingofficername}</td>
-					</tr>
-					<tr>
-						<td class='caption'>Amount :</td>
-						<td class='value'>${amount}</td>
-					</tr>
-				</table>
-			</div>
-		""";
-		
-		/* Cash Breakdown */
-		html += """
-			<div class='data-group'>
-				<div class='data-header'>Breakdown</div>
-				<table class='data-table'>
-					<tr><th>Denomination</th><th>Qty</th><th>Amount</th></tr>
-			
-		""";
-		for (denom in liq.info.denominations) {
-			html += """
-				<tr>
-					<td class='align-right'>${denom.caption} x </td>
-					<td class='align-right'>${denom.qty}</td>
-					<td class='align-right'>${denom.amount}</td>
-				</tr>
-			""";
-		}
-		def totalcash = decformat.format( liq.info.totalcash );
-		html += """
-					<tr class='summary'>
-						<td colspan='2'>Total Cash</td>
-						<td class='align-right'>${totalcash}</td>
-					</tr>
-				</table>
-			</div>
-		""";
-		
-		/* Other Payment Details */
-		html += """
-			<div class='data-group'>
-				<div class='data-header'>Other Payments</div>
-				<table class='data-table'>
-					<tr>
-						<th>Type</th>
-						<th>Particulars</th>
-						<th>Amount</th>
-					</tr>
-		""";
-		for (payment in liq.otherpayments) {
-			def payamount = decformat.format( payment.amount );
-			html += """
-				<tr class='item'>
-					<td>${payment.paytype}</td>
-					<td>${payment.particulars}</td>
-					<td class='align-right'>${payamount}</td>
-				</tr>
-			""";
-		}
-		def totalotherpayment = decformat.format( liq.info.totalotherpayment );
-		html += """
-					<tr class='summary'>
-						<td colspan='2'>Total Other Payment</td>
-						<td>${totalotherpayment}</td>
-					</tr>
-				</table>
-			</div>
-		""";
-		
-		html += """	
-			</body>
-			</html>
-		""";
-		
-		return html;
-	}
-	
 	private def getFundSummaries(def liquidationid){
 		return em.sqlContext.createNamedQuery("liquidation:getFundSummaries")
                  .setParameter("liquidationid", liquidationid )
 				 .resultList;
 	}
+	
+	@ProxyMethod
+	public def fetchOtherPayments( param ){
+		println param.objid
+		def sql_stmt = "getOtherPaymentsByLiquidation"
+		param.liquidationid = param.objid
+		if( !param.objid )
+			sql_stmt = "getOtherPaymentNoLiq"
+		return em.sqlContext.createNamedQuery( "liquidation:" + sql_stmt ).setParameters( param ).resultList	
+	}
+	
+	@ProxyMethod
+	public def getHtml( liq ) {
+		def html = '';
+		if ( !liq )
+			return "<html><head><h1> Select an item. </h1></head></html>";
+		
+		def data = [
+            header  : buildHeader( liq ),
+			otherpayments : buildOtherPayments( liq ),
+			breakdown   : buildBreakdown( liq )
+			
+        ]
+		
+        return doBuildHtml( data )
+	}
+		
+	private def buildBreakdown( liq ){
+		def decformat = new DecimalFormat("#,##0.00");
+		def html = """
+		<table width="100%">
+		<tr>
+		<td>
+		<div style="background-color:silver" width="100%">
+		<table width="100%" cellspacing="1">
+		"""
+
+		html += """
+			<tr> <th align="left" colspan="3"> Liquidation Breakdown </th> </tr>
+			<tr>
+				<th> Denomination </th>
+				<th> Quantity </th>
+				<th> Amount </th>
+			</tr>			
+		"""
+		
+		liq.info.denominations.each {
+			def amount = decformat.format( it.amount );
+			def qty = decformat.format( it.qty );
+			html += """
+			<tr>
+				<td align="right">$it.caption</td>
+				<td align="right">$qty</td>
+				<td align="right">$amount</td>                 
+			</tr>
+			"""
+		}
+		def totalcash = decformat.format( liq.info.totalcash );
+		html += """
+			<tr>
+				<td colspan="2">Total Cash</td>
+				<td align="right">${totalcash}</td>
+			</tr>
+			
+		</td>
+		</tr>
+        </table>
+		"""
+			
+		return html
+	}
+	
+	private def buildOtherPayments( liq ){
+		if( !liq.otherpayments ) return '';
+		def decformat = new DecimalFormat("#,##0.00");
+		def html = """
+		<table width="100%">
+		<tr>
+		<td>
+		<div style="background-color:silver" width="100%">
+		<table width="100%" cellspacing="1">
+		"""
+					
+		html += """
+			<tr> <th align="left" colspan="3"> Non-Cash Payments </th> </tr>
+			<tr>
+				<th> Type </th>
+				<th> Particulars </th>
+				<th> Amount </th>
+			</tr>			
+		"""
+	
+		liq.otherpayments.each(){
+			def payamount = decformat.format( it.amount );
+			html += """
+			<tr>
+				<td> $it.paytype </td>
+				<td> $it.particulars </td>
+				<td align="right"> $payamount </td>
+			</tr>
+			""";
+		}
+		def totalotherpayment = decformat.format( liq.info.totalotherpayment );
+		html += """
+			<tr>
+				<td colspan='2'>Total Other Payment</td>
+				<td align="right">${totalotherpayment}</td>
+			</tr>
+			
+			</td>
+			</tr>
+		</table>
+		"""
+			
+		return html
+	}
+	
+	private def buildHeader( liq ) {
+		def decformat = new DecimalFormat("#,##0.00");
+		def amount = decformat.format( liq.info.amount );
+		
+		return """
+			<table>
+				<tr>
+					<td class="header">Liquidation No. :</td>
+					<td class="header" colspan="3"><b>$liq.info.txnno</b></td>
+				</tr>
+				<tr>
+					<td class="header">Date :</td>
+					<td class="header"><b>$liq.info.txndate</b></td>
+				</tr>
+				<tr>
+					<td class="header">Amount :</td>
+					<td class="header"><b>$amount</b></td>
+				</tr>
+				
+			</table>
+		"""
+	}
+	
+	private def doBuildHtml( data ) {
+		return """
+			<html>
+				<head>
+					<style type="text/css">
+						body, td, th { 
+							font-family: tahoma
+							font-size  : 10pt
+						}	
+						td {
+							background-color:white
+						}
+						th {
+							background-color : #CCCCCC
+						}
+						.title {
+							background-color:#CCCCFF
+							font-weight:bold
+						}
+						.caption {
+							width : 120
+						}
+						.numeric {
+							text-align:right
+						}
+						.header {
+							font-family : tahoma
+							font-size   : 18pt
+							width       : 120
+						}
+						.data {
+							font-weight:bold
+						}
+					</style>
+				</head>
+				<body>
+					<table width="100%">
+						<tr colspan="2">
+							<td>$data.header</td>
+						</tr>
+						<tr>
+							<td width="30%">$data.breakdown</td>
+							<td valign="top" width="70%" >$data.otherpayments</td>
+						</tr>
+					</table>
+				</body>
+			</html>
+		"""
+	}
+	
 }

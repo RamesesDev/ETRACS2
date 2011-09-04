@@ -74,6 +74,7 @@ SELECT pi.* FROM paymentitem pi, receiptlist rl
 WHERE rl.objid = pi.receiptid 
 AND NOT pi.paytype = 'CASH' 
 AND rl.collectorid = $P{collectorid} 
+AND rl.voided = 0 
 AND rl.docstate = 'OPEN'
 
 [getRemittanceInfo]
@@ -277,8 +278,19 @@ SELECT
 	afid, stubno, 
 	MIN(serialno) AS fromserialno, 
 	MAX(serialno) AS toserialno, 
-	SUM(amount) AS amount 
+	SUM(CASE WHEN voided = 0 THEN amount ELSE 0.0 END) AS amount 
 FROM receiptlist 
 WHERE remittanceid = $P{remittanceid} 
- AND voided=0 
 GROUP BY afid, stubno 
+
+[fetchOtherPayments]
+SELECT  
+ rl.objid, rl.remittanceid, 
+ i.receiptid, i.paytype, i.particulars, i.amount 
+FROM receiptlist rl 
+INNER JOIN paymentitem i ON i.receiptid = rl.objid 
+WHERE rl.remittanceid = $P{objid} 
+ AND rl.voided = 0 
+ AND paytype = 'CHECK' 
+ 
+ 

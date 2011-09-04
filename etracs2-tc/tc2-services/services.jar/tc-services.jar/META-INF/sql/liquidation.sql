@@ -42,6 +42,7 @@ FROM paymentitem pay, receiptlist r, remittancelist rm
 WHERE rm.liquidationid = $P{liquidationid} 
 AND NOT pay.paytype = 'CASH' 
 AND rm.objid = r.remittanceid 
+AND r.voided = 0 
 AND r.objid = pay.receiptid 
 
 [getFundSummaries] 
@@ -70,3 +71,19 @@ SET docstate = 'CLOSED',
 	liquidationno = $P{liquidationno} 
 WHERE docstate = 'OPEN' 
 AND collectorid = $P{collectorid}
+
+[getOtherPaymentNoLiq]
+SELECT  
+ rl.objid, rl.remittanceid, r.objid, r.liquidationid,
+ i.receiptid, i.paytype, i.particulars, i.amount 
+FROM remittance r 
+INNER JOIN receiptlist rl ON rl.remittanceid = r.objid 
+INNER JOIN paymentitem i ON i.receiptid = rl.objid  
+WHERE rl.voided = 0  
+ AND r.liquidationid IS NULL 
+ AND paytype = 'CHECK' 
+
+
+
+
+

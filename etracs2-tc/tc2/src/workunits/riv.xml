@@ -6,6 +6,9 @@
         <invoker type="home.action" action="init" caption="RIV" permission="riv_lgu.create" icon="images/doc-new.png" index="50" target="window"/>
         <invoker type="home.action" action="initCollector" caption="Collector RIV" permission="riv.create" icon="images/doc-new.png" index="50" target="window"/>
         
+        <invoker type="formActions"     action="viewRIV" shortcut="ctrl V" visibleWhen="#{selectedItem != null and mode!='create' and selectedItem.docstate != 'DRAFT'}" immediate="true" caption="View RIV" mnemonic="v" index="4" icon="images/doc-view.png" permission="riv.preview" />
+        <invoker type="previewActions"  action="_default" shortcut="ctrl B" caption="Back" mnemonic="b" index="4" icon="images/back.png" />
+        
         <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/doc-new.png" permission="riv.create" />
         <invoker type="formActions" action="edit" visibleWhen="#{mode == 'view' and entity.objid != null and entity.docstate == 'DRAFT'}" immediate="true" caption="Edit" mnemonic="e" icon="images/edit.png" permission="riv.edit"/>
         <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/save.png"/>
@@ -19,6 +22,7 @@
 import com.rameses.rcp.common.*;
 import com.rameses.rcp.annotations.*;
 import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
 import java.rmi.server.UID;
 
 class RIVController
@@ -31,6 +35,9 @@ class RIVController
     
     @Service("RIVService")
     def svc;
+    
+    @Service('ReportParameterService')
+    def svcParams;
     
     @Service("Var")
     def var;
@@ -143,6 +150,18 @@ class RIVController
     void focus( name )  {
         binding.refresh("entity.*");
         binding.focus( name );
+    }
+    
+    def report =[
+        getReportName : { "riv/riv" },
+        getReportData : { return entity; },
+        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+    ] as ServerReportModel;
+    
+    def viewRIV(){
+        report.viewReport();
+        
+        return "preview";
     }
     
     void open( objid ) {
@@ -317,5 +336,6 @@ class RIVController
     </code>
     <pages>
         <page template="etracs2.tc.af.RIVPage"/>
+        <page name="preview" template="etracs2.common.PreviewPage" />
     </pages>
 </workunit>

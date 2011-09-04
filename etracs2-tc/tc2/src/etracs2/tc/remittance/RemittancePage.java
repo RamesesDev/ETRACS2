@@ -117,7 +117,7 @@ public class RemittancePage extends javax.swing.JPanel {
         xNumberField9.setReadonly(true);
         formPanel2.add(xNumberField9);
 
-        xNumberField10.setCaption("Other Payments");
+        xNumberField10.setCaption("Non-Cash Payments");
         xNumberField10.setCaptionWidth(120);
         xNumberField10.setFont(new java.awt.Font("Arial", 0, 12));
         xNumberField10.setName("entity.info.totalotherpayment");
@@ -137,7 +137,7 @@ public class RemittancePage extends javax.swing.JPanel {
         formPanel2.setBounds(10, 50, 270, 100);
 
         xButton1.setMnemonic('o');
-        xButton1.setText("Other Payments");
+        xButton1.setText("Non-Cash Payments");
         xButton1.setFont(new java.awt.Font("Arial", 1, 12));
         xButton1.setName("viewOtherPayments");
         jPanel3.add(xButton1);

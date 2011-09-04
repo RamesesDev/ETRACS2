@@ -248,26 +248,26 @@ class RPTCertificationsService
 	public def fetchDataNoEncumbranceTDNo( def param ){
 		if( param.docstate ){
 			doValiDate( param );
+			
 			def taxpayer = em.sqlContext.createNamedQuery( 'rptcertification:searchByTaxpayerid' ).setParameters( param ).singleResult;        
 			if( !taxpayer ) 
 				throw new Exception( "There are no Property defined for taxpayer: ${param.taxpayername}. " );
 			
 			if( !'CURRENT'.equals(param.docstate) )
-				throw new Exception( "TD No. ${param.tdno} docstate: is ${param.docstate}. Only CURRENT is allowed. " );    
+				throw new Exception( "TD No. ${param.tdno} docstate: is ${param.docstate}. Only CURRENT is allowed." );    
 			
-			if( !'land'.equals(param.rputype) )
-				throw new Exception( "There's no land registered for taxpayer: ${param.taxpayername}. " );
-		
-			//unknown arguements. . .	
+			if( param.annotated != 1)
+				throw new Exception( "There's no Annotations for the particular TD No.: ${param.tdno} " );
 		}
 		
 		/** header **/
-		param.opener = 'noencumbrancebytdno';
-		param.title = 'NO_ENCUMBRANCE_TDNO';
+		param.opener = 'noencumbrance';
+		param.title = 'NO_ENCUMBRANCE';
 		param.faasid = param.objid;
+		param.taxpayerName = param.taxpayername;
 		param.docno = seqSvc.getNextFormattedSeries( SEQUENCE_KEY );
-		param.putAll( fetchDataHeaders(param) );			
-
+		param.putAll( fetchDataHeaders(param) );
+		
 		return param;
 	}
 	

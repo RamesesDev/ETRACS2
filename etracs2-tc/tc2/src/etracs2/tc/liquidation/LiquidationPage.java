@@ -139,7 +139,7 @@ public class LiquidationPage extends javax.swing.JPanel {
         formPanel2.setBounds(20, 60, 270, 100);
 
         xButton1.setMnemonic('o');
-        xButton1.setText("Other Payments");
+        xButton1.setText("Non-Cash Payments");
         xButton1.setFont(new java.awt.Font("Arial", 1, 12));
         xButton1.setName("viewOtherPayments");
         jPanel3.add(xButton1);

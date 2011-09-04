@@ -13,14 +13,14 @@ class RemittanceReportService {
 	
 	@ProxyMethod
 	public def generateRCD( rem ) {
-		
+		rem.info.each(){ println it }
 		def data = [
 			collectorName 		: rem.info.collectorname,
 			collectorTitle		: rem.info.collectortitle,
 			docno 				: rem.info.txnno,
 			dateposted			: dtsvc.parse( "yyyy-MM-dd", rem.info.txndate ),
 			totalDenomination	: rem.info.totalcash,
-			totalchecks			: rem.info.totalotherpayments,
+			totalchecks			: rem.info.totalotherpayment,
 			amount				: rem.info.amount,
 			liquidatingOfficerName	: rem.info.liquidatingofficername,
 			liquidatingOfficerTitle	: rem.info.liquidatingofficertitle,
@@ -63,8 +63,6 @@ class RemittanceReportService {
 		}
 		return query().setParameter( "remittanceid", rem.objid ).resultList;
 	}
-	
-	
 	
 	@ProxyMethod
 	public def generateReportByFund( rem, fund ) {
