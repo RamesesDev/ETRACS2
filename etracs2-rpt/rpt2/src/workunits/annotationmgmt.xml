@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
+<workunit>
+    <invokers>
+        <invoker type="home.action" folderid="menu/rpt/txn" caption="Annotation Management" mnemonic="f" permission="annotationmgmt.view" icon="images/folder.png" index="5" target="window" />
+        <invoker type="formActions" action="createMortgage" immediate="true" caption="New Mortgage" mnemonic="m" icon="images/doc-new.png" permission="mortgage.create" />
+        <invoker type="formActions" action="createBailBond" immediate="true" caption="New BailBond" mnemonic="b" icon="images/doc-new.png" permission="bailbond.create" />
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null and selectedItem.objid != null}" immediate="true" caption="Open" mnemonic="o" icon="images/open.png" permission="annotation.view"/>
+        <invoker type="formActions" action="cancelAnnotation" shortcut="ctrl c" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'APPROVED'}" immediate="true" caption="Cancel Annotation" mnemonic="c" icon="images/doc-cancel.png" permission="cancelannotation.create"/>
+    </invokers>
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+
+public class AnnotationMgmtController 
+{
+    @Binding 
+    def binding
+    
+    @Service('FAASAnnotationService')
+    def svc 
+    
+    String searchText
+    def selectedItem
+    List list
+    
+    
+    def createMortgage() {
+        return InvokerUtil.lookupOpener('rpttransaction.initMortgage', [:])
+    }
+    
+    def createBailBond() {
+        return InvokerUtil.lookupOpener('rpttransaction.initBailBond', [:])
+    }
+    
+    def open() {
+        if( selectedItem ) {
+            def opener = selectedItem.opener + '.open' 
+            return InvokerUtil.lookupOpener( opener , [ entity : selectedItem ])
+        }
+    }
+    
+    def cancelAnnotation() {
+        return InvokerUtil.lookupOpener('cancelannotation.init', [annotation:selectedItem] )
+    }
+    
+    void search() {
+        list = null
+        listHandler.load()
+        binding.refresh('html')
+    }
+    
+    def listHandler =[
+        getRows    : { return 25 },
+        getColumns : { return [
+            new Column( name:'docstate', caption:'State'),
+            new Column( name:'docno', caption:'Txn'),
+            new Column( name:'doctype', caption:'Type'),
+            new Column( name:'tdno', caption:'TD No.'),
+            new Column( name:'ownername', caption:'Owner Name'),
+            new Column( name:'fullpin', caption:'PIN'),
+            new Column( name:'cadastrallotno', caption:'Cadastral Lot No.'),
+            new Column( name:'totalmv', caption:'Market Value', type:'decimal', format:'#,##0.00'),
+            new Column( name:'totalav', caption:'Assessed Value', type:'decimal', format:'#,##0.00'),
+            new Column( name:'details', caption:'Details'),
+        ]},
+        fetchList  : {
+            if( ! list  ) {
+                list = svc.getList( searchText, it )
+            }
+            return list 
+        },
+        onOpenItem : { item, colname -> open() },
+    ] as PageListModel
+    
+    
+
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.annotation.AnnotationMgmtPage"/>
+    </pages>
+</workunit>

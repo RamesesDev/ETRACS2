@@ -110,7 +110,8 @@ class FAASService
                                 memoranda       : 'REVISED PURSUANT TO R.A. 7160', 
                                 autonumber      : var.td_autonumber as boolean , 
                                 backtaxyrs      : 0, 
-                                claimno:'-'
+                                claimno			: '-',
+								annotated		: false, 
                             ],
             rp            : [lgutype: var.lgu_type, attributes:[], autonumber:var.pin_autonumber],
             rpu           : [ry:ry, classid:'RES', classcode:'RES', classname:'RES',suffix:0,info:[:], taxable:true, totalareasqm:0.0, totalareaha:0.0],
@@ -168,6 +169,7 @@ class FAASService
         def faas = em.read( SCHEMA_NAME, [objid:faasid] )
         if( !faas ) throw new Exception('FAAS does not exists.')
         faas.info.datacapture = faas.info.datacapture as boolean
+		faas.info.annotated = ( faas.info.annotated ? faas.info.annotated as boolean : false )
         faas.info.autonumber = faas.info.autonumber  as boolean 
         faas.rpu.taxable = faas.rpu.taxable as boolean
         initOpenRpuInfo( faas.rpu )

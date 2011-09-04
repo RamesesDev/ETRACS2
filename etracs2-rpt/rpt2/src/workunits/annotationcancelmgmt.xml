@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
+<workunit>
+    <invokers>
+        <invoker folderid="menu/rpt/txn" caption="Cancel Annotation Management" permission="cancelannotationmgmt.view"/>
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null and selectedItem.objid != null}" immediate="true" caption="Open" mnemonic="o" icon="images/open.png" permission="cancelannotation.open"/>
+    </invokers>
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.annotations.* 
+import com.rameses.rcp.common.* 
+import com.rameses.osiris2.client.* 
+
+public class CancelAnnotationMgmtController 
+{
+    @Binding 
+    def binding
+    
+    @Service('CancelAnnotationService')
+    def svc 
+    
+    String searchText
+    def selectedItem
+    List list
+    
+    
+    def open() {
+        if( selectedItem ) {
+            return InvokerUtil.lookupOpener( 'cancelannotation.open' , [ entity : selectedItem ])
+        }
+    }
+    
+    void search() {
+        list = null
+        listHandler.load()
+        binding.refresh('html')
+    }
+    
+    def listHandler =[
+        getRows    : { return 25 },
+        getColumns : { return [
+            new Column( name:'docstate', caption:'State'),
+            new Column( name:'docno', caption:'Txn No.'),
+            new Column( name:'fileno', caption:'File No.'),
+            new Column( name:'annotationno', caption:'Annotation No.'),
+            new Column( name:'tdno', caption:'TD No.'),
+            new Column( name:'submittedby', caption:'Submitted By'),
+        ]},
+        fetchList  : {
+            if( ! list  ) {
+                list = svc.getList( searchText, it )
+            }
+            return list 
+        },
+        onOpenItem : { item, colname -> open() },
+    ] as PageListModel
+    
+    
+
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.annotation.AnnotationMgmtPage"/>
+    </pages>
+</workunit>

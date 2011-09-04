@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="rpttransaction" action="initMortgage" caption="Mortgage Annotation" target="window" index="351" permission="mortgage.create" />
+        <invoker type="rpttransaction" action="initBailBond" caption="BailBond Annotation" target="window" index="352" permission="bailbond.create" />
+        <invoker type="rpttransaction.initMortgage" action="initMortgage" caption="Mortgage Annotation" target="window" />
+        <invoker type="rpttransaction.initBailBond" action="initBailBond" caption="BailBond Annotation" target="window" />
+        
+        <invoker type="mortgage.open" action="openMortgage"         caption="Mortgage Information"  target="window"/>
+        <invoker type="bailbond.open" action="openBailBond"         caption="BailBond Information"  target="window"/>
+        
+        <invoker type="formActions" action="_close"         caption="Close"                 shortcut="ctrl W"   mnemonic="c"  immediate="true" icon="images/cancel.png"/>
+        <invoker type="formActions" action="save"           caption="Save"                  shortcut="ctrl S"   mnemonic="s"  visibleWhen="#{entity.docstate == 'DRAFT' or entity.docstate == 'FORAPPROVAL'}"  icon="images/save.png" />
+        <invoker type="formActions" action="remove"         caption="Delete"                shortcut="ctrl D"   mnemonic="d"  visibleWhen="#{showDelete == true}" immediate="true"   icon="images/doc-delete.png" permission="annotation.delete" />
+        <invoker type="formActions" action="submit"         caption="Submit For Approval"   shortcut="ctrl M"   mnemonic="m"  visibleWhen="#{entity.docstate == 'DRAFT' and entity.objid != null}"   icon="images/doc-submit.png" permission="annotation.submit" />
+        <invoker type="formActions" action="approve"        caption="Approve"               shortcut="ctrl A"   mnemonic="a"  visibleWhen="#{entity.docstate == 'FORAPPROVAL'}"   icon="images/approve.png" permission="annotation.approve" />
+    </invokers>
+    
+    <code lang="groovy">
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import com.rameses.osiris2.reports.*
+
+public class AnnotationController {
+    @Binding
+    def binding
+    
+    @Service('FAASAnnotationService') 
+    def svc 
+    
+    
+    def faas 
+    def entity
+    def mode
+    def doctype 
+    
+    def initMortgage() {
+        entity  = [:]
+        setInfo( 'create', 'mortgage' )
+        return 'init'
+    }
+    
+    def initBailBond() {
+        entity  = [:]
+        setInfo( 'create', 'bailbond' )
+        return 'init'
+    }
+    
+    def openMortgage() {
+        setInfo( 'view', 'mortgage' )
+        entity = svc.open( entity.objid )
+        return 'mortgage'
+    }
+
+    def openBailBond() {
+        setInfo( 'view', 'bailbond' )
+        entity = svc.open( entity.objid  )
+        return 'bailbond'
+    }
+
+    def process() {
+        if( doctype == 'mortgage' ){
+            entity = svc.initMortgage( faas.objid  )
+        }
+        else {
+            entity = svc.initBailBond( faas.objid  )
+        }
+        return doctype 
+    }
+    
+    
+    void save() {
+        if( mode == 'create' )
+            entity = svc.create( entity )
+        else 
+            entity = svc.update( entity )
+        mode = 'view' 
+    }
+    
+    def remove() {
+        if( MsgBox.confirm('Delete annotation?') ){
+            svc.remove( entity )
+            return '_close'
+        }
+        return null 
+    }
+    
+    void submit() {
+        if( MsgBox.confirm('Submit annotation for approval?') ){
+            entity = svc.update( entity )
+            entity = svc.submit( entity )
+        }
+    }
+    
+    void approve() {
+        if( MsgBox.confirm('Approve annotation?') ){
+            entity = svc.update( entity )
+            entity = svc.approve( entity )
+        }
+    }
+    
+    
+    
+    
+    
+    /*----------------------------------------------------
+    *
+    * Lookup Support 
+    *
+    *----------------------------------------------------*/
+    def getLookupCurrentFaas() {
+        return InvokerUtil.lookupOpener( 'faas.lookup', [:] )
+    }
+        
+    boolean getShowDelete() {
+        if( ! entity?.objid  ) return false
+        if( entity.docstate == 'APPROVED' || entity.docstate == 'CANCELLED' ) return false
+        return true 
+    }
+    
+    void setInfo( mode, doctype ) {
+        this.mode = mode
+        this.doctype = doctype 
+    }
+    
+    
+}
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page name="init" template="etracs2.rpt.faas.annotation.AnnotationInitPage" />
+        <page name="mortgage" template="etracs2.rpt.faas.annotation.MortgageAnnotationPage" />
+        <page name="bailbond" template="etracs2.rpt.faas.annotation.BailBondAnnotationPage" />
+    </pages>
+</workunit>

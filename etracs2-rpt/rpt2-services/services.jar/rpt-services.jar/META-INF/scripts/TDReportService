@@ -15,12 +15,18 @@ class TDReportService
 	
 	@Service('Var')
 	def var 
+	
+	@Service('DateService')
+	def dateSvc
     
     @ProxyMethod
     public def getReportData( faasid ) {
+		def td =[:]
 		def faas = em.read('faas', [objid:faasid]);
+		if( ! faas ) throw new Exception('Cannot open FAAS with ID no. ' + faasid + '.')
     	
-    	def td =[:]
+		buildAnnotationInfo( td, faas )
+
     	td.putAll( faas.info )
     	td.putAll( faas.rp )
     	td.putAll( faas.rpu )
@@ -62,6 +68,34 @@ class TDReportService
 		}
     	return td;
     }
+	
+	void buildAnnotationInfo( td, faas ) {
+		td.annotated  = false 
+		if( faas.info.annotated == true ) {
+			def data = em.sqlContext.createNamedQuery('faas:getActiveAnnotationId').setParameter('faasid', faas.objid).singleResult
+			def annotation = em.read('annotation', data )
+			td.annotated 		= true 
+			td.annotationtype 	= annotation.doctype 
+			def mortgagedate 	= null
+			if(annotation.mortgagedate){
+				mortgagedate = dateSvc.parse('yyyy-MM-dd', annotation.mortgagedate )
+			}
+			
+			td.annotation = [
+				annotationfileno		 : annotation.fileno,
+				annotationbank			 : annotation.bank,	
+				annotationloanamount 	 : annotation.loanamount,
+				annotationmortgagedate	 : mortgagedate,
+				annotationorno			 : annotation.orno,
+				annotationordate		 : dateSvc.parse('yyyy-MM-dd', annotation.ordate ),
+				annotationamount 		 : annotation.oramount ,
+				annotationbranchno 	   	 : annotation.branchno,
+				annotationcaseno		 : annotation.caseno,
+				annotationsignedby 		 : annotation.signedby,
+				annotationsignedbytitle  : annotation.signedbytitle
+			]
+		}
+	}
 	
 	void clearRealPropertyInfo( td ) {
 		println 'var.td_show_landinfo_on_improvements -> ' + var.td_show_landinfo_on_improvements 

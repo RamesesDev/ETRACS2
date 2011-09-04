@@ -93,6 +93,9 @@ SELECT * FROM faasattachment WHERE docstate = 'FORTRANSMITTAL'
 SELECT * FROM lgu WHERE parentid = $P{parentid} ORDER BY lguname 
 
 
+[getActiveAnnotationId] 
+SELECT objid FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPROVED' ORDER BY docno DESC 
+
 #----------------------------------------------------------------
 # INSERT
 #----------------------------------------------------------------

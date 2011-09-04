@@ -1,8 +1,8 @@
 <workunit>
     <invokers>
-        <invoker type="assessorreports.truecopy" action="init" caption="Certified True Copy" target="popup" />        
+        <invoker type="assessorreports.truecopy" action="init" caption="Certified True Copy" />        
         
-        <invoker type="formActions" action="_close" caption="Back" mnemonic="b" shortcut="ctrl B" icon="images/back.png"/>
+        <invoker type="previewActions" action="_close" caption="Back" mnemonic="b" shortcut="ctrl B" icon="images/back.png"/>
     </invokers>
     <code>
 <![CDATA[
@@ -39,7 +39,12 @@ class TaxDeclarationReportController
     }
     
     def report =[
-        getReportName : { "tdreport/tdtruecopyreport" },
+        getReportName : { 
+            if( data.annotated == true )
+                return "tdreport/tdtruecopyannotated" 
+            else
+                return "tdreport/tdtruecopyreport" 
+        },
         getReportData : { return data; },
         getParameters : { getStandardReportParams(); }
     ] as ServerReportModel;
