@@ -30,12 +30,16 @@ class RemittanceReportService {
 			collectiontype			: getCollectionType( rem.objid ), 
 			remittedforms			: getSerialRemittedFormsByRemittance( rem.objid ),
 			nonserialremittances 	: getNonSerialRemittedFormsByRemittance( rem.objid ),
-			otherpayments		: rem.otherpayments,
+			otherpayments		: getOtherPayments( rem ),
 			denominations		: rem.info.denominations
 		]
 		
 		return data;
 		
+	}
+	
+	private def getOtherPayments( rem ){
+		return em.sqlContext.createNamedQuery( "remittance:fetchOtherPayments" ).setParameter( 'objid', rem.objid ).resultList;
 	}
 	
 	private def getCollectionType( remid ){
