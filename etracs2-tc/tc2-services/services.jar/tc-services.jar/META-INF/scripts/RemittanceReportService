@@ -11,9 +11,11 @@ class RemittanceReportService {
 	@Service("DateService")
 	def dtsvc;
 	
+	@Service("NumberService")
+	def numbSvc;
+	
 	@ProxyMethod
 	public def generateRCD( rem ) {
-		rem.info.each(){ println it }
 		def data = [
 			collectorName 		: rem.info.collectorname,
 			collectorTitle		: rem.info.collectortitle,
@@ -22,6 +24,7 @@ class RemittanceReportService {
 			totalDenomination	: rem.info.totalcash,
 			totalchecks			: rem.info.totalotherpayment,
 			amount				: rem.info.amount,
+			amountInWords 		: numbSvc.convertDouble( rem.info.amount ), 
 			liquidatingOfficerName	: rem.info.liquidatingofficername,
 			liquidatingOfficerTitle	: rem.info.liquidatingofficertitle,
 			collectiontype			: getCollectionType( rem.objid ), 

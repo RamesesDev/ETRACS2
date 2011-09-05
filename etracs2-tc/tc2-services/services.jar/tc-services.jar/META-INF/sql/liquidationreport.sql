@@ -5,6 +5,7 @@ INNER JOIN remittancelist rml on rml.objid = rl.remittanceid
 INNER JOIN liquidationlist ll on ll.objid = rml.liquidationid 
 WHERE ll.objid = $P{liquidationid} 
 AND   pm.paytype != 'CASH' 
+AND rl.voided = 0 
 
 [getRemittancesByLiquidation] 
 SELECT 

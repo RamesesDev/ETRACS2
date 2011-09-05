@@ -24,14 +24,16 @@ public class LiquidationReportServices{
 		reportData.amountformatted = decformat.format( reportData.amount );
 		
 		reportData.txndate = liquidation.dtposted;
+		liquidation.liquidationid = liquidation.objid
 
 		reportData.otherpayments = em.sqlContext.createNamedQuery("liquidationreport:getOtherPaymentsByLiquidation")
-									 .setParameters([liquidationid: liquidationid])
+									 .setParameters( liquidation )
 									 .resultList;
-									 
+
 		reportData.remittances = em.sqlContext.createNamedQuery("liquidationreport:getRemittancesByLiquidation")
 								   .setParameters( [liquidationid: liquidationid] )
 								   .resultList;
+
 		return reportData;
 	}
 	

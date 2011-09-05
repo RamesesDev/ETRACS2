@@ -165,7 +165,6 @@ class LiquidationService {
 	
 	@ProxyMethod
 	public def fetchOtherPayments( param ){
-		println param.objid
 		def sql_stmt = "getOtherPaymentsByLiquidation"
 		param.liquidationid = param.objid
 		if( !param.objid )
@@ -281,10 +280,14 @@ class LiquidationService {
 	
 	private def buildHeader( liq ) {
 		def decformat = new DecimalFormat("#,##0.00");
-		def amount = decformat.format( liq.info.amount );
-		
+		def grandtotal = decformat.format( liq.info.amount );
+		def totalotherpayment = decformat.format( liq.info.totalotherpayment );
+		def totalcash = decformat.format( liq.info.totalcash );
 		return """
 			<table>
+				<tr>
+					<th class="title"><b>GENERAL INFORMATION</th>
+				<tr>
 				<tr>
 					<td class="header">Liquidation No. :</td>
 					<td class="header" colspan="3"><b>$liq.info.txnno</b></td>
@@ -294,10 +297,17 @@ class LiquidationService {
 					<td class="header"><b>$liq.info.txndate</b></td>
 				</tr>
 				<tr>
-					<td class="header">Amount :</td>
-					<td class="header"><b>$amount</b></td>
+					<td class="header">Non-Cash Total :</td>
+					<td class="header"><b>$totalotherpayment</b></td>
 				</tr>
-				
+				<tr>
+					<td class="header">Cash Total :</td>
+					<td class="header"><b>$totalcash</b></td>
+				</tr>
+				<tr>
+					<td class="header">Grand Total :</td>
+					<td class="header"><b>$grandtotal</b></td>
+				</tr>
 			</table>
 		"""
 	}

@@ -35,7 +35,6 @@ class RemittanceService {
 	
 	@ProxyMethod
 	public def getList( searchText, params ) {
-		print "IS COLLECTOR> " + isCollector( params.USERID );
 		if ( isCollector( params.USERID ) )
 			return getListByCollector( searchText, params );
 		return getListAll( searchText, params );
@@ -248,7 +247,6 @@ class RemittanceService {
 	
 	@ProxyMethod
 	public def fetchOtherPayments( param ){
-		println param.objid
 		def sql_stmt = "fetchOtherPayments"
 		if( !param.objid )
 			sql_stmt = "getOtherPayments";
@@ -278,26 +276,35 @@ class RemittanceService {
 	
 	private def buildHeader( rem ) {
 		def decformat = new DecimalFormat("#,##0.00");
-		def amount = decformat.format( rem.info.amount );
+		def grandtotal = decformat.format( rem.info.amount );
+		def totalcash = decformat.format( rem.info.totalcash );
+		def totalotherpayment = decformat.format( rem.info.totalotherpayment );
 		
 		return """
-			<table>
+			<table >
 				<tr>
-					<th class="title"><b>GENERAL INFORMATION</th>
+					<th class="title"><b> GENERAL INFORMATION </b></th>
 				<tr>
 				<tr>
-					<td class="header">Remittance No. :</td>
-					<td class="header" colspan="3"><b>$rem.info.txnno</b></td>
+					<td align="left" class="header"> Remittance No. : </td>
+					<td align="left" class="header" colspan="3"> <b>$rem.info.txnno</b> </td>
 				</tr>
 				<tr>
-					<td class="header">Date :</td>
-					<td class="header"><b>$rem.info.txndate</b></td>
+					<td class="header"> Date :</td>
+					<td class="header"> <b>$rem.info.txndate</b> </td>
 				</tr>
 				<tr>
-					<td class="header">Amount :</td>
-					<td class="header"><b>$amount</b></td>
+					<td class="header"> Non-Cash Total :</td>
+					<td class="header"> <b>$totalotherpayment</b> </td>
 				</tr>
-				
+				<tr>
+					<td class="header"> Cash Total: </td>
+					<td class="header"> <b>$totalcash</b> </td>
+				</tr>
+				<tr>
+					<td class="header"> Grand Total : </td>
+					<td class="header"> <b>$grandtotal</b> </td>
+				</tr>
 			</table>
 		"""
 	}
@@ -308,7 +315,7 @@ class RemittanceService {
 		<table width="80%">
 			<tr>
 				<table width="80%%">
-					<tr> <th align="left" colspan="3"> Collections</th> </tr>
+					<tr> <th align="left" colspan="3"> Collections </th> </tr>
 					<tr>
 						<th>
 							Type ( FORM NO. )
@@ -327,7 +334,7 @@ class RemittanceService {
 						<th>
 							Amount
 						</th>
-					</tr>	
+					</tr>
 		"""
 		rem.afitems.each(){
 			def amount = decformat.format( it.amount );
