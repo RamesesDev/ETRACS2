@@ -1,0 +1,40 @@
+import com.rameses.common.*
+import com.rameses.annotations.*
+
+public class BPReportService
+{
+	@PersistenceContext('main')
+	def em 
+	
+	
+	@ProxyMethod
+	public List getPermitMasterList( year ) {
+		return em.sqlContext.createNamedQuery('bpreport:getPermitMasterList').setParameter('iyear', year ).resultList 
+	}
+	
+	@ProxyMethod
+	public List getApplicationListing( barangay, year, docstate ) {
+		docstate 	= ( docstate ? docstate : '%' )
+		barangay    = ( barangay ? barangay : '%' )
+		def params 	= [ barangay:barangay, iyear:year, docstate:docstate ]
+		return em.sqlContext.createNamedQuery('bpreport:getApplicationListing').setParameters( params ).resultList 
+	}
+	
+	@ProxyMethod
+	public List getApplicationLOBListing( barangay, classification, year, docstate ) {
+		docstate 	= ( docstate ? docstate : '%' )
+		barangay    = ( barangay ? barangay : '%' )
+		classification = ( classification ? classification : '%' )
+		def params 	= [ barangay:barangay, iyear:year, docstate:docstate, classification:classification ]
+		return em.sqlContext.createNamedQuery('bpreport:getApplicationLOBListing').setParameters( params ).resultList 
+	}
+	
+	@ProxyMethod
+	public List getLOBCountListing( barangay, year, docstate ) {
+		docstate 	= ( docstate ? docstate : '%' )
+		barangay    = ( barangay ? barangay : '%' )
+		def params 	= [ barangay:barangay, iyear:year, docstate:docstate ]
+		return em.sqlContext.createNamedQuery('bpreport:getApplicationLOBListing').setParameters( params ).resultList 
+	}
+	
+}

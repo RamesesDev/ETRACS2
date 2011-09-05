@@ -56,12 +56,15 @@ class BPRuleActionUpdateTaxFeeController
     }
     
     def buildFormulaDef() {
+        def variables = buildVariables()
         def parameters = buildParameters()
+        def functions = defineFunctions()
         return [
+            expression : null,
             fields     : [],
-            variables  : parameters,
-            parameters : [],
-            functions  : [],
+            variables  : variables,
+            parameters : parameters,
+            functions  : functions,
         ]
     }
     
@@ -75,6 +78,33 @@ class BPRuleActionUpdateTaxFeeController
         ]
         return vars
     }
+    
+    def buildVariables() {
+        def vars = []
+        def inputVars = rule.conditions.findAll{ it.opener == 'rulecondition.variable' }
+        inputVars.each {
+            vars += [
+                objid   : it.variable.objsid,
+                name    : it.variable.name,
+                caption : it.variable.caption,
+                description : it.variable.description,
+            ]
+        }
+        return vars
+    }
+    
+    def defineFunctions() {
+        return [
+            defineFunction('IIF', '@IIF( expr, truevalue, falsevalue )', 'Ternary IF Condition', 'Performs immediate IF evaluation'),
+            defineFunction('FIXED', '@FIXED( numberexpr )', 'Fixed Function', 'Converts number to integer.' ),
+        ]
+    }
+    
+    def defineFunction(objid, name, caption, description) {
+        return [objid:objid, name:name, caption:caption, description:description ]
+    }
+    
+    
     
 }
 

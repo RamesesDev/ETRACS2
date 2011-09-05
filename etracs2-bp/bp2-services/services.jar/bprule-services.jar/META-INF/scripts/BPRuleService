@@ -274,16 +274,24 @@ class AddTaxFeeHandler implements RuleActionHandler
 		tfvalue.inputvars.each { inputvar -> 
 			params[inputvar.varname] =  inputvar.value 
 		}
-		def resolvedExpr = resolveFunctions( tfvalue.expr )
+		def resolvedExpr = """
+			def IIF( expr, truevalue, falsevalue ) {
+				return (expr ? truevalue : falsevalue )
+			}
+			
+		"""
+		resolvedExpr += tfvalue.expr 
 		return (new Util( ruleService:ruleService )).evaluate( resolvedExpr, params )
 	}
 	
+	/*
 	def resolveFunctions( expr ) {
 		def util = new Util( ruleService:ruleService )
 		def resolvedExpr =  util.resolveIIF( expr )
 		resolvedExpr = util.resolveFixed( expr )
 		return resolvedExpr
 	}
+	*/
 	
 	def getIncomeAccountSystemType( acctid, accttitle, rulename  ) {
 		def acct = em.sqlContext.createNamedQuery('bprule:getIncomeAccountById').setParameter('objid', acctid ).singleResult
@@ -304,11 +312,22 @@ class UpdateAnyTaxFeeHandler implements RuleActionHandler
 		def taxfee = app.taxfees.find{ it.appid == tffact.appid && it.lobid == tffact.lobid && it.acctid == tffact.acctid }
 		def params = [:]
 		params[tfvalue.varname] = tfvalue.varvalue 
-		taxfee.amountdue = (new Util(ruleService:ruleService)).evaluate( tfvalue.expr, params )
+		tfvalue.inputvars?.each { inputvar -> 
+			params[inputvar.varname] =  inputvar.value 
+		}
+		def resolvedExpr = """
+			def IIF( expr, truevalue, falsevalue ) {
+				return (expr ? truevalue : falsevalue )
+			}
+			
+		"""
+		resolvedExpr += tfvalue.expr 
+		taxfee.amountdue = (new Util(ruleService:ruleService)).evaluate( resolvedExpr, params )
 		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
 	}
 }
-
+	
+	
 class UpdateHighestTaxFeeHandler implements RuleActionHandler
 {
 	def app 

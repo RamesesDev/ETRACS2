@@ -154,6 +154,20 @@ class RuleActionService
         s += 'm.put("expr", "' + action.expr + '");\n'
         s += 'm.put("varname", "AMOUNTDUE");\n'
         s += 'm.put("varvalue", AMOUNTDUE);\n'
+		
+		
+		def inputVars = buildVariables( rule, action )
+        if( inputVars ) {
+            s += 'List varlist = new ArrayList();\n'
+            
+            inputVars.each { var ->
+                s += 'varlist.add( ' + var.name + ');\n'
+            }
+            
+            s += 'm.put("inputvars", varlist );\n'
+        }
+		
+		
         s += 'actionList.setContext( drools );\n'
         s += 'actionList.execute("' + updateType + '", m );\n'
 		def conds = getUpdateTypeCondition( updateType )
