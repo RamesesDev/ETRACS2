@@ -98,7 +98,7 @@ ORDER BY afid, stubno
 SELECT 
 	afid, 
 	serialno, 
-	txndate, 
+	txndate, paidby, 
 	CASE WHEN voided = 0 THEN collectiontype ELSE '***VOIDED***' END AS collectiontype, 
 	CASE WHEN voided = 0 THEN amount ELSE 0.0 END AS amount 
 FROM receiptlist 
@@ -109,7 +109,7 @@ ORDER BY afid, serialno
 SELECT 
 	afid, 
 	serialno, 
-	txndate, 
+	txndate, paidby, 
 	CASE WHEN voided = 0 THEN collectiontype ELSE '***VOIDED***' END AS collectiontype, 
 	CASE WHEN voided = 0 THEN amount ELSE 0.0 END AS amount 
 FROM receiptlist 
