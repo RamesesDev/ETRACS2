@@ -160,6 +160,9 @@ class BusinessApplicationForAssessment
     def inputHandler = { app, entitySetter ->
         additionalInfos.clear()
         additionalInfos = determineAdditionalInfos(app)
+        
+        boolean done = true 
+        
         if( additionalInfos ) {
             //preserve currently inputted values
             inputtedValues.addAll( app.infos )
@@ -167,15 +170,21 @@ class BusinessApplicationForAssessment
             //remove additional infos to avoid infinite loop
             app.infos.clear()
             app.infos.addAll( additionalInfos )
-            app = svc.evaluateApplicationInfo( app )
+            def newapp = svc.evaluateApplicationInfo( app )
+            app.clear()
+            app.putAll( newapp)
             
             //exclude previous infos from result 
             removeAllInfos( app, additionalInfos )
             removeAllInfos( app, inputtedValues ) 
             entitySetter( app )
-            return false;
+            
+            done = false 
+            if( ! app.infos ) {
+                done = true 
+            }   
         }
-        return true;
+        return done
     }
     
     def removeAllInfos( app, list ) {
