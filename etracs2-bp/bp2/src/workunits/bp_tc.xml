@@ -93,7 +93,7 @@
             }
         }
 
-        def getParameters() { return svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+        def getParameters() { return paramSvc.getStandardParameter( OsirisContext.env.USERNAME ); }
         def getService() { return svc; }
         def getHtmlService() { return htmlSvc; }
         def getCollectionTitle() { return 'Business Liscence Fee'; }
@@ -103,6 +103,8 @@
         def listHandler = [
             getColumns : {
                 return [
+                    new Column( name:'iyear', caption:'Year', width:10, resizable:false, type:'integer', format:"0000"),
+                    new Column( name:'iqtr', caption:'Qtr', width:5, resizable:false, type:'integer'),
                     new Column( name:'lobname', caption:'Line Of Business'),
                     new Column( name:'accttitle', caption:'Account'),
                     new Column( name:'taxamount', caption:'Amount', type:'decimal', format:"#,##0.00"),
@@ -110,8 +112,6 @@
                     new Column( name:'interest', caption:'Interest', type:'decimal', format:"#,##0.00"),
                     new Column( name:'discount', caption:'Discount', type:'decimal', format:"#,##0.00"),
                     new Column( name:'amount', caption:'Total', type:'decimal', format:"#,##0.00"),
-                    new Column( name:'iqtr', caption:'Qtr', width:5, resizable:false, type:'integer'),
-                    new Column( name:'iyear', caption:'Year', width:10, resizable:false, type:'integer', format:"0000")
                 ];
             },
             

@@ -15,6 +15,9 @@ class BPCollectionService{
 	
 	@Service('DateService')
 	def dateService;
+	
+	@Service('NumberService')
+	def numSvc;
 
 	@ProxyMethod
 	public def getBill( def entity, year, qtr ){
@@ -38,7 +41,7 @@ class BPCollectionService{
 		def getUnpaidReceivables = { 
 			def list = app.receivables.findAll{ it.amount > it.amtpaid };
 			if( app.txntype.matches('NEW|ADDLOB') ) return list;
-			return list.findAll{ it.qtr <= entity.qtr || ( it.assessmentype.matches('NEW|ADDLOB')) }
+			return list.findAll{ it.iqtr <= entity.qtr }
 		}
 		
 		def receivables = getUnpaidReceivables();
@@ -83,9 +86,8 @@ class BPCollectionService{
 					    taxamount: new BigDecimal( it.amount )];
 			item.amount = item.taxamount + item.surcharge + item.interest - item.discount;
 			entity.items << item;
-			entity.info.amount += new BigDecimal( item.amount );
-			
 		}
+		entity.info.amount  = numSvc.round( entity.items.amount.sum() )
 
 		entity.items.sort { a, b ->
 			def sA = a.iyear+''+a.iqtr;
@@ -93,12 +95,7 @@ class BPCollectionService{
 			return sA<=>sB;
 		}
 		
-		entity.items.each{
-			println it;
-		}
-		
 		entity.applicationlastmodified = app.lastmodified;
-		println app.lastmodified;
     	return entity;
 	}
 
