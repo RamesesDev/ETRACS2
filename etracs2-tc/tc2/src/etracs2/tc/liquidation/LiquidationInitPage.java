@@ -54,9 +54,7 @@ public class LiquidationInitPage extends javax.swing.JPanel {
 
         xDateField1.setCaption("Date");
         xDateField1.setCaptionWidth(100);
-        xDateField1.setInputFormat("MM-dd-yyyy");
         xDateField1.setName("entity.info.txndate");
-        xDateField1.setOutputFormat("MM-dd-yyyy");
         xDateField1.setPreferredSize(new java.awt.Dimension(90, 18));
         xDateField1.setRequired(true);
         formPanel1.add(xDateField1);

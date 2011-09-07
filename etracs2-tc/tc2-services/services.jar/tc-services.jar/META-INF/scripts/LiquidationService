@@ -49,7 +49,9 @@ class LiquidationService {
 		liq.docstate = 'OPEN';
 		liq.dtposted = dtsvc.getServerDate()
 		liq.info.txnno = generateLiqNo();
-		liq.info.txndate = dtsvc.format( "yyyy-MM-dd", liq.dtposted);
+		if( ! liq.info.txndate ) {
+			liq.info.txndate = dtsvc.format( "yyyy-MM-dd", liq.dtposted);
+		}
 		updateCashierInfo( liq )
 		closeRemittance( liq );
 		liq.fundsummaries = getFundSummaries( liq.objid );
