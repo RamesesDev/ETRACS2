@@ -220,7 +220,7 @@ public class RPTLedgerPage extends javax.swing.JPanel {
         xLabel12.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel3.add(xLabel12);
 
-        xButton1.setMnemonic('a');
+        xButton1.setMnemonic('d');
         xButton1.setText("Add");
         xButton1.setName("addFaas");
 
