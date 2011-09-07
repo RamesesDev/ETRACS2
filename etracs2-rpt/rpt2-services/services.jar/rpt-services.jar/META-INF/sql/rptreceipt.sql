@@ -19,6 +19,10 @@ SELECT r.*,
 FROM rptpayment r, rptledger rl 
 WHERE rl.objid = r.rptledgerid 
   AND receiptid = $P{receiptid} 
+  
+[getRPTManualPayments]  
+SELECT * FROM rptpaymentmanual 
+WHERE receiptid = $P{receiptid}
 
 [getRPTPaymentInfo]
 SELECT objid, rptledgerid, fromyear, fromqtr, toyear, toqtr FROM rptpayment WHERE receiptid = $P{receiptid}

@@ -268,9 +268,9 @@ WHERE c.objid = af.afinventorycreditid
 [closeAfControl]
 UPDATE afcontrol SET 
 	docstate = 'CLOSED' 
-WHERE beginqty = 0 
-  AND docstate = 'OPEN' 
-  AND collectorid = $P{collectorid}
+WHERE balance = 0 
+  AND docstate = 'APPROVED' 
+  AND collectorid = $P{collectorid} 
 
 [closeReceiptForRemittance]
 UPDATE receipt SET 
