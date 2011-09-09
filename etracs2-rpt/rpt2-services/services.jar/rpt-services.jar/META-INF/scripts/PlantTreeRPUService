@@ -51,7 +51,9 @@ class PlantTreeRPUService
         
 		def rysetting = em.sqlContext.createNamedQuery( 'landrpu:getRPTSetting' ).singleResult;
 		if( rysetting.adjustplanttree == 1 || rysetting.adjustplanttree == true  ){
-			def totallandbmv 	  = landdetails.basemarketvalue.sum()
+			// get total basemarketvalue for agrilands only 
+			def agrilands 		= landdetails.findAll{ it.actualuseid == rysetting.agriculturalid }
+			def totallandbmv 	  = agrilands.basemarketvalue.sum()
 			def totalvalueadj     = landdetails.landvalueadjustment.sum()
 			def totalactualuseadj = landdetails.actualuseadjustment.sum()
 		

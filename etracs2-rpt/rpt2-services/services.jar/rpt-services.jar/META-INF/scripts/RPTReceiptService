@@ -163,10 +163,10 @@ class RPTReceiptService
     @ProxyMethod
     public Map open( receiptid ) {
         def receipt = em.read('receipt', [objid:receiptid])
-        receipt._items = loadRPTPayments( receiptid ).each(){
+		if( ! receipt ) throw new Exception('Cannot open Receipt with ID No. ' + receiptid + '.')
+        receipt._items = loadRPTPayments( receiptid, receipt.opener  ).each(){
 			it.taxpayername = ( it.taxpayername != receipt.info.payorname ) ? it.taxpayername : '';
 		}
-		
         return receipt 
     }
     
@@ -193,10 +193,33 @@ class RPTReceiptService
     * SUPPORT METHODS
     *
     *===========================================================================================*/
-    List loadRPTPayments( receiptid ) {
-        return em.sqlContext.createNamedQuery('rptreceipt:getRPTPayments').setParameter('receiptid', receiptid ).resultList 
+    List loadRPTPayments( receiptid, opener ) {
+		if( opener == 'tc:real_property'  )
+			return em.sqlContext.createNamedQuery('rptreceipt:getRPTPayments').setParameter('receiptid', receiptid ).resultList 
+		else if( opener == 'tc:real_property_manual' ) { 
+			
+			def list = em.sqlContext.createNamedQuery('rptreceipt:getRPTManualPayments').setParameter('receiptid', receiptid ).resultList 
+			list.each {
+				if( ! it.period || it.period.length() == 0  ) {
+					buildPeriod( it )
+				}
+			}
+			return list 
+		}
+		throw new Exception('Invalid opener type when loading RPT Payments.')
     }
     
+	void buildPeriod( item ) {
+        if( item.fromyear == item.toyear && item.fromqtr == 1 && item.toqtr == 4 ) 
+            item.period = 'Full ' + item.fromyear 
+        if( item.fromyear == item.toyear && item.fromqtr == item.toqtr  ) 
+            item.period = item.fromqtr + 'Q, ' + item.fromyear 
+        if( item.fromyear == item.toyear ) 
+            item.period = item.fromqtr + '-' + item.toqtr + 'Q, ' + item.fromyear 
+        if(  item.fromqtr == 1 && item.toqtr == 4 ) 
+            item.period = 'Full ' + item.fromyear + '-' + item.toyear 
+        item.period = item.fromqtr + 'Q,' + item.fromyear + '-' + item.toqtr + 'Q,' + item.toyear 
+    }
     
     void voidRPTPayments( receiptid ) {
         def paymentinfos = em.sqlContext.createNamedQuery('rptreceipt:getRPTPaymentInfo').setParameter('receiptid', receiptid).resultList

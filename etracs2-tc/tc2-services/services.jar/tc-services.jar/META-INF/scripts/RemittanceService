@@ -91,7 +91,9 @@ class RemittanceService {
 		rem.docstate = 'OPEN';
 		rem.info.txnno = generateRemNo();
 		rem.dtposted = dtsvc.getServerDate()
-		rem.info.txndate = dtsvc.format( "yyyy-MM-dd", rem.dtposted );
+		if( ! rem.info.txndate ) {
+			rem.info.txndate = dtsvc.format( "yyyy-MM-dd", rem.dtposted );
+		}
 		updateLiquidatingOfficerInfo( rem )
 		closeReceipts( rem );
 		updateAfControls( rem );
