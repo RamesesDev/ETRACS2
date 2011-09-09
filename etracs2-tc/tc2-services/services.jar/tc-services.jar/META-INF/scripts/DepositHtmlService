@@ -141,10 +141,14 @@ class DepositHtmlService
 	}
 	
 	def buildActions( deposit, summ ) {
-        def cash    = '<td></td>'
+		def cash    = '<td></td>'
+		def cashbreakdon = '<td></td>'
         def noncash = '<td></td>'
-        
-        if( deposit.cash ) cash = """<td><a href="printCashDepositSlip?$summ.fundid">Print Cash Deposit Slip</a></td>"""
+		
+        if( deposit.cash ) {
+			cash = """<td><a href="printCashDepositSlip?$summ.fundid">Print Cash Deposit Slip</a></td>"""
+			cashbreakdon = """<td><a href="printCashBreakdown?$summ.fundid">Print Cash Breakdown</a></td>"""
+		}
         if( deposit.noncash ) noncash = """<td><a href="printCheckDepositSlip?$summ.fundid">Print Check Deposit Slip</a></td>"""
         
 		return """
@@ -153,6 +157,7 @@ class DepositHtmlService
 					<table>
 						<tr>
 							$cash
+							$cashbreakdon
 							$noncash
 						<tr>
 					</table>
