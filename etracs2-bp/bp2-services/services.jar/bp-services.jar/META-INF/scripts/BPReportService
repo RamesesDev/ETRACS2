@@ -6,10 +6,17 @@ public class BPReportService
 	@PersistenceContext('main')
 	def em 
 	
+	@Service('NumberService')
+	def numSvc
 	
 	@ProxyMethod
-	public List getPermitMasterList( year ) {
-		return em.sqlContext.createNamedQuery('bpreport:getPermitMasterList').setParameter('iyear', year ).resultList 
+	public List getTaxpayerMasterList( year ) {
+		def list = em.sqlContext.createNamedQuery('bpreport:getTaxpayerMasterList').setParameter('iyear', year ).resultList 
+		list.each { 
+			it.capital = (it.capital ? numSvc.round( it.capital ) : 0.0 )
+			it.gross = (it.gross?  numSvc.round( it.gross ) : 0.0 )
+		}
+		return list 
 	}
 	
 	@ProxyMethod

@@ -324,9 +324,9 @@ class AFControlService
 	
 	void deactivateCurrentControl( afcontrol ) {
 		def activeafcontrol = getActiveAFControl( afcontrol.collectorid, afcontrol.afid, afcontrol.mode )
-		println 'activeafcontrol -> ' + activeafcontrol
 		if( activeafcontrol )  {
 			activeafcontrol.active = false
+			activeafcontrol.cancelledseries =  em.serializer.read( activeafcontrol.cancelledseries ) 
 			em.update( activeafcontrol.schemaname, activeafcontrol )
 		}
 	}

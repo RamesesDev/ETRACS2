@@ -1,4 +1,4 @@
-[getPermitMasterList]
+[getTaxpayerMasterList]
 SELECT  
 	a.objid,  
 	p.txnno AS permitno, a.iyear,  a.organization, a.barangayname, 
