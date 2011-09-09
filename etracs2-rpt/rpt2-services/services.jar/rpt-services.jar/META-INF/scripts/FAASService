@@ -329,7 +329,10 @@ class FAASService
         def faasinfo = getFaasInfo( faasid )
         
         //validate delete 
-        if( faasinfo.docstate != INTERIM_STATE ) throw new Exception('Delete not allowed for ' + faasinfo.docstate + ' record.' )
+        if( faasinfo.docstate == FORPROVAPPROVAL_STATE ) throw new Exception('FAAS has already been submitted for province approval.' )
+		if( faasinfo.docstate == CURRENT_STATE ) throw new Exception('FAAS is already current.' )
+		if( faasinfo.docstate == CANCELLED_STATE ) throw new Exception('FAAS has already been cancelled.' )
+		
         checkFaasTxnReference( faasid )
         
         //delete record

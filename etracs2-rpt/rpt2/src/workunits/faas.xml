@@ -30,7 +30,7 @@
         <invoker type="formActions" action="_close"         caption="Close"                 shortcut="ctrl W"   mnemonic="c"  immediate="true" icon="images/cancel.png"/>
         <invoker type="formActions" action="save"           caption="Save"                  shortcut="ctrl S"   mnemonic="s"  visibleWhen="#{showSaveAction == true}"  icon="images/save.png" />
         <invoker type="formActions" action="submit"         caption="Submit For Approval"   shortcut="ctrl M"   mnemonic="m"  visibleWhen="#{faas.docstate == 'INTERIM' and mode != 'create'}"   icon="images/doc-submit.png" permission="faas.submit" />
-        <invoker type="formActions" action="remove"         caption="Delete"                shortcut="ctrl D"   mnemonic="d"  visibleWhen="#{faas.docstate == 'INTERIM' and mode != 'create'}" immediate="true"   icon="images/doc-delete.png" permission="faas.delete" />
+        <invoker type="formActions" action="remove"         caption="Delete"                shortcut="ctrl D"   mnemonic="d"  visibleWhen="#{showDelete == true }" immediate="true"   icon="images/doc-delete.png" permission="faas.delete" />
         <invoker type="formActions" action="disapprove"     caption="Disapprove"            shortcut="ctrl e"   mnemonic="a"  visibleWhen="#{showDisapproveAction == true}"  icon="images/disapprove.png" permission="faas.disapprove" />
         <invoker type="formActions" action="approve"        caption="Approve"               shortcut="ctrl A"                 visibleWhen="#{showApproveAction == true}"   icon="images/approve.png" permission="faas.approve" />
         <invoker type="formActions" action="submitToProvince" caption="Submit To Province"  shortcut="ctrl M"   mnemonic="m"  visibleWhen="#{showSubmitToProvinceAction == true}"   icon="images/doc-submit.png" permission="faas.submittoprovince" />
@@ -394,6 +394,14 @@ public class FAASController
         if( faas.docstate == 'CANCELLED' ) return false
         if( faas.info.datacapture == false ) return false 
         return true 
+    }
+    
+    boolean getShowDelete(){
+        if( mode == 'create' ) return false
+        if( faas.docstate == 'CURRENT' ) return false
+        if( faas.docstate == 'CANCELLED' ) return false
+        if( faas.docstate == 'FORPROVAPPROVAL' ) return false
+        return true
     }
     
     
