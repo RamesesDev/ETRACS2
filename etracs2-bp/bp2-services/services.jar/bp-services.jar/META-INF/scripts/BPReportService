@@ -9,22 +9,40 @@ public class BPReportService
 	@Service('NumberService')
 	def numSvc
 	
+	@Service('DateService')
+	def dateSvc
+	
 	@ProxyMethod
 	public List getTaxpayerMasterList( year ) {
-		def list = em.sqlContext.createNamedQuery('bpreport:getTaxpayerMasterList').setParameter('iyear', year ).resultList 
-		list.each { 
-			it.capital = (it.capital ? numSvc.round( it.capital ) : 0.0 )
-			it.gross = (it.gross?  numSvc.round( it.gross ) : 0.0 )
-		}
+		required( 'Year', year )
+		validateYear( year )
+		def list = em.sqlContext.createNamedQuery('bpreport:getTaxpayerMasterList')
+					.setParameter('iyear', year )
+					.resultList
+					.each { 
+						it.capital = (it.capital ? numSvc.round( it.capital ) : 0.0 )
+						it.gross = (it.gross?  numSvc.round( it.gross ) : 0.0 )
+					}
+		if( ! list ) throw new Exception('No records found.')
 		return list 
 	}
 	
 	@ProxyMethod
-	public List getApplicationListing( barangay, year, docstate ) {
+	public List getApplicationListing( barangayid, year, docstate ) {
+		required( 'Year', year )
+		
 		docstate 	= ( docstate ? docstate : '%' )
-		barangay    = ( barangay ? barangay : '%' )
-		def params 	= [ barangay:barangay, iyear:year, docstate:docstate ]
-		return em.sqlContext.createNamedQuery('bpreport:getApplicationListing').setParameters( params ).resultList 
+		barangayid  = ( barangayid ? barangayid : '%' )
+		def params 	= [ barangayid:barangayid, iyear:year, docstate:docstate ]
+		def list = em.sqlContext.createNamedQuery('bpreport:getApplicationListing')
+					.setParameters( params )
+					.resultList 
+					.each { 
+						it.capital = (it.capital ? numSvc.round( it.capital ) : 0.0 )
+						it.gross = (it.gross?  numSvc.round( it.gross ) : 0.0 )
+					}
+		if( ! list ) throw new Exception('No records found.')
+		return list 		
 	}
 	
 	@ProxyMethod
@@ -42,6 +60,22 @@ public class BPReportService
 		barangay    = ( barangay ? barangay : '%' )
 		def params 	= [ barangay:barangay, iyear:year, docstate:docstate ]
 		return em.sqlContext.createNamedQuery('bpreport:getApplicationLOBListing').setParameters( params ).resultList 
+	}
+	
+	
+	@ProxyMethod
+	public List getBarangayList() {
+		return em.sqlContext.createNamedQuery('bpreport:getBarangayList').resultList 
+	}
+	
+	void required( caption, value ) {
+		if( ! value ) throw new Exception(caption + ' is required.')
+	}
+	
+	void validateYear( year ) {
+		def curryear = dateSvc.serverYear
+		if( year > curryear ) throw new Exception('Year must not exceed ' + curryear + '.')
+		
 	}
 	
 }

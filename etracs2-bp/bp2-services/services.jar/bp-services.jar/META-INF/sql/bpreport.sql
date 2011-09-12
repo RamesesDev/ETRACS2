@@ -1,3 +1,8 @@
+[getBarangayList]
+SELECT objid AS barangayid, lguname AS barangayname FROM lgu WHERE lgutype = 'BARANGAY'  ORDER BY lguname  
+
+
+
 [getTaxpayerMasterList]
 SELECT  
 	a.objid,  
@@ -21,7 +26,7 @@ FROM bpapplicationlisting a
 	LEFT JOIN bppermit p ON a.objid= p.applicationid  
 WHERE a.iyear = $P{iyear} 
   AND a.docstate LIKE $P{docstate}   
-  AND a.barangayname LIKE $P{barangay} 
+  AND a.barangayid LIKE $P{barangayid} 
 ORDER BY a.txnno  
 
 [getApplicationLOBListing]

@@ -409,8 +409,11 @@ class IRAFService
 					
 					afinventorycredit.startseries = afend + 1;
 					afinventorycredit.endseries = afinventorycredit.startseries + ri.afpcsperunit - 1;
-
-					afinventory.issuedfrom = afinventorycredit.startseries;
+					
+					//set issuedfrom only if not yet initialized
+					if( ! afinventory.issuedfrom || afinventory.issuedfrom == 0 ) {
+						afinventory.issuedfrom = afinventorycredit.startseries;
+					}
 					afinventory.issuedto = afinventorycredit.endseries;
 				}
 				

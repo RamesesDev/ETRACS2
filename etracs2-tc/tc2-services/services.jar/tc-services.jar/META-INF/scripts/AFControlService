@@ -55,7 +55,10 @@ class AFControlService
 	}
 	
 	@ProxyMethod 
-	public def approveAFControl( afcontrol ) { 
+	public def approveAFControl( afcontrol ) {
+		def old = em.read( afcontrol.schemaname, afcontrol)
+		if( !old ) throw new Exception('AF Control doest not exists.')
+		if( old.docstate != PENDING_STATE ) throw new Exception('AF Control is already ' + old.docstate +'.')
 		afcontrol.docstate = 'APPROVED' 
 		em.update( afcontrol.schemaname, afcontrol )
 		postToAFInventory( afcontrol )
