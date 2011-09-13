@@ -44,9 +44,12 @@ UPDATE afcontrol SET
 	mode = $P{newmode}, active = 0 
 WHERE objid = $P{objid}  
 
+[getCraafByCreditId]
+SELECT * FROM craaf WHERE afinventorycreditid = $P{afinventorycreditid} 
 
   
-  
+[updateTransferredCreditState]  
+UPDATE afinventorycredit SET docstate = 'TRANSFERRED' WHERE objid = $P{objid}
 
 [checkOverlapSeries]
 SELECT stubno FROM afcontrol 

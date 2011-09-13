@@ -54,6 +54,7 @@ FROM afinventorycredit ivc
 	LEFT JOIN iraf i ON ivc.irafid = i.objid   
 	INNER JOIN afcontrol a ON ivc.objid = a.afinventorycreditid  
 WHERE ivc.afinventoryid = $P{afinventoryid}  
+ORDER BY a.stubno 
 
 
 

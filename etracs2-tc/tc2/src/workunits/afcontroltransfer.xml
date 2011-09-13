@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="afcontroltransfer.create" action="init" caption="Transfer Accountable Form" target="popup" />
+        
+        <invoker type="formActions" action="_close"     caption="Close"    mnemonic="c" icon="images/cancel.png" immediate="true" />
+        <invoker type="formActions" action="transfer"   caption="Transfer" mnemonic="t" icon="images/deploy.png" shortcut="ctrl+T" visibleWhen="#{mode=='create'}" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+public class AFControlTransferController  {
+    @Binding
+    def binding
+    
+    @Service('ETRACSUserService')
+    def userSvc
+    
+    @Service('AFControlService')
+    def svc 
+    
+    
+    def ontransfer //handler 
+    
+    def afcontrol 
+    def transferto 
+    def mode
+    
+    void init() {
+        mode = 'create' 
+    }
+    
+    void transfer() {
+        if( MsgBox.confirm('Transfer accountable form?')) {
+            afcontrol = svc.transfer( afcontrol, transferto )
+            if( ontransfer ) ontransfer( afcontrol )
+            mode = 'view' 
+        }
+    }
+    
+    
+    List getCollectorlist() {
+        def list = userSvc.getCollectorList()
+        list.remove( list.find{ it.objid == afcontrol.collectorid } )
+        return list 
+    }
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.af.AFControlTransferPage" />
+    </pages>
+</workunit>
