@@ -41,6 +41,7 @@ ORDER BY afid, serialno DESC, txndate DESC
 [getOtherPaymentsByRemittance]
 SELECT pi.* FROM paymentitem pi, receiptlist rl 
 WHERE rl.objid = pi.receiptid 
+AND rl.voided = 0 
 AND NOT pi.paytype = 'CASH' 
 AND rl.objid = $P{remittanceid} 
 

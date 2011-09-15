@@ -46,12 +46,22 @@ public class BPReportService
 	}
 	
 	@ProxyMethod
-	public List getApplicationLOBListing( barangay, classification, year, docstate ) {
+	public List getApplicationLOBListing( barangayid, classificationid, year, docstate ) {
+		println 'classificationid -> ' + classificationid
 		docstate 	= ( docstate ? docstate : '%' )
-		barangay    = ( barangay ? barangay : '%' )
-		classification = ( classification ? classification : '%' )
-		def params 	= [ barangay:barangay, iyear:year, docstate:docstate, classification:classification ]
-		return em.sqlContext.createNamedQuery('bpreport:getApplicationLOBListing').setParameters( params ).resultList 
+		barangayid  = ( barangayid ? barangayid : '%' )
+		classificationid = ( classificationid ? classificationid : '%' )
+		
+		def params 	= [ barangayid:barangayid, iyear:year, docstate:docstate, classificationid:classificationid ]
+		def list = em.sqlContext.createNamedQuery('bpreport:getApplicationLOBListing')
+					.setParameters( params )
+					.resultList 
+					.each {
+						it.capital = (it.capital ? numSvc.round( it.capital ) : 0.0 )
+						it.gross = (it.gross?  numSvc.round( it.gross ) : 0.0 )					
+					}
+		if( ! list ) throw new Exception('No records found.')
+		return list 		
 	}
 	
 	@ProxyMethod
@@ -59,13 +69,20 @@ public class BPReportService
 		docstate 	= ( docstate ? docstate : '%' )
 		barangay    = ( barangay ? barangay : '%' )
 		def params 	= [ barangay:barangay, iyear:year, docstate:docstate ]
-		return em.sqlContext.createNamedQuery('bpreport:getApplicationLOBListing').setParameters( params ).resultList 
+		def list = em.sqlContext.createNamedQuery('bpreport:getApplicationLOBListing').setParameters( params ).resultList 
+		if( ! list ) throw new Exception('No records found.')
+		return list 		
 	}
 	
 	
 	@ProxyMethod
 	public List getBarangayList() {
 		return em.sqlContext.createNamedQuery('bpreport:getBarangayList').resultList 
+	}
+	
+	@ProxyMethod
+	public List getClassificationList() {
+		return em.sqlContext.createNamedQuery('bpreport:getClassificationList').resultList 
 	}
 	
 	void required( caption, value ) {

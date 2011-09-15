@@ -260,11 +260,14 @@ class ReceiptService
 	
 	void validate( receipt ) {
 		checkDuplicateSerialNo( receipt.objid, receipt.info.afid, receipt.info.serialno )
-		if( receipt.info.amount < 0 ) {
+		if( receipt.info.amount < 0.0 ) {
 			throw new Exception('Amount Due must be greater than zero.')
 		}
 		if( receipt.info.totalpayment < receipt.info.amount ) {
 			throw new Exception('Total Payment must be greater than or equal to amount due.')
+		}
+		if( receipt.info.change < 0.0 ) {
+			throw new Exception('Change must not be negative.\nNormally this happens if check payment is more than receipt amount.')
 		}
         
         def txndate = dateService.parse('yyyy-MM-dd', receipt.info.txndate )
