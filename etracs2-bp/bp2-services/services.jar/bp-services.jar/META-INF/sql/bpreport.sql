@@ -59,7 +59,7 @@ FROM bpapplicationlisting a
 	INNER JOIN lob l ON l.objid = bl.lobid  
 WHERE a.iyear = $P{iyear}  
   AND a.docstate LIKE $P{docstate}   
-  AND a.barangayname LIKE $P{barangay} 
+  AND a.barangayid LIKE $P{barangayid} 
 GROUP BY l.name   
 
 

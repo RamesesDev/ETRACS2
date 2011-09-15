@@ -47,7 +47,6 @@ public class BPReportService
 	
 	@ProxyMethod
 	public List getApplicationLOBListing( barangayid, classificationid, year, docstate ) {
-		println 'classificationid -> ' + classificationid
 		docstate 	= ( docstate ? docstate : '%' )
 		barangayid  = ( barangayid ? barangayid : '%' )
 		classificationid = ( classificationid ? classificationid : '%' )
@@ -65,11 +64,11 @@ public class BPReportService
 	}
 	
 	@ProxyMethod
-	public List getLOBCountListing( barangay, year, docstate ) {
+	public List getLOBCountListing( barangayid, year, docstate ) {
 		docstate 	= ( docstate ? docstate : '%' )
-		barangay    = ( barangay ? barangay : '%' )
-		def params 	= [ barangay:barangay, iyear:year, docstate:docstate ]
-		def list = em.sqlContext.createNamedQuery('bpreport:getApplicationLOBListing').setParameters( params ).resultList 
+		barangayid  = ( barangayid ? barangayid : '%' )
+		def params 	= [ barangayid:barangayid, iyear:year, docstate:docstate ]
+		def list = em.sqlContext.createNamedQuery('bpreport:getLOBCountListing').setParameters( params ).resultList 
 		if( ! list ) throw new Exception('No records found.')
 		return list 		
 	}

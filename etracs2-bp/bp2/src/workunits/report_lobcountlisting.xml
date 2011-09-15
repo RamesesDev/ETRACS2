@@ -1,7 +1,7 @@
 <workunit>
     <invokers>
-        <invoker type="bpreport"         action="init" opener="applicationlisting" caption="Application Listing" target="window" index="2" />
-        <invoker type="bpreport.applicationlisting"    action="init" caption="Application Listing" />
+        <invoker type="bpreport"         action="init" opener="lobcountlisting" caption="Line of Business Count Listing" target="window" index="4" />
+        <invoker type="bpreport.lobcountlisting"    action="init" caption="Line of Business Count Listing" />
         
         <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
         <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
@@ -17,7 +17,7 @@ import com.rameses.rcp.annotations.*;
 import com.rameses.osiris2.client.*;
 import com.rameses.osiris2.reports.*;
 
-class ApplicationListingController
+class LOBCountListingController
 {
     @Binding
     def binding
@@ -47,7 +47,7 @@ class ApplicationListingController
     }
     
     void generateReport() {
-        reportdata = svc.getApplicationListing( barangay?.barangayid, year, docstate )
+        reportdata = svc.getLOBCountListing( barangay?.barangayid, year, docstate )
         report.viewReport()
     }
     
@@ -57,7 +57,7 @@ class ApplicationListingController
     }
     
     def report = [
-        getReportName : { 'bp/applicationlisting' },
+        getReportName : { 'bp/lobcountlisting' },
         getReportData : { return reportdata },
         getParameters : { 
             def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )

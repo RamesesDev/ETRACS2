@@ -10,10 +10,10 @@ package etracs2.bp.report;
  *
  * @author  jzamora
  */
-public class BPApplicationReportInitPage extends javax.swing.JPanel {
+public class BPReportInit1Page extends javax.swing.JPanel {
     
     /** Creates new form BPReportInitPage */
-    public BPApplicationReportInitPage() {
+    public BPReportInit1Page() {
         initComponents();
     }
     
