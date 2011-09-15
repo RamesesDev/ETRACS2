@@ -43,8 +43,8 @@ public class ChangeAdminPage extends javax.swing.JPanel {
         xLabel6 = new com.rameses.rcp.control.XLabel();
         xLabel7 = new com.rameses.rcp.control.XLabel();
         xLabel8 = new com.rameses.rcp.control.XLabel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
-        xLabel9 = new com.rameses.rcp.control.XLabel();
+        xTextField1 = new com.rameses.rcp.control.XTextField();
+        xTextField2 = new com.rameses.rcp.control.XTextField();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -134,23 +134,20 @@ public class ChangeAdminPage extends javax.swing.JPanel {
         xLabel8.setPreferredSize(new java.awt.Dimension(0, 36));
         formPanel3.add(xLabel8);
 
-        xActionTextField1.setActionName("lookupAdmin");
-        xActionTextField1.setCaption("New Admin Name");
-        xActionTextField1.setCaptionWidth(120);
-        xActionTextField1.setName("entity.info.newadminname");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel3.add(xActionTextField1);
+        xTextField1.setCaption("New Admin Name");
+        xTextField1.setCaptionWidth(120);
+        xTextField1.setName("entity.info.newadminname");
+        xTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel3.add(xTextField1);
 
-        xLabel9.setBorder(javax.swing.BorderFactory.createLineBorder(javax.swing.UIManager.getDefaults().getColor("TextField.shadow")));
-        xLabel9.setVerticalAlignment(javax.swing.SwingConstants.TOP);
-        xLabel9.setCaption("New Admin Address");
-        xLabel9.setCaptionWidth(120);
-        xLabel9.setExpression("#{entity.info.newadminaddress}");
-        xLabel9.setPreferredSize(new java.awt.Dimension(0, 36));
-        formPanel3.add(xLabel9);
+        xTextField2.setCaption("New Admin Address");
+        xTextField2.setCaptionWidth(120);
+        xTextField2.setName("entity.info.newadminaddress");
+        xTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel3.add(xTextField2);
 
         jPanel1.add(formPanel3);
-        formPanel3.setBounds(10, 80, 660, 280);
+        formPanel3.setBounds(10, 80, 660, 268);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -164,7 +161,6 @@ public class ChangeAdminPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
@@ -173,7 +169,8 @@ public class ChangeAdminPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel6;
     private com.rameses.rcp.control.XLabel xLabel7;
     private com.rameses.rcp.control.XLabel xLabel8;
-    private com.rameses.rcp.control.XLabel xLabel9;
+    private com.rameses.rcp.control.XTextField xTextField1;
+    private com.rameses.rcp.control.XTextField xTextField2;
     // End of variables declaration//GEN-END:variables
     
 }

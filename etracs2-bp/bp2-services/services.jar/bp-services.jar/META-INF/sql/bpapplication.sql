@@ -48,3 +48,5 @@ WHERE parentid = $P{parentid}
 UPDATE bpapplicationlisting  
 SET docstate = $P{docstate} 
 WHERE objid = $P{objid} 
+
+

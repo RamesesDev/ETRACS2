@@ -11,7 +11,7 @@
         import com.rameses.rcp.annotations.*;
         import com.rameses.osiris2.client.*;
         
-        public class BusinessLookupController {
+        public class BusinessLookupController extends LookupModel {
         
             @Service("BusinessService")
             def svc;
@@ -21,32 +21,33 @@
             def selected;
 
             def ok() {
-                if( onselect ) {
-                    onselect( selected );
-                }
-                return "_close";
-            }
-
-            void search(){
-                getListHandler().load();
+                search = null
+                if( onselect ) onselect( selected )
+                return select();
             }
             
-            def listHandler = [
-                getRows    : { return 50; },
-                getColumns : {
-                    return [
-                        new Column(name:"tradename", caption:"Trade Name"),
-                        new Column(name:"businessaddress", caption:"Address"),
-                        new Column(name:"taxpayername", caption:"Owner Name"),
-                        new Column(name:"taxpayeraddress", caption:"Owner Address")
-                    ]
-                },
-                fetchList : { 
-                        def list = svc.getList(searchText, null);
-                        if( list ) return list;
-                        throw new Exception("Record not found.");
-                }
-            ] as SubListModel;
+            int getRow() {
+                return 25
+            }
+
+            Column[] getColumns() {
+                return [
+                    new Column(name:"tradename", caption:"Trade Name"),
+                    new Column(name:"businessaddress", caption:"Address"),
+                    new Column(name:"taxpayername", caption:"Owner Name"),
+                    new Column(name:"taxpayeraddress", caption:"Owner Address")
+                ]
+            }
+            
+            List fetchList( Map params ) { 
+                def s = search
+                if( !s ) s = searchText
+                def list = svc.getList( s, null);
+                if( list ) return list;
+                throw new Exception("Record not found.");
+            }
+            
+            def getListHandler(){ return this };
 
         }
         
@@ -55,6 +56,6 @@
     </code>
     
     <pages>
-        <page template="etracs2.bp.LookupPage"/>
+        <page template="etracs2.common.LookupPage"/>
     </pages>
 </workunit>

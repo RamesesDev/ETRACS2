@@ -2,11 +2,11 @@
 <workunit>
     
     <invokers>
-        <invoker type="bptransaction" folderid="/menu/bp" action="create" caption="Change Tradename" permission="bpadmin.changetradename" index="254"  target="window" />
-        <invoker type="bptransaction.create"              action="create" caption="Change Tradename" target="window" />
+        <invoker type="bptransaction" folderid="/menu/bp" action="createTradename" caption="Change Tradename" permission="bpadmin.changetradename" index="254"  target="window" />
+        <invoker type="bptransaction.createTradename"              action="createTradename" caption="Change Tradename" target="window" />
         
         <invoker type="formActions" action="close" immediate="true" caption="Close" icon="images/cancel.png"/>
-        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n"  permission="bpadmin.changetradename" icon="images/doc-new.png"/>
+        <invoker type="formActions" action="createTradename" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n"  permission="bpadmin.changetradename" icon="images/doc-new.png"/>
         <invoker type="formActions" action="back" shortcut="ctrl B" visibleWhen="#{mode == 'edit' &amp;&amp; entity.docstate == null}" immediate="true" caption="Back" mnemonic="b" icon="images/back.png"/>
         <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" immediate="true" caption="Next" mnemonic="n" icon="images/next.png"/>
         <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'init' &amp;&amp; mode != 'view' &amp;&amp; entity.docstate != 'SUBMITTED' &amp;&amp; entity.docstate != 'APPROVED'}" caption="Save" mnemonic="s" icon="images/save.png"/>
@@ -35,12 +35,12 @@
             def binding;
             
             def mode;
-
+            def business
             def entity;
             
-            def filter;
-        
-            def create() {
+            
+            def createTradename() {
+                business  = null
                 mode = 'init';
                 entity = [
                     info : buildInfo(),
@@ -62,8 +62,8 @@
                 return 'main';
             }
             
-            def onselectBusiness = { sb ->
-                filter = "";
+            void setBusiness( sb ) {
+                business = sb;
                 entity.businessid = sb.objid;
                 entity.business.tradename = sb.tradename;
                 entity.business.businessaddress = sb.businessaddress;
@@ -76,14 +76,13 @@
                 binding.refresh();
             }
             
-            def lookupBusiness() {
-                return InvokerUtil.lookupOpener( 'business:lookup', [onselect:onselectBusiness, searchText:filter] );
+            def getLookupBusiness() {
+                return InvokerUtil.lookupOpener( 'business:lookup', [:] );
             }
             
             def open() {
                 mode = 'view';
                 entity = svc.open( entity.objid, entity.txntype );
-                println "ENTITY " + entity;
                 return 'main';
             }
 

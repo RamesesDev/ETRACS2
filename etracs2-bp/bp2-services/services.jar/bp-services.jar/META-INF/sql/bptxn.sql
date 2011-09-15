@@ -24,6 +24,12 @@ UPDATE business
 SET tradename = $P{newtradename} 
 WHERE objid = $P{businessid}
 
+[updateApplicationTradename]
+UPDATE bpapplication SET tradename = $P{tradename} WHERE objid = $P{objid} 
+
+[updateApplicationListingTradename]
+UPDATE bpapplicationlisting SET tradename = $P{tradename} WHERE objid = $P{objid} 
+
 
 /* Change Admin Transaction */
 
@@ -53,6 +59,12 @@ adminname = $P{newadminname},
 adminaddress = $P{newadminaddress} 
 WHERE objid = $P{businessid}
 
+[updateApplicationListingAdmin]
+UPDATE bpapplicationlisting SET 
+	administratorname  = $P{administratorname}, 
+	administratoraddress = $P{administratoraddress} 
+WHERE objid = $P{objid} 
+
 /* Change Address Transaction */
 
 [getChangeAddressList]
@@ -78,6 +90,13 @@ WHERE objid = $P{objid}
 UPDATE business 
 SET businessaddress = $P{newbusinessaddress} 
 WHERE objid = $P{businessid}
+
+[updateApplicationBusinessAddress]
+UPDATE bpapplication SET businessaddress = $P{businessaddress} WHERE objid = $P{objid} 
+
+[updateApplicationListingBusinessAddress]
+UPDATE bpapplicationlisting SET businessaddress = $P{businessaddress} WHERE objid = $P{objid} 
+
 
 
 
@@ -109,8 +128,14 @@ taxpayername = $P{newtaxpayername},
 taxpayeraddress = $P{newtaxpayeraddress} 
 WHERE objid = $P{businessid}
 
+[updateApplicationListingPermittee]
+UPDATE bpapplicationlisting SET 
+	taxpayerid = $P{taxpayerid}, 
+	taxpayername = $P{taxpayername}, 
+	taxpayeraddress = $P{taxpayeraddress} 
+WHERE objid = $P{objid} 
 
-
+ 
 
 
 [submitTransaction]
