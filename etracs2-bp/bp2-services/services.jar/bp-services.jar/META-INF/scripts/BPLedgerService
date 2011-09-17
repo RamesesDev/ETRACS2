@@ -257,7 +257,13 @@ class BPLedgerService {
 					app.lobs = em.serializer.read( app.lobs );
 					app.receivables = em.serializer.read( app.receivables ).each{ app.amount += it.amount; app.amtpaid += it.amtpaid; };
 					app.credits = em.serializer.read( app.credits );
+					
+					app.surcharge_paid = app.credits.surcharge.sum()
+					app.interest_paid = app.credits.interest.sum()
+					
 					app.putAll( em.serializer.read( app.extended ) );
+					
+					
 				 };
 	}
 	
