@@ -11,6 +11,9 @@ class LandTaxReportService
 	@Service('DateService')
     def dateSvc
 	
+	@Service('NumberService')
+    def numSvc
+	
 	@Service('Var')
 	def var 
 	
@@ -19,6 +22,9 @@ class LandTaxReportService
 
 	@ProxyMethod
 	public def generateAbstractOfCollection( year, qtr, month, day, type, collector ) {
+		def parsedate = dateSvc.parseCurrentDate()		
+		if( year > parsedate.year ) throw new Exception('Year must not exceed current year.')
+		
 		def params = [
 			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
 			collectorid  : ( collector ? collector.collectorid : '%' ),
@@ -57,7 +63,47 @@ class LandTaxReportService
 	}
 	
 	
-	
+	@ProxyMethod
+	public def generateBarangayShare( year, month, currentrate, previousrate ) {
+		def parsedate = dateSvc.parseCurrentDate()		
+		if( year > parsedate.year ) throw new Exception('Year must not exceed current year.')
+		if( !currentrate || currentrate < 0.0 ) throw new Exception('Current Rate must not be negative.')
+		if( !currentrate || currentrate > 100.0 ) throw new Exception('Current Rate must not exceed 100 percent.')
+		if( !previousrate || previousrate < 0.0 ) throw new Exception('Previous Rate must not be negative.')
+		if( !previousrate || previousrate > 100.0 ) throw new Exception('Previous Rate must not exceed 100 percent.')
+		
+		def basicamtlist = em.sqlContext.createNamedQuery('landtaxreport:getBasicSummaryByMonth')
+								.setParameters( [iyear:year, imonth:month ] )
+								.resultList 
+		def brgyshares = em.sqlContext.createNamedQuery('landtaxreport:getBarangayList').setParameter('parentid', var.lgu_index).resultList 
+		
+		def initbrgybasicamt = { brgy ->
+			brgy.basiccurrent 	= 0.0
+			brgy.basicprevious 	= 0.0
+			brgy.basictotal		= 0.0
+			brgy.basiccurrentshare 	= 0.0
+			brgy.basicpreviousshare = 0.0
+			brgy.totalshare			= 0.0
+		}
+		
+		brgyshares.each{ brgy ->
+			initbrgybasicamt( brgy )
+			def basicamt = basicamtlist.find{ it.barangay == brgy.barangay }
+			if( basicamt ) {
+				brgy.putAll( basicamt )
+				
+				//calculate shares
+				brgy.basiccurrentshare  = numSvc.round( brgy.basiccurrent * currentrate / 100.0 )
+				brgy.basicpreviousshare = numSvc.round( brgy.basicprevious * previousrate / 100.0 )
+				brgy.totalshare			= brgy.basiccurrentshare + brgy.basicpreviousshare 
+			}
+		}
+		
+		return [
+			period 	: 'For the month of ' + getMonthName( month ) + ', ' + year ,
+			items 	: brgyshares, 
+		]
+	}
 	
 	
 	
