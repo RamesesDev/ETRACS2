@@ -62,4 +62,9 @@ WHERE a.iyear = $P{iyear}
   AND a.barangayid LIKE $P{barangayid} 
 GROUP BY l.name   
 
+[getBusinessTaxpayerList]
+SELECT distinct taxpayerid, taxpayername, taxpayeraddress 
+FROM bpapplicationlisting 
+WHERE docstate IN ('APPROVED','PERMIT_PENDING', 'ACTIVE') 
+  AND barangayid LIKE $P{barangayid} 
 

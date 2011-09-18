@@ -16,10 +16,13 @@ AND docstate = 'ACTIVE'
 ORDER BY tradename, taxpayername
 
 [getListByTaxpayerid]
-SELECT * FROM business 
-WHERE taxpayerid = $P{taxpayerid} 
-AND docstate = 'ACTIVE' 
-ORDER BY tradename, taxpayername
+SELECT b.*  
+FROM business b  
+	INNER JOIN bpapplicationlisting bl ON b.applicationid = bl.objid   
+WHERE b.taxpayerid = $P{taxpayerid} 
+  AND b.docstate = 'ACTIVE'  
+  AND bl.barangayid LIKE $P{barangayid}  
+ORDER BY b.tradename, b.taxpayername 
 
 [getApplicationsByBusinessId] 
 SELECT * FROM bpapplication 

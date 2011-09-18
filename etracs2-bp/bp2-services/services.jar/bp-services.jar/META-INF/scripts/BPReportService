@@ -12,6 +12,10 @@ public class BPReportService
 	@Service('DateService')
 	def dateSvc
 	
+	@Service('BPBillingService') 
+	def billingSvc 
+	
+	
 	@ProxyMethod
 	public List getTaxpayerMasterList( year ) {
 		required( 'Year', year )
@@ -71,6 +75,42 @@ public class BPReportService
 		def list = em.sqlContext.createNamedQuery('bpreport:getLOBCountListing').setParameters( params ).resultList 
 		if( ! list ) throw new Exception('No records found.')
 		return list 		
+	}
+	
+	@ProxyMethod
+	public List getBusinessTaxpayerList( barangayid ) {
+		barangayid = (barangayid ? barangayid : '%' )
+		return em.sqlContext.createNamedQuery('bpreport:getBusinessTaxpayerList')
+						.setParameter('barangayid', barangayid )
+						.resultList
+	}
+	
+	@ProxyMethod
+	public def buildDelinquency( billing ) {
+		try {
+			billing = billingSvc.getBilling( billing )
+			def delinquencylist = []
+			billing.items.each{ item -> 
+				delinquencylist.add([
+					appno			: item.appno,
+					txntype			: item.txntype,
+					txndate			: item.txndate, 
+					taxpayername 	: billing.info.taxpayername,
+					taxpayeraddress : billing.info.taxpayeraddress,
+					tradename		: item.tradename,
+					businessaddress	: item.address,
+					amount			: item.totalamount,
+					surcharge		: item.totalsurcharge ,
+					interest		: item.totalinterest,
+					total			: item.grandtotal
+				])
+			}
+			println delinquencylist
+			return delinquencylist
+		}
+		catch( e) {
+			return []
+		}
 	}
 	
 	
