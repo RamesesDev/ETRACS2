@@ -24,7 +24,7 @@ ORDER BY tradename, taxpayername
 [getApplicationsByBusinessId] 
 SELECT * FROM bpapplication 
 WHERE businessid = $P{businessid} 
-AND docstate IN ( 'APPROVED', 'ACTIVE', 'PERMIT_PENDIN', 'EXPIRED' ) 
+AND docstate IN ( 'APPROVED', 'ACTIVE', 'PERMIT_PENDING', 'EXPIRED' ) 
 ORDER BY txnno 
 
 [getApplicationListByBusinessId] 
