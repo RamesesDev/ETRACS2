@@ -17,10 +17,10 @@ SELECT
 	rl.barangay, 
 	rl.classcode AS classification, 
 	IFNULL((SELECT SUM( basic ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid AND revtype IN ('current','advance') ), 0.0) AS currentyear, 
-	IFNULL((SELECT SUM( basic ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid AND revtype ='previous' ), 0.0) AS previousyear, 
+	IFNULL((SELECT SUM( basic ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid AND revtype IN ('previous','prior') ), 0.0) AS previousyear, 
 	IFNULL((SELECT SUM( basicdisc ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid ), 0.0) AS discount, 
 	IFNULL((SELECT SUM( basicint ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid AND revtype IN ('current','advance') ), 0.0) AS penaltycurrent, 
-	IFNULL((SELECT SUM( basicint ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid AND revtype ='previous' ), 0.0) AS penaltyprevious 
+	IFNULL((SELECT SUM( basicint ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid AND revtype IN ('previous','prior') ), 0.0) AS penaltyprevious 
 FROM liquidationlist lq 
 	INNER JOIN remittancelist rem ON lq.objid = rem.liquidationid  
 	INNER JOIN receiptlist r ON rem.objid = r.remittanceid  
@@ -43,10 +43,10 @@ SELECT
 	rl.barangay, 
 	rl.classcode AS classification, 
 	IFNULL((SELECT SUM( sef ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid AND revtype IN ('current','advance') ),0.0) AS currentyear, 
-	IFNULL((SELECT SUM( sef ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid AND revtype ='previous' ),0.0) AS previousyear, 
+	IFNULL((SELECT SUM( sef ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid AND revtype IN ('previous', 'prior') ),0.0) AS previousyear, 
 	IFNULL((SELECT SUM( sefdisc ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid ),0.0) AS discount, 
 	IFNULL((SELECT SUM( sefint ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid AND revtype IN ('current','advance') ),0.0) AS penaltycurrent, 
-	IFNULL((SELECT SUM( sefint ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid AND revtype ='previous' ),0.0) AS penaltyprevious 
+	IFNULL((SELECT SUM( sefint ) FROM rptpaymentdetail WHERE receiptid = r.objid AND rptledgerid = rl.objid AND revtype IN ('previous','prior' ) ),0.0) AS penaltyprevious 
 FROM liquidationlist lq 
 	INNER JOIN remittancelist rem ON lq.objid = rem.liquidationid  
 	INNER JOIN receiptlist r ON rem.objid = r.remittanceid  
@@ -109,6 +109,7 @@ WHERE lq.txntimestamp LIKE $P{txntimestamp}
   AND r.voided = 0 
   AND r.collectorid LIKE $P{collectorid}
 
+  
 [getBasicSummaryByMonth]
 SELECT 
 	rl.barangay, 
@@ -121,13 +122,34 @@ SELECT
 FROM liquidationlist l  
 	INNER JOIN remittance rem ON l.objid = rem.liquidationid  
 	INNER JOIN receiptlist r ON rem.objid = r.remittanceid  
-	INNER JOIN rptpayment rp ON r.objid = rp.receiptid  
-	INNER JOIN rptpaymentdetail rpd ON rp.receiptid = rpd.receiptid 
+	INNER JOIN rptpayment rp ON r.objid = rp.receiptid 
+	INNER JOIN rptpaymentdetail rpd ON r.objid = rpd.receiptid  AND rp.rptledgerid = rpd.rptledgerid 
 	INNER JOIN rptledger rl ON rp.rptledgerid = rl.objid  
 WHERE l.iyear = $P{iyear} 
   AND l.imonth = $P{imonth} 
   AND r.voided = 0  
 GROUP BY rl.barangay 
 ORDER BY rl.barangay  
+
+[getManualBasicSummaryByMonth]
+SELECT 
+	rp.barangay, 
+	SUM(rp.basic + rp.basicint - rp.basicdisc) AS basiccurrent, 
+	SUM(rp.basicprev + rp.basicprevint + rp.basicprior + rp.basicpriorint) AS basicprevious, 
+	SUM(rp.basic + rp.basicint - rp.basicdisc + rp.basicprev + rp.basicprevint + rp.basicprior + rp.basicpriorint) AS basictotal, 
+	0.0 AS basiccurrentshare,  
+	0.0 AS basicpreviousshare,  
+	0.0 AS totalshare  
+FROM liquidationlist l   
+	INNER JOIN remittance rem ON l.objid = rem.liquidationid   
+	INNER JOIN receiptlist r ON rem.objid = r.remittanceid   
+	INNER JOIN rptpaymentmanual rp ON r.objid = rp.receiptid   
+WHERE l.iyear = $P{iyear}  
+  AND l.imonth = $P{imonth}  
+  AND r.voided = 0  
+GROUP BY rp.barangay  
+ORDER BY rp.barangay   
+
+
 
 

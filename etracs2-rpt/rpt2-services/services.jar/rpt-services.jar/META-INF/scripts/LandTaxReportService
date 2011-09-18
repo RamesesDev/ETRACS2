@@ -72,9 +72,13 @@ class LandTaxReportService
 		if( !previousrate || previousrate < 0.0 ) throw new Exception('Previous Rate must not be negative.')
 		if( !previousrate || previousrate > 100.0 ) throw new Exception('Previous Rate must not exceed 100 percent.')
 		
-		def basicamtlist = em.sqlContext.createNamedQuery('landtaxreport:getBasicSummaryByMonth')
+		def onlinepayments = em.sqlContext.createNamedQuery('landtaxreport:getBasicSummaryByMonth')
 								.setParameters( [iyear:year, imonth:month ] )
 								.resultList 
+		def manualpayments = em.sqlContext.createNamedQuery('landtaxreport:getManualBasicSummaryByMonth')
+								.setParameters( [iyear:year, imonth:month ] )
+								.resultList 
+								
 		def brgyshares = em.sqlContext.createNamedQuery('landtaxreport:getBarangayList').setParameter('parentid', var.lgu_index).resultList 
 		
 		def initbrgybasicamt = { brgy ->
@@ -86,17 +90,24 @@ class LandTaxReportService
 			brgy.totalshare			= 0.0
 		}
 		
+		def addupPayments = { brgy, payments ->
+			def pmt = payments.find{ it.barangay == brgy.barangay }
+			if( pmt ) {
+				brgy.basiccurrent += pmt.basiccurrent
+				brgy.basicprevious += pmt.basicprevious
+				brgy.basictotal += pmt.basictotal
+			}
+		}
+		
 		brgyshares.each{ brgy ->
 			initbrgybasicamt( brgy )
-			def basicamt = basicamtlist.find{ it.barangay == brgy.barangay }
-			if( basicamt ) {
-				brgy.putAll( basicamt )
-				
-				//calculate shares
-				brgy.basiccurrentshare  = numSvc.round( brgy.basiccurrent * currentrate / 100.0 )
-				brgy.basicpreviousshare = numSvc.round( brgy.basicprevious * previousrate / 100.0 )
-				brgy.totalshare			= brgy.basiccurrentshare + brgy.basicpreviousshare 
-			}
+			addupPayments( brgy, onlinepayments )
+			addupPayments( brgy, manualpayments )
+			
+			//calculate shares
+			brgy.basiccurrentshare  = numSvc.round( brgy.basiccurrent * currentrate / 100.0 )
+			brgy.basicpreviousshare = numSvc.round( brgy.basicprevious * previousrate / 100.0 )
+			brgy.totalshare			= brgy.basiccurrentshare + brgy.basicpreviousshare 
 		}
 		
 		return [
