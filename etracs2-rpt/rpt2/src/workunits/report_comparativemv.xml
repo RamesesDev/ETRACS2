@@ -1,8 +1,8 @@
 <workunit>
     <invokers>
-        <invoker folderid="/menu/rpt/reports/assessor"         action="init" caption="Accomplishment of Real Property Assessment" permission="rptreport.accomplishmentrpa" index="6" />
-        <invoker type="rptreport"         action="init" opener="accomplishmentrpa" caption="Accomplishment of Real Property Assessment" target="window" permission="rptreport.accomplishmentrpa" index="6" />
-        <invoker type="rptreport.accomplishmentrpa"    action="init"               caption="Accomplishment of Real Property Assessment" />
+        <invoker folderid="/menu/rpt/reports/assessor" action="init" caption="Comparative Data on Market Value" permission="rptreport.comparativemv" index="9" />
+        <invoker type="rptreport"               action="init" opener="comparativemv" caption="Comparative Data on Market Value" target="window" permission="rptreport.comparativemv" index="6" />
+        <invoker type="rptreport.comparativemv" action="init"               caption="Comparative Data on Market Value" />
         
         <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png" immediate="true"/>
         <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
@@ -18,7 +18,7 @@ import com.rameses.rcp.annotations.*;
 import com.rameses.osiris2.client.*;
 import com.rameses.osiris2.reports.*;
 
-class AccomplishmentRPAController
+class ComparativeMVController
 {
     @Service("ReportParameterService")
     def svcParams;
@@ -46,7 +46,7 @@ class AccomplishmentRPAController
     }
     
     void generateReport() {
-        data = svc.generateAccomplishmentRPA( year, qtr, month?.month )
+        data = svc.generateComparativeMV( year, qtr, month?.month )
         report.viewReport()
     }
     
@@ -56,7 +56,7 @@ class AccomplishmentRPAController
     }
     
     def report = [
-        getReportName : { 'accomplishmentrpa' },
+        getReportName : { 'comparativemv' },
         getReportData : { return data.reportdata },
         getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [
                             TITLE       : data.title, 

@@ -488,3 +488,83 @@ WHERE f.txntimestamp < $P{endingtimestamp}
 GROUP BY e.objid, e.exemptdesc 
 ORDER BY e.orderno  
 
+
+
+
+
+
+#----------------------------------------------------------------------
+#
+# COMPARATIVE DATA ON MV
+#
+#----------------------------------------------------------------------
+[getStartComparativeMV]
+SELECT
+	'TAXABLE' AS taxability, 
+	c.objid AS classid, 
+	c.propertydesc AS classname, 
+	c.special AS special, 
+	SUM( CASE WHEN f.rputype = 'land' THEN totalmv ELSE 0.0 END ) AS startlandmv, 
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalmv ELSE 0.0 END ) AS startimpmv, 
+	SUM( f.totalmv ) AS starttotal  
+FROM faaslist f  
+	INNER JOIN propertyclassification c ON f.classid = c.objid   
+WHERE f.txntimestamp < $P{starttxntimestamp}  
+  AND f.docstate = 'CURRENT'   
+  AND f.taxable = 1  
+GROUP BY c.objid, c.propertydesc, c.special  
+ORDER BY c.orderno  
+
+[getEndComparativeMV]
+SELECT 
+	'TAXABLE' AS taxability,  
+	c.objid AS classid,  
+	c.propertydesc AS classname,  
+	c.special AS special,  
+	SUM( CASE WHEN f.rputype = 'land' THEN totalmv ELSE 0.0 END ) AS endlandmv,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalmv ELSE 0.0 END ) AS endimpmv,  
+	SUM( f.totalmv ) AS endtotal 
+FROM faaslist f  
+	INNER JOIN propertyclassification c ON f.classid = c.objid   
+WHERE f.txntimestamp < $P{endtxntimestamp}  
+  AND f.docstate = 'CURRENT'   
+  AND f.taxable = 1  
+GROUP BY c.objid, c.propertydesc, c.special  
+ORDER BY c.orderno  
+
+
+[getStartComparativeMVExempt]
+SELECT 
+	'EXEMPT' AS taxability,  
+	e.objid AS classid,  
+	e.exemptdesc AS classname,  
+	0 AS special,  
+	SUM( CASE WHEN f.rputype = 'land' THEN totalmv ELSE 0.0 END ) AS startlandmv,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalmv ELSE 0.0 END ) AS startimpmv,  
+	SUM( f.totalmv ) AS starttotal  
+FROM faaslist f  
+	INNER JOIN exemptiontype e ON f.exemptid = e.objid    
+WHERE f.txntimestamp < $P{starttxntimestamp}  
+  AND f.docstate = 'CURRENT'   
+  AND f.taxable = 0   
+GROUP BY e.objid, e.exemptdesc 
+ORDER BY e.orderno  
+
+
+
+[getEndComparativeMVExempt]
+SELECT 
+	'EXEMPT' AS taxability,  
+	e.objid AS classid,  
+	e.exemptdesc AS classname,  
+	0 AS special,  
+	SUM( CASE WHEN f.rputype = 'land' THEN totalmv ELSE 0.0 END ) AS endlandmv,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalmv ELSE 0.0 END ) AS endimpmv,  
+	SUM( f.totalmv ) AS endtotal  
+FROM faaslist f  
+	INNER JOIN exemptiontype e ON f.exemptid = e.objid    
+WHERE f.txntimestamp < $P{endtxntimestamp}  
+  AND f.docstate = 'CURRENT'   
+  AND f.taxable = 0   
+GROUP BY e.objid, e.exemptdesc 
+ORDER BY e.orderno  
