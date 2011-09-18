@@ -75,10 +75,18 @@ class RuleActionService
     }
 	
 	def buildRangeAdditionalCondition( rule, action, range ) {
+		//
+		//get condition.variable to determine perline or per establishment option 
+		def varconditions = rule.conditions.findAll{ it.opener == 'rulecondition.variable' }
+		def varcond = varconditions.find{ it.variable.objid == action.variable.objid }
+		def lobid = '$lobid'
+		if( varcond && varcond.perline == false ) {
+			lobid = 'null' 
+		}
 		if( range.rangeto > 0 )
-			return 'InputVariableFact( varid=="' + action.variable.objid + '", value >= ' + range.rangefrom + ', value < ' + range.rangeto + ', appid == $appid, lobid == $lobid )\n'
+			return 'InputVariableFact( varid=="' + action.variable.objid + '", value >= ' + range.rangefrom + ', value < ' + range.rangeto + ', appid == $appid, lobid == ' +  lobid +' )\n'
 		else 	
-			return 'InputVariableFact( varid=="' + action.variable.objid + '", value >= ' + range.rangefrom + ', appid == $appid, lobid == $lobid )\n'
+			return 'InputVariableFact( varid=="' + action.variable.objid + '", value >= ' + range.rangefrom + ', appid == $appid, lobid == ' + lobid +' )\n'
 	}
 	
 	def buildAddTaxFeeCommonText( rule, action, expr ) {
