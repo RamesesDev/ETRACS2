@@ -71,7 +71,7 @@ AND canceledqty != 0
 [updateCRAAFbyIRAFCol]
 UPDATE craaf SET 
 	issuedqty = issuedqty + $P{qtyreceived}, 
-	issuedfrom = $P{issuedfrom}, 
+	issuedfrom = CASE WHEN issuedfrom IS NULL THEN $P{issuedfrom} ELSE issuedfrom END , 
 	issuedto = $P{issuedto}, 
 	endingqty = $P{endingqty}, 
 	endingfrom = $P{endingfrom}, 

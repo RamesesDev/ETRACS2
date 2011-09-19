@@ -133,7 +133,7 @@ class BusinessTxnService {
 	}
 	
 	private void validateChangeAdmin( bptxn ) {
-		if ( bptxn.info.newadminid == bptxn.business.adminid )
+		if ( bptxn.info.newadminid && bptxn.info.newadminid == bptxn.business.adminid )
 			throw new IllegalStateException( "You have referenced the same Administrator." );
 	}
 
@@ -272,23 +272,99 @@ class BusinessTxnService {
 	}
 	
 	private void approveChangeTradenameList( bptxn ) {
-		em.sqlContext.createNamedExecutor( 'bptxn:approvedChangeTradenameList' ).setParameters( [objid:bptxn.objid] ).execute();
-		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessTradename' ).setParameters( [businessid:bptxn.businessid, newtradename:bptxn.info.newtradename] ).execute();
+		def business = em.read('business', [objid:bptxn.businessid] )
+		if( !business ) throw new Exception('Cannot open the selected business.')
+		
+		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationTradename' )
+			.setParameters( [objid:business.applicationid, tradename:bptxn.info.newtradename] )
+			.execute()
+			
+		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationListingTradename' )
+			.setParameters( [objid:business.applicationid, tradename:bptxn.info.newtradename] )
+			.execute()
+			
+		em.sqlContext.createNamedExecutor( 'bptxn:approvedChangeTradenameList' )
+			.setParameters( [objid:bptxn.objid] )
+			.execute();
+			
+		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessTradename' )
+			.setParameters( [businessid:bptxn.businessid, newtradename:bptxn.info.newtradename] )
+			.execute();
 	}
 	
 	private void approveChangeAdminList( bptxn ) {
+		def business = em.read('business', [objid:bptxn.businessid] )
+		if( !business ) throw new Exception('Cannot open the selected business.')
+		
+		def bpapp = em.read('bpapplication', [objid:business.applicationid] )
+		if( ! bpapp ) throw new Exception('Cannot open the associated application.')
+		
+		bpapp.info.administratorname 	= bptxn.info.newadminname
+		bpapp.info.administratoraddress = bptxn.info.newadminaddress
+		em.update( bpapp.schemaname, bpapp )
+		
+		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationListingAdmin' )
+			.setParameters([
+				objid					: business.applicationid, 
+				administratorname		: bptxn.info.newadminname, 
+				administratoraddress	: bptxn.info.newadminaddress, 
+			])
+			.execute()
+		
+		
 		em.sqlContext.createNamedExecutor( 'bptxn:approvedChangeAdminList' ).setParameters( [objid:bptxn.objid] ).execute();
 		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessAdmin' ).setParameters( [businessid:bptxn.businessid, newadminid:bptxn.info.newadminid, newadminname:bptxn.info.newadminname, newadminaddress:bptxn.info.newadminaddress] ).execute();
 	}
 	
 	private void approveChangeAddressList( bptxn ) {
-		em.sqlContext.createNamedExecutor( 'bptxn:approvedChangeAddressList' ).setParameters( [objid:bptxn.objid] ).execute();
-		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessAddress' ).setParameters( [businessid:bptxn.businessid, newbusinessaddress:bptxn.info.newbusinessaddress] ).execute();
+		def business = em.read('business', [objid:bptxn.businessid] )
+		if( !business ) throw new Exception('Cannot open the selected business.')
+		
+		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationBusinessAddress' )
+			.setParameters( [objid:business.applicationid, businessaddress:bptxn.info.newbusinessaddress] )
+			.execute()
+			
+		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationListingBusinessAddress' )
+			.setParameters( [objid:business.applicationid, businessaddress:bptxn.info.newbusinessaddress] )
+			.execute()
+			
+		em.sqlContext.createNamedExecutor( 'bptxn:approvedChangeAddressList' )
+				.setParameters( [objid:bptxn.objid] )
+				.execute();
+				
+		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessAddress' )
+				.setParameters( [businessid:bptxn.businessid, newbusinessaddress:bptxn.info.newbusinessaddress] )
+				.execute();
 	}
 	
 	private void approveChangePermitteeList( bptxn ) {
-		em.sqlContext.createNamedExecutor( 'bptxn:approvedChangePermitteeList' ).setParameters( [objid:bptxn.objid] ).execute();
-		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessPermittee' ).setParameters( [businessid:bptxn.businessid, newtaxpayerid:bptxn.info.newtaxpayerid, newtaxpayername:bptxn.info.newtaxpayername, newtaxpayeraddress:bptxn.info.newtaxpayeraddress] ).execute();
+		def business = em.read('business', [objid:bptxn.businessid] )
+		if( !business ) throw new Exception('Cannot open the selected business.')
+		
+		def bpapp = em.read('bpapplication', [objid:business.applicationid] )
+		if( ! bpapp ) throw new Exception('Cannot open the associated application.')
+		
+		bpapp.info.taxpayerid 		= bptxn.info.newtaxpayerid
+		bpapp.info.taxpayername 	= bptxn.info.newtaxpayername
+		bpapp.info.taxpayeraddress 	= bptxn.info.newtaxpayeraddress
+		em.update( bpapp.schemaname, bpapp )
+		
+		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationListingPermittee' )
+			.setParameters([
+				objid			: business.applicationid, 
+				taxpayerid		: bptxn.info.newtaxpayerid, 
+				taxpayername	: bptxn.info.newtaxpayername, 
+				taxpayeraddress	: bptxn.info.newtaxpayeraddress
+			])
+			.execute()
+			
+		em.sqlContext.createNamedExecutor( 'bptxn:approvedChangePermitteeList' )
+				.setParameters( [objid:bptxn.objid] )
+				.execute();
+				
+		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessPermittee' )
+				.setParameters( [businessid:bptxn.businessid, newtaxpayerid:bptxn.info.newtaxpayerid, newtaxpayername:bptxn.info.newtaxpayername, newtaxpayeraddress:bptxn.info.newtaxpayeraddress] )
+				.execute();
 	}
 	
 	@ProxyMethod

@@ -6,35 +6,132 @@ public class BPReportService
 	@PersistenceContext('main')
 	def em 
 	
+	@Service('NumberService')
+	def numSvc
+	
+	@Service('DateService')
+	def dateSvc
+	
+	@Service('BPBillingService') 
+	def billingSvc 
+	
 	
 	@ProxyMethod
-	public List getPermitMasterList( year ) {
-		return em.sqlContext.createNamedQuery('bpreport:getPermitMasterList').setParameter('iyear', year ).resultList 
+	public List getTaxpayerMasterList( year ) {
+		required( 'Year', year )
+		validateYear( year )
+		def list = em.sqlContext.createNamedQuery('bpreport:getTaxpayerMasterList')
+					.setParameter('iyear', year )
+					.resultList
+					.each { 
+						it.capital = (it.capital ? numSvc.round( it.capital ) : 0.0 )
+						it.gross = (it.gross?  numSvc.round( it.gross ) : 0.0 )
+					}
+		if( ! list ) throw new Exception('No records found.')
+		return list 
 	}
 	
 	@ProxyMethod
-	public List getApplicationListing( barangay, year, docstate ) {
+	public List getApplicationListing( barangayid, year, docstate ) {
+		required( 'Year', year )
+		
 		docstate 	= ( docstate ? docstate : '%' )
-		barangay    = ( barangay ? barangay : '%' )
-		def params 	= [ barangay:barangay, iyear:year, docstate:docstate ]
-		return em.sqlContext.createNamedQuery('bpreport:getApplicationListing').setParameters( params ).resultList 
+		barangayid  = ( barangayid ? barangayid : '%' )
+		def params 	= [ barangayid:barangayid, iyear:year, docstate:docstate ]
+		def list = em.sqlContext.createNamedQuery('bpreport:getApplicationListing')
+					.setParameters( params )
+					.resultList 
+					.each { 
+						it.capital = (it.capital ? numSvc.round( it.capital ) : 0.0 )
+						it.gross = (it.gross?  numSvc.round( it.gross ) : 0.0 )
+					}
+		if( ! list ) throw new Exception('No records found.')
+		return list 		
 	}
 	
 	@ProxyMethod
-	public List getApplicationLOBListing( barangay, classification, year, docstate ) {
+	public List getApplicationLOBListing( barangayid, classificationid, year, docstate ) {
 		docstate 	= ( docstate ? docstate : '%' )
-		barangay    = ( barangay ? barangay : '%' )
-		classification = ( classification ? classification : '%' )
-		def params 	= [ barangay:barangay, iyear:year, docstate:docstate, classification:classification ]
-		return em.sqlContext.createNamedQuery('bpreport:getApplicationLOBListing').setParameters( params ).resultList 
+		barangayid  = ( barangayid ? barangayid : '%' )
+		classificationid = ( classificationid ? classificationid : '%' )
+		
+		def params 	= [ barangayid:barangayid, iyear:year, docstate:docstate, classificationid:classificationid ]
+		def list = em.sqlContext.createNamedQuery('bpreport:getApplicationLOBListing')
+					.setParameters( params )
+					.resultList 
+					.each {
+						it.capital = (it.capital ? numSvc.round( it.capital ) : 0.0 )
+						it.gross = (it.gross?  numSvc.round( it.gross ) : 0.0 )					
+					}
+		if( ! list ) throw new Exception('No records found.')
+		return list 		
 	}
 	
 	@ProxyMethod
-	public List getLOBCountListing( barangay, year, docstate ) {
+	public List getLOBCountListing( barangayid, year, docstate ) {
 		docstate 	= ( docstate ? docstate : '%' )
-		barangay    = ( barangay ? barangay : '%' )
-		def params 	= [ barangay:barangay, iyear:year, docstate:docstate ]
-		return em.sqlContext.createNamedQuery('bpreport:getApplicationLOBListing').setParameters( params ).resultList 
+		barangayid  = ( barangayid ? barangayid : '%' )
+		def params 	= [ barangayid:barangayid, iyear:year, docstate:docstate ]
+		def list = em.sqlContext.createNamedQuery('bpreport:getLOBCountListing').setParameters( params ).resultList 
+		if( ! list ) throw new Exception('No records found.')
+		return list 		
+	}
+	
+	@ProxyMethod
+	public List getBusinessTaxpayerList( barangayid ) {
+		barangayid = (barangayid ? barangayid : '%' )
+		return em.sqlContext.createNamedQuery('bpreport:getBusinessTaxpayerList')
+						.setParameter('barangayid', barangayid )
+						.resultList
+	}
+	
+	@ProxyMethod
+	public def buildDelinquency( billing ) {
+		try {
+			billing = billingSvc.getBilling( billing )
+			def delinquencylist = []
+			billing.items.each{ item -> 
+				delinquencylist.add([
+					appno			: item.appno,
+					txntype			: item.txntype,
+					txndate			: item.txndate, 
+					taxpayername 	: billing.info.taxpayername,
+					taxpayeraddress : billing.info.taxpayeraddress,
+					tradename		: item.tradename,
+					businessaddress	: item.address,
+					amount			: item.totalamount,
+					surcharge		: item.totalsurcharge ,
+					interest		: item.totalinterest,
+					total			: item.grandtotal
+				])
+			}
+			println delinquencylist
+			return delinquencylist
+		}
+		catch( e) {
+			return []
+		}
+	}
+	
+	
+	@ProxyMethod
+	public List getBarangayList() {
+		return em.sqlContext.createNamedQuery('bpreport:getBarangayList').resultList 
+	}
+	
+	@ProxyMethod
+	public List getClassificationList() {
+		return em.sqlContext.createNamedQuery('bpreport:getClassificationList').resultList 
+	}
+	
+	void required( caption, value ) {
+		if( ! value ) throw new Exception(caption + ' is required.')
+	}
+	
+	void validateYear( year ) {
+		def curryear = dateSvc.serverYear
+		if( year > curryear ) throw new Exception('Year must not exceed ' + curryear + '.')
+		
 	}
 	
 }

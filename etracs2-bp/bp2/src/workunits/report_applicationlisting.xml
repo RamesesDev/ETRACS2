@@ -1,0 +1,91 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/bp/reports"         action="init" caption="Application Listing" target="window" index="2" permission="bpreport.applisting"/>
+        <invoker type="bpreport"         action="init" opener="applicationlisting" caption="Application Listing" target="window" index="2" permission="bpreport.applisting"/>
+        <invoker type="bpreport.applicationlisting"    action="init" caption="Application Listing" target="window"/>
+        
+        <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
+        <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
+        <invoker type="formActions"     action="preview" caption="Preview" mnemonic="v"             icon="images/doc-view.png"/>
+        
+        <invoker type="previewActions"  action="back" caption="Back" icon="images/back.png" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class ApplicationListingController
+{
+    @Binding
+    def binding
+    
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('BPReportService') 
+    def svc 
+    
+    @Service('DateService')
+    def dateSvc
+    
+    def year 
+    def docstate
+    def barangay
+    def reportdata
+    
+    void init() {
+        def parsedate = dateSvc.parseCurrentDate()
+        year = parsedate.year 
+    }
+    
+    def preview() {
+        generateReport()
+        return 'preview' 
+    }
+    
+    void generateReport() {
+        reportdata = svc.getApplicationListing( barangay?.barangayid, year, docstate )
+        report.viewReport()
+    }
+    
+    void print(){
+        generateReport()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def report = [
+        getReportName : { 'bp/applicationlisting' },
+        getReportData : { return reportdata },
+        getParameters : { 
+            def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )
+            params.STATE = docstate
+            params.BARANGAYNAME = ( barangay  ? barangay.barangayname : 'ALL' )
+            return params 
+        }
+    ] as ServerReportModel;
+        
+    def back() {
+        return 'default' 
+    }
+    
+    
+    def getStatelist() {
+        return ['APPROVED','PERMIT_PENDING','ACTIVE']
+    }
+    
+    def getBarangaylist() {
+        return svc.getBarangayList()
+    }
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.bp.report.BPReportInit1Page" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>

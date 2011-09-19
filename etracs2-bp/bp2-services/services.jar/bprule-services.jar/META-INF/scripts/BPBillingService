@@ -28,7 +28,7 @@ public class BPBillingService
 	
 	@ProxyMethod
 	public def getBilling( billing ) {
-		def businesslist = getBusinessByTaxpayer( billing.info.taxpayerid );
+		def businesslist = getBusinessByTaxpayer( billing.info.taxpayerid, billing.info.barangayid );
 		if( !businesslist ) throw new Exception("There are no businesses registered for this taxpayer.");
 		billing.items = [];
 		billing.grandtotal = 0.0;
@@ -132,8 +132,13 @@ public class BPBillingService
 		return (Integer)(month / 3);
 	}
 	
-	private def getBusinessByTaxpayer( taxpayerid ) {
-		return em.sqlContext.createNamedQuery( 'business:getListByTaxpayerid' ).setParameters( [taxpayerid:taxpayerid] ).resultList;
+	private def getBusinessByTaxpayer( taxpayerid, barangayid  ) {
+		def params = [
+			taxpayerid : taxpayerid, 
+			barangayid : ( barangayid ? barangayid : '%' ),
+		]
+		return em.sqlContext.createNamedQuery( 'business:getListByTaxpayerid' )
+					.setParameters( params ).resultList;
 	}
 	
 	private def getTaxFeesByBusinessId( buisnessid ) {

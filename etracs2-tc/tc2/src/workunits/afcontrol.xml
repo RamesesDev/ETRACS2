@@ -8,7 +8,8 @@
         <invoker type="formActions" action="createNonSerial" caption="New Non-Serial"   mnemonic="r" icon="images/doc-new.png"  />
         <invoker type="formActions" action="open"            caption="Open"             mnemonic="o" icon="images/deploy.png" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'PENDING' }"/>
         <invoker type="formActions" action="remove"          caption="Delete"           mnemonic="d" icon="images/doc-delete.png" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'PENDING' }"/>
-        <invoker type="formActions" action="changeMode"      caption="Change Mode"      mnemonic="m" icon="images/deploy.png" visibleWhen="#{selectedItem != null and selectedItem.docstate != 'PENDING' }"/>/>
+        <invoker type="formActions" action="changeMode"      caption="Change Mode"      mnemonic="m" icon="images/deploy.png" visibleWhen="#{selectedItem != null and selectedItem.docstate != 'PENDING' }"/>
+        <invoker type="formActions" action="transfer"        caption="Transfer"         mnemonic="t" icon="images/deploy.png" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'APPROVED' }"/>
     </invokers>
     <code>
 <![CDATA[        
@@ -48,6 +49,16 @@ class AFControlController
     
     def createNonSerial() {
         return InvokerUtil.lookupOpener( 'nonserialafcontrol.create', [oncreate:oncreateControl] )
+    }
+    
+    def transfer() {
+        return InvokerUtil.lookupOpener( 'afcontroltransfer.create', [
+            afcontrol  : selectedItem, 
+            ontransfer : { afcontrol ->
+                selectedItem.putAll( afcontrol )
+                binding.refresh( 'selectedItem' )
+            }
+        ])
     }
     
     def open() {
@@ -102,6 +113,7 @@ class AFControlController
                 new Column(name:'stubno', caption:'Stub No.', maxWidth:120),
                 new Column(name:'startseries', caption:'Start Series', format:'0000000'),
                 new Column(name:'endseries', caption:'End Series', format:'0000000'),
+                new Column(name:'currentseries', caption:'Current Series', format:'0000000'),
                 new Column(name:'qtyreceived', caption:'Qty. Received', type:'integer'),
                 new Column(name:'balance', caption:'Balance', type:'integer'),
                 new Column(name:'mode', caption:'Mode'),

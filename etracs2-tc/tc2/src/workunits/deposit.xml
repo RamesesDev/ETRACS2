@@ -3,8 +3,8 @@
         <invoker type="home.action" caption="Deposit" permission="deposit.create" icon="images/cash.png" target="window" index="131"/>
         <invoker folderid="menu/tc/txn" caption="Deposit" permission="deposit.create" target="window" index="131"/>
         
-        <invoker type="initActions" action="doNext" caption="Next" mnemonic="n" shortcut="ctrl N" />
-        <invoker type="mainActions" action="deposit" caption="Deposit" mnemonic="d" shortcut="ctrl D" />
+        <invoker type="initActions" action="doNext" caption="Next" mnemonic="n" shortcut="ctrl N" icon="images/next.png"/>
+        <invoker type="mainActions" action="deposit" caption="Deposit" mnemonic="d" shortcut="ctrl D" icon="images/cash.png"/>
         <invoker type="viewActions" action="closeDeposit" caption="Close Deposit" mnemonic="d" shortcut="ctrl D" visibleWhen="#{entity.docstate == 'OPEN'}" permission="deposit.close" />        
         <invoker type="noncashActions" action="addNonCashPayments" caption="Add Non-Cash Payment" mnemonic="a" shortcut="ctrl a" visibleWhen="#{selectedSummary != null}" permission="deposit.addnoncash" />
         <invoker type="noncashActions" action="addExternalPayment" caption="Add External Non-Cash Payment" mnemonic="e" shortcut="ctrl e" visibleWhen="#{selectedSummary != null}" permission="deposit.addexternalnoncash"/>
@@ -135,7 +135,7 @@ class DepositController
     def buildDepositReportData( fundSummary ) {
         if( ! fundSummary ) throw new Exception('Fund does not exists or invalid.\nReload deposit record and try again.')
         return [
-            txndate      : CommonUtil.formatDate('MM-dd-yyyy',entity.txndate),
+            txndate      : entity.txndate,
             bankacctno   : fundSummary.bankacctno,
             bankacctname : (fundSummary.bankacctname ? fundSummary.bankacctname : 'LGU BOHOL' ),
             cash         : fundSummary.cash,

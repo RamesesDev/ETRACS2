@@ -60,7 +60,8 @@ WHERE l.objid = rem.liquidationid
   AND rem.objid = r.remittanceid  
   AND r.objid = p.receiptid  
   AND l.docstate = 'OPEN'  
-  and p.paytype <> 'CASH'  
+  AND p.paytype <> 'CASH'  
+  AND r.voided = 0 
 ORDER BY paytype, particulars  
 
 [depositOpenLiquidation]

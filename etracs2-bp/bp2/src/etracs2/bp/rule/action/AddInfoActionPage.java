@@ -34,7 +34,7 @@ public class AddInfoActionPage extends javax.swing.JPanel {
         jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setText("Require the following information:");
 
-        xComboBox1.setExpression("#{name}");
+        xComboBox1.setExpression("#{caption} ");
         xComboBox1.setIndex(-10);
         xComboBox1.setItems("variables");
         xComboBox1.setName("action.variable");

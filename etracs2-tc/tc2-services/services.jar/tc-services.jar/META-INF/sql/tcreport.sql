@@ -1,65 +1,57 @@
-[getReceiptsByDate]
-SELECT  afid, serialno, payorname, 
-	CASE WHEN voided = 1 THEN '*** VOIDED ***' ELSE accttitle END AS particulars ,  
-	CASE WHEN voided = 1 THEN 0.0 ELSE amount END as amount 
-FROM revenue  
-WHERE voided = 0  
-AND remittancetimestamp = $P{txntimestamp}  
-ORDER BY afid, serialno, accttitle 
+[getFundList]
+SELECT objid AS fundid, fundname  FROM fund ORDER BY fundname 
 
-[getReceiptSummaryByDate]
-SELECT 
-	fundname, accttitle, SUM(amount) AS amount 
-FROM revenue 
-WHERE remittancetimestamp = $P{txntimestamp} 
+
+[getAbstractOfCollection]
+SELECT afid, serialno, receiptdate, payorname, payoraddress, accttitle, fundname, amount, collectorname, collectortitle  
+FROM revenue  
+WHERE liquidationtimestamp LIKE $P{txntimestamp}  
+  AND fundid LIKE $P{fundid} 
+  AND voided = 0 
+ORDER BY afid, serialno  
+
+
+[getAbstractAccountSummaries]
+SELECT accttitle, fundname, SUM(amount) AS amount 
+FROM revenue  
+WHERE liquidationtimestamp LIKE $P{txntimestamp}  
+  AND fundid LIKE $P{fundid} 
   AND voided = 0 
 GROUP BY fundname, accttitle 
 ORDER BY fundname, accttitle 
 
 
 
-[getReceiptsByMonth]
-SELECT 
-	afid AS afid, 
-	serialno AS serialno, 
-	payorname AS payor, 
-	accttitle AS particulars, 
-	amount AS amount 
-FROM revenue 
-WHERE voided = 0 
-AND remittancetimestamp LIKE CONCAT($P{monthtimestamp}, '%') 
-ORDER BY afid, serialno, accttitle
+[getRevenueByGLAccountSRE]  
+SELECT  
+	a.pathbytitle AS pathtitle,  
+	a.acctcode AS acctcode,  
+	a.accttitle AS accttitle, 
+	p.acctcode as parentcode, 
+	p.accttitle as parenttitle, 
+	SUM(r.amount) AS amount 
+FROM revenue r 
+	LEFT JOIN account a ON a.objid = r.sreid  
+	LEFT JOIN account p on p.objid = a.parentid 
+WHERE liquidationtimestamp LIKE $P{txntimestamp}  
+  AND fundid LIKE $P{fundid} 
+  AND voided = 0 
+GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
+ORDER BY a.pathbytitle 
 
-[getReceiptSummaryByMonth]
-SELECT 
-	accttitle AS acctname, 
-	SUM(amount) AS amount 
-FROM revenue 
-WHERE voided = 0 
-AND remittancetimestamp LIKE CONCAT($P{monthtimestamp}, '%') 
-GROUP BY accttitle 
-ORDER BY accttitle
-
-
-
-[getReceiptsByQtr]
-SELECT 
-	afid AS afid, 
-	serialno AS serialno, 
-	payorname AS payor, 
-	accttitle AS particulars, 
-	amount AS amount 
-FROM revenue 
-WHERE voided = 0 
-AND remittancetimestamp LIKE CONCAT($P{qtrtimestamp}, '%') 
-ORDER BY afid, serialno, accttitle
-
-[getReceiptSummaryByQtr]
-SELECT 
-	accttitle AS acctname, 
-	SUM(amount) AS amount 
-FROM revenue 
-WHERE voided = 0 
-AND remittancetimestamp LIKE CONCAT($P{qtrtimestamp}, '%') 
-GROUP BY accttitle 
-ORDER BY accttitle
+[getRevenueByGLAccountNGAS]  
+SELECT  
+	a.pathbytitle AS pathtitle,   
+	a.acctcode AS acctcode,   
+	a.accttitle AS accttitle, 
+	p.acctcode as parentcode, 
+	p.accttitle as parenttitle,
+	SUM(r.amount) AS amount 
+FROM revenue r 
+	LEFT JOIN account a ON a.objid = r.ngasid 
+	LEFT JOIN account p on p.objid = a.parentid 
+WHERE liquidationtimestamp LIKE $P{txntimestamp}  
+  AND fundid LIKE $P{fundid} 
+  AND voided = 0 
+GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
+ORDER BY a.pathbytitle 

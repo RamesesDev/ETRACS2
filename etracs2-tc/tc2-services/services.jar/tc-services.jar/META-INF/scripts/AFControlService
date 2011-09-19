@@ -55,7 +55,10 @@ class AFControlService
 	}
 	
 	@ProxyMethod 
-	public def approveAFControl( afcontrol ) { 
+	public def approveAFControl( afcontrol ) {
+		def old = em.read( afcontrol.schemaname, afcontrol)
+		if( !old ) throw new Exception('AF Control doest not exists.')
+		if( old.docstate != PENDING_STATE ) throw new Exception('AF Control is already ' + old.docstate +'.')
 		afcontrol.docstate = 'APPROVED' 
 		em.update( afcontrol.schemaname, afcontrol )
 		postToAFInventory( afcontrol )
@@ -65,6 +68,87 @@ class AFControlService
 	@ProxyMethod
 	public void deleteAFControl( afcontrol ) {
 		em.delete( SCHEMANAME, afcontrol ) 
+	}
+	
+	@ProxyMethod
+	public def transfer( afcontrol, transferto ) {
+		def oldafcontrol = em.read( afcontrol.schemaname, afcontrol )
+		if( !oldafcontrol ) throw new Exception('AF Control No. ' + afcontrol.stubno + ' no longer exists.' )
+		if( oldafcontrol.collectorid != afcontrol.collectorid ) throw new Exception('AF Control has already been transferred to ' + oldafcontrol.collectorname + '.' )
+		createNewTransferAFControl( afcontrol, oldafcontrol, transferto )
+		createTransferRecord( afcontrol, oldafcontrol, transferto )
+		transferOldAFControl( oldafcontrol )
+		updateTransferCraafCreditInfo( afcontrol, oldafcontrol ) 
+		return oldafcontrol
+	}
+	
+	void updateTransferCraafCreditInfo( afcontrol, oldafcontrol ) {
+		def craafcredit = em.sqlContext.createNamedQuery('afcontrol:getCraafByCreditId').setParameter('afinventorycreditid', oldafcontrol.afinventorycreditid).singleResult
+		if( craafcredit ) {
+			craafcredit.docstate = 'TRANSFERRED'
+			em.update(craafcredit.schemaname, craafcredit )
+		}
+		
+		em.sqlContext.createNamedExecutor('afcontrol:updateTransferredCreditState')
+				.setParameter('objid', oldafcontrol.afinventorycreditid )
+				.execute()
+				
+		//insert new credit 
+		def credit = em.read('afinventorycredit', [objid:afcontrol.afinventorycreditid ])
+		
+		if( ! credit ) throw new Exception('Cannot open Inventory Credit for Stub No. ' + afcontrol.stubno + '.')
+		def newcredit = [:]
+		newcredit.putAll( credit )
+		
+		newcredit.objid 		= 'NC' + new UID()
+		newcredit.docstate 		= 'OPEN'
+		newcredit.startseries 	= afcontrol.startseries 
+		newcredit.endseries		= afcontrol.endseries 
+		newcredit.balance		= afcontrol.balance
+		
+		em.create( newcredit.schemaname, newcredit )
+		
+		//update afcontrol.afinventorycreditid reference
+		afcontrol.afinventorycreditid = newcredit.objid 
+		em.update(afcontrol.schemaname, afcontrol )
+	}
+	
+	
+	void createTransferRecord( afcontrol, oldafcontrol, transferto) {
+		em.create( 'afcontrol:transfer', [
+			objid 			: 'AT' + new UID(),
+			docstate		:  APPROVED_STATE,
+			txndate			: dateSvc.serverDate,
+			afcontrolid		: oldafcontrol.objid,
+			transferafcontrolid	: afcontrol.objid,
+			collectorid			: oldafcontrol.collectorid,
+			transfercollectorid	: transferto.objid, 
+		])
+	}
+	
+	void createNewTransferAFControl( afcontrol, oldafcontrol, transferto ) {
+		//create a new afcontrol forwarding only the balance  		
+		afcontrol.objid				= 'AT' + new UID()
+		afcontrol.dtissued			= dateSvc.serverDate
+		afcontrol.collectorid 		= transferto.objid 
+		afcontrol.collectorname 	= transferto.name 
+		afcontrol.collectortitle 	= transferto.jobtitle 
+		afcontrol.startseries       = afcontrol.currentseries
+		afcontrol.qtyreceived 		= afcontrol.balance 
+		afcontrol.beginqty			= afcontrol.balance 
+		afcontrol.qtyissued			= 0
+		afcontrol.issuedfrom		= 0
+		afcontrol.issuedto			= 0
+		em.create( afcontrol.schemaname, afcontrol )
+	}
+	
+	void transferOldAFControl( oldafcontrol ) {
+		oldafcontrol.docstate		= 'TRANSFERRED'
+		oldafcontrol.endseries		= oldafcontrol.currentseries - 1
+		oldafcontrol.qtyreceived	= oldafcontrol.endseries - oldafcontrol.startseries + 1
+		oldafcontrol.currentseries	+= 1
+		oldafcontrol.balance		= 0
+		em.update( oldafcontrol.schemaname, oldafcontrol ) 
 	}
 	
 	void postToAFInventory( afcontrol ) {
@@ -324,8 +408,8 @@ class AFControlService
 	
 	void deactivateCurrentControl( afcontrol ) {
 		def activeafcontrol = getActiveAFControl( afcontrol.collectorid, afcontrol.afid, afcontrol.mode )
-		println 'activeafcontrol -> ' + activeafcontrol
 		if( activeafcontrol )  {
+			activeafcontrol = em.read( activeafcontrol.schemaname, activeafcontrol )
 			activeafcontrol.active = false
 			em.update( activeafcontrol.schemaname, activeafcontrol )
 		}

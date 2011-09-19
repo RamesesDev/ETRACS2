@@ -530,6 +530,7 @@ class SubdivisionService
             if( !sland ) throw new Exception('Cannot of subdivision land with ID no. ' + landid.objid + '.')
             def newfaas = createFaas( subdivision )
             newfaas.docstate            = PENDING_STATE
+			newfaas.txntimestamp 		= dateSvc.buildCustomTimeStamp( newfaas.info.issuedate ) 
             newfaas.info.txntype        = SUBDIVISION_TXNTYPE
             newfaas.info.txn            = faasSvc.resolveTxnType( SUBDIVISION_TXNTYPE ) 
             newfaas.info.tdno           = sland.newtdno 
@@ -537,11 +538,15 @@ class SubdivisionService
             newfaas.info.taxpayerno     = tpayinfo.taxpayerno
             newfaas.info.taxpayername   = tpayinfo.taxpayername 
             newfaas.info.taxpayeraddress= tpayinfo.taxpayeraddress
+			newfaas.info.ownername   	= tpayinfo.taxpayername 
+            newfaas.info.owneraddress	= tpayinfo.taxpayeraddress
             if( sland.taxpayerid  ) {
                 newfaas.info.taxpayerid     = sland.taxpayer.objid 
                 newfaas.info.taxpayerno     = sland.taxpayer.entityno
                 newfaas.info.taxpayername   = sland.taxpayer.entityname 
                 newfaas.info.taxpayeraddress= sland.taxpayer.entityaddress 
+				newfaas.info.ownername		= sland.taxpayer.entityname 
+                newfaas.info.owneraddress	= sland.taxpayer.entityaddress 
             }
             newfaas.info.prevtdno       = subdivision.mothertdno 
             newfaas.info.prevpin        = subdivision.motherpin 

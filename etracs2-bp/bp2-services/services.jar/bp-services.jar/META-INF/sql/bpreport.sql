@@ -1,4 +1,11 @@
-[getPermitMasterList]
+[getBarangayList]
+SELECT objid AS barangayid, lguname AS barangayname FROM lgu WHERE lgutype = 'BARANGAY'  ORDER BY lguname  
+
+[getClassificationList]
+SELECT objid AS classificationid, name AS classification FROM lobclassification ORDER BY name 
+ 
+
+[getTaxpayerMasterList]
 SELECT  
 	a.objid,  
 	p.txnno AS permitno, a.iyear,  a.organization, a.barangayname, 
@@ -21,7 +28,7 @@ FROM bpapplicationlisting a
 	LEFT JOIN bppermit p ON a.objid= p.applicationid  
 WHERE a.iyear = $P{iyear} 
   AND a.docstate LIKE $P{docstate}   
-  AND a.barangayname LIKE $P{barangay} 
+  AND a.barangayid LIKE $P{barangayid} 
 ORDER BY a.txnno  
 
 [getApplicationLOBListing]
@@ -36,8 +43,8 @@ FROM bpapplicationlisting a
 	INNER JOIN lob l ON l.objid = bl.lobid 
 WHERE a.iyear = $P{iyear} 
   AND a.docstate LIKE $P{docstate}   
-  AND a.barangayname LIKE $P{barangay}  
-  AND l.classification LIKE $P{classification} 
+  AND a.barangayid LIKE $P{barangayid}  
+  AND l.classificationid LIKE $P{classificationid} 
 ORDER BY a.txnno 
 
 [getLOBCountListing]
@@ -52,7 +59,12 @@ FROM bpapplicationlisting a
 	INNER JOIN lob l ON l.objid = bl.lobid  
 WHERE a.iyear = $P{iyear}  
   AND a.docstate LIKE $P{docstate}   
-  AND a.barangayname LIKE $P{barangay} 
+  AND a.barangayid LIKE $P{barangayid} 
 GROUP BY l.name   
 
+[getBusinessTaxpayerList]
+SELECT distinct taxpayerid, taxpayername, taxpayeraddress 
+FROM bpapplicationlisting 
+WHERE docstate IN ('APPROVED','PERMIT_PENDING', 'ACTIVE') 
+  AND barangayid LIKE $P{barangayid} 
 

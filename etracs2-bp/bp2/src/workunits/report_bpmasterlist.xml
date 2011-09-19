@@ -1,0 +1,76 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/bp/reports" action="init" caption="Business Taxpayer Masterlist" target="window" index="1" permission="bpreport.masterlist"/>
+        <invoker type="bpreport"         action="init" opener="bpmasterlist" caption="Business Taxpayer Masterlist" target="window" index="1" permission="bpreport.masterlist" />
+        <invoker type="bpreport.bpmasterlist"    action="init" caption="Business Taxpayer Masterlist" target="window" />
+        
+        <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
+        <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
+        <invoker type="formActions"     action="preview" caption="Preview" mnemonic="v"             icon="images/doc-view.png"/>
+        
+        <invoker type="previewActions"  action="back" caption="Back" icon="images/back.png" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class BPMasterListController
+{
+    @Binding
+    def binding
+    
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('BPReportService') 
+    def svc 
+    
+    @Service('DateService')
+    def dateSvc
+    
+    def year 
+    def reportdata
+    
+    void init() {
+        def parsedate = dateSvc.parseCurrentDate()
+        year = parsedate.year 
+    }
+    
+    def preview() {
+        generateReport()
+        return 'preview' 
+    }
+    
+    void generateReport() {
+        reportdata = svc.getTaxpayerMasterList( year )
+        report.viewReport()
+    }
+    
+    void print(){
+        generateReport()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def report = [
+        getReportName : { 'bp/bpmasterlist' },
+        getReportData : { return reportdata },
+        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+    ] as ServerReportModel;
+        
+    def back() {
+        return 'default' 
+    }
+    
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.bp.report.BPReportInitPage" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>

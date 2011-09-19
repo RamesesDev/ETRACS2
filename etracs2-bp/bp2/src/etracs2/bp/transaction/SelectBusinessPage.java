@@ -25,44 +25,29 @@ public class SelectBusinessPage extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
-        jPanel1 = new javax.swing.JPanel();
-        formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
-        xLabel1 = new com.rameses.rcp.control.XLabel();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xLabel2 = new com.rameses.rcp.control.XLabel();
         xLabel3 = new com.rameses.rcp.control.XLabel();
         xLabel4 = new com.rameses.rcp.control.XLabel();
 
-        setLayout(new java.awt.BorderLayout());
-
         setPreferredSize(new java.awt.Dimension(603, 359));
+        xActionBar1.setBorder(new com.rameses.rcp.control.border.XUnderlineBorder());
         xActionBar1.setName("formActions");
-        add(xActionBar1, java.awt.BorderLayout.NORTH);
-
-        jPanel1.setLayout(null);
-
-        xActionTextField1.setActionName("lookupBusiness");
-        xActionTextField1.setCaption("Citeria");
-        xActionTextField1.setCaptionWidth(50);
-        xActionTextField1.setName("filter");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel1.add(xActionTextField1);
-
-        jPanel1.add(formPanel1);
-        formPanel1.setBounds(10, 0, 580, 30);
+        xActionBar1.setPadding(new java.awt.Insets(0, 5, 0, 0));
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("Business Information");
         formPanel2.setBorder(xTitledBorder1);
         formPanel2.setPadding(new java.awt.Insets(5, 10, 5, 10));
-        xLabel1.setBackground(javax.swing.UIManager.getDefaults().getColor("TextPane.background"));
-        xLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(javax.swing.UIManager.getDefaults().getColor("TextField.shadow")));
-        xLabel1.setCaption("Trade Name");
-        xLabel1.setCaptionWidth(110);
-        xLabel1.setExpression("#{entity.business.tradename}");
-        xLabel1.setPreferredSize(new java.awt.Dimension(0, 18));
-        formPanel2.add(xLabel1);
+        xLookupField1.setCaption("Trade Name");
+        xLookupField1.setCaptionWidth(110);
+        xLookupField1.setExpression("#{tradename}");
+        xLookupField1.setHandler("lookupBusiness");
+        xLookupField1.setName("business");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField1.setRequired(true);
+        formPanel2.add(xLookupField1);
 
         xLabel2.setBackground(javax.swing.UIManager.getDefaults().getColor("TextPane.background"));
         xLabel2.setBorder(javax.swing.BorderFactory.createLineBorder(javax.swing.UIManager.getDefaults().getColor("TextField.shadow")));
@@ -91,24 +76,34 @@ public class SelectBusinessPage extends javax.swing.JPanel {
         xLabel4.setPreferredSize(new java.awt.Dimension(0, 36));
         formPanel2.add(xLabel4);
 
-        jPanel1.add(formPanel2);
-        formPanel2.setBounds(10, 30, 580, 170);
-
-        add(jPanel1, java.awt.BorderLayout.CENTER);
-
+        org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
+        this.setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 603, Short.MAX_VALUE)
+            .add(layout.createSequentialGroup()
+                .add(10, 10, 10)
+                .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 580, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(13, 13, 13))
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(layout.createSequentialGroup()
+                .add(xActionBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 162, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(181, 181, 181))
+        );
     }// </editor-fold>//GEN-END:initComponents
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private com.rameses.rcp.util.FormPanel formPanel1;
     private com.rameses.rcp.util.FormPanel formPanel2;
-    private javax.swing.JPanel jPanel1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
-    private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
     private com.rameses.rcp.control.XLabel xLabel4;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
     // End of variables declaration//GEN-END:variables
     
 }

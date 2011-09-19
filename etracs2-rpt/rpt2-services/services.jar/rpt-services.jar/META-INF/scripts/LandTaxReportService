@@ -1,0 +1,220 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class LandTaxReportService
+{
+    @PersistenceContext('main')
+    def em
+     
+	@Service('DateService')
+    def dateSvc
+	
+	@Service('NumberService')
+    def numSvc
+	
+	@Service('Var')
+	def var 
+	
+	@Env
+	def env
+
+	@ProxyMethod
+	public def generateAbstractOfCollection( year, qtr, month, day, type, collector ) {
+		def parsedate = dateSvc.parseCurrentDate()		
+		if( year > parsedate.year ) throw new Exception('Year must not exceed current year.')
+		
+		def params = [
+			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
+			collectorid  : ( collector ? collector.collectorid : '%' ),
+		]
+		
+		def items = []
+		
+		//type -> BASIC, SEF 
+		if( type == null || type == 'BASIC'  ) {
+			items.addAll(
+				em.sqlContext.createNamedQuery('landtaxreport:getAbstractCollectionBASIC')
+						.setParameters( params ).resultList 
+			)
+			items.addAll(
+				em.sqlContext.createNamedQuery('landtaxreport:getAbstractCollectionManualBASIC')
+						.setParameters( params ).resultList 
+			)
+		}
+		if( type == null || type == 'SEF'  ) {
+			items.addAll(
+				em.sqlContext.createNamedQuery('landtaxreport:getAbstractCollectionSEF')
+						.setParameters( params ).resultList 
+			)
+			items.addAll(
+				em.sqlContext.createNamedQuery('landtaxreport:getAbstractCollectionManualSEF')
+						.setParameters( params ).resultList 
+			)
+		}
+		if( ! items ) throw new Exception('No records found.')
+		
+		return [
+			title 	: buildTitle( year, qtr, month, day, type, collector  ),
+			period 	: buildPeriod( year, qtr, month, day ),
+			items  	: items 
+		]
+	}
+	
+	
+	@ProxyMethod
+	public def generateBarangayShare( year, month, currentrate, previousrate ) {
+		def parsedate = dateSvc.parseCurrentDate()		
+		if( year > parsedate.year ) throw new Exception('Year must not exceed current year.')
+		if( !currentrate || currentrate < 0.0 ) throw new Exception('Current Rate must not be negative.')
+		if( !currentrate || currentrate > 100.0 ) throw new Exception('Current Rate must not exceed 100 percent.')
+		if( !previousrate || previousrate < 0.0 ) throw new Exception('Previous Rate must not be negative.')
+		if( !previousrate || previousrate > 100.0 ) throw new Exception('Previous Rate must not exceed 100 percent.')
+		
+		def onlinepayments = em.sqlContext.createNamedQuery('landtaxreport:getBasicSummaryByMonth')
+								.setParameters( [iyear:year, imonth:month ] )
+								.resultList 
+		def manualpayments = em.sqlContext.createNamedQuery('landtaxreport:getManualBasicSummaryByMonth')
+								.setParameters( [iyear:year, imonth:month ] )
+								.resultList 
+								
+		def brgyshares = em.sqlContext.createNamedQuery('landtaxreport:getBarangayList').setParameter('parentid', var.lgu_index).resultList 
+		
+		def initbrgybasicamt = { brgy ->
+			brgy.basiccurrent 	= 0.0
+			brgy.basicprevious 	= 0.0
+			brgy.basictotal		= 0.0
+			brgy.basiccurrentshare 	= 0.0
+			brgy.basicpreviousshare = 0.0
+			brgy.totalshare			= 0.0
+		}
+		
+		def addupPayments = { brgy, payments ->
+			def pmt = payments.find{ it.barangay == brgy.barangay }
+			if( pmt ) {
+				brgy.basiccurrent += pmt.basiccurrent
+				brgy.basicprevious += pmt.basicprevious
+				brgy.basictotal += pmt.basictotal
+			}
+		}
+		
+		brgyshares.each{ brgy ->
+			initbrgybasicamt( brgy )
+			addupPayments( brgy, onlinepayments )
+			addupPayments( brgy, manualpayments )
+			
+			//calculate shares
+			brgy.basiccurrentshare  = numSvc.round( brgy.basiccurrent * currentrate / 100.0 )
+			brgy.basicpreviousshare = numSvc.round( brgy.basicprevious * previousrate / 100.0 )
+			brgy.totalshare			= brgy.basiccurrentshare + brgy.basicpreviousshare 
+		}
+		
+		return [
+			period 	: 'For the month of ' + getMonthName( month ) + ', ' + year ,
+			items 	: brgyshares, 
+		]
+	}
+	
+	
+	
+	@ProxyMethod
+	public List getNumDays( year, month ) {
+		if ( !month && month < 0 ) return []
+		
+		Calendar cal = Calendar.getInstance()
+        cal.set( year, month, 1)
+        int maxday = cal.getActualMaximum(cal.DAY_OF_MONTH)
+		def numdays = []
+		1.upto( maxday ) { numdays.add( it ) }
+		return numdays 
+	}
+	
+	@ProxyMethod
+	public List getMonthList( qtr ) {
+		def months = [
+			[name:'JANUARY', 	month:1, qtr:1 ],
+			[name:'FEBRUARY', 	month:2, qtr:1 ],
+			[name:'MARCH', 		month:3, qtr:1 ],
+			
+			[name:'APRIL', 	month:4, qtr:2 ],
+			[name:'MAY', 	month:5, qtr:2 ],
+			[name:'JUNE', 	month:6, qtr:2 ],
+			
+			[name:'JULY', 		month:7, qtr:3 ],
+			[name:'AUG', 		month:8, qtr:3 ],
+			[name:'SEPTEMBER', 	month:9, qtr:3 ],
+			
+			[name:'OCTOBER', 	month:10, qtr:4 ],
+			[name:'NOVEMBER', 	month:11, qtr:4 ],
+			[name:'DECEMBER', 	month:12, qtr:4 ],
+		]
+		
+		if( ! qtr ) return months 
+		return months.findAll{ it.qtr == qtr }
+	}
+	
+	@ProxyMethod
+	public def getMonth( imonth ) {
+		def monthlist = getMonthList( null )
+		return monthlist.find{ it.month == imonth }
+	}
+	
+	@ProxyMethod
+	public List getCollectorList() {
+		return em.sqlContext.createNamedQuery('landtaxreport:getCollectorList').resultList 
+	}
+	
+	
+	
+	
+	def getMonthName( month ) {
+		def months = getMonthList( null )
+		def mon = months.find{ it.month == month }
+		if( mon ) return mon.name 
+		throw new Exception("Month $month is not defined." )
+	}
+	
+	
+	def getQuarterName( qtr ) {
+		if( qtr == 1 ) return '1ST QUARTER'
+		else if( qtr == 2 ) return '2ND QUARTER'
+		else if( qtr == 3 ) return '3RD QUARTER'
+		return '4TH QUARTER'
+	}
+	
+	
+	def buildTitle( year, qtr, month, day, type, collector  ) {
+		def stype = ( type ? type + ' ' : '' )
+		def collectorname = ( collector ? ' of ' + collector.collectorname : '' )
+		if( day ) return 'Daily ' + stype + 'Abstract of Realty Tax Collection ' + collectorname
+		if( month ) return 'Monthly ' + stype + 'Abstract of Realty Tax Collection ' + collectorname
+		if( qtr ) return 'Quarterly ' + stype + 'Abstract of Realty Tax Collection ' + collectorname
+		return 'Annual ' + stype + 'Abstract of Realty Tax Collection ' + collectorname
+	}
+	
+	def buildPeriod( year, qtr, month, day ) {
+		if( day ) return 'For the day ' + getMonthName( month ) + ' ' + day + ', ' + year 
+		if( month ) return 'For the month of ' + getMonthName( month ) + ', ' + year 
+		if( qtr ) return 'For the ' + getQuarterName( qtr ) + ' of ' + year 
+		return 'For the Year ' + year 
+	}
+	
+	def resolveTimeStamp( year, qtr, month, day ) {
+		//build timestamp progressively based on the passed values, e.g.,
+		//if month is null then timestamp is resolve upto the qtr info, such as "20111%" for 1st qtr
+		//if month is notnull thne it is resolve upto the month, such as "2011102%" for 2nd qtr 
+		def timestamp = year + '' + qtr 
+		if( month != null ) timestamp += padLeft( month, 2 )
+		if( day != null ) timestamp += padLeft( day, 2 )
+		if( month == null  || day == null ) timestamp += '%'
+		return timestamp
+		
+	}
+	
+	String padLeft( val, len ) {
+		return "$val".padLeft( len, '0' )
+	}
+	
+	
+}	

@@ -42,7 +42,11 @@
         def message = ''
         def selectedItem
         
-        def getParameters() { return svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+        def getParameters() { 
+            def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME ); 
+            params.listSize = entity.items.size()
+            return params 
+        }
         def getService() { return svc }
         def getHtmlService() { return htmlSvc }
         def getCollectionTitle() { return 'General Collection' }

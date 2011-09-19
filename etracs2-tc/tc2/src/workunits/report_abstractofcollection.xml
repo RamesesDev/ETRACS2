@@ -1,45 +1,101 @@
 <workunit>
     <invokers>
-       <invoker folderid="/menu/tc/reports" caption="Abstract of Collection" permission="tcreport.abstractofcollection"/>
+        <invoker folderid="/menu/tc/reports" action="init" opener="abstract" caption="Abstract of Collection" target="window" index="2" permission="tcreport.abstractofcollection"/>
         
-        <invoker type="formActions" action="close"  immediate="true" caption="Close" mnemonic="c" icon="images/cancel.png"/>
-        <invoker type="formActions" action="viewReport"  immediate="true" caption="Next" icon="images/doc-view.png"/>
+        <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
+        <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
+        <invoker type="formActions"     action="preview" caption="Preview" mnemonic="v"             icon="images/doc-view.png"/>
+        
+        <invoker type="previewActions"  action="back" caption="Back" icon="images/back.png" immediate="true" />
     </invokers>
     <code>
-        <![CDATA[
+<![CDATA[
 
-        import com.rameses.rcp.common.*;
-        import com.rameses.rcp.annotations.*;
-        import com.rameses.osiris2.client.*;
-        import com.rameses.osiris2.reports.*;
-        import java.rmi.server.UID;
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
 
-        class AbstractOfCollectionReportController {
-        
-            def reports;
-            
-            def selectedreport;
-        
-            def getReportList() {
-                if( !reports ) reports = InvokerUtil.lookupOpeners("abstractofcollection:report", [mode:'init']);
-                return reports;
-            } 
-            
-            def viewReport() {
-                if (!selectedreport) return null;
-                return selectedreport;
-            }
-            
-            def close() {
-                return '_close';
-            }
-
+class AbstractOfCollectionController
+{
+    @Binding
+    def binding
+    
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('TCReportService') 
+    def svc 
+    
+    @Service('DateService')
+    def dateSvc
+    
+    def year 
+    def qtr
+    def month
+    def day 
+    def fund
+    def reportdata
+    
+    void init() {
+        def parsedate = dateSvc.parseCurrentDate()
+        year = parsedate.year 
+        qtr  = parsedate.qtr 
+        month = svc.getMonth( parsedate.month )
+        day   = parsedate.day 
+    }
+    
+    def preview() {
+        generateReport()
+        return 'preview' 
+    }
+    
+    void generateReport() {
+        reportdata = svc.generateAbstractOfCollection( year, qtr, month?.month, day, fund )
+        report.viewReport()
+    }
+    
+    void print(){
+        generateReport()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def report = [
+        getReportName : { return 'treasury/abstractofcollection' },
+        getReportData : { return reportdata },
+        getParameters : { 
+            def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )
+            params.TITLE  = reportdata.title
+            params.PERIOD = reportdata.period
+            return params 
         }
-
-        ]]>        
+    ] as ServerReportModel;
+        
+    def back() {
+        return 'default' 
+    }
+    
+    List getQuarterlist() {
+        return [1,2,3,4]
+    }
+    
+    List getMonthlist() {
+        return svc.getMonthList( qtr )
+    }
+    
+    List getDaylist() {
+        return svc.getNumDays( year, month?.month-1 )
+    }
+    
+    List getFundlist() {
+        return svc.getFundList()
+    }
+}
+]]>        
         
     </code>
     <pages>
-        <page template="etracs2.tc.report.abstractofcollection.AbstractOfCollectionInitPage" />
+        <page template="etracs2.tc.report.AbstractInitPage" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
     </pages>
 </workunit>

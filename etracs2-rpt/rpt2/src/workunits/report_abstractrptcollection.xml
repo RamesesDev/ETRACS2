@@ -1,0 +1,107 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/rpt/reports/landtax" action="init" caption="Abstract of Realty Tax Collection" target="window" index="2" permission="landtax.abstractrptcollection"/>
+        
+        <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
+        <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
+        <invoker type="formActions"     action="preview" caption="Preview" mnemonic="v"             icon="images/doc-view.png"/>
+        
+        <invoker type="previewActions"  action="back" caption="Back" icon="images/back.png" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class AbstractRPTCollectionController
+{
+    @Binding
+    def binding
+    
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('LandTaxReportService') 
+    def svc 
+    
+    @Service('DateService')
+    def dateSvc
+    
+    def type
+    def year 
+    def qtr
+    def month
+    def day 
+    def collector 
+    
+    def reportdata
+    
+    void init() {
+        def parsedate = dateSvc.parseCurrentDate()
+        year = parsedate.year 
+        qtr  = parsedate.qtr 
+        month = svc.getMonth( parsedate.month )
+        day   = parsedate.day 
+    }
+    
+    def preview() {
+        generateReport()
+        return 'preview' 
+    }
+    
+    void generateReport() {
+        reportdata = svc.generateAbstractOfCollection( year, qtr, month?.month, day, type, collector )
+        report.viewReport()
+    }
+    
+    void print(){
+        generateReport()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def report = [
+        getReportName : { return 'abstractrptcollection' },
+        getReportData : { return reportdata.items },
+        getParameters : { 
+            def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )
+            params.TITLE  = reportdata.title
+            params.PERIOD = reportdata.period
+            return params 
+        }
+    ] as ServerReportModel;
+        
+    def back() {
+        return 'default' 
+    }
+    
+    List getQuarterlist() {
+        return [1,2,3,4]
+    }
+    
+    List getMonthlist() {
+        return svc.getMonthList( qtr )
+    }
+    
+    List getDaylist() {
+        return svc.getNumDays( year, month?.month-1 )
+    }
+    
+    List getTypelist() {
+        return ['BASIC', 'SEF']
+    }
+    
+    List getCollectorlist() {
+        return svc.getCollectorList()
+    }
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.rpt.report.AbstractInitPage" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>

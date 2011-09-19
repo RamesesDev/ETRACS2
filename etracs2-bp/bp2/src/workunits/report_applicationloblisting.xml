@@ -1,0 +1,97 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/bp/reports"         action="init" caption="Application with LOB Listing" target="window" index="3" permission="bpreport.apploblisting"/>
+        <invoker type="bpreport"         action="init" opener="applicationloblisting" caption="Application with LOB Listing" target="window" index="3" permission="bpreport.apploblisting"/>
+        <invoker type="bpreport.applicationloblisting"    action="init" caption="Application with LOB Listing" target="window" />
+        
+        <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
+        <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
+        <invoker type="formActions"     action="preview" caption="Preview" mnemonic="v"             icon="images/doc-view.png"/>
+        
+        <invoker type="previewActions"  action="back" caption="Back" icon="images/back.png" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class ApplicationLOBListingController
+{
+    @Binding
+    def binding
+    
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('BPReportService') 
+    def svc 
+    
+    @Service('DateService')
+    def dateSvc
+    
+    def year 
+    def docstate
+    def barangay
+    def classification 
+    def reportdata
+    
+    void init() {
+        def parsedate = dateSvc.parseCurrentDate()
+        year = parsedate.year 
+    }
+    
+    def preview() {
+        generateReport()
+        return 'preview' 
+    }
+    
+    void generateReport() {
+        reportdata = svc.getApplicationLOBListing( barangay?.barangayid, classification?.classificationid, year, docstate )
+        report.viewReport()
+    }
+    
+    void print(){
+        generateReport()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def report = [
+        getReportName : { 'bp/applicationloblisting' },
+        getReportData : { return reportdata },
+        getParameters : { 
+            def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )
+            params.STATE            = docstate
+            params.BARANGAYNAME     = ( barangay  ? barangay.barangayname : 'ALL' )
+            params.CLASSIFICATION   = ( classification ? classification.classification : 'ALL' )
+            return params 
+        }
+    ] as ServerReportModel;
+        
+    def back() {
+        return 'default' 
+    }
+    
+    
+    def getStatelist() {
+        return ['APPROVED','PERMIT_PENDING','ACTIVE']
+    }
+    
+    def getBarangaylist() {
+        return svc.getBarangayList()
+    }
+    
+    def getClassificationlist() {
+        return svc.getClassificationList()
+    }
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.bp.report.BPReportInit2Page" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>

@@ -23,14 +23,17 @@ class RPTReceiptService
         buildReceiptItems( receipt, items )
         updateReceiptInfos( receipt, items )
         receiptSvc.create( receipt )
-        //post rptpayment 
+        
+		def parsedate = dateSvc.parseDate( receipt.info.txndate, null )
+		
+		//post rptpayment 
         items.each { item ->
             def rptpayment = createRPTPayment( receipt, item )
             em.validate(rptpayment.schemaname, rptpayment )
             em.create(rptpayment.schemaname, rptpayment )
             //post paymentdetail
             item.details.each { detail ->
-                def pmtdetail = createRPTPaymentDetail( receipt, rptpayment, detail )
+                def pmtdetail = createRPTPaymentDetail( receipt, rptpayment, detail, parsedate )
                 em.validate( pmtdetail.schemaname, pmtdetail )
                 em.create( pmtdetail.schemaname, pmtdetail )
             }
@@ -300,15 +303,18 @@ class RPTReceiptService
         return pmt 
     }
     
-    Map createRPTPaymentDetail( receipt, rptpayment, detail ) {
+    Map createRPTPaymentDetail( receipt, rptpayment, detail, parsedate ) {
         def pmtdetail = [:]
         pmtdetail.putAll( detail )
         pmtdetail.objid         = 'RPD' + new UID()
         pmtdetail.schemaname    = 'rptpayment:rptpaymentdetail'
         pmtdetail.schemaversion = '1.0'
         pmtdetail.receiptid     = receipt.objid
+		pmtdetail.rptledgeritemid = pmtdetail.rptledgerid 
+		pmtdetail.rptledgerid = rptpayment.rptledgerid 
         pmtdetail.basicpartial  = 0.0
         pmtdetail.sefpartial    = 0.0
+		pmtdetail.revtype = ( pmtdetail.year > parsedate.year  ? 'advance' : pmtdetail.revtype )
         return pmtdetail 
     }
     
