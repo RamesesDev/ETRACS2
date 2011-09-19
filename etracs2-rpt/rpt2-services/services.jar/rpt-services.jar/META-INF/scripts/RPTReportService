@@ -17,8 +17,43 @@ class RPTReportService
 	@Service('Var')
 	def var 
 	
+	@Service('RPTBillingService')
+	def billingSvc
+	
 	@Env
 	def env
+	
+	@ProxyMethod
+	public List getDelinquentLedger( barangay ) {
+		def params = [
+			barangay  : barangay,
+			currentyr : dateSvc.serverYear ,
+		]
+		if( ! barangay ) throw new Exception('Barangay is required.')
+		return em.sqlContext.createNamedQuery('rptreport:getDelinquentLedger').setParameters( params ).resultList 
+	}
+	
+	@ProxyMethod
+	public def buildDelinquency( billing ){
+		billing = billingSvc.generateBill( billing  )
+		def item = billing.items[0]
+		
+		if( item.total == 0 ) 
+			return null
+			
+		return [
+			taxpayername 	: item.taxpayername,
+			taxpayeraddress	: item.taxpayeraddress,
+			tdno			: item.tdno,
+			classcode		: item.classcode,
+			pin				: item.pin, 
+			rputype			: item.rputype,
+			barangay		: item.barangay,
+			basicnet		: item.basicnet,
+			sefnet			: item.sefnet,
+			total			: item.total 
+		]
+	}
     
     @ProxyMethod
 	public def generateNotice( notice ) {
