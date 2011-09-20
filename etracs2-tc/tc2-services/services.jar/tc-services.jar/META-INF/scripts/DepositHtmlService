@@ -7,6 +7,9 @@ class DepositHtmlService
 	@PersistenceContext('main')
 	def em
 	
+	@Service('NumberService')
+	def numSvc 
+	
 	def SCHEMA = 'deposit'
 	def SCHEMAVERSION = '1.0' 
 	
@@ -18,6 +21,7 @@ class DepositHtmlService
 		def styles = getStyle()
 		def header = buildHeader( deposit )
 		def fundsummaries = buildFundSummaries( deposit )
+		def liquidationlist = buildLiquidationList( deposit )
 		return """
 			<html>
 				<head>
@@ -29,6 +33,10 @@ class DepositHtmlService
 							<td>$header</td>
 						</tr>
 						<tr>
+							<td>$liquidationlist</td>
+						</tr>
+						<tr></tr>
+						<tr>
 							<td>$fundsummaries</td>
 						</tr>
 					<table>
@@ -37,12 +45,49 @@ class DepositHtmlService
 		"""
 	}
 	
+	def buildLiquidationList( deposit ) {
+		def liquidations = ''
+		
+		deposit.liquidations.each {
+			def amount = numSvc.format('#,##0.00', it.amount )
+			liquidations += """
+				<tr>
+					<td>$it.liquidatingofficername</td>
+					<td>$it.liquidatingofficertitle</td>
+					<td>$it.txnno</td>
+					<td>$it.txndate</td>
+					<td class="numeric">$amount</td>
+				</tr>
+			"""
+		}
+		
+		def html = """
+				<div style="background:silver" width="100%">
+					<table cellspacing="1" width="100%">
+						<tr>
+							<td colspan="5" class="header">Liquidations</td>
+						</tr>
+						<tr>
+							<th>Liquidating Officer</th>
+							<th>Job Title</th>
+							<th>Liquidation No.</th>
+							<th>Liquidation Date</th>
+							<th>Amount</th>
+						</tr>
+						$liquidations
+					</table>
+				</div>
+		"""
+		return html
+	}
+	
+	
 	def getStyle() {
 		return """
 			<style type="text/css">
 				body, td, th { 
 					font-family: tahoma;
-					font-size  : 12pt;
+					font-size  : 14pt;
 				}	
 				td {
 					background-color:white;
@@ -72,11 +117,14 @@ class DepositHtmlService
 	}
 	
 	def buildHeader( deposit ) {
+		def cash = numSvc.format( '#,##0.00', deposit.cash )
+		def noncash = numSvc.format( '#,##0.00', deposit.noncash )
+		def amount = numSvc.format( '#,##0.00', deposit.amount)
 		return """
 			<table>
 				<tr>
 					<td class="caption">State</td>
-					<td><h3>$deposit.docstate</h3></td>
+					<td><h2>$deposit.docstate</h2></td>
 				</tr>
 				<tr>
 					<td class="caption">Deposit No.</td>
@@ -96,11 +144,15 @@ class DepositHtmlService
 				</tr>
 				<tr>
 					<td class="caption">Total Cash Deposit</td>
-					<td class="data">$deposit.cash</td>
+					<td class="numeric"><b>$cash</b></td>
+				</tr>
+				<tr>
+					<td class="caption">Total Non-Cash Deposit</td>
+					<td class="numeric"><b>$noncash</b></td>
 				</tr>
 				<tr>
 					<td class="caption">Total Deposit</td>
-					<td class="data">$deposit.amount</td>
+					<td class="numeric"><b>$amount</b></td>
 				</tr>
 			</table>
 		"""
@@ -167,14 +219,17 @@ class DepositHtmlService
 	}
 	
 	def buildSummary( summ) {
+		def cash = numSvc.format( '#,##0.00', summ.cash )
+		def noncash = numSvc.format( '#,##0.00', summ.noncash )
+		def amount = numSvc.format( '#,##0.00', summ.amount )
 		return """
 			<tr>
 				<td>$summ.bankname</td>
 				<td>$summ.branchname</td>
 				<td>$summ.bankacctno</td>
-				<td>$summ.cash</td>
-				<td>$summ.noncash</td>
-				<td>$summ.amount</td>
+				<td class="numeric">$cash</td>
+				<td class="numeric">$noncash</td>
+				<td class="numeric">$amount</td>
 				<td>${summ.validationno ? summ.validationno : ''}</td>
 				<td>${summ.validationdate ? summ.validationdate: ''}</td>
 			</tr>
@@ -201,11 +256,12 @@ class DepositHtmlService
 	def buildNonCashDeposits( summ ) {
 		def noncashes = ""
 		summ.noncashpayments.each {
+			def amount = numSvc.format( '#,##0.00', it.amount )
 			noncashes += """
 				<tr>
 					<td>$it.paytype</td>
 					<td>$it.particulars</td>
-					<td class="numeric">$it.amount</td>
+					<td class="numeric">$amount</td>
 				</tr>
 			"""
 		}
@@ -229,12 +285,13 @@ class DepositHtmlService
 	def buildDenominations( summ ) {
 		def denoms = ""
 		summ.denominations.each {
+			def amount = numSvc.format( '#,##0.00', it.amount )
 			if( it.amount > 0 )  {
 				denoms += """
 					<tr>
 						<td>$it.caption</td>
 						<td class="numeric">$it.qty</td>
-						<td class="numeric">$it.amount</td>
+						<td class="numeric">$amount</td>
 					</tr>
 				"""
 			}
