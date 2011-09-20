@@ -1,0 +1,56 @@
+<workunit>
+    <invokers>
+        <invoker type="treasurymgmt.actions" action="init" caption="Undeposited Liquidation Monitoring" permission="treasurymgmt_liquidation.view" index="10" />
+    </invokers>
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import etracs2.groovy.*
+
+class LiquidationMonitoringController
+{
+    
+    @Service('TreasuryMgmtService')
+    def svc
+    
+    def undepositedlist
+    
+    void init() {
+        undepositedlist = svc.getUndepositedLiquidationList()
+    }
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column( name:'liquidatingofficername', caption:'Liquidating Officier'),
+                new Column( name:'liquidatingofficertitle', caption:'Job Title'),
+                new Column( name:'txnno', caption:'Liquidation No.' ),
+                new Column( name:'txndate', caption:'Liquidation Date' ),
+                new Column( name:'amount', caption:'Undeposited Amount', type:'decimal'),
+            ]
+        },
+        fetchList : { return undepositedlist }
+    ] as SubListModel
+    
+    def getTotal() {
+        def total = undepositedlist.amount.sum()
+        if( ! total ) 
+            return 0.0
+        return total 
+    }
+    
+}
+
+
+]]>
+
+    </code>
+    <pages>
+        <page template="etracs2.tc.treasury.LiquidationMonitoringPage"/>
+    </pages>
+</workunit>

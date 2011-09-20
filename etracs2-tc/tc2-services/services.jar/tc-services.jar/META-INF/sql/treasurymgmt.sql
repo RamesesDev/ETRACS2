@@ -157,7 +157,7 @@ ORDER BY afid, stubno, startseries
 [getUnremittedCollections]
 SELECT collectorid, collectorname, SUM( amount ) AS amount 
 FROM receiptlist 
-WHERE collectorid = $P{collectorid}
+WHERE collectorid LIKE $P{collectorid}
   AND docstate = 'OPEN' 
   AND voided = 0 
 GROUP BY collectorid, collectorname 
@@ -166,5 +166,10 @@ ORDER BY collectorname
 [getLastRemittance]
 SELECT txnno, txndate  FROM remittancelist  WHERE collectorid = $P{collectorid}  ORDER BY txnno DESC 
 
-
-
+[getOpenLiquidations]
+SELECT  
+	liquidatingofficername, liquidatingofficertitle, 
+	txnno, txndate, amount 
+FROM liquidationlist  
+WHERE docstate = 'OPEN' 
+ORDER BY liquidatingofficername, txnno  
