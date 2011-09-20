@@ -56,6 +56,29 @@ FROM afinventorycredit ivc
 WHERE ivc.afinventoryid = $P{afinventoryid}  
 ORDER BY a.stubno 
 
+[getInventoryCreditByAFInventoryId2]
+SELECT
+	a.docstate, 
+	ivc.irafno, ivc.iraftype, 
+	CASE WHEN c.collectorid IS NOT NULL THEN 'COLLECTOR' ELSE '-' END AS credittype, 
+	c.collectorname AS rivrequestedby,  c.stubno, c.afid, a.aftype, 
+	CASE WHEN a.aftype = 'serial' THEN a.prefix ELSE '' END AS prefix, 
+	CASE WHEN a.aftype = 'serial' THEN a.suffix ELSE '' END AS suffix, 
+	c.receivedqty, 
+	CASE WHEN a.aftype = 'serial' THEN c.receivedfrom ELSE '' END AS receivedfrom, 
+	CASE WHEN a.aftype = 'serial' THEN c.receivedto ELSE '' END AS receivedto, 
+	c.issuedqty, 
+	CASE WHEN a.aftype = 'serial' THEN c.issuedfrom ELSE '' END AS issuedfrom, 
+	CASE WHEN a.aftype = 'serial' THEN c.issuedto ELSE '' END AS issuedto, 
+	c.endingqty, 
+	CASE WHEN a.aftype = 'serial' THEN c.endingfrom ELSE '' END AS endingfrom, 
+	CASE WHEN a.aftype = 'serial' THEN c.endingto ELSE '' END AS endingto 
+FROM craaf c 
+	INNER JOIN afcontrol a ON c.afinventorycreditid = a.afinventorycreditid 
+	INNER JOIN afinventorycredit ivc ON ivc.objid = c.afinventorycreditid 
+WHERE ivc.afinventoryid = $P{afinventoryid} 
+
+
 
 
 

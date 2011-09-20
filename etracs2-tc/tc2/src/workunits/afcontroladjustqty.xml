@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="afcontroladjust.create" action="init" caption="Adjust Quantity Received" target="popup" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+public class AFControlAdjustQtyController  {
+    @Binding
+    def binding
+    
+    @Service('AFControlService')
+    def svc 
+    
+    
+    def onupdate //handler 
+    
+    def afcontrol 
+    def qtyreceived 
+    def qtyadjustment 
+    def newqty 
+    def mode
+    
+    void init() {
+        qtyreceived = afcontrol.qtyreceived
+        qtyadjustment = 0
+        newqty = qtyreceived 
+        mode = 'create' 
+    }
+    
+    def adjustQty() {
+        if( MsgBox.confirm('Adjust quantity?')) {
+            afcontrol = svc.adjustQuantity( afcontrol, newqty, qtyadjustment )
+            if( onupdate ) onupdate( afcontrol )
+            mode = 'view' 
+            return '_close'
+        }
+        return null
+    }
+     
+    void setQtyadjustment( qtyadjustment ) {
+        if( ! qtyadjustment ) 
+            qtyadjustment = 0
+        
+        this.qtyadjustment = qtyadjustment
+        newqty = qtyreceived + qtyadjustment 
+        binding.refresh( 'newqty' ) 
+    }
+    
+    
+    
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.af.AdjustQtyPage" />
+    </pages>
+</workunit>

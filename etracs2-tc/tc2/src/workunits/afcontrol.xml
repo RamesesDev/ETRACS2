@@ -10,6 +10,7 @@
         <invoker type="formActions" action="remove"          caption="Delete"           mnemonic="d" icon="images/doc-delete.png" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'PENDING' }"/>
         <invoker type="formActions" action="changeMode"      caption="Change Mode"      mnemonic="m" icon="images/deploy.png" visibleWhen="#{selectedItem != null and selectedItem.docstate != 'PENDING' }"/>
         <invoker type="formActions" action="transfer"        caption="Transfer"         mnemonic="t" icon="images/deploy.png" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'APPROVED' }"/>
+        <invoker type="formActions" action="adjustQty"       caption="Adjust Quantity"  mnemonic="j" icon="images/deploy.png" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'APPROVED' and selectedItem.aftype == 'nonserial'  }"/>
     </invokers>
     <code>
 <![CDATA[        
@@ -81,6 +82,16 @@ class AFControlController
                 selectedItem.mode   = newmode
                 selectedItem.active = 0
                 binding.refresh( 'selectedItem' )
+            }
+        ])
+    }
+    
+    def adjustQty() {
+        return InvokerUtil.lookupOpener('afcontroladjust.create', [
+            afcontrol : selectedItem,
+            onupdate  : { afcontrol ->  
+                selectedItem.putAll( afcontrol )
+                binding.refresh()
             }
         ])
     }

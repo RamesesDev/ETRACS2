@@ -58,6 +58,21 @@ WHERE objid <> $P{objid}
   AND $P{startseries} BETWEEN startseries AND endseries 
 
 
+[adjustInventoryCreditBalance]
+UPDATE afinventorycredit SET  
+	balance = balance + $P{qtyadjustment}  
+WHERE objid = $P{objid} 
 
+[adjustCraafInventoryCreditQty]
+UPDATE craaf SET  
+	receivedqty = receivedqty + $P{qtyadjustment}, 
+	endingqty = endingqty + $P{qtyadjustment} 
+WHERE afinventorycreditid = $P{afinventorycreditid} 
 
+[adjustCraafInventoryQty]
+UPDATE craaf c, afinventorycredit cr SET  
+	c.receivedqty = c.receivedqty + $P{qtyadjustment},  
+	c.endingqty = c.endingqty + $P{qtyadjustment}  
+WHERE c.afinventoryid = cr.afinventoryid  
+  AND cr.objid = $P{afinventorycreditid}  
   
