@@ -36,8 +36,8 @@ INNER JOIN bpapplicationlisting l ON l.objid = b.objid
 WHERE b.businessid = $P{businessid} 
 ORDER BY b.txnno DESC 
 
-[updateAppFullypaid]
-UPDATE bpapplicationlisting 
-SET fullypaid = 1 
-WHERE businessid = $P{businessid} 
+[updateAppFullypaid]  
+UPDATE bpapplicationlisting   
+SET fullypaid = 1   
+WHERE businessid = $P{businessid}   
 

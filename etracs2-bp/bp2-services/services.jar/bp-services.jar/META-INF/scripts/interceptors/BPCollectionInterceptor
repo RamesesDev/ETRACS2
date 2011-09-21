@@ -18,7 +18,7 @@ class BPCollectionInterceptor {
 	
 	@PersistenceContext('main')
 	def em;
-	
+		
 	@Before(pattern="ReceiptService.create")
 	public void beforeCreate( evt ){
 		//println evt.args[0];
@@ -54,6 +54,8 @@ class BPCollectionInterceptor {
 		}
 		
 		ledgerSvc.postPayment( payment );
+		updateAppFullypaid( receipt )
+		
 	}
 	
 	@After(pattern="ReceiptService.delete") 
@@ -144,5 +146,17 @@ class BPCollectionInterceptor {
 		}
 		
 		ledgerSvc.deletePayment( payment );
+		
 	}
+	
+	public def updateAppFullypaid( receipt ){	
+		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]);
+		if( !app ) throw new Exception("Application with objid $receipt.applicationid no longer exists.");
+		
+		def getUnpaidReceivables = app.receivables.findAll{ it.amount > it.amtpaid };
+				
+		if( !getUnpaidReceivables )
+			em.sqlContext.createNamedExecutor( "business:updateAppFullypaid" ).setParameter( 'businessid', receipt.businessid ).execute()
+	}
+	
 }

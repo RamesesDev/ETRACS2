@@ -1,0 +1,23 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class FullyPaidScripts {
+	
+	@PersistenceContext('main')
+	def em;
+	
+	@ProxyMethod
+	public def updateFullyPaid(){
+		def receivableList = em.sqlContext.createQuery( 'SELECT businessid, receivables FROM bpapplication' ).resultList
+	
+		receivableList.each(){ o ->
+			o.receivables = em.serializer.read( o.receivables )
+			def unpaidRcvbls = o.receivables.findAll{ it.amount > it.amtpaid }
+			if( !unpaidRcvbls ) {
+				em.sqlContext.createNamedExecutor( "business:updateAppFullypaid" ).setParameter( 'businessid', o.businessid ).execute()
+			} 
+		}
+	
+	}
+}
