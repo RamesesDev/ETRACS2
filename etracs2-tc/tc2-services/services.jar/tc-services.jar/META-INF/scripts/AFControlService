@@ -79,6 +79,7 @@ class AFControlService
 		createTransferRecord( afcontrol, oldafcontrol, transferto )
 		transferOldAFControl( oldafcontrol )
 		updateTransferCraafCreditInfo( afcontrol, oldafcontrol ) 
+		logService.logA( 'TRANSFER', 'AFControl', afcontrol.objid, 'TRANSFER AFCONTROL FROM ' + afcontrol.collectorname + ' TO ' + transferto.name )
 		return oldafcontrol
 	}
 	
@@ -111,6 +112,8 @@ class AFControlService
 		em.sqlContext.createNamedExecutor('afcontrol:adjustCraafInventoryQty')
 				.setParameters([afinventorycreditid:afcontrol.afinventorycreditid, qtyadjustment:qtyadjustment])
 				.execute()
+		
+		logService.logA( 'ADJUSTQTY', 'AFControl', afcontrol.objid, 'Adjust AF Control Qty. by ' + qtyadjustment + '.')
 		
 		return afcontrol 
 	}
