@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="treasurymgmt.actions" caption="Remittance Monitoring" permission="treasurymgmt_remittance.view"/>
+        <invoker type="treasurymgmt.actions" action="init" caption="Unremitted Collection Monitoring" permission="treasurymgmt_remittance.view"/>
     </invokers>
     <code>
         
@@ -23,27 +23,18 @@ class RemittanceMonitoringController
     def collector
     def unremittedList
     
-    void setCollector( collector ) {
-        this.collector = collector 
-        loadUnremittedCollections( collector )
-    }
-    
-    void loadUnremittedCollections( collector ) {
-        unremittedList = []
-        if( collector ) {
-            unremittedList = svc.getOpenUnremittedCollections( collector.objid )
-        }
-        listHandler.load()
+    void init() {
+        unremittedList = svc.getOpenUnremittedCollections( null  )
     }
     
     def listHandler = [
         getRows    : { return 50 },
         getColumns : {
             return [
-                new Column( name:'collectorname', caption:'Collector', maxWidth:250),
-                new Column( name:'lastremittanceno', caption:'Last Remittance No.', maxWidth:150),
-                new Column( name:'lastremittancedate', caption:'Last Remittance Date', maxWidth:150),
-                new Column( name:'amount', caption:'Unremitted Collection', type:'decimal', maxWidth:200),
+                new Column( name:'collectorname', caption:'Collector'),
+                new Column( name:'lastremittanceno', caption:'Last Remittance No.'),
+                new Column( name:'lastremittancedate', caption:'Last Remittance Date'),
+                new Column( name:'amount', caption:'Unremitted Collection', type:'decimal'),
             ]
         },
         fetchList : { return unremittedList }
@@ -51,6 +42,13 @@ class RemittanceMonitoringController
     
     def getCollectorList() {
         return userSvc.getCollectorList()
+    }
+    
+    def getTotal() {
+        def total = unremittedList.amount.sum()
+        if( ! total )
+            return 0.0
+        return total 
     }
 }
 

@@ -125,7 +125,10 @@ class RPTReceiptService
 		def basicprioritem  	= rctitems.find{ it.systype == 'RPT_BASICPRIOR'}
 		def basicpriorintitem  	= rctitems.find{ it.systype == 'RPT_BASICPRIORINT'}
 		
-		basicitem.amount += itm.basic 
+		if( itm.basicdisc )
+			basicitem.amount += itm.basic - itm.basicdisc 
+		else 
+			basicitem.amount += itm.basic
 		basicintitem.amount += itm.basicint
 		basicprevitem.amount += itm.basicprev 
 		basicprevintitem.amount += itm.basicprevint
@@ -148,7 +151,10 @@ class RPTReceiptService
 		def sefprioritem  		= rctitems.find{ it.systype == 'RPT_SEFPRIOR'}
 		def sefpriorintitem  	= rctitems.find{ it.systype == 'RPT_SEFPRIORINT'}
 		
-		sefitem.amount += itm.sef 
+		if( itm.sefdisc )
+			sefitem.amount += itm.sef - itm.sefdisc 
+		else
+			sefitem.amount += itm.sef 
 		sefintitem.amount += itm.sefint
 		sefprevitem.amount += itm.sefprev 
 		sefprevintitem.amount += itm.sefprevint

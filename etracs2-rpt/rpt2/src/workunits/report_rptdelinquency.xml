@@ -1,0 +1,171 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/rpt/reports/landtax" action="init" caption="Realty Tax Delinquency Listing" target="window" index="10" permission="rptreport.delinquency" />
+        <invoker type="rptreport" action="init" opener="rptdelinquency" caption="Realty Tax Delinquency Listing" target="window" index="10" permission="rptreport.delinquency" />
+        <invoker type="rptreport.rptdelinquency"    action="init" caption="Realty Tax Delinquency Listing"  target="window" />
+        
+        <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
+        <!-- 
+        <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
+        -->
+        <invoker type="formActions"     action="preview" caption="Preview" mnemonic="v"             icon="images/doc-view.png"/>
+        
+        <invoker type="previewActions"  action="back" caption="Back" icon="images/back.png" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+import com.rameses.rcp.framework.TaskManager;
+
+class RPTDelinquencyController
+{
+    @Binding
+    def binding
+    
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('RPTReportService') 
+    def svc 
+    
+    def barangay
+    def reportdata
+    def msg 
+    def taskmgr
+    def mode 
+    
+    void init() {
+        mode = 'init' 
+        reportdata = [items:[]]
+        taskmgr = new TaskManager()
+    }
+    
+    def updateMessage = { msg ->
+        this.msg = msg
+        binding.refresh('msg')
+    }
+    
+    def onfinish = {
+        mode = 'init' 
+        if( reportdata.items ) {
+            generateReport()
+            binding.fireNavigation('preview')
+        }
+        else {
+            binding.refresh('barangay|preview')
+            MsgBox.alert('No records found.')
+        }
+    }
+    
+    void preview() {
+        mode = 'preview' 
+        reportdata.items = []
+        taskmgr.addTask( new DelinquencyTask( reportdata:reportdata, svc:svc, barangay:barangay, updateMessage:updateMessage, onfinish:onfinish ) );
+        taskmgr.start()
+    }
+    
+    void generateReport() {
+        report.viewReport()
+    }
+    
+    void print(){
+        generateReport()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def report = [
+        getReportName : { 'rptdelinquency' },
+        getReportData : { return reportdata.items },
+        getParameters : { 
+            def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME ); 
+            params.TITLE = 'Realty Tax Delinquency Listing for ' + barangay.barangay 
+            return params 
+        }
+    ] as ServerReportModel;
+        
+    def back() {
+        return 'default' 
+    }
+    
+    List getBarangaylist() {
+        return svc.getBarangayList()
+    }
+    
+}
+
+class DelinquencyTask extends com.rameses.rcp.common.Task {
+    def reportdata
+    def svc 
+    def ended = false
+    def cancelled = false 
+    def barangay 
+    
+    def updateMessage   //handler
+    def onfinish        //handler 
+    
+    
+    
+    public boolean accept() {
+       return !ended
+    }
+    
+    public boolean isEnded() {
+        return ended
+    }
+
+    public void execute() {
+        updateMessage('Searching delinquent ledgers...')
+        def ledgerlist = svc.getDelinquentLedger( barangay?.barangay )
+        
+        ledgerlist.each{ ledger -> 
+            try {
+                updateMessage( 'Please wait while processing Ledger ' + ledger.tdno + '.')            
+                def billing = createBillInfo( ledger )
+                def delinquency = svc.buildDelinquency( billing )
+                if( delinquency ) {
+                    reportdata.items.add( delinquency ) 
+                }
+                try { Thread.sleep( 150 ) } catch( e ) { }
+                i++
+            }
+            catch( ex ) {
+                println '-'*50 
+                ex.printStackTrace()
+            }
+        }
+        ended = true 
+        updateMessage('')
+        onfinish()
+    }
+    
+    Map createBillInfo( ledger ) {
+        return [
+            taxpayerid     : ledger.taxpayerid,
+            taxpayername   : ledger.taxpayername,
+            taxpayeraddress: ledger.taxpayeraddress, 
+            ledgerids      : [ledger.objid],
+            advancepayment : false,
+            billdate       : null,
+            billtoyear     : null,
+            billtoqtr      : 4,
+            fullpayment    : true,
+            qtrlypaymentavailed : false, 
+            advancepayment : false,
+            items          : []
+        ]
+    }
+}
+
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.rpt.report.RPTDelinquencyInitPage" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>

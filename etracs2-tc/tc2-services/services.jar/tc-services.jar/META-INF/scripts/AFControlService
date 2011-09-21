@@ -79,8 +79,45 @@ class AFControlService
 		createTransferRecord( afcontrol, oldafcontrol, transferto )
 		transferOldAFControl( oldafcontrol )
 		updateTransferCraafCreditInfo( afcontrol, oldafcontrol ) 
+		logService.logA( 'TRANSFER', 'AFControl', afcontrol.objid, 'TRANSFER AFCONTROL FROM ' + afcontrol.collectorname + ' TO ' + transferto.name )
 		return oldafcontrol
 	}
+	
+	@ProxyMethod
+	public def adjustQuantity( afcontrol, newqty, qtyadjustment ) {
+		afcontrol = em.read( afcontrol.schemaname, afcontrol )
+		if( ! afcontrol ) 
+			throw new Exception('Cannot open AF Control with Stub No. ' + afcontrol.stubno + '.' )
+		if( afcontrol.docstate == CLOSED_STATE ) 
+			throw new Exception('AF Control Stub No. ' + afcontrol.stubno + ' has already been closed.' )
+		if( afcontrol.qtyreceived == newqty )
+			throw new Exception('New quantity must not be equal to quantity received.')
+		
+		afcontrol.qtyreceived = newqty 
+		afcontrol.beginqty  += qtyadjustment 
+		afcontrol.balance += qtyadjustment
+		em.update( afcontrol.schemaname, afcontrol )
+		
+		//update inventorycredit balance 
+		em.sqlContext.createNamedExecutor('afcontrol:adjustInventoryCreditBalance')
+				.setParameters([objid:afcontrol.afinventorycreditid, qtyadjustment:qtyadjustment])
+				.execute()
+				
+		//update craaf inventorycredit qty 
+		em.sqlContext.createNamedExecutor('afcontrol:adjustCraafInventoryCreditQty')
+				.setParameters([afinventorycreditid:afcontrol.afinventorycreditid, qtyadjustment:qtyadjustment])
+				.execute()
+		
+		//update craaf inventory qty 
+		em.sqlContext.createNamedExecutor('afcontrol:adjustCraafInventoryQty')
+				.setParameters([afinventorycreditid:afcontrol.afinventorycreditid, qtyadjustment:qtyadjustment])
+				.execute()
+		
+		logService.logA( 'ADJUSTQTY', 'AFControl', afcontrol.objid, 'Adjust AF Control Qty. by ' + qtyadjustment + '.')
+		
+		return afcontrol 
+	}
+	
 	
 	void updateTransferCraafCreditInfo( afcontrol, oldafcontrol ) {
 		def craafcredit = em.sqlContext.createNamedQuery('afcontrol:getCraafByCreditId').setParameter('afinventorycreditid', oldafcontrol.afinventorycreditid).singleResult

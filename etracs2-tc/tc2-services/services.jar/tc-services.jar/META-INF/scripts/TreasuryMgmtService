@@ -64,11 +64,17 @@ class TreasuryMgmtService
 	
 	@ProxyMethod
 	public List getOpenUnremittedCollections( collectorid ) {
-		required('Collector', collectorid )
+		collectorid = (collectorid ? collectorid : '%' )
 		List unremittedList = em.sqlContext.createNamedQuery('treasurymgmt:getUnremittedCollections').setParameter('collectorid', collectorid).resultList
 		buildLastRemittanceInfo( unremittedList ) 
 		return unremittedList
 	}
+	
+	@ProxyMethod
+	public List getUndepositedLiquidationList() {
+		return em.sqlContext.createNamedQuery('treasurymgmt:getOpenLiquidations').resultList
+	}
+	
 	
 	void buildLastRemittanceInfo( unremittedList ) {
 		unremittedList.each {

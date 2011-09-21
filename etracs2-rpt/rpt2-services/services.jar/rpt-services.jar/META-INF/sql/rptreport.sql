@@ -4,15 +4,25 @@ SELECT * FROM rptsetting
 [getBarangayList]
 SELECT objid, lguname AS barangay FROM lgu 
 WHERE parentid = $P{parentid} AND lgutype = 'BARANGAY'
-ORDER BY indexno
+ORDER BY lguname 
 
 [getClassificationList] 
-SELECT objid, propertydesc AS classname, special  
+SELECT objid, propertydesc AS classname, special   
 FROM propertyclassification  ORDER BY orderno  
 
 [getExemptionList]
 SELECT objid, exemptdesc AS classname, 0 AS special 
 FROM exemptiontype ORDER BY orderno  
+ 
+[getDelinquentLedger] 
+SELECT  
+	objid, tdno,  
+	taxpayerid, taxpayername, taxpayeraddress   
+FROM rptledger  
+WHERE barangay = $P{barangay} 
+  AND docstate = 'APPROVED' AND taxable = 1  
+  AND ( lastyearpaid < $P{currentyr} OR (lastyearpaid = $P{currentyr} AND lastqtrpaid < 4 ) )  
+ORDER BY tdno    
  
 
 [getNoticeItemsByTaxpayerId]
