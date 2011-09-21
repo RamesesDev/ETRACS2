@@ -269,7 +269,7 @@ class ReceiptService
 		if( receipt.info.change < 0.0 ) {
 			throw new Exception('Change must not be negative.\nNormally this happens if check payment is more than receipt amount.')
 		}
-        
+    
         def txndate = dateService.parse('yyyy-MM-dd', receipt.info.txndate )
         if( txndate > dateService.serverDate ) {
             throw new Exception('Txn Date must be before or equal to current date.')
@@ -291,12 +291,11 @@ class ReceiptService
 		def info = receipt.info 
 		Date currDate = new Date()
 		info.dtposted = currDate
-		
-		if( info.txndate instanceof Date){
+		if( info.txndate instanceof Date)
 			info.txndate = dateService.format('yyyy-MM-dd', info.txndate);
-		}else{
-			info.txndate = dateService.format( 'yyyy-MM-dd', currDate )
-		}
+		//else 
+			//info.txndate = dateService.format( 'yyyy-MM-dd', currDate )
+
 		updatePayorName( receipt )
 	}
 	
