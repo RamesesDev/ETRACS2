@@ -41,3 +41,8 @@ UPDATE bpapplicationlisting
 SET fullypaid = 1   
 WHERE businessid = $P{businessid}   
 
+[updateAppListToRenewed] 
+UPDATE bpapplicationlisting 
+SET docstate = 'RENEWD' 
+WHERE businessid = $P{businessid} 
+
