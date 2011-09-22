@@ -42,6 +42,10 @@ class RPTReceiptService
 
         receipt._items = items.each(){
 			it.taxpayername = ( it.taxpayername != receipt.info.payorname ) ? it.taxpayername : '';
+			it.basicgross = it.basic 
+			it.basicdp    = it.basicint - it.basicdisc 
+			it.sefgross = it.sef
+			it.sefdp    = it.sefint - it.sefdisc 
 		}
 		
         return receipt 
@@ -126,12 +130,14 @@ class RPTReceiptService
 		def basicpriorintitem  	= rctitems.find{ it.systype == 'RPT_BASICPRIORINT'}
 		
 		if( itm.basicdisc )
-			basicitem.amount += itm.basic - itm.basicdisc 
+			basicitem.amount += (itm.basic - itm.basicdisc )
 		else 
 			basicitem.amount += itm.basic
+			
 		basicintitem.amount += itm.basicint
 		basicprevitem.amount += itm.basicprev 
 		basicprevintitem.amount += itm.basicprevint
+		
 		if( basicprioritem ) 
 			basicprioritem.amount += itm.basicprior
 		else
@@ -152,12 +158,14 @@ class RPTReceiptService
 		def sefpriorintitem  	= rctitems.find{ it.systype == 'RPT_SEFPRIORINT'}
 		
 		if( itm.sefdisc )
-			sefitem.amount += itm.sef - itm.sefdisc 
+			sefitem.amount += (itm.sef - itm.sefdisc )
 		else
 			sefitem.amount += itm.sef 
+			
 		sefintitem.amount += itm.sefint
 		sefprevitem.amount += itm.sefprev 
 		sefprevintitem.amount += itm.sefprevint
+		
 		if( sefprioritem ) 
 			sefprioritem.amount += itm.sefprior
 		else
@@ -175,6 +183,12 @@ class RPTReceiptService
 		if( ! receipt ) throw new Exception('Cannot open Receipt with ID No. ' + receiptid + '.')
         receipt._items = loadRPTPayments( receiptid, receipt.opener  ).each(){
 			it.taxpayername = ( it.taxpayername != receipt.info.payorname ) ? it.taxpayername : '';
+			if( receipt.opener == 'tc:real_property' ) {
+				it.basicgross = it.basic 
+				it.basicdp    = it.basicint - it.basicdisc 
+				it.sefgross = it.sef
+				it.sefdp    = it.sefint - it.sefdisc 
+			}
 		}
         return receipt 
     }
