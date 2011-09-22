@@ -37,12 +37,13 @@ public class BPBillingService
 		for ( business in businesslist ) {
 			def applist = getApplicationsByBusinessId( business.objid );
 			for( application in applist ){
-			
+
 				def item = [
 					appno       : application.txnno,
 					barcode     : application.barcode,
 					barcodeurl  : var.get('barcode_url').replace('$P{data}', application.barcode),
 					txntype     : application.txntype,
+					docstate	: application.docstate, 
 					txndate     : new java.text.SimpleDateFormat( "yyyy-MM-dd" ).format( application.txndate ),
 					tradename 	: business.tradename,
 					address		: business.businessaddress,

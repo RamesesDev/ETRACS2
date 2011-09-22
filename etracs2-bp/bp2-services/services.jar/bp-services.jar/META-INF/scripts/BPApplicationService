@@ -538,7 +538,9 @@ class BPApplicationService{
 		def app = open( applicationid );
 		app.docstate = 'RENEWED';
 		em.update( SCHEMANAME, app );
-		em.sqlContext.createNamedExecutor("business:updateAppListToRenewed").setParameter('businessid', app.businessid).execute()
+		
+		// bpapplicationlisting docstate to RENEWED
+		em.sqlContext.createNamedExecutor("business:updateAppListStatToRenewed").setParameter('businessid', app.businessid).execute()		
 	}
 	
 	def evaluateAddLob( def application ){

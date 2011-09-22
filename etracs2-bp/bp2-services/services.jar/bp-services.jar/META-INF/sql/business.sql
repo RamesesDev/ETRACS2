@@ -19,9 +19,9 @@ ORDER BY tradename, taxpayername
 SELECT b.*  
 FROM business b  
 	INNER JOIN bpapplicationlisting bl ON b.applicationid = bl.objid   
-WHERE b.taxpayerid = $P{taxpayerid} 
-  AND b.docstate = 'ACTIVE'  
-  AND bl.barangayid LIKE $P{barangayid}  
+WHERE b.taxpayerid = $P{taxpayerid}  
+  AND b.docstate in ('ACTIVE', 'EXPIRED') 
+  AND bl.barangayid LIKE $P{barangayid}   
 ORDER BY b.tradename, b.taxpayername 
 
 [getApplicationsByBusinessId] 
@@ -41,8 +41,9 @@ UPDATE bpapplicationlisting
 SET fullypaid = 1   
 WHERE businessid = $P{businessid}   
 
-[updateAppListToRenewed] 
+[updateAppListStatToRenewed] 
 UPDATE bpapplicationlisting 
-SET docstate = 'RENEWD' 
+SET docstate = 'RENEWED' 
 WHERE businessid = $P{businessid} 
+
 
