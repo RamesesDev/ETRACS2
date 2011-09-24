@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="collection" caption="Large Cattle Ownership" afid="53" appcode="cattle_ownership" />
+        <invoker type="collection" caption="Large Cattle Ownership" afid="53" appcode="cattle_ownership" permission="collection_cattleownership.create" />
         <invoker type="inquiry:tc:cattle_ownership" action="initInquiry" permission="collection_cattleownership.inquiry" />
         <invoker type="tc:cattle_ownership" action="init" caption="Large Cattle Ownership" afid="53" permission="collection_cattleownership.create"  />
         
@@ -8,9 +8,11 @@
         <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}" icon="images/back.png"/>
         <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}" icon="images/save.png"/>
         <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}" icon="images/save.png"/>
+        <invoker type="formActions" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" visibleWhen="#{mode == 'view'}" permission="collection_cattleownership.print"/>
         <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view'}" permission="collection_cattleownership.void" icon="images/doc-void.png"/>
         
         <invoker type="receipt.actions:tc:cattle_ownership" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" permission="collection_cattleownership.edit" icon="images/edit.png"/>
+        <invoker type="receipt.actions:tc:cattle_ownership" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" permission="collection_cattleownership.print"/>
         <invoker type="receipt.actions:tc:cattle_ownership" action="doVoid" caption="Void" mnemonic="v" permission="collection_cattleownership.void" icon="images/doc-void.png"/>
     </invokers>
     <code>
@@ -19,10 +21,9 @@
     import com.rameses.rcp.common.*;
     import com.rameses.rcp.annotations.*;
     import com.rameses.osiris2.client.*;
-    import etracs2.groovy.*
-    import etracs2.tc.groovy.*
+    import etracs2.groovy.*;
+    import etracs2.tc.groovy.*;
 
-    
     class CattleOwnershipCollectionController extends AbstractCollectionController
     {
         @Binding
@@ -40,10 +41,13 @@
         @Service('CollectionSettingService')
         def collSvc
         
+        @Service('DateService')
+        def dateSvc
+        
         @Service('ReportParameterService')
         def svcParams;
 
-        def getParameters() { return svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+        def getParameters() { return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [TXNDATE: dateSvc.parse("yyyy-MM-dd", entity.info.txndate)]; }
         def getService() { return svc }
         def getHtmlService() { return htmlSvc }
         def getCollectionTitle() { return 'Large Cattle Ownership' }
@@ -69,19 +73,25 @@
             return super.update()
         }
         
+        def getReportName() {
+            return 'receipt/af53'
+        }
+        
         void addReceiptItem() {
             def cs = collSvc.open()
             def ia = acctSvc.open( cs.info.lcoacctid )
-            def item = [
-                acctid    : ia.objid,
-                acctno    : ia.acctno,
-                accttitle : ia.accttitle,
-                fundid    : ia.fundid,
-                fundname  : ia.fundname,
-                amount    : cs.info.lcoamount,
-            ]
-            entity.items.add( item )
-            entity.info.amount = item.amount
+            if( ia ){
+                def item = [
+                    acctid    : ia.objid,
+                    acctno    : ia.acctno,
+                    accttitle : ia.accttitle,
+                    fundid    : ia.fundid,
+                    fundname  : ia.fundname,
+                    amount    : cs.info.lcoamount,
+                ]
+                entity.items.add( item )
+                entity.info.amount = item.amount
+           }
         }
         
         void addDefaultCashPayment() {

@@ -404,10 +404,7 @@ class IRAFService
 				afinventory.currentstub += 1;
 				
 				if( ri.aftype == 'serial' ){
-					def afstart = ( afinventory.issuedfrom <= 0 ) ? (afinventory.startseries - ri.afpcsperunit) : afinventory.issuedfrom;
-					def afend   = afstart + ri.afpcsperunit - 1 ;
-					
-					afinventorycredit.startseries = afend + 1;
+					afinventorycredit.startseries = ( afinventory.issuedfrom == 0 ) ? afinventory.startseries : (afinventory.issuedto + 1)
 					afinventorycredit.endseries = afinventorycredit.startseries + ri.afpcsperunit - 1;
 					
 					//set issuedfrom only if not yet initialized
