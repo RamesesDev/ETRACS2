@@ -40,15 +40,17 @@ class LandAdjustmentTypeLookupController extends LookupModel
     }
     
     def okInfo() {
-        selectedItem.item.params.clear()
-        params.each{
-            selectedItem.item.params.add([
-                paramid     : it.paramid,
-                paramname   : it.paramname,
-                paramcaption : it.paramcaption, 
-                datatype    : it.datatype,
-                paramvalue  : convertParamValue( it ),
-            ])
+        if( selectedItem ) {
+            selectedItem.item.params.clear()
+            params.each{
+                selectedItem.item.params.add([
+                    paramid     : it.paramid,
+                    paramname   : it.paramname,
+                    paramcaption : it.paramcaption, 
+                    datatype    : it.datatype,
+                    paramvalue  : convertParamValue( it ),
+                ])
+            }
         }
         if( onselect ) onselect( selected)
         return select() 
