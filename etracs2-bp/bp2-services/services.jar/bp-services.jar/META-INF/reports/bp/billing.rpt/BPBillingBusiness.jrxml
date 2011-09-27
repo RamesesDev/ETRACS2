@@ -44,17 +44,18 @@
 	<field name="txndate" class="java.lang.String"/>
 	<field name="barcodeurl" class="java.lang.String"/>
 	<field name="barcode" class="java.lang.String"/>
+	<field name="docstate" class="java.lang.String"/>
 
 
 		<group  name="BUSINESSID" >
 			<groupExpression><![CDATA[$F{appno}]]></groupExpression>
 			<groupHeader>
-			<band height="64"  isSplitAllowed="true" >
+			<band height="80"  isSplitAllowed="true" >
 				<staticText>
 					<reportElement
 						mode="Transparent"
 						x="0"
-						y="42"
+						y="55"
 						width="66"
 						height="11"
 						forecolor="#000000"
@@ -74,7 +75,7 @@
 					<reportElement
 						mode="Transparent"
 						x="0"
-						y="53"
+						y="66"
 						width="66"
 						height="11"
 						forecolor="#000000"
@@ -94,7 +95,7 @@
 					<reportElement
 						mode="Transparent"
 						x="67"
-						y="42"
+						y="55"
 						width="477"
 						height="11"
 						forecolor="#000000"
@@ -114,7 +115,7 @@
 					<reportElement
 						mode="Transparent"
 						x="67"
-						y="53"
+						y="66"
 						width="477"
 						height="11"
 						forecolor="#000000"
@@ -214,7 +215,7 @@
 					<reportElement
 						mode="Transparent"
 						x="0"
-						y="29"
+						y="42"
 						width="66"
 						height="11"
 						forecolor="#000000"
@@ -234,7 +235,7 @@
 					<reportElement
 						mode="Transparent"
 						x="67"
-						y="29"
+						y="42"
 						width="129"
 						height="11"
 						forecolor="#000000"
@@ -274,6 +275,46 @@
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$F{barcode}]]></textFieldExpression>
 				</textField>
+				<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						mode="Transparent"
+						x="67"
+						y="30"
+						width="129"
+						height="11"
+						forecolor="#000000"
+						backcolor="#FFFFFF"
+						key="textField-12"/>
+					<box>					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Top" rotation="None" lineSpacing="Single">
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true" isItalic="false" isUnderline="false" isPdfEmbedded ="false" pdfEncoding ="Cp1252" isStrikeThrough="false" />
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($F{docstate}.toString().equals("APPROVED")) ? "ACTIVE" : $F{docstate}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement
+						mode="Transparent"
+						x="0"
+						y="30"
+						width="66"
+						height="11"
+						forecolor="#000000"
+						backcolor="#FFFFFF"
+						key="staticText-6"/>
+					<box>					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+</box>
+					<textElement textAlignment="Left" verticalAlignment="Top" rotation="None" lineSpacing="Single">
+						<font fontName="Tahoma" pdfFontName="Helvetica" size="8" isBold="false" isItalic="false" isUnderline="false" isPdfEmbedded ="false" pdfEncoding ="Cp1252" isStrikeThrough="false" />
+					</textElement>
+				<text><![CDATA[Document State :]]></text>
+				</staticText>
 			</band>
 			</groupHeader>
 			<groupFooter>

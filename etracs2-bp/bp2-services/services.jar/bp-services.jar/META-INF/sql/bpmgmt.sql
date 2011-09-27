@@ -34,32 +34,32 @@ AND   o.docstate = $P{docstate}
 
 [getForRenewalList]  
 SELECT o.* FROM bpapplicationlisting o 
-WHERE   o.docstate IN ('EXPIRED','RENEWED') 
+WHERE   o.docstate = 'EXPIRED'   
 
 [getForRenewalListByPermitNo]  
 SELECT o.* FROM bpapplicationlisting o 
 WHERE o.txnno = $P{search} 
-AND   o.docstate IN ('EXPIRED','RENEWED') 
+AND   o.docstate = 'EXPIRED'  
 
 [getForRenewalListByTradeName]  
 SELECT o.* FROM bpapplicationlisting o  
 WHERE o.tradename LIKE $P{search}  
-AND   o.docstate IN ('EXPIRED','RENEWED') 
+AND   o.docstate = 'EXPIRED'  
 
 [getForRenewalListByBusinessAddress]  
 SELECT o.* FROM bpapplicationlisting o 
 WHERE o.businessaddress LIKE $P{search}  
-AND   o.docstate IN ('EXPIRED','RENEWED') 
+AND   o.docstate = 'EXPIRED'  
 
 [getForRenewalListByTaxpayerName]  
 SELECT o.* FROM bpapplicationlisting o 
 WHERE o.taxpayername LIKE $P{search} 
-AND   o.docstate IN ('EXPIRED','RENEWED') 
+AND   o.docstate = 'EXPIRED'  
 
 [getForRenewalListByTaxpayerAddress]  
 SELECT o.* FROM bpapplicationlisting o 
 WHERE o.taxpayeraddress LIKE $P{search} 
-AND   o.docstate IN ('EXPIRED','RENEWED') 
+AND   o.docstate = 'EXPIRED'  
 
 [getRetiredList]  
 SELECT o.* FROM bpapplicationlisting o 

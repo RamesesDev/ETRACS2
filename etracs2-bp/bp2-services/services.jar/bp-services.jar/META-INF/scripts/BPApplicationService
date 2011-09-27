@@ -396,7 +396,7 @@ class BPApplicationService{
 		submitForReview( appid, applist, requirements );
 		app.docstate = 'APPROVED';
 		app.info.requirements = requirements;
-
+		
 		def business = getBusiness( app );
 		business.applicationid = app.objid;
 		
@@ -404,8 +404,8 @@ class BPApplicationService{
 			updatePreviousApplication( app.parentid );
 		}
 		
-		app.businessid = business.objid;
-		
+		app.businessid = business.objid; 
+		    
 		if( app.txnmode == 'CAPTURE' || app.txntype == 'RENEW' ){
 			business.lastqtrpaid = 4;
 			business.lastyearpaid = app.iyear - 1;
@@ -538,6 +538,9 @@ class BPApplicationService{
 		def app = open( applicationid );
 		app.docstate = 'RENEWED';
 		em.update( SCHEMANAME, app );
+		
+		// bpapplicationlisting docstate to RENEWED
+		em.sqlContext.createNamedExecutor("business:updateAppListStatToRenewed").setParameter('businessid', app.businessid).execute()		
 	}
 	
 	def evaluateAddLob( def application ){
