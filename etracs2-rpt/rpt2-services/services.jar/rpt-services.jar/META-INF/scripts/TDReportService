@@ -73,7 +73,7 @@ class TDReportService
 	
 	void buildAnnotationInfo( td, faas ) {
 		td.annotated  = false 
-		if( faas.info.annotated == true ) {
+		if( IS_TRUE( faas.info.annotated ) ) {
 			def data = em.sqlContext.createNamedQuery('faas:getActiveAnnotationId').setParameter('faasid', faas.objid).singleResult
 			def annotation = em.read('annotation', data )
 			td.annotated 		= true 
@@ -254,5 +254,11 @@ class TDReportService
 		catch( e ) {
 			return defval
 		}
+	}
+	
+	boolean IS_TRUE( value ) {
+		if( value == true || value == 1 || value == 'y' || value == 'yes' )
+			return true
+		return false 
 	}
 }
