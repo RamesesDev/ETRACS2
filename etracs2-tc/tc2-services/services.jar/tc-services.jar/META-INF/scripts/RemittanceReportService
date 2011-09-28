@@ -79,6 +79,13 @@ class RemittanceReportService {
 		return rem;
 	}
 	
+	@ProxyMethod
+	public def generateSummaryByIncomeAcctReport( rem, fund ) {
+		rem.info.txndate = dtsvc.parse( "yyyy-MM-dd", rem.info.txndate );
+		rem.acctsummaries = getIncomeAccuntSummaryByFund( rem, fund );
+		return rem
+	}
+	
 	private def getReceiptDetailsByFund( rem, fund ) {
 		def query = {
 			if( fund?.objid ) return em.sqlContext.createNamedQuery("remittance:getReceiptDetailsByFund").setParameter("fundid", fund.objid);
