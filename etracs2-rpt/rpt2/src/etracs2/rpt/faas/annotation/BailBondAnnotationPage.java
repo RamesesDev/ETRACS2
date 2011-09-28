@@ -34,6 +34,8 @@ public class BailBondAnnotationPage extends javax.swing.JPanel {
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xTextField2 = new com.rameses.rcp.control.XTextField();
         xTextField6 = new com.rameses.rcp.control.XTextField();
+        xTextField7 = new com.rameses.rcp.control.XTextField();
+        xTextField8 = new com.rameses.rcp.control.XTextField();
         xTextField3 = new com.rameses.rcp.control.XTextField();
         xTextField5 = new com.rameses.rcp.control.XTextField();
         xDateField3 = new com.rameses.rcp.control.XDateField();
@@ -66,11 +68,11 @@ public class BailBondAnnotationPage extends javax.swing.JPanel {
         formPanel3.setCellpadding(new java.awt.Insets(0, 0, 0, 15));
         formPanel3.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
         formPanel3.setPadding(new java.awt.Insets(0, 0, 0, 0));
-        formPanel3.setPreferredSize(new java.awt.Dimension(0, 130));
+        formPanel3.setPreferredSize(new java.awt.Dimension(0, 170));
         formPanel3.setShowCaption(false);
 
         formPanel4.setPadding(new java.awt.Insets(0, 0, 0, 0));
-        formPanel4.setPreferredSize(new java.awt.Dimension(330, 135));
+        formPanel4.setPreferredSize(new java.awt.Dimension(330, 200));
         formPanel4.setShowCaption(false);
         xTextField1.setCaption("File No.");
         xTextField1.setCaptionWidth(110);
@@ -92,6 +94,20 @@ public class BailBondAnnotationPage extends javax.swing.JPanel {
         xTextField6.setPreferredSize(new java.awt.Dimension(0, 19));
         xTextField6.setRequired(true);
         formPanel4.add(xTextField6);
+
+        xTextField7.setCaption("Plaintiff");
+        xTextField7.setCaptionWidth(110);
+        xTextField7.setName("entity.plaintiff");
+        xTextField7.setPreferredSize(new java.awt.Dimension(0, 19));
+        xTextField7.setRequired(true);
+        formPanel4.add(xTextField7);
+
+        xTextField8.setCaption("Defendant");
+        xTextField8.setCaptionWidth(110);
+        xTextField8.setName("entity.defendant");
+        xTextField8.setPreferredSize(new java.awt.Dimension(0, 19));
+        xTextField8.setRequired(true);
+        formPanel4.add(xTextField8);
 
         xTextField3.setCaption("Signed By");
         xTextField3.setCaptionWidth(110);
@@ -266,15 +282,18 @@ public class BailBondAnnotationPage extends javax.swing.JPanel {
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 730, Short.MAX_VALUE)
+            .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 740, Short.MAX_VALUE)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(formPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 683, Short.MAX_VALUE)
-                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                        .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE)))
-                .add(37, 37, 37))
+                    .add(layout.createSequentialGroup()
+                        .add(formPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 693, Short.MAX_VALUE)
+                        .add(37, 37, 37))
+                    .add(layout.createSequentialGroup()
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                            .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(org.jdesktop.layout.GroupLayout.LEADING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 604, Short.MAX_VALUE))
+                        .addContainerGap())))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -283,10 +302,10 @@ public class BailBondAnnotationPage extends javax.swing.JPanel {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 238, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 279, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(formPanel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 169, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(38, Short.MAX_VALUE))
+                .add(formPanel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 167, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(17, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
     
@@ -322,6 +341,8 @@ public class BailBondAnnotationPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XTextField xTextField4;
     private com.rameses.rcp.control.XTextField xTextField5;
     private com.rameses.rcp.control.XTextField xTextField6;
+    private com.rameses.rcp.control.XTextField xTextField7;
+    private com.rameses.rcp.control.XTextField xTextField8;
     // End of variables declaration//GEN-END:variables
     
 }
