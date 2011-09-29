@@ -357,10 +357,19 @@ class RPTReceiptService
                 def acctinfo = em.sqlContext.createNamedQuery('rptreceipt:getIncomeAccountInfo').setParameter('objid', mkey).singleResult
                 if( !acctinfo ) throw new Exception("Account with ID No. $mkey does not exists.")
                 
-                def items = mapgroup[mkey]
+				def items = mapgroup[mkey]
+				
+				def disc = 0.0
+				if( field == 'basic' )  
+					disc = items.basicdisc.sum()
+				else if (field == 'sef' )
+					disc = items.sefdisc.sum()
+				
+				def amount = items."$field".sum()
+				
                 def rctitem = [
                     objid       : 'RI' + new UID(),
-                    amount      : items."$field".sum(),
+                    amount      : amount - disc, 
                     refid       : item.objid,
                 ] + acctinfo 
                 

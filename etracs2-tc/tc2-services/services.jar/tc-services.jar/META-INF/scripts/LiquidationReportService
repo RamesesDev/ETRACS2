@@ -163,9 +163,11 @@ public class LiquidationReportServices{
 		
 		list.each{ val ->
 			def idx = 0;
-			val.pathtitle.split('/').each{ 
-				idx = analyzeTree( idx, it );
-			};
+			if( val.pathtitle ) {
+				val.pathtitle.split('/').each{ 
+					idx = analyzeTree( idx, it );
+				};
+			}
 			results.add( display( idx+1, val, true )  );
 		}
 
