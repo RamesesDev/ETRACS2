@@ -53,6 +53,9 @@ class PlantTreeRPUService
 		if( rysetting.adjustplanttree == 1 || rysetting.adjustplanttree == true  ){
 			// get total basemarketvalue for agrilands only 
 			def agrilands 		= landdetails.findAll{ it.actualuseid == rysetting.agriculturalid }
+			if( ! agrilands )   {
+				agrilands = landdetails.findAll{ it.actualusecode == 'AGR' }
+			}
 			def totallandbmv 	  = agrilands.basemarketvalue.sum()
 			def totalvalueadj     = landdetails.landvalueadjustment.sum()
 			def totalactualuseadj = landdetails.actualuseadjustment.sum()

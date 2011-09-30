@@ -34,6 +34,8 @@ public class FAASMgmtController
     def selectedItem
     List list
     
+    def docstate 
+    
     def invokerparam = [
         getParams :  { return [faasid:selectedItem?.objid] }
     ] as InvokerParameter
@@ -59,6 +61,11 @@ public class FAASMgmtController
         binding.refresh('html')
     }
     
+    void setDocstate( docstate ) {
+        this.docstate = docstate
+        search()
+    }
+    
     def listHandler =[
         getRows    : { return 25 },
         getColumns : { return [
@@ -78,7 +85,7 @@ public class FAASMgmtController
         ]},
         fetchList  : {
             if( ! list  ) {
-                list = svc.getList( searchText, it )
+                list = svc.getList2( searchText, docstate, it )
             }
             return list 
         },
@@ -96,6 +103,9 @@ public class FAASMgmtController
         return true
     }
 
+    List getStatelist() {
+        return ['INTERIM', 'FORAPPROVAL', 'FORPROVAPPROVAL', 'CURRENT', 'CANCELLED']
+    }
 }
 
 
