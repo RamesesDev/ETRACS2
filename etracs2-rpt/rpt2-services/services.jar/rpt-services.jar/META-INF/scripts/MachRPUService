@@ -32,9 +32,16 @@ class MachRPUService
     
     @ProxyMethod
     public Map calculateTotals( rpu ) {
+		def rptsetting = getRPTSetting()
+		
         rpu.info.machuses.each { mu ->
             mu.basemarketvalue = mu.machdetails.basemarketvalue.sum()
             mu.marketvalue = mu.machdetails.marketvalue.sum()
+			
+			if( rptsetting && IS_TRUE( rptsetting.roundadjmarketvalue ) ) {
+				mu.marketvalue = numberSvc.roundA( mu.marketvalue, 0 )
+			}
+			
             mu.assesslevel = mu.machdetails.assesslevel.max()
             mu.assessedvalue = mu.machdetails.assessedvalue.sum()
         }

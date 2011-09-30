@@ -18,9 +18,11 @@ INNER JOIN liquidationlist ll on ll.objid = rml.liquidationid
 WHERE ll.objid = $P{liquidationid} 
 
 [getRemittanceFundTotalByLiquidationAndFund] 
-SELECT SUM( o.amount ) as amount, o.remittanceno, o.collectorname FROM revenue o 
+SELECT SUM( o.amount ) as amount, o.remittanceno, o.collectorname 
+FROM revenue o 
 WHERE o.liquidationid = $P{liquidationid} 
 AND   o.fundid = $P{fundid} 
+AND o.voided = 0  
 GROUP BY o.remittanceno, o.collectorname   
 
 [getFundList] 
@@ -35,10 +37,12 @@ SELECT
 	p.accttitle as parenttitle, 
 	SUM(r.amount) AS amount 
 FROM revenue r 
-INNER JOIN account a ON a.objid = r.sreid  
-INNER JOIN account p on p.objid = a.parentid 
+INNER JOIN incomeaccount ia ON r.acctid = ia.objid 
+LEFT JOIN account a ON ia.sreid = a.objid 
+LEFT JOIN account p on p.objid = a.parentid  
 WHERE r.fundid = $P{fundid} 
 AND   r.liquidationid = $P{liquidationid} 
+AND r.voided = 0  
 GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
 ORDER BY a.pathbytitle 
 
@@ -51,10 +55,12 @@ SELECT
 	p.accttitle as parenttitle,
 	SUM(r.amount) AS amount 
 FROM revenue r 
-INNER JOIN account a ON a.objid = r.ngasid 
-INNER JOIN account p on p.objid = a.parentid 
+INNER JOIN incomeaccount ia ON r.acctid = ia.objid 
+LEFT JOIN account a ON ia.ngasid = a.objid 
+LEFT JOIN account p on p.objid = a.parentid 
 WHERE r.fundid = $P{fundid} 
 AND   r.liquidationid = $P{liquidationid} 
+AND r.voided = 0   
 GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
 ORDER BY a.pathbytitle 
 
@@ -67,9 +73,11 @@ SELECT
 	r.accttitle AS accttitle, 
 	SUM(r.amount) AS amount 
 FROM revenue r  
-INNER JOIN account a ON a.objid = r.sreid  
+INNER JOIN incomeaccount ia ON r.acctid = ia.objid 
+LEFT JOIN account a ON ia.sreid = a.objid 
 WHERE r.fundid = $P{fundid}   
 AND   r.liquidationid = $P{liquidationid}  
+AND r.voided = 0  
 GROUP BY a.pathbytitle, a.acctcode, a.accttitle, r.acctno, r.accttitle  
 ORDER BY a.pathbytitle
 
@@ -82,10 +90,12 @@ SELECT
 	r.accttitle AS accttitle,
 	SUM(r.amount) AS amount 
 FROM revenue r 
-INNER JOIN account a ON a.objid = r.ngasid  
+INNER JOIN incomeaccount ia ON r.acctid = ia.objid 
+LEFT JOIN account a ON ia.ngasid =  a.objid 
 WHERE r.fundid = $P{fundid} 
 AND   r.liquidationid = $P{liquidationid} 
 AND   r.fundid = $P{fundid} 
+AND r.voided = 0  
 GROUP BY a.pathbytitle, a.acctcode, a.accttitle, r.acctno, r.accttitle 
 ORDER BY a.pathbytitle 
 

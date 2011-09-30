@@ -186,6 +186,11 @@ class BldgRPUService
         bldguse.adjustment      = calculateSum( 'adjustment', bldguse.floors )
         bldguse.depreciationvalue = calculateSum( 'depreciationvalue', bldguse.floors )
         bldguse.marketvalue     = calculateSum( 'marketvalue', bldguse.floors )
+		
+		def rptsetting = getRPTSetting()
+		if( rptsetting && IS_TRUE( rptsetting.roundadjmarketvalue ) ) {
+			bldguse.marketvalue = numberSvc.roundA( bldguse.marketvalue, 0 )
+		}
         return bldguse 
     }
     
@@ -436,5 +441,18 @@ class BldgRPUService
     
     def evaluateExpr( expr, params ) {
 		return (new GroovyShell( new Binding( params) )).evaluate( expr )
+	}
+	
+	def getRPTSetting() {
+		return em.sqlContext.createNamedQuery('bldgrpu:getRPTSetting').singleResult 
+	}
+	
+	boolean IS_TRUE( value ) {
+		return TO_BOOLEAN( value ) == true 
+	}
+	
+	boolean TO_BOOLEAN( value ) {
+		if( value instanceof Boolean ) return value 
+		return '1/y/yes/true/t'.indexOf( value.toString().toLowerCase() ) >= 0
 	}
 }

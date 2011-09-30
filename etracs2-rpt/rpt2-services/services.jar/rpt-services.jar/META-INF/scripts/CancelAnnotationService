@@ -16,6 +16,9 @@ class CancelAnnotationService
 	@Service('TxnReference')
 	def txnrefSvc
 	
+	@Service('DateService')
+	def dateSvc
+	
 	@Env
 	def env
 	
@@ -170,9 +173,12 @@ class CancelAnnotationService
 		//set info.annotated field  to true 
 		def faas = em.read( 'faas', [objid:cancelannotation.faasid] )
 		if( ! faas ) throw new Exception('Cannot open FAAS for annotation cancellation.\nPlease verify that it was not deleted.')
-		faas.info.annotated = false 
-		em.update( 'faas:faas', faas )
-		em.update( 'faas:faaslist', faas )
+		def annotationlist = em.sqlContext.createNamedQuery('faas:getActiveAnnotations').setParameter('faasid', faas.objid).resultList 
+		if( annotationlist.size() == 0 ) {
+			faas.info.annotated = false 
+			em.update( 'faas:faas', faas )
+			em.update( 'faas:faaslist', faas )
+		}
 	}
 	
 	

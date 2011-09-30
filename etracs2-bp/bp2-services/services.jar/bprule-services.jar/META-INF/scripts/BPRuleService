@@ -184,8 +184,11 @@ class AppInfoHandler implements RuleActionHandler
 	
 	Map getVariableInfo( var ) {
 		def varInfo = em.sqlContext.createNamedQuery('bprule:getVarInfo').setParameter('objid', var.varid).singleResult 
-		varInfo.arrayvalues = em.serializer.read( varInfo.arrayvalues );
 		if( ! varInfo ) throw new Exception('Variable ' + var.varname + ' does not exists.\nCheck if variable was not deleted.')
+		if( varInfo.arrayvalues )
+			varInfo.arrayvalues = em.serializer.read( varInfo.arrayvalues )
+		else 
+			varInfo.arrayvalues = []
 		return varInfo 
 	}
 }

@@ -109,7 +109,8 @@ class FAASAnnotationService
 		em.validate( annotation.schemaname, annotation )
 		em.create( annotation.schemaname, annotation )
 		logSvc.log('CREATE', 'Annotation', annotation.objid )
-		txnrefSvc.insert(annotation.faasid,  annotation.objid, 'Annotation', 'FAAS is referenced by Annotation No. ' + annotation.docno + '.' )
+		//allow multiple annotations 
+		//txnrefSvc.insert(annotation.faasid,  annotation.objid, 'Annotation', 'FAAS is referenced by Annotation No. ' + annotation.docno + '.' )
 		return annotation 
 	}
 	
@@ -192,8 +193,25 @@ class FAASAnnotationService
 		em.delete( 'annotation', annotation)
 		logSvc.log('DELETE', 'Annotation', annotation.objid )
 	}
+
 	
 	void createAnnotationDetail( annotation ) {
+		def text = ''
+		if( annotation.doctype == 'mortgage' ) {
+			text += 'Mortgage for P ' + annotation.loanamount + ' to the ' + annotation.bank + '.'
+			text += ' This instrument executed on ' + annotation.mortgagedate 
+			text += ' by ' + annotation.mortgageby + '. Ratified by ' + annotation.signedby + '.'
+			text += annotation.signedbytitle + ' on ' + annotation.dtsigned + '.'  
+		}
+		else if( annotation.doctype == 'bailbond' ) {
+			text += 'Bail Bond: Filed under Case No. ' + annotation.caseno + ' on ' + annotation.branchno + '. ' 
+			text += ( annotation.plaintiff ? annotation.plaintiff : '_____________________' ) + ' vs. '  
+			text += ( annotation.defendant ? annotation.defendant : '_____________________' ) + '.' 
+		}
+		if( ! text ) text = annotation.memoranda 
+		annotation.details = text 
+		
+		/*
 		if( annotation.doctype == 'mortgage' ) {
 			annotation.details =  'Mortgage to : ' + annotation.bank + '  \n'
 			annotation.details += 'Amount      : P ' +  numSvc.format('#,##0.00', annotation.loanamount) 
@@ -201,6 +219,7 @@ class FAASAnnotationService
 		else if( annotation.doctype == 'bailbond' )  {
 			annotation.details = 'Bail Bond in favor of ' + annotation.branchno + ' under Case No. ' + annotation.caseno + '.'
 		}
+		*/
 	}
 	
 	void annotateFAAS( annotation ) {
@@ -214,7 +233,9 @@ class FAASAnnotationService
 	
 	def validateInit( faasid ) {
 		def faas = checkFaasCurrentState( faasid )
-		txnrefSvc.checkReference( faasid )
+		//
+		//allow multiple annotations, @jzamora 
+		//txnrefSvc.checkReference( faasid )
 		return faas 
 	}
 	

@@ -96,6 +96,10 @@ SELECT * FROM lgu WHERE parentid = $P{parentid} ORDER BY lguname
 [getActiveAnnotationId] 
 SELECT objid FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPROVED' ORDER BY docno DESC 
 
+[getActiveAnnotations] 
+SELECT * FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPROVED' ORDER BY docno DESC 
+
+
 #----------------------------------------------------------------
 # INSERT
 #----------------------------------------------------------------
@@ -177,6 +181,7 @@ SELECT
 	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
 	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
 FROM faaslist 
+WHERE docstate LIKE $P{docstate} 
 
 [findByTdNo]
 SELECT 
@@ -186,6 +191,7 @@ SELECT
 	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
 FROM  faaslist 
 WHERE tdno = $P{tdno} 
+  AND docstate LIKE $P{docstate} 
 
 [findByTaxpayerName]
 SELECT 
@@ -195,6 +201,7 @@ SELECT
 	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
 FROM  faaslist 
 WHERE taxpayername LIKE $P{taxpayername} 
+  AND docstate LIKE $P{docstate} 
 
 [findByPin] 
 SELECT 
@@ -204,6 +211,7 @@ SELECT
 	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
 FROM  faaslist 
 WHERE pin LIKE $P{pin} 
+  AND docstate LIKE $P{docstate} 
 
 [findByBarangay]
 SELECT 
@@ -212,7 +220,9 @@ SELECT
 	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
 	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
 FROM  faaslist 
-WHERE barangay = $P{barangay} 
+WHERE barangay = $P{barangay}  
+  AND docstate LIKE $P{docstate} 
+
 
 [findByCadastralLotNo]
 SELECT 
@@ -221,7 +231,8 @@ SELECT
 	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
 	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
 FROM  faaslist 
-WHERE cadastrallotno = $P{cadastrallotno} 
+WHERE cadastrallotno = $P{cadastrallotno}  
+  AND docstate LIKE $P{docstate} 
 
 [findBySurveyNo]
 SELECT 
@@ -231,6 +242,7 @@ SELECT
 	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
 FROM  faaslist 
 WHERE surveyno = $P{surveyno} 
+  AND docstate LIKE $P{docstate} 
 
 [findByBlockNo]
 SELECT 
@@ -240,6 +252,7 @@ SELECT
 	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
 FROM  faaslist 
 WHERE blockno = $P{blockno} 
+  AND docstate LIKE $P{docstate} 
 
 
 

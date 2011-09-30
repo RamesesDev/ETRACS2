@@ -11,11 +11,10 @@ SELECT * FROM rptsetting
 SELECT 
 	s.objid AS subclassid, s.subclasscode, s.subclassname, s.specificclassid, s.unitvalue AS basevalue, 
 	sp.classcode AS specificclasscode, sp.classname AS specificclassname, sp.lcuvid AS actualuseid, sp.areatype, 
-	c.propertycode AS actualusecode, c.propertydesc AS actualusename 
-FROM lcuvsubclass s, lcuvspecificclass sp, lcuv l, propertyclassification c, landrysetting ls 
+	l.classcode AS actualusecode, l.classname AS actualusename 
+FROM lcuvsubclass s, lcuvspecificclass sp, lcuv l, landrysetting ls 
 WHERE s.specificclassid = sp.objid  
   AND sp.lcuvid = l.objid 
-  AND l.objid = c.objid  
   AND l.landrysettingid = ls.objid 
   AND ls.ry = $P{ry} 
   AND s.subclasscode LIKE $P{subclasscode}  

@@ -19,17 +19,18 @@ class TDReportService
 	@Service('DateService')
 	def dateSvc
     
-    @ProxyMethod
+    @ProxyMethod 
     public def getReportData( faasid ) {
 		def td =[:]
 		def faas = em.read('faas', [objid:faasid]);
 		if( ! faas ) throw new Exception('Cannot open FAAS with ID no. ' + faasid + '.')
     	
 		buildAnnotationInfo( td, faas )
-
+		
     	td.putAll( faas.info )
     	td.putAll( faas.rp )
     	td.putAll( faas.rpu )
+		td.dtapproved = dateSvc.format( 'MM-dd-yyyy', dateSvc.parse('yyyy-MM-dd', td.dtapproved ))
     	td.docstate = faas.docstate
     	td.munidistprovince = faas.rp.munidistrict + ', ' + faas.rp.provcity
     	td.propertytype = faas.rpu.rputype 
@@ -38,10 +39,15 @@ class TDReportService
 		if( faas.rpu.rputype != 'land' ) {
 			clearRealPropertyInfo( td )
 		}
-    	
-    	if( faas.rpu.rputype == 'land' ) {
-			td.lands = getLandDetails( faas.rpu )
-			td.plants = getPlantTreeDetails( faas.rpu )
+    	   
+		if( faas.rpu.rputype == 'land' ) {
+			if( var.td_report_item_format && var.td_report_item_format == 'BLGF' ) {
+				td.lands = buildStandardItemSummary( faas.rpu )
+			}
+			else {
+				td.lands = getLandDetails( faas.rpu )
+				td.plants = getPlantTreeDetails( faas.rpu )
+			}
 		}
     	else if( faas.rpu.rputype == 'bldg' ) {
 			td.bldgdesc  	= faas.rpu.info.bldgtype.bldgtypename + ' - ' + faas.rpu.info.bldgkindbucc.bldgkindname
@@ -73,7 +79,7 @@ class TDReportService
 	
 	void buildAnnotationInfo( td, faas ) {
 		td.annotated  = false 
-		if( faas.info.annotated == true ) {
+		if( IS_TRUE( faas.info.annotated ) ) {
 			def data = em.sqlContext.createNamedQuery('faas:getActiveAnnotationId').setParameter('faasid', faas.objid).singleResult
 			def annotation = em.read('annotation', data )
 			td.annotated 		= true 
@@ -96,11 +102,32 @@ class TDReportService
 				annotationsignedby 		 : annotation.signedby,
 				annotationsignedbytitle  : annotation.signedbytitle
 			]
+			
+			def annotationlist = em.sqlContext.createNamedQuery('faas:getActiveAnnotations').setParameter('faasid', faas.objid).resultList
+			td.annotations = []
+			annotationlist.each { anno ->
+				td.annotations.add( [annotationtext:anno.details ])
+			}
 		}
 	}
 	
+	def buildAnnotationText( anno ) {
+		def text = ''
+		if( anno.doctype == 'mortgage' ) {
+			text += 'Mortgate for P ' + anno.loanamount + ' to the ' + anno.bank + '.'
+			text += ' This instrument executed on ' + anno.dtsigned 
+			text += ' by _______. Ratified by ' + anno.signedby + '.'
+			text += anno.signedbytitle + ' on ' + anno.dtsigned + '.'  
+		}
+		else if( anno.doctype == 'bailbond' ) {
+			text += 'Filed under Case No. ' + anno.caseno + ' on ' + anno.branchno + '.'
+		}
+		if( ! text ) text = anno.memoranda 
+		return text 
+		
+	}
+	
 	void clearRealPropertyInfo( td ) {
-		println 'var.td_show_landinfo_on_improvements -> ' + var.td_show_landinfo_on_improvements 
 		int showlandinfo =  toInt(var.td_show_landinfo_on_improvements, 1 ) 
 		if( showlandinfo == 1 ) return 
 		
@@ -126,9 +153,7 @@ class TDReportService
     
     private def getLandDetails( rpu ) {
     	def data = [];
-    	
     	def landdetails = rpu.info.landdetails;
-
 		landdetails.each {
 			def item = [
 				classification	: rpu.classname,
@@ -142,10 +167,43 @@ class TDReportService
 			
 			data.add( item );
 		}
-		
-		return data;
+		return data; 
     }
-    
+	
+	List buildStandardItemSummary( rpu) {
+		def data = [];
+    	def landdetails = rpu.info.landdetails;
+		def actualusegroup = landdetails.groupBy{ it.actualusename + it.assesslevelname }
+		actualusegroup.keySet().each{ key ->
+			def itemlist = actualusegroup[key]
+			data.add([
+				classification 	: rpu.classname,
+				actualusecode  	: itemlist[0].actualusecode,
+				actualuse	   	: itemlist[0].actualusename,
+				area     	   	: itemlist.areaha.sum(),
+				marketvalue		: itemlist.marketvalue.sum(),
+				assesslevel		: itemlist[0].assesslevel,
+				assessedvalue	: itemlist.assessedvalue.sum(),
+			])
+		}
+		
+		def planttreedetails= []
+    	if( rpu.info.planttrees ) 
+			planttreedetails = rpu.info.planttrees
+		else 
+			planttreedetails = rpu.info.planttreedetails;
+		
+		//add planttree values 
+		planttreedetails.each{ pt ->
+			def agriland = data.find{ it.actualusecode == pt.assesslevelcode}
+			if( agriland ) {
+				agriland.marketvalue += pt.marketvalue
+				agriland.assessedvalue += pt.assessedvalue
+			}
+		}
+		return data 
+	}
+	
     private def getBldgDetails( rpu ) {
     	def data = [];
     	
@@ -157,7 +215,8 @@ class TDReportService
 				actualuse 		: rpu.classname,
 				assesslevel		: rpu.info.assesslevel,
 				marketvalue		: rpu.totalmv,
-				assessedvalue	: rpu.totalav
+				assessedvalue	: rpu.totalav,
+				area			: rpu.totalareasqm,
 			];
 			
 			data.add( item );
@@ -168,7 +227,8 @@ class TDReportService
 					actualuse		: it.actualuse.actualusename,
 					assesslevel		: it.assesslevel,
 					marketvalue		: it.marketvalue,
-					assessedvalue	: it.assessedvalue
+					assessedvalue	: it.assessedvalue,
+					area			: it.area,
 				];
 				
 				data.add( item );
@@ -254,5 +314,11 @@ class TDReportService
 		catch( e ) {
 			return defval
 		}
+	}
+	
+	boolean IS_TRUE( value ) {
+		if( value == true || value == 1 || value == 'y' || value == 'yes' )
+			return true
+		return false 
 	}
 }

@@ -2,6 +2,10 @@
 SELECT predominant, depreciatecoreanditemseparately, computedepreciationbasedonschedule 
 FROM bldgrysetting WHERE ry = $P{ry} 
 
+[getRPTSetting]
+SELECT * FROM rptsetting 
+
+
 [getStructures]
 SELECT  objid AS structureid, structurecode, structuredesc AS structurename FROM structures  ORDER BY structuredesc 
 

@@ -31,7 +31,10 @@ public class FAASMgmtPage extends javax.swing.JPanel {
         jPanel1 = new javax.swing.JPanel();
         jPanel3 = new javax.swing.JPanel();
         xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        jPanel5 = new javax.swing.JPanel();
         xActionBar2 = new com.rameses.rcp.control.XActionBar();
+        formPanel1 = new com.rameses.rcp.util.FormPanel();
+        xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -55,11 +58,29 @@ public class FAASMgmtPage extends javax.swing.JPanel {
         xActionTextField1.setPreferredSize(new java.awt.Dimension(200, 19));
         jPanel3.add(xActionTextField1, java.awt.BorderLayout.WEST);
 
+        jPanel5.setLayout(new java.awt.BorderLayout());
+
+        jPanel5.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
         xActionBar2.setBorder(new com.rameses.rcp.control.border.XUnderlineBorder());
         xActionBar2.setDepends(new String[] {"selectedItem"});
         xActionBar2.setName("formActions");
         xActionBar2.setPadding(new java.awt.Insets(0, 5, 0, 0));
-        jPanel3.add(xActionBar2, java.awt.BorderLayout.CENTER);
+        jPanel5.add(xActionBar2, java.awt.BorderLayout.CENTER);
+
+        formPanel1.setCaptionPadding(new java.awt.Insets(0, 5, 0, 5));
+        formPanel1.setCellpadding(new java.awt.Insets(0, 5, 0, 0));
+        formPanel1.setPadding(new java.awt.Insets(0, 0, 0, 0));
+        xComboBox1.setCaption("State ");
+        xComboBox1.setCaptionWidth(50);
+        xComboBox1.setImmediate(true);
+        xComboBox1.setItems("statelist");
+        xComboBox1.setName("docstate");
+        xComboBox1.setPreferredSize(new java.awt.Dimension(200, 22));
+        formPanel1.add(xComboBox1);
+
+        jPanel5.add(formPanel1, java.awt.BorderLayout.WEST);
+
+        jPanel3.add(jPanel5, java.awt.BorderLayout.CENTER);
 
         jPanel1.add(jPanel3, java.awt.BorderLayout.NORTH);
 
@@ -88,13 +109,16 @@ public class FAASMgmtPage extends javax.swing.JPanel {
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private com.rameses.rcp.util.FormPanel formPanel1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel5;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar2;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
+    private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XEditorPane xEditorPane1;
     // End of variables declaration//GEN-END:variables

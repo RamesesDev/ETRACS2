@@ -1,6 +1,6 @@
 [getList]
 SELECT 
-	objid, docstate, tdno, fullpin, 
+	objid, docstate, tdno, fullpin, barangay, prevtdno, 
 	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
 	lastyearpaid, lastqtrpaid, assessedvalue , classcode 
 FROM rptledger  
@@ -8,7 +8,7 @@ WHERE docstate LIKE $P{docstate}
 
 [getListByTdno]
 SELECT 
-	objid, docstate, tdno, fullpin, 
+	objid, docstate, tdno, fullpin, barangay,  prevtdno, 
 	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
 	lastyearpaid, lastqtrpaid, assessedvalue  , classcode 
 FROM rptledger 
@@ -16,7 +16,7 @@ WHERE docstate LIKE $P{docstate} AND tdno LIKE $P{tdno}
 
 [getListByPin]
 SELECT 
-	objid, docstate, tdno, fullpin, 
+	objid, docstate, tdno, fullpin, barangay,  prevtdno, 
 	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
 	lastyearpaid, lastqtrpaid , assessedvalue , classcode 
 FROM rptledger 
@@ -24,7 +24,7 @@ WHERE docstate LIKE $P{docstate} AND fullpin LIKE $P{fullpin}
 
 [getListByTaxpayer]
 SELECT 
-	objid, docstate, tdno, fullpin, 
+	objid, docstate, tdno, fullpin, barangay,  prevtdno, 
 	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
 	lastyearpaid, lastqtrpaid , assessedvalue , classcode 
 FROM rptledger 
@@ -33,7 +33,7 @@ WHERE docstate LIKE $P{docstate} AND taxpayername LIKE  $P{taxpayername}
 
 [getListByCadastral]
 SELECT 
-	objid, docstate, tdno, fullpin, 
+	objid, docstate, tdno, fullpin, barangay,  prevtdno, 
 	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
 	lastyearpaid, lastqtrpaid , assessedvalue , classcode 
 FROM rptledger 
@@ -41,7 +41,7 @@ WHERE docstate LIKE $P{docstate} AND cadastrallotno = $P{cadastrallotno}
 
 [getListByBlock]
 SELECT 
-	objid, docstate, tdno, fullpin, 
+	objid, docstate, tdno, fullpin, barangay,  prevtdno, 
 	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
 	lastyearpaid, lastqtrpaid , assessedvalue , classcode 
 FROM rptledger 

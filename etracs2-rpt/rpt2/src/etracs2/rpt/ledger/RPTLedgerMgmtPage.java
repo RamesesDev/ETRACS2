@@ -30,19 +30,22 @@ public class RPTLedgerMgmtPage extends javax.swing.JPanel {
         jSplitPane1 = new javax.swing.JSplitPane();
         jPanel1 = new javax.swing.JPanel();
         jPanel3 = new javax.swing.JPanel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        jPanel4 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
+        xActionBar2 = new com.rameses.rcp.control.XActionBar();
+        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         jPanel2 = new javax.swing.JPanel();
-        xActionBar1 = new com.rameses.rcp.control.XActionBar();
         jScrollPane1 = new javax.swing.JScrollPane();
         xEditorPane1 = new com.rameses.rcp.control.XEditorPane();
 
         setLayout(new java.awt.BorderLayout());
 
         setPreferredSize(new java.awt.Dimension(748, 396));
-        jSplitPane1.setDividerLocation(400);
+        jSplitPane1.setDividerLocation(200);
+        jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+        jSplitPane1.setOpaque(false);
         jPanel1.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -51,15 +54,13 @@ public class RPTLedgerMgmtPage extends javax.swing.JPanel {
         jPanel3.setLayout(new java.awt.BorderLayout());
 
         jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 1, 3, 5));
-        xActionTextField1.setActionName("search");
-        xActionTextField1.setName("searchText");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(150, 19));
-        jPanel3.add(xActionTextField1, java.awt.BorderLayout.WEST);
+        jPanel4.setLayout(new java.awt.BorderLayout());
 
         formPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 20, 0, 0));
         formPanel1.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
         formPanel1.setCaptionVAlignment(com.rameses.rcp.constant.UIConstants.CENTER);
         formPanel1.setPadding(new java.awt.Insets(0, 0, 0, 0));
+        formPanel1.setPreferredSize(new java.awt.Dimension(250, 22));
         xComboBox1.setCaption("State");
         xComboBox1.setCaptionWidth(50);
         xComboBox1.setImmediate(true);
@@ -68,7 +69,20 @@ public class RPTLedgerMgmtPage extends javax.swing.JPanel {
         xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));
         formPanel1.add(xComboBox1);
 
-        jPanel3.add(formPanel1, java.awt.BorderLayout.CENTER);
+        jPanel4.add(formPanel1, java.awt.BorderLayout.WEST);
+
+        xActionBar2.setBorder(new com.rameses.rcp.control.border.XUnderlineBorder());
+        xActionBar2.setDepends(new String[] {"selectedItem"});
+        xActionBar2.setName("formActions");
+        xActionBar2.setPadding(new java.awt.Insets(0, 5, 0, 0));
+        jPanel4.add(xActionBar2, java.awt.BorderLayout.CENTER);
+
+        jPanel3.add(jPanel4, java.awt.BorderLayout.CENTER);
+
+        xActionTextField1.setActionName("search");
+        xActionTextField1.setName("searchText");
+        xActionTextField1.setPreferredSize(new java.awt.Dimension(150, 19));
+        jPanel3.add(xActionTextField1, java.awt.BorderLayout.WEST);
 
         jPanel1.add(jPanel3, java.awt.BorderLayout.NORTH);
 
@@ -84,12 +98,6 @@ public class RPTLedgerMgmtPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Document");
         jPanel2.setBorder(xTitledBorder2);
-        xActionBar1.setBorder(new com.rameses.rcp.control.border.XUnderlineBorder());
-        xActionBar1.setDepends(new String[] {"selectedItem"});
-        xActionBar1.setName("formActions");
-        xActionBar1.setPadding(new java.awt.Insets(0, 5, 0, 0));
-        jPanel2.add(xActionBar1, java.awt.BorderLayout.NORTH);
-
         jScrollPane1.setName("html");
         xEditorPane1.setDepends(new String[] {"selectedItem"});
         xEditorPane1.setName("html");
@@ -109,9 +117,10 @@ public class RPTLedgerMgmtPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSplitPane jSplitPane1;
-    private com.rameses.rcp.control.XActionBar xActionBar1;
+    private com.rameses.rcp.control.XActionBar xActionBar2;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
