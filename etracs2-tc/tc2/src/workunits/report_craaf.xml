@@ -26,6 +26,9 @@ class CRAAFController
     
     @Service("ConsolidatedReportService")
     def svc;
+    
+    @Service("ETRACSUserService")
+    def userSvc
    
     def mode = "build";
     def entity = [];
@@ -86,7 +89,9 @@ class CRAAFController
     def getStandardReportParams() {
         return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [
             MONTH       : entity.monthname,
-            YEAR        : Integer.parseInt( entity.year )
+            YEAR        : Integer.parseInt( entity.year ),
+            PREPAREDBY  : OsirisContext.env.USERNAME ,
+            PREPAREDBYTITLE : userSvc.getUser( OsirisContext.env.USERID ).jobtitle 
         ]; 
     }
     
