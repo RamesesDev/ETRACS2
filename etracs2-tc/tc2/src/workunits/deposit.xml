@@ -36,11 +36,8 @@ class DepositController
     @Service("NumberService")
     def numSvc
 	
-	@Service("DateService")
-	def dateSvc
-	
-	@Service("Var")
-	def var
+    @Service("Var")
+    def var
     
     @Service('DateService')
     def dateSvc
@@ -170,7 +167,7 @@ class DepositController
         data.branchname = fundSummary.branchname
         data.depositedbyname = entity.depositedbyname
         data.amountinwords = numSvc.convertString( data.cash + "" )
-        
+        data.txndate = dateSvc.format( 'MM-dd-yyyy', dateSvc.parse('yyyy-MM-dd', data.txndate ))
         return data
     }
     
