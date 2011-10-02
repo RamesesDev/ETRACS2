@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker folderid="/menu/tc/txn" caption="Post Captures" permission="postcapturereceipt.viewlist"/>
+        <invoker type="home.action" caption="Post Captures" permission="postcapturereceipt.viewlist" index="113" icon="images/folder.png" target="window"/>
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/doc-new.png" permission="postcapturereceipt.create"/>
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class PostCaptureListController {
+            @Binding
+            def binding;
+
+            @Service("PostCaptureService")
+            def svc;
+            
+            def entity;
+            
+            def searchText;
+            def list;
+            
+            def selectedItem;
+            
+
+            def listHandler = [
+                getRows    : { return 50; },
+                getColumns : {
+                    return [
+                        new Column( name:"docstate", caption:"State" ),
+                        new Column( name:"dtposted", caption:"Date Posted" ),
+                        new Column( name:"collectorname", caption:'Collector'),
+                        new Column( name:"collectortitle", caption:'Job Title'),
+                        new Column( name:"postedbyname", caption:'Posted By'),
+                        new Column( name:"amount", caption:"Amount", format: "#,##0.00", width:140 )
+                    ];
+                },
+
+                fetchList : { 
+                    return svc.getList( searchText, it );
+                }
+
+            ] as PageListModel;
+            
+            void search() {
+                listHandler.load();
+            }
+            
+            def create() {
+                return InvokerUtil.lookupOpener('postcapture.create', [:] )
+            }
+            
+        }
+        
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.collection.PostCaptureListMgmtPage" />
+    </pages>
+</workunit>
