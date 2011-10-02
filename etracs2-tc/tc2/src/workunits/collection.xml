@@ -71,7 +71,9 @@ class CollectionController
     def doNext() {
         if( ! afcontrol ) {
             getAFControlInfo()
-            return 
+            if( ! afcontrol ) {
+                return 
+            }
         }
         def vals = 'cattle_ownership|cattle_transfer|marriage_license|burial_permit';
         if( collectiontype.appcode.matches(vals) ){
@@ -112,6 +114,11 @@ class CollectionController
         }
     }
     
+    void setCollector( collector ) {
+        this.collector = collector 
+        afcontrol = null 
+    }
+    
     def onselectStubHandler = { afc ->
         afcontrol = afc
     }
@@ -131,7 +138,10 @@ class CollectionController
     
     
     def backHandler = {
-        binding.fireNavigation('default')
+        if( txnmode == CAPTURE_MODE )
+            binding.fireNavigation('capture')
+        else 
+            binding.fireNavigation('default')
     }
     
     def newHandler = { 
