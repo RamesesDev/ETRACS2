@@ -55,7 +55,12 @@ class CollectionController
     
     void initOnline()  { init( ONLINE_MODE  ) }
     void initOffline()  { init( OFFLINE_MONE ) }
-    void initCapture()  { init( CAPTURE_MODE ) }
+    
+    def initCapture()  { 
+        this.txnmode = CAPTURE_MODE 
+        preservedTxnDate()
+        return 'capture' 
+    }
 	
     void init( txnmode ) {
         this.txnmode = txnmode
@@ -64,6 +69,10 @@ class CollectionController
     }
 	
     def doNext() {
+        if( ! afcontrol ) {
+            getAFControlInfo()
+            return 
+        }
         def vals = 'cattle_ownership|cattle_transfer|marriage_license|burial_permit';
         if( collectiontype.appcode.matches(vals) ){
             def cs = csSvc.getCS();
@@ -127,7 +136,10 @@ class CollectionController
     
     def newHandler = { 
         getAFControlInfo( ) 
-        binding.fireNavigation('default')
+        if( txnmode == CAPTURE_MODE )
+            binding.fireNavigation('capture')
+        else 
+            binding.fireNavigation('default')
     }
 	
     void lookupOpener() {
@@ -165,7 +177,14 @@ class CollectionController
     }    
     
     def getCollector(){
-        return userService.getCollector( OsirisContext.env.USERID  )
+        if( txnmode != CAPTURE_MODE )
+            return userService.getCollector( OsirisContext.env.USERID  )
+        return collector 
+        
+    }
+    
+    def getCollectorlist() {
+        return userService.getCollectorList()
     }
 }
         
@@ -173,6 +192,7 @@ class CollectionController
     </code>
     <pages>
         <page template="etracs2.tc.collection.CollectionInitPage"/>
+        <page name="capture" template="etracs2.tc.collection.CollectionCaptureInitPage"/>
         <page name="main" template="etracs2.tc.collection.CollectionMainPage"/>
         <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
     </pages>
