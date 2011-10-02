@@ -13,20 +13,34 @@ class PostCaptureService
 	@Service('DateService')
 	def dateService
 	
+	@Service('ETRACSUserService')
+	def userSvc
+	
 	def SCHEMA = 'postcapture:postcapture'
 	def SCHEMAVERSION = '1.0'
 	
-	def DRAFT_STATE = 'DRAFT'
+	def DRAFT_STATE = 'DRAFT'   
 	def POSTED_STATE = 'POSTED'
 	
 	@ProxyMethod
+	public List getList( searchText, param ) {
+		searchText = ( searchText ? searchText+'%' : '%' )
+		return em.sqlContext.createNamedQuery('postcapture:getList')
+				.setParameter( 'collectorname',searchText)
+				.setFirstResult( param._start )
+				.setMaxResults( param._limit )
+				.resultList
+	}
+	
+	@ProxyMethod
 	public def create( collector ) {
+		def etracscollector = userSvc.getCollector( collector.objid )
 		def entity = [
             docstate       : DRAFT_STATE,
-			collectorid    : collector.collectorid,
-			collectorname  : collector.collectorname,
-			collectortitle : collector.collectortitle,
-            summaries      : loadCapturedReceiptSummaries( collector.collectorid)
+			collectorid    : etracscollector.objid,
+			collectorname  : etracscollector.name,
+			collectortitle : etracscollector.jobtitle,
+            summaries      : loadCapturedReceiptSummaries( collector.objid)
         ]
 		//add validation checks
 		entity.totalcount = entity.summaries.sum( {it.icount} )
@@ -52,7 +66,7 @@ class PostCaptureService
 		entity.objid = 'PC' + new UID()
 		entity.schemaname = SCHEMA
 		entity.schemaversion = SCHEMAVERSION
-		entity.state = POSTED_STATE
+		entity.docstate = POSTED_STATE
 		entity.dtposted = new Date()
 		validate( entity )		
 		em.sqlContext.createNamedExecutor('postcapture:postCapturedReceipts').setParameter('collectorid', entity.collectorid).execute()

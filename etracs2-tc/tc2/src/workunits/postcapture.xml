@@ -1,6 +1,8 @@
 <workunit>
     <invokers>
         <invoker folderid="menu/tc/txn" action="init" caption="Post Captured Receipt" permission="postcapturereceipt.create" />
+        <invoker type="home.action" action="init" caption="Post Captured Receipt" permission="postcapturereceipt.create" index="112" icon="images/doc-new.png" target="window" />
+        <invoker type="postcapture.create" action="init" caption="Post Captured Receipt" permission="postcapturereceipt.create" index="112" icon="images/doc-new.png" target="window" />
         <invoker type="initActions" action="doNext" caption="Next" mnemonic="n" icon="images/next.png"/>
         <invoker type="mainActions" action="post" caption="Post" mnemonic="p" permission="postcapturereceipt.post" icon="images/doc-submit.png"/>
     </invokers>
@@ -124,10 +126,12 @@ class PostCaptureController
     def detailHandler = [
         getRows    : { return 50 },
         getColumns : { return [
-            new Column( name:'afid', caption:'AF No.', maxWidth:50 ),
-            new Column( name:'stubno', caption:'Stub No.', maxWidth:60 ),
+            new Column( name:'afid', caption:'AF No.'),
+            new Column( name:'stubno', caption:'Stub No.'),
             new Column( name:'serialno', caption:'Serial No.'),
-            new Column( name:'amount', caption:'Amount', type:'decimal', maxWidth:110  ),
+            new Column( name:'collectiontype', caption:'Collection Type'),
+            new Column( name:'payorname', caption:'Payor Name'),
+            new Column( name:'amount', caption:'Amount', type:'decimal'),
             new Column( name:'voidreason', caption:'Void' ),
             
         ]},

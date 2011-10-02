@@ -35,10 +35,8 @@ public class PostCapturePage extends javax.swing.JPanel {
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
         jPanel5 = new javax.swing.JPanel();
         jPanel3 = new javax.swing.JPanel();
-        jPanel4 = new javax.swing.JPanel();
-        xActionBar2 = new com.rameses.rcp.control.XActionBar();
-        xSubFormPanel1 = new com.rameses.rcp.control.XSubFormPanel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
+        xActionBar2 = new com.rameses.rcp.control.XActionBar();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -97,24 +95,6 @@ public class PostCapturePage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Detail of Collection");
         jPanel3.setBorder(xTitledBorder2);
-        jPanel4.setLayout(new java.awt.BorderLayout());
-
-        xActionBar2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        xActionBar2.setDepends(new String[] {"selectedDetail"});
-        xActionBar2.setDynamic(true);
-        xActionBar2.setName("detailActions");
-        xActionBar2.setPadding(new java.awt.Insets(2, 2, 2, 2));
-        xActionBar2.setUseToolBar(false);
-        jPanel4.add(xActionBar2, java.awt.BorderLayout.NORTH);
-
-        xSubFormPanel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        xSubFormPanel1.setDepends(new String[] {"selectedDetail"});
-        xSubFormPanel1.setDynamic(true);
-        xSubFormPanel1.setHandler("opener");
-        jPanel4.add(xSubFormPanel1, java.awt.BorderLayout.CENTER);
-
-        jPanel3.add(jPanel4, java.awt.BorderLayout.CENTER);
-
         xDataTable2.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
         xDataTable2.setDepends(new String[] {"selectedSummary"});
         xDataTable2.setDynamic(true);
@@ -122,7 +102,15 @@ public class PostCapturePage extends javax.swing.JPanel {
         xDataTable2.setImmediate(true);
         xDataTable2.setName("selectedDetail");
         xDataTable2.setPreferredSize(new java.awt.Dimension(300, 80));
-        jPanel3.add(xDataTable2, java.awt.BorderLayout.WEST);
+        jPanel3.add(xDataTable2, java.awt.BorderLayout.CENTER);
+
+        xActionBar2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        xActionBar2.setDepends(new String[] {"selectedDetail"});
+        xActionBar2.setDynamic(true);
+        xActionBar2.setName("detailActions");
+        xActionBar2.setPadding(new java.awt.Insets(2, 2, 2, 2));
+        xActionBar2.setUseToolBar(false);
+        jPanel3.add(xActionBar2, java.awt.BorderLayout.NORTH);
 
         jPanel5.add(jPanel3, java.awt.BorderLayout.CENTER);
 
@@ -138,7 +126,6 @@ public class PostCapturePage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
-    private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionBar xActionBar2;
@@ -146,7 +133,6 @@ public class PostCapturePage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XDataTable xDataTable2;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XNumberField xNumberField1;
-    private com.rameses.rcp.control.XSubFormPanel xSubFormPanel1;
     // End of variables declaration//GEN-END:variables
     
 }

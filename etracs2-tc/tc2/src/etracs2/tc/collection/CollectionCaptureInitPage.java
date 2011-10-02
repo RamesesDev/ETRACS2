@@ -12,11 +12,11 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  *
  * @author  jzamora
  */
-@StyleSheet("etracs2/tc/collection/CollectionInitPage.style")
-public class CollectionInitPage extends javax.swing.JPanel {
+@StyleSheet("etracs2/tc/collection/CollectionCaptureInitPage.style")
+public class CollectionCaptureInitPage extends javax.swing.JPanel {
     
     /** Creates new form CollectionInitPage */
-    public CollectionInitPage() {
+    public CollectionCaptureInitPage() {
         initComponents();
     }
     
@@ -29,6 +29,7 @@ public class CollectionInitPage extends javax.swing.JPanel {
     private void initComponents() {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xComboBox3 = new com.rameses.rcp.control.XComboBox();
+        xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
         xLabel4 = new com.rameses.rcp.control.XLabel();
         xButton1 = new com.rameses.rcp.control.XButton();
@@ -51,9 +52,20 @@ public class CollectionInitPage extends javax.swing.JPanel {
         xComboBox3.setRequired(true);
         formPanel1.add(xComboBox3);
 
+        xComboBox1.setCaption("Collector");
+        xComboBox1.setCaptionWidth(100);
+        xComboBox1.setExpression("#{name}");
+        xComboBox1.setFont(new java.awt.Font("Arial", 1, 11));
+        xComboBox1.setImmediate(true);
+        xComboBox1.setItems("collectorlist");
+        xComboBox1.setName("collector");
+        xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));
+        xComboBox1.setRequired(true);
+        formPanel1.add(xComboBox1);
+
         xComboBox2.setCaption("Collection Type");
         xComboBox2.setCaptionWidth(100);
-        xComboBox2.setDepends(new String[] {"af"});
+        xComboBox2.setDepends(new String[] {"af", "collector"});
         xComboBox2.setDynamic(true);
         xComboBox2.setExpression("#{name}");
         xComboBox2.setFont(new java.awt.Font("Arial", 1, 12));
@@ -82,8 +94,8 @@ public class CollectionInitPage extends javax.swing.JPanel {
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(xLabel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 558, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                        .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 345, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                        .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 408, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(203, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -92,10 +104,10 @@ public class CollectionInitPage extends javax.swing.JPanel {
                 .addContainerGap()
                 .add(xLabel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 24, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 128, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 180, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(291, Short.MAX_VALUE))
+                .addContainerGap(239, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
     
@@ -103,6 +115,7 @@ public class CollectionInitPage extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.rameses.rcp.util.FormPanel formPanel1;
     private com.rameses.rcp.control.XButton xButton1;
+    private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XComboBox xComboBox3;
     private com.rameses.rcp.control.XLabel xLabel4;

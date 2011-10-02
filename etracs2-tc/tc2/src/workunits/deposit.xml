@@ -36,12 +36,11 @@ class DepositController
     @Service("NumberService")
     def numSvc
 	
-	@Service("DateService")
-	def dateSvc
-	
-	@Service("Var")
-	def var
+    @Service("Var")
+    def var
     
+    @Service('DateService')
+    def dateSvc
     
     def entity
     def selectedSummary
@@ -168,7 +167,7 @@ class DepositController
         data.branchname = fundSummary.branchname
         data.depositedbyname = entity.depositedbyname
         data.amountinwords = numSvc.convertString( data.cash + "" )
-        
+        data.txndate = dateSvc.format( 'MM-dd-yyyy', dateSvc.parse('yyyy-MM-dd', data.txndate ))
         return data
     }
     
@@ -182,9 +181,9 @@ class DepositController
         checks.each {
             def extended = GroovyObjectDeserializer.instance.deserialize( it.extended )
             data.noncashpayments.add([
-                bankname  : extended.bank,
-                checkno   : extended.checkno,
-                checkdate : extended.checkdate,
+                bankname  : ( extended ? extended.bank : it.bank ),
+                checkno   : ( extended ? extended.checkno : it.checkno ),
+                checkdate : ( extended ? extended.checkdate : it.checkdate ),
                 amount    : it.amount,
                 
             ])
@@ -193,7 +192,7 @@ class DepositController
         data.branchname = fundSummary.branchname
         data.depositedbyname = entity.depositedbyname
         data.amountinwords = numSvc.convertString( data.noncash + "" )
-        
+        data.txndate = dateSvc.format( 'MM-dd-yyyy', dateSvc.parse('yyyy-MM-dd', data.txndate ))
         return data
     }
     
@@ -227,7 +226,7 @@ class DepositController
     
     def addExternalPayment() {
         def params = [cashierid:cashierid, acceptHandler:addExternalPaymentHandler]
-        return InvokerUtil.lookupOpener('payment.type.check', params )
+        return InvokerUtil.lookupOpener('payment.type.externalcheck', params )
     }
     
     void updateDenominationHandlerAmount() {
