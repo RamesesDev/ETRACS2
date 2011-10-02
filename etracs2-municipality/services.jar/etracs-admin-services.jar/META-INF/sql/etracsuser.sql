@@ -11,6 +11,13 @@ WHERE u.objid = eu.objid
   AND u.uid LIKE $P{uid}
 ORDER BY u.uid  
 
+[findById]
+SELECT u.objid, u.uid, u.lastname, u.firstname, eu.jobtitle 
+FROM user u, etracsuser eu 
+WHERE u.objid = eu.objid 
+  AND u.uid LIKE $P{uid}
+ORDER BY u.uid  
+
 [findByLastName]
 SELECT u.objid, u.uid, u.lastname, u.firstname, eu.jobtitle 
 FROM user u, etracsuser eu 

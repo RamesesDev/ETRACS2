@@ -35,6 +35,12 @@ class DepositController
     
     @Service("NumberService")
     def numSvc
+	
+	@Service("DateService")
+	def dateSvc
+	
+	@Service("Var")
+	def var
     
     @Service('DateService')
     def dateSvc
@@ -101,7 +107,7 @@ class DepositController
             def reportName = "depositslip/cashbreakdown"
              def cashReport = [
                 getReportName : { return reportName },
-                getReportData : { return buildCashReportData( fundid ).denominations },
+                getReportData : { return buildCashReportData( fundid ) },
             ] as ServerReportModel
             cashReport.viewReport()
             ReportUtil.print( cashReport.report, true )
@@ -126,6 +132,7 @@ class DepositController
     void doPrintCheckDepositSlip( fundid, checktype ) {
         
         def reportName = "depositslip/check"
+            
          def checkReport  = [
             getReportName : { return reportName },
             getReportData : { return buildCheckReportData( fundid, checktype ) },
@@ -136,10 +143,11 @@ class DepositController
     
     def buildDepositReportData( fundSummary ) {
         if( ! fundSummary ) throw new Exception('Fund does not exists or invalid.\nReload deposit record and try again.')
+	def dt = dateSvc.parse("yyyy-MM-dd", entity.txndate)
         return [
-            txndate      : entity.txndate,
+            txndate      : dt,
             bankacctno   : fundSummary.bankacctno,
-            bankacctname : (fundSummary.bankacctname ? fundSummary.bankacctname : 'LGU BOHOL' ),
+            bankacctname : (fundSummary.bankacctname ? fundSummary.bankacctname : "LGU " + var.get('lgu_name') ),
             cash         : fundSummary.cash,
             noncash      : fundSummary.noncash,
         ]

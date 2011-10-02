@@ -29,6 +29,9 @@
         
             @Service('RPTCertificationsService')
             def svc;
+            
+            @Service("ETRACSUserService")
+            def userSvc
         
             @Binding 
             def binding;
@@ -71,11 +74,13 @@
             def report =[
                     getReportName : { "rpt/td/certification/NoPropertyCertification" },
                     getReportData : { return certification; },
-                    getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+                    getParameters : {svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
                 ] as ServerReportModel;
             
             public def doPreview(){
                 certification.putAll( svc.fetchDataNoProperty(certification) );
+                certification.verifiedby = OsirisContext.env.USERNAME
+                certification.verifiedbytitle = userSvc.getUser( OsirisContext.env.USERID ).jobtitle 
                 report.viewReport();
                 mode='_default'
                 return "preview";

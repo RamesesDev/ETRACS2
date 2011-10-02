@@ -30,7 +30,7 @@ SELECT
 	ri.fundid, ri.fundname, 
 	ba.objid AS bankacctid, 
 	ba.acctno AS bankacctno,
-	ba.bankcode, 
+	ba.bankcode, bankacctname, 
 	ba.bankname, 
 	ba.branchname, 
 	ba.accttype,
