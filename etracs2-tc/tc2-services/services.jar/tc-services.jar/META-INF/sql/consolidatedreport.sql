@@ -46,6 +46,19 @@ AND craafmonth = $P{craafmonth}
 AND craafyear = $P{craafyear}   
 ORDER BY afid, beginfrom, receivedfrom 
 
+[getReportDataGeneralByOpenState]
+SELECT  i.docstate, c.collectorname, c.afid, c.beginqty, c.beginfrom, c.beginto,   
+	c.receivedqty, c.receivedfrom, c.receivedto,   
+	c.issuedqty, c.issuedfrom, c.issuedto,  
+	c.endingqty, c.endingfrom, c.endingto   
+FROM craaf  c, afinventory i 
+WHERE c.afinventoryid = i.objid 
+AND c.collectorid IS NULL     
+AND c.craafmonth < $P{currMonth}     
+AND c.craafyear <= $P{currYear}   
+AND i.docstate <> 'CLOSED'   
+ORDER BY c.afid, c.beginfrom, c.receivedfrom  
+
 [getReportDataCollector]
 SELECT a.collectorname, c.stubno, c.afid, c.beginqty, c.beginfrom, c.beginto,   
 	c.receivedqty, c.receivedfrom, c.receivedto,   
@@ -58,6 +71,18 @@ WHERE c.afinventorycreditid = a.afinventorycreditid
   AND craafyear = $P{craafyear}     
 ORDER BY c.collectorname, c.afid, c.beginfrom, c.receivedfrom  
 
+[getReportDataCollectorByOpenState]
+SELECT a.collectorname, c.stubno, c.afid, c.beginqty, c.beginfrom, c.beginto,   
+	c.receivedqty, c.receivedfrom, c.receivedto,   
+	c.issuedqty, c.issuedfrom, c.issuedto,    
+	c.endingqty, c.endingfrom, c.endingto    
+FROM craaf c , afcontrol a  
+WHERE c.afinventorycreditid = a.afinventorycreditid  
+  AND c.afinventorycreditid IS NOT NULL   
+  AND craafmonth < $P{currMonth}    
+  AND craafyear <= $P{currYear}  
+  AND a.docstate <> 'CLOSED' 
+ORDER BY c.collectorname, c.afid, c.beginfrom, c.receivedfrom  
 
 [getReportDataCanceledSeries]
 SELECT c.collectorname, a.stubno, c.afid, c.canceledqty AS beginqty,    
@@ -67,6 +92,16 @@ WHERE c.afinventorycreditid = a.afinventorycreditid
 AND craafyear = $P{craafyear}  
 AND craafmonth = $P{craafmonth}   
 AND canceledqty != 0  
+
+[getReportDataCanceledSeriesOpenState]
+SELECT c.collectorname, a.stubno, c.afid, c.canceledqty AS beginqty,    
+	   c.canceledfrom AS beginfrom, c.canceledto AS beginto     
+FROM craaf c, afcontrol a    
+WHERE c.afinventorycreditid = a.afinventorycreditid    
+AND craafyear < $P{currYear}  
+AND craafmonth <= $P{currMonth}   
+AND docstate <> 'CLOSED' 
+AND canceledqty != 0
 
 [updateCRAAFbyIRAFCol]
 UPDATE craaf SET 

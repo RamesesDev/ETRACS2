@@ -12,6 +12,9 @@ class ConsolidatedReportService {
 	@Service('LogService')
 	def logService
 	
+	@Service('DateService')
+	def dtSvc
+	
 	def schemaname = "craaf:craaf"
 	def schemaversion = "1.0"
 	
@@ -20,6 +23,9 @@ class ConsolidatedReportService {
 	@ProxyMethod
 	public def buildReport( entity ){
 		def year = Integer.parseInt( entity.year );
+		def param = [:]
+		param.currYear = dtSvc.getServerYear()
+		param.currMonth = dtSvc.getServerMonth()
 		
 		def data = em.sqlContext.createNamedQuery('consolidatedreport:getReportDataGeneral').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
 		data += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCollector').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
@@ -38,7 +44,42 @@ class ConsolidatedReportService {
 			}
 		}
 		
+		def dataByOpen
+		if( year > param.currYear )
+			dataByOpen = getDataByOpen( param )
+		else if( year == param.currYear ){
+			if( entity.month >= param.currMonth )
+				dataByOpen = getDataByOpen( param )
+		}			
+		if( dataByOpen ) data.addAll( dataByOpen )
+
 		return data;
+	}
+	
+	private def getDataByOpen( param ){
+		def dataByOpen = em.sqlContext.createNamedQuery( 'consolidatedreport:getReportDataGeneralByOpenState' ).setParameters( param ).resultList
+		dataByOpen += em.sqlContext.createNamedQuery( 'consolidatedreport:getReportDataCollectorByOpenState' ).setParameters( param ).resultList
+		dataByOpen += em.sqlContext.createNamedQuery( 'consolidatedreport:getReportDataCanceledSeriesOpenState' ).setParameters( param ).resultList
+		
+		dataByOpen.each(){
+			it.beginqty = it.endingqty
+			it.beginfrom = it.endingfrom
+			it.beginto = it.endingto
+			
+			it.receivedqty = null
+			it.receivedfrom = null
+			it.receivedto = null
+			
+			it.issuedqty = null
+			it.issuedfrom = null
+			it.issuedto = null
+			
+			it.endingqty = null
+			it.endingfrom = null
+			it.endingto = null 
+		}
+		
+		return dataByOpen
 	}
 	
 	@ProxyMethod
