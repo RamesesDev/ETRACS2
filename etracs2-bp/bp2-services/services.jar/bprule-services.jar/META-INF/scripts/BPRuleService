@@ -277,6 +277,9 @@ class AddTaxFeeHandler implements RuleActionHandler
 		tfvalue.inputvars.each { inputvar -> 
 			params[inputvar.varname] =  inputvar.value 
 		}
+		
+		params.AMOUNTDUE = tfvalue.varvalue 
+		
 		def resolvedExpr = """
 			def IIF( expr, truevalue, falsevalue ) {
 				return (expr ? truevalue : falsevalue )
@@ -443,7 +446,8 @@ class Util
 		return (new GroovyShell( new Binding( params) )).evaluate( expr )
 	}
 	
-	public def resolveIIF( expr ) {
+	/*
+	public def resolveIIF( expr ) { 
 		def pattern = ~/@IIF\(.+\)/
 		def matcher = pattern.matcher( expr )
 		while( matcher ) {
@@ -454,6 +458,7 @@ class Util
 		} 
 		return expr
 	}
+	*/
 	
 	public def resolveFixed( expr ) {
 		def pattern = ~/@FIXED\(.+\)/
