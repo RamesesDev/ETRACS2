@@ -87,7 +87,9 @@ class BankAcctService{
 	}
 	
 	private void checkDuplicates( bankacct ){
-		def data = em.sqlContext.createNamedQuery( 'bankacct:checkDuplicateBankAccount' ).setParameters( ['acctno':bankacct.acctno] ).singleResult;
+		def data = em.sqlContext.createNamedQuery( 'bankacct:checkDuplicateBankAccount' )
+						.setParameters( [acctno:bankacct.acctno, fundid:bankacct.fundid] )
+						.singleResult;
 		if( data.count != 0 ) throw new Exception( "Bank Account already exists." )
 	}
 	

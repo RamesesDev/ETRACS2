@@ -14,7 +14,10 @@ WHERE f.docstate = 'APPROVED'
 SELECT objid FROM fund WHERE fundname = $P{fundname}
 
 [checkDuplicateBankAccount]
-SELECT COUNT(*) AS count FROM bankaccount WHERE acctno = $P{acctno}
+SELECT COUNT(*) AS count 
+FROM bankaccount 
+WHERE acctno = $P{acctno} 
+AND fundid = $P{fundid}
 
 [getBankAcctByAcctNo]
 SELECT * FROM bankaccount WHERE acctno LIKE $P{acctno}
