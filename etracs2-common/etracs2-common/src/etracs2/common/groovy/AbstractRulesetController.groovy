@@ -60,6 +60,7 @@ public abstract class AbstractRulesetController
     }
     
     def listHandler = [
+        getRows      : { return 50 },
         getColumns   : {
             return [
                 new Column(name:'docstate', caption:'State', maxWidth:80 ),
