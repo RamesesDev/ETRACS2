@@ -108,9 +108,13 @@ class RuleActionService
         s += 'm.put("accttitle", "' + action.accttitle + '");\n'
         s += 'm.put("applytype", "' + action.applytype.name + '" );\n' 
 		
-		s += 'm.put("taxfeefact", TAXFEEFACT );\n'
-		s += 'm.put("varname", "AMOUNTDUE");\n'
-		s += 'm.put("varvalue", AMOUNTDUE);\n' 
+		def taxfeeAccounts = getTaxFeeAccountConditions( rule )
+		
+		if( taxfeeAccounts ) {
+			s += 'm.put("taxfeefact", TAXFEEFACT );\n'
+			s += 'm.put("varname", "AMOUNTDUE");\n'
+			s += 'm.put("varvalue", AMOUNTDUE);\n' 
+		}
 
         def inputVars = buildVariables( rule, action )
         if( inputVars ) {
@@ -125,6 +129,10 @@ class RuleActionService
         s += 'actionList.setContext( drools );\n'
         s += 'actionList.execute("addTaxFee", m );\n'
 		return s 
+	}
+	
+	def getTaxFeeAccountConditions( rule ) {
+		return rule.conditions.findAll{ it.opener == 'rulecondition.taxfee' }
 	}
 	
 	def buildVariables( rule, action ) {
