@@ -198,10 +198,10 @@ class DepositHtmlService
         def noncash = '<td></td>'
 		
         if( deposit.cash ) {
-			cash = """<td><a href="printCashDepositSlip?$summ.fundid">Print Cash Deposit Slip</a></td>"""
-			cashbreakdon = """<td><a href="printCashBreakdown?$summ.fundid">Print Cash Breakdown</a></td>"""
+			cash = """<td><a href="printCashDepositSlip?$summ.bankacctid">Print Cash Deposit Slip</a></td>"""
+			cashbreakdon = """<td><a href="printCashBreakdown?$summ.bankacctid">Print Cash Breakdown</a></td>"""
 		}
-        if( deposit.noncash ) noncash = """<td><a href="printCheckDepositSlip?$summ.fundid">Print Check Deposit Slip</a></td>"""
+        if( deposit.noncash && deposit.noncash > 0  ) noncash = """<td><a href="printCheckDepositSlip?$summ.bankacctid">Print Check Deposit Slip</a></td>"""
         
 		return """
 			<tr>

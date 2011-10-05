@@ -65,6 +65,19 @@ class DepositController
         return 'main' 
     }
     
+    def addDeposit() {
+        return InvokerUtil.lookupOpener('depositadd.create', [
+            svc         : svc,
+            deposit     : entity, 
+            onadd       : { summary ->
+                entity.fundsummaries.add( summary )
+                summaryHandler.load()
+            },
+        ])
+    }
+    
+    
+    
     def deposit() {
         resetSummaryDenominations()
         if( MsgBox.confirm('Post Deposit?') ) {
@@ -83,12 +96,18 @@ class DepositController
         return InvokerUtil.lookupOpener('closedeposit', [entity:entity])
     }
     
-    void printCashDepositSlip( fundid ) {
+    void printCashDepositSlip( bankacctid ) {
         try {
-             def reportName = "depositslip/cash"
+            def reportName = "depositslip/cash"
+             
+            def fundsummary = entity.fundsummaries.find{ it.bankacctid == bankacctid }
+            if( fundsummary && fundsummary?.bankaccount?.checkreport ) {
+                reportName = fundsummary.bankaccount.cashreport
+            }
+        
              def cashReport = [
                 getReportName : { return reportName },
-                getReportData : { return buildCashReportData( fundid ) },
+                getReportData : { return buildCashReportData( bankacctid ) },
             ] as ServerReportModel
             cashReport.viewReport()
             ReportUtil.print( cashReport.report, true )
@@ -99,12 +118,18 @@ class DepositController
         }
     }
     
-    void printCashBreakdown( fundid ){
+    void printCashBreakdown( bankacctid  ){
         try {
             def reportName = "depositslip/cashbreakdown"
+            
+            def fundsummary = entity.fundsummaries.find{ it.bankacctid == bankacctid }
+            if( fundsummary && fundsummary?.bankaccount?.checkreport ) {
+                reportName = fundsummary.bankaccount.cashbreakdownreport
+            }
+            
              def cashReport = [
                 getReportName : { return reportName },
-                getReportData : { return buildCashReportData( fundid ) },
+                getReportData : { return buildCashBreakdownReportData( bankacctid ) },
             ] as ServerReportModel
             cashReport.viewReport()
             ReportUtil.print( cashReport.report, true )
@@ -117,22 +142,26 @@ class DepositController
     }
     
     def selectCheckTypeHandler = { checktype ->
-        doPrintCheckDepositSlip( fundid, checktype )
+        doPrintCheckDepositSlip( bankacctid, checktype )
     }
     
-    def fundid
-    def printCheckDepositSlip( fundid )  {
-        this.fundid = fundid
+    def bankacctid
+    def printCheckDepositSlip( bankacctid )  {
+        this.bankacctid = bankacctid 
         return InvokerUtil.lookupOpener('checktype.select', [selectHandler:selectCheckTypeHandler])
     }
     
-    void doPrintCheckDepositSlip( fundid, checktype ) {
-        
+    void doPrintCheckDepositSlip( bankacctid,  checktype ) {
         def reportName = "depositslip/check"
+        
+        def fundsummary = entity.fundsummaries.find{ it.bankacctid == bankacctid }
+        if( fundsummary && fundsummary?.bankaccount?.checkreport ) {
+            reportName = fundsummary.bankaccount.checkreport
+        }
             
          def checkReport  = [
             getReportName : { return reportName },
-            getReportData : { return buildCheckReportData( fundid, checktype ) },
+            getReportData : { return buildCheckReportData( bankacctid, checktype ) },
         ] as ServerReportModel
         checkReport.viewReport()
         ReportUtil.print( checkReport.report, true )
@@ -150,8 +179,8 @@ class DepositController
         ]
     }
     
-    def buildCashReportData( fundid ) {
-        def fundSummary = entity.fundsummaries.find{ it.fundid == fundid }
+    def buildCashReportData( bankacctid  ) {
+        def fundSummary = entity.fundsummaries.find{ it.bankacctid == bankacctid }
         def data = buildDepositReportData( fundSummary )
         if( fundSummary.cash == 0 ) throw new Exception('There is no cash for deposit.')
         data.denominations = []
@@ -171,8 +200,24 @@ class DepositController
         return data
     }
     
-    def buildCheckReportData( fundid, checktype ) {
-        def fundSummary = entity.fundsummaries.find{ it.fundid == fundid }
+    def buildCashBreakdownReportData( bankacctid  ) {
+        def fundSummary = entity.fundsummaries.find{ it.bankacctid == bankacctid }
+        if( fundSummary.cash == 0 ) throw new Exception('There is no cash for deposit.')
+        def denominations = []
+        fundSummary.denominations.each {
+            if( it.amount > 0 ) {
+                denominations.add([
+                    denomination : it.caption,
+                    qty          : new BigDecimal(it.qty+''),
+                    amount       : new BigDecimal(it.amount+'') ,
+                ])
+            }
+        }
+        return denominations
+    }
+    
+    def buildCheckReportData( bankacctid, checktype ) {
+        def fundSummary = entity.fundsummaries.find{ it.bankacctid  == bankacctid }
         def data = buildDepositReportData( fundSummary )
         if( ! fundSummary.noncashpayments ) throw new Exception('There are no checks for deposit.')
         def checks = fundSummary.noncashpayments.findAll{ it.checktype == checktype  }
@@ -282,7 +327,7 @@ class DepositController
             return [
                 new Column(name:'paytype', caption:'Pay Type', maxWidth:80),
                 new Column(name:'particulars', caption:'Particulars'),
-                new Column(name:'amount', caption:'Amount', maxWidth:120),
+                new Column(name:'amount', caption:'Amount', maxWidth:250),
             ]        
         },
         onRemoveItem : { pmt -> doRemoveItem(pmt) },
@@ -323,6 +368,8 @@ class DepositController
     void lookupDenominationOpener() {
         denominationOpener = null
         if( selectedSummary ) {
+            println '-'*50
+            println selectedSummary
             denominationOpener = InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:selectedSummary.cash, list:selectedSummary.denominations])
         }
     }

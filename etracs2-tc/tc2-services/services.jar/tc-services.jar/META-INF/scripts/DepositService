@@ -50,15 +50,18 @@ class DepositService
 			cash             : 0.0,
 			noncash          : 0.0,
 			amount           : 0.0,
+			runningamount    : 0.0,
 			noncashpayments  : [], 
+			fundsummaries	 : [],
         ]
 		
 		deposit.liquidations  = getOpenLiquidations()
 		if( ! deposit.liquidations ) throw new Exception('There are no open liquidations for deposit.')
-        deposit.fundsummaries = getOpenFundSummaries()
+		
+		deposit.fundtotals 		= getOpenFundTotals()
 		deposit.noncashpayments = getOpenNonCashPayments()
-		deposit.noncashcount = deposit.noncashpayments.size()
-        deposit.amount = deposit.liquidations.sum({it.amount})
+		deposit.noncashcount 	= deposit.noncashpayments.size()
+		deposit.amount 			= deposit.liquidations.sum({it.amount})
 		return deposit 
     }
 	
@@ -97,6 +100,11 @@ class DepositService
 	@ProxyMethod
 	public List getCheckTypes() {
 		return [ 'LOCAL', 'REGIONAL', 'OUT_OF_TOWN', 'ON_USMC', 'OTHER_BANK_MC']
+	}
+	
+	@ProxyMethod
+	public List getBankAccountList() {
+		return em.sqlContext.createNamedQuery('deposit:getBankAccountList').resultList
 	}
 	
 	void checkClosed( deposit ) {
@@ -191,6 +199,10 @@ class DepositService
 		return em.sqlContext.createNamedQuery('deposit:getOpenFundSummaries').resultList 	
 	}
 	
+	List getOpenFundTotals() {
+		return em.sqlContext.createNamedQuery('deposit:getOpenFundTotals').resultList 	
+	}
+	
 	List getOpenNonCashPayments() {
 		return em.sqlContext.createNamedQuery('deposit:getOpenNonCashPayments').resultList 	
 	}
@@ -204,3 +216,5 @@ class DepositService
 					.resultList 
 	}
 }
+
+

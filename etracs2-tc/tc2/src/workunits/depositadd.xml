@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="depositadd.create" action="init" caption="Add New Deposit" target="popup" />
+    </invokers>
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+public class AddDepositController {
+    @Binding
+    def binding
+    
+    @Service('DepositService')
+    def svc 
+    
+    def onadd //handler 
+    def deposit
+    
+    def bankaccount
+    def balance = 0.0
+    def amount  = 0.0
+    
+    def fundtotal 
+    
+    void init() {
+    }
+    
+    void setBankaccount( bankaccount ) {
+        this.bankaccount = bankaccount 
+        balance = 0.0
+        amount  = 0.0
+        
+        if( bankaccount ) {
+            calculatebalance( bankaccount )
+        }
+        binding.refresh('balance|amount')
+    }
+    
+    void calculatebalance( bankaccount ) {
+        fundtotal = deposit.fundtotals.find{ it.fundid == bankaccount.fundid }
+        if( fundtotal ) {
+            balance = fundtotal.amount - fundtotal.runningtotal
+            amount = balance 
+        }
+    }
+    
+    def addDeposit() {
+        if( ! onadd ) throw new Exception('Add Handler not specified.')
+        if( amount <= 0 ) throw new Exception('Amount must not be zero.')
+        if( amount > balance ) throw new Exception('Amount must not exceed remaining balance.')
+        checkDuplicateFundSummary()
+        
+        
+        def summary = [
+            bankaccount     : bankaccount, 
+            fundid          : bankaccount.fundid,
+            bankacctid      : bankaccount.objid,
+            bankacctno      : bankaccount.acctno, 
+            fundname        : bankaccount.fund,
+            bankname        : bankaccount.bankname,
+            branchname      : bankaccount.branchname, 
+            accttype        : bankaccount.accttype, 
+            cash            : amount,
+            noncash         : 0.0,
+            amount          : amount, 
+            validationno    : null,
+            validationdate  : null,
+            denominations   : null,
+            noncashpayments : [],
+        ]
+        
+        fundtotal.runningtotal += amount 
+        onadd( summary )
+        
+        return '_close' 
+    }
+    
+    void checkDuplicateFundSummary() {
+        def summ = deposit.fundsummaries.find{ it.bankacctid == bankaccount.objid }
+        if( summ ) throw new Exception('Duplicate bank account deposit is not allowed.')
+    }
+    
+    
+    List getBankaccountlist() {
+        return svc.getBankAccountList()
+    }
+    
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.deposit.AddDepositPage" />
+    </pages>
+</workunit>
