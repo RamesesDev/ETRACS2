@@ -4,6 +4,7 @@
         <invoker folderid="menu/tc/txn" caption="Deposit" permission="deposit.create" target="window" index="131"/>
         
         <invoker type="initActions" action="doNext" caption="Next" mnemonic="n" shortcut="ctrl N" icon="images/next.png"/>
+        <invoker type="mainActions" action="_close" caption="Close" mnemonic="c" shortcut="ctrl W" icon="images/cancel.png"/>
         <invoker type="mainActions" action="deposit" caption="Deposit" mnemonic="d" shortcut="ctrl D" icon="images/cash.png"/>
         <invoker type="viewActions" action="closeDeposit" caption="Close Deposit" mnemonic="d" shortcut="ctrl D" visibleWhen="#{entity.docstate == 'OPEN'}" permission="deposit.close" />        
         <invoker type="noncashActions" action="addNonCashPayments" caption="Add Non-Cash Payment" mnemonic="a" shortcut="ctrl a" visibleWhen="#{selectedSummary != null}" permission="deposit.addnoncash" />
@@ -72,6 +73,7 @@ class DepositController
             onadd       : { summary ->
                 entity.fundsummaries.add( summary )
                 summaryHandler.load()
+                binding.refresh( 'summarytotal' )
             },
         ])
     }
@@ -371,6 +373,17 @@ class DepositController
             println '-'*50
             println selectedSummary
             denominationOpener = InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:selectedSummary.cash, list:selectedSummary.denominations])
+        }
+    }
+    
+    def getSummarytotal() {
+        if( entity && entity.fundsummaries ) {
+            def total = entity.fundsummaries.amount.sum()
+            if( ! total ) total = 0.0
+            return total 
+        }
+        else {
+            return 0.0 
         }
     }
  

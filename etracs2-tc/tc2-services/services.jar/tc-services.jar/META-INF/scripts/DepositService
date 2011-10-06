@@ -140,8 +140,16 @@ class DepositService
 	}
 	
 	void validateDeposit( deposit ) {
+		
 		validateNonCashSummaries( deposit )
 		validateDenominations( deposit )
+		
+		//fundsummary.amount totals = depositamount
+		def totalamt = deposit.fundsummaries.amount.sum() 
+		if( !totalamt ) totalamt = 0.0
+		if( totalamt != deposit.amount ) throw new Exception('Deposit Summary Total must be equal to Total Deposit.')
+		
+		
 		em.validate( deposit.schemaname, deposit )
 	}
 	
