@@ -33,18 +33,19 @@ public class AddDepositPage extends javax.swing.JPanel {
         xButton1 = new com.rameses.rcp.control.XButton();
         xButton2 = new com.rameses.rcp.control.XButton();
 
-        setPreferredSize(new java.awt.Dimension(374, 263));
+        setPreferredSize(new java.awt.Dimension(478, 263));
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("New Deposit Information");
         formPanel1.setBorder(xTitledBorder1);
         xComboBox1.setCaption("Account No.");
         xComboBox1.setCaptionWidth(120);
-        xComboBox1.setExpression("${acctno}   ( ${fund} )");
+        xComboBox1.setExpression("${acctno} - ${bankcode}  ( ${fund} )");
+        xComboBox1.setFont(new java.awt.Font("Arial", 1, 14));
         xComboBox1.setImmediate(true);
         xComboBox1.setItems("bankaccountlist");
         xComboBox1.setName("bankaccount");
-        xComboBox1.setPreferredSize(new java.awt.Dimension(220, 21));
+        xComboBox1.setPreferredSize(new java.awt.Dimension(0, 25));
         xComboBox1.setRequired(true);
         formPanel1.add(xComboBox1);
 
@@ -52,17 +53,19 @@ public class AddDepositPage extends javax.swing.JPanel {
         xNumberField1.setCaptionWidth(120);
         xNumberField1.setEnabled(false);
         xNumberField1.setFieldType(BigDecimal.class);
+        xNumberField1.setFont(new java.awt.Font("Arial", 1, 14));
         xNumberField1.setName("balance");
         xNumberField1.setPattern("#,##0.00");
-        xNumberField1.setPreferredSize(new java.awt.Dimension(220, 21));
+        xNumberField1.setPreferredSize(new java.awt.Dimension(0, 25));
         formPanel1.add(xNumberField1);
 
         xNumberField2.setCaption(" Amount to Deposit");
         xNumberField2.setCaptionWidth(120);
         xNumberField2.setFieldType(BigDecimal.class);
+        xNumberField2.setFont(new java.awt.Font("Arial", 1, 14));
         xNumberField2.setName("amount");
         xNumberField2.setPattern("#,##0.00");
-        xNumberField2.setPreferredSize(new java.awt.Dimension(220, 21));
+        xNumberField2.setPreferredSize(new java.awt.Dimension(0, 25));
         xNumberField2.setRequired(true);
         formPanel1.add(xNumberField2);
 
@@ -82,13 +85,13 @@ public class AddDepositPage extends javax.swing.JPanel {
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(layout.createSequentialGroup()
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 458, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                         .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                    .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 342, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(22, Short.MAX_VALUE))
+                        .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
