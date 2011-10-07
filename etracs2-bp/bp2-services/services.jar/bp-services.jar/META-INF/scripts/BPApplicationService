@@ -250,7 +250,7 @@ class BPApplicationService{
 			organization: application.info.organization,
 			applicationtype: application.txntype,
 			officetype: application.info.officetype,
-			barangayid: application.info.barangayid,
+			barangayid: application.info.barangay.barangayid,
 			lobs : [],
 			taxfees: [],
 			infos:[]
@@ -326,9 +326,12 @@ class BPApplicationService{
 			def application = open( it.objid );
 			def app = createAppEntity( application );
 			app.infos = it.infos;
+			
+			
 			def res = ruleSvc.buildTaxFees( app );
 			application.taxfees = res.taxfees;
 			application.appinfos = it.infos;
+			
 			
 			if( parentid == it.objid ){
 				if( application.docstate == 'FOR_ASSESSMENT' ) {
