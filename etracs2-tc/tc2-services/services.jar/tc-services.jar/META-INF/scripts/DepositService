@@ -103,8 +103,10 @@ class DepositService
 	}
 	
 	@ProxyMethod
-	public List getBankAccountList() {
-		return em.sqlContext.createNamedQuery('deposit:getBankAccountList').resultList
+	public List getBankAccountList( fundid ) {
+		return em.sqlContext.createNamedQuery('deposit:getBankAccountList')
+					.setParameter('fundid', fundid )
+					.resultList
 	}
 	
 	void checkClosed( deposit ) {

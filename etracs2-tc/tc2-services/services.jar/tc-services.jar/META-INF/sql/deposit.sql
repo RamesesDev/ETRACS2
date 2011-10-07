@@ -52,16 +52,14 @@ SELECT
 	ri.fundid, 
 	ri.fundname, 
 	SUM( ri.amount ) AS amount,  
-	0.0 AS runningtotal 
-FROM liquidationlist lq, remittancelist rem, receiptlist r, receiptitem ri, bankaccount ba, fund f 
+	0.0 AS amtdeposited 
+FROM liquidationlist lq, remittancelist rem, receiptlist r, receiptitem ri 
 WHERE lq.objid = rem.liquidationid 
   AND rem.objid = r.remittanceid  
   AND r.objid = ri.receiptid  
-  AND ri.fundid = ba.fundid  
-  AND ri.fundid = f.objid  
   AND lq.docstate = 'OPEN' 
   AND r.voided = 0 
-GROUP BY ri.fundid, ba.objid, ba.bankcode, ba.bankname, ba.branchname 
+GROUP BY ri.fundid, ri.fundname 
 
 
 [getOpenNonCashPayments]
@@ -97,5 +95,5 @@ WHERE docstate = 'OPEN'
 
 
 [getBankAccountList]
-SELECT * FROM bankaccount ORDER BY fund, acctno 
+SELECT * FROM bankaccount WHERE fundid = $P{fundid} ORDER BY fund, acctno 
 

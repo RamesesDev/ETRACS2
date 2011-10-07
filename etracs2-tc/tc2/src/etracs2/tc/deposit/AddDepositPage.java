@@ -32,14 +32,17 @@ public class AddDepositPage extends javax.swing.JPanel {
         xNumberField2 = new com.rameses.rcp.control.XNumberField();
         xButton1 = new com.rameses.rcp.control.XButton();
         xButton2 = new com.rameses.rcp.control.XButton();
+        xDataTable1 = new com.rameses.rcp.control.XDataTable();
 
-        setPreferredSize(new java.awt.Dimension(478, 263));
+        setPreferredSize(new java.awt.Dimension(473, 385));
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("New Deposit Information");
         formPanel1.setBorder(xTitledBorder1);
         xComboBox1.setCaption("Account No.");
         xComboBox1.setCaptionWidth(120);
+        xComboBox1.setDepends(new String[] {"selectedItem"});
+        xComboBox1.setDynamic(true);
         xComboBox1.setExpression("${acctno} - ${bankcode}  ( ${fund} )");
         xComboBox1.setFont(new java.awt.Font("Arial", 1, 14));
         xComboBox1.setImmediate(true);
@@ -51,6 +54,7 @@ public class AddDepositPage extends javax.swing.JPanel {
 
         xNumberField1.setCaption("Balance");
         xNumberField1.setCaptionWidth(120);
+        xNumberField1.setDepends(new String[] {"selectedItem"});
         xNumberField1.setEnabled(false);
         xNumberField1.setFieldType(BigDecimal.class);
         xNumberField1.setFont(new java.awt.Font("Arial", 1, 14));
@@ -61,6 +65,7 @@ public class AddDepositPage extends javax.swing.JPanel {
 
         xNumberField2.setCaption(" Amount to Deposit");
         xNumberField2.setCaptionWidth(120);
+        xNumberField2.setDepends(new String[] {"selectedItem"});
         xNumberField2.setFieldType(BigDecimal.class);
         xNumberField2.setFont(new java.awt.Font("Arial", 1, 14));
         xNumberField2.setName("amount");
@@ -79,6 +84,13 @@ public class AddDepositPage extends javax.swing.JPanel {
         xButton2.setDefaultCommand(true);
         xButton2.setName("addDeposit");
 
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder2.setTitle("Summary of Collection for Deposit");
+        xDataTable1.setBorder(xTitledBorder2);
+        xDataTable1.setHandler("listHandler");
+        xDataTable1.setImmediate(true);
+        xDataTable1.setName("selectedItem");
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -86,7 +98,8 @@ public class AddDepositPage extends javax.swing.JPanel {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 458, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 453, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 453, Short.MAX_VALUE)
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                         .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
@@ -95,14 +108,16 @@ public class AddDepositPage extends javax.swing.JPanel {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 194, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 198, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 130, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(29, Short.MAX_VALUE))
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
     
@@ -112,6 +127,7 @@ public class AddDepositPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
     private com.rameses.rcp.control.XComboBox xComboBox1;
+    private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField2;
     // End of variables declaration//GEN-END:variables

@@ -47,6 +47,7 @@ class DepositController
     def selectedSummary
     def denominationOpener
     def openNonCashPayments = []
+    def selectedFundTotal
     
     
     void init() {
@@ -73,7 +74,7 @@ class DepositController
             onadd       : { summary ->
                 entity.fundsummaries.add( summary )
                 summaryHandler.load()
-                binding.refresh( 'summarytotal' )
+                binding.refresh( 'summarytotal|selectedFundTotal' )
             },
         ])
     }
@@ -321,9 +322,9 @@ class DepositController
         getColumns : {
             return [
                 new Column(name:'fundname', caption:'Fund'),
+                new Column(name:'bankacctno', caption:'Account No.', minWidth:100),
                 new Column(name:'bankname', caption:'Bank Name', minWidth:100),
                 new Column(name:'branchname', caption:'Branch', , minWidth:100),
-                new Column(name:'bankacctno', caption:'Account No.', minWidth:100),
                 new Column(name:'accttype', caption:'Account', minWidth:100),
                 new Column(name:'cash', caption:'Cash', type:'decimal', minWidth:120),
                 new Column(name:'noncash', caption:'Non-Cash', type:'decimal', minWidth:120),
@@ -360,6 +361,15 @@ class DepositController
         fetchList  : { return entity.liquidations },
     ] as SubListModel
     
+    def listHandler = [
+        getRows     : { return 50 },
+        getColumns  : { return [
+            new Column( name:'fundname', caption:'Fund' ),
+            new Column( name:'amount', caption:'Collection', type:'decimal', format:'#,##0.00' ),
+            new Column( name:'amtdeposited', caption:'Amount to Deposit', type:'decimal', format:'#,##0.00' ),
+        ]},
+        fetchList   : { return entity.fundtotals },
+    ] as PageListModel
     
     def getTotalNonCashPayment() {
         return CommonUtil.formatNumber('#,##0.00', selectedSummary?.noncash )

@@ -23,6 +23,8 @@ public class AddDepositController {
     def bankaccount
     def balance = 0.0
     def amount  = 0.0
+    def selectedItem
+    
     
     def fundtotal 
     
@@ -43,9 +45,15 @@ public class AddDepositController {
     void calculatebalance( bankaccount ) {
         fundtotal = deposit.fundtotals.find{ it.fundid == bankaccount.fundid }
         if( fundtotal ) {
-            balance = fundtotal.amount - fundtotal.runningtotal
+            balance = fundtotal.amount - fundtotal.amtdeposited 
             amount = balance 
         }
+    }
+    
+    void setSelectedItem( selectedItem ) {
+        this.selectedItem = selectedItem
+        balance = selectedItem.amount - selectedItem.amtdeposited
+        amount = selectedItem.amount
     }
     
     def addDeposit() {
@@ -74,11 +82,22 @@ public class AddDepositController {
             noncashpayments : [],
         ]
         
-        fundtotal.runningtotal += amount 
+        fundtotal.amtdeposited += amount 
         onadd( summary )
         
         return '_close' 
     }
+    
+    def listHandler = [
+        getRows     : { return 50 },
+        getColumns  : { return [
+            new Column( name:'fundname', caption:'Fund' ),
+            new Column( name:'amount', caption:'Collection', type:'decimal', format:'#,##0.00' ),
+            new Column( name:'amtdeposited', caption:'Amount to Deposit', type:'decimal', format:'#,##0.00' ),
+        ]},
+        fetchList   : { return deposit.fundtotals },
+    ] as PageListModel
+    
     
     void checkDuplicateFundSummary() {
         def summ = deposit.fundsummaries.find{ it.bankacctid == bankaccount.objid }
@@ -87,7 +106,9 @@ public class AddDepositController {
     
     
     List getBankaccountlist() {
-        return svc.getBankAccountList()
+        if( selectedItem )
+            return svc.getBankAccountList( selectedItem.fundid )
+        return null 
     }
     
 }
