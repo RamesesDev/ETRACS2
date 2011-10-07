@@ -104,9 +104,11 @@ class DepositController
              
             def fundsummary = entity.fundsummaries.find{ it.bankacctid == bankacctid }
             if( fundsummary && fundsummary?.bankaccount?.checkreport ) {
-                reportName = fundsummary.bankaccount.cashreport
+                reportName = 'depositslip/' + fundsummary.bankaccount.cashreport
             }
         
+            println 'reportName -> ' + reportName 
+            
              def cashReport = [
                 getReportName : { return reportName },
                 getReportData : { return buildCashReportData( bankacctid ) },
@@ -126,10 +128,10 @@ class DepositController
             
             def fundsummary = entity.fundsummaries.find{ it.bankacctid == bankacctid }
             if( fundsummary && fundsummary?.bankaccount?.checkreport ) {
-                reportName = fundsummary.bankaccount.cashbreakdownreport
+                reportName = 'depositslip/' + fundsummary.bankaccount.cashbreakdownreport
             }
             
-             def cashReport = [
+            def cashReport = [
                 getReportName : { return reportName },
                 getReportData : { return buildCashBreakdownReportData( bankacctid ) },
             ] as ServerReportModel
@@ -158,9 +160,11 @@ class DepositController
         
         def fundsummary = entity.fundsummaries.find{ it.bankacctid == bankacctid }
         if( fundsummary && fundsummary?.bankaccount?.checkreport ) {
-            reportName = fundsummary.bankaccount.checkreport
+            reportName = 'depositslip/' + fundsummary.bankaccount.checkreport
         }
             
+        println 'reportName -> ' + reportName 
+        
          def checkReport  = [
             getReportName : { return reportName },
             getReportData : { return buildCheckReportData( bankacctid, checktype ) },
@@ -187,13 +191,19 @@ class DepositController
         if( fundSummary.cash == 0 ) throw new Exception('There is no cash for deposit.')
         data.denominations = []
         fundSummary.denominations.each {
+            def dqty = 'dqty' + it.caption.toString().replace('.00','')
+            def damt = 'damt' + it.caption.toString().replace('.00','')
+            data."$dqty" = null
+            data."$damt" = null
             if( it.amount > 0 ) {
                 data.denominations.add([
                     denomination : it.caption,
                     qty          : new BigDecimal(it.qty+''),
                     amount       : new BigDecimal(it.amount+'') ,
                 ])
-            }
+                data."$dqty" = it.qty + 0.0
+                data."$damt" = it.amount
+            }            
         }
         data.branchname = fundSummary.branchname
         data.depositedbyname = entity.depositedbyname

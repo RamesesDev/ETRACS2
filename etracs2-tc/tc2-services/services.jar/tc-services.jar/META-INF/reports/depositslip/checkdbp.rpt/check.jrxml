@@ -2,7 +2,7 @@
 <!-- Created with iReport - A designer for JasperReports -->
 <!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
 <jasperReport
-		 name="cash"
+		 name="check"
 		 columnCount="1"
 		 printOrder="Vertical"
 		 orientation="Portrait"
@@ -23,56 +23,58 @@
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
 
-	<parameter name="cashbreakdownitem" isForPrompting="false" class="java.lang.Object"/>
+	<parameter name="checkbreakdownitem" isForPrompting="false" class="java.lang.Object"/>
 
 	<field name="bankacctno" class="java.lang.String"/>
 	<field name="bankacctname" class="java.lang.String"/>
 	<field name="txndate" class="java.lang.String"/>
-	<field name="denominations" class="java.lang.Object"/>
+	<field name="noncashpayments" class="java.lang.Object"/>
 	<field name="currency" class="java.lang.String"/>
 	<field name="accttype" class="java.lang.String"/>
-	<field name="cash" class="java.math.BigDecimal"/>
-	<field name="branchname" class="java.lang.String"/>
-	<field name="depositedbyname" class="java.lang.String"/>
+	<field name="noncash" class="java.math.BigDecimal"/>
+	<field name="checktype" class="java.lang.String"/>
 
 		<background>
 			<band height="0"  isSplitAllowed="true" >
 			</band>
 		</background>
 		<title>
-			<band height="188"  isSplitAllowed="true" >
+			<band height="612"  isSplitAllowed="true" >
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="210"
-						y="74"
-						width="143"
+						x="11"
+						y="88"
+						width="119"
 						height="12"
+						forecolor="#000000"
 						key="textField"/>
 					<box></box>
-					<textElement textAlignment="Center" verticalAlignment="Middle">
+					<textElement textAlignment="Center">
 						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="9" isBold="true"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$F{bankacctno}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="211"
-						y="35"
-						width="247"
+						x="9"
+						y="60"
+						width="172"
 						height="12"
+						forecolor="#000000"
 						key="textField"/>
 					<box></box>
-					<textElement textAlignment="Center" verticalAlignment="Middle">
+					<textElement>
 						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="9" isBold="true"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$F{bankacctname}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="369"
-						y="16"
-						width="83"
+						x="126"
+						y="88"
+						width="55"
 						height="12"
+						forecolor="#000000"
 						key="textField"/>
 					<box></box>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
@@ -82,43 +84,73 @@
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="278"
-						y="161"
-						width="110"
+						x="496"
+						y="226"
+						width="53"
 						height="12"
+						forecolor="#000000"
 						key="textField"/>
 					<box></box>
-					<textElement textAlignment="Right">
-						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="9" isBold="true"/>
+					<textElement textAlignment="Right" verticalAlignment="Middle">
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
 					</textElement>
-				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{cash}]]></textFieldExpression>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{noncash}]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<subreport  isUsingCache="true">
 					<reportElement
-						x="379"
-						y="74"
-						width="78"
-						height="12"
-						key="textField-1"/>
+						x="337"
+						y="99"
+						width="157"
+						height="19"
+						key="subreport-1"/>
+					<dataSourceExpression><![CDATA[$F{noncashpayments}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{checkbreakdownitem}]]></subreportExpression>
+				</subreport>
+				<staticText>
+					<reportElement
+						x="76"
+						y="111"
+						width="13"
+						height="14"
+						key="staticText-1">
+							<printWhenExpression><![CDATA[new Boolean($F{checktype}.equals("LOCAL"))]]></printWhenExpression>
+						</reportElement>
 					<box></box>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
-						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="7" isBold="true"/>
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="9" isBold="true"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{branchname}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<text><![CDATA[X]]></text>
+				</staticText>
+				<staticText>
 					<reportElement
-						x="44"
-						y="129"
-						width="162"
-						height="12"
-						key="textField-2"/>
+						x="16"
+						y="137"
+						width="13"
+						height="14"
+						key="staticText-2">
+							<printWhenExpression><![CDATA[new Boolean($F{checktype}.equals("ON_USMC"))]]></printWhenExpression>
+						</reportElement>
 					<box></box>
-					<textElement textAlignment="Center">
-						<font size="9"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="9" isBold="true"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{depositedbyname}]]></textFieldExpression>
-				</textField>
+				<text><![CDATA[X]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="76"
+						y="137"
+						width="13"
+						height="14"
+						key="staticText-3">
+							<printWhenExpression><![CDATA[new Boolean($F{checktype}.equals("ON_REGIONAL"))]]></printWhenExpression>
+						</reportElement>
+					<box></box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="9" isBold="true"/>
+					</textElement>
+				<text><![CDATA[X]]></text>
+				</staticText>
 			</band>
 		</title>
 		<pageHeader>
