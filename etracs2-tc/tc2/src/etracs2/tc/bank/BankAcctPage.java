@@ -132,6 +132,7 @@ public class BankAcctPage extends javax.swing.JPanel {
 
         xLookupField1.setCaption("Bank Code");
         xLookupField1.setCaptionWidth(100);
+        xLookupField1.setDepends(new String[] {"selectedItem"});
         xLookupField1.setExpression("#{bankcode}");
         xLookupField1.setHandler("lookupBank");
         xLookupField1.setName("bank");
@@ -179,7 +180,6 @@ public class BankAcctPage extends javax.swing.JPanel {
         xTextField6.setDepends(new String[] {"selectedItem"});
         xTextField6.setName("entity.cashreport");
         xTextField6.setPreferredSize(new java.awt.Dimension(0, 19));
-        xTextField6.setRequired(true);
         xTextField6.setTextCase(com.rameses.rcp.constant.TextCase.LOWER);
         formPanel1.add(xTextField6);
 
@@ -189,7 +189,6 @@ public class BankAcctPage extends javax.swing.JPanel {
         xTextField7.setDepends(new String[] {"selectedItem"});
         xTextField7.setName("entity.cashbreakdownreport");
         xTextField7.setPreferredSize(new java.awt.Dimension(0, 19));
-        xTextField7.setRequired(true);
         xTextField7.setTextCase(com.rameses.rcp.constant.TextCase.LOWER);
         formPanel1.add(xTextField7);
 
@@ -199,7 +198,6 @@ public class BankAcctPage extends javax.swing.JPanel {
         xTextField8.setDepends(new String[] {"selectedItem"});
         xTextField8.setName("entity.checkreport");
         xTextField8.setPreferredSize(new java.awt.Dimension(0, 19));
-        xTextField8.setRequired(true);
         xTextField8.setTextCase(com.rameses.rcp.constant.TextCase.LOWER);
         formPanel1.add(xTextField8);
 
