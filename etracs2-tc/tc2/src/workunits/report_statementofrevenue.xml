@@ -1,9 +1,12 @@
 <workunit>
     <invokers>
-        <invoker folderid="/menu/tc/reports" caption="Statement Of Revenue" permission="tcreport.statementofrevenue"/>
+        <invoker folderid="/menu/tc/reports" action="init" opener="abstract" caption="Statement of Revenue" target="window" index="2" permission="tcreport.statementofrevenue"/>
         
-        <invoker type="formActions" action="view" caption="View" mnemonic="v" shortcut="ctrl v" visibleWhen="#{mode == 'build'}" icon="images/doc-view.png"/>
-        <invoker type="formActions" action="back" caption="Back" mnemonic="b" shortcut="ctrl b" visibleWhen="#{mode == 'view'}" icon="images/back.png"/>
+        <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
+        <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
+        <invoker type="formActions"     action="preview" caption="Preview" mnemonic="v"             icon="images/doc-view.png"/>
+        
+        <invoker type="previewActions"  action="back" caption="Back" icon="images/back.png" immediate="true" />
     </invokers>
     <code>
 <![CDATA[
@@ -12,90 +15,92 @@ import com.rameses.rcp.common.*;
 import com.rameses.rcp.annotations.*;
 import com.rameses.osiris2.client.*;
 import com.rameses.osiris2.reports.*;
-import java.rmi.server.UID;
 
-class StatementOfRevenue
+class StatementOfRevenueController
 {
-    def mode = "build";
+    @Binding
+    def binding
+    
     @Service("ReportParameterService")
     def svcParams;
     
-    @Service("TreasuryReportService")
-    def svc;
-
-    def entity = [:];
-    def qtrList = [
-        [name:"QTR1", value:1],
-        [name:"QTR2", value:2],
-        [name:"QTR3", value:3],
-        [name:"QTR4", value:4]
-    ];
+    @Service('TCReportService') 
+    def svc 
     
-    def months =  [
-            [name:"JANUARY", value:1, qtr:1],
-            [name:"FEBRUARY", value:2, qtr:1],
-            [name:"MARCH", value:3, qtr:1],
-            [name:"APRIL", value:4, qtr:2],
-            [name:"MAY", value:5, qtr:2],
-            [name:"JUNE", value:6, qtr:2],
-            [name:"JULY", value:7, qtr:3],
-            [name:"AUGUST", value:8, qtr:3],
-            [name:"SEPTEMBER", value:9, qtr:3],
-            [name:"OCTOBER", value:10, qtr:4],
-            [name:"NOVEMBER", value:11, qtr:4],
-            [name:"DECEMBER", value:12, qtr:4]
-    ];
+    @Service('DateService')
+    def dateSvc
     
-    def getMonthList() {
-        if (!entity.qtr)
-            return months;
-        return months.findAll{ it.qtr == entity.qtr.value  }
+    def chart
+    def year 
+    def qtr
+    def month
+    def day 
+    def fund
+    def reportdata
+    
+    void init() {
+        def parsedate = dateSvc.parseCurrentDate()
+        year = parsedate.year 
+        qtr  = parsedate.qtr 
+        month = svc.getMonth( parsedate.month )
+        day   = parsedate.day 
     }
     
-    def data;
-    def param;
-    def month;
+    def preview() {
+        generateReport()
+        return 'preview' 
+    }
     
-    def report =[
-        getReportName : { "treasury/statementofrevenue" },
-        getReportData : { return data; },
-        getParameters : { return param; }
+    void generateReport() {
+        reportdata = svc.generateStatementOfRevenue( chart,  year, qtr, month?.month, day, fund )
+        report.viewReport()
+    }
+    
+    void print(){
+        generateReport()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def report = [
+        getReportName : { return 'treasury/statementofrevenue' }, 
+        getReportData : { return reportdata },
+        getParameters : { 
+            def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )
+            params.TITLE  = reportdata.title
+            params.PERIOD = reportdata.period
+            return params 
+        }
     ] as ServerReportModel;
-    
-    def back(){
-        mode = "build";
-        return "default";
+        
+    def back() {
+        return 'default' 
     }
     
-    def getFundList(){
-        return svc.fundList;
+    List getQuarterlist() {
+        return [1,2,3,4]
     }
     
-    def view(){
-        data = svc.generateStatementOfRevenue( entity.chart, entity.year, entity.qtr?.value, entity.month?.value, entity.fund.objid );
-        param = svcParams.getStandardParameter( OsirisContext.env.USERNAME );
-        param.put("FUND", entity.fund.fundname);
-        def period = entity.year;
-        if (entity.month)
-            period = entity.month.name + ", " + period;
-        else if (entity.qtr)
-            period = entity.qtr.name + ", " + period;
-        param.put("PERIOD", period );
-        report.viewReport();
-        mode = "view";
-        return "preview";
+    List getMonthlist() {
+        return svc.getMonthList( qtr )
     }
     
-    List getChartList() {
-        return ['NGAS','SRE']
+    List getDaylist() {
+        return svc.getNumDays( year, month?.month-1 )
+    }
+    
+    List getFundlist() {
+        return svc.getFundList()
+    }
+    
+    List getChartlist() {
+        return ['NGAS', 'SRE' ]
     }
 }
-
 ]]>        
         
     </code>
     <pages>
-        <page template="etracs2.tc.report.StatementOfRevenuePage"/>
-        <page name="preview" template="etracs2.tc.PreviewPage" />
+        <page template="etracs2.tc.report.AbstractInit2Page" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
     </pages>
 </workunit>

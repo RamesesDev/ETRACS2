@@ -55,3 +55,40 @@ WHERE liquidationtimestamp LIKE $P{txntimestamp}
   AND voided = 0 
 GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
 ORDER BY a.pathbytitle 
+
+
+
+
+[getStatementOfRevenueSRE]  
+SELECT  
+	a.pathbytitle AS pathtitle,  
+	a.acctcode AS acctcode,  
+	a.accttitle AS accttitle, 
+	p.acctcode as parentcode, 
+	p.accttitle as parenttitle, 
+	SUM(r.amount) AS amount 
+FROM revenue r 
+	LEFT JOIN account a ON a.objid = r.sreid  
+	LEFT JOIN account p on p.objid = a.parentid 
+WHERE liquidationtimestamp LIKE $P{txntimestamp}  
+  AND fundid LIKE $P{fundid} 
+  AND voided = 0 
+GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
+ORDER BY a.pathbytitle 
+
+[getStatementOfRevenueNGAS]  
+SELECT  
+	a.pathbytitle AS pathtitle,   
+	a.acctcode AS acctcode,   
+	a.accttitle AS accttitle, 
+	p.acctcode as parentcode, 
+	p.accttitle as parenttitle,
+	SUM(r.amount) AS amount 
+FROM revenue r 
+	LEFT JOIN account a ON a.objid = r.ngasid 
+	LEFT JOIN account p on p.objid = a.parentid 
+WHERE liquidationtimestamp LIKE $P{txntimestamp}  
+  AND fundid LIKE $P{fundid} 
+  AND voided = 0 
+GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
+ORDER BY a.pathbytitle 
