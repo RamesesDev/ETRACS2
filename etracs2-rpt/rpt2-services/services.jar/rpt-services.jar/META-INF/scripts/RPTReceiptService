@@ -37,7 +37,10 @@ class RPTReceiptService
                 em.validate( pmtdetail.schemaname, pmtdetail )
                 em.create( pmtdetail.schemaname, pmtdetail )
             }
-            updateLedgerLastYearQtrPaid([ objid:item.objid, lastyearpaid:item.toyear, lastqtrpaid:item.toqtr ] )
+			if( item.partialbasic == 0 )
+				updateLedgerLastYearQtrPaid([ objid:item.objid, lastyearpaid:item.toyear, lastqtrpaid:item.toqtr, partialbasic:0.0, partialbasicint:0.0, partialsef:0.0, partialsefint:0.0 ] )
+			else 
+				updateLedgerLastYearQtrPaid([ objid:item.objid, lastyearpaid:item.lastyearpaid, lastqtrpaid:item.lastqtrpaid, partialbasic:item.partialbasic, partialbasicint:item.partialbasicint, partialsef:item.partialsef, partialsefint:item.partialsefint  ] )
         }
 
         receipt._items = items.each(){
@@ -233,15 +236,16 @@ class RPTReceiptService
     }
     
 	void buildPeriod( item ) {
-        if( item.fromyear == item.toyear && item.fromqtr == 1 && item.toqtr == 4 ) 
+		if( item.fromyear == item.toyear && item.fromqtr == 1 && item.toqtr == 4 ) 
             item.period = 'Full ' + item.fromyear 
-        if( item.fromyear == item.toyear && item.fromqtr == item.toqtr  ) 
+        else if( item.fromyear == item.toyear && item.fromqtr == item.toqtr  ) 
             item.period = item.fromqtr + 'Q, ' + item.fromyear 
-        if( item.fromyear == item.toyear ) 
+        else if( item.fromyear == item.toyear ) 
             item.period = item.fromqtr + '-' + item.toqtr + 'Q, ' + item.fromyear 
-        if(  item.fromqtr == 1 && item.toqtr == 4 ) 
+        else if(  item.fromqtr == 1 && item.toqtr == 4 ) 
             item.period = 'Full ' + item.fromyear + '-' + item.toyear 
-        item.period = item.fromqtr + 'Q,' + item.fromyear + '-' + item.toqtr + 'Q,' + item.toyear 
+        else 
+			item.period = item.fromqtr + 'Q,' + item.fromyear + '-' + item.toqtr + 'Q,' + item.toyear 
     }
     
     void voidRPTPayments( receiptid ) {

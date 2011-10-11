@@ -29,7 +29,11 @@ SELECT objid, rptledgerid, fromyear, fromqtr, toyear, toqtr FROM rptpayment WHER
 
 
 [updateLedgerLastYearQtrPaid]
-UPDATE rptledger SET lastyearpaid = $P{lastyearpaid}, lastqtrpaid = $P{lastqtrpaid} WHERE objid = $P{objid} 
+UPDATE rptledger SET 
+	lastyearpaid = $P{lastyearpaid}, lastqtrpaid = $P{lastqtrpaid},
+	partialbasic = $P{partialbasic}, partialsef = $P{partialsef},
+	partialbasicint = $P{partialbasicint}, partialsefint = $P{partialsefint}  
+WHERE objid = $P{objid} 
 
 
 [voidRPTPayment]
