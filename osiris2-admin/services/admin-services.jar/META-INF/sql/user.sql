@@ -1,5 +1,7 @@
 [list]
-select objid,uid,firstname,lastname,loginid,owner from user where parentid=$P{parentid} ${filter} order by lastname
+select objid,uid,firstname,lastname,loginid,owner 
+from user where parentid=$P{parentid} ${filter} 
+order by lastname
 
 
 [find]
