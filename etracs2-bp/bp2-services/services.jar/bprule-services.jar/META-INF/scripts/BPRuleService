@@ -21,6 +21,9 @@ public class BPRuleService
 	@Service('BPApplicationService') 
 	def appSvc
 	
+	@Service('DateService')
+	def dateSvc
+	
 	def BPASSESSMENT_RULESET = 'bpassessment'
 	def FACTS_PACKAGE = 'bp.assessment.facts.'
 	
@@ -131,6 +134,7 @@ public class BPRuleService
 	}
 	
 	def createInputVariableFacts( app ) {
+		def parsedate = dateSvc.parseCurrentDate()
 		def facts = []
 		app.infos.each {
 			def fact = ruleService.createFact(BPASSESSMENT_RULESET, FACTS_PACKAGE + 'InputVariableFact' )
@@ -142,7 +146,25 @@ public class BPRuleService
 			fact.value   = it.value 
 			facts += fact 
 		}
+		
+		getSystemVarList().each{
+			def fact = ruleService.createFact(BPASSESSMENT_RULESET, FACTS_PACKAGE + 'InputVariableFact' )
+			fact.appid = app.objid 
+			fact.lobid = null 
+			fact.varid = it.objid 
+			fact.varname = it.varname 
+			fact.vartype = it.vartype 
+			if( it.varname == 'CURRENT_YEAR' ) 
+				fact.value   = parsedate.year 
+			else if( it.varname == 'CURRENT_QTR')
+				fact.value =  parsedate.qtr 
+			facts += fact 
+		}
 		return facts 
+	}
+	
+	List getSystemVarList() {
+		return em.sqlContext.createNamedQuery('bprule:getSystemVarList').resultList 
 	}
 	
 	void sortInfos( app ) {
