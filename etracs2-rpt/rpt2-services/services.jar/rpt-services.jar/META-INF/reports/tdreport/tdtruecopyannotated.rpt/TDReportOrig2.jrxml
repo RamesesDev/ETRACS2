@@ -42,7 +42,8 @@
 	<parameter name="CERTIFICATIONORNO" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="CERTIFICATIONORDATE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="CERTIFICATIONORAMOUNT" isForPrompting="false" class="java.math.BigDecimal"/>
-	<parameter name="TDReportAnnotationList" isForPrompting="false" class="java.lang.Object"/>
+	<parameter name="TDReportBailBondItem" isForPrompting="false" class="java.lang.Object"/>
+	<parameter name="TDReportMortgageItem" isForPrompting="false" class="java.lang.Object"/>
 	<parameter name="ASSESSOROFFICENAME" isForPrompting="false" class="java.lang.String"/>
 
 	<field name="lands" class="java.lang.Object"/>
@@ -104,7 +105,6 @@
 	<field name="annotation" class="java.lang.Object"/>
 	<field name="prevmv" class="java.math.BigDecimal"/>
 	<field name="prevpin" class="java.lang.String"/>
-	<field name="annotations" class="java.lang.Object"/>
 
 
 		<group  name="TAXPAYER" >
@@ -2315,8 +2315,8 @@
 					<reportElement
 						mode="Transparent"
 						x="138"
-						y="222"
-						width="403"
+						y="248"
+						width="267"
 						height="34"
 						forecolor="#000000"
 						backcolor="#FFFFFF"
@@ -2335,7 +2335,7 @@
 					<reportElement
 						mode="Transparent"
 						x="138"
-						y="223"
+						y="249"
 						width="88"
 						height="33"
 						forecolor="#999999"
@@ -2357,8 +2357,8 @@ TRUE COPY]]></text>
 						mode="Transparent"
 						x="138"
 						y="146"
-						width="403"
-						height="74"
+						width="267"
+						height="99"
 						forecolor="#000000"
 						backcolor="#FFFFFF"
 						key="textField-15"/>
@@ -2378,7 +2378,7 @@ TRUE COPY]]></text>
 						x="1"
 						y="146"
 						width="134"
-						height="110"
+						height="136"
 						forecolor="#000000"
 						backcolor="#FFFFFF"
 						key="rectangle-1"/>
@@ -2388,7 +2388,7 @@ TRUE COPY]]></text>
 					<reportElement
 						mode="Transparent"
 						x="8"
-						y="241"
+						y="266"
 						width="60"
 						height="10"
 						forecolor="#000000"
@@ -2408,7 +2408,7 @@ TRUE COPY]]></text>
 					<reportElement
 						mode="Transparent"
 						x="69"
-						y="241"
+						y="266"
 						width="63"
 						height="10"
 						forecolor="#000000"
@@ -2428,7 +2428,7 @@ TRUE COPY]]></text>
 					<reportElement
 						mode="Transparent"
 						x="69"
-						y="231"
+						y="256"
 						width="63"
 						height="10"
 						forecolor="#000000"
@@ -2448,7 +2448,7 @@ TRUE COPY]]></text>
 					<reportElement
 						mode="Transparent"
 						x="8"
-						y="231"
+						y="256"
 						width="60"
 						height="10"
 						forecolor="#000000"
@@ -2468,7 +2468,7 @@ TRUE COPY]]></text>
 					<reportElement
 						mode="Transparent"
 						x="8"
-						y="221"
+						y="246"
 						width="60"
 						height="10"
 						forecolor="#000000"
@@ -2488,7 +2488,7 @@ TRUE COPY]]></text>
 					<reportElement
 						mode="Transparent"
 						x="69"
-						y="221"
+						y="246"
 						width="63"
 						height="10"
 						forecolor="#000000"
@@ -2508,7 +2508,7 @@ TRUE COPY]]></text>
 					<reportElement
 						mode="Transparent"
 						x="4"
-						y="199"
+						y="207"
 						width="129"
 						height="11"
 						forecolor="#000000"
@@ -2528,7 +2528,7 @@ TRUE COPY]]></text>
 					<reportElement
 						mode="Transparent"
 						x="4"
-						y="188"
+						y="196"
 						width="129"
 						height="11"
 						forecolor="#000000"
@@ -2588,8 +2588,8 @@ TRUE COPY]]></text>
 					<reportElement
 						mode="Transparent"
 						x="228"
-						y="244"
-						width="311"
+						y="270"
+						width="175"
 						height="10"
 						forecolor="#999999"
 						backcolor="#FFFFFF"
@@ -2608,8 +2608,8 @@ TRUE COPY]]></text>
 					<reportElement
 						mode="Transparent"
 						x="228"
-						y="235"
-						width="311"
+						y="261"
+						width="175"
 						height="10"
 						forecolor="#999999"
 						backcolor="#FFFFFF"
@@ -2628,8 +2628,8 @@ TRUE COPY]]></text>
 					<reportElement
 						mode="Transparent"
 						x="228"
-						y="226"
-						width="311"
+						y="252"
+						width="175"
 						height="10"
 						forecolor="#999999"
 						backcolor="#FFFFFF"
@@ -2644,6 +2644,30 @@ TRUE COPY]]></text>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$P{ASSESSOROFFICENAME}]]></textFieldExpression>
 				</textField>
+				<subreport  isUsingCache="true">
+					<reportElement
+						x="408"
+						y="146"
+						width="133"
+						height="136"
+						key="subreport-6">
+							<printWhenExpression><![CDATA[new Boolean($F{annotationtype}.equals("mortgage"))]]></printWhenExpression>
+						</reportElement>
+					<dataSourceExpression><![CDATA[$F{annotation}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{TDReportMortgageItem}]]></subreportExpression>
+				</subreport>
+				<subreport  isUsingCache="true">
+					<reportElement
+						x="408"
+						y="146"
+						width="133"
+						height="136"
+						key="subreport-7">
+							<printWhenExpression><![CDATA[new Boolean($F{annotationtype}.equals("bailbond"))]]></printWhenExpression>
+						</reportElement>
+					<dataSourceExpression><![CDATA[$F{annotation}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{TDReportBailBondItem}]]></subreportExpression>
+				</subreport>
 				<staticText>
 					<reportElement
 						mode="Transparent"
@@ -2844,20 +2868,6 @@ TRUE COPY]]></text>
 					</textElement>
 				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{prevmv}]]></textFieldExpression>
 				</textField>
-				<subreport  isUsingCache="true">
-					<reportElement
-						mode="Opaque"
-						x="0"
-						y="259"
-						width="541"
-						height="15"
-						forecolor="#000000"
-						backcolor="#FFFFFF"
-						key="subreport-6"
-						positionType="Float"/>
-					<dataSourceExpression><![CDATA[$F{annotations}]]></dataSourceExpression>
-					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{TDReportAnnotationList}]]></subreportExpression>
-				</subreport>
 			</band>
 		</summary>
 </jasperReport>
