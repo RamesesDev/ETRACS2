@@ -170,13 +170,13 @@ class RPTLedgerService
         em.sqlContext.createNamedExecutor('rptledger:updateLastYearQtrPaid').setParameters(params).execute()
         return pmt 
     }
-    
+     
     
     
     /*-------------------------------------------------------------------
     * Support Methods 
     -------------------------------------------------------------------*/
-    void postNewLedger( faas, state ) {
+    void postNewLedger( faas, state ) { 
         def ledger = createLedger( faas, state)
         def ledgeritem = createLedgerItem( ledger )
         em.validate( ledger.schemaname, ledger ) 
@@ -216,6 +216,8 @@ class RPTLedgerService
         ledger.lastqtrpaid      = ( faas.effectivityqtr == 1 ? 4 : faas.effectivityqtr - 1 )
         ledger.partialbasic     = 0.0
         ledger.partialsef       = 0.0
+		ledger.partialbasicint  = 0.0
+		ledger.partialsefint	= 0.0 
         ledger.firstqtrpaidontime = false 
         updateActualUseInfo( ledger )
         return ledger
