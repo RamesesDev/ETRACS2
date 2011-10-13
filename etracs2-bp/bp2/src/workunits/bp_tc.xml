@@ -116,12 +116,29 @@
             },
             
             fetchList  : { 
-                if( entity.applicationid ){
-                    entity = bpcolSvc.getBill( entity, year, qtr );
-                }
                 return entity.items;
             }
         ] as SubListModel
+        
+        
+        void setYear( year )  {
+            this.year = year 
+            getBill()
+        }
+        
+        void setQtr( qtr ) {
+            this.qtr = qtr 
+            getBill()
+        }
+        
+        void getBill() {
+            if( entity.applicationid ){
+                entity = bpcolSvc.getBill( entity, year, qtr );
+            }
+            listHandler.load()
+        }
+        
+        
         
         void init() {
             super.init();

@@ -388,6 +388,31 @@
             }
             return ''
         }
+        
+        
+        /*----------------------------------------------------------------------
+        *
+        * Partial Payment Support 
+        *
+        *------------------------------------------------------------------------*/
+        
+        def partialPayment() {
+            if( !selectedItem ) return 
+            return InvokerUtil.lookupOpener('rptpartialpayment', [
+                amount    : selectedItem.amount,
+                onpartial : { partial ->
+                    def partialitem = billingSvc.computePartialPayment( selectedItem, partial)
+                    def item = bill.items.find{ it.objid == partialitem.objid }
+                    if( item ) { 
+                        item.clear() 
+                        item.putAll( partialitem )
+                    }
+                    listHandler.load()
+                    calculateReceiptAmount()
+                }
+                
+            ])
+        }
     }
 ]]>        
     </code>
@@ -398,4 +423,5 @@
         <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
         <page name="html" template="etracs2.tc.HtmlPage"/>
     </pages>
+    
 </workunit>

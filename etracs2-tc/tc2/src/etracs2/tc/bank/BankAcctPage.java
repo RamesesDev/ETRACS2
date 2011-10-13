@@ -34,10 +34,14 @@ public class BankAcctPage extends javax.swing.JPanel {
         xTextField3 = new com.rameses.rcp.control.XTextField();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
-        xTextField2 = new com.rameses.rcp.control.XTextField();
+        xComboBox3 = new com.rameses.rcp.control.XComboBox();
         xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xTextField4 = new com.rameses.rcp.control.XTextField();
         xTextField5 = new com.rameses.rcp.control.XTextField();
+        xSeparator1 = new com.rameses.rcp.control.XSeparator();
+        xTextField6 = new com.rameses.rcp.control.XTextField();
+        xTextField7 = new com.rameses.rcp.control.XTextField();
+        xTextField8 = new com.rameses.rcp.control.XTextField();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -104,6 +108,7 @@ public class BankAcctPage extends javax.swing.JPanel {
         xComboBox1.setDepends(new String[] {"selectedItem"});
         xComboBox1.setItems("accttype");
         xComboBox1.setName("entity.accttype");
+        xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));
         xComboBox1.setRequired(true);
         formPanel1.add(xComboBox1);
 
@@ -112,19 +117,22 @@ public class BankAcctPage extends javax.swing.JPanel {
         xComboBox2.setDepends(new String[] {"selectedItem"});
         xComboBox2.setItems("funds");
         xComboBox2.setName("entity.fund");
+        xComboBox2.setPreferredSize(new java.awt.Dimension(0, 22));
         xComboBox2.setRequired(true);
         formPanel1.add(xComboBox2);
 
-        xTextField2.setCaption("Currency");
-        xTextField2.setCaptionWidth(100);
-        xTextField2.setDepends(new String[] {"selectedItem"});
-        xTextField2.setName("entity.currency");
-        xTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
-        xTextField2.setRequired(true);
-        formPanel1.add(xTextField2);
+        xComboBox3.setCaption("Currency");
+        xComboBox3.setCaptionWidth(100);
+        xComboBox3.setDepends(new String[] {"selectedItem"});
+        xComboBox3.setItems("currencylist");
+        xComboBox3.setName("entity.currency");
+        xComboBox3.setPreferredSize(new java.awt.Dimension(0, 22));
+        xComboBox3.setRequired(true);
+        formPanel1.add(xComboBox3);
 
         xLookupField1.setCaption("Bank Code");
         xLookupField1.setCaptionWidth(100);
+        xLookupField1.setDepends(new String[] {"selectedItem"});
         xLookupField1.setExpression("#{bankcode}");
         xLookupField1.setHandler("lookupBank");
         xLookupField1.setName("bank");
@@ -148,19 +156,64 @@ public class BankAcctPage extends javax.swing.JPanel {
         xTextField5.setReadonly(true);
         formPanel1.add(xTextField5);
 
+        xSeparator1.setCaption("Deposit Slip Report Format");
+        xSeparator1.setCaptionFont(new java.awt.Font("Tahoma", 1, 11));
+        xSeparator1.setCaptionWidth(500);
+        xSeparator1.setCellPadding(new java.awt.Insets(15, 0, 5, 0));
+        xSeparator1.setPreferredSize(new java.awt.Dimension(0, 20));
+        xSeparator1.setShowCaption(true);
+        org.jdesktop.layout.GroupLayout xSeparator1Layout = new org.jdesktop.layout.GroupLayout(xSeparator1);
+        xSeparator1.setLayout(xSeparator1Layout);
+        xSeparator1Layout.setHorizontalGroup(
+            xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 0, Short.MAX_VALUE)
+        );
+        xSeparator1Layout.setVerticalGroup(
+            xSeparator1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 20, Short.MAX_VALUE)
+        );
+        formPanel1.add(xSeparator1);
+
+        xTextField6.setText("entity.cashreport");
+        xTextField6.setCaption("Cash");
+        xTextField6.setCaptionWidth(120);
+        xTextField6.setDepends(new String[] {"selectedItem"});
+        xTextField6.setName("entity.cashreport");
+        xTextField6.setPreferredSize(new java.awt.Dimension(0, 19));
+        xTextField6.setTextCase(com.rameses.rcp.constant.TextCase.LOWER);
+        formPanel1.add(xTextField6);
+
+        xTextField7.setText("entity.cashbreakdownreport");
+        xTextField7.setCaption("Cash Breakdown");
+        xTextField7.setCaptionWidth(120);
+        xTextField7.setDepends(new String[] {"selectedItem"});
+        xTextField7.setName("entity.cashbreakdownreport");
+        xTextField7.setPreferredSize(new java.awt.Dimension(0, 19));
+        xTextField7.setTextCase(com.rameses.rcp.constant.TextCase.LOWER);
+        formPanel1.add(xTextField7);
+
+        xTextField8.setText("entity.checkreport");
+        xTextField8.setCaption("Check");
+        xTextField8.setCaptionWidth(120);
+        xTextField8.setDepends(new String[] {"selectedItem"});
+        xTextField8.setName("entity.checkreport");
+        xTextField8.setPreferredSize(new java.awt.Dimension(0, 19));
+        xTextField8.setTextCase(com.rameses.rcp.constant.TextCase.LOWER);
+        formPanel1.add(xTextField8);
+
         org.jdesktop.layout.GroupLayout jPanel4Layout = new org.jdesktop.layout.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel4Layout.createSequentialGroup()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 328, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(34, Short.MAX_VALUE))
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 361, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(32, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel4Layout.createSequentialGroup()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 244, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(135, Short.MAX_VALUE))
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 331, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(48, Short.MAX_VALUE))
         );
         jPanel2.add(jPanel4, java.awt.BorderLayout.CENTER);
 
@@ -182,13 +235,17 @@ public class BankAcctPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
+    private com.rameses.rcp.control.XComboBox xComboBox3;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XLookupField xLookupField1;
+    private com.rameses.rcp.control.XSeparator xSeparator1;
     private com.rameses.rcp.control.XTextField xTextField1;
-    private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;
     private com.rameses.rcp.control.XTextField xTextField4;
     private com.rameses.rcp.control.XTextField xTextField5;
+    private com.rameses.rcp.control.XTextField xTextField6;
+    private com.rameses.rcp.control.XTextField xTextField7;
+    private com.rameses.rcp.control.XTextField xTextField8;
     // End of variables declaration//GEN-END:variables
     
 }

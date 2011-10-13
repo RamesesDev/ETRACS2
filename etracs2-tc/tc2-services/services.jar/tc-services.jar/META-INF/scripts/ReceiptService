@@ -266,6 +266,9 @@ class ReceiptService
 		if( receipt.info.totalpayment < receipt.info.amount ) {
 			throw new Exception('Total Payment must be greater than or equal to amount due.')
 		}
+		if( receipt.info.otherpayment > receipt.info.amount ) {
+			throw new Exception('Non-Cash Payment must be less than or equal to amount due.')
+		}
 		if( receipt.info.change < 0.0 ) {
 			throw new Exception('Change must not be negative.\nNormally this happens if check payment is more than receipt amount.')
 		}

@@ -50,15 +50,18 @@ class DepositService
 			cash             : 0.0,
 			noncash          : 0.0,
 			amount           : 0.0,
+			runningamount    : 0.0,
 			noncashpayments  : [], 
+			fundsummaries	 : [],
         ]
 		
 		deposit.liquidations  = getOpenLiquidations()
 		if( ! deposit.liquidations ) throw new Exception('There are no open liquidations for deposit.')
-        deposit.fundsummaries = getOpenFundSummaries()
+		
+		deposit.fundtotals 		= getOpenFundTotals()
 		deposit.noncashpayments = getOpenNonCashPayments()
-		deposit.noncashcount = deposit.noncashpayments.size()
-        deposit.amount = deposit.liquidations.sum({it.amount})
+		deposit.noncashcount 	= deposit.noncashpayments.size()
+		deposit.amount 			= deposit.liquidations.sum({it.amount})
 		return deposit 
     }
 	
@@ -99,6 +102,13 @@ class DepositService
 		return [ 'LOCAL', 'REGIONAL', 'OUT_OF_TOWN', 'ON_USMC', 'OTHER_BANK_MC']
 	}
 	
+	@ProxyMethod
+	public List getBankAccountList( fundid ) {
+		return em.sqlContext.createNamedQuery('deposit:getBankAccountList')
+					.setParameter('fundid', fundid )
+					.resultList
+	}
+	
 	void checkClosed( deposit ) {
 		if( getState( deposit ) == CLOSED_STATE ) 
 			throw new Exception('Deposit has already been closed.')
@@ -132,8 +142,16 @@ class DepositService
 	}
 	
 	void validateDeposit( deposit ) {
+		
 		validateNonCashSummaries( deposit )
 		validateDenominations( deposit )
+		
+		//fundsummary.amount totals = depositamount
+		def totalamt = deposit.fundsummaries.amount.sum() 
+		if( !totalamt ) totalamt = 0.0
+		if( totalamt != deposit.amount ) throw new Exception('Deposit Summary Total must be equal to Total Deposit.')
+		
+		
 		em.validate( deposit.schemaname, deposit )
 	}
 	
@@ -191,6 +209,10 @@ class DepositService
 		return em.sqlContext.createNamedQuery('deposit:getOpenFundSummaries').resultList 	
 	}
 	
+	List getOpenFundTotals() {
+		return em.sqlContext.createNamedQuery('deposit:getOpenFundTotals').resultList 	
+	}
+	
 	List getOpenNonCashPayments() {
 		return em.sqlContext.createNamedQuery('deposit:getOpenNonCashPayments').resultList 	
 	}
@@ -204,3 +226,5 @@ class DepositService
 					.resultList 
 	}
 }
+
+

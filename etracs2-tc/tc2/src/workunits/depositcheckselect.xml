@@ -36,6 +36,19 @@ class DepositCheckSelectController
         payments.each{ it.checktype = checktype }
     }
     
+    void selectAll() {
+        selectAllChecks( true )
+    }
+    
+    void deselectAll() {
+        selectAllChecks( false )
+    }
+    
+    void selectAllChecks( select ) {
+        payments.each { it.checked = select }
+        listHandler.load()
+    }
+    
     def listHandler = [
         getRows    : { return 50 },
         getColumns : {

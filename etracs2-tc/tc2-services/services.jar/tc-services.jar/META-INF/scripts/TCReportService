@@ -128,6 +128,36 @@ class TDReportService {
 		]
 	}
 	
+	@ProxyMethod
+	public Map generateStatementOfRevenue( chart, year, qtr, month, day, fund  ) {
+		def params = [
+			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
+			fundid		 : ( fund ?  fund.fundid : '%' ),
+		]
+		
+		def list = em.sqlContext.createNamedQuery("tcreport:getStatementOfRevenue$chart")
+		             .setParameters( params )
+					 .resultList
+		if( !list ) throw new Exception('No records found.')
+		
+		def display = { idx, val, last ->
+			if( !last ) {
+				return [title: (' '*(idx*10))+val, header:true];
+			}
+			else {
+				if( ! val.acctcode ) val.acctcode = '<unmapped>'
+				if( ! val.accttitle ) val.accttitle = '<unmapped>'
+				return [title: (' '*(idx*10))+val.acctcode+"-"+val.accttitle, header:false, amount: val.amount];
+			}
+		};
+		
+		return [
+			title 	: buildStatementRevenueTitle( chart, year, qtr, month, day, fund  ),
+			period 	: buildPeriod( year, qtr, month, day ),
+			items  	: buildTree( list, display )
+		]
+	}
+	
 	
 	
 	/*------------------------------------------------------------------
@@ -163,6 +193,13 @@ class TDReportService {
 		if( month ) return 'Monthly Abstract of Collection By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
 		if( qtr ) return 'Quarterly Abstract of Collection By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
 		return 'Annual Abstract of Collection By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
+	}
+	
+	def buildStatementRevenueTitle( chart, year, qtr, month, day, fund  ){
+		if( day ) return 'Daily Statement of Revenue By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
+		if( month ) return 'Monthly Statement of Revenue By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
+		if( qtr ) return 'Quarterly Statement of Revenue By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
+		return 'Annual Statement of Revenue By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
 	}
 	
 	def buildPeriod( year, qtr, month, day ) {

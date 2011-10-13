@@ -47,7 +47,10 @@ class UserService {
 			sb.append( ' and userlevel > $P{userlevel}' );
 		}
 		qry.setVars( [ filter: sb.toString() ] ); 
-		return qry.setParameters( param ).resultList;
+		return qry.setParameters( param )
+					.setFirstResult( param._start)
+					.setMaxResults( param._limit )
+					.resultList;
 	}
 
     @ProxyMethod	

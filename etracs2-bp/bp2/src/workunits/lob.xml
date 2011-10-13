@@ -26,7 +26,7 @@ class LobController extends etracs2.groovy.CRUDController
     @Service("LOBService")
     def svc;
     
-    def classification = [:];
+    def classification
     def searchAttribute
     def attribute
     
@@ -36,27 +36,15 @@ class LobController extends etracs2.groovy.CRUDController
         }
     }
    
-    def onselectClassification = {
-        if( it ){
-            entity.classificationid = it.objid;
-            entity.classification = it.name;
-        }else{
-            entity.classificationid = null;
-            entity.classification = null;
-        }
-        binding.refresh();
-    }
-    
-    def getClassification(){
-        if( !this.classification ) this.classification = [:];
-        this.classification.objid = entity.classificationid;
-        this.classification.name = entity.classification;
-        return this.classification;
+    void setClassification( classification ) { 
+        this.classification = classification
+        entity.classificationid = classification?.objid
+        entity.classification = classification?.name
     }
     
     
     def getLookupClassification() {
-        return InvokerUtil.lookupOpener('lobclassification.lookup', [searchText:classification?.name, onselect:onselectClassification])
+        return InvokerUtil.lookupOpener('lobclassification.lookup', [:])
     }
     
     def onselectAttribute = { attr ->
@@ -91,11 +79,13 @@ class LobController extends etracs2.groovy.CRUDController
     
     void create() {
         super.create()
+        classification = null
         attributeListHandler.load()
     }
     
     void setSelectedItem( item ) {
         super.setSelectedItem( item )
+        this.classification = [objid:entity.classificationid, name:entity.classification ]
         attributeListHandler.load()
     }
     

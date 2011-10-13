@@ -90,8 +90,7 @@ SELECT * FROM faasattachment WHERE faasid = $P{faasid}
 SELECT * FROM faasattachment WHERE docstate = 'FORTRANSMITTAL' 
 
 [getBarangays]
-SELECT * FROM lgu WHERE parentid = $P{parentid} ORDER BY lguname 
-
+SELECT * FROM lgu WHERE lgutype = 'BARANGAY' ORDER BY lguname 
 
 [getActiveAnnotationId] 
 SELECT objid FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPROVED' ORDER BY docno DESC 

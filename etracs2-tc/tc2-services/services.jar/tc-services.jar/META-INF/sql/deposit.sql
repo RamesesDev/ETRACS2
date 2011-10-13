@@ -47,6 +47,21 @@ WHERE lq.objid = rem.liquidationid
   AND r.voided = 0 
 GROUP BY ri.fundid, ba.objid, ba.bankcode, ba.bankname, ba.branchname 
 
+[getOpenFundTotals]
+SELECT 
+	ri.fundid, 
+	ri.fundname, 
+	SUM( ri.amount ) AS amount,  
+	0.0 AS amtdeposited 
+FROM liquidationlist lq, remittancelist rem, receiptlist r, receiptitem ri 
+WHERE lq.objid = rem.liquidationid 
+  AND rem.objid = r.remittanceid  
+  AND r.objid = ri.receiptid  
+  AND lq.docstate = 'OPEN' 
+  AND r.voided = 0 
+GROUP BY ri.fundid, ri.fundname 
+
+
 [getOpenNonCashPayments]
 SELECT 
 	p.objid AS paymentitemid, 
@@ -78,4 +93,7 @@ UPDATE liquidationlist SET
 	dtdeposited = $P{dtdeposited} 
 WHERE docstate = 'OPEN'	 
 
+
+[getBankAccountList]
+SELECT * FROM bankaccount WHERE fundid = $P{fundid} ORDER BY fund, acctno 
 

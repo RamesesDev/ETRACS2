@@ -269,7 +269,7 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         xComboBox1.setImmediate(true);
         xComboBox1.setItems("years");
         xComboBox1.setName("year");
-        xComboBox1.setPreferredSize(new java.awt.Dimension(50, 22));
+        xComboBox1.setPreferredSize(new java.awt.Dimension(70, 22));
         xComboBox1.setRequired(true);
         formPanel3.add(xComboBox1);
 
@@ -280,12 +280,12 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         xComboBox2.setImmediate(true);
         xComboBox2.setItems("qtrs");
         xComboBox2.setName("qtr");
+        xComboBox2.setPreferredSize(new java.awt.Dimension(50, 22));
         formPanel3.add(xComboBox2);
 
         jPanel7.add(formPanel3, java.awt.BorderLayout.NORTH);
 
         xDataTable1.setCaption("Collection Entry");
-        xDataTable1.setDepends(new String[] {"year", "qtr"});
         xDataTable1.setDynamic(true);
         xDataTable1.setHandler("listHandler");
         xDataTable1.setImmediate(true);

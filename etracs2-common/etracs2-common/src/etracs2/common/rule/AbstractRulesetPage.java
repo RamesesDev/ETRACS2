@@ -28,9 +28,10 @@ public class AbstractRulesetPage extends javax.swing.JPanel {
         xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
         jPanel2 = new javax.swing.JPanel();
-        xDataTable1 = new com.rameses.rcp.control.XDataTable();
+        jSplitPane1 = new javax.swing.JSplitPane();
         jScrollPane1 = new javax.swing.JScrollPane();
         xEditorPane1 = new com.rameses.rcp.control.XEditorPane();
+        xDataTable1 = new com.rameses.rcp.control.XDataTable();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -53,19 +54,23 @@ public class AbstractRulesetPage extends javax.swing.JPanel {
 
         jPanel2.setLayout(new java.awt.BorderLayout());
 
-        jPanel2.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        jPanel2.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 3, 3, 3));
+        jSplitPane1.setDividerLocation(130);
+        jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+        xEditorPane1.setDepends(new String[] {"selectedItem"});
+        xEditorPane1.setName("html");
+        jScrollPane1.setViewportView(xEditorPane1);
+
+        jSplitPane1.setRightComponent(jScrollPane1);
+
         xDataTable1.setDynamic(true);
         xDataTable1.setHandler("listHandler");
         xDataTable1.setImmediate(true);
         xDataTable1.setName("selectedItem");
         xDataTable1.setPreferredSize(new java.awt.Dimension(200, 200));
-        jPanel2.add(xDataTable1, java.awt.BorderLayout.NORTH);
+        jSplitPane1.setLeftComponent(xDataTable1);
 
-        xEditorPane1.setDepends(new String[] {"selectedItem"});
-        xEditorPane1.setName("html");
-        jScrollPane1.setViewportView(xEditorPane1);
-
-        jPanel2.add(jScrollPane1, java.awt.BorderLayout.CENTER);
+        jPanel2.add(jSplitPane1, java.awt.BorderLayout.CENTER);
 
         add(jPanel2, java.awt.BorderLayout.CENTER);
 
@@ -76,6 +81,7 @@ public class AbstractRulesetPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XDataTable xDataTable1;

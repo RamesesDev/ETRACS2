@@ -20,17 +20,20 @@ class LobClassificationLookupController extends LookupModel
     def selected;
     
     def ok() {
+        search = null 
         if( onselect ) {
-            onselect( selected );
+            onselect( selected )
         }
-        return "_close";
+        return select()
     }
     
     int getRow(){ return 20; }
     Column[] getColumns() { return [new Column(name:"name", caption:"Classification"),] };
     
     List fetchList(Map params) { 
-        def list = svc.getList(searchText, params);
+        def s = search
+        if( !s ) s= searchText
+        def list = svc.getList( s, params);
         if(list) return list;
         throw new Exception("Record not found.");
     }
