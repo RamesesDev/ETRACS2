@@ -126,6 +126,8 @@ class ConsolidationService
         if( consolidation.docstate == FORPROVAPPROVAL_STATE ) throw new Exception('Consolidation has already been submitted to province.')
         if( consolidation.docstate == APPROVED_STATE ) throw new Exception('Consolidation has already been approved.')
         validateConsolidationInfo( consolidation )
+		createConsolidatedFaas( consolidation )
+        createAffectedRpuFaas( consolidation ) 
         consolidation.docstate = FORAPPROVAL_STATE
         em.update( consolidation.schemaname, consolidation )
         return consolidation
@@ -133,7 +135,17 @@ class ConsolidationService
     
     @ProxyMethod
     public Map approve( consolidationid ) {
-        throw new Exception('Action not yet implemented.')
+		def consolidation = open( consolidationid )
+        if( consolidation.docstate == DRAFT_STATE ) throw new Exception('Consolidation is still a draft document.')
+        if( consolidation.docstate == APPROVED_STATE ) throw new Exception('Consolidation has already been approved.')
+        
+        def landfaas = faasSvc.approveConsolidatedFaas( consolidation.newfaasid )
+        approveAffectedRpus( consolidation, landfaas )
+        consolidation.newtdno = landfaas.info.tdno 
+        consolidation.newpin  = landfaas.rpu.fullpin 
+        consolidation.docstate = APPROVED_STATE
+        em.update( consolidation.schemaname, consolidation )
+        return consolidation 
     }
     
     @ProxyMethod
@@ -364,13 +376,15 @@ class ConsolidationService
             newfaas.info.tdno      = arpu.newtdno
             newfaas.info.txntype   = CONSOLIDATION_TXNTYPE
             newfaas.info.txn       = faasSvc.resolveTxnType( CONSOLIDATION_TXNTYPE )
-            newfaas.info.autonumber         = consolidation.autonumber as boolean 
+            newfaas.info.autonumber         = TO_BOOLEAN( consolidation.autonumber )
             newfaas.info.memoranda          = consolidation.memoranda
             newfaas.info.effectivityyear    = consolidation.effectivityyear
             newfaas.info.effectivityqtr     = consolidation.effectivityqtr
             newfaas.info.datacapture        = false 
             newfaas.info.landfaasid         = consolidation.newfaasid
             newfaas.info.landtaxpayerid     = consolidation.newtaxpayerid 
+			newfaas.info.issuedate      	= consolidation.issuedate 
+			newfaas.txntimestamp 			= dateSvc.buildCustomTimeStamp( newfaas.info.issuedate ) 
             
             newfaas.info.prevtdno          = arpufaas.info.tdno 
             newfaas.info.prevpin           = arpufaas.rpu.fullpin 
@@ -411,10 +425,11 @@ class ConsolidationService
         newfaas.info.txntype        = CONSOLIDATION_TXNTYPE
         newfaas.info.txn            = faasSvc.resolveTxnType( CONSOLIDATION_TXNTYPE )
         newfaas.info.datacapture    = false 
-        newfaas.info.memoranda      = consolidation.memoranda 
+        newfaas.info.memoranda      = consolidation.memoranda  
         newfaas.info.autonumber     = consolidation.autonumber
         newfaas.info.issuedate      = consolidation.issuedate 
-        newfaas.info.autonumber     = consolidation.autonumber as boolean 
+		newfaas.txntimestamp 		= dateSvc.buildCustomTimeStamp( newfaas.info.issuedate ) 
+        newfaas.info.autonumber     = TO_BOOLEAN( consolidation.autonumber )
         newfaas.info.effectivityyear = consolidation.effectivityyear
         newfaas.info.effectivityqtr  = consolidation.effectivityqtr
         newfaas.info.titletype       = consolidation.newtitletype
@@ -516,6 +531,11 @@ class ConsolidationService
 						.setFirstResult( params._start )
 						.setMaxResults( params._limit )
 						.resultList
+	}
+	
+	boolean TO_BOOLEAN( value ) {
+		if( value instanceof Boolean ) return value 
+		return ( value.toString().toLowerCase().matches('1|y|yes|t|true') )
 	}
     
 }

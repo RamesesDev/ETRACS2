@@ -140,6 +140,7 @@ class SubdivisionService
         validateInfo( subdivision )
         validateArea( subdivision )
         validateAffectedRpu( subdivision )
+		createSubdividedLandsFaas( subdivision )
         subdivision.docstate = FORAPPROVAL_STATE
         em.update( subdivision.schemaname, subdivision )
         return subdivision
@@ -169,7 +170,7 @@ class SubdivisionService
         if( subdivision.docstate == DRAFT_STATE ) throw new Exception('Subdivision is not yet submitted for approval.')
         if( subdivision.docstate == FORPROVAPPROVAL_STATE ) throw new Exception('Subdivision has already been submitted to province.')
         if( subdivision.docstate == APPROVED_STATE ) throw new Exception('Subdivision has already been approved.')      
-        invokeSubdivisionCommonApprovalMethods( subdivision )
+		invokeSubdivisionCommonApprovalMethods( subdivision )
         return subdivision
     }
     
@@ -210,14 +211,14 @@ class SubdivisionService
     
     void invokeSubdivisionCommonApprovalMethods( subdivision ) {
         validateInfo( subdivision )
-        validateArea( subdivision )
-        approveSubdividedLands( subdivision )
-        approveAffectedRpus( subdivision )
-        cancelMotherLand( subdivision )
-        moveMessageToProcessedOutbox( subdivision.objid  )
-        txnSvc.delete( subdivision.motherfaasid )
-        subdivision.docstate = APPROVED_STATE
-        em.update( subdivision.schemaname, subdivision )
+		validateArea( subdivision )
+		approveSubdividedLands( subdivision )
+		approveAffectedRpus( subdivision )
+		cancelMotherLand( subdivision )
+		moveMessageToProcessedOutbox( subdivision.objid  )
+		txnSvc.delete( subdivision.motherfaasid )
+		subdivision.docstate = APPROVED_STATE
+		em.update( subdivision.schemaname, subdivision )
     }
     
     @ProxyMethod
@@ -403,7 +404,7 @@ class SubdivisionService
             def sland = em.read(SUBDIVISIONLAND_SCHEMANAME, slandid )
             if( !sland ) throw new Exception('Cannot open Subdivision Land with ID no. ' + slandid )
             def newfaas = em.read( FAAS_SCHEMANAME, [objid:sland.newfaasid])
-            boolean autonumber = newfaas.rp.autonumber as boolean 
+            boolean autonumber = TO_BOOLEAN( newfaas.rp.autonumber )
             if(  autonumber == true ) {
                 faasSvc.assignNextPin( newfaas  )
             }
@@ -525,8 +526,8 @@ class SubdivisionService
         def tpayinfo = em.sqlContext.createNamedQuery('faas:getTaxpayerInfo').setParameter('objid', subdivision.motherfaasid).singleResult 
         def slandIds = em.sqlContext.createNamedQuery('subdivision:getSubdividedLandIds').setParameter('subdivisionid', subdivision.objid).resultList 
         if( ! slandIds ) throw new Exception('Subdivision lands are required.')
-        slandIds.each { landid ->
-            def sland = em.read( SUBDIVISIONLAND_SCHEMANAME, landid )
+        slandIds.each { landid ->	
+			def sland = em.read( SUBDIVISIONLAND_SCHEMANAME, landid )
             if( !sland ) throw new Exception('Cannot of subdivision land with ID no. ' + landid.objid + '.')
             def newfaas = createFaas( subdivision )
             newfaas.docstate            = PENDING_STATE
@@ -607,7 +608,7 @@ class SubdivisionService
     def createFaas( subdivision ) {
         def faas = faasSvc.createFaas()
         faas.info.txntype       = subdivision.txntype 
-        faas.info.autonumber    = subdivision.autonumber as boolean 
+        faas.info.autonumber    = TO_BOOLEAN( subdivision.autonumber   )
         faas.info.issuedate     = subdivision.issuedate
         faas.info.datacapture   = false 
         faas.info.effectivityyear = subdivision.effectivityyear
@@ -638,6 +639,11 @@ class SubdivisionService
             em.delete('message:outbox', msg )
         }
     }
+	
+	boolean TO_BOOLEAN( value ) {
+		if( value instanceof Boolean ) return value 
+		return ( value.toString().toLowerCase().matches('1|y|yes|t|true') )
+	}
     
 }
 
