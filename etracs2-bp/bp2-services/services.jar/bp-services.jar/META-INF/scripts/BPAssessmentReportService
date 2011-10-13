@@ -9,6 +9,9 @@ public class BPApplicationService
 	@Service('Var')
 	def var;
 	
+	@Service('BPSettingService')
+	def bpsettingSvc
+	
 	def SCHEMANAME = 'bpapplication:bpapplication';
 	
 	@ProxyMethod
@@ -52,7 +55,8 @@ public class BPApplicationService
 			info.totalamount += it.amountdue;
 		}
 		
-		info.signatories?.sort{ it.index };
+		info.signatories = bpsettingSvc.setting.assessmentsignatories
+		//info.signatories?.sort{ it.index };
 		
 		return info;
 	}

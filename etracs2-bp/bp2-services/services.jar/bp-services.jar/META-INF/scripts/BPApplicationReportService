@@ -9,6 +9,9 @@ public class BPApplicatioService
 	@Service('Var')
 	def var;
 	
+	@Service('BPSettingService')
+	def bpsettingSvc
+	
 	def SCHEMANAME = 'bpapplication:bpapplication';
 	
 	@ProxyMethod
@@ -39,17 +42,14 @@ public class BPApplicatioService
 			ctcno: bpa.info.ctcno,
 			ctcplaceissued: bpa.info.ctcplaceissued,
 			ctcdateissued: bpa.info.ctcdateissued,
-			infos: buildAppInfo( bpa.appinfos )
+			infos: buildAppInfo( bpa.appinfos ),
+			requirements: bpsettingSvc.setting.requirements,
+			signatories: bpsettingSvc.setting.applicationsignatories
 		];
 		
-		info.signatories = (!bpa.info.appsignatories) ? [[name:'', department:'', title:'']] : bpa.info.appsignatories ;
-		info.requirements = (!bpa.info.requirements)  ? [[requirement:'', complied:'', remarks:'']] : bpa.info.requirements;
+		info.signatories = ( !info.signatories ) ? [[name:'', department:'', title:'']] : info.signatories ;
+		info.requirements = ( !info.requirements )  ? [[requirement:'', complied:'', remarks:'']] : info.requirements;
 		info.requirements.each{ it.complied = ((it.complied == true ) ? "YES" : "");  }
-		
-		println  "==============================================";
-		println info.requirements;
-		println  "==============================================";
-		println info.signatories;
 		
 		return info;
 	}
