@@ -35,17 +35,25 @@ class MachRPUService
 		def rptsetting = getRPTSetting()
 		
         rpu.info.machuses.each { mu ->
-            mu.basemarketvalue = mu.machdetails.basemarketvalue.sum()
-            mu.marketvalue = mu.machdetails.marketvalue.sum()
-			
-			if( rptsetting && IS_TRUE( rptsetting.roundadjmarketvalue ) ) {
-				mu.marketvalue = numberSvc.roundA( mu.marketvalue, 0 )
+			if( mu.machdetails ) {
+				mu.basemarketvalue = mu.machdetails.basemarketvalue.sum()
+				mu.marketvalue = mu.machdetails.marketvalue.sum()
+				
+				if( rptsetting && IS_TRUE( rptsetting.roundadjmarketvalue ) ) {
+					mu.marketvalue = numberSvc.roundA( mu.marketvalue, 0 )
+				}
+				
+				mu.assesslevel = mu.machdetails.assesslevel.max()
+				mu.assessedvalue = mu.machdetails.assessedvalue.sum()
 			}
-			
-            mu.assesslevel = mu.machdetails.assesslevel.max()
-            mu.assessedvalue = mu.machdetails.assessedvalue.sum()
+			else {
+				mu.basemarketvalue = 0.0
+				mu.marketvalue = 0.0
+				mu.assesslevel = 0.0
+				mu.assessedvalue = 0.0
+			}
         }
-        rpu.totalbmv = rpu.info.machuses.basemarketvalue.sum()
+        rpu.totalbmv = rpu.info.machuses.basemarketvalue.sum() 
         rpu.totalmv = rpu.info.machuses.marketvalue.sum()
         rpu.totalav = rpu.info.machuses.assessedvalue.sum()
         return rpu 
@@ -120,14 +128,15 @@ class MachRPUService
     
     
     void calculateDepreciation( machdetail ) {
-        machdetail.depreciation         = 0.0
-        machdetail.depreciationvalue    = 0.0
         if( machdetail.autodepreciate == 1 && machdetail.estimatedlife > 0) {
             double dep = (double)machdetail.remaininglife / (double)machdetail.estimatedlife
             dep = (1 - dep) * 100;
             machdetail.depreciation = numberSvc.roundA( dep, 0 )
             machdetail.depreciationvalue =  numberSvc.round( machdetail.replacementcost *  machdetail.depreciation / 100.0 )
         }
+		else {
+			machdetail.depreciationvalue =  numberSvc.round( machdetail.replacementcost *  machdetail.depreciation / 100.0 )
+		}
     }
     
     void updateForexInfo( machdetail, ry) {
@@ -208,5 +217,18 @@ class MachRPUService
 					.setFirstResult( params._start )
 					.setMaxResults( params._limit )
 					.resultList
+	}
+	
+	def getRPTSetting() {
+		return em.sqlContext.createNamedQuery('bldgrpu:getRPTSetting').singleResult 
+	}
+	
+	boolean IS_TRUE( value ) {
+		return TO_BOOLEAN( value ) == true 
+	}
+	
+	boolean TO_BOOLEAN( value ) {
+		if( value instanceof Boolean ) return value 
+		return '1/y/yes/true/t'.indexOf( value.toString().toLowerCase() ) >= 0
 	}
 }

@@ -66,6 +66,7 @@ public class MachRPUDetailController
     }
     
     def ok() {
+        if( machdetail.yearsused < 0 ) throw new Exception('Years Used must be more than or equal to zero.')
         if( mode == 'create' ) {
             machuse.machdetails.add( machdetail )
         }
@@ -133,6 +134,13 @@ public class MachRPUDetailController
     def arrastrecost    = 0.0
     def othercost       = 0.0
     def depreciation    = 0.0
+    def autodepreciate  = 1
+    
+    void setAutodepreciate( autodepreciate ) {
+        this.autodepreciate = autodepreciate
+        machdetail.autodepreciate = autodepreciate
+        recalc()
+    }
     
     void setNewlyinstalled( newlyinstalled ) {
         this.newlyinstalled = newlyinstalled
