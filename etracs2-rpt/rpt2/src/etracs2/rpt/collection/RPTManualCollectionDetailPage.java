@@ -141,6 +141,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xComboBox4.setItems("classifications");
         xComboBox4.setName("item.classcode");
         xComboBox4.setPreferredSize(new java.awt.Dimension(160, 22));
+        xComboBox4.setRequired(true);
         formPanel8.add(xComboBox4);
 
         xComboBox5.setCaption("RPU Type");

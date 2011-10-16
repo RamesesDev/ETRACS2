@@ -1,0 +1,115 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/rpt/reports/landtax" action="init" caption="Real Property Tax Collection" target="window" index="3" permission="landtax.rptc"/>
+        
+        <invoker type="formActions"     action="_close" caption="Close" mnemonic="c" shortcut="ctrl + W" icon="images/cancel.png"/>
+        <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
+        <invoker type="formActions"     action="preview" caption="Preview" mnemonic="v"             icon="images/doc-view.png"/>
+        
+        <invoker type="previewActions"  action="back" caption="Back" icon="images/back.png" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class RPTReportController
+{
+    @Binding
+    def binding
+    
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('LandTaxReportService') 
+    def svc 
+    
+    @Service('DateService')
+    def dateSvc
+    
+    def year 
+    def month
+    def provrate = 35.0
+    def munirate = 40.0
+    def brgyrate = 25.0
+    def cityrate = 65.0
+    def citybrgyrate = 35.0
+    def lgutype
+    
+    def reportdata
+    
+    
+    void init() {
+        def parsedate = dateSvc.parseCurrentDate()
+        year = parsedate.year 
+        month = svc.getMonth( parsedate.month )
+        lgutype = svc.getLguType()
+    }
+    
+    def preview() {
+        generateReport()
+        return 'preview' 
+    }
+    
+    void generateReport() {
+        if( lgutype == 'city' ) {
+            required( 'City Rate', cityrate )
+            required( 'Barangay Rate', citybrgyrate )
+            validateRate( 'City Rate', cityrate )
+            validateRate( 'Barangay Rate', citybrgyrate )
+            if( cityrate + citybrgyrate != 100.00 ) throw new Exception( 'Total City and Barangay Rates must be equal to 100.' )
+        }
+        else {
+            required( 'Province Rate', provrate )
+            required( 'Municipality Rate', munirate )
+            required( 'Barangay Rate', citybrgyrate )
+            validateRate( 'Province Rate', provrate )
+            validateRate( 'Municipality Rate', munirate )
+            validateRate( 'Barangay Rate', brgyrate )
+            if( provrate + munirate + brgyrate != 100.00 ) throw new Exception( 'Total Province, Municipality and Barangay Rates must be equal to 100.' )
+        }
+    
+        reportdata = svc.generateRPTCReport( lgutype, year, month, provrate, munirate, brgyrate, cityrate, citybrgyrate )
+        report.viewReport()
+    }
+    
+    void print(){
+        generateReport()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def report = [
+        getReportName : { return 'rptcollection' },
+        getReportData : { return reportdata },
+        getParameters : { 
+            return svcParams.getStandardParameter( OsirisContext.env.USERNAME )
+        }
+    ] as ServerReportModel;
+        
+    def back() {
+        return 'default' 
+    }
+    
+    List getMonthlist() {
+        return svc.getMonthList( null )
+    }
+    
+    void required( caption, value ) {
+        if( ! value ) throw new Exception( caption + ' is required.' )
+    }
+    
+    void validateRate( caption, value ) {
+        if( value < 0.0 ) throw new Exception( caption + ' must be greater than or equal to zero.')
+    }
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.rpt.report.RPTCInitPage" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>
