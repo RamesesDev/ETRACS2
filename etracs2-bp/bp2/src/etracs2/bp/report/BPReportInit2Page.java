@@ -35,6 +35,7 @@ public class BPReportInit2Page extends javax.swing.JPanel {
         xTitledBorder1.setTitle("Initial Information");
         formPanel1.setBorder(xTitledBorder1);
         xNumberField1.setCaption("Year");
+        xNumberField1.setCaptionWidth(100);
         xNumberField1.setCellPadding(new java.awt.Insets(10, 10, 0, 0));
         xNumberField1.setFieldType(Integer.class);
         xNumberField1.setName("year");
@@ -42,7 +43,9 @@ public class BPReportInit2Page extends javax.swing.JPanel {
         xNumberField1.setRequired(true);
         formPanel1.add(xNumberField1);
 
+        xComboBox1.setAllowNull(false);
         xComboBox1.setCaption("State");
+        xComboBox1.setCaptionWidth(100);
         xComboBox1.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
         xComboBox1.setItems("statelist");
         xComboBox1.setName("docstate");
@@ -51,6 +54,7 @@ public class BPReportInit2Page extends javax.swing.JPanel {
         formPanel1.add(xComboBox1);
 
         xComboBox2.setCaption("Barangay");
+        xComboBox2.setCaptionWidth(100);
         xComboBox2.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
         xComboBox2.setExpression("#{barangayname}");
         xComboBox2.setItems("barangaylist");
@@ -59,6 +63,7 @@ public class BPReportInit2Page extends javax.swing.JPanel {
         formPanel1.add(xComboBox2);
 
         xComboBox3.setCaption("Classification");
+        xComboBox3.setCaptionWidth(100);
         xComboBox3.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
         xComboBox3.setExpression("#{classification}");
         xComboBox3.setItems("classificationlist");
@@ -74,10 +79,10 @@ public class BPReportInit2Page extends javax.swing.JPanel {
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+            .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 443, Short.MAX_VALUE)
             .add(layout.createSequentialGroup()
                 .add(10, 10, 10)
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 356, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 409, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         layout.setVerticalGroup(

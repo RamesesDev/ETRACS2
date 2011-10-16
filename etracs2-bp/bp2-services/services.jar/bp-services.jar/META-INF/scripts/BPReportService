@@ -32,31 +32,15 @@ public class BPReportService
 	}
 	
 	@ProxyMethod
-	public List getApplicationListing( barangayid, year, docstate ) {
-		required( 'Year', year )
-		
-		docstate 	= ( docstate ? docstate : '%' )
-		barangayid  = ( barangayid ? barangayid : '%' )
-		def params 	= [ barangayid:barangayid, iyear:year, docstate:docstate ]
+	public List getApplicationListing( year, docstate, barangayid, classificationid, lobid  ) {
+		def params 	= [ 
+			iyear				: year, 
+			docstate			: ( docstate ? docstate : '%' ),
+			barangayid			: ( barangayid ? barangayid : '%' ),
+			classificationid	: ( classificationid ? classificationid : '%' ),
+			lobid 				: ( lobid  ? lobid : '%' ),
+		] 
 		def list = em.sqlContext.createNamedQuery('bpreport:getApplicationListing')
-					.setParameters( params )
-					.resultList 
-					.each { 
-						it.capital = (it.capital ? numSvc.round( it.capital ) : 0.0 )
-						it.gross = (it.gross?  numSvc.round( it.gross ) : 0.0 )
-					}
-		if( ! list ) throw new Exception('No records found.')
-		return list 		
-	}
-	
-	@ProxyMethod
-	public List getApplicationLOBListing( barangayid, classificationid, year, docstate ) {
-		docstate 	= ( docstate ? docstate : '%' )
-		barangayid  = ( barangayid ? barangayid : '%' )
-		classificationid = ( classificationid ? classificationid : '%' )
-		
-		def params 	= [ barangayid:barangayid, iyear:year, docstate:docstate, classificationid:classificationid ]
-		def list = em.sqlContext.createNamedQuery('bpreport:getApplicationLOBListing')
 					.setParameters( params )
 					.resultList 
 					.each {
@@ -69,9 +53,11 @@ public class BPReportService
 	
 	@ProxyMethod
 	public List getLOBCountListing( barangayid, year, docstate ) {
-		docstate 	= ( docstate ? docstate : '%' )
-		barangayid  = ( barangayid ? barangayid : '%' )
-		def params 	= [ barangayid:barangayid, iyear:year, docstate:docstate ]
+		def params 	= [ 
+			iyear			: year,
+			docstate		: ( docstate ? docstate : '%' ),
+			barangayid		: ( barangayid ? barangayid : '%' )
+		]
 		def list = em.sqlContext.createNamedQuery('bpreport:getLOBCountListing').setParameters( params ).resultList 
 		if( ! list ) throw new Exception('No records found.')
 		return list 		

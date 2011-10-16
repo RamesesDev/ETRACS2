@@ -28,12 +28,15 @@ public class BPReportInit1Page extends javax.swing.JPanel {
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
+        xComboBox3 = new com.rameses.rcp.control.XComboBox();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("Initial Information");
         formPanel1.setBorder(xTitledBorder1);
         xNumberField1.setCaption("Year");
+        xNumberField1.setCaptionWidth(100);
         xNumberField1.setCellPadding(new java.awt.Insets(10, 10, 0, 0));
         xNumberField1.setFieldType(Integer.class);
         xNumberField1.setName("year");
@@ -41,7 +44,9 @@ public class BPReportInit1Page extends javax.swing.JPanel {
         xNumberField1.setRequired(true);
         formPanel1.add(xNumberField1);
 
+        xComboBox1.setAllowNull(false);
         xComboBox1.setCaption("State");
+        xComboBox1.setCaptionWidth(100);
         xComboBox1.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
         xComboBox1.setItems("statelist");
         xComboBox1.setName("docstate");
@@ -50,12 +55,31 @@ public class BPReportInit1Page extends javax.swing.JPanel {
         formPanel1.add(xComboBox1);
 
         xComboBox2.setCaption("Barangay");
+        xComboBox2.setCaptionWidth(100);
         xComboBox2.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
         xComboBox2.setExpression("#{barangayname}");
         xComboBox2.setItems("barangaylist");
         xComboBox2.setName("barangay");
         xComboBox2.setPreferredSize(new java.awt.Dimension(0, 22));
         formPanel1.add(xComboBox2);
+
+        xComboBox3.setCaption("Classification");
+        xComboBox3.setCaptionWidth(100);
+        xComboBox3.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
+        xComboBox3.setExpression("#{classification}");
+        xComboBox3.setItems("classificationlist");
+        xComboBox3.setName("classification");
+        xComboBox3.setPreferredSize(new java.awt.Dimension(0, 22));
+        formPanel1.add(xComboBox3);
+
+        xLookupField1.setCaption("Line of Business");
+        xLookupField1.setCaptionWidth(100);
+        xLookupField1.setCellPadding(new java.awt.Insets(0, 10, 0, 0));
+        xLookupField1.setExpression("#{name}");
+        xLookupField1.setHandler("lookupLob");
+        xLookupField1.setName("lob");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel1.add(xLookupField1);
 
         xActionBar1.setBorder(new com.rameses.rcp.control.border.XUnderlineBorder());
         xActionBar1.setName("formActions");
@@ -65,10 +89,10 @@ public class BPReportInit1Page extends javax.swing.JPanel {
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+            .add(xActionBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 443, Short.MAX_VALUE)
             .add(layout.createSequentialGroup()
                 .add(10, 10, 10)
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 333, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 409, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -87,6 +111,8 @@ public class BPReportInit1Page extends javax.swing.JPanel {
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
+    private com.rameses.rcp.control.XComboBox xComboBox3;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     // End of variables declaration//GEN-END:variables
     

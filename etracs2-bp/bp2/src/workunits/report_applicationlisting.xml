@@ -1,8 +1,8 @@
 <workunit>
     <invokers>
-        <invoker folderid="/menu/bp/reports"         action="init" caption="Application Listing" target="window" index="2" permission="bpreport.applisting"/>
-        <invoker type="bpreport"         action="init" opener="applicationlisting" caption="Application Listing" target="window" index="2" permission="bpreport.applisting"/>
-        <invoker type="bpreport.applicationlisting"    action="init" caption="Application Listing" target="window"/>
+        <invoker folderid="/menu/bp/reports"         action="init" caption="Application Listing" target="window" index="3" permission="bpreport.apploblisting"/>
+        <invoker type="bpreport"         action="init" opener="applicationloblisting" caption="Application with LOB Listing" target="window" index="3" permission="bpreport.apploblisting"/>
+        <invoker type="bpreport.applicationloblisting"    action="init" caption="Application with LOB Listing" target="window" />
         
         <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
         <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
@@ -35,6 +35,8 @@ class ApplicationListingController
     def year 
     def docstate
     def barangay
+    def classification 
+    def lob
     def reportdata
     
     void init() {
@@ -48,7 +50,7 @@ class ApplicationListingController
     }
     
     void generateReport() {
-        reportdata = svc.getApplicationListing( barangay?.barangayid, year, docstate )
+        reportdata = svc.getApplicationListing( year, docstate, barangay?.barangayid, classification?.classificationid, lob?.objid  )
         report.viewReport()
     }
     
@@ -62,8 +64,10 @@ class ApplicationListingController
         getReportData : { return reportdata },
         getParameters : { 
             def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )
-            params.STATE = docstate
-            params.BARANGAYNAME = ( barangay  ? barangay.barangayname : 'ALL' )
+            params.STATE            = docstate
+            params.BARANGAYNAME     = ( barangay  ? barangay.barangayname : 'ALL' )
+            params.CLASSIFICATION   = ( classification ? classification.classification : 'ALL' )
+            params.LOB              = ( lob ? lob.name : 'ALL' )
             return params 
         }
     ] as ServerReportModel;
@@ -80,6 +84,16 @@ class ApplicationListingController
     def getBarangaylist() {
         return svc.getBarangayList()
     }
+    
+    def getClassificationlist() {
+        return svc.getClassificationList()
+    }
+    
+    
+    def getLookupLob() {
+        return InvokerUtil.lookupOpener( 'lob.lookup', [:] )
+    }
+    
 }
 ]]>        
         
