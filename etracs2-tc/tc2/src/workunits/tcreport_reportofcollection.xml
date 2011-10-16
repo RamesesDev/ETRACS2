@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker folderid="/menu/tc/reports" action="init" opener="abstract" caption="Abstract of Collection By Chart of Account" target="window" index="2" permission="tcreport.abstractofcollectionbychart"/>
+        <invoker folderid="/menu/tc/reports" action="init" opener="abstract" caption="Report of Collection" target="window" index="2" permission="tcreport.reportofcollection"/>
         
         <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
         <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
@@ -16,7 +16,7 @@ import com.rameses.rcp.annotations.*;
 import com.rameses.osiris2.client.*;
 import com.rameses.osiris2.reports.*;
 
-class AbstractOfCollectionByChartController
+class ReportOfCollectionController
 {
     @Binding
     def binding
@@ -30,7 +30,6 @@ class AbstractOfCollectionByChartController
     @Service('DateService')
     def dateSvc
     
-    def chart
     def year 
     def qtr
     def month
@@ -52,7 +51,7 @@ class AbstractOfCollectionByChartController
     }
     
     void generateReport() {
-        reportdata = svc.generateAbstractOfCollectionByGL( chart,  year, qtr, month?.month, day, fund )
+        reportdata = svc.generateReportOfCollectionListing( year, qtr, month?.month, day, fund )
         report.viewReport()
     }
     
@@ -62,7 +61,7 @@ class AbstractOfCollectionByChartController
     }
     
     def report = [
-        getReportName : { return 'treasury/abstractofcollectionbychart' },
+        getReportName : { return 'treasury/abstractofcollection' },
         getReportData : { return reportdata },
         getParameters : { 
             def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )
@@ -91,16 +90,12 @@ class AbstractOfCollectionByChartController
     List getFundlist() {
         return svc.getFundList()
     }
-    
-    List getChartlist() {
-        return ['NGAS', 'SRE' ]
-    }
 }
 ]]>        
         
     </code>
     <pages>
-        <page template="etracs2.tc.report.AbstractInit2Page" />
+        <page template="etracs2.tc.report.AbstractInitPage" />
         <page name="preview" template="etracs2.common.PreviewPage" />
     </pages>
 </workunit>
