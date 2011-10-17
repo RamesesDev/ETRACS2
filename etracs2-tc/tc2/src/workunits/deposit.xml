@@ -43,6 +43,9 @@ class DepositController
     @Service('DateService')
     def dateSvc
     
+    @Service("ReportParameterService")
+    def paramSvc
+    
     def entity
     def selectedSummary
     def denominationOpener
@@ -144,6 +147,52 @@ class DepositController
             //ignore
         }
     
+    }
+    
+    
+    void printFundRCD( bankacctid ) {
+        try {
+            def reportName = "depositslip/rcdbybankacct"
+             
+            def fundsummary = entity.fundsummaries.find{ it.bankacctid == bankacctid }
+            if( ! fundsummary ) throw new Exception('Fund Summary does not exists.\nPlease verify that a deposit was made on the selected fund.')
+            def fundRCDReport = [
+                getReportName : { return reportName },
+                getReportData : { 
+                    def data = [:]
+                    data.txndate = entity.txndate 
+                    data.txnno   = entity.txnno 
+                    if( fundsummary.cash > 0.0 ) {
+                        data.cashier1    = entity.depositedbyname
+                        data.depositref1 = fundsummary.bankcode + ' - Cash Deposit D/S _______________ '
+                        data.depositamt1 = fundsummary.cash 
+                    }
+                    if( fundsummary.noncash > 0.0 ) {
+                        data.cashier2    = entity.depositedbyname
+                        data.depositref2 = fundsummary.bankcode + ' - Check Deposit D/S _______________ '
+                        data.depositamt2 = fundsummary.noncash 
+                    }
+            
+                    data.amount = fundsummary.amount 
+                    data.amountinwords = numSvc.convertString( data.amount + "" )
+                    return data 
+                },
+                getParameters : { 
+                    def param = [
+                        CASHIERNAME     : entity.depositedbyname,
+                        CASHIERTITLE    : entity.depositedbytitle,
+                    ]
+                    return paramSvc.getStandardParameter( 'system' )+param; 
+                }
+            ] as ServerReportModel
+            
+            fundRCDReport.viewReport()
+            ReportUtil.print( fundRCDReport.report, true )
+        }
+        catch( e ) {
+            e.printStackTrace()
+            //ignore
+        }
     }
     
     def selectCheckTypeHandler = { checktype ->
