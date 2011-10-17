@@ -80,6 +80,7 @@ WHERE afinventoryid = $P{afinventoryid}
  AND craafyear = $P{year}  
  AND craafmonth = $P{month} 
 
+ 
 [updateCRAAFbyRemittance] 
 UPDATE craaf SET 
 	issuedqty = $P{issuedqty}, 
@@ -90,9 +91,6 @@ UPDATE craaf SET
 	endingto = $P{endingto}  
 WHERE objid = $P{objid} 
 
-
-
------ post to craaf statements -----
 
 [getCraaf]
 SELECT 
