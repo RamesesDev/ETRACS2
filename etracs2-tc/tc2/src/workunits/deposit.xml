@@ -82,6 +82,17 @@ class DepositController
         ])
     }
     
+    void deleteDeposit() {
+        if( selectedSummary && MsgBox.confirm('Delete selected item?') ) {
+            entity.fundsummaries.remove( selectedSummary  )
+            def fundtotal = entity.fundtotals.find{ it.fundid == selectedSummary.bankaccount.fundid }
+            if( fundtotal ) {
+                fundtotal.amtdeposited  -= selectedSummary.amount 
+                listHandler.load()
+            }
+        }
+    }
+    
     
     
     def deposit() {
@@ -160,7 +171,7 @@ class DepositController
                 getReportName : { return reportName },
                 getReportData : { 
                     def data = [:]
-                    data.txndate = entity.txndate 
+                    data.txndate = dateSvc.parse('yyyy-MM-dd', entity.txndate )
                     data.txnno   = entity.txnno 
                     if( fundsummary.cash > 0.0 ) {
                         data.cashier1    = entity.depositedbyname
