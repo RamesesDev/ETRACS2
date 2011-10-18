@@ -17,21 +17,7 @@ WHERE a.objid = p.applicationid
   AND a.iyear = $P{iyear} 
 ORDER BY a.txnno  
 
-[getApplicationListing]
-SELECT 
-	a.txnno AS appno, a.iyear, a.docstate, a.txntype, a.organization, a.barangayname,  
-	a.tradename, a.businessaddress, a.taxpayername, a.taxpayeraddress,  
-	(SELECT SUM(value) FROM bpappinfolisting WHERE varname = 'CAPITAL' and objid like CONCAT(a.objid,'%')) AS capital, 
-	(SELECT SUM(value) FROM bpappinfolisting WHERE varname = 'GROSS' and objid like CONCAT(a.objid,'%')) AS gross, 
-	p.txnno AS permitno 
-FROM bpapplicationlisting a 
-	LEFT JOIN bppermit p ON a.objid= p.applicationid  
-WHERE a.iyear = $P{iyear} 
-  AND a.docstate LIKE $P{docstate}   
-  AND a.barangayid LIKE $P{barangayid} 
-ORDER BY a.txnno  
-
-[getApplicationLOBListing]
+[getApplicationListing] 
 SELECT 
 	a.txnno AS appno, a.iyear, a.docstate, a.txntype, a.organization, a.barangayname, 
 	a.tradename, a.businessaddress, a.taxpayername, a.taxpayeraddress, 
@@ -45,10 +31,12 @@ WHERE a.iyear = $P{iyear}
   AND a.docstate LIKE $P{docstate}   
   AND a.barangayid LIKE $P{barangayid}  
   AND l.classificationid LIKE $P{classificationid} 
+  AND l.objid LIKE $P{lobid} 
 ORDER BY a.txnno 
 
 [getLOBCountListing]
 SELECT  
+	a.iyear, 
 	l.name AS lobname, 
 	SUM(CASE WHEN a.txntype = 'NEW' THEN 1 ELSE 0 END)  AS newcount, 
 	SUM(CASE WHEN a.txntype = 'RENEW' THEN 1 ELSE 0 END)  AS renewcount, 
@@ -60,7 +48,7 @@ FROM bpapplicationlisting a
 WHERE a.iyear = $P{iyear}  
   AND a.docstate LIKE $P{docstate}   
   AND a.barangayid LIKE $P{barangayid} 
-GROUP BY l.name   
+GROUP BY a.iyear, l.name   
 
 [getBusinessTaxpayerList]
 SELECT distinct taxpayerid, taxpayername, taxpayeraddress 

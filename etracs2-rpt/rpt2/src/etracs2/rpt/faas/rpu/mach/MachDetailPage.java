@@ -80,6 +80,7 @@ public class MachDetailPage extends javax.swing.JPanel {
         xLookupField1.setCaption("Machine Code");
         xLookupField1.setExpression("#{machinecode}");
         xLookupField1.setHandler("lookupMachine");
+        xLookupField1.setIndex(-100);
         xLookupField1.setName("machine");
         xLookupField1.setPreferredSize(new java.awt.Dimension(100, 19));
         xLookupField1.setRequired(true);
@@ -217,7 +218,7 @@ public class MachDetailPage extends javax.swing.JPanel {
         xCheckBox3.setText("Auto Depreciate?");
         xCheckBox3.setCheckValue(1);
         xCheckBox3.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        xCheckBox3.setName("machdetail.autodepreciate");
+        xCheckBox3.setName("autodepreciate");
         xCheckBox3.setUncheckValue(0);
 
         org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
@@ -377,7 +378,7 @@ public class MachDetailPage extends javax.swing.JPanel {
 
         xNumberField19.setCaption("Depreciation ( % )");
         xNumberField19.setCaptionWidth(110);
-        xNumberField19.setDepends(new String[] {"machdetail.autodepreciate"});
+        xNumberField19.setDepends(new String[] {"machdetail.autodepreciate", "autodepreciate"});
         xNumberField19.setEnabled(false);
         xNumberField19.setFieldType(java.math.BigDecimal.class);
         xNumberField19.setName("depreciation");

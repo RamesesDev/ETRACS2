@@ -80,6 +80,25 @@ class TDReportService {
 	}	
 	
 	@ProxyMethod
+	public Map generateReportOfCollectionListing( year, qtr, month, day, fund ) {
+		def params = [
+			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
+			fundid		 : ( fund ?  fund.fundid : '%' ),
+		]
+		def list = em.sqlContext.createNamedQuery( 'tcreport:getAbstractOfCollection' ).setParameters( params ).resultList 
+		if( !list ) throw new Exception('No records found.')
+		
+		def acctsummaries = em.sqlContext.createNamedQuery( 'tcreport:getAbstractAccountSummaries' ).setParameters( params ).resultList 
+		
+		return [
+			title 	: buildTitle( 'REPORT OF COLLECTION', year, qtr, month, day ),
+			period 	: buildPeriod( year, qtr, month, day ),
+			items 	: list,
+			acctsummaries : acctsummaries,
+		]
+	}
+	
+	@ProxyMethod
 	public Map generateAbstractOfCollection( year, qtr, month, day, fund ) {
 		def params = [
 			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
@@ -91,7 +110,7 @@ class TDReportService {
 		def acctsummaries = em.sqlContext.createNamedQuery( 'tcreport:getAbstractAccountSummaries' ).setParameters( params ).resultList 
 		
 		return [
-			title 	: buildTitle( year, qtr, month, day ),
+			title 	: buildTitle( 'ABSTRACT OF COLLECTION', year, qtr, month, day ),
 			period 	: buildPeriod( year, qtr, month, day ),
 			items 	: list,
 			acctsummaries : acctsummaries,
@@ -128,6 +147,7 @@ class TDReportService {
 		]
 	}
 	
+	
 	@ProxyMethod
 	public Map generateStatementOfRevenue( chart, year, qtr, month, day, fund  ) {
 		def params = [
@@ -157,7 +177,7 @@ class TDReportService {
 			items  	: buildTree( list, display )
 		]
 	}
-	
+
 	
 	
 	/*------------------------------------------------------------------
@@ -181,11 +201,11 @@ class TDReportService {
 		return '4TH QUARTER'
 	}
 	
-	def buildTitle( year, qtr, month, day ) {
-		if( day ) return 'DAILY ABSTRACT OF COLLECTION REPORT'
-		if( month ) return 'MONTHLY ABSTRACT OF COLLECTION REPORT'
-		if( qtr ) return 'QUARTERLY ABSTRACT OF COLLECTION REPORT'
-		return 'ANNUAL ABSTRACT OF COLLECTION REPORT'
+	def buildTitle( title, year, qtr, month, day ) {
+		if( day ) return 'DAILY ' + title
+		if( month ) return 'MONTHLY ' + title 
+		if( qtr ) return 'QUARTERLY ' + title 
+		return 'ANNUAL ' + title
 	}
 	
 	def buildTitle2( chart, year, qtr, month, day, fund  ){
@@ -293,7 +313,7 @@ class TDReportService {
 			};
 			results.add( display( idx+1, val, true )  );
 		}
-
+		results.remove(0)
 		return results;
 	}
 	
