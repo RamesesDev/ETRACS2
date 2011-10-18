@@ -1,0 +1,131 @@
+<workunit>
+    <invokers>
+        <invoker type="collection" caption="Slaughter Permit" afid="57" appcode="slaughter_permit"  />
+        <invoker type="inquiry:tc:slaughter_permit" action="initInquiry" permission="collection_slaughterpermit.inquiry" />
+        <invoker type="tc:slaughter_permit" action="init" caption="Slaughter Permit" afid="53" permission="collection_slaughterpermit.create"  />
+        
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}" permission="collection_slaughterpermit.create" icon="images/add.png"/>
+        <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}" icon="images/back.png"/>
+        <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}" icon="images/save.png"/>
+        <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}" icon="images/save.png"/>
+        <invoker type="formActions" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" visibleWhen="#{mode == 'view'}" permission="collection_slaughterpermit.print"/>
+        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view'}" permission="collection_slaughterpermit.void" icon="images/doc-void.png"/>
+        
+        <invoker type="receipt.actions:tc:slaughter_permit" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" permission="collection_slaughterpermit.edit" icon="images/edit.png"/>
+        <invoker type="receipt.actions:tc:slaughter_permit" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" permission="collection_slaughterpermit.print"/>
+        <invoker type="receipt.actions:tc:slaughter_permit" action="doVoid" caption="Void" mnemonic="v" permission="collection_slaughterpermit.void" icon="images/doc-void.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+    import com.rameses.rcp.common.*;
+    import com.rameses.rcp.annotations.*;
+    import com.rameses.osiris2.client.*;
+    import etracs2.groovy.*;
+    import etracs2.tc.groovy.*;
+
+    class SlaughterCollectionController extends AbstractCollectionController
+    {
+        @Binding
+        def binding
+        
+        @Service('ReceiptService')
+        def svc
+        
+        @Service('IncomeAcctService')
+        def acctSvc
+        
+        @Service('SlaughterPermitHtmlService')
+        def htmlSvc
+        
+        @Service('DateService')
+        def dateSvc
+        
+        @Service('Var')
+        def VAR
+        
+        @Service('ReportParameterService')
+        def svcParams;
+
+        def getParameters() { return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [TXNDATE: dateSvc.parse("yyyy-MM-dd", entity.info.txndate)]; }
+        def getService() { return svc }
+        def getHtmlService() { return htmlSvc }
+        def getCollectionTitle() { return 'Slaughter Permit' }
+        
+        def account 
+        def permitamount = 0.0 
+        
+        void setPermitamount( permitamount ){
+            this.permitamount = permitamount 
+            updateItemInfo()
+        }
+        
+        void init() {
+            super.init()
+            entity.weight = 1.0
+            entity.info.paidbyaddress = VAR.lgu_formal_name
+            entity.info.parentlgu = VAR.parent_lgu_formal_name
+            entity.doctype = 'SLAUGHTER_PERMIT'
+        }
+        
+        def getHtml() {
+            return htmlSvc.getHtml( entity.objid )
+        }
+        
+        def create() {
+            if( ! permitamount ) throw new Exception( 'Permit Amount is required.' )
+            if( permitamount <= 0.0 ) throw new Exception( 'Permit Amount must be greater than zero.' )
+            if( !account ) throw new Exception('Account is required.')
+            addReceiptItem()
+            return super.create()
+        }
+        
+        def update() {
+            validateAge()
+            return super.update()
+        }
+        
+        def getReportName() {
+            return 'receipt/af53'
+        }
+        
+        void addReceiptItem() {
+            def item = [
+                acctid    : account.objid,
+                acctno    : account.acctno,
+                accttitle : account.accttitle,
+                fundid    : account.fundid,
+                fundname  : account.fundname,
+                amount    : permitamount,
+            ]
+            entity.items.add( item )
+            entity.info.amount = item.amount
+        }
+        
+        void setAccount( account ) {
+            this.account = account 
+        }
+        
+        def getLookupAccount() {
+            return InvokerUtil.lookupOpener('incomeacct:lookup', [:])
+        }
+        
+        void updateItemInfo() {
+            entity.info.amount = ( permitamount ? permitamount : 0.0 )
+            def payments = []
+            payments.addAll( entity.payments )
+            updatePaymentInfo( payments )
+            calculateChange()
+            binding.refresh('entity.info.*|permitamount')       
+        }
+        
+        
+    }
+]]>        
+    </code>
+    <pages>
+        <page template="etracs2.tc.collection.SlaughterPermitCollectionPage"/>
+        <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
+        <page name="html" template="etracs2.tc.HtmlPage"/>
+    </pages>
+</workunit>
