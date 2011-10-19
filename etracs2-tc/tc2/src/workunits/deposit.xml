@@ -7,10 +7,14 @@
         <invoker type="mainActions" action="_close" caption="Close" mnemonic="c" shortcut="ctrl W" icon="images/cancel.png"/>
         <invoker type="mainActions" action="deposit" caption="Deposit" mnemonic="d" shortcut="ctrl D" icon="images/cash.png"/>
         <invoker type="viewActions" action="closeDeposit" caption="Close Deposit" mnemonic="d" shortcut="ctrl D" visibleWhen="#{entity.docstate == 'OPEN'}" permission="deposit.close" />        
+        <invoker type="viewActions" action="previewFundSummary" caption="Preview Fund Summary" mnemonic="f" icon="images/doc-view.png" shortcut="ctrl f" visibleWhen="#{entity.docstate == 'OPEN'}"  />        
+        
         <invoker type="noncashActions" action="addNonCashPayments" caption="Add Non-Cash Payment" mnemonic="a" shortcut="ctrl a" visibleWhen="#{selectedSummary != null}" permission="deposit.addnoncash" />
         <invoker type="noncashActions" action="addExternalPayment" caption="Add External Non-Cash Payment" mnemonic="e" shortcut="ctrl e" visibleWhen="#{selectedSummary != null}" permission="deposit.addexternalnoncash"/>
         
         <invoker type="deposit.view" action="doView" caption="View" mnemonic="v" shortcut="ctrl V" permission="deposit.view"/>
+        
+        <invoker type="reportActions" action="backToMain" caption="Back" mnemonic="b" icon="images/back.png" />
     </invokers>
     <code>
 
@@ -46,11 +50,14 @@ class DepositController
     @Service("ReportParameterService")
     def paramSvc
     
+    
+    
     def entity
     def selectedSummary
     def denominationOpener
     def openNonCashPayments = []
     def selectedFundTotal
+    def fund 
     
     
     void init() {
@@ -111,6 +118,27 @@ class DepositController
     
     def closeDeposit() {
         return InvokerUtil.lookupOpener('closedeposit', [entity:entity])
+    }
+    
+    def previewFundSummary() {
+        return 'report'
+    }
+                    
+    def reportModel = [
+        getReportName : { return 'depositslip/rcdbyfund'; },
+        getReportData : { return svc.createRCDByFundReport( entity, fund )  },
+        getParameters : { return paramSvc.getStandardParameter( 'system' ) }
+    ] as ServerReportModel;
+
+    public def getReport(){
+        reportModel.viewReport();
+        return reportModel.report;
+    }
+    
+    def fundlist;
+    public def getFundlist(){
+        if( !fundlist ) this.fundlist = svc.fundList;
+        return fundlist;
     }
     
     void printCashDepositSlip( bankacctid ) {
@@ -470,6 +498,10 @@ class DepositController
     def getHtml() {
         return htmlSvc.getHtml( entity.objid )
     }
+    
+    def backToMain() {
+        return 'view'
+    }
 }
 
 ]]>
@@ -479,6 +511,7 @@ class DepositController
         <page template="etracs2.tc.deposit.DepositInitPage"/>
         <page name="main" template="etracs2.tc.deposit.DepositPage"/>
         <page name="view" template="etracs2.tc.deposit.DepositViewPage"/>
+        <page name="report" template="etracs2.tc.deposit.DepositFundSummaryInitPage" />
     </pages>
         
 </workunit>
