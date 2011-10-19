@@ -73,6 +73,9 @@ class PlantTreeRPUService
         
 		//calculate marketvalue 
         planttree.marketvalue = numberSvc.round( planttree.basemarketvalue + planttree.adjustment )
+		if( rysetting && IS_TRUE( rysetting.roundadjmarketvalue ) ) {
+			planttree.marketvalue = numberSvc.roundToTen( planttree.marketvalue )
+		}
         //calculate assessedvalue
         planttree.assessedvalue = numberSvc.roundToTen(planttree.marketvalue * planttree.assesslevel / 100.0 )
         return planttree 
@@ -166,5 +169,14 @@ class PlantTreeRPUService
 					.setFirstResult( params._start )
 					.setMaxResults( params._limit )
 					.resultList
+	}
+	
+	boolean IS_TRUE( value ) {
+		return TO_BOOLEAN( value ) == true 
+	}
+	
+	boolean TO_BOOLEAN( value ) {
+		if( value instanceof Boolean ) return value 
+		return '1/y/yes/true/t'.indexOf( value.toString().toLowerCase() ) >= 0
 	}
 }
