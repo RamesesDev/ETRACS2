@@ -99,3 +99,15 @@ AND   o.txntype in ('RETIRE','RETIRELOB')
 [findPermitByApplicationId] 
 SELECT o.* FROM bppermit o 
 WHERE o.applicationid = $P{applicationid} 
+
+
+
+
+
+[getAppListInfo]
+SELECT barangayname, ctcno FROM bpapplicationlisting WHERE objid = $P{objid}
+
+[getTaxpayer]
+SELECT * FROM entity where objid = $P{objid}
+
+

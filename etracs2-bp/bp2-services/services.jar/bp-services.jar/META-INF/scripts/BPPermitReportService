@@ -18,12 +18,25 @@ public class BPPermitReportService
 		           .singleResult;
 				   
 		def app = em.read('bpapplication:bpapplication', [objid:applicationid]);
-
+		def applistinfo = em.read( 'bplisting:bpapplicationlisting', [objid:applicationid] )
+		def entity = em.sqlContext.createNamedQuery('bpmgmt:getTaxpayer')
+				   .setParameter('objid', applistinfo.taxpayerid)
+		           .singleResult
+				   
+		entity.info = em.serializer.read( entity.info )
+		if( entity.entitytype.equals('individual') ){
+			entity.info.middlename = ( entity.info.middlename ) ? " $entity.info.middlename ": " "
+			bp.taxpayername = "$entity.info.firstname$entity.info.middlename$entity.info.lastname".toString()
+		}
+				
+		bp.barangayname = applistinfo.barangayname 
+		bp.ctcno = applistinfo.ctcno 
 		bp.txntype = app.txntype;
 		bp.barcode = app.barcode;
 		bp.barcodeurl = var.get('barcode_url').replace('$P{data}', app.barcode);
 		
 		bp.lines = em.serializer.read( bp.lobs );
+		bp.lob = bp.lines[0]
 		bp.lobs = null;
 		
 		bp.iyear = yearFormat.format( bp.txndate );
@@ -37,6 +50,7 @@ public class BPPermitReportService
 				   amount: p.amount];
 		//app.credits.findAll{ it.refno == or.orno }.each{ or.amount += it.amount + it.surcharge + it.interest - it.discount };
 		bp.orlist = [ or ];
+		bp.ordetails = bp.orlist[0]
 		
 		def sdf = new java.text.SimpleDateFormat("EEEEE MMMMM dd, yyyy");
 		def params = [

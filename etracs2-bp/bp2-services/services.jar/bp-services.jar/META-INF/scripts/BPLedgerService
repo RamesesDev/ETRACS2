@@ -124,7 +124,6 @@ class BPLedgerService {
 	public void postPayment( def payment ){
 		def application = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
 		def bplisting = em.read('bplisting:bpapplicationlisting', [objid: application.objid]);
-		
 		if( !application.payments ) application.payments = [];
 		if( application.payments.find{ it.refno == payment.refno } )
 			throw new Exception("Payment reference number already exist.");
@@ -173,7 +172,9 @@ class BPLedgerService {
 			if( !application.docstate.matches('EXPIRED') ){
 				application.docstate = 'PERMIT_PENDING';
 				bplisting.docstate = 'PERMIT_PENDING';
-				bplisting.fullypaid = 1 
+			
+				def getUnpaidReceivables = application.receivables.findAll{ it.amount > it.amtpaid }
+				if( !getUnpaidReceivables ) bplisting.fullypaid = 1
 			}
 		}else{
 			application.docstate = 'APPROVED';
@@ -241,31 +242,31 @@ class BPLedgerService {
 		}
 		
 		def taxfees = getUnpaidReceivables();
-		if( taxfees.findAll{ it.systype != 'BUSINESS_TAX' } ) return false;
-		if( taxfees.findAll{ it.applicationtype.matches('NEW|ADDLOB') } ) return false;
+		if( taxfees.findAll{ it.applicationtype?.matches('NEW|ADDLOB') } ) return false;
+		
 		return true;
 	}
 	
 	@ProxyMethod
 	public def getApplicationByBusiness( def businessid ){
 		return em.sqlContext.createNamedQuery('business:getApplicationListByBusinessId')
-		         .setParameters([businessid: businessid])
-				 .resultList.each{ app ->
-					app.amount = 0.0;
-					app.amtpaid = 0.0;
-					
-					app.taxfees = em.serializer.read( app.taxfees );
-					app.lobs = em.serializer.read( app.lobs );
-					app.receivables = em.serializer.read( app.receivables ).each{ app.amount += it.amount; app.amtpaid += it.amtpaid; };
-					app.credits = em.serializer.read( app.credits );
-					
-					app.surcharge_paid = app.credits.surcharge.sum()
-					app.interest_paid = app.credits.interest.sum()
-					
-					app.putAll( em.serializer.read( app.extended ) );
-					
-					
-				 };
+			 .setParameters([businessid: businessid])
+			 .resultList.each{ app ->
+				app.amount = 0.0;
+				app.amtpaid = 0.0;
+				
+				app.taxfees = em.serializer.read( app.taxfees );
+				app.lobs = em.serializer.read( app.lobs );
+				app.receivables = em.serializer.read( app.receivables ).each{ app.amount += it.amount; app.amtpaid += it.amtpaid; };
+				app.credits = em.serializer.read( app.credits );
+				
+				app.surcharge_paid = app.credits.surcharge.sum()
+				app.interest_paid = app.credits.interest.sum()
+				
+				app.putAll( em.serializer.read( app.extended ) );
+				
+				
+			 };
 	}
-	
+		
 }
