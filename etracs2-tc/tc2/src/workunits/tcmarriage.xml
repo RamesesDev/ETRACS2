@@ -45,6 +45,9 @@
         @Service('ReportParameterService')
         def svcParams
         
+        @Service('DateService')
+        def dateSvc
+        
         def getService() { return svc }
         def getHtmlService() { return htmlSvc }
         def getCollectionTitle() { return 'Marriage License and Fee' }
@@ -66,7 +69,7 @@
         }
         
         def getParameters(){
-            return svcParams.getStandardParameter( OsirisContext.env.USERNAME );
+            return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [TXNDATE: dateSvc.parse("yyyy-MM-dd", entity.info.txndate)];
         }
 
         void addReceiptItem() {
