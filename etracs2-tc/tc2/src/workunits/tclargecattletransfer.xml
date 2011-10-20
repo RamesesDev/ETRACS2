@@ -50,6 +50,9 @@
         @Service('NumberService')
         def numSvc
         
+        @Service('Var')
+        def VAR
+        
         def getParameters() { 
             return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [
                                 TXNDATE     : dateSvc.parse("yyyy-MM-dd", entity.info.txndate),
@@ -66,6 +69,11 @@
         void init() {
             super.init()
             entity.doctype = 'CATTLE_TRANSFER'
+            entity.info?.paidbyaddress = VAR.lgu_name
+            entity.citymuni = VAR.lgu_name
+            entity.province = VAR.parent_lgu_name
+            entity.issuedcitymuni = VAR.lgu_name
+            entity.issuedprovince = VAR.parent_lgu_name 
             addReceiptItem()
             addDefaultCashPayment()
         }

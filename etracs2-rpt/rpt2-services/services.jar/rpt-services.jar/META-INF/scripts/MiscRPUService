@@ -52,6 +52,12 @@ class MiscRPUService
 		miscitem.basemarketvalue = numberSvc.round( expression );
 		miscitem.depreciatedvalue = numberSvc.round( miscitem.basemarketvalue * miscitem.depreciation / 100.0 );
 		miscitem.marketvalue = numberSvc.round( miscitem.basemarketvalue - miscitem.depreciatedvalue );
+		
+		def rysetting = em.sqlContext.createNamedQuery( 'landrpu:getRPTSetting' ).singleResult;
+		if( rysetting && IS_TRUE( rysetting.roundadjmarketvalue ) ) {
+			miscitem.marketvalue = numberSvc.roundToTen( miscitem.marketvalue )
+		}
+		
 		miscitem.assesslevel = determineAssessLevel( miscitem );
 		miscitem.assessedvalue = numberSvc.roundToTen( miscitem.marketvalue * miscitem.assesslevel / 100.0 );
 		
@@ -140,5 +146,14 @@ class MiscRPUService
     
     def evaluateExpr( expr, params ) {
 		return (new GroovyShell( new Binding( params) )).evaluate( expr )
+	}
+	
+	boolean IS_TRUE( value ) {
+		return TO_BOOLEAN( value ) == true 
+	}
+	
+	boolean TO_BOOLEAN( value ) {
+		if( value instanceof Boolean ) return value 
+		return '1/y/yes/true/t'.indexOf( value.toString().toLowerCase() ) >= 0
 	}
 }

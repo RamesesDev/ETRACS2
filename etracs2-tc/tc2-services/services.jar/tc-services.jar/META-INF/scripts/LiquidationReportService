@@ -33,6 +33,9 @@ public class LiquidationReportServices{
 		reportData.remittances = em.sqlContext.createNamedQuery("liquidationreport:getRemittancesByLiquidation")
 								   .setParameters( [liquidationid: liquidationid] )
 								   .resultList;
+		reportData.collectionsummaries = em.sqlContext.createNamedQuery('liquidationreport:getCollectionSummaryByAF')
+									.setParameters( [liquidationid: liquidationid] )
+								    .resultList;
 
 		return reportData;
 	}
