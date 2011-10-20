@@ -17,6 +17,30 @@ FROM remittancelist rml
 INNER JOIN liquidationlist ll on ll.objid = rml.liquidationid 
 WHERE ll.objid = $P{liquidationid} 
 
+[getRemittedForms]
+SELECT 
+	rf.afid, rf.beginqty, rf.beginfrom, rf.beginto, 
+	rf.receivedqty, rf.receivedfrom, rf.receivedto,  
+	rf.issuedqty, rf.issuedfrom, rf.issuedto,  
+	rf.endingqty, rf.endingfrom, rf.endingto  
+FROM liquidationlist lq 
+	INNER JOIN remittancelist rem ON lq.objid = rem.liquidationid 
+	INNER JOIN remittedform rf ON rem.objid = rf.remittanceid 
+WHERE lq.objid = $P{liquidationid} 
+  AND rf.aftype = 'serial'  
+ORDER BY afid, rf.beginfrom  
+
+[getNonSerialRemittedForms]
+SELECT 
+	rf.afid, rf.beginqty, rf.receivedqty, rf.issuedqty, rf.endingqty 
+FROM liquidationlist lq 
+	INNER JOIN remittancelist rem ON lq.objid = rem.liquidationid 
+	INNER JOIN remittedform rf ON rem.objid = rf.remittanceid 
+WHERE lq.objid = $P{liquidationid} 
+  AND rf.aftype = 'nonserial'  
+ORDER BY afid, rf.beginfrom  
+
+
 [getCollectionSummaryByAF]
 SELECT 
 	CASE WHEN af.aftype = 'serial' 
