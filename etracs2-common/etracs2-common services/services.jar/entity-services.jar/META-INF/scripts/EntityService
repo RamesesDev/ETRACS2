@@ -153,9 +153,9 @@ class EntityService
 	}
 	
 	void checkDuplicateEntityName( entity ) {
-		def params = [ objid:entity.objid, entityname:entity.entityname ]
+		def params = [ objid:entity.objid, entityname:entity.entityname, entityaddress:entity.entityaddress ]
 		def data = em.sqlContext.createNamedQuery('entity:checkDuplicateName').setParameters( params ).singleResult 
-		if( data ) throw new Exception( entity.entityname + ' already exists with Entity No. ' + data.entityno +'.\nDuplicate name is not allowed.')
+		if( data ) throw new Exception( entity.entityname + ' already exists with Entity No. ' + data.entityno +'.\nDuplicate name and address combination is not allowed.')
 	}
 	
 	def buildName( entity ) {
