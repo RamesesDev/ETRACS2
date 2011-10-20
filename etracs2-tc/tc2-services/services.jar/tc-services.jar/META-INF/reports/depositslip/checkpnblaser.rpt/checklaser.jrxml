@@ -2,7 +2,7 @@
 <!-- Created with iReport - A designer for JasperReports -->
 <!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
 <jasperReport
-		 name="cashlx"
+		 name="checklaser"
 		 columnCount="1"
 		 printOrder="Vertical"
 		 orientation="Portrait"
@@ -23,99 +23,103 @@
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
 
-	<parameter name="cashbreakdownitem" isForPrompting="false" class="java.lang.Object"/>
+	<parameter name="checkbreakdownitem" isForPrompting="false" class="java.lang.Object"/>
 
 	<field name="bankacctno" class="java.lang.String"/>
 	<field name="bankacctname" class="java.lang.String"/>
 	<field name="txndate" class="java.lang.String"/>
-	<field name="denominations" class="java.lang.Object"/>
+	<field name="noncashpayments" class="java.lang.Object"/>
 	<field name="currency" class="java.lang.String"/>
 	<field name="accttype" class="java.lang.String"/>
-	<field name="cash" class="java.math.BigDecimal"/>
-	<field name="amountinwords" class="java.lang.String"/>
+	<field name="noncash" class="java.math.BigDecimal"/>
 	<field name="depositedbyname" class="java.lang.String"/>
+	<field name="amountinwords" class="java.lang.String"/>
+	<field name="checktype" class="java.lang.String"/>
 	<field name="branchname" class="java.lang.String"/>
+	<field name="cash" class="java.math.BigDecimal"/>
 
+	<variable name="RETURNTOTALAMT" class="java.math.BigDecimal" resetType="Report" calculation="System">
+	</variable>
 		<background>
 			<band height="0"  isSplitAllowed="true" >
 			</band>
 		</background>
 		<title>
 			<band height="612"  isSplitAllowed="true" >
-				<textField isStretchWithOverflow="false" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="51"
+						x="210"
 						y="35"
 						width="111"
 						height="18"
-						key="textField"/>
+						key="textField-1"/>
 					<box></box>
 					<textElement textAlignment="Center">
-						<font size="9"/>
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="9" isBold="true"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$F{branchname}]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="217"
+						x="375"
 						y="35"
 						width="65"
 						height="18"
-						key="textField"/>
+						key="textField-2"/>
 					<box></box>
 					<textElement>
-						<font size="9"/>
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="9" isBold="true"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$F{txndate}]]></textFieldExpression>
 				</textField>
-				<subreport  isUsingCache="true">
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="96"
-						y="125"
-						width="167"
-						height="18"
-						key="subreport-1"/>
-					<dataSourceExpression><![CDATA[$F{denominations}]]></dataSourceExpression>
-					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{cashbreakdownitem}]]></subreportExpression>
-				</subreport>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="20"
-						y="69"
+						x="180"
+						y="71"
 						width="253"
 						height="18"
-						key="textField"/>
+						key="textField-3"/>
 					<box></box>
 					<textElement>
-						<font pdfFontName="Helvetica-Bold" isBold="true"/>
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="11" isBold="true"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$F{bankacctno}]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="20"
-						y="92"
+						x="180"
+						y="94"
 						width="253"
 						height="18"
-						key="textField"/>
+						key="textField-4"/>
 					<box></box>
 					<textElement>
-						<font/>
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="9" isBold="true"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$F{bankacctname}]]></textFieldExpression>
 				</textField>
+				<subreport  isUsingCache="true">
+					<reportElement
+						x="174"
+						y="286"
+						width="245"
+						height="21"
+						key="subreport-1"/>
+					<dataSourceExpression><![CDATA[$F{noncashpayments}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{checkbreakdownitem}]]></subreportExpression>
+				</subreport>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="183"
-						y="248"
-						width="79"
-						height="16"
+						x="141"
+						y="394"
+						width="120"
+						height="14"
 						key="textField"/>
 					<box rightPadding="1"></box>
 					<textElement textAlignment="Right" verticalAlignment="Middle">
-						<font size="9"/>
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="10" isBold="true"/>
 					</textElement>
-				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{cash}]]></textFieldExpression>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{noncash}]]></textFieldExpression>
 				</textField>
 			</band>
 		</title>
