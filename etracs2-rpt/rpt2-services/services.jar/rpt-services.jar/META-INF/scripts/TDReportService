@@ -43,6 +43,13 @@ class TDReportService
 		if( faas.rpu.rputype == 'land' ) {
 			if( var.td_report_item_format && var.td_report_item_format == 'BLGF' ) {
 				td.lands = buildStandardItemSummary( faas.rpu )
+				//
+				//determine if multiple area, if so set mixedarea = 1 otherwise = 0
+				//in the report display sqm for the total area in cases of mixedarea = 1
+				def uniqueareatypelist = td.lands.unique{ it.areatype }
+				if( uniqueareatypelist.size() > 1 ) {
+					td.lands.each{ it.mixedarea = 1 }
+				}
 			}
 			else {
 				td.lands = getLandDetails( faas.rpu )
@@ -178,12 +185,16 @@ class TDReportService
 			def itemlist = actualusegroup[key]
 			data.add([
 				classification 	: rpu.classname,
-				actualusecode  	: itemlist[0].actualusecode,
-				actualuse	   	: itemlist[0].actualusename,
-				area     	   	: itemlist.areaha.sum(),
+				actualusecode  	: itemlist[0].assesslevelcode,
+				actualuse	   	: itemlist[0].assesslevelname,
+				area     	   	: (itemlist[0].subclass.areatype == 'SQM' ? itemlist.areasqm.sum() : itemlist.areaha.sum()),
+				areatype		: itemlist[0].subclass.areatype.toLowerCase(),
 				marketvalue		: itemlist.marketvalue.sum(),
 				assesslevel		: itemlist[0].assesslevel,
 				assessedvalue	: itemlist.assessedvalue.sum(),
+				areasqm			: itemlist.areasqm.sum(),
+				areaha			: itemlist.areaha.sum(),
+				mixedarea		: 0,
 			])
 		}
 		

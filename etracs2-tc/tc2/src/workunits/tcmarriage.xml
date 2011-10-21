@@ -12,7 +12,7 @@
         <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view'}" permission="collection_marriage.void" icon="images/doc-void.png"/>
         
         <invoker type="receipt.actions:tc:marriage_license" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" permission="collection_marriage.edit" icon="images/edit.png"/>
-        <invoker type="receipt.actions:tc:marriage_license" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" permission="collection_marriage.print "/>
+        <invoker type="receipt.actions:tc:marriage_license" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" permission="collection_marriage.print"/>
         <invoker type="receipt.actions:tc:marriage_license" action="doVoid" caption="Void" mnemonic="v" permission="collection_marriage.void" icon="images/doc-void.png"/>
     </invokers>
     <code>
@@ -45,6 +45,9 @@
         @Service('ReportParameterService')
         def svcParams
         
+        @Service('DateService')
+        def dateSvc
+        
         def getService() { return svc }
         def getHtmlService() { return htmlSvc }
         def getCollectionTitle() { return 'Marriage License and Fee' }
@@ -66,7 +69,7 @@
         }
         
         def getParameters(){
-            return svcParams.getStandardParameter( OsirisContext.env.USERNAME );
+            return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [TXNDATE: dateSvc.parse("yyyy-MM-dd", entity.info.txndate)];
         }
 
         void addReceiptItem() {

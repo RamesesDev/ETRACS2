@@ -274,7 +274,7 @@ class ReceiptService
 		}
     
         def txndate = dateService.parse('yyyy-MM-dd', receipt.info.txndate )
-        if( txndate > dateService.serverDate ) {
+        if( receipt.info.mode != 'ONLINE' && txndate > dateService.serverDate ) {
             throw new Exception('Txn Date must be before or equal to current date.')
         }
         
@@ -294,10 +294,11 @@ class ReceiptService
 		def info = receipt.info 
 		Date currDate = new Date()
 		info.dtposted = currDate
-		if( info.txndate instanceof Date)
-			info.txndate = dateService.format('yyyy-MM-dd', info.txndate);
-		else if( ! info.txndate ) 
+		if( ! info.txndate || receipt.info.mode == 'ONLINE' ) 
 			info.txndate = dateService.format( 'yyyy-MM-dd', currDate )
+		else if( info.txndate instanceof Date)
+			info.txndate = dateService.format('yyyy-MM-dd', info.txndate);
+		
 
 		updatePayorName( receipt )
 	}

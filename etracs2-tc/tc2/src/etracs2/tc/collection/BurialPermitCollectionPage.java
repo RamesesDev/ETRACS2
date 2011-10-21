@@ -47,13 +47,14 @@ public class BurialPermitCollectionPage extends javax.swing.JPanel {
         xLabel7 = new com.rameses.rcp.control.XLabel();
         xLabel10 = new com.rameses.rcp.control.XLabel();
         xLabel8 = new com.rameses.rcp.control.XLabel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xTextField2 = new com.rameses.rcp.control.XTextField();
         xDateField1 = new com.rameses.rcp.control.XDateField();
         xSubFormPanel1 = new com.rameses.rcp.control.XSubFormPanel();
         jPanel6 = new javax.swing.JPanel();
         formPanel3 = new com.rameses.rcp.util.FormPanel();
+        xTextField10 = new com.rameses.rcp.control.XTextField();
+        xTextField11 = new com.rameses.rcp.control.XTextField();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xTextField3 = new com.rameses.rcp.control.XTextField();
         xTextField4 = new com.rameses.rcp.control.XTextField();
@@ -197,16 +198,6 @@ public class BurialPermitCollectionPage extends javax.swing.JPanel {
 
         formPanel1.add(formPanel2);
 
-        xActionTextField1.setActionName("lookupEntity");
-        xActionTextField1.setCaption("Payor");
-        xActionTextField1.setCaptionWidth(75);
-        xActionTextField1.setFont(new java.awt.Font("Arial", 0, 12));
-        xActionTextField1.setHint("Search Payor");
-        xActionTextField1.setIndex(-10);
-        xActionTextField1.setName("entity.info.payorname");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 20));
-        formPanel1.add(xActionTextField1);
-
         xTextField1.setCaption("Paid By");
         xTextField1.setCaptionWidth(75);
         xTextField1.setFont(new java.awt.Font("Arial", 0, 12));
@@ -245,6 +236,20 @@ public class BurialPermitCollectionPage extends javax.swing.JPanel {
 
         formPanel3.setCaptionFont(new java.awt.Font("Arial", 0, 12));
         formPanel3.setPadding(new java.awt.Insets(0, 5, 5, 5));
+        xTextField10.setCaption("To City/Municipality of");
+        xTextField10.setCaptionWidth(140);
+        xTextField10.setFont(new java.awt.Font("Arial", 0, 12));
+        xTextField10.setName("entity.tocitymuni");
+        xTextField10.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel3.add(xTextField10);
+
+        xTextField11.setCaption("To Province");
+        xTextField11.setCaptionWidth(140);
+        xTextField11.setFont(new java.awt.Font("Arial", 0, 12));
+        xTextField11.setName("entity.toprovince");
+        xTextField11.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel3.add(xTextField11);
+
         xComboBox1.setCaption("Permission Type");
         xComboBox1.setCaptionWidth(140);
         xComboBox1.setFont(new java.awt.Font("Arial", 0, 12));
@@ -404,7 +409,6 @@ public class BurialPermitCollectionPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XDateField xDateField1;
@@ -421,6 +425,8 @@ public class BurialPermitCollectionPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XSeparator xSeparator1;
     private com.rameses.rcp.control.XSubFormPanel xSubFormPanel1;
     private com.rameses.rcp.control.XTextField xTextField1;
+    private com.rameses.rcp.control.XTextField xTextField10;
+    private com.rameses.rcp.control.XTextField xTextField11;
     private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;
     private com.rameses.rcp.control.XTextField xTextField4;

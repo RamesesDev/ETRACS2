@@ -16,6 +16,9 @@ class DepositService
 	@Service('SequenceService')
 	def sequenceSvc
 	
+	@Service('NumberService')
+	def numSvc
+	
 	@Service('LogService')
 	def logSvc
 	
@@ -34,6 +37,10 @@ class DepositService
 		return result
 	}
 	
+	@ProxyMethod
+	public def getFundList(){
+		return em.sqlContext.createNamedQuery("deposit:getFundList").resultList;
+	}
 	
 	@ProxyMethod
 	public Map createDeposit( cashierid ) {
@@ -45,7 +52,7 @@ class DepositService
 			docstate         : OPEN_STATE,
 			txndate          : dateSvc.format('yyyy-MM-dd', new Date() ),
             depositedbyid    : cashier.objid,
-            depositedbyname  : cashier.name,
+            depositedbyname  : cashier.formalname,
             depositedbytitle : cashier.jobtitle,
 			cash             : 0.0,
 			noncash          : 0.0,
@@ -95,6 +102,58 @@ class DepositService
 		em.update( deposit.schemaname, deposit )
 		logSvc.log('CLOSE', 'Deposit', deposit.objid )
 		return deposit
+	}
+	
+	@ProxyMethod
+	public def createRCDByFundReport( deposit, fund ) {
+		fund = ( fund ? fund.fund : 'GENERAL')
+		def data = [
+			txnno				: deposit.txnno, 
+			txndate				: dateSvc.parse('yyyy-MM-dd', deposit.txndate ),
+			collectionsummaries	: getCollectionSummaryByAFAndFund( deposit, fund ),
+			remittancedeposits	: buildRemittanceDepositList( deposit, fund  ),
+			remittedforms		: [[:],[:]],
+			nonserialremittances: [[:],[:]],
+			fund 				: fund, 
+		]
+		data.amount = data.collectionsummaries.amount.sum()
+		data.amountinwords = numSvc.convertString( data.amount + "" )
+		data.depositedbyname = deposit.depositedbyname
+		data.depositedbytitle = deposit.depositedbytitle
+		return data 
+	}
+	
+	List buildRemittanceDepositList( deposit, fund  ) {
+		def list = []
+		
+		def cashfundsummaries = deposit.fundsummaries.findAll{ it.bankaccount.fund == fund && it.cash > 0.0 }
+		if( cashfundsummaries ) {
+			cashfundsummaries.each {
+				list.add([
+					cashier		: deposit.depositedbyname,
+					depositref  : it.bankaccount.bankcode + ' - Cash Deposit D/S _______________ ',
+					depositamt  : it.cash ,
+				])
+			}
+		}
+		
+		def checkfundsummaries = deposit.fundsummaries.findAll{ it.bankaccount.fund == fund && it.noncash > 0.0 }
+		if( checkfundsummaries ) {
+			checkfundsummaries.each {
+				list.add([
+					cashier		: deposit.depositedbyname,
+					depositref  : it.bankaccount.bankcode + ' - Check Deposit D/S _______________ ',
+					depositamt  : it.noncash ,
+				])
+			}
+		}
+		return list 
+	}
+	
+	List getCollectionSummaryByAFAndFund( deposit, fund ) {
+		return em.sqlContext.createNamedQuery('deposit:getCollectionSummaryByAFAndFund')
+					.setParameters([depositid:deposit.objid, fund:fund])
+					.resultList
 	}
 	
 	@ProxyMethod

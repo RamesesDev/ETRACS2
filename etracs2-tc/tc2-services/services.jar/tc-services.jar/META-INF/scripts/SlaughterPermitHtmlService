@@ -1,0 +1,61 @@
+import com.rameses.common.*
+import com.rameses.annotations.*
+
+class SlaughterPermitHtmlService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ReceiptHtmlService')
+	def htmlSvc
+	
+	def SCHEMANAME = 'receipt:receipt'
+	
+	@ProxyMethod
+	public def open( receiptid ) {
+		return em.read(SCHEMANAME, [objid:receiptid])
+	}
+	
+	@ProxyMethod
+	public def getHtml( receiptid ) {
+		def rct = open( receiptid )
+		if( ! rct ) return ''
+		def info = htmlSvc.buildInfo( rct )
+		def ownershipInfo = buildSlaughterInfo( rct )
+		def items = htmlSvc.buildItems( rct )
+		return """
+			<html>
+				<head>
+				</head>
+				<body>
+					$info
+					$ownershipInfo
+					$items
+				<body>
+			</html>
+		"""
+	}
+	
+	def buildSlaughterInfo( rct ){
+		return """
+			<table>
+				<tr>
+					<td colspan="2"><b>Slaughter Information</b></td>
+				</tr>
+				<tr>
+					<td>Permit Amount</td>
+					</td>$rct.info.amount</td>
+				</tr>
+				<tr>
+					<td>Slaughter for one (1) head of </td>
+					</td>$rct.slaughterof</td>
+				</tr>
+				<tr>
+					<td>Weight (kilo)</td>
+					</td>$rct.weight</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+}

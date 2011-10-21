@@ -7,10 +7,14 @@
         <invoker type="mainActions" action="_close" caption="Close" mnemonic="c" shortcut="ctrl W" icon="images/cancel.png"/>
         <invoker type="mainActions" action="deposit" caption="Deposit" mnemonic="d" shortcut="ctrl D" icon="images/cash.png"/>
         <invoker type="viewActions" action="closeDeposit" caption="Close Deposit" mnemonic="d" shortcut="ctrl D" visibleWhen="#{entity.docstate == 'OPEN'}" permission="deposit.close" />        
+        <invoker type="viewActions" action="previewFundSummary" caption="Preview Fund Summary" mnemonic="f" icon="images/doc-view.png" shortcut="ctrl f" visibleWhen="#{entity.docstate == 'OPEN'}"  />        
+        
         <invoker type="noncashActions" action="addNonCashPayments" caption="Add Non-Cash Payment" mnemonic="a" shortcut="ctrl a" visibleWhen="#{selectedSummary != null}" permission="deposit.addnoncash" />
         <invoker type="noncashActions" action="addExternalPayment" caption="Add External Non-Cash Payment" mnemonic="e" shortcut="ctrl e" visibleWhen="#{selectedSummary != null}" permission="deposit.addexternalnoncash"/>
         
         <invoker type="deposit.view" action="doView" caption="View" mnemonic="v" shortcut="ctrl V" permission="deposit.view"/>
+        
+        <invoker type="reportActions" action="backToMain" caption="Back" mnemonic="b" icon="images/back.png" />
     </invokers>
     <code>
 
@@ -43,11 +47,17 @@ class DepositController
     @Service('DateService')
     def dateSvc
     
+    @Service("ReportParameterService")
+    def paramSvc
+    
+    
+    
     def entity
     def selectedSummary
     def denominationOpener
     def openNonCashPayments = []
     def selectedFundTotal
+    def fund 
     
     
     void init() {
@@ -79,6 +89,17 @@ class DepositController
         ])
     }
     
+    void deleteDeposit() {
+        if( selectedSummary && MsgBox.confirm('Delete selected item?') ) {
+            entity.fundsummaries.remove( selectedSummary  )
+            def fundtotal = entity.fundtotals.find{ it.fundid == selectedSummary.bankaccount.fundid }
+            if( fundtotal ) {
+                fundtotal.amtdeposited  -= selectedSummary.amount 
+                listHandler.load()
+            }
+        }
+    }
+    
     
     
     def deposit() {
@@ -97,6 +118,27 @@ class DepositController
     
     def closeDeposit() {
         return InvokerUtil.lookupOpener('closedeposit', [entity:entity])
+    }
+    
+    def previewFundSummary() {
+        return 'report'
+    }
+                    
+    def reportModel = [
+        getReportName : { return 'depositslip/rcdbyfund'; },
+        getReportData : { return svc.createRCDByFundReport( entity, fund )  },
+        getParameters : { return paramSvc.getStandardParameter( 'system' ) }
+    ] as ServerReportModel;
+
+    public def getReport(){
+        reportModel.viewReport();
+        return reportModel.report;
+    }
+    
+    def fundlist;
+    public def getFundlist(){
+        if( !fundlist ) this.fundlist = svc.fundList;
+        return fundlist;
     }
     
     void printCashDepositSlip( bankacctid ) {
@@ -132,6 +174,8 @@ class DepositController
                 reportName = 'depositslip/' + fundsummary.bankaccount.cashbreakdownreport
             }
             
+            println 'reportName -> ' + reportName 
+            
             def cashReport = [
                 getReportName : { return reportName },
                 getReportData : { return buildCashBreakdownReportData( bankacctid ) },
@@ -144,6 +188,53 @@ class DepositController
             //ignore
         }
     
+    }
+    
+    
+    void printFundRCD( bankacctid ) {
+        try {
+            def reportName = "depositslip/rcdbybankacct"
+             
+            def fundsummary = entity.fundsummaries.find{ it.bankacctid == bankacctid }
+            if( ! fundsummary ) throw new Exception('Fund Summary does not exists.\nPlease verify that a deposit was made on the selected fund.')
+            def fundRCDReport = [
+                getReportName : { return reportName },
+                getReportData : { 
+                    def data = [:]
+                    data.txndate = dateSvc.parse('yyyy-MM-dd', entity.txndate )
+                    data.txnno   = entity.txnno 
+                    data.fund    = fundsummary.bankaccount.fund 
+                    if( fundsummary.cash > 0.0 ) {
+                        data.cashier1    = entity.depositedbyname
+                        data.depositref1 = fundsummary.bankaccount.bankcode + ' - Cash Deposit D/S _______________ '
+                        data.depositamt1 = fundsummary.cash 
+                    }
+                    if( fundsummary.noncash > 0.0 ) {
+                        data.cashier2    = entity.depositedbyname
+                        data.depositref2 = fundsummary.bankaccount.bankcode + ' - Check Deposit D/S _______________ '
+                        data.depositamt2 = fundsummary.noncash 
+                    }
+            
+                    data.amount = fundsummary.amount 
+                    data.amountinwords = numSvc.convertString( data.amount + "" )
+                    return data 
+                },
+                getParameters : { 
+                    def param = [
+                        CASHIERNAME     : entity.depositedbyname,
+                        CASHIERTITLE    : entity.depositedbytitle,
+                    ]
+                    return paramSvc.getStandardParameter( 'system' )+param; 
+                }
+            ] as ServerReportModel
+            
+            fundRCDReport.viewReport()
+            ReportUtil.print( fundRCDReport.report, true )
+        }
+        catch( e ) {
+            e.printStackTrace()
+            //ignore
+        }
     }
     
     def selectCheckTypeHandler = { checktype ->
@@ -410,6 +501,10 @@ class DepositController
     def getHtml() {
         return htmlSvc.getHtml( entity.objid )
     }
+    
+    def backToMain() {
+        return 'view'
+    }
 }
 
 ]]>
@@ -419,6 +514,7 @@ class DepositController
         <page template="etracs2.tc.deposit.DepositInitPage"/>
         <page name="main" template="etracs2.tc.deposit.DepositPage"/>
         <page name="view" template="etracs2.tc.deposit.DepositViewPage"/>
+        <page name="report" template="etracs2.tc.deposit.DepositFundSummaryInitPage" />
     </pages>
         
 </workunit>

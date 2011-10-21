@@ -204,18 +204,18 @@ class RemittanceService {
 				aftype : afctrl.aftype,
 				afid : afctrl.afid,
 				stubno : afctrl.stubno, 
-				receivedfrom : (afctrl.qtyreceived == afctrl.balance) ? afctrlsvc.formatSeries( afctrl.startseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
-				receivedto : (afctrl.qtyreceived == afctrl.balance) ? afctrlsvc.formatSeries( afctrl.endseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
-				receivedqty : (afctrl.qtyreceived == afctrl.balance) ? afctrl.qtyreceived : null,
-				beginfrom : (afctrl.qtyreceived != afctrl.balance) ? afctrlsvc.formatSeries( afctrl.beginseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
-				beginto : (afctrl.qtyreceived != afctrl.balance) ? afctrlsvc.formatSeries( afctrl.endseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
-				beginqty : (afctrl.qtyreceived != afctrl.balance) ? afctrl.beginqty : null,
-				issuedfrom : (afctrl.qtyissued != 0) ? afctrlsvc.formatSeries( afctrl.issuedfrom, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
-				issuedto : (afctrl.qtyissued != 0) ? afctrlsvc.formatSeries( afctrl.issuedto, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
-				issuedqty : (afctrl.qtyissued != 0) ? afctrl.qtyissued : null,
-				endingfrom : (afctrl.balance != 0) ? afctrlsvc.formatSeries( afctrl.currentseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
-				endingto : (afctrl.balance != 0) ? afctrlsvc.formatSeries( afctrl.endseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
-				endingqty : (afctrl.balance != 0) ? afctrl.balance : null
+				receivedfrom 	: (afctrl.beginqty == null || afctrl.beginqty == 0) ? afctrlsvc.formatSeries( afctrl.startseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
+				receivedto 		: (afctrl.beginqty == null || afctrl.beginqty == 0) ? afctrlsvc.formatSeries( afctrl.endseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
+				receivedqty 	: (afctrl.beginqty == null || afctrl.beginqty == 0) ? afctrl.qtyreceived : null,
+				beginfrom 		: (afctrl.beginqty != null && afctrl.beginqty > 0) ? afctrlsvc.formatSeries( afctrl.beginseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
+				beginto 		: (afctrl.beginqty != null && afctrl.beginqty > 0) ? afctrlsvc.formatSeries( afctrl.endseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
+				beginqty 		: (afctrl.beginqty != null && afctrl.beginqty > 0) ? afctrl.beginqty : null,
+				issuedfrom 		: (afctrl.qtyissued != 0) ? afctrlsvc.formatSeries( afctrl.issuedfrom, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
+				issuedto 		: (afctrl.qtyissued != 0) ? afctrlsvc.formatSeries( afctrl.issuedto, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
+				issuedqty 		: (afctrl.qtyissued != 0) ? afctrl.qtyissued : null,
+				endingfrom 		: (afctrl.balance != 0) ? afctrlsvc.formatSeries( afctrl.currentseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
+				endingto 		: (afctrl.balance != 0) ? afctrlsvc.formatSeries( afctrl.endseries, afctrl.prefix, afctrl.suffix, afctrl.serieslength ) : null,
+				endingqty 		: (afctrl.balance != 0) ? afctrl.balance : null
 			];
 		}
 		

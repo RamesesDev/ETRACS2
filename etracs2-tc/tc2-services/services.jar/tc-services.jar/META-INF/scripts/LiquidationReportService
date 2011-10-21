@@ -33,6 +33,15 @@ public class LiquidationReportServices{
 		reportData.remittances = em.sqlContext.createNamedQuery("liquidationreport:getRemittancesByLiquidation")
 								   .setParameters( [liquidationid: liquidationid] )
 								   .resultList;
+		reportData.collectionsummaries = em.sqlContext.createNamedQuery('liquidationreport:getCollectionSummaryByAF')
+									.setParameters( [liquidationid: liquidationid] )
+								    .resultList;
+		reportData.remittedforms = em.sqlContext.createNamedQuery('liquidationreport:getRemittedForms')
+									.setParameters( [liquidationid: liquidationid] )
+								    .resultList;
+		reportData.nonserialremittances = em.sqlContext.createNamedQuery('liquidationreport:getNonSerialRemittedForms')
+									.setParameters( [liquidationid: liquidationid] )
+								    .resultList;
 
 		return reportData;
 	}
