@@ -58,9 +58,9 @@ public class BurialPermitCollectionPage extends javax.swing.JPanel {
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xTextField3 = new com.rameses.rcp.control.XTextField();
         xTextField4 = new com.rameses.rcp.control.XTextField();
-        xNumberField4 = new com.rameses.rcp.control.XNumberField();
+        xTextField12 = new com.rameses.rcp.control.XTextField();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
-        xDateField2 = new com.rameses.rcp.control.XDateField();
+        xTextField13 = new com.rameses.rcp.control.XTextField();
         xTextField5 = new com.rameses.rcp.control.XTextField();
         xTextField6 = new com.rameses.rcp.control.XTextField();
         formPanel4 = new com.rameses.rcp.util.FormPanel();
@@ -272,41 +272,36 @@ public class BurialPermitCollectionPage extends javax.swing.JPanel {
         xTextField4.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField4.setName("entity.nationality");
         xTextField4.setPreferredSize(new java.awt.Dimension(0, 19));
-        xTextField4.setRequired(true);
         formPanel3.add(xTextField4);
 
-        xNumberField4.setCaption("Age (Years)");
-        xNumberField4.setCaptionWidth(140);
-        xNumberField4.setFieldType(Integer.class);
-        xNumberField4.setFont(new java.awt.Font("Arial", 0, 12));
-        xNumberField4.setName("entity.age");
-        xNumberField4.setPreferredSize(new java.awt.Dimension(120, 19));
-        xNumberField4.setRequired(true);
-        formPanel3.add(xNumberField4);
+        xTextField12.setCaption("Age");
+        xTextField12.setCaptionWidth(140);
+        xTextField12.setFont(new java.awt.Font("Arial", 0, 12));
+        xTextField12.setName("entity.age");
+        xTextField12.setPreferredSize(new java.awt.Dimension(200, 19));
+        formPanel3.add(xTextField12);
 
         xComboBox2.setCaption("Sex");
         xComboBox2.setCaptionWidth(140);
         xComboBox2.setFont(new java.awt.Font("Arial", 0, 12));
         xComboBox2.setItems("sexList");
         xComboBox2.setName("entity.sex");
-        xComboBox2.setPreferredSize(new java.awt.Dimension(120, 19));
+        xComboBox2.setPreferredSize(new java.awt.Dimension(200, 19));
         xComboBox2.setRequired(true);
         formPanel3.add(xComboBox2);
 
-        xDateField2.setCaption("Date of Death");
-        xDateField2.setCaptionWidth(140);
-        xDateField2.setFont(new java.awt.Font("Arial", 0, 12));
-        xDateField2.setName("entity.dtdeath");
-        xDateField2.setPreferredSize(new java.awt.Dimension(120, 19));
-        xDateField2.setRequired(true);
-        formPanel3.add(xDateField2);
+        xTextField13.setCaption("Date of Death");
+        xTextField13.setCaptionWidth(140);
+        xTextField13.setFont(new java.awt.Font("Arial", 0, 12));
+        xTextField13.setName("entity.dtdeath");
+        xTextField13.setPreferredSize(new java.awt.Dimension(200, 19));
+        formPanel3.add(xTextField13);
 
         xTextField5.setCaption("Cause of Death");
         xTextField5.setCaptionWidth(140);
         xTextField5.setFont(new java.awt.Font("Arial", 0, 12));
         xTextField5.setName("entity.deathcause");
         xTextField5.setPreferredSize(new java.awt.Dimension(0, 19));
-        xTextField5.setRequired(true);
         formPanel3.add(xTextField5);
 
         xTextField6.setCaption("Cemetery");
@@ -412,7 +407,6 @@ public class BurialPermitCollectionPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XDateField xDateField1;
-    private com.rameses.rcp.control.XDateField xDateField2;
     private com.rameses.rcp.control.XLabel xLabel10;
     private com.rameses.rcp.control.XLabel xLabel4;
     private com.rameses.rcp.control.XLabel xLabel7;
@@ -421,12 +415,13 @@ public class BurialPermitCollectionPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField2;
     private com.rameses.rcp.control.XNumberField xNumberField3;
-    private com.rameses.rcp.control.XNumberField xNumberField4;
     private com.rameses.rcp.control.XSeparator xSeparator1;
     private com.rameses.rcp.control.XSubFormPanel xSubFormPanel1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField10;
     private com.rameses.rcp.control.XTextField xTextField11;
+    private com.rameses.rcp.control.XTextField xTextField12;
+    private com.rameses.rcp.control.XTextField xTextField13;
     private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;
     private com.rameses.rcp.control.XTextField xTextField4;
