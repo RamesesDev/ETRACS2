@@ -1,0 +1,55 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class BPScripts {
+	
+	@PersistenceContext('main')
+	def em;
+	
+	// Method/Script to update fullypaid column into 1 
+	//if the taxpayer is fullypaid for the said business
+	@ProxyMethod
+	public def updateFullyPaid(){
+		def receivableList = em.sqlContext.createQuery( 'SELECT businessid, receivables FROM bpapplication' ).resultList
+	
+		receivableList.each(){ o ->
+			o.receivables = em.serializer.read( o.receivables )
+			def unpaidRcvbls = o.receivables.findAll{ it.amount > it.amtpaid }
+			if( !unpaidRcvbls ) {
+				//em.update( 'bplisting:bplisting', o )
+				em.sqlContext.createNamedExecutor( "scripts:updateAppFullypaid" ).setParameter( 'businessid', o.businessid ).execute()
+			} 
+		}
+	}
+	
+	
+	// Method/Script to update docstate column into 'PERMIT_PENDING'
+	//if the taxpayer is quarterly/yearly paid for the said business
+	@ProxyMethod
+	public def updateDocState(){
+		def sql = """
+			SELECT 
+				objid, docstate, receivables  
+			FROM bpapplication 
+			WHERE docstate = 'APPROVED'		
+		"""
+		
+		def application = em.sqlContext.createQuery( sql ).resultList
+		if( application ){
+			application.each(){ apps ->
+				def receivables = em.serializer.read( apps.receivables )
+				receivables = receivables.findAll{ it.iqtr == 1 && it.amount > it.amtpaid }
+				if( !receivables ){
+				
+					em.sqlContext.createNamedExecutor( "scripts:updateStateApps" )
+						.setParameter( 'objid', apps.objid ).execute()
+						
+					em.sqlContext.createNamedExecutor( "scripts:updateStateAppListing" )
+						.setParameter( 'objid', apps.objid ).execute()
+				}			
+			}
+		}
+	}
+	
+}
