@@ -390,6 +390,12 @@ class AFControlService
 	}
 	
 	@ProxyMethod
+	public List getInactiveSerialCaptureList( collectorid  ) {
+		def params = [collectorid:collectorid]
+		return em.sqlContext.createNamedQuery('afcontrol:getInactiveSerialCaptureList').setParameters(params).resultList
+	}
+	
+	@ProxyMethod
 	public List getAllInactiveList( collectorid ) {
 		return em.sqlContext.createNamedQuery('afcontrol:getAllInactiveList').setParameter('collectorid', collectorid).resultList
 	}
