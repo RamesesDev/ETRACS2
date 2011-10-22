@@ -44,6 +44,7 @@ class DepositService
 	
 	@ProxyMethod
 	public Map createDeposit( cashierid ) {
+		checkFundBankAccountAssignment()
         def cashier = userSvc.getCashier( cashierid )
 		def deposit = [
 			objid            : 'D' + new UID(),
@@ -71,6 +72,17 @@ class DepositService
 		deposit.amount 			= deposit.liquidations.sum({it.amount})
 		return deposit 
     }
+	
+	void checkFundBankAccountAssignment() {
+		//check that all funds has an assigned bank account 
+		def fundlist = em.sqlContext.createNamedQuery('deposit:getFundIdList').resultList 
+		fundlist.each{ fund -> 
+			def bankaccount = em.sqlContext.createNamedQuery('deposit:getBankAccountByFund')
+								.setParameter('fundid', fund.fundid ).singleResult 
+			if( !bankaccount ) 
+				throw new Exception('Fund ' + fund.fundname + ' has not been assigned with a Bank Account.\nAssign a bank account for this fund before processing a deposit.')
+		}
+	}
 	
 	@ProxyMethod
 	public Map open( objid ) {
@@ -208,8 +220,13 @@ class DepositService
 		//fundsummary.amount totals = depositamount
 		def totalamt = deposit.fundsummaries.amount.sum() 
 		if( !totalamt ) totalamt = 0.0
-		if( totalamt != deposit.amount ) throw new Exception('Deposit Summary Total must be equal to Total Deposit.')
+		if( totalamt != deposit.amount ) 
+			throw new Exception('Deposit Summary Total must be equal to Total Deposit.')
 		
+		//deposit amount must be equal to total liquidations amount
+		def liquidationstotal = deposit.liquidations.amount.sum()
+		if( liquidationstotal != deposit.amount ) 
+			throw new Exception('Deposit amount must be equal to total liquidation amount.\nPlease check that all funds have equivalent Bank Account assigned.')
 		
 		em.validate( deposit.schemaname, deposit )
 	}
