@@ -35,6 +35,7 @@ public class JuridicalPage extends javax.swing.JPanel {
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xTextField4 = new com.rameses.rcp.control.XTextField();
         xTextField5 = new com.rameses.rcp.control.XTextField();
+        xTextField10 = new com.rameses.rcp.control.XTextField();
         xSeparator1 = new com.rameses.rcp.control.XSeparator();
         xDateField1 = new com.rameses.rcp.control.XDateField();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
@@ -87,6 +88,12 @@ public class JuridicalPage extends javax.swing.JPanel {
         xTextField5.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xTextField5);
 
+        xTextField10.setCaption("Contact No.");
+        xTextField10.setCaptionWidth(115);
+        xTextField10.setName("entity.info.contactno");
+        xTextField10.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel1.add(xTextField10);
+
         xSeparator1.setPreferredSize(new java.awt.Dimension(0, 20));
         formPanel1.add(xSeparator1);
 
@@ -132,8 +139,8 @@ public class JuridicalPage extends javax.swing.JPanel {
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel4Layout.createSequentialGroup()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 221, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(167, Short.MAX_VALUE))
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 249, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(139, Short.MAX_VALUE))
         );
         jPanel2.add(jPanel4, java.awt.BorderLayout.CENTER);
 
@@ -152,6 +159,7 @@ public class JuridicalPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XSeparator xSeparator1;
     private com.rameses.rcp.control.XTextField xTextField1;
+    private com.rameses.rcp.control.XTextField xTextField10;
     private com.rameses.rcp.control.XTextField xTextField4;
     private com.rameses.rcp.control.XTextField xTextField5;
     private com.rameses.rcp.control.XTextField xTextField6;

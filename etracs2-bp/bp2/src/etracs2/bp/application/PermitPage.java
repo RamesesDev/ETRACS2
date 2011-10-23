@@ -34,7 +34,7 @@ public class PermitPage extends javax.swing.JPanel {
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xLabel4 = new com.rameses.rcp.control.XLabel();
         formPanel4 = new com.rameses.rcp.util.FormPanel();
-        xLabel10 = new com.rameses.rcp.control.XLabel();
+        xDateField1 = new com.rameses.rcp.control.XDateField();
         jPanel3 = new javax.swing.JPanel();
         formPanel3 = new com.rameses.rcp.util.FormPanel();
         xLabel8 = new com.rameses.rcp.control.XLabel();
@@ -73,16 +73,11 @@ public class PermitPage extends javax.swing.JPanel {
         jPanel2.add(xLabel4);
         xLabel4.setBounds(170, 0, 420, 20);
 
-        com.rameses.rcp.control.border.XLineBorder xLineBorder1 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder1.setLineColor(new java.awt.Color(204, 204, 204));
-        xLabel10.setBorder(xLineBorder1);
-        xLabel10.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        xLabel10.setCaption("Date");
-        xLabel10.setCaptionWidth(100);
-        xLabel10.setExpression("#{permit.txndate}");
-        xLabel10.setName("application.year");
-        xLabel10.setPreferredSize(new java.awt.Dimension(0, 18));
-        formPanel4.add(xLabel10);
+        xDateField1.setCaption("Date");
+        xDateField1.setCaptionWidth(100);
+        xDateField1.setName("permit.txndate");
+        xDateField1.setPreferredSize(new java.awt.Dimension(0, 18));
+        formPanel4.add(xDateField1);
 
         jPanel2.add(formPanel4);
         formPanel4.setBounds(350, 20, 240, 50);
@@ -96,17 +91,17 @@ public class PermitPage extends javax.swing.JPanel {
         xTitledBorder2.setTitle("Business Information");
         jPanel3.setBorder(xTitledBorder2);
 
-        com.rameses.rcp.control.border.XLineBorder xLineBorder2 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder2.setLineColor(new java.awt.Color(204, 204, 204));
-        xLabel8.setBorder(xLineBorder2);
+        com.rameses.rcp.control.border.XLineBorder xLineBorder1 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder1.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel8.setBorder(xLineBorder1);
         xLabel8.setCaption("Permittee");
         xLabel8.setExpression("#{permit.taxpayername}");
         xLabel8.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel3.add(xLabel8);
 
-        com.rameses.rcp.control.border.XLineBorder xLineBorder3 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder3.setLineColor(new java.awt.Color(204, 204, 204));
-        xLabel9.setBorder(xLineBorder3);
+        com.rameses.rcp.control.border.XLineBorder xLineBorder2 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder2.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel9.setBorder(xLineBorder2);
         xLabel9.setCaption("Address");
         xLabel9.setExpression("#{permit.taxpayeraddress}");
         xLabel9.setName("application.info.taxpayeraddress");
@@ -116,17 +111,17 @@ public class PermitPage extends javax.swing.JPanel {
         jPanel3.add(formPanel3);
         formPanel3.setBounds(0, 20, 590, 50);
 
-        com.rameses.rcp.control.border.XLineBorder xLineBorder4 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder4.setLineColor(new java.awt.Color(204, 204, 204));
-        xLabel1.setBorder(xLineBorder4);
+        com.rameses.rcp.control.border.XLineBorder xLineBorder3 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder3.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel1.setBorder(xLineBorder3);
         xLabel1.setCaption("Trade Name");
         xLabel1.setExpression("#{permit.tradename}");
         xLabel1.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel1.add(xLabel1);
 
-        com.rameses.rcp.control.border.XLineBorder xLineBorder5 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder5.setLineColor(new java.awt.Color(204, 204, 204));
-        xLabel2.setBorder(xLineBorder5);
+        com.rameses.rcp.control.border.XLineBorder xLineBorder4 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder4.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel2.setBorder(xLineBorder4);
         xLabel2.setCaption("Address");
         xLabel2.setExpression("#{permit.businessaddress}");
         xLabel2.setName("application.info.taxpayeraddress");
@@ -162,8 +157,8 @@ public class PermitPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel3;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
+    private com.rameses.rcp.control.XDateField xDateField1;
     private com.rameses.rcp.control.XLabel xLabel1;
-    private com.rameses.rcp.control.XLabel xLabel10;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel4;
     private com.rameses.rcp.control.XLabel xLabel8;

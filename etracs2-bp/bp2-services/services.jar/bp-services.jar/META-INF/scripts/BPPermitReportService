@@ -20,15 +20,14 @@ public class BPPermitReportService
 		def app = em.read('bpapplication:bpapplication', [objid:applicationid]);
 		def applistinfo = em.read( 'bplisting:bpapplicationlisting', [objid:applicationid] )
 		def entity = em.sqlContext.createNamedQuery('bpmgmt:getTaxpayer')
-				   .setParameter('objid', applistinfo.taxpayerid)
-		           .singleResult
+				   .setParameter('objid', applistinfo.taxpayerid).singleResult
 				   
 		entity.info = em.serializer.read( entity.info )
 		if( entity.entitytype.equals('individual') ){
 			entity.info.middlename = ( entity.info.middlename ) ? " $entity.info.middlename ": " "
 			bp.taxpayername = "$entity.info.firstname$entity.info.middlename$entity.info.lastname".toString()
 		}
-				
+
 		bp.barangayname = applistinfo.barangayname 
 		bp.ctcno = applistinfo.ctcno 
 		bp.txntype = app.txntype;

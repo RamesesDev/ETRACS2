@@ -11,14 +11,20 @@ class BPScripts {
 	//if the taxpayer is fullypaid for the said business
 	@ProxyMethod
 	public def updateFullyPaid(){
-		def receivableList = em.sqlContext.createQuery( 'SELECT businessid, receivables FROM bpapplication' ).resultList
+		def sql = """
+			SELECT businessid, receivables FROM bpapplication
+		"""
+		
+		def bpapplication = em.sqlContext.createQuery( sql ).resultList
 	
-		receivableList.each(){ o ->
-			o.receivables = em.serializer.read( o.receivables )
-			def unpaidRcvbls = o.receivables.findAll{ it.amount > it.amtpaid }
+		bpapplication.each(){ bpapps ->
+			bpapps.receivables = em.serializer.read( bpapps.receivables )
+			def unpaidRcvbls = bpapps.receivables.findAll{ it.amount > it.amtpaid }
 			if( !unpaidRcvbls ) {
-				//em.update( 'bplisting:bplisting', o )
-				em.sqlContext.createNamedExecutor( "scripts:updateAppFullypaid" ).setParameter( 'businessid', o.businessid ).execute()
+				
+				//em.update( 'bplisting:bplisting', bpapps )
+				em.sqlContext.createNamedExecutor( "scripts:updateAppFullypaid" ).
+					setParameter( 'businessid', bpapps.businessid ).execute()
 			} 
 		}
 	}
@@ -35,11 +41,11 @@ class BPScripts {
 			WHERE docstate = 'APPROVED'		
 		"""
 		
-		def application = em.sqlContext.createQuery( sql ).resultList
-		if( application ){
-			application.each(){ apps ->
-				def receivables = em.serializer.read( apps.receivables )
-				receivables = receivables.findAll{ it.iqtr == 1 && it.amount > it.amtpaid }
+		def bpapplication = em.sqlContext.createQuery( sql ).resultList
+		if( bpapplication ){
+			bpapplication.each(){ apps ->
+				apps.receivables = em.serializer.read( apps.receivables )
+				def receivables = apps.receivables.findAll{ it.iqtr == 1 && it.amount > it.amtpaid }
 				if( !receivables ){
 				
 					em.sqlContext.createNamedExecutor( "scripts:updateStateApps" )
@@ -50,6 +56,33 @@ class BPScripts {
 				}			
 			}
 		}
+	}
+	
+	
+	// Method/Script to copy ctcno from bpapplication table to bpapplicationlisting
+	@ProxyMethod
+	public def insertCTCNoAppListing(){
+		def sql = """
+			SELECT 
+				list.objid, list.ctcno, list.businessid, 
+				apps.businessid, apps.info 
+			FROM bpapplicationlisting LIST  
+			INNER JOIN bpapplication apps ON apps.businessid = list.businessid 
+			WHERE ctcno IS NULL 		
+		"""
+		def applications = em.sqlContext.createQuery( sql ).resultList
+				
+		applications.each(){ apps ->
+			apps.info =  em.serializer.read( apps.info )
+			def application = [
+				objid: apps.objid,
+				ctcno: apps.info.ctcno
+			]
+		
+			em.update( 'bplisting:bpapplicationlisting', application )
+			
+		}	
+		
 	}
 	
 }

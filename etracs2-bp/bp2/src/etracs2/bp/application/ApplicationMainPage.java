@@ -33,6 +33,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xLabel1 = new com.rameses.rcp.control.XLabel();
         xLabel2 = new com.rameses.rcp.control.XLabel();
+        xLabel6 = new com.rameses.rcp.control.XLabel();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
         xDateField1 = new com.rameses.rcp.control.XDateField();
         xLabel3 = new com.rameses.rcp.control.XLabel();
@@ -91,8 +92,18 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xLabel2.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel1.add(xLabel2);
 
+        com.rameses.rcp.control.border.XLineBorder xLineBorder3 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder3.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel6.setBorder(xLineBorder3);
+        xLabel6.setCaption("Contact No.");
+        xLabel6.setExpression("#{application.info.contactno}");
+        xLabel6.setFocusCycleRoot(true);
+        xLabel6.setName("application.info.taxpayeraddress");
+        xLabel6.setPreferredSize(new java.awt.Dimension(0, 18));
+        formPanel1.add(xLabel6);
+
         jPanel2.add(formPanel1);
-        formPanel1.setBounds(0, 20, 350, 50);
+        formPanel1.setBounds(0, 20, 350, 80);
 
         xDateField1.setCaption("Date");
         xDateField1.setCaptionWidth(100);
@@ -102,9 +113,9 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xDateField1.setSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xDateField1);
 
-        com.rameses.rcp.control.border.XLineBorder xLineBorder3 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder3.setLineColor(new java.awt.Color(204, 204, 204));
-        xLabel3.setBorder(xLineBorder3);
+        com.rameses.rcp.control.border.XLineBorder xLineBorder4 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder4.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel3.setBorder(xLineBorder4);
         xLabel3.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
         xLabel3.setCaption("Applicable Year");
         xLabel3.setCaptionWidth(100);
@@ -128,7 +139,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xLabel4.setBounds(290, 0, 300, 17);
 
         jPanel1.add(jPanel2);
-        jPanel2.setBounds(10, 0, 600, 80);
+        jPanel2.setBounds(10, 0, 600, 100);
 
         jPanel3.setLayout(null);
 
@@ -235,7 +246,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         formPanel6.setBounds(0, 190, 590, 50);
 
         jPanel1.add(jPanel3);
-        jPanel3.setBounds(10, 80, 600, 250);
+        jPanel3.setBounds(10, 100, 600, 250);
 
         jPanel4.setLayout(null);
 
@@ -255,7 +266,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xLookupField1.setBounds(5, 30, 580, 19);
 
         jPanel1.add(jPanel4);
-        jPanel4.setBounds(10, 330, 600, 170);
+        jPanel4.setBounds(10, 350, 600, 170);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -285,6 +296,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel3;
     private com.rameses.rcp.control.XLabel xLabel4;
     private com.rameses.rcp.control.XLabel xLabel5;
+    private com.rameses.rcp.control.XLabel xLabel6;
     private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;

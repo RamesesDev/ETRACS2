@@ -37,6 +37,7 @@ public class MultiplePage extends javax.swing.JPanel {
         xTextArea1 = new com.rameses.rcp.control.XTextArea();
         xTextField4 = new com.rameses.rcp.control.XTextField();
         xTextField5 = new com.rameses.rcp.control.XTextField();
+        xTextField10 = new com.rameses.rcp.control.XTextField();
         xTextField9 = new com.rameses.rcp.control.XTextField();
         xButton1 = new com.rameses.rcp.control.XButton();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
@@ -101,6 +102,12 @@ public class MultiplePage extends javax.swing.JPanel {
         xTextField5.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xTextField5);
 
+        xTextField10.setCaption("Contact No.");
+        xTextField10.setCaptionWidth(115);
+        xTextField10.setName("entity.contactno");
+        xTextField10.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel1.add(xTextField10);
+
         xTextField9.setCaption("Remarks");
         xTextField9.setCaptionWidth(115);
         xTextField9.setName("entity.remarks");
@@ -126,15 +133,15 @@ public class MultiplePage extends javax.swing.JPanel {
             .add(jPanel4Layout.createSequentialGroup()
                 .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(589, Short.MAX_VALUE))
-            .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 696, Short.MAX_VALUE)
             .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 696, Short.MAX_VALUE)
+            .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 696, Short.MAX_VALUE)
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel4Layout.createSequentialGroup()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel4Layout.createSequentialGroup()
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 215, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 195, Short.MAX_VALUE)
+                .add(xDataTable1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 198, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
         );
@@ -156,6 +163,7 @@ public class MultiplePage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XTextArea xTextArea1;
     private com.rameses.rcp.control.XTextField xTextField1;
+    private com.rameses.rcp.control.XTextField xTextField10;
     private com.rameses.rcp.control.XTextField xTextField4;
     private com.rameses.rcp.control.XTextField xTextField5;
     private com.rameses.rcp.control.XTextField xTextField9;

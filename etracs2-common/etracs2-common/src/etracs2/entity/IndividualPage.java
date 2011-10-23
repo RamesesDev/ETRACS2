@@ -38,6 +38,7 @@ public class IndividualPage extends javax.swing.JPanel {
         xTextField3 = new com.rameses.rcp.control.XTextField();
         xTextField4 = new com.rameses.rcp.control.XTextField();
         xTextField5 = new com.rameses.rcp.control.XTextField();
+        xTextField8 = new com.rameses.rcp.control.XTextField();
         xSeparator1 = new com.rameses.rcp.control.XSeparator();
         xDateField1 = new com.rameses.rcp.control.XDateField();
         xTextField6 = new com.rameses.rcp.control.XTextField();
@@ -115,6 +116,12 @@ public class IndividualPage extends javax.swing.JPanel {
         xTextField5.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xTextField5);
 
+        xTextField8.setCaption("Contact No.");
+        xTextField8.setCaptionWidth(90);
+        xTextField8.setName("entity.info.contactno");
+        xTextField8.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel1.add(xTextField8);
+
         xSeparator1.setPreferredSize(new java.awt.Dimension(0, 20));
         formPanel1.add(xSeparator1);
 
@@ -161,7 +168,7 @@ public class IndividualPage extends javax.swing.JPanel {
         formPanel1.add(xTextField7);
 
         jPanel5.add(formPanel1);
-        formPanel1.setBounds(4, 8, 332, 348);
+        formPanel1.setBounds(4, 8, 332, 360);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder3.setTitle("Other Information");
@@ -198,7 +205,7 @@ public class IndividualPage extends javax.swing.JPanel {
         formPanel2.add(xTextField12);
 
         jPanel5.add(formPanel2);
-        formPanel2.setBounds(340, 8, 266, 348);
+        formPanel2.setBounds(340, 8, 266, 360);
 
         org.jdesktop.layout.GroupLayout jPanel4Layout = new org.jdesktop.layout.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
@@ -246,6 +253,7 @@ public class IndividualPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XTextField xTextField5;
     private com.rameses.rcp.control.XTextField xTextField6;
     private com.rameses.rcp.control.XTextField xTextField7;
+    private com.rameses.rcp.control.XTextField xTextField8;
     private com.rameses.rcp.control.XTextField xTextField9;
     // End of variables declaration//GEN-END:variables
     

@@ -6,10 +6,10 @@
         <invoker type="home.action" category="Business" folderid="/menu/bp/txn" action="initActivePermit" caption="Active Permits" permission="bppermit.activepermits" id="activepermits" target="window" icon="images/folder.png"/>
         <invoker type="home.action" category="Business" folderid="/menu/bp/txn" caption="Retired Application" permission="bppermit.retire" id="retiredapplications" target="window" icon="images/folder.png"/>
 
-        <invoker type="formActions" action="previewApplication" caption="View Application" visibleWhen="#{selectedItem != null}" icon="images/doc-view.png"/>
-        <invoker type="formActions" action="previewAssessment" caption="View Assessment" visibleWhen="#{selectedItem != null}" icon="images/doc-view.png"/>
-        <invoker type="formActions" action="open" caption="Open" visibleWhen="#{selectedItem != null}" icon="images/open.png"/>
-        <invoker type="formActions" action="renew" caption="Renew" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'EXPIRED' }" icon="images/open.png" permission="bplicensing.renewtransaction"/>
+        <invoker type="formActions" action="previewApplication" mnemonic="p" shortcut="ctrl P" caption="View Application" visibleWhen="#{selectedItem != null}" icon="images/doc-view.png"/>
+        <invoker type="formActions" action="previewAssessment"  mnemonic="v" shortcut="ctrl V" caption="View Assessment" visibleWhen="#{selectedItem != null}" icon="images/doc-view.png"/>
+        <invoker type="formActions" action="open" caption="Open"   mnemonic="o" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" icon="images/open.png"/>
+        <invoker type="formActions" action="renew" caption="Renew" mnemonic="r" shortcut="ctrl R"  visibleWhen="#{selectedItem != null and selectedItem.docstate == 'EXPIRED' }" icon="images/open.png" permission="bplicensing.renewtransaction"/>
     </invokers>
     <code>
 <![CDATA[
@@ -88,6 +88,7 @@ class BusinessMgmtList
     
     def release(){
         def permit = svc.openPermit( selectedItem.objid );
+        permit.mode = appSvc.open( selectedItem.objid ).txnmode
         return InvokerUtil.lookupOpener('bp.releasepermit', [permit: permit]);
     }
     

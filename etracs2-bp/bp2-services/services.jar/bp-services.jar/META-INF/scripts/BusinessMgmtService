@@ -100,11 +100,12 @@ class BusinessMgmtService{
 		bp.objid = "PERM" + new UID();
 		bp.plateno = permit.plateno;
 		bp.txnno = getNextPermitSeries();
-		bp.txndate = dateService.serverDate;
+		
+		bp.txndate = ( permit.txndate ) ? new java.text.SimpleDateFormat( 'yyyy-MM-dd' ).format( java.sql.Date.valueOf(permit.txndate) ) : dateService.serverDate 
 		bp.docstate = 'ACTIVE';
 		
 		app.docstate = 'ACTIVE';
-		em.update('bpapplication:bpapplication', app);
+		em.update('bpapplication:bpapplication', app); 
 		
 		em.validate( PERMIT_SCHEMA, bp );
 		em.create( PERMIT_SCHEMA, bp );
