@@ -45,6 +45,7 @@ public class IncomeAcctPage extends javax.swing.JPanel {
         xTextField2 = new com.rameses.rcp.control.XTextField();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
+        xComboBox4 = new com.rameses.rcp.control.XComboBox();
         xSeparator1 = new com.rameses.rcp.control.XSeparator();
         xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
         xActionTextField4 = new com.rameses.rcp.control.XActionTextField();
@@ -162,6 +163,15 @@ public class IncomeAcctPage extends javax.swing.JPanel {
         xComboBox2.setRequestFocusEnabled(false);
         formPanel1.add(xComboBox2);
 
+        xComboBox4.setCaption("Grouping");
+        xComboBox4.setDepends(new String[] {"selectedItem"});
+        xComboBox4.setImmediate(true);
+        xComboBox4.setItems("incomeaccountgrouplist");
+        xComboBox4.setName("entity.groupid");
+        xComboBox4.setPreferredSize(new java.awt.Dimension(200, 22));
+        xComboBox4.setRequestFocusEnabled(false);
+        formPanel1.add(xComboBox4);
+
         xSeparator1.setPreferredSize(new java.awt.Dimension(0, 20));
         formPanel1.add(xSeparator1);
 
@@ -197,13 +207,13 @@ public class IncomeAcctPage extends javax.swing.JPanel {
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 417, Short.MAX_VALUE)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, formPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 417, Short.MAX_VALUE)
+            .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 417, Short.MAX_VALUE)
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel4Layout.createSequentialGroup()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 269, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 285, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 113, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(30, Short.MAX_VALUE))
@@ -234,6 +244,7 @@ public class IncomeAcctPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XComboBox xComboBox3;
+    private com.rameses.rcp.control.XComboBox xComboBox4;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XNumberField xNumberField1;

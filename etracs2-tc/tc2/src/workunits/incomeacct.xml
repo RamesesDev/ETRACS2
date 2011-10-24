@@ -23,6 +23,9 @@ class IncomeAcctController extends etracs2.groovy.CRUDController
     @Service("IncomeAcctService")
     def svc;
     
+    @Service("IncomeAcctGroupService")
+    def groupSvc;
+    
     def getService() { return svc; }
     def getCreateFocusComponent() { return "entity.acctno"; }
     def getEditFocusComponent() { return "entity.acctno"; }
@@ -121,6 +124,11 @@ class IncomeAcctController extends etracs2.groovy.CRUDController
             entity.sresubaccttitle = acct.accttitle;
             binding.refresh("entity.*");
         }
+    }
+    
+    List getIncomeaccountgrouplist() {
+        def list = groupSvc.getList(null, null )
+        return list.collect{ it.objid }
     }
     
 }

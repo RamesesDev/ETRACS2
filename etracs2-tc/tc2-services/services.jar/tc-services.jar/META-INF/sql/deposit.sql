@@ -99,10 +99,12 @@ SELECT * FROM bankaccount WHERE fundid = $P{fundid} ORDER BY fund, acctno
 
 [getCollectionSummaryByAFAndFund]
 SELECT 
-	CASE WHEN af.aftype = 'serial' 
-		THEN CONCAT( 'AF#', rct.afid, ': ', af.description, ' - ', ri.fundname)  
-		ELSE CONCAT( rct.afid, ': ', af.description, ' - ', ri.fundname )  
-	END AS particulars,  
+	CASE 
+	WHEN af.objid = '51' AND af.aftype = 'serial' AND ia.groupid IS NULL THEN CONCAT( 'AF#', rct.afid, ': ', ri.fundname ) 
+	WHEN af.objid = '51' AND af.aftype = 'serial' AND ia.groupid IS NOT NULL THEN CONCAT( 'AF#', rct.afid, ': ', ia.groupid ) 
+	WHEN af.aftype = 'nonserial' AND ia.groupid IS NOT NULL THEN CONCAT( rct.afid, ': ', ia.groupid ) 
+	ELSE CONCAT( rct.afid, ': ', af.description,' - ', ri.fundname ) 
+	END AS particulars, 
 	SUM( ri.amount ) AS  amount   
 FROM deposit d  
 	INNER JOIN liquidationlist lq on d.objid = lq.depositid  
@@ -110,11 +112,13 @@ FROM deposit d
 	INNER JOIN receiptlist rct on rem.objid = rct.remittanceid   
 	INNER JOIN af af ON rct.afid = af.objid  	 
 	INNER JOIN receiptitem ri  on rct.objid = ri.receiptid   
+	INNER JOIN incomeaccount ia ON ri.acctid = ia.objid 
 	INNER JOIN fund f on ri.fundid = f.objid  
 WHERE d.objid = $P{depositid} 
   AND rct.voided = 0    
   AND f.fund LIKE $P{fund} 
-GROUP BY rct.afid, ri.fundname   
+GROUP BY rct.afid, ri.fundname , ia.groupid 
+
 
 
 
