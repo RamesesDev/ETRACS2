@@ -43,19 +43,23 @@ ORDER BY afid, rf.beginfrom
 
 [getCollectionSummaryByAF]
 SELECT 
-	CASE WHEN af.aftype = 'serial' 
-		THEN CONCAT( 'AF#', rl.afid, ': ', af.description, ' - ', ri.fundname) 
-		ELSE CONCAT( rl.afid, ': ', af.description, ' - ', ri.fundname ) 
+	CASE 
+	WHEN af.objid = '51' AND af.aftype = 'serial' AND ia.groupid IS NULL THEN CONCAT( 'AF#', rl.afid, ': ', ri.fundname ) 
+	WHEN af.objid = '51' AND af.aftype = 'serial' AND ia.groupid IS NOT NULL THEN CONCAT( 'AF#', rl.afid, ': ', ia.groupid ) 
+	WHEN af.aftype = 'nonserial' AND ia.groupid IS NOT NULL THEN CONCAT( rl.afid, ': ', ia.groupid ) 
+	ELSE CONCAT( rl.afid, ': ', af.description,' - ', ri.fundname ) 
 	END AS particulars, 
-	SUM( ri.amount ) AS  amount  
+	SUM( ri.amount ) AS  amount   
 FROM receiptitem ri   
-INNER JOIN receiptlist rl on rl.objid = ri.receiptid   
-INNER JOIN remittancelist rml on rml.objid = rl.remittanceid    
-INNER JOIN liquidationlist ll on ll.objid = rml.liquidationid    
+INNER JOIN incomeaccount ia ON ri.acctid = ia.objid  
+INNER JOIN receiptlist rl on rl.objid = ri.receiptid    
+INNER JOIN remittancelist rml on rml.objid = rl.remittanceid     
+INNER JOIN liquidationlist ll on ll.objid = rml.liquidationid     
 INNER JOIN af af ON rl.afid = af.objid 
-WHERE ll.objid = $P{liquidationid}   
+WHERE ll.objid = $P{liquidationid} 
   AND rl.voided = 0   
-GROUP BY rl.afid, ri.fundname  
+GROUP BY rl.afid, ri.fundname, ia.groupid  
+ORDER BY rl.afid, ri.fundname, ia.groupid 
 
 
 [getRemittanceFundTotalByLiquidationAndFund] 
