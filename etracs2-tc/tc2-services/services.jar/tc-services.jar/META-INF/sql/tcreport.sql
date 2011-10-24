@@ -95,7 +95,7 @@ ORDER BY a.pathbytitle
 
 
 #-------------------------------------------
-# REport of Collection 2
+# Report of Collection 2
 #-------------------------------------------
 [getAffectedNGLListingNGAS]
 SELECT DISTINCT 
@@ -113,17 +113,42 @@ WHERE r.liquidationtimestamp LIKE $P{txntimestamp}
   AND r.voided = 0 
 ORDER BY p.acctcode, a.acctcode 
 
-[]
-SELECT 
-	r.receiptid, r.remittanceno, r.receiptdate, r.serialno, r.payorname, r.collectorname, 
-	r.acctid, r.amount, p.objid AS parentglacctid, a.objid AS glacctid
-FROM revenue r 
-	LEFT JOIN incomeaccount ia ON r.acctid = ia.objid  
-	LEFT JOIN account a ON ia.ngasid = a.objid  
-	LEFT JOIN account p ON a.parentid = p.objid 
-WHERE r.liquidationtimestamp LIKE LIKE $P{txntimestamp} 
-  AND r.voided = 0 
-ORDER BY r.collectorname, r.remittanceno, r.serialno
+
+[getReportOfCollection2NGAS]
+SELECT  
+	p.acctcode AS parentglacctcode, 
+	p.accttitle AS parentglaccttitle, 
+	a.acctcode AS glacctcode, 
+	a.accttitle AS glaccttitle,  
+	r.receiptid, r.remittanceno, r.receiptdate, r.serialno, r.payorname, r.collectorname,  
+	r.acctid, r.amount, p.objid AS parentglacctid, a.objid AS glacctid 
+FROM revenue r  
+	LEFT JOIN incomeaccount ia ON r.acctid = ia.objid   
+	LEFT JOIN account a ON ia.ngasid = a.objid   
+	LEFT JOIN account p ON a.parentid = p.objid  
+WHERE r.liquidationtimestamp LIKE $P{txntimestamp}  
+  AND ia.fundid LIKE $P{fundid}  
+  AND r.voided = 0  
+ORDER BY p.acctcode, a.acctcode, r.collectorname, r.remittanceno, r.serialno 
+
+[getReportOfCollection2SRE]
+SELECT  
+	p.acctcode AS parentglacctcode, 
+	p.accttitle AS parentglaccttitle, 
+	a.acctcode AS glacctcode, 
+	a.accttitle AS glaccttitle,  
+	r.receiptid, r.remittanceno, r.receiptdate, r.serialno, r.payorname, r.collectorname,  
+	r.acctid, r.amount, p.objid AS parentglacctid, a.objid AS glacctid 
+FROM revenue r  
+	LEFT JOIN incomeaccount ia ON r.acctid = ia.objid   
+	LEFT JOIN account a ON ia.sreid = a.objid   
+	LEFT JOIN account p ON a.parentid = p.objid  
+WHERE r.liquidationtimestamp LIKE $P{txntimestamp}  
+  AND ia.fundid LIKE $P{fundid}  
+  AND r.voided = 0  
+ORDER BY p.acctcode, a.acctcode, r.collectorname, r.remittanceno, r.serialno 
+
+
 
 
 

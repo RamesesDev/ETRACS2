@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker folderid="/menu/tc/reports" action="init" opener="abstract" caption="Statement of Revenue" target="window" index="10" permission="tcreport.statementofrevenue"/>
+        <invoker folderid="/menu/tc/reports" action="init" caption="Report of Collection 2" target="window" index="3" permission="tcreport.reportofcollection2"/>
         
         <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
         <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
@@ -16,7 +16,7 @@ import com.rameses.rcp.annotations.*;
 import com.rameses.osiris2.client.*;
 import com.rameses.osiris2.reports.*;
 
-class StatementOfRevenueController
+class ReportOfCollection2Controller
 {
     @Binding
     def binding
@@ -30,13 +30,13 @@ class StatementOfRevenueController
     @Service('DateService')
     def dateSvc
     
-    def chart
     def year 
     def qtr
     def month
     def day 
     def fund
     def reportdata
+    def chart 
     
     void init() {
         def parsedate = dateSvc.parseCurrentDate()
@@ -52,7 +52,7 @@ class StatementOfRevenueController
     }
     
     void generateReport() {
-        reportdata = svc.generateStatementOfRevenue( chart,  year, qtr, month?.month, day, fund )
+        reportdata = svc.generateReportOfCollection2( chart, year, qtr, month?.month, day, fund )
         report.viewReport()
     }
     
@@ -62,8 +62,8 @@ class StatementOfRevenueController
     }
     
     def report = [
-        getReportName : { return 'treasury/statementofrevenue' }, 
-        getReportData : { return reportdata },
+        getReportName : { return 'treasury/reportofcollection2' },
+        getReportData : { return reportdata.items },
         getParameters : { 
             def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )
             params.TITLE  = reportdata.title

@@ -180,22 +180,19 @@ class TDReportService {
 
 	
 	@ProxyMethod
-	public Map generateReportOfCollection2( year, qtr, month, day, fund ) {
+	public Map generateReportOfCollection2( chart, year, qtr, month, day, fund ) {
 		def params = [
 			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
 			fundid		 : ( fund ?  fund.fundid : '%' ),
+			chart 		 : chart, 
 		]
 		
-		
-		def affectedgllist = em.sqlContext.createNamedQuery('tcreport:getAffectedNGLListing' + fund).setParameters( params ).resultList 
-		def collectionlist = em.sqlContext.createNamedQuery('tcreport:getReportOfCollection2' + fund).setParameters( params ).resultList 
-		
+		def list = em.sqlContext.createNamedQuery('tcreport:getReportOfCollection2' + chart).setParameters( params ).resultList 
 		
 		return [
 			title 	: buildTitle( 'REPORT OF COLLECTION', year, qtr, month, day ),
 			period 	: buildPeriod( year, qtr, month, day ),
 			items 	: list,
-			acctsummaries : acctsummaries,
 		]
 	}
 	
