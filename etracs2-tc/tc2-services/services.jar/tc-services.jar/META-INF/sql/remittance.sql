@@ -130,9 +130,7 @@ SELECT
 FROM receiptlist rl, receiptitem ri 
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
-GROUP BY rl.afid, rl.serialno, 
-	CASE WHEN rl.voided = 0 THEN rl.paidby ELSE '***VOIDED***' END,
-	CASE WHEN rl.voided = 0 THEN ri.accttitle ELSE '***VOIDED***' END
+ORDER BY rl.afid, rl.serialno
 
 [getReceiptDetailsByFund]
 SELECT 
@@ -147,7 +145,7 @@ FROM receiptlist rl, receiptitem ri
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
 	AND ri.fundid LIKE $P{fundid} 
-GROUP BY rl.afid, rl.serialno, rl.paidby, ri.accttitle 
+ORDER BY  rl.afid, rl.serialno, rl.paidby, ri.accttitle 
 	
 [getIncomeAccuntSummaryByAllFund] 
 SELECT 
