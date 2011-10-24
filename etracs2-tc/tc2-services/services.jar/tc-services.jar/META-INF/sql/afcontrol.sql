@@ -25,6 +25,17 @@ WHERE collectorid = $P{collectorid}
   AND balance > 0 
 ORDER BY dtissued, stubno   
 
+[getInactiveSerialCaptureList]
+SELECT * FROM afcontrol 
+WHERE collectorid = $P{collectorid} 
+  AND docstate = 'APPROVED' 
+  AND afid = '51' 
+  AND mode = 'CAPTURE' 
+  AND aftype = 'serial' 
+  AND active = 0 
+  AND balance > 0 
+ORDER BY afid, startseries 
+
 [getAFList]
  SELECT objid, aftype, serieslength FROM af WHERE docstate = 'APPROVED' ORDER BY objid 
  

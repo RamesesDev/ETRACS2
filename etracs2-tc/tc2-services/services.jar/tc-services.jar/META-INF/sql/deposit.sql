@@ -122,3 +122,9 @@ GROUP BY rct.afid, ri.fundname
 
 [getFundList] 
 SELECT distinct fund FROM fund o  
+
+[getFundIdList]
+SELECT objid AS fundid, fundname  FROM fund 
+
+[getBankAccountByFund]
+SELECT objid FROM bankaccount WHERE fundid = $P{fundid}

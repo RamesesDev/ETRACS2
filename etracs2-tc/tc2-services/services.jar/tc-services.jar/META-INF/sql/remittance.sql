@@ -139,7 +139,6 @@ SELECT
 	rl.afid AS afid, 
 	rl.serialno AS serialno, 
 	rl.txndate AS txndate, 
-	rl.paidby AS payer, 
 	ri.fundname AS fundname, 
 	CASE WHEN rl.voided = 0 THEN rl.paidby ELSE '***VOIDED***' END AS payer, 
 	CASE WHEN rl.voided = 0 THEN ri.accttitle ELSE '***VOIDED***' END AS particulars, 
@@ -147,11 +146,9 @@ SELECT
 FROM receiptlist rl, receiptitem ri 
 WHERE rl.objid = ri.receiptid 
 	AND rl.remittanceid = $P{remittanceid} 
-	AND ri.fundid = $P{fundid} 
-GROUP BY rl.afid, rl.serialno, 
-	CASE WHEN rl.voided = 0 THEN rl.paidby ELSE '***VOIDED***' END,
-	CASE WHEN rl.voided = 0 THEN ri.accttitle ELSE '***VOIDED***' END
-
+	AND ri.fundid LIKE $P{fundid} 
+GROUP BY rl.afid, rl.serialno, rl.paidby, ri.accttitle 
+	
 [getIncomeAccuntSummaryByAllFund] 
 SELECT 
 	ri.fundname, 

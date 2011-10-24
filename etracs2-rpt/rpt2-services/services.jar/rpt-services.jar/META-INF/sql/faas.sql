@@ -230,7 +230,7 @@ SELECT
 	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
 	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
 FROM  faaslist 
-WHERE cadastrallotno = $P{cadastrallotno}  
+WHERE cadastrallotno LIKE $P{cadastrallotno}  
   AND docstate LIKE $P{docstate} 
 
 [findBySurveyNo]
@@ -240,7 +240,7 @@ SELECT
 	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
 	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
 FROM  faaslist 
-WHERE surveyno = $P{surveyno} 
+WHERE surveyno LIKE $P{surveyno} 
   AND docstate LIKE $P{docstate} 
 
 [findByBlockNo]
@@ -250,7 +250,7 @@ SELECT
 	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
 	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
 FROM  faaslist 
-WHERE blockno = $P{blockno} 
+WHERE blockno LIKE $P{blockno} 
   AND docstate LIKE $P{docstate} 
 
 

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker type="home.action" action="init" caption="Batch Capture Management" icon="images/folder.png" target="window" index="132"/>
+        <invoker folderid="/menu/tc/txn" action="init" caption="Batch Capture Management" target="window" index="132"/>
+        
+        <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl+N" icon="images/doc-new.png" /> 
+        <invoker type="formActions" action="open" caption="Open" mnemonic="o" shortcut="ctrl+O" icon="images/open.png" visibleWhen="#{selectedItem != null}"/> 
+    </invokers>
+    
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+class BatchCaptureListController {
+
+    @Service("BatchCaptureService")
+    def svc
+
+    def searchText
+    def selectedItem
+    
+    void init() {
+    
+    }
+    
+    def create() {
+        return InvokerUtil.lookupOpener( 'batchcapture.create', [:] )
+    }
+    
+    def ondeleteHandler = {
+        listHandler.load()
+    }
+    
+    def open() {
+        return InvokerUtil.lookupOpener( 'batchcapture.view', [entity:selectedItem, ondelete:ondeleteHandler] )
+    }
+    
+
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column( name:'docstate', caption:'State'),
+                new Column( name:'afid', caption:'AF No.'),
+                new Column( name:'collectorname', caption:'Collector'),
+                new Column( name:'startseries', caption:'Start Series', type:'integer', format:'0000000'),
+                new Column( name:'endseries', caption:'endseries', type:'integer', format:'0000000'),
+                new Column( name:'amount', caption:'Amount', type:'decimal', format:'#,##0.00' ),
+                new Column( name:'encodedby', caption:'Encoded By'),
+            ]
+        },
+        fetchList : { return svc.getList( searchText, it ) }
+    ] as PageListModel
+
+    void search() {
+        listHandler.load();
+    }
+
+}
+               
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.ListMgmtPage2" />
+    </pages>
+</workunit>
+
