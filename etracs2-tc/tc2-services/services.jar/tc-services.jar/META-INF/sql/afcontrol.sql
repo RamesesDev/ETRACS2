@@ -32,7 +32,6 @@ WHERE collectorid = $P{collectorid}
   AND afid = '51' 
   AND mode = 'CAPTURE' 
   AND aftype = 'serial' 
-  AND active = 0 
   AND balance > 0 
 ORDER BY afid, startseries 
 
