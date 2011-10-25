@@ -1,6 +1,6 @@
 [getList]
 SELECT 
-	objid, docstate, afid, collectorname, encodedby, amount, 
+	objid, opener, docstate, afid, collectorname, encodedby, amount, 
 	startseries, series-1 AS endseries 
 FROM batchcapture  
 ORDER BY defaulttxndate DESC 
@@ -8,7 +8,7 @@ ORDER BY defaulttxndate DESC
 
 [getListByState]
 SELECT 
-	objid, docstate, afid, collectorname, encodedby, amount, 
+	objid, opener, docstate, afid, collectorname, encodedby, amount, 
 	startseries, series-1 AS endseries 
 FROM batchcapture  
 WHERE docstate LIKE $P{docstate}  
@@ -16,7 +16,7 @@ ORDER BY defaulttxndate DESC
 
 [getListByCollector]
 SELECT 
-	objid, docstate, afid, collectorname, encodedby, amount, 
+	objid, opener, docstate, afid, collectorname, encodedby, amount, 
 	startseries, series-1 AS endseries 
 FROM batchcapture  
 WHERE collectorname LIKE $P{collectorname}  
@@ -24,7 +24,7 @@ ORDER BY defaulttxndate DESC
 
 [getListByEncoder]
 SELECT 
-	objid, docstate, afid, collectorname, encodedby, amount, 
+	objid, opener, docstate, afid, collectorname, encodedby, amount, 
 	startseries, series-1 AS endseries 
 FROM batchcapture  
 WHERE encodedby LIKE $P{encodedby}  
