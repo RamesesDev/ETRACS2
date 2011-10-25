@@ -116,7 +116,7 @@ FROM deposit d
 	INNER JOIN fund f on ri.fundid = f.objid  
 WHERE d.objid = $P{depositid} 
   AND rct.voided = 0    
-  AND f.fund LIKE $P{fund} 
+  AND f.fundname LIKE $P{fundname} 
 GROUP BY rct.afid, ri.fundname , ia.groupid 
 
 
@@ -125,7 +125,7 @@ GROUP BY rct.afid, ri.fundname , ia.groupid
 
 
 [getFundList] 
-SELECT distinct fund FROM fund o  
+SELECT distinct fundname FROM fund o  
 
 [getFundIdList]
 SELECT objid AS fundid, fundname  FROM fund 

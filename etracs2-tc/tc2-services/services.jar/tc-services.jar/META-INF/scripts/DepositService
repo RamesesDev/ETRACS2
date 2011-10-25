@@ -118,15 +118,15 @@ class DepositService
 	
 	@ProxyMethod
 	public def createRCDByFundReport( deposit, fund ) {
-		fund = ( fund ? fund.fund : 'GENERAL')
+		def fundname = ( fund ? fund.fundname : 'GENERAL')
 		def data = [
 			txnno				: deposit.txnno, 
 			txndate				: dateSvc.parse('yyyy-MM-dd', deposit.txndate ),
-			collectionsummaries	: getCollectionSummaryByAFAndFund( deposit, fund ),
-			remittancedeposits	: buildRemittanceDepositList( deposit, fund  ),
+			collectionsummaries	: getCollectionSummaryByAFAndFund( deposit, fundname ),
+			remittancedeposits	: buildRemittanceDepositList( deposit, fundname  ),
 			remittedforms		: [[:],[:]],
 			nonserialremittances: [[:],[:]],
-			fund 				: fund, 
+			fund 				: fundname, 
 		]
 		data.amount = data.collectionsummaries.amount.sum()
 		data.amountinwords = numSvc.convertString( data.amount + "" )
@@ -135,10 +135,9 @@ class DepositService
 		return data 
 	}
 	
-	List buildRemittanceDepositList( deposit, fund  ) {
+	List buildRemittanceDepositList( deposit, fundname  ) {
 		def list = []
-		
-		def cashfundsummaries = deposit.fundsummaries.findAll{ it.bankaccount.fund == fund && it.cash > 0.0 }
+		def cashfundsummaries = deposit.fundsummaries.findAll{ it.bankaccount.fund == fundname && it.cash > 0.0 }
 		if( cashfundsummaries ) {
 			cashfundsummaries.each {
 				list.add([
@@ -149,7 +148,7 @@ class DepositService
 			}
 		}
 		
-		def checkfundsummaries = deposit.fundsummaries.findAll{ it.bankaccount.fund == fund && it.noncash > 0.0 }
+		def checkfundsummaries = deposit.fundsummaries.findAll{ it.bankaccount.fund == fundname && it.noncash > 0.0 }
 		if( checkfundsummaries ) {
 			checkfundsummaries.each {
 				list.add([
@@ -162,10 +161,12 @@ class DepositService
 		return list 
 	}
 	
-	List getCollectionSummaryByAFAndFund( deposit, fund ) {
-		return em.sqlContext.createNamedQuery('deposit:getCollectionSummaryByAFAndFund')
-					.setParameters([depositid:deposit.objid, fund:fund])
+	List getCollectionSummaryByAFAndFund( deposit, fundname ) {
+		def list = em.sqlContext.createNamedQuery('deposit:getCollectionSummaryByAFAndFund')
+					.setParameters([depositid:deposit.objid, fundname:fundname])
 					.resultList
+		if( ! list ) throw new Exception('No records found.')
+		return list 
 	}
 	
 	@ProxyMethod
