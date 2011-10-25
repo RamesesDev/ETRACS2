@@ -49,7 +49,7 @@ class PostCaptureController
     
     def post() {
         if( MsgBox.confirm('Post captured receipts?') ) {
-            entity = svc.post( entity ) 
+            entity = svc.post( entity, OsirisContext.env.USERID ) 
             return 'view'
         }
     }
@@ -57,7 +57,7 @@ class PostCaptureController
     void setSelectedSummary( selectedSummary ) {
         this.selectedSummary = selectedSummary
         if( selectedSummary && ! selectedSummary.details ) {
-            selectedSummary.details = svc.getCapturedReceipts( entity.collectorid, selectedSummary?.afid )
+            selectedSummary.details = svc.getCapturedReceipts( entity.collectorid, OsirisContext.env.USERID, selectedSummary?.afid )
             selectedSummary.detailSize = selectedSummary.details.size()
         }
         detailHandler.load()
@@ -96,7 +96,7 @@ class PostCaptureController
     }
     
     void loadEntity() {
-        entity = svc.create( collector )
+        entity = svc.create( collector, OsirisContext.env.USERID  )
         initPostedByInfo()
         caption = 'Collector: ' + entity.collectorname
     }

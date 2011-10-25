@@ -95,6 +95,7 @@ public class BatchCapturePage extends javax.swing.JPanel {
         xDataTable1.setBorder(xTitledBorder1);
         xDataTable1.setFont(new java.awt.Font("Tahoma", 0, 14));
         xDataTable1.setHandler("listHandler");
+        xDataTable1.setImmediate(true);
         xDataTable1.setName("selectedItem");
         xDataTable1.setShowRowHeader(true);
         add(xDataTable1, java.awt.BorderLayout.CENTER);
