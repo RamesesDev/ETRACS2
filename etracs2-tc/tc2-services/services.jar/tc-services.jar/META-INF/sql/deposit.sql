@@ -103,7 +103,7 @@ SELECT
 	WHEN af.objid = '51' AND af.aftype = 'serial' AND ia.groupid IS NULL THEN CONCAT( 'AF#', rct.afid, ': ', ri.fundname ) 
 	WHEN af.objid = '51' AND af.aftype = 'serial' AND ia.groupid IS NOT NULL THEN CONCAT( 'AF#', rct.afid, ': ', ia.groupid ) 
 	WHEN af.aftype = 'nonserial' AND ia.groupid IS NOT NULL THEN CONCAT( rct.afid, ': ', ia.groupid ) 
-	ELSE CONCAT( rct.afid, ': ', af.description,' - ', ri.fundname ) 
+	ELSE CONCAT( 'AF#', rct.afid, ': ', af.description,' - ', ri.fundname ) 
 	END AS particulars, 
 	SUM( ri.amount ) AS  amount   
 FROM deposit d  
