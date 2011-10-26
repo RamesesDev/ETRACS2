@@ -31,9 +31,9 @@ public class RemittanceListMgmtPage extends javax.swing.JPanel {
         jPanel1 = new javax.swing.JPanel();
         jPanel3 = new javax.swing.JPanel();
         xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        xActionBar1 = new com.rameses.rcp.control.XActionBar();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         jPanel2 = new javax.swing.JPanel();
-        xActionBar1 = new com.rameses.rcp.control.XActionBar();
         jScrollPane1 = new javax.swing.JScrollPane();
         xActionBar2 = new com.rameses.rcp.control.XActionBar();
         xEditorPane1 = new com.rameses.rcp.control.XEditorPane();
@@ -41,7 +41,8 @@ public class RemittanceListMgmtPage extends javax.swing.JPanel {
         setLayout(new java.awt.BorderLayout());
 
         setPreferredSize(new java.awt.Dimension(748, 396));
-        jSplitPane1.setDividerLocation(400);
+        jSplitPane1.setDividerLocation(200);
+        jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jPanel1.setLayout(new java.awt.BorderLayout());
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
@@ -54,6 +55,11 @@ public class RemittanceListMgmtPage extends javax.swing.JPanel {
         xActionTextField1.setName("searchText");
         xActionTextField1.setPreferredSize(new java.awt.Dimension(150, 19));
         jPanel3.add(xActionTextField1, java.awt.BorderLayout.WEST);
+
+        xActionBar1.setDepends(new String[] {"selectedItem"});
+        xActionBar1.setFont(new java.awt.Font("Arial", 0, 12));
+        xActionBar1.setName("formActions");
+        jPanel3.add(xActionBar1, java.awt.BorderLayout.CENTER);
 
         jPanel1.add(jPanel3, java.awt.BorderLayout.NORTH);
 
@@ -69,11 +75,6 @@ public class RemittanceListMgmtPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Document");
         jPanel2.setBorder(xTitledBorder2);
-        xActionBar1.setDepends(new String[] {"selectedItem"});
-        xActionBar1.setFont(new java.awt.Font("Arial", 0, 12));
-        xActionBar1.setName("formActions");
-        jPanel2.add(xActionBar1, java.awt.BorderLayout.NORTH);
-
         xActionBar2.setFont(new java.awt.Font("Arial", 0, 12));
         xActionBar2.setName("formActions");
         jScrollPane1.setViewportView(xActionBar2);
