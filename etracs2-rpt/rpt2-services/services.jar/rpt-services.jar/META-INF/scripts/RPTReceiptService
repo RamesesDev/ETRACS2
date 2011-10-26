@@ -70,6 +70,8 @@ class RPTReceiptService
 			summarizeSEFAccounts( rctitems, itm )
 		}
 		
+		def zeroitems = rctitems.findAll{ it.amount <= 0.0 }
+		rctitems.removeAll( zeroitems )
 		receipt.items = rctitems 
 		calculateManualReceiptTotals( receipt, items )
 		receiptSvc.create( receipt )
@@ -375,10 +377,11 @@ class RPTReceiptService
                     objid       : 'RI' + new UID(),
                     amount      : amount - disc, 
                     refid       : item.objid,
-                ] + acctinfo 
-                
-                receipt.items.add( rctitem )
-            }
+                ] + acctinfo  
+                if( rctitem.amount > 0 ) {
+					receipt.items.add( rctitem )
+				}
+            } 
         }
     }
     

@@ -57,10 +57,17 @@ WHERE remittanceid = $P{remittanceid}
 ORDER BY afid, stubno
 
 [getNonSerialRemittedFormsByRemittance]
-SELECT * FROM remittedform 
-WHERE remittanceid = $P{remittanceid} 
-	AND aftype = 'nonserial' 
-ORDER BY afid, stubno
+SELECT 
+	CASE WHEN rf.receivedqty >= 0 THEN rf.receivedqty * af.denomination ELSE 0.0 END AS receivedamt, 
+	CASE WHEN rf.beginqty >= 0 THEN rf.beginqty * af.denomination ELSE 0.0 END AS beginamt, 
+	CASE WHEN rf.issuedqty >= 0 THEN rf.issuedqty * af.denomination ELSE 0.0 END AS issuedamt, 
+	CASE WHEN rf.endingqty >= 0 THEN rf.endingqty * af.denomination ELSE 0.0 END AS endingamt, 
+	rf.* 
+FROM remittedform rf 
+	INNER JOIN af af ON rf.afid = af.objid 
+WHERE rf.remittanceid = $P{remittanceid} 
+	AND rf.aftype = 'nonserial' 
+ORDER BY rf.afid, rf.stubno
 
 
 [getUnremittedReceipts]

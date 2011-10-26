@@ -126,6 +126,7 @@ public class DepositPage extends javax.swing.JPanel {
 
         xButton1.setMnemonic('a');
         xButton1.setText("Add Deposit");
+        xButton1.setDefaultCommand(true);
         xButton1.setName("addDeposit");
 
         xNumberField2.setEnabled(false);
@@ -136,7 +137,7 @@ public class DepositPage extends javax.swing.JPanel {
 
         jLabel1.setText("Summary Total :");
 
-        xButton2.setMnemonic('d');
+        xButton2.setMnemonic('e');
         xButton2.setText("Delete Deposit");
         xButton2.setDepends(new String[] {"selectedSummary"});
         xButton2.setName("deleteDeposit");

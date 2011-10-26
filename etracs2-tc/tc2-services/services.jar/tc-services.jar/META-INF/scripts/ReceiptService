@@ -19,6 +19,9 @@ class ReceiptService
 	@Service('Var')
 	def var 
 	
+	@Env
+	def env;
+	
 	def SCHEMANAME = 'receipt:receipt'
 	def SCHEMAVERSION = '1.0'
 	def RECEIPTITEM_SCHEMA = 'receipt:receiptitem'
@@ -300,6 +303,16 @@ class ReceiptService
 			throw new Exception('Txn Date is required.')
 
 		updatePayorName( receipt )
+		updateCapturedByInfo( receipt )
+	}
+	
+	void updateCapturedByInfo( receipt ) {
+		if( receipt.info.mode == 'CAPTURE' ) {
+			receipt.capturedbyid = env.USERID
+			receipt.info.capturedbyid = env.USERID
+			receipt.info.capturedbyname = env.USERNAME
+			receipt.info.capturedbytitle = env.JOBTITLE 
+		}
 	}
 	
 	void updatePayorName( receipt ) {

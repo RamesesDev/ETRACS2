@@ -103,7 +103,7 @@ SELECT
 	WHEN af.objid = '51' AND af.aftype = 'serial' AND ia.groupid IS NULL THEN CONCAT( 'AF#', rct.afid, ': ', ri.fundname ) 
 	WHEN af.objid = '51' AND af.aftype = 'serial' AND ia.groupid IS NOT NULL THEN CONCAT( 'AF#', rct.afid, ': ', ia.groupid ) 
 	WHEN af.aftype = 'nonserial' AND ia.groupid IS NOT NULL THEN CONCAT( rct.afid, ': ', ia.groupid ) 
-	ELSE CONCAT( 'AF#', rct.afid, ': ', af.description,' - ', ri.fundname ) 
+	ELSE CONCAT( 'AF#',rct.afid, ': ', af.description,' - ', ri.fundname ) 
 	END AS particulars, 
 	SUM( ri.amount ) AS  amount   
 FROM deposit d  
@@ -116,8 +116,9 @@ FROM deposit d
 	INNER JOIN fund f on ri.fundid = f.objid  
 WHERE d.objid = $P{depositid} 
   AND rct.voided = 0    
-  AND f.fund LIKE $P{fund} 
-GROUP BY rct.afid, ri.fundname , ia.groupid 
+  AND f.fundname LIKE $P{fundname}  
+GROUP BY rct.afid, CASE WHEN af.aftype = 'nonserial' THEN ri.fundname ELSE ia.groupid END   
+ORDER BY rct.afid, ri.fundname , ia.groupid  
 
 
 
@@ -125,7 +126,7 @@ GROUP BY rct.afid, ri.fundname , ia.groupid
 
 
 [getFundList] 
-SELECT distinct fund FROM fund o  
+SELECT distinct fundname FROM fund o  
 
 [getFundIdList]
 SELECT objid AS fundid, fundname  FROM fund 
