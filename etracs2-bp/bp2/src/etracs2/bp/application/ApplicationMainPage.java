@@ -33,7 +33,6 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xLabel1 = new com.rameses.rcp.control.XLabel();
         xLabel2 = new com.rameses.rcp.control.XLabel();
-        xLabel6 = new com.rameses.rcp.control.XLabel();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
         xDateField1 = new com.rameses.rcp.control.XDateField();
         xLabel3 = new com.rameses.rcp.control.XLabel();
@@ -54,6 +53,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xTextField7 = new com.rameses.rcp.control.XTextField();
         xDateField2 = new com.rameses.rcp.control.XDateField();
         xTextField5 = new com.rameses.rcp.control.XTextField();
+        xTextField10 = new com.rameses.rcp.control.XTextField();
         formPanel6 = new com.rameses.rcp.util.FormPanel();
         xTextField8 = new com.rameses.rcp.control.XTextField();
         xTextField9 = new com.rameses.rcp.control.XTextField();
@@ -92,16 +92,6 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xLabel2.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel1.add(xLabel2);
 
-        com.rameses.rcp.control.border.XLineBorder xLineBorder3 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder3.setLineColor(new java.awt.Color(204, 204, 204));
-        xLabel6.setBorder(xLineBorder3);
-        xLabel6.setCaption("Contact No.");
-        xLabel6.setExpression("#{application.info.contactno}");
-        xLabel6.setFocusCycleRoot(true);
-        xLabel6.setName("application.info.taxpayeraddress");
-        xLabel6.setPreferredSize(new java.awt.Dimension(0, 18));
-        formPanel1.add(xLabel6);
-
         jPanel2.add(formPanel1);
         formPanel1.setBounds(0, 20, 350, 80);
 
@@ -113,9 +103,9 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xDateField1.setSize(new java.awt.Dimension(0, 19));
         formPanel2.add(xDateField1);
 
-        com.rameses.rcp.control.border.XLineBorder xLineBorder4 = new com.rameses.rcp.control.border.XLineBorder();
-        xLineBorder4.setLineColor(new java.awt.Color(204, 204, 204));
-        xLabel3.setBorder(xLineBorder4);
+        com.rameses.rcp.control.border.XLineBorder xLineBorder3 = new com.rameses.rcp.control.border.XLineBorder();
+        xLineBorder3.setLineColor(new java.awt.Color(204, 204, 204));
+        xLabel3.setBorder(xLineBorder3);
         xLabel3.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
         xLabel3.setCaption("Applicable Year");
         xLabel3.setCaptionWidth(100);
@@ -212,6 +202,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xTextField6.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel5.add(xTextField6);
 
+        xTextField7.setText("application.info.ctcplaceissued");
         xTextField7.setCaption("Place Issued");
         xTextField7.setName("application.info..ctcplaceissued");
         xTextField7.setPreferredSize(new java.awt.Dimension(0, 19));
@@ -226,6 +217,11 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xTextField5.setName("application.info.tin");
         xTextField5.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel5.add(xTextField5);
+
+        xTextField10.setCaption("Contact No.");
+        xTextField10.setName("application.info.contactno");
+        xTextField10.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel5.add(xTextField10);
 
         jPanel3.add(formPanel5);
         formPanel5.setBounds(350, 70, 240, 120);
@@ -296,9 +292,9 @@ public class ApplicationMainPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel3;
     private com.rameses.rcp.control.XLabel xLabel4;
     private com.rameses.rcp.control.XLabel xLabel5;
-    private com.rameses.rcp.control.XLabel xLabel6;
     private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XTextField xTextField1;
+    private com.rameses.rcp.control.XTextField xTextField10;
     private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;
     private com.rameses.rcp.control.XTextField xTextField4;
