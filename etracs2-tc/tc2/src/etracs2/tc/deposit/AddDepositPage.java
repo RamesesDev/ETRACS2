@@ -40,12 +40,14 @@ public class AddDepositPage extends javax.swing.JPanel {
         xTitledBorder1.setTitle("New Deposit Information");
         formPanel1.setBorder(xTitledBorder1);
         xComboBox1.setCaption("Account No.");
+        xComboBox1.setCaptionMnemonic('n');
         xComboBox1.setCaptionWidth(120);
         xComboBox1.setDepends(new String[] {"selectedItem"});
         xComboBox1.setDynamic(true);
         xComboBox1.setExpression("${acctno} - ${bankcode}  ( ${fund} )");
         xComboBox1.setFont(new java.awt.Font("Arial", 1, 14));
         xComboBox1.setImmediate(true);
+        xComboBox1.setIndex(-10);
         xComboBox1.setItems("bankaccountlist");
         xComboBox1.setName("bankaccount");
         xComboBox1.setPreferredSize(new java.awt.Dimension(0, 25));
@@ -64,6 +66,7 @@ public class AddDepositPage extends javax.swing.JPanel {
         formPanel1.add(xNumberField1);
 
         xNumberField2.setCaption(" Amount to Deposit");
+        xNumberField2.setCaptionMnemonic('d');
         xNumberField2.setCaptionWidth(120);
         xNumberField2.setDepends(new String[] {"selectedItem"});
         xNumberField2.setFieldType(BigDecimal.class);
@@ -89,6 +92,7 @@ public class AddDepositPage extends javax.swing.JPanel {
         xDataTable1.setBorder(xTitledBorder2);
         xDataTable1.setHandler("listHandler");
         xDataTable1.setImmediate(true);
+        xDataTable1.setIndex(-100);
         xDataTable1.setName("selectedItem");
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);

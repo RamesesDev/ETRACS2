@@ -95,7 +95,7 @@ public class AddDepositController {
             new Column( name:'amount', caption:'Collection', type:'decimal', format:'#,##0.00' ),
             new Column( name:'amtdeposited', caption:'Amount to Deposit', type:'decimal', format:'#,##0.00' ),
         ]},
-        fetchList   : { return deposit.fundtotals },
+        fetchList   : { return deposit.fundtotals.findAll{ it.amount - it.amtdeposited > 0 } },
     ] as PageListModel
     
     
