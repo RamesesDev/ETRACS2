@@ -32,13 +32,18 @@ ORDER BY afid, rf.beginfrom
 
 [getNonSerialRemittedForms]
 SELECT 
+	CASE WHEN rf.receivedqty >= 0 THEN rf.receivedqty * af.denomination ELSE 0.0 END AS receivedamt, 
+	CASE WHEN rf.beginqty >= 0 THEN rf.beginqty * af.denomination ELSE 0.0 END AS beginamt, 
+	CASE WHEN rf.issuedqty >= 0 THEN rf.issuedqty * af.denomination ELSE 0.0 END AS issuedamt, 
+	CASE WHEN rf.endingqty >= 0 THEN rf.endingqty * af.denomination ELSE 0.0 END AS endingamt, 
 	rf.afid, rf.beginqty, rf.receivedqty, rf.issuedqty, rf.endingqty 
 FROM liquidationlist lq 
 	INNER JOIN remittancelist rem ON lq.objid = rem.liquidationid 
 	INNER JOIN remittedform rf ON rem.objid = rf.remittanceid 
+	INNER JOIN af af ON rf.afid = af.objid 
 WHERE lq.objid = $P{liquidationid} 
   AND rf.aftype = 'nonserial'  
-ORDER BY afid, rf.beginfrom  
+ORDER BY rf.afid, rf.beginfrom  
 
 
 [getCollectionSummaryByAF]
