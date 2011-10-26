@@ -7,6 +7,7 @@
         <invoker type="home.action" action="initCollector" caption="Collector RIV" permission="riv.create" icon="images/doc-new.png" index="50" target="window"/>
         
         <invoker type="formActions"     action="viewRIV" shortcut="ctrl V" visibleWhen="#{selectedItem != null and mode != 'create' and selectedItem.docstate != 'DRAFT' and entity.txnno != null}" immediate="true" caption="View RIV" mnemonic="v" index="4" icon="images/doc-view.png" permission="riv.preview" />
+        <invoker type="formActions"     action="viewRIS" shortcut="ctrl I" visibleWhen="#{selectedItem != null and mode != 'create' and selectedItem.docstate != 'DRAFT' and entity.txnno != null}" immediate="true" caption="View RIS" mnemonic="i" index="5" icon="images/doc-view.png" permission="riv.preview" />
         <invoker type="previewActions"  action="_default" shortcut="ctrl B" caption="Back" mnemonic="b" index="4" icon="images/back.png" />
         
         <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/doc-new.png" permission="riv.create" />
@@ -100,6 +101,7 @@ class RIVController
             entity = svc.update( entity, [diff:changeLog.difference]  );
             updateItem( entity );
         }
+        
         mode = "view";
     }
     
@@ -152,11 +154,25 @@ class RIVController
         binding.focus( name );
     }
     
-    def report =[
-        getReportName : { "riv/riv" },
-        getReportData : { return entity; },
+    def reportRIV =[
+        getReportName : { return "riv/riv" },
+        getReportData : { return entity },
         getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
     ] as ServerReportModel;
+    
+    def reportRIS =[
+        getReportName : { return "ris/ris" },
+        getReportData : { return entity },
+        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+    ] as ServerReportModel;
+    
+    def reportName = "RIV";
+    def getReport() {
+        if("RIV".equals(reportName))
+            return reportRIV;
+        else
+            return reportRIS;
+    }
     
     void open( objid ) {
         entity = svc.open( objid );
@@ -181,6 +197,15 @@ class RIVController
     
     def viewRIV(){
         entity.txndate = entity.txndate.toString()
+        reportName = "RIV";
+        report.viewReport();
+        
+        return "preview";
+    }
+    
+    def viewRIS(){
+        entity.txndate = entity.txndate.toString()
+        reportName = "RIS";
         report.viewReport();
         
         return "preview";
