@@ -114,12 +114,12 @@ class FAASService
                                 prevav      : 0.0, 
                                 effectivityqtr  : 1, 
                                 memoranda       : 'REVISED PURSUANT TO R.A. 7160', 
-                                autonumber      : var.td_autonumber as boolean , 
+                                autonumber      : TO_BOOLEAN( var.td_autonumber ),
                                 backtaxyrs      : 0, 
                                 claimno			: '-',
 								annotated		: false, 
                             ],
-            rp            : [lgutype: var.lgu_type, attributes:[], autonumber:var.pin_autonumber],
+            rp            : [lgutype: var.lgu_type, attributes:[], autonumber:var.pin_autonumber, pintype:var.pin_type],
             rpu           : [ry:ry, classid:'RES', classcode:'RES', classname:'RES',suffix:0,info:[:], taxable:true, totalareasqm:0.0, totalareaha:0.0],
             previousfaases: [],
             lgutype       : var.lgu_type,
@@ -174,10 +174,10 @@ class FAASService
     public Map open( faasid ) {
         def faas = em.read( SCHEMA_NAME, [objid:faasid] )
         if( !faas ) throw new Exception('FAAS does not exists.')
-        faas.info.datacapture = faas.info.datacapture as boolean
-		faas.info.annotated = ( faas.info.annotated ? faas.info.annotated as boolean : false )
-        faas.info.autonumber = faas.info.autonumber  as boolean 
-        faas.rpu.taxable = faas.rpu.taxable as boolean
+        faas.info.datacapture 	= TO_BOOLEAN( faas.info.datacapture )
+		faas.info.annotated 	= ( faas.info.annotated ? TO_BOOLEAN( faas.info.annotated ) : false )
+        faas.info.autonumber 	= TO_BOOLEAN( faas.info.autonumber )
+        faas.rpu.taxable 		= TO_BOOLEAN( faas.rpu.taxable )
         initOpenRpuInfo( faas.rpu )
         return faas 
     }
@@ -186,7 +186,7 @@ class FAASService
     public Map getFaasInfo( faasid ){
         def faasinfo = em.read(LISTSCHEMA_NAME, [objid:faasid])
         if( ! faasinfo ) throw new Exception('Cannot open FAAS with ID No. ' + faasid )
-        faasinfo.datacapture = faasinfo.datacapture as boolean 
+        faasinfo.datacapture = TO_BOOLEAN( faasinfo.datacapture )
         return faasinfo 
     }
     
@@ -376,8 +376,8 @@ class FAASService
     
     @ProxyMethod
     public void assignNextPin( faas  ) {
-        def autonumber = faas.rp.autonumber as boolean 
-		def datacapture = faas.info.datacapture as boolean 
+        def autonumber = TO_BOOLEAN( faas.rp.autonumber )
+		def datacapture = TO_BOOLEAN (faas.info.datacapture )
 		if( ! autonumber ) return 
 		if( faas.rp.pin == '-' ) return 
 		if( faas.rpu.rputype != LAND_TYPE ) return 
@@ -441,8 +441,7 @@ class FAASService
     @ProxyMethod
     public Map initTransaction( txntype, prevtdno, autonumber, claimno) {
 		autonumber = TO_BOOLEAN( var.td_autonumber )
-		println 'autonumber -> ' + autonumber
-        def faas = em.sqlContext.createNamedQuery('faas:getInfoByTdno').setParameter('tdno', prevtdno).singleResult
+		def faas = em.sqlContext.createNamedQuery('faas:getInfoByTdno').setParameter('tdno', prevtdno).singleResult
         if( ! faas ) throw new Exception('FAAS ' + prevtdno + ' does not exists.')
         if( faas.docstate == CANCELLED_STATE ) throw new Exception('FAAS ' +  prevtdno + ' has already been cancelled.')
         if( faas.docstate != CURRENT_STATE ) throw new Exception('FAAS ' +  prevtdno + ' is not current.')
@@ -568,7 +567,7 @@ class FAASService
     
     @ProxyMethod
     public void updateAutonumberTdNo( faas ) {
-        faas.info.autonumber = faas.info.autonumber as boolean 
+        faas.info.autonumber = TO_BOOLEAN( faas.info.autonumber )
         faas.info.autonumber = ( faas.info.datacapture == true ? false : faas.info.autonumber )
         
         if( faas.info.datacapture == true ||  faas.info.autonumber == false ) {
@@ -655,14 +654,14 @@ class FAASService
     
     public void initOpenRpuInfo( rpu ) {
         if( rpu.rputype == LAND_TYPE ) {
-            rpu.info.landdetails.each{ it.taxable = it.taxable as boolean }
+            rpu.info.landdetails.each{ it.taxable = TO_BOOLEAN( it.taxable )}
         }
         else if( rpu.rputype == BLDG_TYPE ) {
-            rpu.info.swornstatement = rpu.info.swornstatement  as boolean
-            rpu.info.predominant  = rpu.info.predominant  as boolean
-            rpu.info.condominium  = rpu.info.condominium  as boolean
-            rpu.info.autocomputebldgdepreciation  = rpu.info.autocomputebldgdepreciation  as boolean
-            rpu.info.depreciatecoreanditemseparately  = rpu.info.depreciatecoreanditemseparately  as boolean
+            rpu.info.swornstatement = TO_BOOLEAN( rpu.info.swornstatement  )
+            rpu.info.predominant  = TO_BOOLEAN( rpu.info.predominant  )
+            rpu.info.condominium  = TO_BOOLEAN( rpu.info.condominium  )
+            rpu.info.autocomputebldgdepreciation  = TO_BOOLEAN( rpu.info.autocomputebldgdepreciation  )
+            rpu.info.depreciatecoreanditemseparately  = TO_BOOLEAN( rpu.info.depreciatecoreanditemseparately  )
         }
         else if( rpu.rputype == MACH_TYPE ) {
             //throw new Exception('FAASService.initOpenRpuInfo not yet implemented')
@@ -968,6 +967,7 @@ class FAASService
         faas.info.memoranda            = null 
         faas.info.titleno              = null
         faas.info.titledate            = null 
+		faas.lgutype 					= var.lgu_type,
         return faas 
     }
     
@@ -1004,10 +1004,11 @@ class FAASService
         faas.info.dtappraised   = currdate 
         faas.info.dtrecommended = currdate 
         faas.info.dtapproved    = currdate 
+		faas.lgutype 			= var.lgu_type,
         //
         //clear info 
         faas.info.tdno          = null 
-        faas.info.memoranda            = null 
+        faas.info.memoranda     = null 
         return faas 
     }
 	
@@ -1031,10 +1032,11 @@ class FAASService
         faas.info.dtappraised   = currdate 
         faas.info.dtrecommended = currdate 
         faas.info.dtapproved    = currdate 
+		faas.lgutype 			= var.lgu_type,
         //
         //clear info 
         faas.info.tdno          = null 
-        faas.info.memoranda            = null 
+        faas.info.memoranda     = null 
         return faas 
     }
     

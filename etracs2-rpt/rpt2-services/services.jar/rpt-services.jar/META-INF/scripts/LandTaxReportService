@@ -19,6 +19,11 @@ class LandTaxReportService
 	
 	@Env
 	def env
+	
+	@ProxyMethod 
+	public def getLguType() {
+		return var.lgu_type 
+	}
 
 	@ProxyMethod
 	public def generateAbstractOfCollection( year, qtr, month, day, type, collector ) {
@@ -116,6 +121,146 @@ class LandTaxReportService
 		]
 	}
 	
+		
+	
+	def initCollectionHandler = { item, taxability ->
+		item.taxability 		= taxability 
+		item.basiccurrent 		= 0.0
+		item.basicdisc			= 0.0
+		item.basicprev 			= 0.0
+		item.basiccurrentint	= 0.0
+		item.basicprevint		= 0.0
+		item.basicgross			= 0.0
+		item.basicnet			= 0.0
+		item.sefcurrent 		= 0.0
+		item.sefdisc			= 0.0
+		item.sefprev 			= 0.0
+		item.sefcurrentint		= 0.0
+		item.sefprevint			= 0.0
+		item.sefgross			= 0.0
+		item.sefnet				= 0.0
+		item.grandtotal			= 0.0
+		item.netgrandtotal		= 0.0
+		return item 
+	}
+	
+	def summarizeRPTCollection = { item, collectionlist ->
+		def collection = collectionlist.find{ it.classid == item.classid }
+		if( collection ) {
+			item.keySet().each{ key ->
+				if( ! (item[key] instanceof String) ) {
+					item[key] = collection[key]
+				}
+			}
+		}
+	}
+		
+	@ProxyMethod
+	public Map generateRPTCReport( lgutype, year, month, provrate, munirate, brgyrate, cityrate, citybrgyrate ) 
+	{
+		provrate = provrate / 100 
+		munirate = munirate / 100
+		brgyrate = brgyrate / 100
+		cityrate = cityrate / 100 
+		citybrgyrate = citybrgyrate / 100 
+		
+		def txntimestamp = resolveTimeStamp( year, month.qtr, month.month, null )
+		def onlinerptcs = em.sqlContext.createNamedQuery('landtaxreport:getOnlineRPTC').setParameter('txntimestamp', txntimestamp).resultList 
+		def manualrptcs = em.sqlContext.createNamedQuery('landtaxreport:getManualRPTC').setParameter('txntimestamp', txntimestamp).resultList 
+		
+		//add manualrptcs to onlinerptcs 
+		manualrptcs.each{ manual ->
+			def online = onlinerptcs.find{ it.classid == manual.classid }
+			if( online ) {
+				online.keySet().each{ key -> 
+					if( online[key] instanceof String )
+						online[key] = manual[key]
+					else 
+						online[key] += manual[key]
+				}
+			}
+			else {
+				onlinerptcs.add( manual )
+			}
+		}
+		
+		def taxablelist = getTaxableList( initCollectionHandler )
+		taxablelist.each{ 
+			summarizeRPTCollection( it, onlinerptcs )
+			summarizeRPTCollection( it, manualrptcs )
+		}
+		
+		return [
+			title 		 : 'MONTHLY REAL PROPERTY TAX COLLECTION',
+			period 		 : 'FOR THE MONTH OF ' + getMonthName( month.month ) + ', ' + year,
+			periodtype 	 : 'MONTH',
+			provcity     : (var.lgu_type == 'city' ? var.lgu_name : var.parent_lgu_name ),
+			municipality : (var.lgu_type == 'city' ? null : var.lgu_name ),
+			brgycount	 : getBrgyCount(),
+			items 		 : taxablelist,
+			dispositions : buildRPTCDispositions( taxablelist, lgutype, provrate, munirate, brgyrate, cityrate, citybrgyrate  ),
+		]
+	}
+	
+	def buildDisposition( classname, items, rate ) {
+		return [
+			classname 		: classname,
+			basiccurrent	: numSvc.round( items.basiccurrent.sum() * rate ),
+			basicdisc		: numSvc.round( items.basicdisc.sum() * rate ),
+			basicprev		: numSvc.round( items.basicprev.sum() * rate ),
+			basiccurrentint	: numSvc.round( items.basiccurrentint.sum() * rate ),
+			basicprevint	: numSvc.round( items.basicprevint.sum() * rate ),
+			basicgross		: numSvc.round( items.basicgross.sum() * rate ),
+			basicnet		: numSvc.round( items.basicnet.sum() * rate ),
+			sefcurrent		: numSvc.round( items.sefcurrent.sum() * rate ),
+			sefdisc			: numSvc.round( items.sefdisc.sum() * rate ),
+			sefprev			: numSvc.round( items.sefprev.sum() * rate ),
+			sefcurrentint	: numSvc.round( items.sefcurrentint.sum() * rate ),
+			sefprevint		: numSvc.round( items.sefprevint.sum() * rate ),
+			sefgross		: numSvc.round( items.sefgross.sum() * rate ),
+			sefnet			: numSvc.round( items.sefnet.sum() * rate ),
+			grandtotal		: numSvc.round( items.grandtotal.sum() * rate ),
+			netgrandtotal	: numSvc.round( items.netgrandtotal.sum() * rate ),
+		]
+	}
+	
+	def buildDispositionAdjust( classname, items, dispositions ) {
+		return [
+			classname 		: classname,
+			basiccurrent	: numSvc.round( items.basiccurrent.sum() - dispositions.basiccurrent.sum()),
+			basicdisc		: numSvc.round( items.basicdisc.sum() - dispositions.basicdisc.sum() ),
+			basicprev		: numSvc.round( items.basicprev.sum() - dispositions.basicprev.sum() ),
+			basiccurrentint	: numSvc.round( items.basiccurrentint.sum() - dispositions.basiccurrentint.sum()),
+			basicprevint	: numSvc.round( items.basicprevint.sum() - dispositions.basicprevint.sum()),
+			basicgross		: numSvc.round( items.basicgross.sum() - dispositions.basicgross.sum()),
+			basicnet		: numSvc.round( items.basicnet.sum() - dispositions.basicnet.sum()),
+			
+			sefcurrent		: numSvc.round( items.sefcurrent.sum() - dispositions.sefcurrent.sum()),
+			sefdisc			: numSvc.round( items.sefdisc.sum() - dispositions.sefdisc.sum() ),
+			sefprev			: numSvc.round( items.sefprev.sum() - dispositions.sefprev.sum() ),
+			sefcurrentint	: numSvc.round( items.sefcurrentint.sum() - dispositions.sefcurrentint.sum()),
+			sefprevint		: numSvc.round( items.sefprevint.sum() - dispositions.sefprevint.sum()),
+			sefgross		: numSvc.round( items.sefgross.sum() - dispositions.sefgross.sum()),
+			sefnet			: numSvc.round( items.sefnet.sum() - dispositions.sefnet.sum()),
+			
+			grandtotal		: numSvc.round( items.grandtotal.sum() - dispositions.grandtotal.sum() ),
+			netgrandtotal	: numSvc.round( items.netgrandtotal.sum() - dispositions.netgrandtotal.sum() ),
+		]
+	}
+	
+	def buildRPTCDispositions( items, lgutype, provrate, munirate, brgyrate, cityrate, citybrgyrate  ) {
+		def dispositionlist = []
+		if( lgutype == 'city') {
+			dispositionlist.add( buildDisposition( 'CITY', items, cityrate ) )
+			dispositionlist.add( buildDispositionAdjust( 'BARANGAY', items, dispositionlist ) )
+		}
+		else {
+			dispositionlist.add( buildDisposition( 'PROVINCE', items, provrate ) )
+			dispositionlist.add( buildDisposition( 'MUNICIPALITY', items, munirate ) )
+			dispositionlist.add( buildDispositionAdjust( 'BARANGAY', items, dispositionlist ) )
+		}
+		return dispositionlist
+	}
 	
 	
 	@ProxyMethod
@@ -216,5 +361,46 @@ class LandTaxReportService
 		return "$val".padLeft( len, '0' )
 	}
 	
+	
+	List getTaxableList( initHandler ) {
+		int lineno = 1
+		int charindex = 'a' 
+		def classifications = em.sqlContext.createNamedQuery('landtaxreport:getClassificationList').resultList
+		def firstspecial = classifications.find{ it.special == 1 }
+		classifications.add( classifications.indexOf( firstspecial), [classid:'SPECIAL', classname:'SPECIAL', special:0] )
+		def taxables = classifications.collect{ initHandler(it, 'TAXABLE') }
+		taxables.each { data ->
+			if( data.special == 0 ) {
+				data.classname = lineno + '. ' + data.classname 
+				lineno += 1
+			}
+			else {
+				data.classname = '   ' + ((char)charindex) + '. ' + data.classname 
+				charindex += 1
+			}
+		}
+		return taxables 
+	}
+	
+	List getExemptionList( initHandler ) {
+		int lineno = 1 
+		def exempts  = em.sqlContext.createNamedQuery('landtaxreport:getExemptionList').resultList
+		exempts.collect{ initHandler(it, 'EXEMPT') }
+		exempts.each { data -> 
+			data.classname = lineno + '. ' + data.classname 
+			lineno += 1
+		}
+		return exempts 
+	}
+
+	def getBrgyCount() {
+		def brgy = em.sqlContext.createNamedQuery('landtaxreport:getBrgyCount').singleResult
+		return TO_INT( brgy.brgycount )
+	}
+	
+	int TO_INT( val ) {
+		if ( val instanceof Integer ) return val 
+		return (int) val 
+	}
 	
 }	

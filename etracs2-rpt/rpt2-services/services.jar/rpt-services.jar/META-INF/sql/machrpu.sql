@@ -18,15 +18,6 @@ WHERE s.objid = mf.machrysettingid
   AND mf.iyear = $P{iyear}
 
   
-def getRPTSetting() {
-	return em.sqlContext.createNamedQuery('bldgrpu:getRPTSetting').singleResult 
-}
+[getRPTSetting]
+SELECT * FROM rptsetting   
 
-boolean IS_TRUE( value ) {
-	return TO_BOOLEAN( value ) == true 
-}
-
-boolean TO_BOOLEAN( value ) {
-	if( value instanceof Boolean ) return value 
-	return '1/y/yes/true/t'.indexOf( value.toString().toLowerCase() ) >= 0
-}

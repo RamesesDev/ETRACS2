@@ -87,7 +87,6 @@ public class FAASPage extends javax.swing.JPanel {
         jLabel22 = new javax.swing.JLabel();
         jLabel23 = new javax.swing.JLabel();
         xLabel3 = new com.rameses.rcp.control.XLabel();
-        xLabel4 = new com.rameses.rcp.control.XLabel();
         jLabel24 = new javax.swing.JLabel();
         xTextField7 = new com.rameses.rcp.control.XTextField();
         jLabel25 = new javax.swing.JLabel();
@@ -95,7 +94,8 @@ public class FAASPage extends javax.swing.JPanel {
         jLabel27 = new javax.swing.JLabel();
         xTextField8 = new com.rameses.rcp.control.XTextField();
         xLookupField4 = new com.rameses.rcp.control.XLookupField();
-        xLookupField5 = new com.rameses.rcp.control.XLookupField();
+        xTextField9 = new com.rameses.rcp.control.XTextField();
+        xTextField20 = new com.rameses.rcp.control.XTextField();
         jPanel8 = new javax.swing.JPanel();
         jPanel10 = new javax.swing.JPanel();
         jLabel32 = new javax.swing.JLabel();
@@ -453,12 +453,6 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel7.add(xLabel3);
         xLabel3.setBounds(528, 24, 266, 19);
 
-        xLabel4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        xLabel4.setName("faas.info.administratoraddress");
-        xLabel4.setPreferredSize(new java.awt.Dimension(42, 19));
-        jPanel7.add(xLabel4);
-        xLabel4.setBounds(528, 62, 266, 19);
-
         jLabel24.setText("Declared Owner* :");
         jLabel24.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel24);
@@ -497,11 +491,15 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel7.add(xLookupField4);
         xLookupField4.setBounds(104, 24, 360, 19);
 
-        xLookupField5.setExpression("#{entityname}");
-        xLookupField5.setHandler("lookupAdministrator");
-        xLookupField5.setName("administrator");
-        jPanel7.add(xLookupField5);
-        xLookupField5.setBounds(104, 62, 360, 19);
+        xTextField9.setCaption("Owner");
+        xTextField9.setName("faas.info.administratorname");
+        jPanel7.add(xTextField9);
+        xTextField9.setBounds(104, 62, 360, 19);
+
+        xTextField20.setCaption("Owner Address");
+        xTextField20.setName("faas.info.administratoraddress");
+        jPanel7.add(xTextField20);
+        xTextField20.setBounds(528, 62, 266, 19);
 
         jPanel3.add(jPanel7);
         jPanel7.setBounds(8, 172, 802, 90);
@@ -789,7 +787,6 @@ public class FAASPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel11;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
-    private com.rameses.rcp.control.XLabel xLabel4;
     private com.rameses.rcp.control.XLabel xLabel5;
     private com.rameses.rcp.control.XLabel xLabel6;
     private com.rameses.rcp.control.XLabel xLabel7;
@@ -799,7 +796,6 @@ public class FAASPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLookupField xLookupField2;
     private com.rameses.rcp.control.XLookupField xLookupField3;
     private com.rameses.rcp.control.XLookupField xLookupField4;
-    private com.rameses.rcp.control.XLookupField xLookupField5;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField2;
     private com.rameses.rcp.control.XNumberField xNumberField3;
@@ -817,12 +813,14 @@ public class FAASPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XTextField xTextField18;
     private com.rameses.rcp.control.XTextField xTextField19;
     private com.rameses.rcp.control.XTextField xTextField2;
+    private com.rameses.rcp.control.XTextField xTextField20;
     private com.rameses.rcp.control.XTextField xTextField3;
     private com.rameses.rcp.control.XTextField xTextField4;
     private com.rameses.rcp.control.XTextField xTextField5;
     private com.rameses.rcp.control.XTextField xTextField6;
     private com.rameses.rcp.control.XTextField xTextField7;
     private com.rameses.rcp.control.XTextField xTextField8;
+    private com.rameses.rcp.control.XTextField xTextField9;
     // End of variables declaration//GEN-END:variables
     
 }

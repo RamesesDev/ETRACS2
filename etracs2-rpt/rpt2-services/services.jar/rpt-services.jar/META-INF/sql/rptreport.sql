@@ -3,7 +3,7 @@ SELECT * FROM rptsetting
 
 [getBarangayList]
 SELECT objid, lguname AS barangay FROM lgu 
-WHERE parentid = $P{parentid} AND lgutype = 'BARANGAY'
+WHERE lgutype = 'BARANGAY'
 ORDER BY lguname 
 
 [getClassificationList] 

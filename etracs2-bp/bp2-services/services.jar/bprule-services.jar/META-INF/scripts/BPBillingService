@@ -213,30 +213,37 @@ public class BPBillingService
 		ledgerFact.lastyearpaid = bill.lastyearpaid
 		ledgerFact.lastqtrpaid  = bill.lastqtrpaid
 		facts += ledgerFact 
-		bill.taxfees.each {
+		bill.taxfees.each { tf -> 
 			def tffact = ruleService.createFact('bpbilling','bp.billing.facts.TaxFeeFact')
 			if( !tffact ) throw new Exception("Error in creating Tax Fee Fact");
-			tffact.taxfeeid = it.objid 
+			tffact.taxfeeid = tf.objid 
 			tffact.ledgerid = bill.ledgerid 
-			tffact.lobid = it.lobid 
-			tffact.lobname = it.lobname 
-			tffact.year = it.year
-			tffact.qtr = it.qtr
-			tffact.acctid = it.acctid
-			tffact.accttitle = it.accttitle
-			tffact.amount    = it.amount 
+			tffact.lobid = tf.lobid 
+			tffact.lobname = tf.lobname 
+			tffact.year = tf.year
+			tffact.qtr = tf.qtr
+			tffact.acctid = tf.acctid
+			tffact.accttitle = tf.accttitle
+			tffact.amount    = tf.amount 
 			tffact.surcharge = 0.0
 			tffact.interest = 0.0
 			tffact.discount = 0.0
-			tffact.monthsfromjan = calculateNoOfMonthsFromJan( cyfact, it.year, it.qtr )
-			tffact.monthsfromqtr = calculateNoOfMonthsFromQtr( cyfact, it.year, it.qtr )
-			tffact.daysfromjan = calculateNoOfDaysFromJan( cyfact, it.year, it.qtr )
-			tffact.daysfromqtr = calculateNoOfDaysFromQtr( cyfact, it.year, it.qtr )
+			tffact.monthsfromjan = calculateNoOfMonthsFromJan( cyfact, tf.year, tf.qtr )
+			tffact.monthsfromqtr = calculateNoOfMonthsFromQtr( cyfact, tf.year, tf.qtr )
+			tffact.daysfromjan = calculateNoOfDaysFromJan( cyfact, tf.year, tf.qtr )
+			tffact.daysfromqtr = calculateNoOfDaysFromQtr( cyfact, tf.year, tf.qtr )
 			tffact.applysurcharge = false 
-			if( bill.txntype != 'NEW' ) {
-				tffact.applysurcharge = isApplySurcharge( cyfact, it.year, it.qtr )
+			
+			def lob = bill.lobs.find{ it.lobid == tf.lobid }
+			
+			if( lob && lob.assessmenttype != 'NEW' ) {
+				tffact.applysurcharge = isApplySurcharge( cyfact, tf.year, tf.qtr )
 			}
-			tffact.applydiscount = isApplyDiscount( cyfact, it.year, it.qtr )
+			else if( bill.txntype != 'NEW' ) {
+				tffact.applysurcharge = isApplySurcharge( cyfact, tf.year, tf.qtr )
+			}
+			
+			tffact.applydiscount = isApplyDiscount( cyfact, tf.year, tf.qtr )
 			facts += tffact
 		}
 		return facts 
