@@ -11,12 +11,18 @@ class CRAAFInterceptor
 	@Env
 	def env;
 	
+	@Before(pattern="IRAFService.approve") 
+	public void interceptBeforeIRAFApproved( evt ) {
+		
+		svc.postToCraaf()
+	}
+	
 	@After(pattern="IRAFService.approve") 
 	public void interceptIRAFApproved( evt ) {
 		def iraf = evt.result;
-
-		svc.createCRAAF( iraf );
 		
+		svc.createCRAAF( iraf );
+				
 		logService.log("GENERATE", "CRAAF", iraf.objid);	
 	}
 	
