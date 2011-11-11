@@ -30,6 +30,7 @@ class RemittanceReportService {
 			collectiontype			: getCollectionType( rem.objid ), 
 			remittedforms			: getSerialRemittedFormsByRemittance( rem.objid ),
 			nonserialremittances 	: getNonSerialRemittedFormsByRemittance( rem.objid ),
+			nonserialsummary	 	: getNonSerialRemittedFormsSummary( rem.objid ),
 			otherpayments		: getOtherPayments( rem ),
 			denominations		: rem.info.denominations
 		]
@@ -54,6 +55,10 @@ class RemittanceReportService {
 		return em.sqlContext.createNamedQuery( "remittance:getNonSerialRemittedFormsByRemittance" ).setParameters( [remittanceid:remid] ).resultList;
 	}
 	
+	private def getNonSerialRemittedFormsSummary( remid ) {
+		return em.sqlContext.createNamedQuery( "remittance:getNonSerialRemittedFormsSummary" )
+						.setParameters( [remittanceid:remid] ).resultList
+	}
 	
 	
 	@ProxyMethod
@@ -77,6 +82,30 @@ class RemittanceReportService {
 		rem.receipts = getReceiptDetailsByFund( rem, fund );
 		rem.acctsummaries = getIncomeAccuntSummaryByFund( rem, fund );
 		return rem;
+	}
+	
+	@ProxyMethod
+	public def generateReportByCashTicket( rem ) {
+		def summaries = em.sqlContext.createNamedQuery('remittance:getCashTicketSummary')
+											.setParameter('remittanceid', rem.objid)
+											.resultList
+		def ctamount	= summaries.amount.sum()
+		def data = [
+			collectorName 		: rem.info.collectorname,
+			collectorTitle		: rem.info.collectortitle,
+			docno 				: rem.info.txnno,
+			dateposted			: dtsvc.parse( "yyyy-MM-dd", rem.info.txndate ),
+			totalDenomination	: rem.info.totalcash,
+			totalchecks			: rem.info.totalotherpayment,
+			amount				: ctamount,
+			amountInWords 		: numbSvc.convertDouble( ctamount ), 
+			liquidatingOfficerName	: rem.info.liquidatingofficername,
+			liquidatingOfficerTitle	: rem.info.liquidatingofficertitle,
+			collectiontype			: getCollectionType( rem.objid ), 
+			cashticketsummaries 	: summaries,
+			ctamount 				: ctamount, 
+		]
+		return data 
 	}
 	
 	@ProxyMethod

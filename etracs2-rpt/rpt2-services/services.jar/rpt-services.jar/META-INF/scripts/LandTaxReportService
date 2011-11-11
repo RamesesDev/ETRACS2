@@ -201,6 +201,92 @@ class LandTaxReportService
 		]
 	}
 	
+	@ProxyMethod
+	public Map generateRPTCReport2( lgutype, year, month, provrate, munirate, brgyrate, cityrate, citybrgyrate ) 
+	{
+		provrate = provrate / 100 
+		munirate = munirate / 100
+		brgyrate = brgyrate / 100
+		cityrate = cityrate / 100 
+		citybrgyrate = citybrgyrate / 100 
+		
+		def txntimestamp = resolveTimeStamp( year, month.qtr, month.month, null )
+		def onlinerptcs = em.sqlContext.createNamedQuery('landtaxreport:getOnlineRPTC').setParameter('txntimestamp', txntimestamp).resultList 
+		def manualrptcs = em.sqlContext.createNamedQuery('landtaxreport:getManualRPTC').setParameter('txntimestamp', txntimestamp).resultList 
+		
+		//add manualrptcs to onlinerptcs 
+		manualrptcs.each{ manual ->
+			def online = onlinerptcs.find{ it.classid == manual.classid }
+			if( online ) {
+				online.keySet().each{ key -> 
+					if( online[key] instanceof String )
+						online[key] = manual[key]
+					else 
+						online[key] += manual[key]
+				}
+			}
+			else {
+				onlinerptcs.add( manual )
+			}
+		}
+		
+		def taxablelist = getTaxableList( initCollectionHandler )
+		taxablelist.each{ 
+			summarizeRPTCollection( it, onlinerptcs )
+		}
+		
+		def reportdata = [
+			title 		 : 'MONTHLY REAL PROPERTY TAX COLLECTION',
+			period 		 : 'FOR THE MONTH OF ' + getMonthName( month.month ) + ', ' + year,
+			periodtype 	 : 'MONTH',
+			provcity     : (var.lgu_type == 'city' ? var.lgu_name : var.parent_lgu_name ),
+			municipality : (var.lgu_type == 'city' ? null : var.lgu_name ),
+			brgycount	 : getBrgyCount(),
+			items 		 : taxablelist,
+		]
+		
+		buildDisposition2( reportdata, lgutype, taxablelist, provrate, munirate, brgyrate, cityrate, citybrgyrate )
+		return reportdata 
+	}
+	
+	void buildDisposition2( reportdata, lgutype, taxablelist, provrate, munirate, brgyrate, cityrate, citybrgyrate ) {
+		def totalbasic = taxablelist.basicnet.sum()
+		def totalsef  = taxablelist.sefnet.sum()
+		
+		reportdata.provcitybasicshare 	= 0.0
+		reportdata.munibasicshare		= 0.0
+		reportdata.brgybasicshare		= 0.0
+		reportdata.provcitysefshare		= 0.0
+		reportdata.munisefshare			= 0.0
+		reportdata.brgysefshare			= 0.0
+		reportdata.provcityshare		= 0.0
+		reportdata.munishare			= 0.0
+		reportdata.brgyshares			= 0.0
+		
+		if( lgutype == 'city' ) {
+			reportdata.provcitybasicshare	= numSvc.round( totalbasic * cityrate )
+			reportdata.brgybasicshare		= totalbasic - reportdata.provcitybasicshare
+			reportdata.provcitysefshare	= numSvc.round( totalsef * cityrate )
+			
+			reportdata.brgysefshare		= totalsef - reportdata.provcitysefshare
+			reportdata.provcityshare	= reportdata.provcitybasicshare + reportdata.provcitysefshare
+			reportdata.brgyshare		= reportdata.brgybasicshare + reportdata.brgysefshare 
+		}
+		else {
+			reportdata.provcitybasicshare	= numSvc.round( totalbasic * provrate)
+			reportdata.munibasicshare		= numSvc.round( totalbasic * munirate)
+			reportdata.brgybasicshare		= totalbasic - reportdata.provcitybasicshare - reportdata.munibasicshare 
+			
+			reportdata.provcitysefshare	= numSvc.round( totalsef * provrate )
+			reportdata.munisefshare		= numSvc.round( totalsef * munirate)
+			reportdata.brgysefshare		= totalsef  - reportdata.provcitysefshare - reportdata.munisefshare 
+			
+			reportdata.provcityshare	= reportdata.provcitybasicshare + reportdata.provcitysefshare
+			reportdata.munishare		= reportdata.munibasicshare + reportdata.munisefshare
+			reportdata.brgyshare		= reportdata.brgybasicshare + reportdata.brgysefshare 
+		}
+	}
+	
 	def buildDisposition( classname, items, rate ) {
 		return [
 			classname 		: classname,

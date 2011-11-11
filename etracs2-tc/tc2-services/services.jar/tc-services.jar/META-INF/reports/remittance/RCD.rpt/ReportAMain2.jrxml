@@ -38,6 +38,7 @@
 	<parameter name="ReportCollectionType" isForPrompting="false" class="java.lang.Object"/>
 	<parameter name="TREASURERNAME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="TREASURERTITLE" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="ReportNonSerialSummary" isForPrompting="false" class="java.lang.Object"/>
 
 	<field name="otherpayments" class="java.lang.Object"/>
 	<field name="collectorName" class="java.lang.String"/>
@@ -54,6 +55,7 @@
 	<field name="denominations" class="java.lang.Object"/>
 	<field name="collectiontype" class="java.lang.Object"/>
 	<field name="totalchecks" class="java.math.BigDecimal"/>
+	<field name="nonserialsummary" class="java.lang.Object"/>
 
 
 		<group  name="TYPE_GROUP" >
@@ -183,6 +185,31 @@
 						positionType="Float"/>
 					<dataSourceExpression><![CDATA[$F{nonserialremittances}]]></dataSourceExpression>
 					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{ReportNSAForms}]]></subreportExpression>
+				</subreport>
+			</band>
+			</groupHeader>
+			<groupFooter>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+			</groupFooter>
+		</group>
+		<group  name="NSASUMMARY" >
+			<groupExpression><![CDATA[]]></groupExpression>
+			<groupHeader>
+			<band height="12"  isSplitAllowed="true" >
+				<subreport  isUsingCache="true">
+					<reportElement
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="540"
+						height="12"
+						forecolor="#000000"
+						backcolor="#FFFFFF"
+						key="subreport-7"
+						positionType="Float"/>
+					<dataSourceExpression><![CDATA[$F{nonserialsummary}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{ReportNonSerialSummary}]]></subreportExpression>
 				</subreport>
 			</band>
 			</groupHeader>
