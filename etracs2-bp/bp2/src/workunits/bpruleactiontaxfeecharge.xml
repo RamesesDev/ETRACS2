@@ -62,6 +62,7 @@ class BPRuleActionTaxFeeChargeController
         }
         required('Account', action.acctid )
         required('Formula for computing tax, fee or charge', action.expr )
+        action.expr = action.expr.replace('\n', '') 
         action.ranges.clear()
     }
     
@@ -69,6 +70,9 @@ class BPRuleActionTaxFeeChargeController
         required('Account', action.acctid )
         required('Variable', action.variable )
         required('At least one (1) range ', action.ranges )
+        action.ranges.each { range ->
+            range.expr = range.expr.replace('\n', '')
+        }
     }
     
     def buildDisplayText() {
@@ -89,7 +93,26 @@ class BPRuleActionTaxFeeChargeController
     }
     
     def buildRangeDisplayText(){
-        return 'Calculate ' + action.accttitle + ' based on Tax Table using ' + action.variable.name + '.'
+        def txt = 'Calculate ' + action.accttitle + ' based on Tax Table using ' + action.variable.name + '.\n'
+        /*
+        txt += '<table border="1">\n'
+        txt += '    <tr>'
+        txt += '    <th>Greater Than or Equal</th>\n'
+        txt += '    <th>Less Than</th>\n'
+        txt += '    <th>Expression</th>\n'
+        txt += '    </tr>\n'
+        
+        action.ranges.each{ range ->
+            txt += '<tr>\n'
+            txt += '<td>' + range.rangefrom + '</td>\n'
+            txt += '<td>' + range.rangeto + '</td>\n'
+            txt += '<td>' + range.expr + '</td>\n'
+            txt += '</tr>\n'
+        }
+        
+        txt += '</table>'
+        */
+        return txt 
     }
     
        
