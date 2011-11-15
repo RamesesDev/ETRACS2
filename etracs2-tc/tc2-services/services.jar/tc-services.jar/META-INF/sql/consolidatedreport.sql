@@ -95,24 +95,24 @@ WHERE objid = $P{objid}
 SELECT 
  qtyonhand 
  FROM afinventory  
-WHERE objid = $P{objid} 
+WHERE objid = $P{objid}  
 
 
 
 
 
 [getCraaf]
-SELECT 
- *  
-FROM craaf 
-WHERE craafyear = $P{year}  
- AND craafmonth = $P{month}
+SELECT  
+ *   
+FROM craaf  
+WHERE craafyear = $P{year}   
+ AND craafmonth = $P{month} 
 
 [getAFInventoryStateOpen]
-SELECT 
- * 
- FROM afinventory 
-WHERE docstate = 'OPEN'
+SELECT  
+ *  
+ FROM afinventory  
+WHERE docstate = 'OPEN' 
 
 [getAFInventoryStateClosed]
 SELECT i.* FROM afinventory i  
@@ -125,7 +125,7 @@ SELECT
  * 
 FROM afinventorycredit   
 WHERE afinventoryid = $P{afinventoryid}  
- AND docstate = 'OPEN'
+ AND docstate = 'OPEN' 
  
 [getAFCtrlStateApproved]
 SELECT 
