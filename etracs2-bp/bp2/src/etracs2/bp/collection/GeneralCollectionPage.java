@@ -61,6 +61,7 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         formPanel3 = new com.rameses.rcp.util.FormPanel();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
+        xButton1 = new com.rameses.rcp.control.XButton();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         xLabel1 = new com.rameses.rcp.control.XLabel();
 
@@ -283,6 +284,11 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         xComboBox2.setPreferredSize(new java.awt.Dimension(50, 22));
         formPanel3.add(xComboBox2);
 
+        xButton1.setText("Partial Payment");
+        xButton1.setName("doPartialPayment");
+        xButton1.setShowCaption(false);
+        formPanel3.add(xButton1);
+
         jPanel7.add(formPanel3, java.awt.BorderLayout.NORTH);
 
         xDataTable1.setCaption("Collection Entry");
@@ -331,6 +337,7 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel8;
     private javax.swing.JScrollPane jScrollPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
+    private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XDataTable xDataTable1;

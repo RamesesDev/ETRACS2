@@ -20,47 +20,84 @@ class ConsolidatedReportService {
 	
 	def cal = Calendar.getInstance()
 	
+	private def fetchAFIStateOpen(){
+	
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryStateOpen' ).resultList
+	}
+	
+	private def fetchAFIStateClosed(){
+	
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryStateClosed' ).resultList
+	}
+	
+	private def fetchAFICStateOpen( afi ){
+	
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAfICreditByParentIdOpen' )
+						.setParameter( 'afinventoryid', afi.afinventoryid ).resultList
+	}
+	
+	private def fetchAFCtrlStateApproved( afic ){
+		
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFCtrlStateApproved' )
+								.setParameter( 'afinventorycreditid', afic.objid ).singleResult	
+	}
+	
+	private def fetchCraafAFICId( param ){
+		
+		return em.sqlContext.createNamedQuery('consolidatedreport:getCraafByAFCId')
+									.setParameters( param ).singleResult
+	}
+	
+	private def doBuildCraafByAFIC( afi, param ){
+
+		def afinventorycredit = fetchAFICStateOpen( afi )
+		if( afinventorycredit ){
+			afinventorycredit.each(){ afic -> 
+				def afctrl = fetchAFCtrlStateApproved( afic )			
+				if( afctrl ){
+					param.afinvetorycreditid = afic.objid
+					def getCraafAfCId = fetchCraafAFICId( param )
+					if( !getCraafAfCId ){
+						afic.collectorid = afctrl.collectorid
+						afic.collectorname = afctrl.collectorname
+						afic.collectortitle = afctrl.collectortitle
+						afic.beginqty = afctrl.balance
+						afic.currentseries = afctrl.currentseries
+						afic.endseries = afctrl.endseries
+						
+						buildCraaf( null, afic ) 
+					}
+				}	
+			}
+		} 
+	}
+	
 	@ProxyMethod
-	public def postToCraaf(){
+	public def postToCraaf(){	
+		    
 		def param = [:]
 		param.year = cal.get( Calendar.YEAR )
 		param.month = cal.get( Calendar.MONTH ) + 1
-			//setMaxResults( 1 )
-		def craaf = em.sqlContext.createNamedQuery('consolidatedreport:getCraaf').setParameters( param ).resultList		
+
+		def craaf = em.sqlContext.createNamedQuery('consolidatedreport:getCraaf').setParameters( param ).singleResult		
 		if( craaf ) return ''
 		
-		def afinventory = em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventory' ).resultList
+		def afinventory = fetchAFIStateOpen()
+		if( !afinventory )
+			afinventory = fetchAFIStateClosed()
+			
 		if( afinventory ){
 			afinventory.each(){ afi ->
-				afi.afinventoryid = afi.objid
+				afi.afinventoryid = afi.objid				
+				//build craaf by AFInventory 
 				if( 'OPEN'.equals( afi.docstate ) ) 
 					buildCraaf( afi, null )
 					
-				def afinventorycredit = em.sqlContext.createNamedQuery( 'consolidatedreport:getAfICreditByParentId' )
-						.setParameter( 'afinventoryid', afi.afinventoryid ).resultList
-				if( afinventorycredit ){
-					afinventorycredit.each(){ afic -> 
-						def afctrl = em.sqlContext.createNamedQuery( 'consolidatedreport:getAFCtrl' )
-								.setParameter( 'afinventorycreditid', afic.objid ).singleResult					
-						if( afctrl ){
-							param.afinvetorycreditid = afic.objid
-							def getAfinventorycredit = em.sqlContext.createNamedQuery('consolidatedreport:getCraafByAfinventorycreditid')
-									.setParameters( param ).singleResult
-							if( !getAfinventorycredit ){
-								afic.collectorid = afctrl.collectorid
-								afic.collectorname = afctrl.collectorname
-								afic.collectortitle = afctrl.collectortitle
-								afic.beginqty = afctrl.beginqty
-								afic.currentseries = afctrl.currentseries
-								afic.endseries = afctrl.endseries
-								
-								buildCraaf( null, afic ) 
-							}
-						}	
-					}
-				}  
+				//build craaf by AFCredit
+				doBuildCraafByAFIC( afi, param )
 			}
-		}				
+		}
+				
 	}
 	
 	private def buildCraaf( afi, afic ){ 

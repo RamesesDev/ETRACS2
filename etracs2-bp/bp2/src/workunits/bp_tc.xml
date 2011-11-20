@@ -138,8 +138,6 @@
             listHandler.load()
         }
         
-        
-        
         void init() {
             super.init();
             entity.doctype = 'BUSINESS_TAX';
@@ -158,6 +156,28 @@
 
             year = years[0];
             return 'view';
+        }
+        
+        void calculateReceiptAmount() {
+        
+            entity.info.amount = entity.items.amount.sum()
+            binding.refresh('entity.info.amount|entity.info.totalpayment|entity.info.change')
+        }
+        
+        public def onpartial = { partial ->
+            if( partial ){
+                entity.items = bpcolSvc.doComputePartial( entity, partial )
+            }
+            listHandler.load()
+            calculateReceiptAmount()
+        }
+        
+        public def doPartialPayment(){
+            return InvokerUtil.lookupOpener( 'bppartialpayment', [
+                amount    : entity.info.amount,
+                onpartial : onpartial
+                
+            ])
         }
         
         def getQtrs(){

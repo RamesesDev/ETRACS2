@@ -90,53 +90,52 @@ UPDATE craaf SET
 	endingfrom = $P{endingfrom}, 
 	endingto = $P{endingto}  
 WHERE objid = $P{objid} 
+ 
+[getAFInventoryQtyHandById]
+SELECT 
+ qtyonhand 
+ FROM afinventory  
+WHERE objid = $P{objid}  
+
+
+
 
 
 [getCraaf]
-SELECT 
+SELECT  
+ *   
+FROM craaf  
+WHERE craafyear = $P{year}   
+ AND craafmonth = $P{month} 
+
+[getAFInventoryStateOpen]
+SELECT  
  *  
-FROM craaf 
-WHERE craafyear = $P{year}  
- AND craafmonth = $P{month}
+ FROM afinventory  
+WHERE docstate = 'OPEN' 
 
-[getAFInventory]
-SELECT 
- * 
- FROM afinventory 
+[getAFInventoryStateClosed]
+SELECT i.* FROM afinventory i  
+INNER JOIN afinventorycredit c ON c.afinventoryid = i.objid  
+WHERE i.docstate = 'CLOSED' 
+ AND c.docstate = 'OPEN' 
  
-[getAfICreditByParentId1]
-SELECT 
- afic.objid, afctrl.docstate, 
- afctrl.collectorid, afctrl.collectorname, 
- afctrl.collectortitle, afctrl.beginqty, 
- afctrl.beginseries, afctrl.endseries
-FROM afinventorycredit afic 
-INNER JOIN afcontrol afctrl ON afctrl.afinventorycreditid = afic.objid 
-WHERE afinventoryid = $P{afinventoryid} 
- AND afctrl.docstate = 'APPROVED' 
-
-[getAfICreditByParentId]  
+[getAfICreditByParentIdOpen]  
 SELECT  
  * 
 FROM afinventorycredit   
 WHERE afinventoryid = $P{afinventoryid}  
- AND docstate <> 'CLOSED'
-
-[getAFCtrl]
+ AND docstate = 'OPEN' 
+ 
+[getAFCtrlStateApproved]
 SELECT 
  * 
 FROM afcontrol 
 WHERE afinventorycreditid = $P{afinventorycreditid}  
  and docstate = 'APPROVED'  
  
-[getCraafByAfinventorycreditid]
+[getCraafByAFCId]
 SELECT afinventorycreditid FROM craaf 
 WHERE afinventorycreditid = $P{afinventorycreditid} 
  AND craafyear = $P{year}  
  AND craafmonth = $P{month} 
- 
-[getAFInventoryQtyHandById]
-SELECT 
- qtyonhand 
- FROM afinventory  
-WHERE objid = $P{objid} 

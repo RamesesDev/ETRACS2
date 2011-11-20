@@ -130,6 +130,9 @@ class BPLedgerService {
 		
 		if( !application ) throw new Exception("Application is no longer exist.");
 		def paymentamount = 0.0;
+		
+		//change amount -> totalamount   
+		//added taxamount as amount   
 		for( c in payment.items ){
 			application.credits << [ objid			: 'BPRCR' + new UID(),
 									 bpreceivableid	: c.bpreceivableid, 
@@ -137,15 +140,26 @@ class BPLedgerService {
 									 reftype		: payment.reftype,
 									 refno			: payment.refno,
 									 refdate		: payment.refdate,
-									 amount			: c.amount,
-									 surcharge		: c.surcharge,
-									 interest		: c.interest,
-									 discount		: c.discount ];
-			
+									 amount			: numberSvc.round( (c.taxamount) ? c.taxamount : c.amount ),
+									 surcharge		: numberSvc.round(c.surcharge),
+									 interest		: numberSvc.round(c.interest),
+									 discount		: numberSvc.round(c.discount),
+									totalamount: numberSvc.round( (c.totalamount) ? c.totalamount : c.amount ) ];
+
 			def brc = application.receivables.find{ it.objid == c.bpreceivableid };
+			 
 			if( !brc.amtpaid ) brc.amtpaid = 0.0;
-			brc.amtpaid += c.amount;
-			paymentamount += c.amount;
+			//brc.amtpaid += c.totalamount;
+			if( !brc.surcharge ) brc.surcharge = 0.0
+			if( !brc.interest ) brc.interest = 0.0
+			if( !brc.discount ) brc.discount = 0.0
+			
+			brc.amtpaid += numberSvc.round( (c.taxamount) ? c.taxamount : c.amount )
+			brc.surcharge += numberSvc.round(c.surcharge)
+			brc.interest += numberSvc.round(c.interest)
+			brc.discount += numberSvc.round(c.discount)
+			paymentamount += numberSvc.round( (c.totalamount) ? c.totalamount : c.amount )
+			
 		}
 
 		def b = em.read('business:business', [objid: application.businessid]);
