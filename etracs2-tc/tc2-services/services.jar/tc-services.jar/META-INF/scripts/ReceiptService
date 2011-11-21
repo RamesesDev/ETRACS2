@@ -40,6 +40,7 @@ class ReceiptService
 	@ProxyMethod
 	public def create( receipt ) {
 		updateReceiptInfo( receipt )
+		checkDuplicateSerialNo( receipt.objid, receipt.info.afid, receipt.info.serialno )
 		validate( receipt )
 		em.create( receipt.schemaname, receipt )
 		buildDateBreakdownInfo( receipt )
@@ -262,7 +263,6 @@ class ReceiptService
 	}
 	
 	void validate( receipt ) {
-		checkDuplicateSerialNo( receipt.objid, receipt.info.afid, receipt.info.serialno )
 		if( receipt.info.amount <= 0.0 ) {
 			throw new Exception('Amount Due must be greater than zero.')
 		}
