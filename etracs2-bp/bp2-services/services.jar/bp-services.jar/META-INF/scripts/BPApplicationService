@@ -685,19 +685,16 @@ class BPApplicationService{
 			def q = em.sqlContext.createNamedQuery(qry);
 			if( param ) q.setParameter('searchText', param );
 			
-			list.addAll( q.setMaxResults(10).resultList );
+			list.addAll( q.setMaxResults(25).resultList );
 			return list;
 		}
 		
 		def list = [];
 		if( !searchText ) return fetch(list, 'lookupbp:lookupApproveApplication', '' );
-		if( fetch( list, 'lookupbp:lookupApproveApplicationByBIN', searchText ) ) return list;
-		if( fetch( list, 'lookupbp:lookupApproveApplicationByAppNo', searchText ) ) return list;
-		if( fetch( list, 'lookupbp:lookupApproveApplicationByPermitNo', searchText ) ) return list;
 		if( fetch( list, 'lookupbp:lookupApproveApplicationByTradeName' , searchText + '%') ) return list;
 		if( fetch( list, 'lookupbp:lookupApproveApplicationByTaxpayerName',searchText + '%') ) return list;
-		if( fetch( list, 'lookupbp:lookupApproveApplicationByAdminstratorName', searchText  + '%') ) return list;
-		if( fetch( list, 'lookupbp:lookupApproveApplicationByBusinessAddress', searchText +'%' ) ) return list;
+		if( fetch( list, 'lookupbp:lookupApproveApplicationByBIN', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupApproveApplicationByAppNo', searchText ) ) return list;
 		return list;
 	}
 	
