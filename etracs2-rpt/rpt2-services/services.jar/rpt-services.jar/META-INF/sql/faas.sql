@@ -253,6 +253,27 @@ FROM  faaslist
 WHERE blockno LIKE $P{blockno} 
   AND docstate LIKE $P{docstate} 
 
+[findByFilter]
+SELECT 
+	objid, docstate, ry, tdno, fullpin, rputype, txntype, 
+	taxpayerid, taxpayername, taxpayeraddress, ownername, owneraddress, 
+	cadastrallotno, surveyno, effectivityyear, effectivityqtr, classcode, taxable, 
+	totalareasqm, totalmv, totalav, barangay, totalareasqm, totalareaha 
+FROM  faaslist  
+${whereclause}   
+  
+
+[getFaasFilters]
+SELECT * FROM filter WHERE refname = 'faas' ORDER BY name  
+
+[getClassificationList]
+SELECT objid, propertycode AS classcode, propertydesc AS classname FROM propertyclassification ORDER BY orderno  
 
 
+[createFilter]
+INSERT INTO filter (objid, name, refname, info )
+VALUES ( $P{objid}, $P{name}, $P{refname}, $P{info} )
+
+[removeFilter]
+DELETE FROM filter WHERE objid = $P{objid}
 
