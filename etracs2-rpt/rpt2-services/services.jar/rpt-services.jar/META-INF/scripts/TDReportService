@@ -38,6 +38,11 @@ class TDReportService
 		
 		if( faas.rpu.rputype != 'land' ) {
 			clearRealPropertyInfo( td )
+			
+			if( faas.info.landfaastaxpayerid != faas.info.taxpayerid ) {
+				def pin = td.pin 
+				td.fullpin = pin[0 .. pin.lastIndexOf('-')] + '(' + pin[-2..-1] + ')' + '-' + td.suffix 
+			}
 		}
     	   
 		if( faas.rpu.rputype == 'land' ) {
