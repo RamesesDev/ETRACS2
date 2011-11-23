@@ -50,7 +50,7 @@ public class FAASFilterPage extends javax.swing.JPanel {
         add(jScrollPane1, java.awt.BorderLayout.NORTH);
 
         xActionBar1.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 0, 5, 0));
-        xActionBar1.setDepends(new String[] {"filter"});
+        xActionBar1.setDepends(new String[] {"selectedFilter"});
         xActionBar1.setName("formActions");
         xActionBar1.setUseToolBar(false);
         add(xActionBar1, java.awt.BorderLayout.SOUTH);
