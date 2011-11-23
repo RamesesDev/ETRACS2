@@ -32,6 +32,7 @@ public class FAASFilterPage extends javax.swing.JPanel {
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
+        xComboBox4 = new com.rameses.rcp.control.XComboBox();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
         xComboBox3 = new com.rameses.rcp.control.XComboBox();
@@ -64,6 +65,14 @@ public class FAASFilterPage extends javax.swing.JPanel {
         xTextField1.setRequired(true);
         xTextField1.setTextCase(com.rameses.rcp.constant.TextCase.NONE);
         formPanel1.add(xTextField1);
+
+        xComboBox4.setCaption("State");
+        xComboBox4.setCaptionWidth(100);
+        xComboBox4.setDynamic(true);
+        xComboBox4.setItems("statelist");
+        xComboBox4.setName("filter.info.docstate");
+        xComboBox4.setPreferredSize(new java.awt.Dimension(0, 22));
+        formPanel1.add(xComboBox4);
 
         xComboBox1.setCaption("Barangay");
         xComboBox1.setCaptionWidth(100);
@@ -111,6 +120,7 @@ public class FAASFilterPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XComboBox xComboBox3;
+    private com.rameses.rcp.control.XComboBox xComboBox4;
     private com.rameses.rcp.control.XList xList1;
     private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XTextField xTextField1;

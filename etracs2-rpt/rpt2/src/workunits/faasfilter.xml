@@ -71,11 +71,11 @@ public class FAASFilterController {
         ]
     }
     
-    def create() {
-        svc.createFilter( filter ) 
+    void create() {
+        filter = svc.createFilter( filter ) 
         if( onadd ) onadd( filter )
         mode = 'view'
-        return '_close'  
+        binding.refresh('selectedFilter')
     }   
     
     def getLookupOwner() {
@@ -102,6 +102,10 @@ public class FAASFilterController {
     
     List getRputypelist() {
         return ['land', 'bldg', 'mach', 'planttree', 'misc']
+    }
+    
+    List getStatelist() {
+        return ['INTERIM', 'FORAPPROVAL', 'FORPROVAPPROVAL', 'CURRENT', 'CANCELLED']
     }
 }
 
