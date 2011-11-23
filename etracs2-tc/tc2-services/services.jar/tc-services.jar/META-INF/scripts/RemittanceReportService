@@ -141,6 +141,53 @@ class RemittanceReportService {
 		return rem;
 	}
 	
+	
+	@ProxyMethod
+	public def generateSummaryOfCollection( remittanceid, chart ) {
+		def acctlist = em.sqlContext.createNamedQuery('remittance:getDistinctAccount' + chart)
+							.setParameter('remittanceid', remittanceid )
+							.resultList 
+		
+		def colindex = 0
+		def columnsql = ''
+		def hasUnmapped = acctlist.find{ it.objid == null }
+		if(  hasUnmapped ) {
+			columnsql = " SUM( CASE WHEN a.objid IS NULL AND rl.voided = 0 THEN ri.amount ELSE 0.0 END ) AS col${colindex}, \n"
+			colindex++
+		}
+		acctlist.each { acct ->
+			if( acct.objid ) {
+				columnsql += " SUM( CASE WHEN a.objid = '$acct.objid' AND rl.voided = 0 THEN ri.amount ELSE 0.0 END ) AS col${colindex}, \n"
+				colindex++
+			}
+		}
+		columnsql += " SUM( CASE WHEN rl.voided = 0 THEN ri.amount ELSE 0.0 END ) AS col${colindex}, \n"
+			
+		def qry = em.sqlContext.createNamedQuery('remittance:getSummaryOfCollection' + chart )
+		
+		def items = qry.setVars([columnsql:columnsql])
+						.setParameter( 'remittanceid', remittanceid )
+						.resultList
+		
+		def header = [:]
+		colindex = 0
+		if( hasUnmapped ) {
+			header[ 'COL' + colindex ] = 'UNMAPPED'
+			colindex++
+		}
+		acctlist.collect{ acct ->
+			if( acct.objid ) {
+				header[ 'COL' + colindex ] = acct.accttitle 
+				colindex++
+			}
+		}
+		
+		header[ 'COL' + colindex ] = 'TOTAL'
+		
+		return [ header:header, items:items]
+	}
+	
+	
 	private def getSerialReceiptDetailsByFund( rem, fund ) {
 		def query = {
 			if( fund?.objid ) return em.sqlContext.createNamedQuery( "remittance:getSerialReceiptDetailsByFund" ).setParameter( "fundid", fund.objid );

@@ -348,3 +348,58 @@ WHERE rl.remittanceid = $P{objid}
  AND paytype = 'CHECK' 
  
  
+[getDistinctAccountSRE]
+SELECT DISTINCT 
+	a.objid,  
+	a.acctcode, 
+	a.accttitle  
+FROM receiptlist rl  
+	INNER JOIN receiptitem ri ON rl.objid = ri.receiptid 
+	INNER JOIN incomeaccount ia ON ri.acctid = ia.objid  
+	LEFT JOIN account a ON ia.sreid = a.objid 
+WHERE rl.remittanceid = $P{remittanceid} 
+ORDER BY a.acctcode 
+
+[getSummaryOfCollectionSRE]
+SELECT 
+	rl.afid, 
+	rl.serialno, 
+	CASE WHEN rl.voided = 0 THEN rl.paidby ELSE '*** VOIDED ***' END AS paidby, 
+	rl.txndate, 
+	${columnsql} 
+	rl.voided 
+FROM receiptlist rl  
+	INNER JOIN receiptitem ri ON rl.objid = ri.receiptid  
+	INNER JOIN incomeaccount ia ON ri.acctid = ia.objid   
+	LEFT JOIN account a ON ia.sreid = a.objid  
+WHERE rl.remittanceid = $P{remittanceid} 
+GROUP BY rl.afid, rl.serialno, rl.paidby, rl.txndate, rl.voided 
+ORDER BY rl.afid, rl.serialno 	
+
+[getDistinctAccountNGAS]
+SELECT DISTINCT 
+	a.objid,
+	a.acctcode, 
+	a.accttitle  
+FROM receiptlist rl  
+	INNER JOIN receiptitem ri ON rl.objid = ri.receiptid 
+	INNER JOIN incomeaccount ia ON ri.acctid = ia.objid  
+	LEFT JOIN account a ON ia.ngasid = a.objid 
+WHERE rl.remittanceid = $P{remittanceid} 
+ORDER BY a.acctcode 
+
+[getSummaryOfCollectionNGAS]
+SELECT 
+	rl.afid, 
+	rl.serialno, 
+	CASE WHEN rl.voided = 0 THEN rl.paidby ELSE '*** VOIDED ***' END AS paidby, 
+	rl.txndate, 
+	${columnsql} 
+	rl.voided 
+FROM receiptlist rl  
+	INNER JOIN receiptitem ri ON rl.objid = ri.receiptid  
+	INNER JOIN incomeaccount ia ON ri.acctid = ia.objid   
+	LEFT JOIN account a ON ia.ngasid = a.objid  
+WHERE rl.remittanceid = $P{remittanceid} 
+GROUP BY rl.afid, rl.serialno, rl.paidby, rl.txndate, rl.voided 
+ORDER BY rl.afid, rl.serialno 	
