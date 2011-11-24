@@ -209,7 +209,7 @@ class BPApplicationService{
 	private def checkExpiredApp( def application, def txndate ){
 		def bplist = em.read('bplisting:bpapplicationlisting', [objid: application.parentid])
 		def curryr = Integer.parseInt(format( txndate, 'yyyy' ).toString())
-		if( "EXPIRED".equals( bplist.docstate ) ){
+		if( bplist && "EXPIRED".equals( bplist.docstate ) ){
 			if( (bplist.iyear + 1) < curryr ){
 				application.iyear = bplist.iyear + 1
 				application.txndate = java.sql.Date.valueOf("$application.iyear-01-01")
