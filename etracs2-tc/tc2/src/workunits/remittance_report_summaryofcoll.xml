@@ -4,7 +4,9 @@
         <invoker type="remittance.report" action="viewNGAS" caption="Remittance Summary of Collection By NGAS" index="12"/>
         
         <invoker type="formActions" action="close"  immediate="true" caption="Back" mnemonic="c" icon="images/back.png"/>
+        <!-- 
         <invoker type="formActions" action="viewReport" caption="View" visibleWhen="#{mode == 'init'}" mnemonic="v" icon="images/doc-view.png"/>
+        -->
     </invokers>
     <code>
 <![CDATA[
@@ -35,13 +37,6 @@ class RemittanceReportSummaryOfCollectionController {
         getParameters : { 
             def params = paramSvc.getStandardParameter( OsirisContext.env.USERNAME );
             params.putAll( reportdata.header )
-            params.REPORTTITLE = 'SUMMARY OF COLLECTION BY ' + chart 
-            params.REMITTANCENO = entity.info.txnno
-            params.REMITTANCEDATE = entity.info.txndate
-            params.COLLECTORNAME = entity.info.collectorname
-            params.COLLECTORTITLE = entity.info.collectortitle
-            params.LIQUIDATINGOFFICER = entity.info.liquidatingofficername
-            params.LIQUIDATINGOFFICERTITLE = entity.info.liquidatingofficertitle
             return params
         }
     ] as ServerReportModel;
@@ -62,7 +57,7 @@ class RemittanceReportSummaryOfCollectionController {
     }
     
     void view() {
-        reportdata = svc.generateSummaryOfCollection( entity.objid, chart )
+        reportdata = svc.generateSummaryOfCollection( entity, chart )
         report.viewReport();
         mode = 'init';
     }
