@@ -8,7 +8,7 @@ SELECT objid, docstate, schemaname, tdno, fullpin, claimno, ledgerid FROM faasli
 SELECT objid, docstate, schemaname, tdno, fullpin, claimno, ledgerid FROM faaslist WHERE pin = $P{pin} 
 
 [getLandReferenceByPin]
-SELECT objid, schemaname, taxpayerid FROM faaslist WHERE fullpin = $P{pin} 
+SELECT objid, schemaname, taxpayerid FROM faaslist WHERE fullpin = $P{pin} AND docstate <> 'CANCELLED' 
 
 [getTxnReference]
 SELECT * FROM txnreference WHERE objid = $P{objid}
