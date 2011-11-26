@@ -36,6 +36,18 @@ class TDReportService
     	td.propertytype = faas.rpu.rputype 
 		td.avinwords = numberSvc.convertDouble( faas.rpu.totalav )
 		
+		if( td.titledate ) {
+			td.titledate = dateSvc.parse('yyyy-MM-dd', td.titledate )
+		}
+		
+		if( var.td_report_display_appraisedby  &&  !IS_TRUE( var.td_report_display_appraisedby)) {
+			td.appraisedby = null
+			td.appraisedbytitle = null 
+		}
+		
+		
+		
+		
 		if( faas.rpu.rputype != 'land' ) {
 			clearRealPropertyInfo( td )
 			
@@ -86,7 +98,7 @@ class TDReportService
 				td.ordinancedate = new java.text.SimpleDateFormat("yyyy-MM-dd").parse( setting.ordinancedate );
 			}
 		}
-    	return td;
+		return td;
     }
 	
 	void buildAnnotationInfo( td, faas ) {
@@ -118,7 +130,7 @@ class TDReportService
 			def annotationlist = em.sqlContext.createNamedQuery('faas:getActiveAnnotations').setParameter('faasid', faas.objid).resultList
 			td.annotations = []
 			annotationlist.each { anno ->
-				td.annotations.add( [annotationtext:anno.details ])
+				td.annotations.add( [annotationtext:anno.memoranda ])
 			}
 		}
 	}
@@ -333,8 +345,13 @@ class TDReportService
 	}
 	
 	boolean IS_TRUE( value ) {
-		if( value == true || value == 1 || value == 'y' || value == 'yes' )
+		if( value instanceof Boolean ) 
+			return value 
+		value = value +''
+		if( '1/yes/true/y/t'.indexOf(value) >= 0 )
 			return true
 		return false 
 	}
+	
+	
 }

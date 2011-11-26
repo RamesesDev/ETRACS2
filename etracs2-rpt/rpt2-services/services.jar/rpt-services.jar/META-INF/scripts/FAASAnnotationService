@@ -57,6 +57,11 @@ class FAASAnnotationService
 		return result
 	}
 	
+	@ProxyMethod
+	public List getOtherAnnotationTypeList() {
+		return em.sqlContext.createNamedQuery('annotation:getOtherAnnotationTypeList').resultList.annotationtype 
+	}
+	
 	
 	@ProxyMethod 
 	public Map initMortgage( faasid ) {
@@ -99,13 +104,28 @@ class FAASAnnotationService
 		return bailbond 
 	}
 	
+	@ProxyMethod 
+	public Map initOther( faasid ) {
+		def faas = validateInit( faasid )
+		def annotation = [
+			schemaname		: SCHEMA_NAME,
+			schemaversion 	: SCHEMA_VERSION,
+			docstate 		: DRAFT_STATE,
+			opener			: 'other',
+			faasid			: faasid ,
+		]
+		annotation.putAll( faas )
+		annotation.docstate = DRAFT_STATE
+		return annotation 
+	}
+	
 	@ProxyMethod
 	public Map create( annotation ) {
 		checkFaasCurrentState( annotation.faasid )
 		validateInfo( annotation )
 		annotation.objid = 'A'+ new UID()
 		annotation.docno = seqSvc.getNextFormattedSeries('FAASAnnotation')
-		createAnnotationDetail( annotation )
+		//createAnnotationDetail( annotation )
 		em.validate( annotation.schemaname, annotation )
 		em.create( annotation.schemaname, annotation )
 		logSvc.log('CREATE', 'Annotation', annotation.objid )
@@ -115,17 +135,21 @@ class FAASAnnotationService
 	}
 	
 	void validateInfo( annotation ) {
-		def currdate 		= dateSvc.serverDate 
-		def dtsigned		= dateSvc.parse('yyyy-MM-dd', annotation.dtsigned )
-		def ordate			= dateSvc.parse('yyyy-MM-dd', annotation.ordate )
+		def currdate = dateSvc.serverDate 
+		def ordate	 = dateSvc.parse('yyyy-MM-dd', annotation.ordate )
 		
-		def mortgagedate 	= null
+		def dtsigned = null 
+		if( annotation.dtsigned ) {
+			dtsigned = dateSvc.parse('yyyy-MM-dd', annotation.dtsigned )
+		}
+		
+		def mortgagedate = null
 		if( annotation.mortgagedate ) {
 			mortgagedate 	= dateSvc.parse('yyyy-MM-dd', annotation.mortgagedate )
 		}
 		
 		if( mortgagedate && mortgagedate > currdate ) throw new Exception('Mortgage Date must not exceed current date.')
-		if( dtsigned > currdate ) throw new Exception('Date Signed must not exceed current date.')
+		if( dtsigned && dtsigned > currdate ) throw new Exception('Date Signed must not exceed current date.')
 		if( mortgagedate && dtsigned < mortgagedate ) throw new Exception('Date Signed must be later or equal to Mortgage Date.')
 		if( ordate > currdate ) throw new Exception('O.R. Date must not exceed current date.')
 		if( ordate < dtsigned ) throw new Exception('O.R. Date must be later or equal to Date Signed.')
@@ -135,7 +159,7 @@ class FAASAnnotationService
 	@ProxyMethod
 	public Map update( annotation ) {
 		validateInfo( annotation )
-		createAnnotationDetail( annotation )
+		//createAnnotationDetail( annotation )
 		em.validate( annotation.schemaname, annotation )
 		em.update( annotation.schemaname, annotation, { diff ->
 			logSvc.logB('UPDATE', 'Annotation', annotation.objid, '', diff )
