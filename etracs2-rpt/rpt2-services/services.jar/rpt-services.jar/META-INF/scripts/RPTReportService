@@ -140,6 +140,13 @@ class RPTReportService
 		return list 
 	}
 	
+	@ProxyMethod 
+	public def generateAnnotationListing( ) {
+		def list = em.sqlContext.createNamedQuery('rptreport:getAnnotationListing').resultList
+		if( ! list ) throw new Exception('Records not found.')
+		return list 
+	}
+	
 	
 	@ProxyMethod
 	public Map generateAccomplishmentRPA( year, qtr, month ) {

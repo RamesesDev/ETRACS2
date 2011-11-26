@@ -125,6 +125,17 @@ WHERE barangayid = $P{barangayid}
  AND docstate IN ( 'CURRENT', 'CANCELLED' ) 
 ORDER BY convert(replace(tdno,'-',''), UNSIGNED ) 
 
+[getAnnotationListing]
+SELECT  
+	fl.tdno, fl.titleno, fl.titledate, fl.titletype, fl.ownername, fl.owneraddress, 
+	fl.fullpin, fl.cadastrallotno, fl.rputype, fl.barangay, fl.classcode, fl.totalmv, fl.totalav, 
+	fl.totalareaha,	fl.totalareasqm, UPPER(fa.doctype) as annotationtype, fa.memoranda 
+FROM faaslist fl 
+	INNER JOIN faasannotation fa ON fl.objid = fa.faasid  
+WHERE fl.annotated = 1  
+  AND fl.docstate = 'CURRENT'  
+  AND fa.docstate = 'APPROVED'  
+
 
 #----------------------------------------------------------------------
 #
