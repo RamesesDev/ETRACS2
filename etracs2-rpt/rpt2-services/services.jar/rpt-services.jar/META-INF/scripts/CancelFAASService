@@ -1,0 +1,187 @@
+import com.rameses.annotations.*
+import java.rmi.server.UID
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class CancelFAASService
+{
+	@PersistenceContext('java:system')
+	def em_sys
+	
+	@PersistenceContext('main')
+	def em
+    
+	@Env
+	def env
+	
+	@Service('DateService')
+	def dateSvc
+
+    @Service('LogService')
+    def logSvc
+	
+	@Service('TxnReference')
+	def txnrefSvc
+    
+    def DRAFT_STATE = 'DRAFT'
+    def FORAPPROVAL_STATE = 'FORAPPROVAL'
+    def APPROVED_STATE = 'APPROVED'
+    
+	def SCHEMA_NAME = 'cancelfaas'
+    def SCHEMA_VERSION = '1.0'
+    
+    	
+	@ProxyMethod
+	public def getList( searchtext, docstate, params ) {
+		if( ! searchtext ) {
+			return getListByFilter( '', '', '', params )
+		}
+		
+		def whereclauses = [
+			[ wheresql:' WHERE tdno = $P{searchtext} ', wildcard:'' ],
+			[ wheresql:' WHERE ownername LIKE $P{searchtext} ', wildcard:'%' ],
+			[ wheresql:' WHERE fullpin LIKE $P{searchtext} ', wildcard:'' ],
+		]
+		
+		whereclauses.each { whereclause -> 
+			def list = getListByFilter( whereclause.wheresql, searchtext, whereclause.wildcard, params )
+			if( list ) return list 
+		}
+		
+		return []
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		def cancelfaas = em.read( SCHEMA_NAME, [objid:objid] )
+		if( ! cancelfaas ) throw new Exception('Cannot open record with ID No. ' + objid)
+		return cancelfaas
+	}
+	
+	@ProxyMethod
+	public def create( cancelfaas ) {
+		if( cancelfaas.faasstate != 'CURRENT' ) throw new Exception('Only Current FAAS is allowed.')
+		cancelfaas.objid = 'CF' + new UID()
+		cancelfaas.schemaname = SCHEMA_NAME
+		cancelfaas.schemaversion = SCHEMA_VERSION 
+		cancelfaas.cancelreason = cancelfaas.reason.cancelcode 
+		cancelfaas.cancelreasonid = cancelfaas.reason.objid 
+		em.validate( SCHEMA_NAME, cancelfaas)
+		em.create( SCHEMA_NAME, cancelfaas )
+		txnrefSvc.insert( cancelfaas.faasid,  cancelfaas.objid, 'CancelFAAS', 'FAAS No. ' + cancelfaas.tdno + ' is currently referenced by Cancel FAAS Transaction.' )
+		logSvc.log('CREATE', 'CancelFAAS', cancelfaas.objid )
+		return cancelfaas 
+	}
+	
+	@ProxyMethod
+	public def update( cancelfaas ) {
+		cancelfaas.cancelreason = cancelfaas.reason.cancelcode 
+		cancelfaas.cancelreasonid = cancelfaas.reason.objid 
+		em.validate( SCHEMA_NAME, cancelfaas)
+		em.update( SCHEMA_NAME, cancelfaas, { diff ->
+			logSvc.logB('UPDATE', cancelfaas.objid, 'CancelFAAS', '', diff )
+		} as UpdateChangeHandler )
+		return cancelfaas 
+	}
+	
+	@ProxyMethod
+	public def submit( cancelfaas ) {
+		def old = open( cancelfaas.objid )
+		if( old.docstate == FORAPPROVAL_STATE ) throw new Exception('Record has already been submitted for approval.')
+		if( old.docstate == APPROVED_STATE ) throw new Exception('Record has already been approved.')
+		cancelfaas.docstate = FORAPPROVAL_STATE 
+		em.update( SCHEMA_NAME, cancelfaas )
+		logSvc.log('UPDATE', 'CancelFAAS', cancelfaas.objid )
+		return cancelfaas 
+	}
+	
+	@ProxyMethod
+	public def approve( cancelfaas ) {
+		def old = open( cancelfaas.objid )
+		if( old.docstate == DRAFT_STATE ) throw new Exception('Record has not yet been submitted for approval.')
+		if( old.docstate == APPROVED_STATE ) throw new Exception('Record has already been approved.')
+		checkReferenceFAASIsCurrent( cancelfaas )
+		checkImprovementsAreCancelled( cancelfaas )
+		
+		
+		cancelfaas.dtapproved = dateSvc.serverDate 
+		cancelfaas.approvedby = env.USERFORMALNAME 
+		cancelLedger( cancelfaas )
+		cancelCurrentFAAS( cancelfaas )
+		cancelfaas.docstate = APPROVED_STATE
+		em.update( SCHEMA_NAME, cancelfaas )
+		txnrefSvc.delete( cancelfaas.faasid )
+		logSvc.log('APPROVED', 'CancelFAAS', cancelfaas.objid )
+		return cancelfaas 
+	}
+	
+	void checkImprovementsAreCancelled( cancelfaas ) {
+		if( cancelfaas.rputype != 'land' ) {
+			return 
+		}
+		
+		def improvements = em.sqlContext.createNamedQuery('cancelfaas:getUncancelledLandImprovements')
+								.setParameter( 'landfaasid', cancelfaas.faasid ).resultList 
+		improvements.each{ improvement -> 
+			throw new Exception('Land Improvement with TD No. ' + cancelfaas.tdno + ' must be cancelled first before cancelling the Land.')
+		}
+	}
+	
+	void checkReferenceFAASIsCurrent( cancelfaas ) {
+		def state = getState( cancelfaas.faasid )
+		if( state != 'CURRENT' ) throw new Exception('FAAS to cancel with TD No. ' + cancelfaas.tdno + ' it not CURRENT.')
+	}
+	
+	@ProxyMethod
+	public void delete( cancelfaas ) {
+		em.delete( SCHEMA_NAME, cancelfaas )
+		txnrefSvc.delete( cancelfaas.faasid )
+		logSvc.log('APPROVED', 'CancelFAAS', cancelfaas.objid )
+	}
+	
+	void cancelCurrentFAAS( cancelfaas ) {
+		em.sqlContext.createNamedExecutor('cancelfaas:cancelFAASList')
+				.setParameters([
+					objid 			: cancelfaas.faasid,
+					cancelreason	: cancelfaas.cancelreason,
+					canceldate  	: cancelfaas.dtapproved,
+					cancelledbytdnos : '',
+				])
+				.execute()
+		
+		def faas = em.sqlContext.createNamedQuery('cancelfaas:getFAASInfo').setParameter('objid', cancelfaas.faasid).singleResult 
+		faas.info = em.serializer.read( faas.info )
+		faas.info.cancelreason = cancelfaas.cancelreason
+		faas.info.canceldate = cancelfaas.dtapproved
+		em.sqlContext.createNamedExecutor('cancelfaas:cancelFAAS')
+				.setParameters([
+					objid : cancelfaas.faasid,
+					info  : em.serializer.write( faas.info ),
+				])
+				.execute()
+		
+	}
+	
+	void cancelLedger( cancelfaas ) {
+		em.sqlContext.createNamedExecutor('cancelfaas:cancelLedger').setParameter('faasid', cancelfaas.faasid).execute()
+	}
+	
+	
+	def getListByFilter( whereclause, searchtext, wildcard, params ) {
+        if( ! params ) params = [ _start:0, _limit:25]
+		return em.sqlContext.createNamedQuery( 'cancelfaas:getList' )
+					.setVars( [whereclause:whereclause] )
+					.setParameters( [searchtext:searchtext+wildcard] )
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+	
+	def getState( faasid ) {
+		def faas = em.sqlContext.createNamedQuery('cancelfaas:getState').setParameter('objid', faasid).singleResult
+		if( ! faas ) throw new Exception('Cannot open FAAS with ID No. ' + faasid + '.\nVerify that the record still exists in the database.' )
+		return faas.docstate 
+	}	
+
+}
+

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+-->
+<workunit>
+    <invokers>
+        <invoker folderid="menu/rpt/txn" caption="Cancel FAAS Management" permission="cancelfaasmgt.view"/>
+        
+        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/doc-new.png" permission="cancelfaasmgt.create" />
+        <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null and selectedItem.objid != null}" immediate="true" caption="Open" mnemonic="o" icon="images/open.png" permission='cancelfaasmgt.open'/>
+    </invokers>
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+public class CancelFAASMgmtController 
+{
+    @Binding 
+    def binding
+    
+    @Service('CancelFAASService')
+    def svc 
+    
+    String searchText
+    def selectedItem
+    List list
+    
+    def create() {
+        return InvokerUtil.lookupOpener('cancelfaas.create', [entity:selectedItem])
+    }
+    
+    def open() {
+        if( selectedItem ) {
+            return InvokerUtil.lookupOpener('cancelfaas.open', [entity:selectedItem])
+        }
+    }
+    
+    void search() {
+        list = null
+        listHandler.load()
+    }
+    
+    def listHandler =[
+        getRows    : { return 25 },
+        getColumns : { return [
+            new Column( name:'docstate', caption:'State'),
+            new Column( name:'tdno', caption:'TD No.' ),
+            new Column( name:'ownername', caption:'Owner Name'),
+            new Column( name:'classcode', caption:'Classification' ),
+            new Column( name:'fullpin', caption:'PIN' ),
+            new Column( name:'cancelreason', caption:'Reason' ),
+            new Column( name:'remarks', caption:'Remarks' ),
+            new Column( name:'approvedby', caption:'Approved By' ),
+            new Column( name:'dtapproved', caption:'Date Approved' ),
+        ]},
+        fetchList  : {
+            if( ! list ) {
+                list = svc.getList( searchText, null, it )
+            }
+            return list 
+        },
+        onOpenItem : { item, colname -> open() },
+    ] as PageListModel
+    
+     
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.cancelfaas.CancelFAASMgmtPage"/>
+    </pages>
+</workunit>
