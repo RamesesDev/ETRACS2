@@ -96,6 +96,43 @@ GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle
 ORDER BY a.pathbytitle 
 
 
+[getStatementOfRevenueExpandedSRE]  
+SELECT  
+	a.pathbytitle AS pathtitle,  
+	a.acctcode AS acctcode,  
+	a.accttitle AS accttitle, 
+	p.acctcode as parentcode, 
+	p.accttitle as parenttitle, 
+	SUM(r.amount) AS amount 
+FROM revenue r 
+	INNER JOIN incomeaccount ia ON r.acctid = ia.objid 
+	LEFT JOIN account a ON a.objid = ia.sresubacctid  
+	LEFT JOIN account p on p.objid = a.parentid 
+WHERE r.liquidationtimestamp LIKE $P{txntimestamp}  
+  AND ia.fundid LIKE $P{fundid} 
+  AND r.voided = 0 
+GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
+ORDER BY a.pathbytitle 
+
+[getStatementOfRevenueExpandedNGAS]  
+SELECT  
+	a.pathbytitle AS pathtitle,   
+	a.acctcode AS acctcode,   
+	a.accttitle AS accttitle, 
+	p.acctcode as parentcode, 
+	p.accttitle as parenttitle,
+	SUM(r.amount) AS amount 
+FROM revenue r 
+	INNER JOIN incomeaccount ia ON r.acctid = ia.objid 
+	LEFT JOIN account a ON a.objid = ia.ngassubacctid      
+	LEFT JOIN account p on p.objid = a.parentid 
+WHERE r.liquidationtimestamp LIKE $P{txntimestamp}  
+  AND ia.fundid LIKE $P{fundid} 
+  AND r.voided = 0 
+GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
+ORDER BY a.pathbytitle 
+
+
 #-------------------------------------------
 # Report of Collection 2
 #-------------------------------------------
