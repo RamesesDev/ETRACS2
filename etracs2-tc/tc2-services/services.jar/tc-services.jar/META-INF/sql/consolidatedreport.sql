@@ -36,7 +36,7 @@ GROUP BY afid
 SELECT * FROM afcontrol WHERE objid = $P{afcontrolid} 
 
 [getReportDataGeneral]
-SELECT collectorname, afid, beginqty, beginfrom, beginto,   
+SELECT DISTINCT collectorname, afid, beginqty, beginfrom, beginto,   
 	receivedqty, receivedfrom, receivedto,   
 	issuedqty, issuedfrom, issuedto,  
 	endingqty, endingfrom, endingto  
@@ -47,7 +47,7 @@ AND craafyear = $P{craafyear}
 ORDER BY afid, beginfrom, receivedfrom 
 
 [getReportDataCollector]
-SELECT a.collectorname, c.stubno, c.afid, c.beginqty, c.beginfrom, c.beginto,   
+SELECT DISTINCT a.collectorname, c.stubno, c.afid, c.beginqty, c.beginfrom, c.beginto,   
 	c.receivedqty, c.receivedfrom, c.receivedto,   
 	c.issuedqty, c.issuedfrom, c.issuedto,    
 	c.endingqty, c.endingfrom, c.endingto    
@@ -59,7 +59,7 @@ WHERE c.afinventorycreditid = a.afinventorycreditid
 ORDER BY c.collectorname, c.afid, c.beginfrom, c.receivedfrom  
 
 [getReportDataCanceledSeries]
-SELECT c.collectorname, a.stubno, c.afid, c.canceledqty AS beginqty,    
+SELECT DISTINCT c.collectorname, a.stubno, c.afid, c.canceledqty AS beginqty,    
 	   c.canceledfrom AS beginfrom, c.canceledto AS beginto     
 FROM craaf c, afcontrol a    
 WHERE c.afinventorycreditid = a.afinventorycreditid    
