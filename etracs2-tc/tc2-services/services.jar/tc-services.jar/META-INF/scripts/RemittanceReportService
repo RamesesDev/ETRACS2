@@ -201,6 +201,55 @@ class RemittanceReportService {
 	}
 	
 	
+	@ProxyMethod
+	public def generateAbstractOfRPTCollection( rem ) {
+		def items = []
+		
+		items.addAll(
+			em.sqlContext.createNamedQuery('remittance:getAbstractCollectionBASIC')
+					.setParameter( 'objid', rem.objid ).resultList 
+		)
+		items.addAll(
+			em.sqlContext.createNamedQuery('remittance:getAbstractCollectionManualBASIC')
+					.setParameter( 'objid', rem.objid ).resultList 
+		)
+
+		items.addAll(
+			em.sqlContext.createNamedQuery('remittance:getAbstractCollectionSEF')
+					.setParameter( 'objid', rem.objid ).resultList 
+		)
+		items.addAll(
+			em.sqlContext.createNamedQuery('remittance:getAbstractCollectionManualSEF')
+					.setParameter( 'objid', rem.objid ).resultList 
+		)
+
+		if( ! items ) throw new Exception('No records found.')
+		
+		def amount  = items.currentyear.sum() + items.previousyear.sum() + 
+					  items.penaltycurrent.sum() + items.penaltyprevious.sum() - items.discount.sum() 
+		
+		//
+		//additional params
+		def header = [:]
+		header.TITLE = 'ABSTRACT OF REAL PROPERTY TAX COLLECTION'
+		header.PERIOD = ''
+		header.REMITTANCENO = rem.info.txnno
+		header.REMITTANCEDATE = rem.info.txndate
+		header.REMITTANCEAMOUNT = amount
+		header.COLLECTORNAME = rem.info.collectorname
+		header.COLLECTORTITLE = rem.info.collectortitle
+		header.LIQUIDATINGOFFICER = rem.info.liquidatingofficername
+		header.LIQUIDATINGOFFICERTITLE = rem.info.liquidatingofficertitle
+		header.DATEPOSTED = dtsvc.parse('yyyy-MM-dd', rem.info.txndate )
+		header.AMTINWORDS = numbSvc.convertDouble( amount )
+		
+		return [
+			header  : header,
+			items  	: items 
+		]
+	}
+	
+	
 	private def getSerialReceiptDetailsByFund( rem, fund ) {
 		def query = {
 			if( fund?.objid ) return em.sqlContext.createNamedQuery( "remittance:getSerialReceiptDetailsByFund" ).setParameter( "fundid", fund.objid );
