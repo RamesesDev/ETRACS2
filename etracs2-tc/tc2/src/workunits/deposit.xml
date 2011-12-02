@@ -7,7 +7,7 @@
         <invoker type="mainActions" action="_close" caption="Close" mnemonic="c" shortcut="ctrl W" icon="images/cancel.png"/>
         <invoker type="mainActions" action="deposit" caption="Deposit" mnemonic="d" shortcut="ctrl D" icon="images/cash.png"/>
         <invoker type="viewActions" action="closeDeposit" caption="Close Deposit" mnemonic="d" shortcut="ctrl D" visibleWhen="#{entity.docstate == 'OPEN'}" permission="deposit.close" />        
-        <invoker type="viewActions" action="previewFundSummary" caption="Preview Fund Summary" mnemonic="f" icon="images/doc-view.png" shortcut="ctrl f" visibleWhen="#{entity.docstate == 'OPEN'}"  />        
+        <invoker type="viewActions" action="previewFundSummary" caption="Preview Fund Summary" mnemonic="f" icon="images/doc-view.png" shortcut="ctrl f" visibleWhen="#{entity.docstate == 'OPEN'}"  />       
         
         <invoker type="noncashActions" action="addNonCashPayments" caption="Add Non-Cash Payment" mnemonic="n" shortcut="ctrl a" visibleWhen="#{selectedSummary != null}" permission="deposit.addnoncash" />
         <invoker type="noncashActions" action="addExternalPayment" caption="Add External Non-Cash Payment" mnemonic="e" shortcut="ctrl e" visibleWhen="#{selectedSummary != null}" permission="deposit.addexternalnoncash"/>
@@ -123,7 +123,7 @@ class DepositController
     def previewFundSummary() {
         return 'report'
     }
-                    
+    
     def reportModel = [
         getReportName : { return 'depositslip/rcdbyfund'; },
         getReportData : { return svc.createRCDByFundReport( entity, fund )  },
@@ -300,7 +300,12 @@ class DepositController
         data.branchname = fundSummary.branchname
         data.depositedbyname = entity.depositedbyname
         data.amountinwords = numSvc.convertString( data.cash + "" )
-        data.txndate = dateSvc.format( 'MM-dd-yyyy', dateSvc.parse('yyyy-MM-dd', data.txndate ))
+        
+        if( '1'.equals( var.deposit_print_date ) )
+            data.txndate = dateSvc.format( 'MM-dd-yyyy', dateSvc.parse('yyyy-MM-dd', data.txndate ))
+        else
+            data.txndate = ''
+        
         return data
     }
     
@@ -341,7 +346,12 @@ class DepositController
         data.branchname = fundSummary.branchname
         data.depositedbyname = entity.depositedbyname
         data.amountinwords = numSvc.convertString( data.noncash + "" )
-        data.txndate = dateSvc.format( 'MM-dd-yyyy', dateSvc.parse('yyyy-MM-dd', data.txndate ))
+        
+        if( '1'.equals( var.deposit_print_date ) )
+            data.txndate = dateSvc.format( 'MM-dd-yyyy', dateSvc.parse('yyyy-MM-dd', data.txndate ))
+        else
+            data.txndate = ''
+        
         return data
     }
     

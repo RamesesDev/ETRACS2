@@ -124,7 +124,7 @@ class DepositService
 			txndate				: dateSvc.parse('yyyy-MM-dd', deposit.txndate ),
 			collectionsummaries	: getCollectionSummaryByAFAndFund( deposit, fundname ),
 			remittancedeposits	: buildRemittanceDepositList( deposit, fundname  ),
-			remittedforms		: [[:],[:]],
+			remittedforms		: getRemittedFormsByAF( deposit, fundname ),
 			nonserialremittances: [[:],[:]],
 			fund 				: fundname, 
 		]
@@ -133,6 +133,23 @@ class DepositService
 		data.depositedbyname = deposit.depositedbyname
 		data.depositedbytitle = deposit.depositedbytitle
 		return data 
+	}
+	
+	List getRemittedFormsByAF( deposit, fundname ) {
+		def remittedForms = []
+		
+		if('SEF'.equals(fundname)) {
+			def liquidations = deposit.liquidations
+			for( liq in liquidations ) {
+				def list = em.sqlContext.createNamedQuery('deposit:getRemittedFormsByAF')
+						.setParameters( [liquidationid:liq.objid, afid:'56'] )
+						.resultList;
+						
+				remittedForms += list
+			}
+		}
+		
+		return remittedForms
 	}
 	
 	List buildRemittanceDepositList( deposit, fundname  ) {
