@@ -45,12 +45,14 @@ class BPCollectionInterceptor {
 			 items: []
 		];
 		
+		//change amount -> totalamount
 		receipt.items.each{ r ->
 			payment.items << [ bpreceivableid	: r.taxfeeid,
-							 amount			: r.amount,
+							 taxamount		: r.taxamount,
 							 surcharge		: r.surcharge,
 							 interest		: r.interest,
-							 discount		: r.discount ];
+							 discount		: r.discount,
+							 totalamount	: r.amount ];
 		}
 		
 		ledgerSvc.postPayment( payment );
