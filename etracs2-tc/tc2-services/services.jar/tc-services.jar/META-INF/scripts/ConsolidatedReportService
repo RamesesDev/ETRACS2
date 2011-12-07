@@ -85,15 +85,17 @@ class ConsolidatedReportService {
 		def afinventory = fetchAFIStateOpen()
 		if( !afinventory )
 			afinventory = fetchAFIStateClosed()
-
-		afinventory.each(){ afi ->
-			afi.afinventoryid = afi.objid				
-			//build craaf by AFInventory 
-			if( 'OPEN'.equals( afi.docstate ) ) 
-				buildCraaf( afi, null )
-				
-			//build craaf by AFCredit
-			doBuildCraafByAFIC( afi, param ) 
+			
+		if( afinventory ){
+			afinventory.each(){ afi ->
+				afi.afinventoryid = afi.objid				
+				//build craaf by AFInventory 
+				if( 'OPEN'.equals( afi.docstate ) ) 
+					buildCraaf( afi, null )
+					
+				//build craaf by AFCredit
+				doBuildCraafByAFIC( afi, param )
+			}
 		}
 				
 	}
