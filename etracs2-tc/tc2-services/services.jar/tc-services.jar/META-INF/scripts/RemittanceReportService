@@ -141,6 +141,51 @@ class RemittanceReportService {
 		return rem;
 	}
 	
+	@ProxyMethod
+	public def generateReportByFundDetailedCrosstab( entity) {
+		def remittanceid = entity.objid 
+		def fundlist = em.sqlContext.createNamedQuery('remittance:getDistinctFundAccount')
+							.setParameter('remittanceid', remittanceid )
+							.resultList 
+		
+		def colindex = 0
+		def columnsql = ''
+		fundlist.each { fund  ->
+			columnsql += " SUM( CASE WHEN ia.fundid = '$fund.fundid' AND rl.voided = 0 THEN ri.amount ELSE NULL END )  AS col${colindex}, \n"
+			colindex++
+		}
+		columnsql += " SUM( CASE WHEN rl.voided = 0 THEN ri.amount ELSE NULL END ) AS col${colindex}, \n"
+			
+		def qry = em.sqlContext.createNamedQuery('remittance:getReportByFundDetailCrosstab')
+		def items = qry.setVars([columnsql:columnsql])
+						.setParameter( 'remittanceid', remittanceid )
+						.resultList
+		
+		def header = [:]
+		colindex = 0
+		fundlist.collect{ fund ->
+			header[ 'COL' + colindex ] = fund.fundname 
+			colindex++
+		}
+		
+		header[ 'COL' + colindex ] = 'TOTAL'
+		//
+		//additional params
+		header.REPORTTITLE = 'SUMMARY OF COLLECTIONS BY FUND'
+		header.REMITTANCENO = entity.info.txnno
+		header.REMITTANCEDATE = entity.info.txndate
+		header.REMITTANCEAMOUNT = entity.info.amount
+		header.COLLECTORNAME = entity.info.collectorname
+		header.COLLECTORTITLE = entity.info.collectortitle
+		header.LIQUIDATINGOFFICER = entity.info.liquidatingofficername
+		header.LIQUIDATINGOFFICERTITLE = entity.info.liquidatingofficertitle
+		header.DATEPOSTED = dtsvc.parse('yyyy-MM-dd', entity.info.txndate )
+		header.AMTINWORDS = numbSvc.convertDouble( entity.info.amount )
+		
+		return [ header:header, items:items]
+	}
+	
+	
 	
 	@ProxyMethod
 	public def generateSummaryOfCollection( entity, chart ) {
