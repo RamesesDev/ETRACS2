@@ -69,7 +69,7 @@ SELECT ry FROM rptsetting
  
 
 [getLedgerInfo]
-SELECT objid, docstate, lastyearpaid, lastqtrpaid FROM rptledger where objid = $P{objid} 
+SELECT objid, docstate, lastyearpaid, lastqtrpaid, taxable FROM rptledger where objid = $P{objid} 
 
 
 [getLandImprovementIds]
