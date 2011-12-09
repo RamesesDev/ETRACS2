@@ -418,6 +418,7 @@ ORDER BY ia.fundname
 [getReportByFundDetailCrosstab]
 SELECT 
 	rl.afid, 
+	rl.collectiontype, 
 	rl.serialno, 
 	CASE WHEN rl.voided = 0 THEN rl.paidby ELSE '*** VOIDED ***' END AS paidby, 
 	rl.txndate, 
