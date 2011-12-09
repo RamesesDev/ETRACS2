@@ -11,7 +11,7 @@
 import com.rameses.rcp.common.*;
 import com.rameses.rcp.annotations.*;
 
-class LookupAccountController 
+class LookupAccountController extends LookupModel 
 {
     @Service("AccountService")
     def svc;
@@ -30,26 +30,33 @@ class LookupAccountController
     }
     
     def ok() {
+        search = null 
         if( onselect ) {
             onselect( selected );
         }
-        return "_close";
+        return select()
     }
     
-    def listHandler = [
-        getRows    : { return 20; },
-        getColumns : {
-            return [
-                new Column(name:"acctcode", caption:"Code", width:70),
-                new Column(name:"accttitle", caption:"Title", width:250),
-            ]
-        },
-        fetchList : { 
-                def list = svc.getAccountList(searchText, chartType, it);
-                if( list ) return list;
-                throw new Exception("Record not found.");
-	},
-    ] as PageListModel;
+    def getListHandler() {
+        return this
+    }   
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"acctcode", caption:"Code", width:70),
+            new Column(name:"accttitle", caption:"Title", width:250),
+        ]
+    }
+    
+    int getRows() { return 20 }
+    
+    List fetchList( Map params ) {
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getAccountList(s, chartType, params);
+        if( list ) return list;
+        throw new Exception("Record not found.");
+    }
 }  
 
 
