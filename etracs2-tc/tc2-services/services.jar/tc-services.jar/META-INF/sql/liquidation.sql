@@ -3,6 +3,31 @@ SELECT * FROM liquidationlist
 ORDER BY txndate DESC, txnno DESC
 
 
+[getUnliquidatedRemittanceByLiquidatingOfficer]
+SELECT * FROM remittancelist 
+WHERE docstate = 'OPEN' 
+AND liquidatingofficerid = $P{liquidatingofficerid}  
+ORDER BY txndate DESC, txnno DESC
+
+
+[getUnliquidatedRemittanceOtherPaymentsByLiquidatingOfficer]
+SELECT pay.* 
+FROM paymentitem pay, receiptlist rl, remittancelist rml 
+WHERE rml.liquidatingofficerid = $P{liquidatingofficerid} 
+AND rml.docstate = 'OPEN' 
+AND rml.objid = rl.remittanceid 
+AND rl.objid = pay.receiptid 
+AND NOT pay.paytype = 'CASH'
+
+[getUnliquidatedRemittanceInfoByLiquidatingOfficer]
+SELECT 
+	SUM( amount ) AS totalamount, 
+	SUM( totalcash ) AS totalcash, 
+	SUM( totalotherpayment ) AS totalotherpayment 
+FROM remittancelist 
+WHERE docstate = 'OPEN' 
+AND liquidatingofficerid = $P{liquidatingofficerid} 
+
 
 
 [getUnliquidatedRemittanceByCollector]
@@ -10,16 +35,6 @@ SELECT * FROM remittancelist
 WHERE docstate = 'OPEN' 
 AND collectorid = $P{collectorid} 
 ORDER BY txndate DESC, txnno DESC
-
-[getUnliquidatedRemittanceInfoByCollector]
-SELECT 
-	SUM( amount ) AS totalamount, 
-	SUM( totalcash ) AS totalcash, 
-	SUM( totalotherpayment ) AS totalotherpayment 
-FROM remittancelist 
-WHERE docstate = 'OPEN' 
-AND collectorid = $P{collectorid} 
-ORDER BY txnno DESC, txndate DESC
 
 [getUnliquidatedRemittanceOtherPaymentsByCollector]
 SELECT pay.* 
@@ -47,7 +62,7 @@ AND r.objid = pay.receiptid
 
 [getFundSummaries] 
 SELECT fundid, fundname, SUM( amount ) FROM revenue 
-WHERE liquidationid = $P{liquidationid} 
+WHERE liquidationid = $P{liquidationid} AND voided = 0 
 GROUP BY fundid, fundname 
 
 
