@@ -32,6 +32,7 @@ abstract class AbstractCollectionController
     def newHandler
     def updateHandler
     def deleteHandler
+    def payor
     
             
     abstract def getService()
@@ -58,6 +59,7 @@ abstract class AbstractCollectionController
         entity = svc.open( entity.objid )
         checkAllowEdit()
         reinitializePaymentSummary()
+        payor = [objid:entity.info.payorid, entityname:entity.info.payorname]
         return 'default'
     }
     
@@ -188,6 +190,21 @@ abstract class AbstractCollectionController
         
     def lookupEntity() {
         return InvokerUtil.lookupOpener('entity.lookup', [onselect:onselectEntity, searchText:entity.info.payorname])
+    }
+    
+    // referenced by XLookupField 
+    def getLookupEntity2() {
+        return InvokerUtil.lookupOpener('entity.lookup', [:])
+    }
+    
+    void setPayor( se ) {
+        this.payor = se 
+        entity.info.payorid   = se?.objid
+        entity.info.payorname = se?.entityname
+        entity.info.payoraddress = se?.entityaddress
+        entity.info.paidby = entity.info.payorname
+        entity.info.paidbyaddress = entity.info.payoraddress
+        binding.refresh( 'entity.info.*')
     }
             
     void resetItemIncomeAcctInfo() {

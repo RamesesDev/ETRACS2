@@ -112,7 +112,7 @@ class ReceiptService
 	public List getList( searchParam, params ) {
 		if( !searchParam.docstate ) searchParam.docstate = '%'
 		if( !searchParam.collectorid ) searchParam.collectorid = '%'
-		if( ! searchParam.searchText ) return getListByQuery( 'receipt:getList', searchParam, params )
+		if( ! searchParam.searchText ) return getListByQuery('receipt:getList2', searchParam, params)
 		
 		searchParam.collectorid = searchParam.collectorid+'%'
 		searchParam.serialno    = searchParam.searchText
@@ -267,7 +267,7 @@ class ReceiptService
 			throw new Exception('Amount Due must be greater than zero.')
 		}
 		if( receipt.info.amount != receipt.items.amount.sum() ) {
-			throw new Exception('Receipt Amount must be equal to item amount totals.')
+			throw new Exception('The Receipt Amount is not equal to item amount total.\nPlease recreate the transaction to correct the problem.')
 		}
 		if( receipt.info.totalpayment < receipt.info.amount ) {
 			throw new Exception('Total Payment must be greater than or equal to amount due.')
