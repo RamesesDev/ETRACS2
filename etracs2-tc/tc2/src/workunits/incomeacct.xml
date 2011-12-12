@@ -44,24 +44,34 @@ class IncomeAcctController extends etracs2.groovy.CRUDController
         return list
     }
     
-    def listHandler =[
-            getRows    : { return 25 },
-            getColumns : {
-                return [
-                    new Column(name:"acctno", caption:"Acct No.", minWidth:60),
-                    new Column(name:"accttitle", caption:"Title", width:250),
-                    new Column(name:"docstate", caption:"State", width:120),
-                ];
-            },
-            fetchList : { 
-                return svc.getList( searchText, it )
-                // return list
-                //return getList( searchText, it )
-            },
-     ] as PageListModel
+    int _start = -1
+    
+    def listHandler = [
+        getRows    : { return 25 },
+        getColumns : {
+            return [
+                new Column(name:"acctno", caption:"Acct No.", minWidth:60),
+                new Column(name:"accttitle", caption:"Title", width:250),
+                new Column(name:"docstate", caption:"State", width:120),
+            ];
+        },
+        fetchList : { 
+            if( _start != it._start ) {
+                list = getList( searchText, it )
+                _start = it._start 
+            }
+            return list;
+        },
+    ] as PageListModel
+   
         
     
     def createEntity() {
+        ngas = null
+        ngassubacct =null
+        sre = null
+        sresubacct = null
+        
         return [
             objid        : 'IA' + new UID(),
             docstate     : 'DRAFT',
