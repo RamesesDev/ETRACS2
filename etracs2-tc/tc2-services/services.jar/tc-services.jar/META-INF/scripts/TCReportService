@@ -170,7 +170,7 @@ class TDReportService {
 				return [idx:idx +'-false', title: (' '*(idx*10))+val.acctcode+"  -  "+val.accttitle, header:false, amount: val.amount];
 			}
 		};
-		
+		 
 		return [
 			title 	: buildStatementRevenueTitle( chart, year, qtr, month, day, fund  ),
 			period 	: buildPeriod( year, qtr, month, day ),
@@ -178,6 +178,36 @@ class TDReportService {
 		]
 	}
 
+	@ProxyMethod
+	public Map generateStatementOfRevenueDetailed( chart, year, qtr, month, day, fund  ) { 
+		def params = [
+			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
+			fundid		 : ( fund ?  fund.fundid : '%' ),
+		]
+		
+		def list = em.sqlContext.createNamedQuery("tcreport:getStatementOfRevenueDetailed$chart")
+		             .setParameters( params )
+					 .resultList
+		if( !list ) throw new Exception('No records found.')
+		
+		def display = { idx, val, last ->
+			if( !last ) {
+				return [idx:idx +'-true', title: (' '*(idx*8))+val, header:true];
+			}
+			else {
+				if( ! val.acctcode ) val.acctcode = '<unmapped>'
+				if( ! val.accttitle ) val.accttitle = '<unmapped>'
+				return [idx:idx +'-false', title: (' '*(idx*8))+val.acctcode+"  -  "+val.accttitle, header:false, amount: val.amount];
+			}
+		};
+		
+		return [
+			title 	: buildStatementRevenueTitle( chart, year, qtr, month, day, fund  ),
+			period 	: buildPeriod( year, qtr, month, day ),
+			items  	: buildTree( list, display )
+		]
+	}
+	
 	
 	@ProxyMethod
 	public Map generateReportOfCollection2( chart, year, qtr, month, day, fund ) {

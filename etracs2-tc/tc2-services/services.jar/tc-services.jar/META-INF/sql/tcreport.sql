@@ -75,11 +75,11 @@ WHERE r.liquidationtimestamp LIKE $P{txntimestamp}
   AND ia.fundid LIKE $P{fundid} 
   AND r.voided = 0 
 GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
-ORDER BY a.pathbytitle 
+ORDER BY p.pathbytitle, p.acctcode, a.acctcode  
 
 [getStatementOfRevenueNGAS]  
 SELECT  
-	a.pathbytitle AS pathtitle,   
+	p.pathbytitle AS pathtitle,   
 	a.acctcode AS acctcode,   
 	a.accttitle AS accttitle, 
 	p.acctcode as parentcode, 
@@ -93,7 +93,46 @@ WHERE r.liquidationtimestamp LIKE $P{txntimestamp}
   AND ia.fundid LIKE $P{fundid} 
   AND r.voided = 0 
 GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
-ORDER BY a.pathbytitle 
+ORDER BY p.pathbytitle, p.acctcode, a.acctcode  
+
+[getStatementOfRevenueDetailedSRE]  
+SELECT  
+	concat(p.pathbytitle, '/', IFNULL(a.acctcode,'unmapped'), ' - ' , IFNULL(a.accttitle,'unmapped' ) ) AS pathtitle,   
+	p.acctcode as parentcode, 
+	p.accttitle as parenttitle,	
+	a.acctcode AS glacctcode,   
+	a.accttitle AS glaccttitle, 
+	ia.acctcode as acctcode, 
+	ia.accttitle as accttitle, 
+	SUM(r.amount) AS amount  
+FROM revenue r  
+	INNER JOIN incomeaccount ia ON r.acctid = ia.objid  
+	LEFT JOIN account a ON a.objid = ia.sreid  
+	LEFT JOIN account p on p.objid = a.parentid  
+WHERE r.liquidationtimestamp LIKE $P{txntimestamp}   
+  AND r.voided = 0  
+GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle, ia.acctcode, ia.accttitle 
+ORDER BY p.pathbytitle, p.acctcode, a.acctcode, ia.acctcode, ia.accttitle  
+
+
+[getStatementOfRevenueDetailedNGAS]  
+SELECT  
+	concat(p.pathbytitle, '/', IFNULL(a.acctcode,'unmapped'), ' - ' , IFNULL(a.accttitle,'unmapped' ) ) AS pathtitle,   
+	p.acctcode as parentcode, 
+	p.accttitle as parenttitle,	
+	a.acctcode AS glacctcode,   
+	a.accttitle AS glaccttitle, 
+	ia.acctcode as acctcode,
+	ia.accttitle as accttitle,
+	SUM(r.amount) AS amount 
+FROM revenue r  
+	INNER JOIN incomeaccount ia ON r.acctid = ia.objid  
+	LEFT JOIN account a ON a.objid = ia.ngasid  
+	LEFT JOIN account p on p.objid = a.parentid  
+WHERE r.liquidationtimestamp LIKE $P{txntimestamp}   
+  AND r.voided = 0  
+GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle, ia.acctcode, ia.accttitle 
+ORDER BY p.pathbytitle, p.acctcode, a.acctcode, ia.acctcode, ia.accttitle  
 
 
 #-------------------------------------------
