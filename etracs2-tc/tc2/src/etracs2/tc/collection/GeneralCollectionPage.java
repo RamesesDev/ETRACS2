@@ -243,16 +243,17 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
 
         jPanel8.setLayout(new java.awt.BorderLayout());
 
-        jPanel8.setPreferredSize(new java.awt.Dimension(179, 50));
+        jPanel8.setPreferredSize(new java.awt.Dimension(179, 80));
+        jScrollPane1.setPreferredSize(new java.awt.Dimension(239, 150));
         xTextArea1.setColumns(20);
         xTextArea1.setRows(5);
         xTextArea1.setCaption("Remarks");
         xTextArea1.setCaptionMnemonic('r');
         xTextArea1.setCaptionWidth(100);
         xTextArea1.setFocusAccelerator('r');
+        xTextArea1.setFont(new java.awt.Font("Arial", 0, 14));
         xTextArea1.setHint("Remarks");
         xTextArea1.setName("entity.info.remarks");
-        xTextArea1.setPreferredSize(new java.awt.Dimension(169, 50));
         xTextArea1.setTextCase(com.rameses.rcp.constant.TextCase.UPPER);
         jScrollPane1.setViewportView(xTextArea1);
 
