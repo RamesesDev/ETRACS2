@@ -111,11 +111,11 @@ class ReceiptService
 		logService.logB('DELETE', 'Receipt', receiptid, 'Qty Issued: ' + rct.qtyissued, null)
 	}
 	
-	@ProxyMethod
+	@ProxyMethod 
 	public List getList( searchParam, params ) {
 		if( !searchParam.docstate ) searchParam.docstate = '%'
 		if( !searchParam.collectorid ) searchParam.collectorid = '%'
-		if( ! searchParam.searchText ) return [] //return getListByQuery('receipt:getList2', searchParam, params)
+		if( ! searchParam.searchText ) return getListByQuery('receipt:getList', searchParam, params)
 		
 		searchParam.collectorid = searchParam.collectorid+'%'
 		searchParam.serialno    = searchParam.searchText
