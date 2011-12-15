@@ -23,6 +23,9 @@ class BPApplicationService{
 	@Service('BPRuleService')
 	def ruleSvc;
 	
+	@Service('NumberService')
+	def numSvc
+	
 	def PERMIT_SCHEMA = 'bppermit:bppermit';
 	def BP_RECIVABLE_SCHAMENAME = 'bpledger:bpreceivable';
 	def BUSINESS_SCHEMA = 'business:business';
@@ -337,8 +340,8 @@ class BPApplicationService{
 		app.amountdue = 0.0;
 		
 		app.taxfees.each{
-			app.assessedvalue += it.assessedvalue;
-			app.amountdue += it.amountdue;
+			app.assessedvalue += numSvc.round( it.assessedvalue );
+			app.amountdue += numSvc.round( it.amountdue );
 		}
 		
 		return app;
