@@ -36,6 +36,9 @@
 	</parameter>
 	<parameter name="TREASURERTITLE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="BusinessPermitOR" isForPrompting="false" class="java.lang.Object"/>
+	<parameter name="BusinessPermitLOB_i" isForPrompting="false" class="java.lang.Object"/>
+	<parameter name="BusinessPermitLOB_ii" isForPrompting="false" class="java.lang.Object"/>
+	<parameter name="BPBGLOGO" isForPrompting="false" class="java.lang.String"/>
 
 	<field name="barcode" class="java.lang.String"/>
 	<field name="barcodeurl" class="java.lang.String"/>
@@ -50,9 +53,23 @@
 	<field name="businessaddress" class="java.lang.String"/>
 	<field name="tradename" class="java.lang.String"/>
 	<field name="txnno" class="java.lang.String"/>
+	<field name="linesize" class="java.lang.Integer"/>
+	<field name="lines2" class="java.lang.Object"/>
 
 		<background>
-			<band height="0"  isSplitAllowed="true" >
+			<band height="599"  isSplitAllowed="true" >
+				<image  scaleImage="FillFrame" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						mode="Opaque"
+						x="15"
+						y="341"
+						width="509"
+						height="257"
+						key="image-3"/>
+					<box></box>
+					<graphicElement stretchType="NoStretch"/>
+					<imageExpression class="java.lang.String"><![CDATA[$P{BPBGLOGO}]]></imageExpression>
+				</image>
 			</band>
 		</background>
 		<title>
@@ -69,6 +86,22 @@
 		</columnHeader>
 		<detail>
 			<band height="720"  isSplitAllowed="true" >
+				<subreport  isUsingCache="true">
+					<reportElement
+						mode="Transparent"
+						x="26"
+						y="348"
+						width="488"
+						height="25"
+						forecolor="#000000"
+						backcolor="#FFFFFF"
+						key="subreport-4"
+						positionType="Float">
+							<printWhenExpression><![CDATA[new Boolean( $F{linesize}.intValue() > 7 )]]></printWhenExpression>
+						</reportElement>
+					<dataSourceExpression><![CDATA[$F{lines2}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{BusinessPermitLOB_ii}]]></subreportExpression>
+				</subreport>
 				<rectangle radius="5" >
 					<reportElement
 						mode="Transparent"
@@ -79,6 +112,18 @@
 						forecolor="#000000"
 						backcolor="#FFFFFF"
 						key="rectangle-3"/>
+					<graphicElement stretchType="NoStretch" fill="Solid" />
+				</rectangle>
+				<rectangle radius="0" >
+					<reportElement
+						mode="Transparent"
+						x="16"
+						y="342"
+						width="507"
+						height="125"
+						forecolor="#000000"
+						backcolor="#FFFFFF"
+						key="rectangle-2"/>
 					<graphicElement stretchType="NoStretch" fill="Solid" >
 					<pen lineWidth="2.0" lineStyle="Solid"/>
 </graphicElement>
@@ -123,20 +168,6 @@
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[new SimpleDateFormat("yyyy").format( $F{txndate} )]]></textFieldExpression>
 				</textField>
-				<rectangle radius="0" >
-					<reportElement
-						mode="Opaque"
-						x="16"
-						y="342"
-						width="507"
-						height="125"
-						forecolor="#000000"
-						backcolor="#FFFFFF"
-						key="rectangle-2"/>
-					<graphicElement stretchType="NoStretch" fill="Solid" >
-					<pen lineWidth="2.0" lineStyle="Solid"/>
-</graphicElement>
-				</rectangle>
 				<staticText>
 					<reportElement
 						mode="Transparent"
@@ -515,7 +546,7 @@
 					<textElement textAlignment="Justified" verticalAlignment="Top" rotation="None" isStyledText="true" lineSpacing="Single">
 						<font fontName="Tahoma" pdfFontName="Helvetica" size="10" isBold="false" isItalic="false" isUnderline="false" isPdfEmbedded ="false" pdfEncoding ="Cp1252" isStrikeThrough="false" />
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["has been granted <style isBold=\"true\">BUSINESS PERMIT</style> to operate the following businessess subject to existing laws, ordinances, rules and regulations of the " + $P{LGUNAME} + " and to the pertinent provision of Republic Act 7160 otherwise known as the Local Government Code of 1991 and provided further, that conditions stipulated in the application must be complied with any infraction or violation therefore will be sufficient ground for the revocation of the <style isBold=\"true\">PERMIT</style>"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["has been granted <style isBold=\"true\">BUSINESS PERMIT</style> to operate the following businessess subject to existing laws, ordinances, rules and regulations of the " + $P{LGUNAME} + " and to the pertinent provision of Republic Act 7160 otherwise known as the Local Government Code of 1991 and provided further, that conditions stipulated in the application must be complied with any infraction or violation therefore will be sufficient ground for the revocation of the <style isBold=\"true\">PERMIT.</style>"]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -677,20 +708,6 @@
 </graphicElement>
 					<imageExpression class="java.lang.String"><![CDATA[$P{LOGOLGU}]]></imageExpression>
 				</image>
-				<subreport  isUsingCache="true">
-					<reportElement
-						mode="Opaque"
-						x="24"
-						y="349"
-						width="488"
-						height="25"
-						forecolor="#000000"
-						backcolor="#FFFFFF"
-						key="subreport-1"
-						positionType="Float"/>
-					<dataSourceExpression><![CDATA[$F{lines}]]></dataSourceExpression>
-					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{BusinessPermitLOB}]]></subreportExpression>
-				</subreport>
 				<textField isStretchWithOverflow="false" pattern="" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						mode="Transparent"
@@ -773,7 +790,7 @@
 				</textField>
 				<subreport  isUsingCache="true">
 					<reportElement
-						mode="Opaque"
+						mode="Transparent"
 						x="25"
 						y="479"
 						width="200"
@@ -783,6 +800,22 @@
 						key="subreport-2"/>
 					<dataSourceExpression><![CDATA[$F{orlist}]]></dataSourceExpression>
 					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{BusinessPermitOR}]]></subreportExpression>
+				</subreport>
+				<subreport  isUsingCache="true">
+					<reportElement
+						mode="Transparent"
+						x="26"
+						y="348"
+						width="488"
+						height="25"
+						forecolor="#000000"
+						backcolor="#FFFFFF"
+						key="subreport-3"
+						positionType="Float">
+							<printWhenExpression><![CDATA[new Boolean( $F{linesize}.intValue() < 8 )]]></printWhenExpression>
+						</reportElement>
+					<dataSourceExpression><![CDATA[$F{lines}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{BusinessPermitLOB_i}]]></subreportExpression>
 				</subreport>
 			</band>
 		</detail>
