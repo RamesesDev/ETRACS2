@@ -48,7 +48,7 @@ class TDReportService
 			td.appraisedbytitle = null 
 		}
 		
-		
+		concatHousenoStreetPurok( td ) 
 		
 		
 		if( faas.rpu.rputype != 'land' ) {
@@ -104,6 +104,33 @@ class TDReportService
 		
 		return td;
     }
+	
+	private void concatHousenoStreetPurok( def td ){
+		
+		def houseno = { 
+			return ( it.houseno ) ? "$it.houseno".toString() : ''
+		}
+		
+		def street = {
+			def strt = ''
+			if( it.street ){
+				strt = ( it.houseno && it.street ) ? ', ' : ''
+				strt += "$it.street".toString()
+			}
+			return strt
+		}
+		
+		def purok = {
+			def prk = ''
+			if( it.purok ){
+				prk = ( it.houseno || it.street ) ? ', ' : ''
+				prk += "$it.purok".toString()
+			}
+			return prk
+		}
+		
+		td.street = houseno( td ) + street( td ) + purok( td )
+	}
 	
 	void buildAnnotationInfo( td, faas ) {
 		td.annotated  = false 
