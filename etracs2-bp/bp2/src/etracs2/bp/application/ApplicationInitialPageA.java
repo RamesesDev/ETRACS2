@@ -31,7 +31,7 @@ public class ApplicationInitialPageA extends javax.swing.JPanel {
         jPanel2 = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField2 = new com.rameses.rcp.control.XLookupField();
         xLabel1 = new com.rameses.rcp.control.XLabel();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
@@ -52,31 +52,32 @@ public class ApplicationInitialPageA extends javax.swing.JPanel {
         xTitledBorder1.setTitle(" Business Application");
         jPanel1.setBorder(xTitledBorder1);
 
-        xActionTextField1.setActionName("lookupPayer");
-        xActionTextField1.setCaption("Permittee");
-        xActionTextField1.setIndex(-1);
-        xActionTextField1.setName("application.info.taxpayername");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
-        xActionTextField1.setRequired(true);
-        formPanel1.add(xActionTextField1);
+        xLookupField2.setCaption("Permitee");
+        xLookupField2.setExpression("#{entityname}");
+        xLookupField2.setHandler("lookupTaxpayer");
+        xLookupField2.setName("taxpayerSearch");
+        xLookupField2.setPreferredSize(new java.awt.Dimension(0, 19));
+        xLookupField2.setRequired(true);
+        formPanel1.add(xLookupField2);
 
         com.rameses.rcp.control.border.XLineBorder xLineBorder1 = new com.rameses.rcp.control.border.XLineBorder();
         xLineBorder1.setLineColor(new java.awt.Color(204, 204, 204));
         xLabel1.setBorder(xLineBorder1);
         xLabel1.setCaption("Address");
         xLabel1.setCaptionFont(new java.awt.Font("Tahoma", 0, 11));
-        xLabel1.setDepends(new String[] {"application.info.taxpayername"});
+        xLabel1.setDepends(new String[] {"taxpayerSearch"});
         xLabel1.setExpression("#{application.info.taxpayeraddress}");
         xLabel1.setFont(new java.awt.Font("Tahoma", 0, 11));
         xLabel1.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xLabel1);
 
         jPanel1.add(formPanel1);
-        formPanel1.setBounds(0, 20, 490, 50);
+        formPanel1.setBounds(0, 20, 490, 70);
 
         xComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "application.txntype" }));
         xComboBox1.setCaption("Type");
         xComboBox1.setCaptionFont(new java.awt.Font("Tahoma", 0, 11));
+        xComboBox1.setDepends(new String[] {"taxpayerSearch"});
         xComboBox1.setFont(new java.awt.Font("Tahoma", 1, 11));
         xComboBox1.setItems("typeList");
         xComboBox1.setName("application.txntype");
@@ -87,6 +88,7 @@ public class ApplicationInitialPageA extends javax.swing.JPanel {
         xComboBox2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "application.txnmode" }));
         xComboBox2.setCaption("Mode");
         xComboBox2.setCaptionFont(new java.awt.Font("Tahoma", 0, 11));
+        xComboBox2.setDepends(new String[] {"taxpayerSearch"});
         xComboBox2.setFont(new java.awt.Font("Tahoma", 1, 11));
         xComboBox2.setItems("modeList");
         xComboBox2.setName("application.txnmode");
@@ -95,7 +97,7 @@ public class ApplicationInitialPageA extends javax.swing.JPanel {
         formPanel2.add(xComboBox2);
 
         jPanel1.add(formPanel2);
-        formPanel2.setBounds(0, 70, 490, 60);
+        formPanel2.setBounds(0, 90, 490, 60);
 
         jPanel2.add(jPanel1);
         jPanel1.setBounds(10, 0, 500, 150);
@@ -111,10 +113,10 @@ public class ApplicationInitialPageA extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XLabel xLabel1;
+    private com.rameses.rcp.control.XLookupField xLookupField2;
     // End of variables declaration//GEN-END:variables
     
 }
