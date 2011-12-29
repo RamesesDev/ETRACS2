@@ -152,11 +152,13 @@ abstract class AbstractCollectionController
     void voidReceipt() {
         if( MsgBox.confirm('Void receipt?') ) {
             def reason = MsgBox.prompt('Enter reason for voiding the receipt:')
-            CommonUtil.required( 'Reason', reason )
-            entity = svc.voidReceipt( entity.objid, reason.toUpperCase() )   
-            invokeNewHandler()
-            invokeUpdateHandler()
-        }        
+            if( !"null".equalsIgnoreCase( reason ) ){
+                CommonUtil.required( 'Reason', reason )
+                entity = svc.voidReceipt( entity.objid, reason.toUpperCase() )   
+                invokeNewHandler()
+                invokeUpdateHandler()
+            }
+        }      
     }
     
     def  doVoid() {
