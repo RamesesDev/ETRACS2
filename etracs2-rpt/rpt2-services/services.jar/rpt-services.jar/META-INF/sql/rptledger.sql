@@ -47,6 +47,15 @@ SELECT
 FROM rptledger 
 WHERE docstate LIKE $P{docstate} AND blockno = $P{blockno} 
 
+[getBarangay]
+SELECT 
+	objid, docstate, tdno, fullpin, barangay,  prevtdno, 
+	taxpayerid, taxpayername, taxpayeraddress, rputype, cadastrallotno, 
+	lastyearpaid, lastqtrpaid , assessedvalue , classcode 
+FROM rptledger 
+WHERE docstate LIKE $P{docstate} AND barangay LIKE $P{barangay} 
+
+
 
 [getLatestItem]
 SELECT * FROM rptledgeritem WHERE toyear = 0 AND parentid = $P{parentid} 
