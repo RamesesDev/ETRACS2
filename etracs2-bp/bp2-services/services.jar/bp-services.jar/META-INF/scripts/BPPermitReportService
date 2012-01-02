@@ -81,8 +81,9 @@ public class BPPermitReportService
 				bp.orno = permit.orno
 				bp.plateno = permit.plateno
 			}
-
-			if( bp.lines[0].name.equals('PEDDLER') )
+			def lobclassification = em.read( 'lobclassification', [objid:bp.lines[0].classificationid] ).name
+			
+			if( lobclassification.equals('PEDDLER') )
 				reportName += '_lantapan_peddler'
 			else if( bp.lines[0].name.equals('MOTORELA'))
 				reportName += '_lantapan_motorela'

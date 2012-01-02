@@ -7,7 +7,7 @@
         <invoker type="formActions" action="previewAssessment" caption="View Assessment" icon="images/doc-view.png"/>
         <invoker type="formActions" action="release" caption="Release" visibleWhen="#{permit.docstate != 'ACTIVE'}" mnemonic="r" icon="images/doc-approve.png" permission="bppermit.release"/>
         <invoker type="formActions" action="viewPermit" caption="View Permit" visibleWhen="#{permit.docstate == 'ACTIVE'}" mnemonic="r" icon="images/doc-view.png"/>
-        <invoker type="formActions" action="addSpecs" caption="Add Motorela/Habal-Habal Specs" visibleWhen="#{var == 'LANTAPAN' and isHabalRela and permit.docstate != 'ACTIVE'}" mnemonic="a" icon="images/doc-view.png" index="10" />
+        <invoker type="formActions" action="addSpecs" caption="Add Specifications" visibleWhen="#{var == 'LANTAPAN' and isHabalRela and permit.docstate != 'ACTIVE'}" mnemonic="a" icon="images/doc-view.png" index="10" />
     </invokers>
     <code>
 <![CDATA[
@@ -48,6 +48,11 @@ class BPReleasePermitController
     ] as SubListModel;
     
     public void release(){
+        def lob = permit.lobs[0].name
+        if( isHabalRela ){
+            if( !permit.info ) 
+                throw new Exception( "$lob specifications not yet set." )
+        }
         if( MsgBox.confirm('Release permit?') ) permit = svc.releasePermit( permit );
     }
     
