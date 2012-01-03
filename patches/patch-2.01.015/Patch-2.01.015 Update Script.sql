@@ -1,3 +1,6 @@
+create index ix_bpapplication_tradename on bpapplication( tradename );
+create index ix_bpapplication_txnno on bpapplication( txnno );
+
 
 ALTER TABLE rptpaymentmanual add column municity varchar(200) not null;
 ALTER TABLE rptpaymentmanual add column municityid varchar(50) not null;
