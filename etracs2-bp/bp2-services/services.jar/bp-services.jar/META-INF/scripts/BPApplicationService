@@ -195,10 +195,25 @@ class BPApplicationService{
 		return application;
 	}
 	
-	@ProxyMethod
-	public def getList(def searchText, def param){
-		return em.sqlContext.createNamedQuery('bpapplication:getList')
-				 .resultList;
+	@ProxyMethod 
+	public def getList(def searchText, def params){
+		if( ! searchText ) 
+			return getListByQuery('bpapplication:getList', [:], params)
+		
+		def criteria = [ tradename:searchText +'%', txnno:searchText+'%']
+		def result = []
+		if( (result = getListByQuery('bpapplication:getListByTradename', criteria, params)) ) return result
+		if( (result = getListByQuery('bpapplication:getListByTxnno', criteria, params)) ) return result
+		return result 
+	}
+	
+	def getListByQuery( namedQuery, criteria, params ) {
+        if( ! params ) params = [ _start:0, _limit:25]
+		return em.sqlContext.createNamedQuery( namedQuery )
+						.setParameters( criteria )
+						.setFirstResult( params._start )
+						.setMaxResults( params._limit )
+						.resultList
 	}
 	
 	private def buildTxndateYear( txndate ){

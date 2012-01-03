@@ -1,13 +1,22 @@
 [getList] 
-SELECT 
-	o.objid, 
-	o.txnno, 
-	o.tradename, 
-	o.businessaddress, 
-	o.docstate 
+SELECT o.objid, o.txnno, o.tradename, o.businessaddress, o.docstate 
 FROM bpapplication o 
 WHERE o.docstate IN ('DRAFT','FOR_REVIEW','FOR_ASSESSMENT','FOR_APPROVAL') 
-ORDER BY o.txnno 
+ORDER BY o.tradename
+
+[getListByTradename] 
+SELECT o.objid, o.txnno, o.tradename, o.businessaddress, o.docstate 
+FROM bpapplication o 
+WHERE o.docstate IN ('DRAFT','FOR_REVIEW','FOR_ASSESSMENT','FOR_APPROVAL') 
+  AND o.tradename LIKE $P{tradename} 
+ORDER BY o.tradename 
+
+[getListByTxnno] 
+SELECT o.objid, o.txnno, o.tradename, o.businessaddress, o.docstate 
+FROM bpapplication o 
+WHERE o.docstate IN ('DRAFT','FOR_REVIEW','FOR_ASSESSMENT','FOR_APPROVAL') 
+  AND o.txnno LIKE $P{txnno} 
+ORDER BY o.tradename
 
 [getBusinessForRENEW] 
 SELECT b.objid, b.tradename, b.businessaddress, bpa.info FROM business b 
