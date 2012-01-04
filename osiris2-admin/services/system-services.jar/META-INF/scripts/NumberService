@@ -34,15 +34,15 @@ class NumberService {
     
     @ProxyMethod    
     public def roundToTen( value ) {
-        BigDecimal bd = new BigDecimal(value+'')
+		BigDecimal bd = new BigDecimal( value +'' )
         if( bd < 5 ) {
             return 0.0
         }
         else if( bd  < 10 )
             return 10.0
         else {
-            String snum = bd.doubleValue()+''
-            int i = snum.indexOf('.')
+			String snum = format( '#0.00000000', bd)
+			int i = snum.indexOf('.')
             i = (i == 1 ? 2 : i)
             MathContext mc = new MathContext(i-1, RoundingMode.HALF_UP)
             return bd.round(mc)
@@ -154,7 +154,7 @@ class NumberService {
     
     @ProxyMethod
     public String convertDouble(double number) {
-        String str 	= number+"";
+        String str 	= format('#0.00000000', number )
         String strDec	= "";
         String wn 	= convertLong((long)number);
         
