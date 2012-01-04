@@ -170,6 +170,9 @@ ORDER BY a.pathbytitle
 
 [getRevenueByLiquidationId]
 SELECT 
+	lq.amount as liquidationamount, 
+	rl.objid as remittanceid,
+	rl.amount as remittanceamount, 
 	r.collectorname as collectorname,  
 	r.receiptdate as receiptdate,  
 	r.serialno as serialno, 
@@ -180,5 +183,8 @@ SELECT
 	r.voided as voided,
 	r.afid as afid 
 FROM revenue r 
-WHERE r.liquidationid = $P{liquidationid}
-ORDER BY r.serialno, r.receiptdate
+	inner join liquidationlist lq on r.liquidationid = lq.objid  
+	inner join remittancelist rl on r.remittanceid = rl.objid  
+WHERE r.liquidationid = $P{liquidationid} 
+ORDER BY r.collectorname, rl.objid, r.afid, r.serialno, r.receiptdate 
+

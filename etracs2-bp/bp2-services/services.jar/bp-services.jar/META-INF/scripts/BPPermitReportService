@@ -35,6 +35,9 @@ public class BPPermitReportService
 		bp.barcodeurl = var.get('barcode_url').replace('$P{data}', app.barcode);
 		
 		bp.lines = em.serializer.read( bp.lobs );
+		//remove retired lines 
+		def retiredlines = bp.lines.findAll{ it.assessmenttype == 'RETIRE' || it.assessmenttype == 'RETIRELOB' }
+		if( retiredlines ) bp.lines.removeAll( retiredlines )
 		bp.lob = bp.lines[0]
 		bp.lobs = null;
 		

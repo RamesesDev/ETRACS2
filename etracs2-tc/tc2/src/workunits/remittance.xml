@@ -53,6 +53,7 @@
             def selectedreport;
             
             def reports;
+            def lqofficer
             
             def create() {
                 collector = usersvc.getCollector( OsirisContext.env.USERID );
@@ -81,10 +82,17 @@
             }
             
             def next() {
+                updateLiquidatingOfficerInfo()
                 entity = svc.createRemittance( entity );
                 mode = 'main';
                 denominationOpener = InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:entity.info.totalcash, list:entity.info.denominations]);
                 return 'main';
+            }
+            
+            void updateLiquidatingOfficerInfo() {
+                entity.liquidatingofficerid = lqofficer.objid
+                entity.info.liquidatingofficername = lqofficer.formalname
+                entity.info.liquidatingofficertitle = lqofficer.jobtitle
             }
             
             def back() {
@@ -93,7 +101,7 @@
             }
             
             def submit() {
-                if (! MsgBox.confirm( "Do you want to submit this document?" ) )
+                if (! MsgBox.confirm( "Submit remittance to $entity.info.liquidatingofficername?" ) )
                     return null;
                 entity.info.denominations = denominationOpener.handle.list;
                 entity = svc.save( entity );
@@ -235,6 +243,10 @@
             def backToMain() {
                 mode = 'view';
                 return 'main';
+            }
+            
+            List getLqofficerlist() {
+                return svc.getLiquidatingOfficerList()
             }
 
         }

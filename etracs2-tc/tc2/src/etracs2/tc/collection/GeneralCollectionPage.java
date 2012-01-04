@@ -47,7 +47,7 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         xLabel7 = new com.rameses.rcp.control.XLabel();
         xLabel10 = new com.rameses.rcp.control.XLabel();
         xLabel8 = new com.rameses.rcp.control.XLabel();
-        xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xTextField2 = new com.rameses.rcp.control.XTextField();
         xDateField1 = new com.rameses.rcp.control.XDateField();
@@ -187,15 +187,13 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
 
         formPanel1.add(formPanel2);
 
-        xActionTextField1.setActionName("lookupEntity");
-        xActionTextField1.setCaption("Payor");
-        xActionTextField1.setCaptionWidth(75);
-        xActionTextField1.setFont(new java.awt.Font("Arial", 0, 12));
-        xActionTextField1.setHint("Search Payor");
-        xActionTextField1.setIndex(-10);
-        xActionTextField1.setName("entity.info.payorname");
-        xActionTextField1.setPreferredSize(new java.awt.Dimension(0, 20));
-        formPanel1.add(xActionTextField1);
+        xLookupField1.setCaption("Payor");
+        xLookupField1.setCaptionWidth(75);
+        xLookupField1.setExpression("#{entityname}");
+        xLookupField1.setHandler("lookupEntity2");
+        xLookupField1.setName("payor");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel1.add(xLookupField1);
 
         xTextField1.setCaption("Paid By");
         xTextField1.setCaptionWidth(75);
@@ -245,12 +243,18 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
 
         jPanel8.setLayout(new java.awt.BorderLayout());
 
-        jPanel8.setPreferredSize(new java.awt.Dimension(179, 50));
+        jPanel8.setPreferredSize(new java.awt.Dimension(179, 80));
+        jScrollPane1.setPreferredSize(new java.awt.Dimension(239, 150));
         xTextArea1.setColumns(20);
         xTextArea1.setRows(5);
+        xTextArea1.setCaption("Remarks");
+        xTextArea1.setCaptionMnemonic('r');
+        xTextArea1.setCaptionWidth(100);
+        xTextArea1.setFocusAccelerator('r');
+        xTextArea1.setFont(new java.awt.Font("Arial", 0, 14));
         xTextArea1.setHint("Remarks");
         xTextArea1.setName("entity.info.remarks");
-        xTextArea1.setPreferredSize(new java.awt.Dimension(169, 50));
+        xTextArea1.setTextCase(com.rameses.rcp.constant.TextCase.UPPER);
         jScrollPane1.setViewportView(xTextArea1);
 
         jPanel8.add(jScrollPane1, java.awt.BorderLayout.CENTER);
@@ -291,7 +295,6 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel8;
     private javax.swing.JScrollPane jScrollPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XDateField xDateField1;
     private com.rameses.rcp.control.XLabel xLabel1;
@@ -300,6 +303,7 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel7;
     private com.rameses.rcp.control.XLabel xLabel8;
     private com.rameses.rcp.control.XLabel xLabel9;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField2;
     private com.rameses.rcp.control.XNumberField xNumberField3;

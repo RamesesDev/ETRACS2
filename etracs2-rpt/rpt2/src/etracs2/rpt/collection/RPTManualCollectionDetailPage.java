@@ -31,15 +31,16 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xTextField4 = new com.rameses.rcp.control.XTextField();
-        formPanel6 = new com.rameses.rcp.util.FormPanel();
-        xTextField2 = new com.rameses.rcp.control.XTextField();
-        xTextField3 = new com.rameses.rcp.control.XTextField();
+        xTextField6 = new com.rameses.rcp.control.XTextField();
         formPanel7 = new com.rameses.rcp.util.FormPanel();
         xTextField5 = new com.rameses.rcp.control.XTextField();
-        xComboBox3 = new com.rameses.rcp.control.XComboBox();
+        xTextField3 = new com.rameses.rcp.control.XTextField();
         formPanel8 = new com.rameses.rcp.util.FormPanel();
         xComboBox4 = new com.rameses.rcp.control.XComboBox();
         xComboBox5 = new com.rameses.rcp.control.XComboBox();
+        formPanel9 = new com.rameses.rcp.util.FormPanel();
+        xComboBox6 = new com.rameses.rcp.control.XComboBox();
+        xComboBox3 = new com.rameses.rcp.control.XComboBox();
         xSeparator1 = new com.rameses.rcp.control.XSeparator();
         formPanel4 = new com.rameses.rcp.util.FormPanel();
         xNumberField16 = new com.rameses.rcp.control.XNumberField();
@@ -70,7 +71,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xNumberField17 = new com.rameses.rcp.control.XNumberField();
         jLabel1 = new javax.swing.JLabel();
 
-        setPreferredSize(new java.awt.Dimension(598, 555));
+        setPreferredSize(new java.awt.Dimension(598, 571));
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("Manual Collection Information");
@@ -89,25 +90,12 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xTextField4.setRequired(true);
         formPanel1.add(xTextField4);
 
-        formPanel6.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
-        formPanel6.setPadding(new java.awt.Insets(0, 0, 0, 0));
-        formPanel6.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel6.setShowCaption(false);
-        xTextField2.setCaption("TD No.");
-        xTextField2.setCaptionWidth(120);
-        xTextField2.setCellPadding(new java.awt.Insets(0, 0, 0, 10));
-        xTextField2.setName("item.tdno");
-        xTextField2.setPreferredSize(new java.awt.Dimension(162, 19));
-        xTextField2.setRequired(true);
-        formPanel6.add(xTextField2);
-
-        xTextField3.setCaption("PIN");
-        xTextField3.setCaptionWidth(70);
-        xTextField3.setName("item.fullpin");
-        xTextField3.setPreferredSize(new java.awt.Dimension(200, 19));
-        formPanel6.add(xTextField3);
-
-        formPanel1.add(formPanel6);
+        xTextField6.setCaption("TD No.");
+        xTextField6.setCaptionWidth(120);
+        xTextField6.setName("item.tdno");
+        xTextField6.setPreferredSize(new java.awt.Dimension(0, 19));
+        xTextField6.setRequired(true);
+        formPanel1.add(xTextField6);
 
         formPanel7.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
         formPanel7.setPadding(new java.awt.Insets(0, 0, 0, 0));
@@ -121,13 +109,11 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xTextField5.setRequired(true);
         formPanel7.add(xTextField5);
 
-        xComboBox3.setCaption("Barangay");
-        xComboBox3.setCaptionWidth(70);
-        xComboBox3.setItems("barangays");
-        xComboBox3.setName("item.barangay");
-        xComboBox3.setPreferredSize(new java.awt.Dimension(200, 22));
-        xComboBox3.setRequired(true);
-        formPanel7.add(xComboBox3);
+        xTextField3.setCaption("PIN");
+        xTextField3.setCaptionWidth(70);
+        xTextField3.setName("item.fullpin");
+        xTextField3.setPreferredSize(new java.awt.Dimension(200, 19));
+        formPanel7.add(xTextField3);
 
         formPanel1.add(formPanel7);
 
@@ -152,6 +138,34 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         formPanel8.add(xComboBox5);
 
         formPanel1.add(formPanel8);
+
+        formPanel9.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
+        formPanel9.setPadding(new java.awt.Insets(0, 0, 0, 0));
+        formPanel9.setPreferredSize(new java.awt.Dimension(0, 22));
+        formPanel9.setShowCaption(false);
+        xComboBox6.setAllowNull(false);
+        xComboBox6.setCaption("City / Municipality");
+        xComboBox6.setCaptionWidth(120);
+        xComboBox6.setCellPadding(new java.awt.Insets(0, 0, 0, 12));
+        xComboBox6.setExpression("#{lguname}");
+        xComboBox6.setImmediate(true);
+        xComboBox6.setItems("municipalityCityList");
+        xComboBox6.setName("item.municity");
+        xComboBox6.setPreferredSize(new java.awt.Dimension(160, 22));
+        xComboBox6.setRequired(true);
+        formPanel9.add(xComboBox6);
+
+        xComboBox3.setCaption("Barangay");
+        xComboBox3.setCaptionWidth(70);
+        xComboBox3.setDepends(new String[] {"item.municity"});
+        xComboBox3.setDynamic(true);
+        xComboBox3.setItems("barangays");
+        xComboBox3.setName("item.barangay");
+        xComboBox3.setPreferredSize(new java.awt.Dimension(200, 22));
+        xComboBox3.setRequired(true);
+        formPanel9.add(xComboBox3);
+
+        formPanel1.add(formPanel9);
 
         xSeparator1.setPreferredSize(new java.awt.Dimension(0, 20));
         org.jdesktop.layout.GroupLayout xSeparator1Layout = new org.jdesktop.layout.GroupLayout(xSeparator1);
@@ -432,7 +446,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .add(19, 19, 19))
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
     
@@ -443,9 +457,9 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel3;
     private com.rameses.rcp.util.FormPanel formPanel4;
     private com.rameses.rcp.util.FormPanel formPanel5;
-    private com.rameses.rcp.util.FormPanel formPanel6;
     private com.rameses.rcp.util.FormPanel formPanel7;
     private com.rameses.rcp.util.FormPanel formPanel8;
+    private com.rameses.rcp.util.FormPanel formPanel9;
     private javax.swing.JLabel jLabel1;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
@@ -455,6 +469,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XComboBox xComboBox3;
     private com.rameses.rcp.control.XComboBox xComboBox4;
     private com.rameses.rcp.control.XComboBox xComboBox5;
+    private com.rameses.rcp.control.XComboBox xComboBox6;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField10;
     private com.rameses.rcp.control.XNumberField xNumberField11;
@@ -475,10 +490,10 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XNumberField xNumberField9;
     private com.rameses.rcp.control.XSeparator xSeparator1;
     private com.rameses.rcp.control.XTextField xTextField1;
-    private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;
     private com.rameses.rcp.control.XTextField xTextField4;
     private com.rameses.rcp.control.XTextField xTextField5;
+    private com.rameses.rcp.control.XTextField xTextField6;
     // End of variables declaration//GEN-END:variables
     
 }

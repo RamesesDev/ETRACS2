@@ -94,7 +94,7 @@ class RemittanceService {
 		if( ! rem.info.txndate ) {
 			rem.info.txndate = dtsvc.format( "yyyy-MM-dd", rem.dtposted );
 		}
-		updateLiquidatingOfficerInfo( rem )
+		// updateLiquidatingOfficerInfo( rem )
 		closeReceipts( rem );
 		updateAfControls( rem );
 		em.validate( SCHEMANAME, rem );
@@ -103,6 +103,11 @@ class RemittanceService {
 		createListingItem( rem );
 		
 		return rem;
+	}
+	
+	@ProxyMethod
+	public List getLiquidatingOfficerList() {
+		return em.sqlContext.createNamedQuery('remittance:getLiquidatingOfficerList').resultList 
 	}
 	
 	void updateLiquidatingOfficerInfo( rem ) {
@@ -169,7 +174,7 @@ class RemittanceService {
             //post to afinventorycredit 
             def creditinfo = [afcontrolid:form.afcontrolid, qtyissued:form.issuedqty ]
             em.sqlContext.createNamedExecutor('remittance:updateAFInventoryCreditInfo').setParameters( creditinfo ).execute()
-		}
+		} 
 	}
 	
 	@ProxyMethod

@@ -47,13 +47,17 @@ SELECT *  FROM subdivisionland WHERE subdivisionid = $P{subdivisionid} ORDER BY 
 [getAffectedRpus]
 SELECT *  FROM subdivisionaffectedrpu WHERE subdivisionid = $P{subdivisionid}  ORDER BY rputype, prevfullpin 
 
+[checkDuplicateTDNo]
+SELECT objid, tdno FROM faaslist WHERE tdno = $P{tdno} AND objid <> $P{objid} 
 
 [getImprovementIds]
 SELECT objid FROM faaslist WHERE landfaasid = $P{landfaasid} AND docstate <> 'CANCELLED' AND rputype <> 'land' 
 
 [getImprovementInfo]
 SELECT objid, tdno, fullpin, rputype FROM faaslist WHERE landfaasid = $P{landfaasid} AND docstate <> 'CANCELLED' AND rputype <> 'land' 
-
+ 
+[getPin]
+SELECT * FROM pin WHERE pin = $P{pin}  
 
 [getImprovementStates] 
 SELECT f.tdno, f.docstate  

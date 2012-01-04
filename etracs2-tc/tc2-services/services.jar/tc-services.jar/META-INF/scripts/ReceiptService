@@ -19,6 +19,9 @@ class ReceiptService
 	@Service('Var')
 	def var 
 	
+	@Service('NumberService')
+	def numSvc 
+	
 	@Env
 	def env;
 	
@@ -108,11 +111,11 @@ class ReceiptService
 		logService.logB('DELETE', 'Receipt', receiptid, 'Qty Issued: ' + rct.qtyissued, null)
 	}
 	
-	@ProxyMethod
+	@ProxyMethod 
 	public List getList( searchParam, params ) {
 		if( !searchParam.docstate ) searchParam.docstate = '%'
 		if( !searchParam.collectorid ) searchParam.collectorid = '%'
-		if( ! searchParam.searchText ) return getListByQuery( 'receipt:getList', searchParam, params )
+		if( ! searchParam.searchText ) return getListByQuery('receipt:getList', searchParam, params)
 		
 		searchParam.collectorid = searchParam.collectorid+'%'
 		searchParam.serialno    = searchParam.searchText
@@ -266,8 +269,8 @@ class ReceiptService
 		if( receipt.info.amount <= 0.0 ) {
 			throw new Exception('Amount Due must be greater than zero.')
 		}
-		if( receipt.info.amount != receipt.items.amount.sum() ) {
-			throw new Exception('Receipt Amount must be equal to item amount totals.')
+		if( receipt.info.amount != numSvc.round(receipt.items.amount.sum()) ) {
+			throw new Exception('A data problem is encountered during validation.\nThe Receipt Amount is not equal to item amount total.\nClose the form and recreate the transaction to correct the problem.')
 		}
 		if( receipt.info.totalpayment < receipt.info.amount ) {
 			throw new Exception('Total Payment must be greater than or equal to amount due.')

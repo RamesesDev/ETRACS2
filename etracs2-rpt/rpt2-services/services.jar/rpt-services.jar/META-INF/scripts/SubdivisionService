@@ -487,11 +487,33 @@ class SubdivisionService
         }
         
         //check land reference 
+		boolean TD_AUTONUMBER = TO_BOOLEAN( var.td_autonumber )
         affectedrpus = getAffectedRpus( subdivision.objid )
         affectedrpus.each {
             if( ! it.subdivisionlandid ) throw new Exception('Land Reference for Affected RPU ' + it.prevfullpin + ' is not set.')
+			if( ! TD_AUTONUMBER ) {
+				checkDuplicateTDNoFromFAASList( it.objid, it.newtdno, "Duplicate New TD No. $tdno assigned to Affected RPU No. $it.prevfullpin is not allowed." )
+				def spin = it.newpin + '-' + it.newsuffix
+				checkDuplicatePIN( spin, "Duplicate New PIN $spin assigned to Affected RPU No. $it.prevfullpin is not allowed." )
+			}
         }
     }
+	
+	void checkDuplicateTDNoFromFAASList( objid, tdno, msg ) {
+		def faas = em.sqlContext.createNamedQuery('subdivision:checkDuplicateTDNo')
+						.setParameters([objid:objid, tdno:tdno])
+						.singleResult 
+		if( faas ) {
+			throw new Exception( msg  )
+		}
+	}
+	
+	void checkDuplicatePIN( spin, msg ){
+		def pin = em.sqlContext.createNamedQuery('subdivision:getPin').setParameter('pin', spin ).singleResult
+		if( pin ) {
+			throw new Exception( msg ) 
+		}	
+	}
     
     
     void validateInfo( subdivision ) {
@@ -528,9 +550,16 @@ class SubdivisionService
         def tpayinfo = em.sqlContext.createNamedQuery('faas:getTaxpayerInfo').setParameter('objid', subdivision.motherfaasid).singleResult 
         def slandIds = em.sqlContext.createNamedQuery('subdivision:getSubdividedLandIds').setParameter('subdivisionid', subdivision.objid).resultList 
         if( ! slandIds ) throw new Exception('Subdivision lands are required.')
+		
+		boolean TD_AUTONUMBER = TO_BOOLEAN( var.td_autonumber )
+		
         slandIds.each { landid ->	
 			def sland = em.read( SUBDIVISIONLAND_SCHEMANAME, landid )
             if( !sland ) throw new Exception('Cannot of subdivision land with ID no. ' + landid.objid + '.')
+			
+			checkDuplicateTDNoFromFAASList( sland.objid, sland.newtdno, "Duplicate New TD No. $sland.newtdno assigned to Subdivided Land $sland.newpin is not allowed." )
+			checkDuplicatePIN( sland.newpin, "Duplicate New PIN $sland.newpin assigned to Subdivided Land #$sland.itemno is not allowed." )
+			 
             def newfaas = createFaas( subdivision )
             newfaas.docstate            = PENDING_STATE
 			newfaas.txntimestamp 		= dateSvc.buildCustomTimeStamp( newfaas.info.issuedate ) 
@@ -643,6 +672,7 @@ class SubdivisionService
     }
 	
 	boolean TO_BOOLEAN( value ) {
+		if( ! value ) return false 
 		if( value instanceof Boolean ) return value 
 		return ( value.toString().toLowerCase().matches('1|y|yes|t|true') )
 	}

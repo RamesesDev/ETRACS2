@@ -34,6 +34,7 @@ public class RemittancePage extends javax.swing.JPanel {
         formPanel3 = new com.rameses.rcp.util.FormPanel();
         xTextField2 = new com.rameses.rcp.control.XTextField();
         xTextField1 = new com.rameses.rcp.control.XTextField();
+        xTextField3 = new com.rameses.rcp.control.XTextField();
         xDateField1 = new com.rameses.rcp.control.XDateField();
         jPanel3 = new javax.swing.JPanel();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
@@ -68,8 +69,8 @@ public class RemittancePage extends javax.swing.JPanel {
 
         xTextField2.setCaption("Doc No.");
         xTextField2.setCaptionFont(new java.awt.Font("Arial", 0, 14));
-        xTextField2.setCaptionWidth(100);
-        xTextField2.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField2.setCaptionWidth(140);
+        xTextField2.setFont(new java.awt.Font("Arial", 1, 14));
         xTextField2.setName("entity.info.txnno");
         xTextField2.setPreferredSize(new java.awt.Dimension(160, 21));
         xTextField2.setReadonly(true);
@@ -77,29 +78,38 @@ public class RemittancePage extends javax.swing.JPanel {
 
         xTextField1.setCaption("Collector");
         xTextField1.setCaptionFont(new java.awt.Font("Arial", 0, 14));
-        xTextField1.setCaptionWidth(100);
-        xTextField1.setFont(new java.awt.Font("Arial", 0, 14));
+        xTextField1.setCaptionWidth(140);
+        xTextField1.setFont(new java.awt.Font("Arial", 1, 14));
         xTextField1.setName("entity.info.collectorname");
         xTextField1.setPreferredSize(new java.awt.Dimension(450, 21));
         xTextField1.setReadonly(true);
         formPanel3.add(xTextField1);
 
+        xTextField3.setCaption("Liquidating Officer");
+        xTextField3.setCaptionFont(new java.awt.Font("Arial", 0, 14));
+        xTextField3.setCaptionWidth(140);
+        xTextField3.setFont(new java.awt.Font("Arial", 1, 14));
+        xTextField3.setName("entity.info.liquidatingofficername");
+        xTextField3.setPreferredSize(new java.awt.Dimension(450, 21));
+        xTextField3.setReadonly(true);
+        formPanel3.add(xTextField3);
+
         xDateField1.setCaption("Date");
         xDateField1.setCaptionFont(new java.awt.Font("Arial", 0, 14));
-        xDateField1.setCaptionWidth(100);
-        xDateField1.setFont(new java.awt.Font("Arial", 0, 14));
+        xDateField1.setCaptionWidth(140);
+        xDateField1.setFont(new java.awt.Font("Arial", 1, 14));
         xDateField1.setInputFormat("MM-dd-yyyy");
         xDateField1.setName("entity.info.txndate");
         xDateField1.setOutputFormat("MM-dd-yyyy");
-        xDateField1.setPreferredSize(new java.awt.Dimension(100, 21));
+        xDateField1.setPreferredSize(new java.awt.Dimension(160, 21));
         xDateField1.setReadonly(true);
         formPanel3.add(xDateField1);
 
         jPanel2.add(formPanel3);
-        formPanel3.setBounds(10, 20, 530, 80);
+        formPanel3.setBounds(10, 20, 606, 112);
 
         jPanel1.add(jPanel2);
-        jPanel2.setBounds(10, 10, 620, 110);
+        jPanel2.setBounds(10, 10, 642, 136);
 
         jPanel3.setLayout(null);
 
@@ -111,36 +121,36 @@ public class RemittancePage extends javax.swing.JPanel {
         formPanel2.setCaptionVAlignment(com.rameses.rcp.constant.UIConstants.CENTER);
         xNumberField9.setEditable(false);
         xNumberField9.setCaption("Total Cash");
-        xNumberField9.setCaptionWidth(120);
+        xNumberField9.setCaptionWidth(140);
         xNumberField9.setEnabled(false);
         xNumberField9.setFont(new java.awt.Font("Arial", 1, 14));
         xNumberField9.setName("entity.info.totalcash");
-        xNumberField9.setPreferredSize(new java.awt.Dimension(140, 25));
+        xNumberField9.setPreferredSize(new java.awt.Dimension(0, 25));
         xNumberField9.setReadonly(true);
         formPanel2.add(xNumberField9);
 
         xNumberField10.setEditable(false);
         xNumberField10.setCaption("Non-Cash Payments");
-        xNumberField10.setCaptionWidth(120);
+        xNumberField10.setCaptionWidth(140);
         xNumberField10.setEnabled(false);
         xNumberField10.setFont(new java.awt.Font("Arial", 1, 14));
         xNumberField10.setName("entity.info.totalotherpayment");
-        xNumberField10.setPreferredSize(new java.awt.Dimension(140, 25));
+        xNumberField10.setPreferredSize(new java.awt.Dimension(0, 25));
         xNumberField10.setReadonly(true);
         formPanel2.add(xNumberField10);
 
         xNumberField11.setEditable(false);
         xNumberField11.setCaption("Remittance Amount");
-        xNumberField11.setCaptionWidth(120);
+        xNumberField11.setCaptionWidth(140);
         xNumberField11.setEnabled(false);
         xNumberField11.setFont(new java.awt.Font("Arial", 1, 14));
         xNumberField11.setName("entity.info.amount");
-        xNumberField11.setPreferredSize(new java.awt.Dimension(140, 25));
+        xNumberField11.setPreferredSize(new java.awt.Dimension(0, 25));
         xNumberField11.setReadonly(true);
         formPanel2.add(xNumberField11);
 
         jPanel3.add(formPanel2);
-        formPanel2.setBounds(10, 50, 270, 100);
+        formPanel2.setBounds(10, 50, 296, 100);
 
         xButton1.setMnemonic('o');
         xButton1.setText("Non-Cash Payments");
@@ -164,7 +174,7 @@ public class RemittancePage extends javax.swing.JPanel {
         xButton4.setBounds(70, 220, 150, 23);
 
         jPanel1.add(jPanel3);
-        jPanel3.setBounds(10, 130, 290, 290);
+        jPanel3.setBounds(10, 152, 312, 290);
 
         jPanel4.setLayout(new java.awt.BorderLayout());
 
@@ -176,7 +186,7 @@ public class RemittancePage extends javax.swing.JPanel {
         jPanel4.add(xSubFormPanel2, java.awt.BorderLayout.CENTER);
 
         jPanel1.add(jPanel4);
-        jPanel4.setBounds(310, 130, 320, 290);
+        jPanel4.setBounds(328, 152, 324, 290);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -203,6 +213,7 @@ public class RemittancePage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XSubFormPanel xSubFormPanel2;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
+    private com.rameses.rcp.control.XTextField xTextField3;
     // End of variables declaration//GEN-END:variables
     
 }

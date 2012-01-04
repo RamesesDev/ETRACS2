@@ -47,8 +47,10 @@ public class RPTManualCollectionDetailPage {
     def toqtr  = 4 
     
     def parsedate
+    def lgutype 
     
     void initAdd() {
+        lgutype = svc.getLguType()
         parsedate = dateSvc.parseCurrentDate()
         item= [
             taxpayername       : receipt.info.payorname,
@@ -62,6 +64,7 @@ public class RPTManualCollectionDetailPage {
     }
     
     void initEdit() {
+        lgutype = svc.getLguType()
         fromyear = item.fromyear
         fromqtr  = item.fromqtr
         toyear   = item.toyear
@@ -80,6 +83,9 @@ public class RPTManualCollectionDetailPage {
         
         calculateTotals()
         buildPeriod()
+        item.municityid = item.municity?.objid
+        item.municityname = item.municity?.lguname
+        
         if( onadd ) onadd( item )
         if( onedit) onedit( item )
         return '_close'
@@ -277,7 +283,7 @@ public class RPTManualCollectionDetailPage {
     
     
     List getBarangays() {
-        return svc.getBarangays().lguname
+        return svc.getBarangayList( item.municity ).lguname
     }
     
     List getRputypes() {
@@ -297,6 +303,10 @@ public class RPTManualCollectionDetailPage {
     
     void required( caption, val ) {
         if( ! val ) throw new Exception( caption + ' is required.' )
+    }
+    
+    List getMunicipalityCityList() {
+        return svc.getMunicipalityCityList()
     }
 }
 

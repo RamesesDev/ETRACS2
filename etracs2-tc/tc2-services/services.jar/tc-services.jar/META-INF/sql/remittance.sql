@@ -30,6 +30,12 @@ SELECT lq.* FROM etracsuser lq WHERE lq.objid IN (
 	select c.lqofficerid from etracsuser c WHERE c.objid = $P{collectorid}
 )
 
+[getLiquidatingOfficerList]
+SELECT objid, name, formalname, jobtitle  
+FROM etracsuser  
+WHERE isliquidating = 1 
+ORDER BY name 
+
 
 
 
@@ -214,7 +220,7 @@ WHERE rl.objid = ri.receiptid
 	AND rl.remittanceid = $P{remittanceid} 
 	AND rl.afid = af.objid 
 	AND af.aftype = 'serial' 
-ORDER BY rl.afid, rl.serialno, ri.accttitle
+ORDER BY rl.afid, ri.accttitle, rl.serialno 
 
 [getSerialReceiptDetailsByFund]
 SELECT 
@@ -231,7 +237,7 @@ WHERE rl.objid = ri.receiptid
 	AND ri.fundid = $P{fundid} 
 	AND rl.afid = af.objid 
 	AND af.aftype = 'serial' 
-ORDER BY rl.afid, rl.serialno, ri.accttitle
+ORDER BY rl.afid, ri.accttitle, rl.serialno 
 
 [getNonSerialReceiptDetailsByAllFund]
 SELECT 
@@ -247,7 +253,7 @@ WHERE rl.objid = ri.receiptid
 	AND rl.remittanceid = $P{remittanceid} 
 	AND rl.afid = af.objid 
 	AND af.aftype = 'serial' 
-ORDER BY rl.afid, rl.serialno, ri.accttitle
+ORDER BY rl.afid, ri.accttitle
 
 [getNonSerialReceiptDetailsByFund]
 SELECT 
@@ -264,7 +270,7 @@ WHERE rl.objid = ri.receiptid
 	AND ri.fundid = $P{fundid} 
 	AND rl.afid = af.objid 
 	AND af.aftype = 'serial' 
-ORDER BY rl.afid, rl.serialno, ri.accttitle
+ORDER BY rl.afid, ri.accttitle 
 
 
 [getCashTicketSummary]
@@ -349,7 +355,6 @@ WHERE rl.remittanceid = $P{objid}
  AND rl.voided = 0 
  AND paytype = 'CHECK' 
  
- 
 [getDistinctAccountSRE]
 SELECT DISTINCT 
 	a.objid,  
@@ -407,6 +412,32 @@ GROUP BY rl.afid, rl.serialno, rl.paidby, rl.txndate, rl.voided
 ORDER BY rl.afid, rl.serialno 	
 
 
+ 
+[getDistinctFundAccount]
+ SELECT DISTINCT 
+	ia.fundid, 
+	ia.fundname 
+FROM receiptlist rl  
+	INNER JOIN receiptitem ri ON rl.objid = ri.receiptid 
+	INNER JOIN incomeaccount ia ON ri.acctid = ia.objid  
+WHERE rl.remittanceid = $P{remittanceid} AND rl.voided = 0 
+ORDER BY ia.fundname  
+
+[getReportByFundDetailCrosstab]
+SELECT 
+	rl.afid, 
+	rl.collectiontype, 
+	rl.serialno, 
+	CASE WHEN rl.voided = 0 THEN rl.paidby ELSE '*** VOIDED ***' END AS paidby, 
+	rl.txndate, 
+	${columnsql} 
+	rl.voided 
+FROM receiptlist rl  
+	INNER JOIN receiptitem ri ON rl.objid = ri.receiptid  
+	INNER JOIN incomeaccount ia ON ri.acctid = ia.objid   
+WHERE rl.remittanceid = $P{remittanceid} 
+GROUP BY rl.afid, rl.serialno, rl.paidby, rl.txndate, rl.voided 
+ORDER BY rl.afid, rl.serialno 	
 
 
 [getAbstractCollectionBASIC] 
@@ -508,4 +539,5 @@ WHERE rem.objid = $P{objid}
   AND r.voided = 0  
 ORDER BY r.serialno   
 
-  
+[getFundName]
+SELECT objid, fundname FROM fund ORDER BY fundname 

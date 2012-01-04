@@ -26,10 +26,17 @@ class IncomeAcctController extends etracs2.groovy.CRUDController
     @Service("IncomeAcctGroupService")
     def groupSvc;
     
+    
+    def ngas
+    def ngassubacct
+    def sre 
+    def sresubacct
+    
     def getService() { return svc; }
     def getCreateFocusComponent() { return "entity.acctno"; }
     def getEditFocusComponent() { return "entity.acctno"; }
     def getListHandler() { return listHandler; }
+    
     
     def getList( searchText, params ) {
         if( ! params ) params = [_start:0, _limit:25]
@@ -37,23 +44,34 @@ class IncomeAcctController extends etracs2.groovy.CRUDController
         return list
     }
     
-    def listHandler =[
-            getRows    : { return 20; },
-            getColumns : {
-                return [
-                    new Column(name:"acctno", caption:"Acct No.", minWidth:60),
-                    new Column(name:"accttitle", caption:"Title", width:250),
-                    new Column(name:"docstate", caption:"State", width:120),
-                ];
-            },
-            fetchList : { 
-                // return list
-                return getList( searchText, it )
-            },
-     ] as PageListModel
+    int _start = -1
+    
+    def listHandler = [
+        getRows    : { return 25 },
+        getColumns : {
+            return [
+                new Column(name:"acctno", caption:"Acct No.", minWidth:60),
+                new Column(name:"accttitle", caption:"Title", width:250),
+                new Column(name:"docstate", caption:"State", width:120),
+            ];
+        },
+        fetchList : { 
+            if( _start != it._start ) {
+                list = getList( searchText, it )
+                _start = it._start 
+            }
+            return list;
+        },
+    ] as PageListModel
+   
         
     
     def createEntity() {
+        ngas = null
+        ngassubacct =null
+        sre = null
+        sresubacct = null
+        
         return [
             objid        : 'IA' + new UID(),
             docstate     : 'DRAFT',
@@ -74,43 +92,48 @@ class IncomeAcctController extends etracs2.groovy.CRUDController
         return ['FIX', 'FIXUNIT'];
     }
     
-    def lookupNgas() {
-        return InvokerUtil.lookupOpener("account:lookup.ngas", [searchText:entity.ngastitle, onselect:selectNgasHandler]);        
+    
+    void open( objid ) {
+        super.open( objid )
+        ngas = [acctid:entity.ngasid, acctcode:entity.ngascode, accttitle:entity.ngastitle]
+        ngassubacct = [acctid:entity.ngassubacctid, acctcode:entity.ngassubacctcode, accttitle:entity.ngassubaccttitle]
+        sre = [acctid:entity.sreid, acctcode:entity.srecode, accttitle:entity.sretitle]
+        sresubacct = [acctid:entity.sresubacctid, acctcode:entity.sresubacctcode, accttitle:entity.sresubaccttitle]
     }
     
-    def selectNgasHandler = { acct ->
-        if( acct ) {
-            entity.ngasid = acct.objid;
-            entity.ngascode = acct.acctcode;
-            entity.ngastitle = acct.accttitle;
-            binding.refresh("entity.*");
-        }
+    def getLookupNGAS() {
+        return InvokerUtil.lookupOpener("account:lookup.ngas", [:]);        
     }
+    
+    void setNgas( ngas )  {
+        this.ngas = ngas;
+        entity.ngasid = ngas?.objid;
+        entity.ngascode = ngas?.acctcode;
+        entity.ngastitle = ngas?.accttitle;
+    }
+    
     
     def lookupNgasSubAcct() {
         return InvokerUtil.lookupOpener("account:lookup.subngas", [searchText:entity.ngassubaccttitle, parentid:entity.ngasid, onselect:selectNgasSubAcctHandler]);        
     }
     
     def selectNgasSubAcctHandler = { acct ->
-        if( acct ) {
-            entity.ngassubacctid = acct.objid;
-            entity.ngassubacctcode = acct.acctcode;
-            entity.ngassubaccttitle = acct.accttitle;
-            binding.refresh("entity.*");
-        }
+        ngassubacct = acct 
+        entity.ngassubacctid = acct?.objid;
+        entity.ngassubacctcode = acct?.acctcode;
+        entity.ngassubaccttitle = acct?.accttitle;
+        binding.refresh("entity.*|acct.*");
     }
     
-    def lookupSre() {
-        return InvokerUtil.lookupOpener("account:lookup.sre", [searchText:entity.sretitle, onselect:selectSreHandler]);        
+    def getLookupSRE() {
+        return InvokerUtil.lookupOpener("account:lookup.sre", [:]);        
     }
     
-    def selectSreHandler = { acct ->
-        if( acct ) {
-            entity.sreid = acct.objid;
-            entity.srecode  = acct.acctcode;
-            entity.sretitle = acct.accttitle;
-            binding.refresh("entity.*");
-        }
+    void setSre( sre ) {
+        this.sre = sre;
+        entity.sreid = sre?.objid;
+        entity.srecode  = sre?.acctcode;
+        entity.sretitle = sre?.accttitle;
     }
     
     def lookupSreSubAcct() {
@@ -118,12 +141,10 @@ class IncomeAcctController extends etracs2.groovy.CRUDController
     }
     
     def selectSreSubAcctHandler = { acct ->
-        if( acct ) {
-            entity.sresubacctid = acct.objid;
-            entity.sresubacctcode = acct.acctcode;
-            entity.sresubaccttitle = acct.accttitle;
-            binding.refresh("entity.*");
-        }
+        entity.sresubacctid = acct?.objid;
+        entity.sresubacctcode = acct?.acctcode;
+        entity.sresubaccttitle = acct?.accttitle;
+        binding.refresh("entity.*");
     }
     
     List getIncomeaccountgrouplist() {
