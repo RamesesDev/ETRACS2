@@ -50,7 +50,7 @@ DELETE FROM faas WHERE objid IN ( SELECT newfaasid FROM consolidationaffectedrpu
 DELETE FROM consolidationaffectedrpu WHERE consolidationid = $P{consolidationid} 
 
 [deleteConsolidatedFaas]
-DELETE FROM faas WHERE objidn IN (SELECT newfaasid FROM consolidation WHERE objid = $P{objid} ) 
+DELETE FROM faas WHERE objid IN (SELECT newfaasid FROM consolidation WHERE objid = $P{objid} ) 
 
 [deleteConsolidation]
 DELETE FROM consolidation WHERE objid = $P{objid} 
