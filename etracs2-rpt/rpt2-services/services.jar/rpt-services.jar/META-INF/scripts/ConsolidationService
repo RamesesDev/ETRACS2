@@ -126,8 +126,10 @@ class ConsolidationService
         if( consolidation.docstate == FORPROVAPPROVAL_STATE ) throw new Exception('Consolidation has already been submitted to province.')
         if( consolidation.docstate == APPROVED_STATE ) throw new Exception('Consolidation has already been approved.')
         validateConsolidationInfo( consolidation )
-		createConsolidatedFaas( consolidation )
-        createAffectedRpuFaas( consolidation ) 
+		if( var.lgu_type == 'city' ) {
+			createConsolidatedFaas( consolidation )
+			createAffectedRpuFaas( consolidation ) 
+		}
         consolidation.docstate = FORAPPROVAL_STATE
         em.update( consolidation.schemaname, consolidation )
         return consolidation

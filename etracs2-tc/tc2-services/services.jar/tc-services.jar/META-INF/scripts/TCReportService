@@ -276,29 +276,35 @@ class TDReportService {
 			def acctcode = ( acct.acctcode ? acct.acctcode : '***' ).padRight( 10, ' ' )
 			list.add([
 				charttype : charttype, 
-				account   : ( ' '*(level-1)*15 ) + acctcode + '  ' + acct.accttitle ,
+				account   : ( ' '*(level-1)*12 ) + acctcode + '  ' + acct.accttitle ,
 			])
 			buildAccounts( charttype, list, acct.objid, level+1 )
 		}
 		
 		// parentid is the glaccount, populate the incomeaccount
+		def subacctlist = null 
 		if( !accounts ) {
 			def incomeaccts = []
 			if( charttype == 'NGAS' ) {
-				incomeaccts = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE ngasid = $P{ngasid}')
+				incomeaccts = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE ngasid = $P{ngasid} ORDER BY acctno')
 								.setParameter( 'ngasid', parentid ).resultList 
+				subacctlist = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE ngassubacctid = $P{ngasid} ORDER BY acctno')
+								.setParameter( 'ngasid', parentid ).resultList 
+				incomeaccts.addAll( subacctlist )
 			}
 			else {
-				incomeaccts = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE sreid = $P{sreid}')
+				incomeaccts = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE sreid = $P{sreid} ORDER BY acctno')
 								.setParameter( 'sreid', parentid ).resultList 
-
+				subacctlist = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE sresubacctid = $P{sreid} ORDER BY acctno')
+								.setParameter( 'sreid', parentid ).resultList 
+				incomeaccts.addAll( subacctlist )
 			}
 			
 			incomeaccts.each { acct ->
 				def acctno = ( acct.acctno ? acct.acctno : '***' ).padRight( 10, ' ' )
 				list.add([
 					charttype : charttype,
-					account   : ( ' '*level* 12 ) + acctno + ' - ' + acct.accttitle ,
+					account   : ( ' '*level* 12 ) + '*' + acctno + ' - ' + acct.accttitle ,
 				])
 			}
 		}

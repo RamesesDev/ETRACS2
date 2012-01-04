@@ -1,0 +1,73 @@
+<workunit>
+    <invokers>
+        <invoker type="remittance.report" action="viewSRE" caption="Remittance Summary of Collection By SRE" index="11"/>
+        <invoker type="remittance.report" action="viewNGAS" caption="Remittance Summary of Collection By NGAS" index="12"/>
+        
+        <invoker type="formActions" action="close"  immediate="true" caption="Back" mnemonic="c" icon="images/back.png"/>
+        <!-- 
+        <invoker type="formActions" action="viewReport" caption="View" visibleWhen="#{mode == 'init'}" mnemonic="v" icon="images/doc-view.png"/>
+        -->
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+import java.rmi.server.UID;
+
+class RemittanceReportSummaryOfCollectionController {
+
+    @Service("RemittanceReportService")
+    def svc;
+
+    @Service("ReportParameterService")
+    def paramSvc;
+
+    def entity;
+
+    def mode;
+    def reportdata 
+    def chart 
+
+    def report = [
+        getReportName : { return 'remittance/RCDSummaryOfCollection' },
+        getReportData : { return reportdata.items  }, 
+        getParameters : { 
+            def params = paramSvc.getStandardParameter( OsirisContext.env.USERNAME );
+            params.putAll( reportdata.header )
+            return params
+        }
+    ] as ServerReportModel;
+
+    def close() {
+        mode = 'init';
+        return '_close';
+    }
+
+    void viewNGAS() {
+        chart = 'NGAS'
+        view()
+    }
+
+    void viewSRE() {
+        chart = 'SRE'
+        view()
+    }
+    
+    void view() {
+        reportdata = svc.generateSummaryOfCollection( entity, chart )
+        report.viewReport();
+        mode = 'init';
+    }
+
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.PreviewPage" />
+    </pages>
+</workunit>

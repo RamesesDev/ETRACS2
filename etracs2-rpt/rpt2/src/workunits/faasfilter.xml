@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="faasfilter.create" action="initFilter" caption="FAAS Filter" target="popup" />
+        
+        <invoker type="formActions" action="initNew" caption="New Filter" mnemonic="n" visibleWhen="#{mode=='view'}" immediate="true" />        
+        <invoker type="formActions" action="create" caption="Save" mnemonic="s"  visibleWhen="#{mode=='create'}"/>        
+        <invoker type="formActions" action="remove" caption="Delete" mnemonic="s"  visibleWhen="#{filter != null and filter.objid != null and mode=='view'}" immediate="true" />        
+        <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c"  visibleWhen="#{mode=='create'}" immediate="true" />        
+    </invokers>
+    
+    <code lang="groovy">
+
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+import java.rmi.server.UID;
+
+public class FAASFilterController {
+    @Binding
+    def binding
+    
+    @Service('FAASService')
+    def svc
+    
+    @Service('LguService')
+    def lguSvc
+    
+    def filter
+    def filterlist
+    def mode 
+    def selectedFilter 
+    
+    def onadd //handler 
+    def onremove //handler
+    
+    void initNew() {
+        filter = [refname:'faas', info:[:]]
+        mode = 'create'
+        binding.refresh('filter.*')
+        binding.focus('filter.name')
+    }
+    
+    void cancel() {
+        mode = 'view'
+        filter = [refname:'faas', info:[:]]
+        binding.refresh('filter.*')
+    }
+    
+    def remove() {
+        if( ! filter.objid ) return 
+        if( MsgBox.confirm('Delete selected filter?') ) {
+            svc.removeFilter( filter )
+            filterlist.remove( filter )
+            if( onremove ) onremove( filter )
+            filter = [refname:'faas', info:[:]]
+            binding.refresh('filter.*|filterlist')
+        }
+    }
+    
+    
+    void initFilter() {
+        mode = 'view'
+        filter = [
+            objid   : 'F' + new UID(),
+            name    : null,
+            refname : 'faas', 
+            info    : [:],
+        ]
+    }
+    
+    void create() {
+        filter = svc.createFilter( filter ) 
+        if( onadd ) onadd( filter )
+        mode = 'view'
+        binding.refresh('selectedFilter')
+    }   
+    
+    def getLookupOwner() {
+        return InvokerUtil.lookupOpener('entity.lookup',[:])
+    }
+    
+    
+    void setSelectedFilter( selectedFilter ) {
+        this.selectedFilter = selectedFilter
+        if( mode == 'create' ) return 
+        filter = [:]
+        filter.putAll(selectedFilter)
+        binding.refresh('filter.*')
+    }
+    
+    
+    List getBarangaylist() {
+        return lguSvc.getBarangays()
+    }
+    
+    List getClassificationlist() {
+        return svc.getClassificationList()
+    }
+    
+    List getRputypelist() {
+        return ['land', 'bldg', 'mach', 'planttree', 'misc']
+    }
+    
+    List getStatelist() {
+        return ['INTERIM', 'FORAPPROVAL', 'FORPROVAPPROVAL', 'CURRENT', 'CANCELLED']
+    }
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.FAASFilterPage" />
+    </pages>
+</workunit>

@@ -52,3 +52,6 @@ SELECT lguname FROM lgu WHERE lgutype = 'BARANGAY' ORDER BY lguname
 [getClassifications]
 SELECT propertycode AS classcode  FROM propertyclassification ORDER BY orderno  
 
+[deleteRPTPaymentManual] 
+DELETE FROM rptpaymentmanual WHERE receiptid = $P{receiptid} 
+

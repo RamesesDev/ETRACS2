@@ -3,17 +3,22 @@
     <invokers>
         <invoker type="rpttransaction" action="initMortgage" caption="Mortgage Annotation" target="window" index="351" permission="mortgage.create" />
         <invoker type="rpttransaction" action="initBailBond" caption="BailBond Annotation" target="window" index="352" permission="bailbond.create" />
+        <invoker type="rpttransaction" action="initOther" caption="Other Annotations" target="window" index="353" permission="other.create" />
+        
         <invoker type="rpttransaction.initMortgage" action="initMortgage" caption="Mortgage Annotation" target="window" />
         <invoker type="rpttransaction.initBailBond" action="initBailBond" caption="BailBond Annotation" target="window" />
+        <invoker type="rpttransaction.initOther" action="initOther" caption="Other Annotation" target="window" />
         
         <invoker type="mortgage.open" action="openMortgage"         caption="Mortgage Information"  target="window"/>
         <invoker type="bailbond.open" action="openBailBond"         caption="BailBond Information"  target="window"/>
+        <invoker type="other.open"    action="openOther"         caption="Annotation Information"  target="window"/>
         
         <invoker type="formActions" action="_close"         caption="Close"                 shortcut="ctrl W"   mnemonic="c"  immediate="true" icon="images/cancel.png"/>
-        <invoker type="formActions" action="save"           caption="Save"                  shortcut="ctrl S"   mnemonic="s"  visibleWhen="#{entity.docstate == 'DRAFT' or entity.docstate == 'FORAPPROVAL'}"  icon="images/save.png" />
-        <invoker type="formActions" action="remove"         caption="Delete"                shortcut="ctrl D"   mnemonic="d"  visibleWhen="#{showDelete == true}" immediate="true"   icon="images/doc-delete.png" permission="annotation.delete" />
-        <invoker type="formActions" action="submit"         caption="Submit For Approval"   shortcut="ctrl M"   mnemonic="m"  visibleWhen="#{entity.docstate == 'DRAFT' and entity.objid != null}"   icon="images/doc-submit.png" permission="annotation.submit" />
-        <invoker type="formActions" action="approve"        caption="Approve"               shortcut="ctrl A"   mnemonic="a"  visibleWhen="#{entity.docstate == 'FORAPPROVAL'}"   icon="images/approve.png" permission="annotation.approve" />
+        <invoker type="formActions" action="save"           caption="Save"                  shortcut="ctrl S"   mnemonic="s"  visibleWhen="#{mode != 'view' and entity.docstate != 'APPROVED' and entity.docstate != 'CANCELLED'}"  icon="images/save.png" />
+        <invoker type="formActions" action="edit"           caption="Edit"                  shortcut="ctrl E"   mnemonic="e"  visibleWhen="#{mode == 'view' and entity.docstate != 'APPROVED' and entity.docstate != 'CANCELLED'}"  icon="images/edit.png" />
+        <invoker type="formActions" action="remove"         caption="Delete"                shortcut="ctrl D"   mnemonic="d"  visibleWhen="#{mode == 'view' and showDelete == true}" immediate="true"   icon="images/doc-delete.png" permission="annotation.delete" />
+        <invoker type="formActions" action="submit"         caption="Submit For Approval"   shortcut="ctrl M"   mnemonic="m"  visibleWhen="#{mode == 'view' and entity.docstate == 'DRAFT' and entity.objid != null}"   icon="images/doc-submit.png" permission="annotation.submit" />
+        <invoker type="formActions" action="approve"        caption="Approve"               shortcut="ctrl A"   mnemonic="a"  visibleWhen="#{mode == 'view' and entity.docstate == 'FORAPPROVAL'}"   icon="images/approve.png" permission="annotation.approve" />
     </invokers>
     
     <code lang="groovy">
@@ -50,6 +55,12 @@ public class AnnotationController {
         return 'init'
     }
     
+    def initOther(){
+        entity = [:]
+        setInfo('create', 'other')
+        return 'init' 
+    }
+    
     def openMortgage() {
         setInfo( 'view', 'mortgage' )
         entity = svc.open( entity.objid )
@@ -61,17 +72,29 @@ public class AnnotationController {
         entity = svc.open( entity.objid  )
         return 'bailbond'
     }
+    
+    def openOther() {
+        setInfo( 'view', 'other' )
+        entity = svc.open( entity.objid  )
+        return 'other'
+    }
 
     def process() {
         if( doctype == 'mortgage' ){
             entity = svc.initMortgage( faas.objid  )
         }
-        else {
+        else if( doctype == 'bailbond' ){
             entity = svc.initBailBond( faas.objid  )
+        }
+        else {
+            entity = svc.initOther( faas.objid  )
         }
         return doctype 
     }
     
+    void edit() {
+        mode = 'edit' 
+    }
     
     void save() {
         if( mode == 'create' )
@@ -128,6 +151,11 @@ public class AnnotationController {
     }
     
     
+    List getAnnotationTypeList() {
+        return svc.getOtherAnnotationTypeList()
+    }
+    
+    
 }
 
 
@@ -139,5 +167,7 @@ public class AnnotationController {
         <page name="init" template="etracs2.rpt.faas.annotation.AnnotationInitPage" />
         <page name="mortgage" template="etracs2.rpt.faas.annotation.MortgageAnnotationPage" />
         <page name="bailbond" template="etracs2.rpt.faas.annotation.BailBondAnnotationPage" />
+        <page name="other" template="etracs2.rpt.faas.annotation.OtherAnnotationPage" />
     </pages>
 </workunit>
+

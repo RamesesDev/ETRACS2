@@ -36,7 +36,7 @@ GROUP BY afid
 SELECT * FROM afcontrol WHERE objid = $P{afcontrolid} 
 
 [getReportDataGeneral]
-SELECT collectorname, afid, beginqty, beginfrom, beginto,   
+SELECT DISTINCT collectorname, afid, beginqty, beginfrom, beginto,   
 	receivedqty, receivedfrom, receivedto,   
 	issuedqty, issuedfrom, issuedto,  
 	endingqty, endingfrom, endingto  
@@ -47,7 +47,7 @@ AND craafyear = $P{craafyear}
 ORDER BY afid, beginfrom, receivedfrom 
 
 [getReportDataCollector]
-SELECT a.collectorname, c.stubno, c.afid, c.beginqty, c.beginfrom, c.beginto,   
+SELECT DISTINCT a.collectorname, c.stubno, c.afid, c.beginqty, c.beginfrom, c.beginto,   
 	c.receivedqty, c.receivedfrom, c.receivedto,   
 	c.issuedqty, c.issuedfrom, c.issuedto,    
 	c.endingqty, c.endingfrom, c.endingto    
@@ -59,7 +59,7 @@ WHERE c.afinventorycreditid = a.afinventorycreditid
 ORDER BY c.collectorname, c.afid, c.beginfrom, c.receivedfrom  
 
 [getReportDataCanceledSeries]
-SELECT c.collectorname, a.stubno, c.afid, c.canceledqty AS beginqty,    
+SELECT DISTINCT c.collectorname, a.stubno, c.afid, c.canceledqty AS beginqty,    
 	   c.canceledfrom AS beginfrom, c.canceledto AS beginto     
 FROM craaf c, afcontrol a    
 WHERE c.afinventorycreditid = a.afinventorycreditid    
@@ -90,53 +90,52 @@ UPDATE craaf SET
 	endingfrom = $P{endingfrom}, 
 	endingto = $P{endingto}  
 WHERE objid = $P{objid} 
+ 
+[getAFInventoryQtyHandById]
+SELECT 
+ qtyonhand 
+ FROM afinventory  
+WHERE objid = $P{objid}  
+
+
+
 
 
 [getCraaf]
-SELECT 
+SELECT  
+ *   
+FROM craaf  
+WHERE craafyear = $P{year}   
+ AND craafmonth = $P{month} 
+
+[getAFInventoryStateOpen]
+SELECT  
  *  
-FROM craaf 
-WHERE craafyear = $P{year}  
- AND craafmonth = $P{month}
+ FROM afinventory  
+WHERE docstate = 'OPEN' 
 
-[getAFInventory]
-SELECT 
- * 
- FROM afinventory 
+[getAFInventoryStateClosed]
+SELECT i.* FROM afinventory i  
+INNER JOIN afinventorycredit c ON c.afinventoryid = i.objid  
+WHERE i.docstate = 'CLOSED' 
+ AND c.docstate = 'OPEN' 
  
-[getAfICreditByParentId1]
-SELECT 
- afic.objid, afctrl.docstate, 
- afctrl.collectorid, afctrl.collectorname, 
- afctrl.collectortitle, afctrl.beginqty, 
- afctrl.beginseries, afctrl.endseries
-FROM afinventorycredit afic 
-INNER JOIN afcontrol afctrl ON afctrl.afinventorycreditid = afic.objid 
-WHERE afinventoryid = $P{afinventoryid} 
- AND afctrl.docstate = 'APPROVED' 
-
-[getAfICreditByParentId]  
+[getAfICreditByParentIdOpen]  
 SELECT  
  * 
 FROM afinventorycredit   
 WHERE afinventoryid = $P{afinventoryid}  
- AND docstate <> 'CLOSED'
-
-[getAFCtrl]
+ AND docstate = 'OPEN' 
+ 
+[getAFCtrlStateApproved]
 SELECT 
  * 
 FROM afcontrol 
 WHERE afinventorycreditid = $P{afinventorycreditid}  
  and docstate = 'APPROVED'  
  
-[getCraafByAfinventorycreditid]
+[getCraafByAFCId]
 SELECT afinventorycreditid FROM craaf 
 WHERE afinventorycreditid = $P{afinventorycreditid} 
  AND craafyear = $P{year}  
  AND craafmonth = $P{month} 
- 
-[getAFInventoryQtyHandById]
-SELECT 
- qtyonhand 
- FROM afinventory  
-WHERE objid = $P{objid} 

@@ -33,8 +33,11 @@ public class FAASMgmtController
     String searchText
     def selectedItem
     List list
+    List filterlist
     
     def docstate 
+    def filter 
+    def searchtype = 'SEARCH'   //valid values : SEARCH, FILTER 
     
     def invokerparam = [
         getParams :  { return [faasid:selectedItem?.objid] }
@@ -56,14 +59,37 @@ public class FAASMgmtController
     }
     
     void search() {
+        searchtype = 'SEARCH' 
+        filter = null
         list = null
         listHandler.load()
-        binding.refresh('html')
+        binding.refresh('html|filter')
     }
     
     void setDocstate( docstate ) {
         this.docstate = docstate
         search()
+    }
+    
+    void setFilter( filter ) {
+        searchtype = 'FILTER' 
+        this.filter = filter
+        list = null
+        listHandler.load()
+    }
+    
+    def createFilter() {
+        return InvokerUtil.lookupOpener('faasfilter.create', [
+            filterlist : filterlist,
+            onadd      : { filter -> 
+                filterlist.add( filter ) 
+                binding.refresh('filter|filterlist')
+            },
+            onremove   : { filter ->
+                filterlist.remove( filter)
+                binding.refresh('filter|filterlist')
+            }
+        ])
     }
     
     def listHandler =[
@@ -84,8 +110,11 @@ public class FAASMgmtController
             new Column( name:'totalav', caption:'Assessed Value', type:'decimal'),
         ]},
         fetchList  : {
-            if( ! list  ) {
+            if( searchtype == 'SEARCH' ) {
                 list = svc.getList2( searchText, docstate, it )
+            }
+            else {
+                list = svc.getListByFilter( searchText, filter, it )
             }
             return list 
         },
@@ -105,6 +134,13 @@ public class FAASMgmtController
 
     List getStatelist() {
         return ['INTERIM', 'FORAPPROVAL', 'FORPROVAPPROVAL', 'CURRENT', 'CANCELLED']
+    }
+    
+    List getFilterlist() {
+        if( ! filterlist ) {
+            filterlist = svc.getFilterList()
+        }
+        return filterlist 
     }
 }
 

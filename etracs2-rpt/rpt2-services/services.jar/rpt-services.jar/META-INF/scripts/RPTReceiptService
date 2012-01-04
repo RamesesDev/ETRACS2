@@ -89,6 +89,47 @@ class RPTReceiptService
         return receipt 
     }
 	
+	@ProxyMethod
+    public def updateManualCollection( receipt, items ) {
+		if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
+        
+		//delete rptpaymentmanual items
+		em.sqlContext.createNamedExecutor('rptreceipt:deleteRPTPaymentManual')
+				.setParameter( 'receiptid', receipt.objid ).execute() 
+				
+		receipt.items.clear()
+		
+		// each item contain the following payment details :
+		//    basic, basicdisc, basicint, basicprev, basicprevint, basicprior, basicpriorint 
+		//    sef, sefdisc, sefint, sefprev, sefprevint, sefprior, sefpriorint 
+		// summarize the items by account for current, previous and prior
+		// and create receiptitem for each account summary 
+		
+		def rctitems = em.sqlContext.createNamedQuery('rptreceipt:getRPTIncomeAccounts').resultList 
+		items.each { itm ->
+			summarizeBasicAccounts( rctitems, itm )
+			summarizeSEFAccounts( rctitems, itm )
+		}
+		
+		def zeroitems = rctitems.findAll{ it.amount <= 0.0 }
+		rctitems.removeAll( zeroitems )
+		receipt.items = rctitems 
+		calculateManualReceiptTotals( receipt, items )
+		receiptSvc.update( receipt )
+		
+		//save items to rptpaymentmanual 
+		items.each { item ->
+			item.objid 			= 'RM' + new UID()
+			item.schemaname 	= 'rptreceipt:rptpaymentmanual'
+			item.schemaversion 	= '1.0'
+			item.receiptid 		= receipt.objid 
+			em.create( 'rptreceipt:rptpaymentmanual', item )
+		}
+		
+		receipt._items = items 
+        return receipt 
+    }
+	
 	void calculateManualReceiptTotals( receipt, items ) {
         receipt.checknos   =  ''
         receipt.checkbank  = ''

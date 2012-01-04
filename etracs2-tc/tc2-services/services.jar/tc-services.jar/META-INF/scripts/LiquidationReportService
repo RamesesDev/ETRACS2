@@ -55,11 +55,16 @@ public class LiquidationReportServices{
 		
 		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
 		def reportData = buildLiquidationData( liquidation )
-		def map = [liquidationid: liquidationid, fundid: fundid];
-
+		
 		reportData.list = em.sqlContext.createNamedQuery("liquidationreport:getRemittanceFundTotalByLiquidationAndFund")
 		                    .setParameters([liquidationid: liquidationid, fundid: fundid])
 							.resultList;
+							
+		def fundTotal = reportData.list.amount.sum()
+		if( ! fundTotal ) fundTotal = 0.0 
+		
+		reportData.amountinwords 	= numsvc.convertString( fundTotal + '' ).toUpperCase() + ' PESOS' 
+		reportData.amountformatted	= decformat.format( fundTotal )
 		
 		return reportData;
 	}

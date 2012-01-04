@@ -31,7 +31,6 @@ SELECT * FROM faasannotation  WHERE blockno LIKE $P{blockno} ORDER BY docno DESC
 SELECT * FROM faasannotation WHERE faasid = $P{faasid}  AND docstate = 'APPROVED' 
 
 
-
 [getFaasInfo]
 SELECT 
 	objid, docstate, tdno, issuedate, 
@@ -40,4 +39,9 @@ SELECT
 	totalmv, totalav  
 FROM faaslist	 
 WHERE objid = $P{objid} 
+
+
+[getOtherAnnotationTypeList]
+SELECT annotationtype FROM faasannotationtype ORDER BY annotationtype 
+
 

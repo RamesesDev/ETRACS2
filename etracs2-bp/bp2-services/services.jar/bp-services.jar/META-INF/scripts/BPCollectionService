@@ -42,6 +42,7 @@ class BPCollectionService{
 		
 		def getUnpaidReceivables = { 
 			def list = app.receivables.findAll{ it.amount > it.amtpaid };
+			list = list.each(){ it.amount -= it.amtpaid }
 			if( app.txntype.matches('NEW|ADDLOB') ) return list;
 			return list.findAll{ it.iqtr <= entity.qtr }
 		}
@@ -55,7 +56,7 @@ class BPCollectionService{
 		}
 		
 		bill = billingSvc.buildBill( bill ); 
-		
+		if( !bill.taxfees && entity.qtr == 4 ) throw new Exception( "Business is fully paid." );
 		if( !bill.taxfees ) throw new Exception("Business is already paid for quarter " + entity.qtr + '.');
 		
 		entity.businessid = bp.objid;
@@ -101,5 +102,26 @@ class BPCollectionService{
 
     	return entity;
 	}
+	
+	@ProxyMethod 
+	public def doComputePartial( entity , partial ){
+		def partialpmt = partial
+		entity.items.each(){
+			if( partialpmt == 0 )
+				it.amount = partialpmt
+			if( partialpmt >= it.amount )
+				partialpmt -= it.amount
+			else{
+				it.taxamount = partialpmt * ( it.taxamount / it.amount )
+				it.surcharge = partialpmt * ( it.surcharge / it.amount )
+				it.interest = partialpmt - it.taxamount - it.surcharge 
+				it.amount = it.taxamount + it?.surcharge + it?.interest
+				
+				partialpmt = 0.0
+			}
 
+		}
+	
+		return entity.items.findAll{ it.amount != 0.0 }
+	}
 }

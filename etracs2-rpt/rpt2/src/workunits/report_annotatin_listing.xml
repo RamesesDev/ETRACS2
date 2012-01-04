@@ -1,0 +1,63 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/rpt/reports/assessor"  action="init" caption="FAAS Annotation Listing" permission="rptreport.annotationlisting" index="11" />
+        <invoker type="rptreport"       action="init" opener="annotationlisting" caption="FAAS Annotation Listing" target="window" permission="rptreport.jat" index="11" />
+        <invoker type="rptreport.annotationlisting"   action="init" caption="FAAS Annotation Listing" permission="rptreport.jat" />
+        
+        <invoker type="previewActions"  action="back" caption="Back" icon="images/back.png" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class AnnotationListingController
+{
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('RPTReportService') 
+    def svc 
+    
+    def reportdata
+    
+    void init() {
+        preview()
+    }
+
+    def preview() {
+        generateReport()
+        return 'preview' 
+    }
+    
+    void generateReport() {
+        reportdata = svc.generateAnnotationListing( )
+        report.viewReport()
+    }
+    
+    void print(){
+        generateReport()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def report = [
+        getReportName : { 'annotationlisting' },
+        getReportData : { return reportdata },
+        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+    ] as ServerReportModel;
+        
+    def back() {
+        return 'default' 
+    }
+    
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>

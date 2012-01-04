@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+   <invokers>
+       <invoker type="cancelfaas.create" action="initCreate" caption="New Cancel FAAS" />
+       <invoker type="cancelfaas.open" action="initOpen" caption="View Cancel FAAS" />
+       
+       <invoker type="formActions" action="_close"         caption="Close"                 shortcut="ctrl W"   mnemonic="c"  immediate="true" icon="images/cancel.png"/>
+       <invoker type="formActions" action="save"           caption="Save"                  shortcut="ctrl S"   mnemonic="s"  visibleWhen="#{entity.docstate != 'APPROVED' and mode != 'view'}"  icon="images/save.png" />
+       <invoker type="formActions" action="edit"           caption="Edit"                  shortcut="ctrl E"   mnemonic="e"  visibleWhen="#{entity.docstate != 'APPROVED' and mode == 'view'}"  icon="images/save.png" permission="cancelfaas.edit" />
+       <invoker type="formActions" action="submit"         caption="Submit For Approval"   shortcut="ctrl M"   mnemonic="m"  visibleWhen="#{entity.docstate == 'DRAFT' and mode == 'view'}"   icon="images/doc-submit.png" permission="cancelfaas.submit" />
+       <invoker type="formActions" action="approve"        caption="Approve"               shortcut="ctrl A"                 visibleWhen="#{entity.docstate == 'FORAPPROVAL' and mode == 'view'}"   icon="images/approve.png" permission="cancelfaas.approve" />
+       <invoker type="formActions" action="remove"         caption="Delete"                shortcut="ctrl D"   mnemonic="d"  visibleWhen="#{entity.docstate != 'APPROVED' and mode == 'view'}" immediate="true"   icon="images/doc-delete.png" permission="cancelfaas.delete" />
+       
+   </invokers> 
+    <code lang="groovy">
+<![CDATA[
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.* 
+
+public class CancelFAASController{
+    @Binding
+    def binding
+    
+    @Service('CancelFAASService')
+    def svc
+    
+    @Service('CancelTDService')
+    def canceltdSvc
+    
+    def entity
+    def faas
+    def mode
+    
+    
+    
+    void initCreate() {
+        entity = [docstate:'DRAFT']
+        mode = 'create' 
+    }
+    
+    void initOpen() {
+        faas = [:]
+        entity = svc.open( entity.objid )
+        faas.tdno = entity.tdno
+        mode = 'view' 
+    }
+    
+    void save() {
+        if( mode == 'create' ) {
+            entity = svc.create( entity )
+        }
+        else {
+            entity = svc.update( entity )
+        }
+        mode = 'view' 
+    }
+    
+    void edit() {
+        mode = 'edit' 
+    }
+    
+    void submit() {
+        if( MsgBox.confirm('Submit record for approval?') ) {
+            entity = svc.submit( entity )
+        }
+    }
+    
+    void approve() {
+        if( MsgBox.confirm('Approve record?') ) {
+            entity = svc.approve( entity )
+        }
+    }
+    
+    def remove() {
+        if( MsgBox.confirm('Delete record?') ) {
+            svc.delete( entity )
+            return '_close'
+        }
+    }
+    
+    List getCancelreasonlist() {
+        return canceltdSvc.getList(null, null)
+    }
+    
+    def getLookupFAAS() {
+        return InvokerUtil.lookupOpener("faas.lookup", [:])
+    }
+    
+    void setFaas( faas ) {
+        if( faas && faas.docstate != 'CURRENT' ) throw new Exception('Only current FAAS is allowed.')
+        this.faas = faas 
+        entity.ownername = faas?.taxpayername
+        entity.tdno      = faas?.tdno
+        entity.fullpin   = faas?.fullpin
+        entity.classcode = faas?.classcode
+        entity.rputype   = faas?.rputype 
+        entity.faasid    = faas?.objid 
+        entity.faasstate = faas?.docstate 
+    }
+}
+                
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.cancelfaas.CancelFAASPage"/>
+    </pages>
+</workunit>

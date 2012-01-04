@@ -140,7 +140,9 @@ class SubdivisionService
         validateInfo( subdivision )
         validateArea( subdivision )
         validateAffectedRpu( subdivision )
-		createSubdividedLandsFaas( subdivision )
+		if( var.lgu_type == 'city' ) {
+			createSubdividedLandsFaas( subdivision )
+		}
         subdivision.docstate = FORAPPROVAL_STATE
         em.update( subdivision.schemaname, subdivision )
         return subdivision

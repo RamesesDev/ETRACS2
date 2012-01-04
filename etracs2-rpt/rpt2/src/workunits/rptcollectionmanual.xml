@@ -100,6 +100,28 @@
             return null
         }
         
+        def update() {
+            if( rptitems.size() == 0 ) {
+                throw new Exception('At least one ledger for payment is required.')
+            }
+            if( MsgBox.confirm("Update collection?") ) {
+                validateTxnDate()
+                svc.updateManualCollection( entity, rptitems )
+                mode = 'view'
+                invokeUpdateHandler()
+                return 'view'
+            }
+            return null
+        }
+        
+                
+        def edit() {
+            super.edit()
+            rptitems = entity._items
+            mode = 'edit' 
+            return 'default'
+        }
+        
         /*================================================================================================
         *
         * Main Page Support 
