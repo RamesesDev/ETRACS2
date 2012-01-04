@@ -30,6 +30,12 @@ SELECT lq.* FROM etracsuser lq WHERE lq.objid IN (
 	select c.lqofficerid from etracsuser c WHERE c.objid = $P{collectorid}
 )
 
+[getLiquidatingOfficerList]
+SELECT objid, name, formalname, jobtitle  
+FROM etracsuser  
+WHERE isliquidating = 1 
+ORDER BY name 
+
 
 
 
@@ -418,6 +424,7 @@ ORDER BY ia.fundname
 [getReportByFundDetailCrosstab]
 SELECT 
 	rl.afid, 
+	rl.collectiontype, 
 	rl.serialno, 
 	CASE WHEN rl.voided = 0 THEN rl.paidby ELSE '*** VOIDED ***' END AS paidby, 
 	rl.txndate, 

@@ -29,6 +29,7 @@ public class RemittanceInitPage extends javax.swing.JPanel {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xDateField1 = new com.rameses.rcp.control.XDateField();
+        xComboBox1 = new com.rameses.rcp.control.XComboBox();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -44,19 +45,34 @@ public class RemittanceInitPage extends javax.swing.JPanel {
         formPanel1.setBorder(xTitledBorder1);
         formPanel1.setPadding(new java.awt.Insets(10, 10, 5, 5));
         xTextField1.setCaption("Collector");
+        xTextField1.setCaptionWidth(120);
+        xTextField1.setFont(new java.awt.Font("Arial", 1, 14));
         xTextField1.setName("entity.info.collectorname");
-        xTextField1.setPreferredSize(new java.awt.Dimension(350, 18));
+        xTextField1.setPreferredSize(new java.awt.Dimension(0, 24));
         xTextField1.setReadonly(true);
         formPanel1.add(xTextField1);
 
         xDateField1.setCaption("Date");
+        xDateField1.setCaptionWidth(120);
+        xDateField1.setFont(new java.awt.Font("Arial", 1, 14));
         xDateField1.setName("entity.info.txndate");
-        xDateField1.setPreferredSize(new java.awt.Dimension(90, 18));
+        xDateField1.setPreferredSize(new java.awt.Dimension(120, 24));
         xDateField1.setRequired(true);
         formPanel1.add(xDateField1);
 
+        xComboBox1.setCaption("Liquidating Officer");
+        xComboBox1.setCaptionWidth(120);
+        xComboBox1.setExpression("#{name}");
+        xComboBox1.setFont(new java.awt.Font("Arial", 1, 14));
+        xComboBox1.setImmediate(true);
+        xComboBox1.setItems("lqofficerlist");
+        xComboBox1.setName("lqofficer");
+        xComboBox1.setPreferredSize(new java.awt.Dimension(0, 26));
+        xComboBox1.setRequired(true);
+        formPanel1.add(xComboBox1);
+
         jPanel1.add(formPanel1);
-        formPanel1.setBounds(10, 10, 510, 220);
+        formPanel1.setBounds(10, 10, 504, 220);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -67,6 +83,7 @@ public class RemittanceInitPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel1;
     private javax.swing.JPanel jPanel1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
+    private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XDateField xDateField1;
     private com.rameses.rcp.control.XTextField xTextField1;
     // End of variables declaration//GEN-END:variables

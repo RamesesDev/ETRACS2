@@ -99,6 +99,7 @@ public class BatchCaptureMultiController
             batch       : entity,
             afcontrol   : afcontrol, 
             onadd       : { receipt ->
+                svc.validateTxnDate( receipt.txndate )
                 entity.items.add( receipt )
                 entity.series += 1
                 listHandler.load()
@@ -114,6 +115,7 @@ public class BatchCaptureMultiController
             entity      : selectedItem ,
             afcontrol   : afcontrol, 
             onedit    : { receipt ->
+                svc.validateTxnDate( receipt.txndate )
                 listHandler.load()
                 binding.refresh('total')
             }

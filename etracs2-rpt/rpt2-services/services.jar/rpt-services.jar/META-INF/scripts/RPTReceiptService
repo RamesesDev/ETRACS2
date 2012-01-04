@@ -11,11 +11,14 @@ class RPTReceiptService
     
     @Service('DateService')
 	def dateSvc
+	
+	@Service('Var')
+	def var 
 
 	@Env
 	def env
-    
-    
+	
+	
     @ProxyMethod
     public def create( receipt, items ) {
 		if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
@@ -246,10 +249,27 @@ class RPTReceiptService
         voidRPTPayments( receiptid )
     }
 	
+	@ProxyMethod
+	public def getLguType() {
+		return var.lgu_type 
+	}
 	
 	@ProxyMethod
-	public List getBarangays() {
-		return em.sqlContext.createNamedQuery('rptreceipt:getBarangays').resultList 
+	public List getMunicipalityCityList() {
+		return em.sqlContext.createNamedQuery('rptreceipt:getMunicipalityCityList').resultList 
+	}
+	
+	@ProxyMethod
+	public List getBarangayList( municity ) {
+		if( ! municity ) throw new Exception('City or Municipality is required.')
+		
+		if( municity.lgutype == 'CITY' ) {
+			return em.sqlContext.createNamedQuery('rptreceipt:getCityBarangayList').resultList 
+		}
+		
+		return em.sqlContext.createNamedQuery('rptreceipt:getMunicipalityBarangayList')
+					.setParameter('parentid', municity.objid )
+					.resultList 
 	}
 	
 	@ProxyMethod

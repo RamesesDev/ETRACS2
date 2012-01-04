@@ -1,8 +1,11 @@
 [getList]
 SELECT * FROM receiptlist 
 WHERE collectorid LIKE $P{collectorid} 
-  AND docstate LIKE $P{docstate} 
+   AND docstate LIKE $P{docstate} 
 ORDER BY afid, serialno 
+
+[getList2]
+SELECT * FROM receiptlist 
 
 [getListBySerialNo]
 SELECT * FROM receiptlist 

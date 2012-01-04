@@ -23,6 +23,9 @@ class BPApplicationService{
 	@Service('BPRuleService')
 	def ruleSvc;
 	
+	@Service('NumberService')
+	def numSvc
+	
 	def PERMIT_SCHEMA = 'bppermit:bppermit';
 	def BP_RECIVABLE_SCHAMENAME = 'bpledger:bpreceivable';
 	def BUSINESS_SCHEMA = 'business:business';
@@ -192,10 +195,25 @@ class BPApplicationService{
 		return application;
 	}
 	
-	@ProxyMethod
-	public def getList(def searchText, def param){
-		return em.sqlContext.createNamedQuery('bpapplication:getList')
-				 .resultList;
+	@ProxyMethod 
+	public def getList(def searchText, def params){
+		if( ! searchText ) 
+			return getListByQuery('bpapplication:getList', [:], params)
+		
+		def criteria = [ tradename:searchText +'%', txnno:searchText+'%']
+		def result = []
+		if( (result = getListByQuery('bpapplication:getListByTradename', criteria, params)) ) return result
+		if( (result = getListByQuery('bpapplication:getListByTxnno', criteria, params)) ) return result
+		return result 
+	}
+	
+	def getListByQuery( namedQuery, criteria, params ) {
+        if( ! params ) params = [ _start:0, _limit:25]
+		return em.sqlContext.createNamedQuery( namedQuery )
+						.setParameters( criteria )
+						.setFirstResult( params._start )
+						.setMaxResults( params._limit )
+						.resultList
 	}
 	
 	private def buildTxndateYear( txndate ){
@@ -337,8 +355,8 @@ class BPApplicationService{
 		app.amountdue = 0.0;
 		
 		app.taxfees.each{
-			app.assessedvalue += it.assessedvalue;
-			app.amountdue += it.amountdue;
+			app.assessedvalue += numSvc.round( it.assessedvalue );
+			app.amountdue += numSvc.round( it.amountdue );
 		}
 		
 		return app;

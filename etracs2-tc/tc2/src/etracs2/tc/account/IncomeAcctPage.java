@@ -47,9 +47,9 @@ public class IncomeAcctPage extends javax.swing.JPanel {
         xComboBox2 = new com.rameses.rcp.control.XComboBox();
         xComboBox4 = new com.rameses.rcp.control.XComboBox();
         xSeparator1 = new com.rameses.rcp.control.XSeparator();
-        xActionTextField2 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField1 = new com.rameses.rcp.control.XLookupField();
         xActionTextField4 = new com.rameses.rcp.control.XActionTextField();
-        xActionTextField3 = new com.rameses.rcp.control.XActionTextField();
+        xLookupField2 = new com.rameses.rcp.control.XLookupField();
         xActionTextField5 = new com.rameses.rcp.control.XActionTextField();
 
         setLayout(new java.awt.BorderLayout());
@@ -175,12 +175,13 @@ public class IncomeAcctPage extends javax.swing.JPanel {
         xSeparator1.setPreferredSize(new java.awt.Dimension(0, 20));
         formPanel1.add(xSeparator1);
 
-        xActionTextField2.setActionName("lookupNgas");
-        xActionTextField2.setCaption("NGAS");
-        xActionTextField2.setDepends(new String[] {"selectedItem"});
-        xActionTextField2.setName("entity.ngastitle");
-        xActionTextField2.setPreferredSize(new java.awt.Dimension(0, 20));
-        formPanel1.add(xActionTextField2);
+        xLookupField1.setCaption("NGAS Account");
+        xLookupField1.setDepends(new String[] {"selectedItem"});
+        xLookupField1.setExpression("#{accttitle}");
+        xLookupField1.setHandler("lookupNGAS");
+        xLookupField1.setName("ngas");
+        xLookupField1.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel1.add(xLookupField1);
 
         xActionTextField4.setActionName("lookupNgasSubAcct");
         xActionTextField4.setCaption("    Sub Account");
@@ -189,12 +190,13 @@ public class IncomeAcctPage extends javax.swing.JPanel {
         xActionTextField4.setPreferredSize(new java.awt.Dimension(0, 20));
         formPanel1.add(xActionTextField4);
 
-        xActionTextField3.setActionName("lookupSre");
-        xActionTextField3.setCaption("SRE Account");
-        xActionTextField3.setDepends(new String[] {"selectedItem"});
-        xActionTextField3.setName("entity.sretitle");
-        xActionTextField3.setPreferredSize(new java.awt.Dimension(0, 20));
-        formPanel1.add(xActionTextField3);
+        xLookupField2.setCaption("SRE Account");
+        xLookupField2.setDepends(new String[] {"selectedItem"});
+        xLookupField2.setExpression("#{accttitle}");
+        xLookupField2.setHandler("lookupSRE");
+        xLookupField2.setName("sre");
+        xLookupField2.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel1.add(xLookupField2);
 
         xActionTextField5.setActionName("lookupSreSubAcct");
         xActionTextField5.setCaption("    Sub Account");
@@ -237,8 +239,6 @@ public class IncomeAcctPage extends javax.swing.JPanel {
     private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
-    private com.rameses.rcp.control.XActionTextField xActionTextField2;
-    private com.rameses.rcp.control.XActionTextField xActionTextField3;
     private com.rameses.rcp.control.XActionTextField xActionTextField4;
     private com.rameses.rcp.control.XActionTextField xActionTextField5;
     private com.rameses.rcp.control.XComboBox xComboBox1;
@@ -247,6 +247,8 @@ public class IncomeAcctPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XComboBox xComboBox4;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XLabel xLabel1;
+    private com.rameses.rcp.control.XLookupField xLookupField1;
+    private com.rameses.rcp.control.XLookupField xLookupField2;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XSeparator xSeparator1;
     private com.rameses.rcp.control.XTextField xTextField1;

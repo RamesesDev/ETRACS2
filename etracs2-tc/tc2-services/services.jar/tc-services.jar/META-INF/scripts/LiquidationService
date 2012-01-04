@@ -125,21 +125,27 @@ class LiquidationService {
 		liq.info.totalotherpayment = 0.0;
 		liq.info.treasurername = var.get('treasurer_name');
 		liq.info.treasurertitle = var.get('treasurer_title');
-		def subordinates = getSubordinates( liq.info.liquidatingofficerid );
-		for (collector in subordinates) {
-			def remits = em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceByCollector" ).setParameter( "collectorid", collector.objid ).resultList;
-			if ( remits ) {
-				liq.remittances += remits;
-				liq.otherpayments += em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceOtherPaymentsByCollector" ).setParameter( "collectorid", collector.objid ).resultList;
-				def reminfo = em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceInfoByCollector" ).setParameter( "collectorid", collector.objid ).singleResult;
-				liq.info.amount += reminfo.totalamount;
-				liq.info.totalcash += reminfo.totalcash;
-				liq.info.totalotherpayment += reminfo.totalotherpayment;
-			}
+		
+		def remits = em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceByLiquidatingOfficer" )
+							.setParameter( "liquidatingofficerid", liq.info.liquidatingofficerid )
+							.resultList;
+							
+		if ( ! remits  ) {
+			throw new IllegalStateException( "There are no remittances." );
 		}
 		
-		if ( ! liq.remittances )
-			throw new IllegalStateException( "There are no remittances." );
+		liq.remittances += remits;
+		liq.otherpayments += em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceOtherPaymentsByLiquidatingOfficer" )
+								.setParameter( "liquidatingofficerid", liq.info.liquidatingofficerid )
+								.resultList;
+								
+		def reminfo = em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceInfoByLiquidatingOfficer" )
+								.setParameter( "liquidatingofficerid", liq.info.liquidatingofficerid ) 
+								.singleResult;
+								
+		liq.info.amount += reminfo.totalamount;
+		liq.info.totalcash += reminfo.totalcash;
+		liq.info.totalotherpayment += reminfo.totalotherpayment;
 		
 		return liq;
 	}

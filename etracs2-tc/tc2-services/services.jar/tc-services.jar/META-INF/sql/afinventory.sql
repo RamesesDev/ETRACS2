@@ -74,9 +74,10 @@ SELECT
 	CASE WHEN a.aftype = 'serial' THEN c.endingfrom ELSE '' END AS endingfrom, 
 	CASE WHEN a.aftype = 'serial' THEN c.endingto ELSE '' END AS endingto 
 FROM craaf c 
-	INNER JOIN afcontrol a ON c.afinventorycreditid = a.afinventorycreditid 
-	INNER JOIN afinventorycredit ivc ON ivc.objid = c.afinventorycreditid 
+	LEFT JOIN afcontrol a ON c.afinventorycreditid = a.afinventorycreditid 
+	LEFT JOIN afinventorycredit ivc ON ivc.objid = c.afinventorycreditid 
 WHERE ivc.afinventoryid = $P{afinventoryid} 
+ORDER BY a.startseries 
 
 
 
