@@ -52,6 +52,12 @@ class ReceiptService
 		postPayments( receipt )
 		postAFControl( receipt )
 		logService.log('CREATE',receipt.doctype, receipt.objid)
+		
+		if( 'BUSINESS_TAX'.equals( receipt.doctype ) ){
+			receipt._itms = receipt.items.clone()
+			receipt.items = reconstructRcptItems( receipt )
+		}
+
 		return receipt 
 	}
 	
@@ -71,7 +77,13 @@ class ReceiptService
 	
 	@ProxyMethod 
 	public def open( receiptid ) {
-		return em.read( SCHEMANAME, [objid:receiptid] )
+		def receipt = em.read( SCHEMANAME, [objid:receiptid] )
+		if( 'BUSINESS_TAX'.equals( receipt.doctype ) ){
+			receipt._itms = receipt.items.clone()
+			receipt.items = reconstructRcptItems( receipt )
+		}
+		
+		return receipt
 	}
 	
 	@ProxyMethod
@@ -473,5 +485,25 @@ class ReceiptService
 					.setFirstResult( params._start )
 					.setMaxResults( params._limit )
 					.resultList
+	}
+	
+	private def reconstructRcptItems( def receipt ){
+		def items = receipt.items.findAll{ it.systype.equals('BUSINESS_TAX') }
+		items = items.clone().unique{ it.lobid }.each(){ o ->
+			def amount = receipt.items.findAll{ it.lobid == o.lobid && it.systype.equals('BUSINESS_TAX') }.amount.sum()
+			def nqtr = receipt.qtr
+			if( nqtr == 1 ) nqtr += 'st Qtr'
+			else if( nqtr == 2 ) nqtr += 'nd Qtr'
+			else if( nqtr == 3 ) nqtr += 'rd Qtr'
+			else if( nqtr == 4 ) nqtr += "th Qtr"
+			
+			o.accttitle = "$o.accttitle - $nqtr".toString()
+			o.amount = ( amount ) ? amount : o.amount
+		}     
+		
+		receipt.items.removeAll( receipt.items.findAll{ it.systype.equals('BUSINESS_TAX') } )
+		receipt.items.addAll( items )
+		
+		return receipt.items
 	}
 }
