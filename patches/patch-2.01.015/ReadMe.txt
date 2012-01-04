@@ -8,5 +8,6 @@ Patch-2.01.015
   to avoid the hassle of changing liquidating officers in cases of leave, absence etc
 - Change RETIRELOB to RETIRE selection on the business application renewal
 - Add search by tradename and txnno support for bp application listing
-
+- Fix account code mapping for eNGAS export
+- Round-off bp billing computed values
 - 
