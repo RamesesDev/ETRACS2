@@ -10,4 +10,5 @@ Patch-2.01.015
 - Add search by tradename and txnno support for bp application listing
 - Fix account code mapping for eNGAS export
 - Round-off bp billing computed values
-- 
+- Exclude retired/retiredlob from permit printout 
+- Add RPT Tax Clearance report

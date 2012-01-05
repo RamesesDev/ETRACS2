@@ -16,6 +16,30 @@ SELECT COUNT(*) AS brgycount FROM lgu WHERE lgutype = 'BARANGAY'
 SELECT objid AS collectorid, name AS collectorname, jobtitle AS collectortitle  from etracsuser WHERE iscollector = 1 ORDER BY name 
 
 
+[getRPTClearancePaymentInfo]
+SELECT 
+	rct.serialno as orno, 
+	rct.txndate as ordate, 
+	CONCAT('Q', MIN(pd.qtr), '-Q', MAX(pd.qtr)) AS period, 
+	SUM( basic ) AS basic, 
+	SUM( basicdisc ) AS basicdisc, 
+	SUM( basicint ) AS basicint, 
+	SUM( basic + basicint - basicdisc ) AS basicnet,  
+	SUM( sef ) AS sef, 
+	SUM( sefdisc ) AS sefdisc, 
+	SUM( sefint ) AS sefint, 
+	SUM(sef + sefint - sefdisc) AS sefnet  
+FROM receiptlist rct  
+	INNER JOIN rptpaymentdetail pd ON rct.objid = pd.receiptid  
+WHERE pd.year = $P{year}  
+  AND pd.rptledgerid = $P{ledgerid}   
+  AND rct.voided = 0   
+GROUP BY rct.objid  
+ORDER BY serialno 
+
+
+
+
 [getAbstractCollectionBASIC] 
 SELECT  
 	rp.period AS payperiod, 
