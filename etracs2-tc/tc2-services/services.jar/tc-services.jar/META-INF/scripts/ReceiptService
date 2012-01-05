@@ -79,7 +79,6 @@ class ReceiptService
 	public def open( receiptid ) {
 		def receipt = em.read( SCHEMANAME, [objid:receiptid] )
 		if( 'BUSINESS_TAX'.equals( receipt.doctype ) ){
-			receipt._itms = receipt.items.clone()
 			receipt.items = reconstructRcptItems( receipt )
 		}
 		
@@ -488,21 +487,37 @@ class ReceiptService
 	}
 	
 	private def reconstructRcptItems( def receipt ){
-		def items = receipt.items.findAll{ it.systype.equals('BUSINESS_TAX') }
-		items = items.clone().unique{ it.lobid }.each(){ o ->
-			def amount = receipt.items.findAll{ it.lobid == o.lobid && it.systype.equals('BUSINESS_TAX') }.amount.sum()
-			def nqtr = receipt.qtr
-			if( nqtr == 1 ) nqtr += 'st Qtr'
-			else if( nqtr == 2 ) nqtr += 'nd Qtr'
-			else if( nqtr == 3 ) nqtr += 'rd Qtr'
-			else if( nqtr == 4 ) nqtr += "th Qtr"
+		def bt_items = receipt.items.findAll{ it.systype.equals('BUSINESS_TAX') }
+		bt_items = bt_items.clone().unique{ it.lobid }.each(){ item ->
+			def amount = receipt.items.findAll{ it.lobid.equals(item.lobid) && it.systype.equals('BUSINESS_TAX') }.amount.sum()
+			def nqtr = receipt.items.findAll{ it.lobid.equals(item.lobid) && it.systype.equals('BUSINESS_TAX') }.size()
+			def fqtr = { qtr->
+				if( qtr == 1 )
+					return 'st'
+				else if( qtr == 2)
+					return 'nd'
+				else if( qtr == 3 )
+					return '3d'
+				else if( qtr == 4 )
+					return 'th'
+			}
 			
-			o.accttitle = "$o.accttitle - $nqtr".toString()
-			o.amount = ( amount ) ? amount : o.amount
-		}     
+			if( nqtr == 4 ) nqtr = 'Full paid'
+			else if( nqtr == 1 ) nqtr = "$item.iqtr" + fqtr(item.iqtr) + " Qtr"
+			else nqtr = "$item.iqtr" + fqtr(item.iqtr) + "-" + "$receipt.qtr" + fqtr(receipt.qtr) + " Qtr"
+			
+			item.accttitle = "$item.accttitle - $nqtr".toString()
+			item.amount = ( amount ) ? amount : item.amount
+		}    
 		
 		receipt.items.removeAll( receipt.items.findAll{ it.systype.equals('BUSINESS_TAX') } )
-		receipt.items.addAll( items )
+		receipt.items = receipt.items.each(){ item ->
+			def duplicate = receipt.items.findAll{ it.acctid.equals(item.acctid) }.size()
+			if( duplicate > 1 ){
+				if( item.lobname ) item.remarks = item.lobname
+			}
+		}
+		receipt.items.addAll( bt_items )
 		
 		return receipt.items
 	}

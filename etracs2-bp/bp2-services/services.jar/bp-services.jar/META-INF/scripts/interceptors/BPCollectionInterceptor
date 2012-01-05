@@ -28,7 +28,7 @@ class BPCollectionInterceptor {
 	public void afterCreate( evt ) {
 		def receipt = evt.result;
 		if( receipt?.doctype != 'BUSINESS_TAX' ) return;
-		receipt.items = receipt._itms         
+		//receipt.items = receipt._itms         
 		
 		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]);
 		
@@ -47,7 +47,7 @@ class BPCollectionInterceptor {
 		];
 		
 		//change amount -> totalamount
-		receipt.items.each{ r ->
+		receipt._itms.each{ r ->
 			payment.items << [ bpreceivableid	: r.taxfeeid,
 							 taxamount		: r.taxamount,
 							 surcharge		: r.surcharge,
