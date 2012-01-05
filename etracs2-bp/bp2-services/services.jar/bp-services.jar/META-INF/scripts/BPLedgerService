@@ -183,9 +183,11 @@ class BPLedgerService {
 		application.lastmodified = dateService.serverDate.time;
 		
 		if( isApplicationStatusForPermit( application ) ){
-			if( !application.docstate.matches('EXPIRED') ){
-				application.docstate = 'PERMIT_PENDING';
-				bplisting.docstate = 'PERMIT_PENDING';
+			if( !application.docstate.equals('EXPIRED') ){
+				if( !application.docstate.equals('ACTIVE') )
+					application.docstate = 'PERMIT_PENDING'
+				if( !bplisting.docstate.equals('ACTIVE') )
+					bplisting.docstate = 'PERMIT_PENDING'
 			
 				def getUnpaidReceivables = application.receivables.findAll{ it.amount > it.amtpaid }
 				if( !getUnpaidReceivables ) bplisting.fullypaid = 1

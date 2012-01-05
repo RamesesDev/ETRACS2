@@ -27,7 +27,7 @@ public class BPPermitReportService
 			entity.info.middlename = ( entity.info.middlename ) ? " $entity.info.middlename ": " "
 			bp.taxpayername = "$entity.info.firstname$entity.info.middlename$entity.info.lastname".toString()
 		}
-
+		
 		bp.barangayname = applistinfo.barangayname 
 		bp.ctcno = applistinfo.ctcno 
 		bp.txntype = app.txntype;
@@ -35,9 +35,26 @@ public class BPPermitReportService
 		bp.barcodeurl = var.get('barcode_url').replace('$P{data}', app.barcode);
 		
 		bp.lines = em.serializer.read( bp.lobs );
+
+		bp.lines2 = []
+		def nextrow = (bp.lines.size / 2) as int
+		bp.linesize = bp.lines.size
+		
+		if( bp.lines.size() >= 8 ){
+			for( int i=0; i < bp.lines.size(); i++ ){
+			   if( i < (bp.lines.size / 2)){
+				   bp.lines2[i] = [:]
+				   bp.lines2[i].name_1 = bp.lines[i].name
+				   bp.lines2[i].name_2 = bp.lines[nextrow].name
+				   nextrow++
+			   }
+			}
+		}
+		 
 		//remove retired lines 
 		def retiredlines = bp.lines.findAll{ it.assessmenttype == 'RETIRE' || it.assessmenttype == 'RETIRELOB' }
 		if( retiredlines ) bp.lines.removeAll( retiredlines )
+
 		bp.lob = bp.lines[0]
 		bp.lobs = null;
 		
@@ -50,20 +67,78 @@ public class BPPermitReportService
 		def or = [orno: c.refno+'', 
 				   ordate: dateFormat.parse( c.refdate ),
 				   amount: p.amount];
-		//app.credits.findAll{ it.refno == or.orno }.each{ or.amount += it.amount + it.surcharge + it.interest - it.discount };
 		bp.orlist = [ or ];
 		bp.ordetails = bp.orlist[0]
+		
+		def reportName = 'bp/businesspermit'		
+		
+		//for lgu lantapan
+		if( 'LANTAPAN'.equals( var.get('lgu_name') )){
+			
+			def permit = em.sqlContext.createNamedQuery( 'bpreport:getPermitInfo' ).setParameter('applicationid', applicationid).singleResult
+			if( permit.info ){
+				permit = em.serializer.read( permit.info )
+				bp.model = permit.model
+				bp.type = permit.type
+				bp.color = permit.color
+				bp.engineno = permit.engineno
+				bp.chassisno = permit.chassisno
+				bp.orno = permit.orno
+				bp.plateno = permit.plateno
+			}
+			def lobclassification = em.read( 'lobclassification', [objid:bp.lines[0].classificationid] ).name
+			
+			if( lobclassification.equals('PEDDLER') )
+				reportName += '_lantapan_peddler'
+			else if( bp.lines[0].name.equals('MOTORELA'))
+				reportName += '_lantapan_motorela'
+			else if( bp.lines[0].name.equals('HABAL-HABAL') )
+				reportName += '_lantapan_habal2'
+			else
+				reportName += '_lantapan_mp'
+			
+			bp.orno = bp.orlist[0].orno
+			bp.ordate = bp.orlist[0].ordate
+			bp.amount = bp.orlist[0].amount
+			bp.citizenship = entity.info.citizenship
+			bp.civilstatus = entity.info.civilstatus
+			bp.organization = applistinfo.organization
+			bp.barangayname = applistinfo.barangayname
+		}		
 		
 		def sdf = new java.text.SimpleDateFormat("EEEEE MMMMM dd, yyyy");
 		def params = [
 			PERMITDATE: sdf.format( bp.txndate ),
 			LGUADDRESS: var.lgu_address,
 			MAYORNAME: var.mayor_name,
-			MAYORTITLE: var.mayor_title
-		];
-
-		return [reportName: 'bp/businesspermit',
+			MAYORTITLE: var.mayor_title,
+			
+			PERMITDAY: getFDate( 'dd', bp.txndate ),
+			PERMITMONTHYR: getFDate( 'MMMMM yyyy', bp.txndate )
+		];		
+		
+		return [reportName: reportName,
 			    info: bp,
 				params: params];
 	}
+	
+	private def getFDate( fdt, txndate ){
+		def strdate = txndate.toString()
+		def date = java.sql.Date.valueOf( strdate )
+		def dt = new java.text.SimpleDateFormat( fdt ).format( date ).toString()
+				
+		if( 'dd'.equals(fdt) ){
+			if( dt.matches('1|21|31') )
+				return dt + 'st';
+			else if( dt.matches('2|22') )
+				return dt + 'nd';
+			else if(dt.matches('3|23')) 
+				return dt + 'rd';
+			else return dt + 'th';
+		}
+		
+		return dt;
+	}
+	
+	
 }

@@ -30,6 +30,8 @@ UPDATE bpapplication SET tradename = $P{tradename} WHERE objid = $P{objid}
 [updateApplicationListingTradename]
 UPDATE bpapplicationlisting SET tradename = $P{tradename} WHERE objid = $P{objid} 
 
+[updatePermitTradename]
+UPDATE bppermit SET tradename = $P{tradename} WHERE applicationid = $P{applicationid} 
 
 /* Change Admin Transaction */
 

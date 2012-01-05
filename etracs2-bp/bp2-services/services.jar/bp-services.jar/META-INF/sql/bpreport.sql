@@ -55,4 +55,9 @@ SELECT distinct taxpayerid, taxpayername, taxpayeraddress
 FROM bpapplicationlisting 
 WHERE docstate IN ('APPROVED','PERMIT_PENDING', 'ACTIVE') 
   AND barangayid LIKE $P{barangayid} 
+  
+[getPermitInfo]
+SELECT info FROM bppermit WHERE applicationid = $P{applicationid} 
+  
+ 
 

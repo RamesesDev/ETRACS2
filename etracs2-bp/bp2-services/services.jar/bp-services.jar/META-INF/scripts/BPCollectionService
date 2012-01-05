@@ -20,7 +20,7 @@ class BPCollectionService{
 	def numSvc;
 	
 	@ProxyMethod
-	public def getBill( def entity, year, qtr ){		
+	public def getBill( def entity, year, qtr ){
 		entity.year = (year == 0) ? Integer.parseInt(new java.text.SimpleDateFormat("yyyy").format( dateService.serverDate )) : year;
 		entity.qtr = (qtr == 0) ? 4 : qtr;
 		
@@ -71,26 +71,31 @@ class BPCollectionService{
 		entity.info.txndate = dateService.serverDate;
 		entity.info.amount = 0.0;
 		entity.items = [];
-		
+
 		bill.taxfees.each{
 			def acct = em.read("incomeacct:incomeacct", [objid: it.acctid]);
 			def item = [taxfeeid: it.objid,
  					    iyear: it.year, 
 					    iqtr: it.qtr, 
+						lobid: it.lobid,
 					    lobname: it.lobname,
 					    acctid: acct.objid, 
-					    acctno: acct.acctno,
+						acctno: acct.acctno,
 					    accttitle: acct.accttitle,
+						systype : acct.systype,
 					    fundid: acct.fundid,
 					    fundname: acct.fundname,
 					    surcharge: new BigDecimal( (it.surcharge) ? it.surcharge : 0.0 ),
 					    discount: new BigDecimal( (it.discount) ? new BigDecimal( it.discount ) : 0.0 ),
 					    interest: new BigDecimal( (it.interest)  ? new BigDecimal( it.interest ) : 0.0 ),
 					    taxamount: new BigDecimal( it.amount )];
-			item.amount = item.taxamount + item.surcharge + item.interest - item.discount;
+						
+			def amount = item.taxamount + item.surcharge + item.interest - item.discount
+			item.amount = numSvc.round( amount )			
 			entity.items << item;
 		}
-		entity.info.amount  = numSvc.round( entity.items.amount.sum() )
+		//entity.info.amount = entity.items.amount.sum()
+		entity.info.amount  = numSvc.round( entity.items.amount.sum() ) 
 
 		entity.items.sort { a, b ->
 			def sA = a.iyear+''+a.iqtr;

@@ -28,6 +28,7 @@ class BPCollectionInterceptor {
 	public void afterCreate( evt ) {
 		def receipt = evt.result;
 		if( receipt?.doctype != 'BUSINESS_TAX' ) return;
+		//receipt.items = receipt._itms         
 		
 		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]);
 		
@@ -46,7 +47,7 @@ class BPCollectionInterceptor {
 		];
 		
 		//change amount -> totalamount
-		receipt.items.each{ r ->
+		receipt._itms.each{ r ->
 			payment.items << [ bpreceivableid	: r.taxfeeid,
 							 taxamount		: r.taxamount,
 							 surcharge		: r.surcharge,
@@ -152,10 +153,10 @@ class BPCollectionInterceptor {
 	}
 	
 	public def updateAppFullypaid( receipt ){	
-		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]);
-		if( !app ) throw new Exception("Application with objid $receipt.applicationid no longer exists.");
+		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid])
+		if( !app ) throw new Exception("Application with objid $receipt.applicationid no longer exists.")
 		
-		def getUnpaidReceivables = app.receivables.findAll{ it.amount > it.amtpaid };
+		def getUnpaidReceivables = app.receivables.findAll{ it.amount > it.amtpaid }
 				
 		if( !getUnpaidReceivables )
 			em.sqlContext.createNamedExecutor( "business:updateAppFullypaid" ).setParameter( 'businessid', receipt.businessid ).execute()

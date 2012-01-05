@@ -1,19 +1,20 @@
 <workunit>
     <invokers>
-        <invoker type="bp.releasepermit" caption="Release Permit" target="window"/>
+        <invoker type="bp.releasepermit" caption="Release Permit" target="window" action="init" />
         
         <invoker type="formActions" action="_close" caption="Cancel" mnemonic="r" icon="images/cancel.png"/>
-        <invoker type="formActions" action="previewApplication" caption="View Application" icon="images/view.png"/>
+        <invoker type="formActions" action="previewApplication" caption="View Application" icon="images/doc-view.png"/>
         <invoker type="formActions" action="previewAssessment" caption="View Assessment" icon="images/doc-view.png"/>
         <invoker type="formActions" action="release" caption="Release" visibleWhen="#{permit.docstate != 'ACTIVE'}" mnemonic="r" icon="images/doc-approve.png" permission="bppermit.release"/>
         <invoker type="formActions" action="viewPermit" caption="View Permit" visibleWhen="#{permit.docstate == 'ACTIVE'}" mnemonic="r" icon="images/doc-view.png"/>
+        <invoker type="formActions" action="addSpecs" caption="Add Specifications" visibleWhen="#{var == 'LANTAPAN' and isHabalRela and permit.docstate != 'ACTIVE'}" mnemonic="a" icon="images/doc-view.png" index="10" />
     </invokers>
     <code>
 <![CDATA[
 
 import com.rameses.rcp.annotations.*
 import com.rameses.rcp.common.*
-import com.rameses.osiris2.client.*
+import com.rameses.osiris2.client.* 
 
 class BPReleasePermitController 
 {
@@ -23,7 +24,20 @@ class BPReleasePermitController
     @Service('BusinessMgmtService')
     def svc;
     
+    
+    @Service('Var')
+    def svcVar
+    
     def permit;
+    def var
+    def isHabalRela
+    
+    void init(){
+        isHabalRela = false
+        var = svcVar.get('lgu_name')
+        if( permit.lobs[0].name.matches('HABAL-HABAL|MOTORELA') ) 
+            isHabalRela = true
+    }
     
     def lobHandler = [
         getRows: {return 5;},
@@ -37,6 +51,11 @@ class BPReleasePermitController
     ] as SubListModel;
     
     public void release(){
+        def lob = permit.lobs[0].name
+        if( isHabalRela ){
+            if( !permit.info ) 
+                throw new Exception( "$lob specifications not yet set." )
+        }
         if( MsgBox.confirm('Release permit?') ) permit = svc.releasePermit( permit );
     }
     
@@ -52,11 +71,17 @@ class BPReleasePermitController
         return InvokerUtil.lookupOpener('bp.bppermitreport', [applicationid:permit.applicationid]);
     }
     
+    def addSpecs(){
+        permit.info = [:]
+        return 'infopage'
+    }
+    
 }
 
 ]]>
     </code>
     <pages>
         <page template="etracs2.bp.application.PermitPage" />
+        <page name="infopage" template="etracs2.bp.application.PermitInfoPage" />
     </pages>
 </workunit>
