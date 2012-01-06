@@ -132,4 +132,17 @@ SELECT distinct fundname FROM fund o
 SELECT objid AS fundid, fundname  FROM fund 
 
 [getBankAccountByFund]
-SELECT objid FROM bankaccount WHERE fundid = $P{fundid}
+SELECT objid FROM bankaccount WHERE fundid = $P{fundid}  
+
+[getRemittedFormsByAF]
+SELECT 
+	rf.afid, rf.beginqty, rf.beginfrom, rf.beginto, 
+	rf.receivedqty, rf.receivedfrom, rf.receivedto,  
+	rf.issuedqty, rf.issuedfrom, rf.issuedto,  
+	rf.endingqty, rf.endingfrom, rf.endingto  
+FROM liquidationlist lq 
+	INNER JOIN remittancelist rem ON lq.objid = rem.liquidationid 
+	INNER JOIN remittedform rf ON rem.objid = rf.remittanceid 
+WHERE lq.objid = $P{liquidationid} 
+  AND rf.afid = $P{afid}  
+ORDER BY afid, rf.beginfrom  

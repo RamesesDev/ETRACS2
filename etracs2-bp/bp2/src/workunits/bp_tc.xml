@@ -8,10 +8,12 @@
         <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}" icon="images/save.png"/>
         <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}"  icon="images/save.png"/>
         <invoker type="formActions" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" visibleWhen="#{mode == 'view'}" permission="collection_bp.print"/>
+        <invoker type="formActions" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" visibleWhen="#{mode == 'view'}" permission="collection_bp.print"/>
         <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view'}" permission="collection_bp.void" icon="images/void.png"/>
         
         <invoker type="receipt.actions:tc:business_tax" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" target="popup" permission="collection_bp.edit" icon="images/edit.png"/>
         <invoker type="receipt.actions:tc:business_tax" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" permission="collection_bp.print"/>
+        <invoker type="receipt.actions:tc:business_tax" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" permission="collection_bp.print"/>
         <invoker type="receipt.actions:tc:business_tax" action="doVoid" caption="Void" mnemonic="v" permission="collection_bp.void" icon="images/doc-void.png"/>
     </invokers>
     <code>
@@ -95,7 +97,11 @@
             }
         }
 
-        def getParameters() { return paramSvc.getStandardParameter( OsirisContext.env.USERNAME ); }
+        def getParameters() { 
+            def params = paramSvc.getStandardParameter( OsirisContext.env.USERNAME )
+            params.listSize = entity.items.size()
+            return params
+        }
         def getService() { return svc; }
         def getHtmlService() { return htmlSvc; }
         def getCollectionTitle() { return 'Business License Fee'; }

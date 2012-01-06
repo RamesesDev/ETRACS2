@@ -32,6 +32,7 @@
 	<parameter name="TOTAL" isForPrompting="false" class="java.math.BigDecimal"/>
 	<parameter name="TREASURERNAME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="TREASURERTITLE" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="RECEIPTITEMCOUNT" isForPrompting="false" class="java.lang.Integer"/>
 
 	<field name="info.serialno" class="java.lang.String"/>
 	<field name="info.payorname" class="java.lang.String"/>
@@ -48,6 +49,8 @@
 	<field name="checkdate" class="java.lang.String"/>
 	<field name="paytype" class="java.lang.String"/>
 	<field name="voided" class="java.lang.Integer"/>
+	<field name="tradename" class="java.lang.String"/>
+	<field name="info.remarks" class="java.lang.String"/>
 
 		<background>
 			<band height="0"  isSplitAllowed="true" >
@@ -60,7 +63,7 @@
 					<reportElement
 						mode="Transparent"
 						x="53"
-						y="132"
+						y="135"
 						width="85"
 						height="13"
 						forecolor="#000000"
@@ -80,7 +83,7 @@
 					<reportElement
 						mode="Transparent"
 						x="142"
-						y="137"
+						y="139"
 						width="133"
 						height="18"
 						forecolor="#000000"
@@ -100,7 +103,7 @@
 					<reportElement
 						mode="Transparent"
 						x="30"
-						y="423"
+						y="426"
 						width="245"
 						height="25"
 						forecolor="#000000"
@@ -120,7 +123,7 @@
 					<reportElement
 						mode="Transparent"
 						x="93"
-						y="488"
+						y="491"
 						width="60"
 						height="11"
 						forecolor="#000000"
@@ -140,7 +143,7 @@
 					<reportElement
 						mode="Transparent"
 						x="156"
-						y="488"
+						y="490"
 						width="59"
 						height="11"
 						forecolor="#000000"
@@ -160,7 +163,7 @@
 					<reportElement
 						mode="Transparent"
 						x="218"
-						y="488"
+						y="490"
 						width="57"
 						height="11"
 						forecolor="#000000"
@@ -180,7 +183,7 @@
 					<reportElement
 						mode="Opaque"
 						x="20"
-						y="223"
+						y="226"
 						width="248"
 						height="30"
 						forecolor="#000000"
@@ -189,6 +192,15 @@
 					<subreportParameter  name="TOTAL">
 						<subreportParameterExpression><![CDATA[$F{info.amount}]]></subreportParameterExpression>
 					</subreportParameter>
+					<subreportParameter  name="REMARKS">
+						<subreportParameterExpression><![CDATA[$F{info.remarks}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="listSize">
+						<subreportParameterExpression><![CDATA[$P{listSize}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="RECEIPTITEMCOUNT">
+						<subreportParameterExpression><![CDATA[$P{RECEIPTITEMCOUNT}]]></subreportParameterExpression>
+					</subreportParameter>
 					<dataSourceExpression><![CDATA[$F{items}]]></dataSourceExpression>
 					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{AF51Item}]]></subreportExpression>
 				</subreport>
@@ -196,7 +208,7 @@
 					<reportElement
 						mode="Transparent"
 						x="198"
-						y="401"
+						y="404"
 						width="77"
 						height="13"
 						forecolor="#000000"
@@ -216,7 +228,7 @@
 					<reportElement
 						mode="Transparent"
 						x="116"
-						y="526"
+						y="529"
 						width="159"
 						height="13"
 						forecolor="#000000"
@@ -236,7 +248,7 @@
 					<reportElement
 						mode="Transparent"
 						x="56"
-						y="183"
+						y="186"
 						width="222"
 						height="13"
 						forecolor="#000000"
@@ -250,13 +262,14 @@
 					<textElement textAlignment="Left" verticalAlignment="Top" rotation="None" lineSpacing="Single">
 						<font fontName="Tahoma" pdfFontName="Helvetica" size="8" isBold="false" isItalic="false" isUnderline="false" isPdfEmbedded ="false" pdfEncoding ="Cp1252" isStrikeThrough="false" />
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{info.payorname} + " ( " + $F{info.payoraddress} + " ) "]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{info.payorname} + " ( " + $F{info.payoraddress} + " ) " + 
+"\n" + ($F{tradename} == null ? "" : "Tradename: " + $F{tradename})]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						mode="Transparent"
 						x="116"
-						y="538"
+						y="541"
 						width="159"
 						height="11"
 						forecolor="#000000"
@@ -276,8 +289,8 @@
 					<reportElement
 						mode="Transparent"
 						x="56"
-						y="159"
-						width="112"
+						y="162"
+						width="255"
 						height="13"
 						forecolor="#000000"
 						backcolor="#FFFFFF"
@@ -296,7 +309,7 @@
 					<reportElement
 						mode="Transparent"
 						x="141"
-						y="401"
+						y="404"
 						width="48"
 						height="13"
 						forecolor="#000000"

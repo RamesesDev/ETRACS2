@@ -32,6 +32,7 @@
 	<parameter name="TOTAL" isForPrompting="false" class="java.math.BigDecimal"/>
 	<parameter name="TREASURERNAME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="TREASURERTITLE" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="RECEIPTITEMCOUNT" isForPrompting="false" class="java.lang.Integer"/>
 
 	<field name="info.serialno" class="java.lang.String"/>
 	<field name="info.payorname" class="java.lang.String"/>
@@ -48,6 +49,8 @@
 	<field name="checkdate" class="java.lang.String"/>
 	<field name="paytype" class="java.lang.String"/>
 	<field name="voided" class="java.lang.Integer"/>
+	<field name="info.remarks" class="java.lang.String"/>
+	<field name="tradename" class="java.lang.String"/>
 
 		<background>
 			<band height="0"  isSplitAllowed="true" >
@@ -189,6 +192,15 @@
 					<subreportParameter  name="TOTAL">
 						<subreportParameterExpression><![CDATA[$F{info.amount}]]></subreportParameterExpression>
 					</subreportParameter>
+					<subreportParameter  name="REMARKS">
+						<subreportParameterExpression><![CDATA[$F{info.remarks}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="listSize">
+						<subreportParameterExpression><![CDATA[$P{listSize}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="RECEIPTITEMCOUNT">
+						<subreportParameterExpression><![CDATA[$P{RECEIPTITEMCOUNT}]]></subreportParameterExpression>
+					</subreportParameter>
 					<dataSourceExpression><![CDATA[$F{items}]]></dataSourceExpression>
 					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{AF51Item}]]></subreportExpression>
 				</subreport>
@@ -250,7 +262,8 @@
 					<textElement textAlignment="Left" verticalAlignment="Top" rotation="None" lineSpacing="Single">
 						<font fontName="Tahoma" pdfFontName="Helvetica" size="10" isBold="false" isItalic="false" isUnderline="false" isPdfEmbedded ="false" pdfEncoding ="Cp1252" isStrikeThrough="false" />
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{info.payorname} + " ( " + $F{info.payoraddress} + " ) "]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{info.payorname} + " ( " + $F{info.payoraddress} + " ) " +
+"\n" + ($F{tradename} == null ? "" : "Tradename: " + $F{tradename})]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement

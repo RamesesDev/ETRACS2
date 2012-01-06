@@ -28,6 +28,7 @@
 	</parameter>
 	<parameter name="REMARKS" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="TOTAL" isForPrompting="false" class="java.math.BigDecimal"/>
+	<parameter name="RECEIPTITEMCOUNT" isForPrompting="false" class="java.lang.Integer"/>
 
 	<field name="particulars" class="java.lang.String"/>
 	<field name="acctno" class="java.lang.String"/>
@@ -47,7 +48,7 @@
 		</pageHeader>
 		<columnHeader>
 			<band height="20"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[new Boolean( false )]]></printWhenExpression>
+				<printWhenExpression><![CDATA[new Boolean($P{listSize}.intValue() > $P{RECEIPTITEMCOUNT}.intValue())]]></printWhenExpression>
 				<staticText>
 					<reportElement
 						mode="Transparent"
@@ -72,7 +73,7 @@
 		</columnHeader>
 		<detail>
 			<band height="14"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[new Boolean( true )]]></printWhenExpression>
+				<printWhenExpression><![CDATA[new Boolean($P{listSize}.intValue() <= $P{RECEIPTITEMCOUNT}.intValue())]]></printWhenExpression>
 				<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						mode="Transparent"
