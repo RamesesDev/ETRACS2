@@ -58,24 +58,25 @@ class BPApplication
     def lob;
     
     def allowedDelete( def lob ){
-        if( mode != 'VIEW' ){
+        if( mode != 'view' ){
             if( lob.assessmenttype.matches('NEW|ADDLOB') ) return true;
-            if( lob.assessmenttype == 'RENEW' && application.txnmode == 'CAPTURE' ) return true;
-            if( application.txntype == 'RETIRE_LINE' ) return true;
+            if( lob.assessmenttype == 'RENEW' && application.txnmode == 'CAPTURE' && !application.txntype.equals('RETIRE') ) return true;
+            //if( application.txntype == 'RETIRE_LINE' ) return true;
         }
         return false;
     }
     
     def getTypes = {
-        if( lob?.assessmenttype == 'ADDLOB' ) return ['ADDLOB'];
-        return ['RENEW', 'RETIRE'];
+        if( lob?.asssesmenttype.equals('RETIRE') ) return ['RETIRELOB'] 
+        if( lob?.assessmenttype.equals('ADDLOB') ) return ['ADDLOB']; 
+        return ['RENEW', 'NEW', 'RETIRE']
     }
     
     def isTypeEditable = {
-        if( mode == 'VIEW' ) return false;
-        if( application.txntype.matches('NEW|ADDLOB|RETIRE|RETIRELOB') ) return false;
-        if( application.txnmode == 'CAPTURE' ) return false;
-        if( lob?.assessmenttype == 'ADDLOB' ) return false;
+        if( mode.equals('view') ) return false
+        if( application.txntype.matches('NEW|ADDLOB|RETIRELOB|RETIRE') ) return false
+        if( application.txnmode.equals('ONLINE') && application.txntype.equals('RENEW') ) return false
+        if( lob?.assessmenttype.equals('ADDLOB') ) return false
         return true;
     }
     
@@ -91,19 +92,23 @@ class BPApplication
         },
         
         onRemoveItem : {
-            if( allowedDelete( it ) ) { application.lobs.remove( it );}
+            if( allowedDelete( it ) ) { 
+                application.lobs.remove( it );
+            }
         },
         
         fetchList : { return application.lobs; },
     ] as SubListModel;
     
     def onselect = { selected ->
-        if(selected){
+        if( selected ){
             def o = application.lobs.find{ it.lobid == selected.objid };
             if( o ) throw new Exception("LOB '$selected.name' is already in application list.");
             def l = [lobid:selected.objid, name:selected.name, assessmenttype:'NEW', classificationid:selected.classificationid];
-            if( application.txntype.matches('ADDLOB|RENEW') ) l.assessmenttype = 'ADDLOB';
-            if( application.txnmode == 'CAPTURE' && application.txntype == 'RENEW' ) l.assessmenttype = 'RENEW';
+            if( application.txntype.equals('RETIRELOB') ) l.assessmenttype = 'RETIRELOB';
+            if( application.txntype.equals('ADDLOB') ) l.assessmenttype = 'ADDLOB';
+            if( application.txnmode.equals('CAPTURE') && application.txntype.equals('RENEW') ) l.assessmenttype = 'RENEW';
+            if( application.txnmode.equals('ONLINE') ) l.assessmenttype = 'NEW'
             application.lobs << l;
             lobHandler.load();
             binding.refresh();

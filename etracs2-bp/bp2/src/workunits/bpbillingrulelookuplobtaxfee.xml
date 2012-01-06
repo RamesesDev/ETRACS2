@@ -1,0 +1,68 @@
+<workunit>
+    <invokers>
+        <invoker type="bpbilling_lookup.lob" caption="TaxFee LOB Criteria" target="popup"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+class BPBillingRuleLookupLOBTaxFeeController
+{
+    @Binding
+    def binding
+    
+    def searchText
+    def selectedItem
+    def lobs = []
+    def finishHandler
+    
+    def ok() {
+        if( finishHandler ) finishHandler( lobs )
+        return '_close' 
+    }
+    
+    def remove() {
+        if( selectedItem ) {
+            lobs.remove( selectedItem )
+        }
+    }
+    
+    def selectAcctHandler = { lob ->
+        if( ! contains( lob ) ) {
+            lobs.add([
+                objid: lob.objid,
+                name : lob.name
+            ])
+        }
+        searchText = null
+        binding.refresh( 'searchText' )
+        binding.refresh('selectedItem')
+    }
+    
+    def lookupLOB() {
+        return InvokerUtil.lookupOpener('lob.lookup', [searchText:searchText, onselect:selectAcctHandler])
+    }
+    
+    def onselect = { lob ->
+        if( lobs.find{ it.lob.objid == lob.objid } )
+            throw new Exception("Line of business $lob.name already exist.");
+    }
+    
+    boolean contains( lob ) {
+        def v = lobs.find{ it.objid == lob.objid }
+        return v != null
+    }
+    
+    
+}
+
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.bp.billing.rule.TaxFeeCriteriaLOBPage"/>
+    </pages>
+</workunit>

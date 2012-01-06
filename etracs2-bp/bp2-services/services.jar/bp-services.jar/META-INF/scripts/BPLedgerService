@@ -144,7 +144,7 @@ class BPLedgerService {
 									 surcharge		: numberSvc.round(c.surcharge),
 									 interest		: numberSvc.round(c.interest),
 									 discount		: numberSvc.round(c.discount),
-									totalamount: numberSvc.round( (c.totalamount) ? c.totalamount : c.amount ) ];
+									 totalamount: numberSvc.round( (c.totalamount) ? c.totalamount : c.amount ) ];
 
 			def brc = application.receivables.find{ it.objid == c.bpreceivableid };
 			 
@@ -155,9 +155,9 @@ class BPLedgerService {
 			if( !brc.discount ) brc.discount = 0.0
 			
 			brc.amtpaid += numberSvc.round( (c.taxamount) ? c.taxamount : c.amount )
-			brc.surcharge += numberSvc.round(c.surcharge)
-			brc.interest += numberSvc.round(c.interest)
-			brc.discount += numberSvc.round(c.discount)
+			brc.surcharge += numberSvc.round( c.surcharge )
+			brc.interest += numberSvc.round( c.interest )
+			brc.discount += numberSvc.round( c.discount )
 			paymentamount += numberSvc.round( (c.totalamount) ? c.totalamount : c.amount )
 			
 		}
@@ -183,9 +183,11 @@ class BPLedgerService {
 		application.lastmodified = dateService.serverDate.time;
 		
 		if( isApplicationStatusForPermit( application ) ){
-			if( !application.docstate.matches('EXPIRED') ){
-				application.docstate = 'PERMIT_PENDING';
-				bplisting.docstate = 'PERMIT_PENDING';
+			if( !application.docstate.equals('EXPIRED') ){
+				if( !application.docstate.equals('ACTIVE') )
+					application.docstate = 'PERMIT_PENDING'
+				if( !bplisting.docstate.equals('ACTIVE') )
+					bplisting.docstate = 'PERMIT_PENDING'
 			
 				def getUnpaidReceivables = application.receivables.findAll{ it.amount > it.amtpaid }
 				if( !getUnpaidReceivables ) bplisting.fullypaid = 1
@@ -241,7 +243,7 @@ class BPLedgerService {
 		}
 
 		application.payments.remove( p );
-		if( applicaton.docstate == 'PERMIT_PENDING') application.docstate = 'APPROVED';
+		if( application.docstate == 'PERMIT_PENDING') application.docstate = 'APPROVED';
 		
 		em.update( 'bpapplication:bpapplication', application );
 		em.update( 'bplisting:bplisting', bplisting );

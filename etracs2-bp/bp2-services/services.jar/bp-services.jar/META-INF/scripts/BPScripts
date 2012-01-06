@@ -2,7 +2,7 @@ import com.rameses.annotations.*;
 import com.rameses.common.*;
 import java.rmi.server.UID
 
-class BPScripts {
+class BPbpscripts {
 	
 	@PersistenceContext('main')
 	def em;
@@ -23,7 +23,7 @@ class BPScripts {
 			if( !unpaidRcvbls ) {
 				
 				//em.update( 'bplisting:bplisting', bpapps )
-				em.sqlContext.createNamedExecutor( "scripts:updateAppFullypaid" ).
+				em.sqlContext.createNamedExecutor( "bpscripts:updateAppFullypaid" ).
 					setParameter( 'businessid', bpapps.businessid ).execute()
 			} 
 		}
@@ -48,10 +48,10 @@ class BPScripts {
 				def receivables = apps.receivables.findAll{ it.iqtr == 1 && it.amount > it.amtpaid }
 				if( !receivables ){
 				
-					em.sqlContext.createNamedExecutor( "scripts:updateStateApps" )
+					em.sqlContext.createNamedExecutor( "bpscripts:updateStateApps" )
 						.setParameter( 'objid', apps.objid ).execute()
 						
-					em.sqlContext.createNamedExecutor( "scripts:updateStateAppListing" )
+					em.sqlContext.createNamedExecutor( "bpscripts:updateStateAppListing" )
 						.setParameter( 'objid', apps.objid ).execute()
 				}			
 			}
@@ -59,7 +59,7 @@ class BPScripts {
 	}
 	
 	
-	// Method/Script to copy ctcno from bpapplication table to bpapplicationlisting
+	// Method/Script to copy ctcno from bpapplication to bpapplicationlisting table
 	@ProxyMethod
 	public def copyCTCNoToBPAppListing(){
 		def sql = """
@@ -82,6 +82,28 @@ class BPScripts {
 			em.update( 'bplisting:bpapplicationlisting', application )
 		}
 	}
+	
+	
+	//Method to paid all receivables 
+	//for a particular application by tradename
+	@ProxyMethod
+	public def doPaidApplication( def tradename ){
+		def application = em.sqlContext.createNamedQuery('bpscripts:getreceivables').setParameter( 'tradename', tradename ).singleResult
+		if( !application ) {
+			return "Tradename: doesn't exist. "
+		}
+		
+		application.receivables = em.serializer.read( application.receivables ).each(){
+			it.amtpaid = it.amount
+		}
+		application.receivables = em.serializer.write( application.receivables )
+		
+		em.sqlContext.createNamedExecutor("bpscripts:updatereceivables")
+			.setParameters( application ).execute()
+		
+		return "Trade Name: $tradename successfully paid"
+	}
+	
 	
 	
 }

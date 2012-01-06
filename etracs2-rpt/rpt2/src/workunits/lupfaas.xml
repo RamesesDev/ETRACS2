@@ -6,6 +6,7 @@
 <workunit>
     <invokers>
         <invoker type="faas.lookup" action="init" caption="FAAS Lookup" target="popup" />
+        <invoker type="faascurrent.lookup" action="initCurrent" caption="FAAS Lookup" target="popup" />
     </invokers>
     
     <code>
@@ -23,8 +24,13 @@ class FaasLookupController extends LookupModel
     def onselect
     def searchText
     def selected
+    def docstate
     
     void init(){
+    }
+    
+    void initCurrent() {
+        docstate = 'CURRENT' 
     }
     
     
@@ -53,7 +59,7 @@ class FaasLookupController extends LookupModel
     List fetchList( Map params ) { 
         def s = search
         if( !s ) s = searchText 
-        def list = svc.getList( s, params)
+        def list = svc.getList2( s, docstate, params)
         if( list ) return list
         throw new Exception("Record not found.")
     }

@@ -127,16 +127,7 @@ class FAASService
 	@ProxyMethod
 	public def getList2( search, docstate, params ) {
 		def result = null
-        def criteria = [
-            tdno : search,
-            taxpayername : search+'%',
-            pin : search,
-            barangay : search,
-            cadastrallotno : search,
-            surveyno : search,
-            blockno  : search,
-			docstate : ( docstate ? docstate : '%' ),
-        ]
+        def criteria = buildSearchCriteria( search, docstate )
 		if( ! search ) return getListByQuery('faas:findByState', criteria, params)
 		if( (result = getListByQuery('faas:findByTdNo', criteria, params)) ) return result
 		if( (result = getListByQuery('faas:findByTaxpayerName', criteria, params)) ) return result
@@ -156,6 +147,30 @@ class FAASService
 		if((result = getListByQuery('faas:getLookupByTdNo', [tdno:searchText], params))) return result
 		
 		return result
+	}
+	
+	@ProxyMethod
+	public List getClearedFaasList( searchText, taxpayerid, params) {
+		def criteria = buildSearchCriteria( searchText, 'CURRENT' )
+		criteria.taxpayerid = taxpayerid 
+		if( ! searchText ) return getListByQuery('faas:findClearedByState', criteria, params)
+		def result = []
+		if( (result = getListByQuery('faas:findClearedByTdNo', criteria, params)) ) return result
+		if( (result = getListByQuery('faas:findClearedByPin', criteria, params)) ) return result
+		return result
+	}
+	
+	def buildSearchCriteria( search, docstate ) {
+		return [
+            tdno : search,
+            taxpayername : search+'%',
+            pin : search,
+            barangay : search,
+            cadastrallotno : search,
+            surveyno : search,
+            blockno  : search,
+			docstate : ( docstate ? docstate : '%' ),
+        ]
 	}
     
     @ProxyMethod

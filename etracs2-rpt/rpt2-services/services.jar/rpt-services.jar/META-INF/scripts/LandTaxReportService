@@ -25,6 +25,77 @@ class LandTaxReportService
 		return var.lgu_type 
 	}
 
+	@ProxyMethod 
+	public def generateTaxClearance( clearance ) {
+		def parsedate = dateSvc.parseCurrentDate()	
+		
+		required( 'At least one property for clearance', clearance.items )
+		validateClearedItems( clearance )
+		
+		//validate receipt info 
+		def ordate = dateSvc.parse('yyyy-MM-dd', clearance.ordate )
+        if( ordate > dateSvc.serverDate ) {
+            throw new Exception('O.R. Date must be before or equal to current date.')
+        }
+		
+		//additional info 
+        clearance.issueday		= formalizeNumber( parsedate.day )
+		clearance.issuemonth	= getMonth( parsedate.month ).name 
+		clearance.issueyear		= parsedate.year +''
+		clearance.issueplace	= var.lgu_formal_name 
+		clearance.clearedyear	= clearance.year+''
+		
+		//load payment info 
+		clearance.items.each{ item ->
+			item.paymentlist = []
+			if( TO_BOOLEAN( item.taxable ) == true ) {
+				def pmtlist = em.sqlContext.createNamedQuery('landtaxreport:getRPTClearancePaymentInfo')
+									.setParameters([ledgerid:item.ledgerid, year:clearance.year] )
+									.resultList 
+				pmtlist.each { pmt ->
+					pmt.ordate = dateSvc.format( 'MM-dd-yyyy', pmt.ordate )
+					if( pmt.period == 'Q1-Q4' ) {
+						pmt.period = 'FULL ' + clearance.year 
+					}
+					else {
+						pmt.period + ' ' + clearance.year 
+					}
+				}
+				item.paymentlist.addAll(  pmtlist )
+			}
+			else {
+				item.paymentlist.add([
+					period : 'EXEMPT '  + clearance.year 
+				])
+			}
+		}
+		return clearance 
+	}
+	
+	
+	
+	void validateClearedItems( clearance )  {
+		clearance.items.each {
+			it.taxable = TO_BOOLEAN( it.taxable) 
+			if( it.taxable && it.assessedvalue > 0 ) {
+				if( it.lastyearpaid < clearance.year ) 
+					throw new Exception("TD No. $it.tdno is not cleared for the year $clearance.year.")
+				else if( it.lastyearpaid == clearance.year && it.lastqtrpaid < clearance.qtr )
+					throw new Exception("TD No. $it.tdno is not cleared for the year $clearance.year - Q$clearance.qtr.")
+			}
+		}
+	}
+	
+	boolean TO_BOOLEAN( boolvalue ) {
+		if( boolvalue instanceof Boolean ) 
+			return boolvalue 
+		if( '1/y/yes/t/true'.indexOf( boolvalue.toString().toLowerCase() ) >= 0 ) {
+			return true 
+		}
+		return false 
+	}
+	
+	
 	@ProxyMethod
 	public def generateAbstractOfCollection( year, qtr, month, day, type, collector ) {
 		def parsedate = dateSvc.parseCurrentDate()		
@@ -486,6 +557,20 @@ class LandTaxReportService
 	int TO_INT( val ) {
 		if ( val instanceof Integer ) return val 
 		return (int) val 
+	}
+	
+	void required( caption, value ) {
+		if( ! value )  throw new Exception( caption + ' is required.')
+	}
+	
+	def formalizeNumber( num ) {
+		def snum = numSvc.format('#0', num )
+		if( snum == '11' ) return snum + 'TH'
+		else if( snum == '12' ) return snum + 'TH'
+		else if( snum.endsWith('1') ) return snum + 'ST'
+		else if( snum.endsWith('2') ) return snum + 'ND'
+		else if( snum.endsWith('3') ) return snum + 'RD'
+		else return snum + 'TH' 
 	}
 	
 }	

@@ -1,0 +1,71 @@
+<!--
+// author    : jzamora
+// copyright : Rameses Systems Inc
+// date      : 17 july 2011
+-->
+<workunit>
+    <invokers>
+        <invoker type="faascleared.lookup" action="init" caption="Cleared FAAS Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+
+class ClearedFaasLookupController extends LookupModel 
+{
+    @Service("FAASService")
+    def svc
+    
+    def onselect
+    def searchText
+    def selected
+    def taxpayerid
+    
+    void init(){
+    }
+    
+    
+    def ok() {
+        search = null
+        if( onselect ) onselect( selected )
+        return select()
+    }
+    
+    def getListHandler() {
+        return this
+    }
+    
+    int getRows() { return 25 }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"fullpin", caption:"PIN", maxWidth:150),
+            new Column(name:"tdno", caption:"TD No.", maxWidth:150),
+            new Column(name:"taxpayername", caption:"Taxpayer"),
+            new Column(name:"lastyearpaid", caption:"Last Yr. Paid", type:'integer', format:'0000' ),
+            new Column(name:"lastqtrpaid", caption:"Last Qtr Paid", type:'integer', format:'0' ),
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getClearedFaasList( s, taxpayerid, params)
+        if( list ) return list
+        throw new Exception("Record not found.")
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.common.LookupPage"/>
+    </pages>
+</workunit>

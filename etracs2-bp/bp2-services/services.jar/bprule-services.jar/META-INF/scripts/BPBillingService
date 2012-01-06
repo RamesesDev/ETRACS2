@@ -18,6 +18,9 @@ public class BPBillingService
 	@Service("DateService")
 	def dtService;
 	
+	@Service('NumberService')
+	def numSvc;
+		
 	@Service('Var')
 	def var;
 	
@@ -73,6 +76,11 @@ public class BPBillingService
 						it.surcharge = ( it.surcharge ) ? new BigDecimal( it.surcharge.toString() ) : new BigDecimal('0.0');
 						it.interest = ( it.interest ) ? new BigDecimal( it.interest.toString() ) : new BigDecimal('0.0');
 						it.amount = ( it.amount ) ? new BigDecimal( it.amount.toString() ) : new BigDecimal('0.0');
+						
+						it.discount = numSvc.round( it.discount )
+						it.surcharge = numSvc.round( it.surcharge )
+						it.interest = numSvc.round( it.interest )
+						it.amount = numSvc.round( it.amount )
 						
 						it.total = it.amount + it.surcharge + it.interest - it.discount;
 						it.duedate = it.year+"-"+duedate.month+"-"+duedate.day;
@@ -183,6 +191,18 @@ public class BPBillingService
 		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'INTEREST' )
 		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'DISCOUNT' )
 		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'SUMMARY' )
+		
+		bill.taxfees.each {
+			it.discount = ( it.discount ) ? new BigDecimal( it.discount.toString() ) : new BigDecimal('0.0');
+			it.surcharge = ( it.surcharge ) ? new BigDecimal( it.surcharge.toString() ) : new BigDecimal('0.0');
+			it.interest = ( it.interest ) ? new BigDecimal( it.interest.toString() ) : new BigDecimal('0.0');
+			it.amount = ( it.amount ) ? new BigDecimal( it.amount.toString() ) : new BigDecimal('0.0');
+			
+			it.discount = numSvc.round( it.discount )
+			it.surcharge = numSvc.round( it.surcharge )
+			it.interest = numSvc.round( it.interest )
+			it.amount = numSvc.round( it.amount )
+		}
 		return bill
 	}	
 	
