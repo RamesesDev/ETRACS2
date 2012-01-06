@@ -179,12 +179,13 @@ SELECT
 	r.payorname as payorname,  
 	r.accttitle as accttitle,  
 	r.amount as amount, 
-	r.acctno as acctno,
+	ia.acctno  as acctno,
 	r.voided as voided,
 	r.afid as afid 
 FROM revenue r 
 	inner join liquidationlist lq on r.liquidationid = lq.objid  
-	inner join remittancelist rl on r.remittanceid = rl.objid  
+	inner join remittancelist rl on r.remittanceid = rl.objid 
+	inner join incomeaccount ia on r.acctid = ia.objid  
 WHERE r.liquidationid = $P{liquidationid} 
 ORDER BY r.collectorname, rl.objid, r.afid, r.serialno, r.receiptdate 
 
