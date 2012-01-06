@@ -19,7 +19,7 @@ class CommonUtil
     }
     
     public static void required(caption, value) {
-        if( ! value || value.toString().trim().length() > 0 ) {
+        if( ! value || value.toString().trim().length() == 0 ) {
             throw new Exception(caption + ' is required.')
         }
     }
