@@ -600,8 +600,8 @@ class FAASService
         if( ledger.docstate == 'PENDING' ) throw new Exception('Ledger is not yet approved.\nLet LandTax approve the ledger before processing the transaction.')
         if( ledger.docstate == 'CANCELLED') throw new Exception('Ledger has already been cancelled.')
 		if( TO_BOOLEAN( ledger.taxable ) == false ) return 
-        if( ledger.lastyearpaid < parseddate.year ) throw new Exception( msg )
-        if( ledger.lastqtrpaid < 4 ) throw new Exception( msg )
+		if( ledger.assessedvalue > 0.0 && ledger.lastyearpaid < parseddate.year ) throw new Exception( msg )
+        if( ledger.assessedvalue > 0.0 && ledger.lastqtrpaid < 4 ) throw new Exception( msg )
     }
     
     
