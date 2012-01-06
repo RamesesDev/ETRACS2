@@ -1,0 +1,140 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class FaasReportService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('NumberService')
+	def numberSvc
+	
+	@ProxyMethod
+	public def getReportData( faasid ) {
+		def faasdata = [:]
+		def faas = em.read('faas', [objid:faasid])
+		if( !faas ) throw new Exception('Cannot open FAAS with ID No. ' + faasid + '.')
+		
+		faasdata.putAll( faas.info )
+    	faasdata.putAll( faas.rp )
+    	faasdata.putAll( faas.rpu )
+		faasdata.taxeffectivity = faas.info.effectivityqtr + "Q - " + faas.info.effectivityyear
+		faasdata.taxability = ( faasdata.info.taxable ? "TAXABLE" : "EXEMPT" )
+		
+		if( faas.rpu.rputype == 'land' ) {
+			faasdata.landappraisals = getLandDetails( faas.rpu )
+			faasdata.planttreesappraisals = getPlantTreeDetails( faas.rpu )
+			faasdata.landadjustments = getLandAdjustments( faas.rpu )
+			faasdata.propertyassessments = getPropertyAssessements( faas.rpu )
+			
+			faasdata.landAppraisalsSize = faasdata.landappraisals.size
+			faasdata.plantTreesSize = faasdata.planttreesappraisals.size
+			faasdata.landAdjustmentsSize = faasdata.landadjustments.size
+			faasdata.propertyAssessmentsSize = faasdata.propertyassessments.size
+		}
+		else 
+			throw new Exception( 'There is no FAAS report for this record yet.' )
+			
+		return faasdata
+	}
+	
+	private def getLandDetails( rpu ) {
+    	def data = []
+    	def landdetails = rpu.info.landdetails
+		def hasAgri = "0"
+		
+		for( o in landdetails )
+		{
+			if( o.areatype == 'HA' ) {
+				hasAgri = "1"
+				break
+			}
+		}
+		
+		landdetails.each {
+			def item = [
+				classification	: rpu.classname,
+				subclass		: it.subclassname,
+				actualuse 		: it.actualusename,
+				area			: ( hasAgri.equals("1") ? it.areaha : it.areasqm ),
+				unitvalue		: it.unitvalue,
+				basemarketvalue	: it.basemarketvalue,
+				hasAgri			: hasAgri
+			]
+			
+			data.add( item )
+		}
+		return data
+    }
+	
+	private def getPlantTreeDetails( rpu ) {
+    	def data = []
+		def planttreedetails= []
+    	if( rpu.info.planttrees ) 
+			planttreedetails = rpu.info.planttrees
+		else 
+			planttreedetails = rpu.info.planttreedetails
+			
+		planttreedetails.each {
+			def item = [
+				subclass	 	: rpu.classname,
+				nonbearing		: it.nonbearing,
+				bearing			: it.bearing,
+				unitvalue		: it.unitvalue,
+				basemarketvalue	: it.basemarketvalue
+			]
+			
+			data.add( item )
+		}
+		
+		return data
+    }
+	
+	private def getLandAdjustments( rpu ) {
+		def data = []
+		def landdetails = rpu.info.landdetails
+		
+		landdetails.each { itm ->
+			itm.landadjustments?.each {
+				def adjpercentage = ''
+				
+				if(itm.basemarketvalue != 0.00) {
+					def percentadj = (it.adjustment / itm.basemarketvalue) * 100
+					adjpercentage = numberSvc.format("#,##0", percentadj) + ' %'
+				}
+				
+				def item = [
+					basemarketvalue	: itm.basemarketvalue,
+					adjtypename		: it.adjtypename,
+					adjpercentage	: adjpercentage,
+					adjustment		: it.adjustment,
+					marketvalue		: itm.marketvalue
+				]
+				
+				data.add( item )
+			}
+		}
+		
+		return data
+	}
+	
+	private def getPropertyAssessements( rpu ) {
+		def data = []
+		def landdetails = rpu.info.landdetails
+		
+		landdetails.each {
+			def assesslevel = numberSvc.format("#,##0", it.assesslevel)
+			def item = [
+				classification	: rpu.classname,
+				basemarketvalue	: it.basemarketvalue,
+				assesslevel		: assesslevel + " %",
+				assessedvalue	: it.assessedvalue
+			]
+			
+			data.add( item )
+		}
+		
+		return data
+	}
+}

@@ -1,0 +1,65 @@
+<workunit>
+    <invokers>
+        <!-- <invoker type="assessorreports.td" action="init" caption="Tax Declaration" target="popup" icon="images/doc-view.png" />
+        <invoker type="assessorreports.printtd" action="print" caption="Print"/> -->
+        
+        <invoker type="faasmgmt.action" action="init" caption="View FAAS" index="102" icon="images/doc-view.png" target="window" visibleWhen="#{showActions == true}"/>
+        
+        <invoker type="formActions" action="_close" caption="Back" mnemonic="b" shortcut="ctrl B" icon="images/back.png"/>
+        
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class FAASReportController
+{
+    @Service("ReportParameterService")
+    def svcParams
+    
+    @Service("FAASReportService")
+    def svc
+   
+    def data
+    def faasid
+    
+    void init(){
+        if( !faasid ) throw new Exception( "Select a FAAS. $faasid " )
+        view()
+    }
+    
+    def view() {
+       data = svc.getReportData( faasid )
+       if( !data ) throw new Exception("No results found.")
+       report.viewReport()
+       return "preview"
+    }
+    
+    def report =[
+        getReportName : { 
+            if(data.rputype == 'land')
+                return 'faas/land'
+        },
+        getReportData : { return data; },
+        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
+    ] as ServerReportModel
+    
+    def print(){
+        try {
+            init();
+            ReportUtil.print( report.report, true )
+        }catch( e ) { MsgBox.alert( e.message ) }
+        return '_close'
+    }
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>
