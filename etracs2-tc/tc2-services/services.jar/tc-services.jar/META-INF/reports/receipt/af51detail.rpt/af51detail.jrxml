@@ -32,6 +32,7 @@
 	<field name="items" class="java.lang.Object"/>
 	<field name="info.amount" class="java.math.BigDecimal"/>
 	<field name="voided" class="java.lang.Integer"/>
+	<field name="tradename" class="java.lang.String"/>
 
 		<background>
 			<band height="104"  isSplitAllowed="true" >
@@ -71,7 +72,8 @@
 						height="14"
 						forecolor="#000000"
 						backcolor="#FFFFFF"
-						key="staticText-2"/>
+						key="staticText-2"
+						positionType="Float"/>
 					<box>					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					<bottomPen lineWidth="0.0" lineColor="#000000"/>
@@ -160,7 +162,8 @@
 					<textElement textAlignment="Left" verticalAlignment="Top" rotation="None" lineSpacing="Single">
 						<font fontName="Tahoma" pdfFontName="Helvetica" size="8" isBold="false" isItalic="false" isUnderline="false" isPdfEmbedded ="false" pdfEncoding ="Cp1252" isStrikeThrough="false" />
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{info.payoraddress}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{info.payoraddress} + 
+($F{tradename} == null ? "" : "\nTradename: " + $F{tradename})]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -252,7 +255,8 @@
 						y="0"
 						width="253"
 						height="12"
-						key="subreport-1"/>
+						key="subreport-1"
+						positionType="Float"/>
 					<dataSourceExpression><![CDATA[$F{items}]]></dataSourceExpression>
 					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{ITEM}]]></subreportExpression>
 				</subreport>
@@ -277,7 +281,8 @@
 						height="14"
 						forecolor="#000000"
 						backcolor="#FFFFFF"
-						key="textField-8"/>
+						key="textField-8"
+						positionType="Float"/>
 					<box>					<topPen lineWidth="0.25" lineStyle="Solid" lineColor="#000000"/>
 					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					<bottomPen lineWidth="0.0" lineColor="#000000"/>
