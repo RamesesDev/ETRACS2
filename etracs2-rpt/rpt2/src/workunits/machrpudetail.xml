@@ -83,10 +83,12 @@ public class MachRPUDetailController
     def conversionfactor = 1
     
     void setConversionfactor( conversionfactor ) {
-        this.conversionfactor = conversionfactor
-        if( machdetail.imported == 1 ) {
-            recalc()
+        if( ! conversionfactor ) {
+            conversionfactor = 1
         }
+        this.conversionfactor = conversionfactor
+        machdetail.conversionfactor = conversionfactor
+        recalc()
     }
     
     def yearacquired

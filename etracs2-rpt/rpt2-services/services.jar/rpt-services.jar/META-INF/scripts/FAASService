@@ -586,16 +586,22 @@ class FAASService
     
     @ProxyMethod
     public void checkLedgerBalance( faas ) {
+		checkLedgerBalanceByDate( faas, dateSvc.serverDate )
+    }
+	
+	@ProxyMethod
+    public void checkLedgerBalanceByDate( faas, refdate ) {
 		def ledger = em.sqlContext.createNamedQuery('faas:getLedgerInfo').setParameter('objid', faas.ledgerid ).singleResult
         if( !ledger) throw new Exception('Cannot open Ledger for FAAS ' + faas.tdno + '.')
         
+		//check clearance against FAAS issuedate 
 		def msg = 'Ledger is not fully paid.'
-        def parseddate = dateSvc.parseCurrentDate()
-        if( ledger.docstate == 'PENDING' ) throw new Exception('Ledger if not yet approved.\nLet LandTax approve the ledger before processing the transaction.')
+        def parseddate = dateSvc.parseDate( refdate, null )
+        if( ledger.docstate == 'PENDING' ) throw new Exception('Ledger is not yet approved.\nLet LandTax approve the ledger before processing the transaction.')
         if( ledger.docstate == 'CANCELLED') throw new Exception('Ledger has already been cancelled.')
 		if( TO_BOOLEAN( ledger.taxable ) == false ) return 
-        if( ledger.lastyearpaid < parseddate.year ) throw new Exception( msg )
-        if( ledger.lastqtrpaid < 4 ) throw new Exception( msg )
+		if( ledger.assessedvalue > 0.0 && ledger.lastyearpaid < parseddate.year ) throw new Exception( msg )
+        if( ledger.assessedvalue > 0.0 && ledger.lastqtrpaid < 4 ) throw new Exception( msg )
     }
     
     

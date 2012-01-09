@@ -46,8 +46,8 @@ public class ConsolidationPINPage extends javax.swing.JPanel {
         jPanel5 = new javax.swing.JPanel();
         formPanel6 = new com.rameses.rcp.util.FormPanel();
         xTextField9 = new com.rameses.rcp.control.XTextField();
-        xTextField10 = new com.rameses.rcp.control.XTextField();
         xTextField11 = new com.rameses.rcp.control.XTextField();
+        xTextField10 = new com.rameses.rcp.control.XTextField();
         xTextField12 = new com.rameses.rcp.control.XTextField();
 
         setLayout(new java.awt.BorderLayout());
@@ -168,17 +168,17 @@ public class ConsolidationPINPage extends javax.swing.JPanel {
         xTextField9.setRequired(true);
         formPanel6.add(xTextField9);
 
-        xTextField10.setCaption("South");
-        xTextField10.setName("rp.south");
-        xTextField10.setPreferredSize(new java.awt.Dimension(0, 18));
-        xTextField10.setRequired(true);
-        formPanel6.add(xTextField10);
-
         xTextField11.setCaption("East");
         xTextField11.setName("rp.east");
         xTextField11.setPreferredSize(new java.awt.Dimension(0, 18));
         xTextField11.setRequired(true);
         formPanel6.add(xTextField11);
+
+        xTextField10.setCaption("South");
+        xTextField10.setName("rp.south");
+        xTextField10.setPreferredSize(new java.awt.Dimension(0, 18));
+        xTextField10.setRequired(true);
+        formPanel6.add(xTextField10);
 
         xTextField12.setCaption("West");
         xTextField12.setName("rp.west");

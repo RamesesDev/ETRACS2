@@ -118,7 +118,7 @@ public class MachDetailPage extends javax.swing.JPanel {
         xNumberField11.setDepends(new String[] {"machdetail.imported"});
         xNumberField11.setFieldType(java.math.BigDecimal.class);
         xNumberField11.setName("conversionfactor");
-        xNumberField11.setPattern("#,##0.00");
+        xNumberField11.setPattern("#,##0.0000");
         xNumberField11.setPreferredSize(new java.awt.Dimension(160, 18));
         formPanel2.add(xNumberField11);
 

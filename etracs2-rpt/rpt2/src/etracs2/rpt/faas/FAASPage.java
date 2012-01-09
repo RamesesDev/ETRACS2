@@ -588,7 +588,7 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel11.setBounds(336, 22, 206, 64);
 
         xTextField17.setCaption("South Boundary");
-        xTextField17.setName("faas.rp.south");
+        xTextField17.setName("faas.rp.east");
         xTextField17.setRequired(true);
         jPanel8.add(xTextField17);
         xTextField17.setBounds(78, 108, 458, 19);
@@ -604,7 +604,7 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel8.add(jLabel39);
         jLabel39.setBounds(8, 90, 70, 19);
 
-        jLabel40.setText("South * :");
+        jLabel40.setText("East * :");
         jLabel40.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel8.add(jLabel40);
         jLabel40.setBounds(8, 108, 70, 19);
@@ -616,12 +616,12 @@ public class FAASPage extends javax.swing.JPanel {
         xTextField18.setBounds(78, 144, 458, 19);
 
         xTextField19.setCaption("East Boundary");
-        xTextField19.setName("faas.rp.east");
+        xTextField19.setName("faas.rp.south");
         xTextField19.setRequired(true);
         jPanel8.add(xTextField19);
         xTextField19.setBounds(78, 126, 458, 19);
 
-        jLabel41.setText("East * :");
+        jLabel41.setText("South * :");
         jLabel41.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel8.add(jLabel41);
         jLabel41.setBounds(8, 126, 70, 19);
