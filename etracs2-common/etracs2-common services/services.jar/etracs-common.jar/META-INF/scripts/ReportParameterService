@@ -41,7 +41,12 @@ class ReportParameterService{
         def parentlguname = var.get('parent_lgu_name');
         if( parentlguname ) parentlguname = 'PROVINCE OF ' + parentlguname;
 		
-		def receiptitemcount = Integer.parseInt(var.receipt_item_printout_count)
+		//set default item count 
+		def itemcount = 10
+		if( var.receipt_item_printout_count ) {
+			itemcount = Integer.parseInt(var.receipt_item_printout_count)
+		}
+		def receiptitemcount = itemcount 
 		
 		return [
 			DOMAIN		: var.get('lgu_formal_name'),
