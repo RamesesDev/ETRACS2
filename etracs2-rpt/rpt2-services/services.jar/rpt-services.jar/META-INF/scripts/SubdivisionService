@@ -129,7 +129,6 @@ class SubdivisionService
         em.sqlContext.createNamedExecutor('subdivision:deleteSubdivision').setParameter('objid', subdivisionid ).execute()
     }
     
-    
     @ProxyMethod
     public Map submit( subdivisionid ) {
         def subdivision = em.read( SCHEMA_NAME, [objid:subdivisionid] )
@@ -476,7 +475,7 @@ class SubdivisionService
     }
     
     void validateAffectedRpu( subdivision ) {
-        def affectedrpus = em.sqlContext.createNamedQuery('subdivision:getImprovementStates').setParameter('subdivisionid', subdivision.objid ).resultList 
+		def affectedrpus = em.sqlContext.createNamedQuery('subdivision:getImprovementStates').setParameter('subdivisionid', subdivision.objid ).resultList 
         if( affectedrpus ) {
             throw new Exception('Affected RPU with TD No. ' + affectedrpus[0].tdno + ' is not yet current.' )
         }
@@ -492,7 +491,7 @@ class SubdivisionService
         affectedrpus.each {
             if( ! it.subdivisionlandid ) throw new Exception('Land Reference for Affected RPU ' + it.prevfullpin + ' is not set.')
 			if( ! TD_AUTONUMBER ) {
-				checkDuplicateTDNoFromFAASList( it.objid, it.newtdno, "Duplicate New TD No. $tdno assigned to Affected RPU No. $it.prevfullpin is not allowed." )
+				checkDuplicateTDNoFromFAASList( it.objid, it.newtdno, "Duplicate New TD No. $it.newtdno assigned to Affected RPU No. $it.prevfullpin is not allowed." )
 				def spin = it.newpin + '-' + it.newsuffix
 				checkDuplicatePIN( spin, "Duplicate New PIN $spin assigned to Affected RPU No. $it.prevfullpin is not allowed." )
 			}
