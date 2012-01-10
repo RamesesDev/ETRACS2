@@ -228,13 +228,19 @@ class BPLedgerService {
 		if( !application.payments ) application.payments = [];
 		def p = application.payments.find{ it.refno == payment.refno };
 		if( !p ) throw new Exception("Unable to find payment with reference number $payment.refno.");
-		if( p.tail != null ) throw new Exception("Unable to process this transaction.\nThis is referred by another payment transaction.");
+		// 
+		// @jzamora: purpose not yet so clear.
+		// if( p.tail != null ) throw new Exception("Unable to process this transaction.\nThis is referred by another payment transaction.");
+		//
 		def b = em.read('business:business', [objid: application.businessid]);
 		b.lastqtrpaid = p.qtr;
 		b.lastyearpaid = p.year;
 		
 		def credits = application.credits.findAll{ it.refno == p.refno };
-		if( !credits ) throw new Exception("There are no credits bind in this payment.");
+		//
+		//@jzamora: bypass when credit information are not available
+		//if( !credits ) throw new Exception("There are no credits bind in this payment.");
+		//
 		for( c in credits ){
 			application.credits.remove( c );
 			def brc = application.receivables.find{ c.bpreceivableid == it.objid };
