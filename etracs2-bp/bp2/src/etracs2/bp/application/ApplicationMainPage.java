@@ -249,6 +249,7 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xTitledBorder3.setTitle("Line(s) Of Business");
         jPanel4.setBorder(xTitledBorder3);
         xDataTable1.setHandler("lobHandler");
+        xDataTable1.setImmediate(true);
         xDataTable1.setName("lob");
         jPanel4.add(xDataTable1);
         xDataTable1.setBounds(5, 50, 580, 110);

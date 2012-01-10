@@ -67,18 +67,19 @@ class BPApplication
     }
     
     def getTypes = {
-        if( lob?.asssesmenttype.equals('RETIRE') ) return ['RETIRELOB'] 
+        if( lob?.assessmenttype.equals('RETIRE') ) return ['RETIRELOB'] 
         if( lob?.assessmenttype.equals('ADDLOB') ) return ['ADDLOB']; 
-        return ['RENEW', 'NEW', 'RETIRE']
+        if( lob?.assessmenttype.equals('NEW') ) return ['NEW']; 
+        return ['RENEW', 'RETIRE', 'RETIRELOB']
     }
     
-    def isTypeEditable = {
+    def allowEditAssessmentType = { lob -> 
         if( mode.equals('view') ) return false
         if( application.txntype.matches('NEW|ADDLOB|RETIRELOB|RETIRE') ) return false
-        if( application.txnmode.equals('ONLINE') && application.txntype.equals('RENEW') ) return false
         if( lob?.assessmenttype.equals('ADDLOB') ) return false
+        if( lob?.assessmenttype.equals('NEW') ) return false
         return true;
-    }
+    } as Map 
     
     def lobHandler = [
         getRows    : { return 5; },
@@ -86,7 +87,7 @@ class BPApplication
             return [
                 new Column(name:"retire", caption:"", type:'boolean', visible:application.txntype.matches('RETIRE|RETIRELOB'), width:25, resizable:false, editable:(application.txntype == 'RETIRELOB') ),
                 new Column(name:"name", caption:"Classification"),
-                new Column(name:"assessmenttype", caption:"Assessment Type", type:'combo', items:getTypes(), editable: isTypeEditable(), required:true),
+                new Column(name:"assessmenttype", caption:"Assessment Type", type:'combo', items:getTypes(),  editableWhen:'#{root.allowEditAssessmentType[item]}', required:true),
                 new Column(name:"iyear", caption:"Year", format:"####")
             ];
         },
