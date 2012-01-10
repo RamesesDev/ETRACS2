@@ -29,10 +29,9 @@ class BPCollectionInterceptor {
 		def receipt = evt.result
 		if( !'BUSINESS_TAX'.equals( receipt.doctype ) )
 			return
-			 
-		receipt._items = receipt.items.clone()
+		   
 		receipt.items = summarizedItems( receipt )
-		
+		    
 		return receipt
 	}
 	
@@ -51,7 +50,8 @@ class BPCollectionInterceptor {
 	public void afterCreate( evt ) {
 		def receipt = evt.result;
 		if( receipt?.doctype != 'BUSINESS_TAX' ) return;
-			
+		
+		receipt.items = em.read( 'receipt:receipt', [objid:receipt.objid] ).items
 		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]);
 		
 		if( app.lastmodified != receipt.applicationlastmodified ) 
@@ -69,7 +69,7 @@ class BPCollectionInterceptor {
 		];
 		
 		//change amount -> totalamount
-		receipt._items.each{ r ->
+		receipt.items.each{ r ->
 			payment.items << [ bpreceivableid	: r.taxfeeid,
 							 taxamount		: r.taxamount,
 							 surcharge		: r.surcharge,
@@ -77,10 +77,9 @@ class BPCollectionInterceptor {
 							 discount		: r.discount,
 							 totalamount	: r.amount ];
 		}
-		
+
 		ledgerSvc.postPayment( payment );
 		updateAppFullypaid( receipt )
-		
 	}
 	
 	@After(pattern="ReceiptService.delete") 
