@@ -133,6 +133,8 @@ class BPLedgerService {
 		
 		//change amount -> totalamount   
 		//added taxamount as amount   
+		//remove c.amount
+		//totalamount: numberSvc.round( (c.totalamount) ? c.totalamount : c.amount ) ];
 		for( c in payment.items ){
 			application.credits << [ objid			: 'BPRCR' + new UID(),
 									 bpreceivableid	: c.bpreceivableid, 
@@ -140,29 +142,29 @@ class BPLedgerService {
 									 reftype		: payment.reftype,
 									 refno			: payment.refno,
 									 refdate		: payment.refdate,
-									 amount			: numberSvc.round( (c.taxamount) ? c.taxamount : c.amount ),
-									 surcharge		: numberSvc.round(c.surcharge),
-									 interest		: numberSvc.round(c.interest),
-									 discount		: numberSvc.round(c.discount),
-									 totalamount: numberSvc.round( (c.totalamount) ? c.totalamount : c.amount ) ];
+									 amount			: numberSvc.round( c.taxamount ),
+									 surcharge		: numberSvc.round( c.surcharge ),
+									 interest		: numberSvc.round( c.interest ),
+									 discount		: numberSvc.round( c.discount ),
+									 totalamount	: numberSvc.round( c.totalamount ) 
+								   ]									 
 
 			def brc = application.receivables.find{ it.objid == c.bpreceivableid };
 			 
 			if( !brc.amtpaid ) brc.amtpaid = 0.0;
-			//brc.amtpaid += c.totalamount;
 			if( !brc.surcharge ) brc.surcharge = 0.0
 			if( !brc.interest ) brc.interest = 0.0
 			if( !brc.discount ) brc.discount = 0.0
-			
-			brc.amtpaid += numberSvc.round( (c.taxamount) ? c.taxamount : c.amount )
+			//brc.amtpaid += numberSvc.round( (c.taxamount) ? c.taxamount : c.amount )
+			//paymentamount += numberSvc.round( (c.totalamount) ? c.totalamount : c.amount )
+			brc.amtpaid += numberSvc.round( c.taxamount )
 			brc.surcharge += numberSvc.round( c.surcharge )
 			brc.interest += numberSvc.round( c.interest )
 			brc.discount += numberSvc.round( c.discount )
-			paymentamount += numberSvc.round( (c.totalamount) ? c.totalamount : c.amount )
-			
+			paymentamount += numberSvc.round( c.totalamount )
 		}
-
-		def b = em.read('business:business', [objid: application.businessid]);
+		
+		def business = em.read('business:business', [objid: application.businessid]);
 		def prep = application.payments.find{ it.tail == null };
 		if( prep ) prep.tail = payment.refno;
 		
@@ -172,13 +174,13 @@ class BPLedgerService {
 								  refdate: payment.refdate, 
 								  qtr: payment.qtr, 
 								  year:payment.year,
-								  lastyearpaid: b.lastyearpaid,
-								  lastqtrpaid: b.lastqtrpaid,
+								  lastyearpaid: business.lastyearpaid,
+								  lastqtrpaid: business.lastqtrpaid,
 								  amount: paymentamount,
 								  head: prep?.refno];
 
-		b.lastqtrpaid = payment.qtr;
-		b.lastyearpaid = payment.year;
+		business.lastqtrpaid = payment.qtr;
+		business.lastyearpaid = payment.year;
 		
 		application.lastmodified = dateService.serverDate.time;
 		
@@ -197,7 +199,7 @@ class BPLedgerService {
 			bplisting.docstate = 'APPROVED';
 		}
 		
-		em.update( 'business:business', b );
+		em.update( 'business:business', business );
 		em.update( 'bpapplication:bpapplication', application );
 		em.update( 'bplisting:bpapplicationlisting',  bplisting );
 	}
@@ -216,6 +218,19 @@ class BPLedgerService {
 		deletePayment( payment );
 	}
 	
+	private void validateRefNo( def refno, def credits ){
+		if( !credits.last().refno.equals( refno ) )     
+			throw new Exception("Unable to process this transaction.\nThis is referred by another payment transaction.");
+	}
+	
+	private def getPayments( def application , def payment ){
+		if( !application.payments ) application.payments = [];
+		def payments = application.payments.find{ it.refno == payment.refno };
+		if( !payments ) throw new Exception("Unable to find payment with reference number $payment.refno.");
+		
+		return payments
+	}
+	
 	@ProxyMethod
 	public void deletePayment( def payment ){
 		def application = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
@@ -224,16 +239,17 @@ class BPLedgerService {
 			throw new Exception("Unable to process transaction.\nApplication reference status is already $application.docstate.");
 		
 		def bplisting = em.read('bplisting:bpapplicationlisting', [objid: application.objid]);
+				
+		def paymentrefno = getPayments( application, payment )
+		validateRefNo( payment.refno, application.credits )
+		//if( p.tail != null ) throw new Exception("Unable to process this transaction.\nThis is referred by another payment transaction.");
+				
+		// unknown. . .
+		def business = em.read('business:business', [objid: application.businessid]);
+		business.lastqtrpaid = paymentrefno.qtr;
+		business.lastyearpaid = paymentrefno.year;
 		
-		if( !application.payments ) application.payments = [];
-		def p = application.payments.find{ it.refno == payment.refno };
-		if( !p ) throw new Exception("Unable to find payment with reference number $payment.refno.");
-		if( p.tail != null ) throw new Exception("Unable to process this transaction.\nThis is referred by another payment transaction.");
-		def b = em.read('business:business', [objid: application.businessid]);
-		b.lastqtrpaid = p.qtr;
-		b.lastyearpaid = p.year;
-		
-		def credits = application.credits.findAll{ it.refno == p.refno };
+		def credits = application.credits.findAll{ it.refno == paymentrefno.refno };
 		if( !credits ) throw new Exception("There are no credits bind in this payment.");
 		for( c in credits ){
 			application.credits.remove( c );
@@ -241,9 +257,14 @@ class BPLedgerService {
 			if( !brc ) throw new Exception("Missing receivable in credit $c.objid of this payment.");
 			brc.amtpaid -= c.amount;
 		}
-
-		application.payments.remove( p );
-		if( application.docstate == 'PERMIT_PENDING') application.docstate = 'APPROVED';
+     
+		application.payments.remove( paymentrefno );   
+		if( bplisting && ( !bplisting.fullypaid || bplisting.fullypaid == 1 ) ) bplisting.fullypaid = 0
+		def unpaidReceivables = application.receivables.findAll{ it.amtpaid == it.amount }
+		if( !unpaidReceivables ){
+			if( application.docstate.equals('PERMIT_PENDING') ) application.docstate = 'APPROVED';
+			if( bplisting.docstate.equals('PERMIT_PENDING') ) bplisting.docstate = 'APPROVED'
+		} 
 		
 		em.update( 'bpapplication:bpapplication', application );
 		em.update( 'bplisting:bplisting', bplisting );
