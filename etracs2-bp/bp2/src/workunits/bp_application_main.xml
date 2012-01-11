@@ -107,9 +107,11 @@ class BPApplication
             if( o ) throw new Exception("LOB '$selected.name' is already in application list.");
             def l = [lobid:selected.objid, name:selected.name, assessmenttype:'NEW', classificationid:selected.classificationid];
             if( application.txntype.equals('RETIRELOB') ) l.assessmenttype = 'RETIRELOB';
-            if( application.txntype.equals('ADDLOB') ) l.assessmenttype = 'ADDLOB';
-            if( application.txnmode.equals('CAPTURE') && application.txntype.equals('RENEW') ) l.assessmenttype = 'RENEW';
-            if( application.txnmode.equals('ONLINE') ) l.assessmenttype = 'NEW'
+            else if( application.txntype.equals('ADDLOB') ) l.assessmenttype = 'ADDLOB';
+            else if( application.txnmode.equals('CAPTURE') && application.txntype.equals('RENEW') ) l.assessmenttype = 'RENEW';
+            else if( application.txnmode.equals('CAPTURE') && application.txntype.equals('NEW') ) l.assessmenttype = 'NEW';
+            else if( application.txnmode.equals('ONLINE') ) l.assessmenttype = 'NEW'
+            else l.assessmenttype = 'RENEW'
             application.lobs << l;
             lobHandler.load();
             binding.refresh();
