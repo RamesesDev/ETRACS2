@@ -25,12 +25,13 @@
 
 
 	<field name="classification" class="java.lang.String"/>
-	<field name="basemarketvalue" class="java.math.BigDecimal"/>
+	<field name="marketvalue" class="java.math.BigDecimal"/>
 	<field name="assesslevel" class="java.lang.String"/>
 	<field name="assessedvalue" class="java.math.BigDecimal"/>
+	<field name="actualuse" class="java.lang.String"/>
 
 	<variable name="TOTALBASEMV" class="java.math.BigDecimal" resetType="Report" calculation="Sum">
-		<variableExpression><![CDATA[$F{basemarketvalue}]]></variableExpression>
+		<variableExpression><![CDATA[$F{marketvalue}]]></variableExpression>
 	</variable>
 	<variable name="TOTALASSESSEDVALUE" class="java.math.BigDecimal" resetType="Report" calculation="Sum">
 		<variableExpression><![CDATA[$F{assessedvalue}]]></variableExpression>
@@ -53,7 +54,7 @@
 					<reportElement
 						x="0"
 						y="0"
-						width="146"
+						width="98"
 						height="21"
 						key="staticText-4"
 						positionType="Float"/>
@@ -69,9 +70,9 @@
 				</staticText>
 				<staticText>
 					<reportElement
-						x="146"
+						x="196"
 						y="0"
-						width="143"
+						width="110"
 						height="21"
 						key="staticText-5"
 						positionType="Float"/>
@@ -87,7 +88,7 @@
 				</staticText>
 				<staticText>
 					<reportElement
-						x="289"
+						x="306"
 						y="0"
 						width="106"
 						height="21"
@@ -105,9 +106,9 @@
 				</staticText>
 				<staticText>
 					<reportElement
-						x="395"
+						x="412"
 						y="0"
-						width="140"
+						width="123"
 						height="21"
 						key="staticText-7"
 						positionType="Float"/>
@@ -121,6 +122,24 @@
 					</textElement>
 				<text><![CDATA[Assessed Value]]></text>
 				</staticText>
+				<staticText>
+					<reportElement
+						x="98"
+						y="0"
+						width="98"
+						height="21"
+						key="staticText-12"
+						positionType="Float"/>
+					<box>					<topPen lineWidth="0.5" lineStyle="Solid"/>
+					<leftPen lineWidth="0.5" lineStyle="Solid"/>
+					<bottomPen lineWidth="0.5" lineStyle="Solid"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid"/>
+</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Actual Use]]></text>
+				</staticText>
 			</band>
 		</columnHeader>
 		<detail>
@@ -129,7 +148,7 @@
 					<reportElement
 						x="0"
 						y="0"
-						width="146"
+						width="98"
 						height="14"
 						key="textField"/>
 					<box leftPadding="3">					<leftPen lineWidth="0.5" lineStyle="Solid"/>
@@ -142,9 +161,9 @@
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="146"
+						x="196"
 						y="0"
-						width="143"
+						width="110"
 						height="14"
 						key="textField"/>
 					<box rightPadding="2">					<leftPen lineWidth="0.5" lineStyle="Solid"/>
@@ -153,11 +172,11 @@
 					<textElement textAlignment="Right" verticalAlignment="Middle">
 						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
 					</textElement>
-				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{basemarketvalue}]]></textFieldExpression>
+				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{marketvalue}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="289"
+						x="306"
 						y="0"
 						width="106"
 						height="14"
@@ -172,9 +191,9 @@
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="395"
+						x="412"
 						y="0"
-						width="140"
+						width="123"
 						height="14"
 						key="textField"/>
 					<box rightPadding="2">					<leftPen lineWidth="0.5" lineStyle="Solid"/>
@@ -185,6 +204,21 @@
 						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
 					</textElement>
 				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{assessedvalue}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="98"
+						y="0"
+						width="98"
+						height="14"
+						key="textField"/>
+					<box leftPadding="3">					<leftPen lineWidth="0.5" lineStyle="Solid"/>
+					<bottomPen lineWidth="0.5" lineStyle="Solid"/>
+</box>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{actualuse}]]></textFieldExpression>
 				</textField>
 			</band>
 		</detail>
@@ -202,7 +236,7 @@
 					<reportElement
 						x="0"
 						y="0"
-						width="146"
+						width="98"
 						height="14"
 						key="staticText-1">
 							<printWhenExpression><![CDATA[new Boolean($V{REPORT_COUNT}.intValue() > 0)]]></printWhenExpression>
@@ -219,7 +253,7 @@
 				</staticText>
 				<staticText>
 					<reportElement
-						x="289"
+						x="306"
 						y="0"
 						width="106"
 						height="14"
@@ -236,9 +270,9 @@
 				</staticText>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="146"
+						x="196"
 						y="0"
-						width="143"
+						width="110"
 						height="14"
 						key="textField">
 							<printWhenExpression><![CDATA[new Boolean($V{REPORT_COUNT}.intValue() > 0)]]></printWhenExpression>
@@ -253,9 +287,9 @@
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="395"
+						x="412"
 						y="0"
-						width="140"
+						width="123"
 						height="14"
 						key="textField">
 							<printWhenExpression><![CDATA[new Boolean($V{REPORT_COUNT}.intValue() > 0)]]></printWhenExpression>
@@ -273,7 +307,7 @@
 					<reportElement
 						x="0"
 						y="0"
-						width="146"
+						width="98"
 						height="14"
 						key="staticText-8"
 						positionType="Float">
@@ -291,9 +325,9 @@
 				</staticText>
 				<staticText>
 					<reportElement
-						x="146"
+						x="196"
 						y="0"
-						width="143"
+						width="110"
 						height="14"
 						key="staticText-9"
 						positionType="Float">
@@ -311,9 +345,9 @@
 				</staticText>
 				<staticText>
 					<reportElement
-						x="395"
+						x="412"
 						y="0"
-						width="140"
+						width="123"
 						height="14"
 						key="staticText-11"
 						positionType="Float">
@@ -323,6 +357,23 @@
 					<leftPen lineWidth="0.5" lineStyle="Solid"/>
 					<bottomPen lineWidth="0.5" lineStyle="Solid"/>
 					<rightPen lineWidth="0.5" lineStyle="Solid"/>
+</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Tahoma"/>
+					</textElement>
+				<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="98"
+						y="0"
+						width="98"
+						height="14"
+						key="staticText-13"/>
+					<box>					<topPen lineWidth="0.0" lineStyle="Solid"/>
+					<leftPen lineWidth="0.5" lineStyle="Solid"/>
+					<bottomPen lineWidth="0.5" lineStyle="Solid"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid"/>
 </box>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font fontName="Tahoma"/>
