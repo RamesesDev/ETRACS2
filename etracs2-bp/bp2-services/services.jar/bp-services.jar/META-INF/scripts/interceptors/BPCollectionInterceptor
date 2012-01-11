@@ -24,39 +24,24 @@ class BPCollectionInterceptor {
 		//println evt.args[0];
 	}
 	
-	@After(pattern="ReceiptService.create") 
-	public def summarizedItemsByAcctAfterCreate( evt ){
-		def receipt = evt.result
-		if( !'BUSINESS_TAX'.equals( receipt.doctype ) )
-			return
-		   
-		receipt.items = summarizedItems( receipt )
-		    
-		return receipt
-	}
-	
 	@After(pattern="ReceiptService.open")
-	public def summarizedItemsByAcctAfterOpen( evt ){
+	public def afterOpenReceipt( evt ){
 		def receipt = evt.result
-		if( !'BUSINESS_TAX'.equals( receipt.doctype ) )
-			return
-		
 		receipt.items = summarizedItems( receipt )
 		
 		return receipt		
 	}
 	
 	@After(pattern="ReceiptService.create") 
-	public void afterCreate( evt ) {
+	public def afterCreate( evt ) {
 		def receipt = evt.result;
 		if( receipt?.doctype != 'BUSINESS_TAX' ) return;
 		
-		receipt.items = em.read( 'receipt:receipt', [objid:receipt.objid] ).items
 		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]);
-		
 		if( app.lastmodified != receipt.applicationlastmodified ) 
 			throw new Exception("Unabled to continue.\nThe document has been modified by the other user.");
 		
+		//receipt.items = em.read( 'receipt:receipt', [objid:receipt.objid] ).items
 		def payment = [
 			 applicationid: app.objid,
 			 refid: receipt.objid,
@@ -77,9 +62,12 @@ class BPCollectionInterceptor {
 							 discount		: r.discount,
 							 totalamount	: r.amount ];
 		}
-
+		payment.items.each(){ println it }
 		ledgerSvc.postPayment( payment );
 		updateAppFullypaid( receipt )
+		receipt.items = summarizedItems( receipt )
+		    
+		return receipt
 	}
 	
 	@After(pattern="ReceiptService.delete") 
@@ -160,7 +148,7 @@ class BPCollectionInterceptor {
 			 refdate: receipt.info.txndate,
 			 items: []
 		];
-		
+		  
 		receipt.items.each{ r ->
 			payment.items << [ bpreceivableid	: r.taxfeeid,
 							 amount			: r.amount,
@@ -184,11 +172,13 @@ class BPCollectionInterceptor {
 	}
 	
 	private def summarizedItems( def receipt ){
+		if( !'BUSINESS_TAX'.equals( receipt.doctype ) ) return
+				
 		def bt_items = summarizedByBTItems( receipt )
 		receipt.items.removeAll( receipt.items.findAll{ it.systype.equals('BUSINESS_TAX') } )
 		receipt.items.addAll( bt_items )
 		receipt.items = summarizedByAccts( receipt )
-		
+		receipt.items.each(){ println it }
 		return receipt.items
 	}
 	
@@ -208,7 +198,7 @@ class BPCollectionInterceptor {
 		bt_items = bt_items.clone().unique{ it.lobid }.each(){ item ->
 			def amount = receipt.items.findAll{ it.lobid.equals(item.lobid) && it.systype.equals('BUSINESS_TAX') }.amount.sum()
 			def nqtr = receipt.items.findAll{ it.lobid.equals(item.lobid) && it.systype.equals('BUSINESS_TAX') }.size()
-						
+			
 			if( nqtr == 4 ) nqtr = 'Full paid'
 			else if( nqtr == 1 ) nqtr = "$item.iqtr" + fqtr(item.iqtr) + " Qtr"
 			else nqtr = "$item.iqtr-$receipt.qtr Qtr"

@@ -97,21 +97,31 @@ class BPLedgerService {
 	public def postCapturePayment( payment ) {
 		validateCapturePayment( payment );
 		def items = [];
+
 		for ( item in payment.items ) {
+			item.amtpaid = numberSvc.round( item.amtpaid )
+			item.surcharge = numberSvc.round( item.surcharge )
+			item.interest = numberSvc.round( item.interest )
+			item.discount = numberSvc.round( item.discount )
+			def amtpaid = ( item.amtpaid + item.surcharge + item.interest ) - item.discount
+			
 			if (item.amtpaid > 0) {
 					items << [  bpreceivableid	: item.bpreceivableid, 
-								amount			: item.amtpaid,
+								taxamount		: item.amount,
 								surcharge		: item.surcharge,
 								interest		: item.interest,
-								discount		: item.discount];
+								discount		: item.discount,
+								totalamount		: amtpaid
+							  ]
 			}
 		}
-		
+	
 		def p = [:];
 		p.reftype = 'CAPTURE';
 		p.putAll( payment );
 		p.items = items;
 		postPayment( p );
+		
 		return payment;
 	}
 	
@@ -132,9 +142,7 @@ class BPLedgerService {
 		def paymentamount = 0.0;
 		
 		//change amount -> totalamount   
-		//added taxamount as amount   
-		//remove c.amount
-		//totalamount: numberSvc.round( (c.totalamount) ? c.totalamount : c.amount ) ];
+		//added taxamount as amount  
 		for( c in payment.items ){
 			application.credits << [ objid			: 'BPRCR' + new UID(),
 									 bpreceivableid	: c.bpreceivableid, 
@@ -146,17 +154,16 @@ class BPLedgerService {
 									 surcharge		: numberSvc.round( c.surcharge ),
 									 interest		: numberSvc.round( c.interest ),
 									 discount		: numberSvc.round( c.discount ),
-									 totalamount	: numberSvc.round( c.totalamount ) 
-								   ]									 
-
+									 totalamount	: numberSvc.round( c.totalamount )
+								   ]	
+								   
 			def brc = application.receivables.find{ it.objid == c.bpreceivableid };
-			 
+			
 			if( !brc.amtpaid ) brc.amtpaid = 0.0;
 			if( !brc.surcharge ) brc.surcharge = 0.0
 			if( !brc.interest ) brc.interest = 0.0
 			if( !brc.discount ) brc.discount = 0.0
-			//brc.amtpaid += numberSvc.round( (c.taxamount) ? c.taxamount : c.amount )
-			//paymentamount += numberSvc.round( (c.totalamount) ? c.totalamount : c.amount )
+			
 			brc.amtpaid += numberSvc.round( c.taxamount )
 			brc.surcharge += numberSvc.round( c.surcharge )
 			brc.interest += numberSvc.round( c.interest )
@@ -218,8 +225,8 @@ class BPLedgerService {
 		deletePayment( payment );
 	}
 	
-	private void validateRefNo( def refno, def credits ){
-		if( !credits.last().refno.equals( refno ) )     
+	private void validateRefNo( def payment, def application ){
+		if( !application.credits.last().refno.equals( payment.refno ) )     
 			throw new Exception("Unable to process this transaction.\nThis is referred by another payment transaction.");
 	}
 	
@@ -231,24 +238,7 @@ class BPLedgerService {
 		return payments
 	}
 	
-	@ProxyMethod
-	public void deletePayment( def payment ){
-		def application = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
-		if( !application ) throw new Exception('Application reference is no longer exist.');
-		if( application.docstate.matches('ACTIVE') )
-			throw new Exception("Unable to process transaction.\nApplication reference status is already $application.docstate.");
-		
-		def bplisting = em.read('bplisting:bpapplicationlisting', [objid: application.objid]);
-				
-		def paymentrefno = getPayments( application, payment )
-		validateRefNo( payment.refno, application.credits )
-		//if( p.tail != null ) throw new Exception("Unable to process this transaction.\nThis is referred by another payment transaction.");
-				
-		// unknown. . .
-		def business = em.read('business:business', [objid: application.businessid]);
-		business.lastqtrpaid = paymentrefno.qtr;
-		business.lastyearpaid = paymentrefno.year;
-		
+	private def removePayments( def application, def paymentrefno ){
 		def credits = application.credits.findAll{ it.refno == paymentrefno.refno };
 		if( !credits ) throw new Exception("There are no credits bind in this payment.");
 		for( c in credits ){
@@ -257,9 +247,14 @@ class BPLedgerService {
 			if( !brc ) throw new Exception("Missing receivable in credit $c.objid of this payment.");
 			brc.amtpaid -= c.amount;
 		}
-     
 		application.payments.remove( paymentrefno );   
-		if( bplisting && ( !bplisting.fullypaid || bplisting.fullypaid == 1 ) ) bplisting.fullypaid = 0
+		
+		return application
+	}
+	
+	private void updateAppListing( def application, def bplisting ){
+		if( bplisting && ( !bplisting.fullypaid || bplisting.fullypaid == 1 ) )
+			bplisting.fullypaid = 0
 		def unpaidReceivables = application.receivables.findAll{ it.amtpaid == it.amount }
 		if( !unpaidReceivables ){
 			if( application.docstate.equals('PERMIT_PENDING') ) application.docstate = 'APPROVED';
@@ -268,6 +263,29 @@ class BPLedgerService {
 		
 		em.update( 'bpapplication:bpapplication', application );
 		em.update( 'bplisting:bplisting', bplisting );
+	}
+	
+	private void validateApplication( def application ){
+		if( !application ) throw new Exception('Application reference is no longer exist.');
+		//if( application.docstate.matches('ACTIVE') )
+			//throw new Exception("Unable to process transaction.\nApplication reference status is already $application.docstate.");
+	}
+	
+	@ProxyMethod
+	public void deletePayment( def payment ){
+		def application = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
+		def bplisting = em.read('bplisting:bpapplicationlisting', [objid: application.objid]);
+		validateApplication( application )
+		def paymentrefno = getPayments( application, payment )
+		validateRefNo( payment, application )
+		//if( p.tail != null ) throw new Exception("Unable to process this transaction.\nThis is referred by another payment transaction.");
+				
+		def business = em.read('business:business', [objid: application.businessid]);
+		business.lastqtrpaid = paymentrefno.qtr;
+		business.lastyearpaid = paymentrefno.year;
+		
+		application = removePayments( application, paymentrefno )
+		updateAppListing( application, bplisting )
 	}
 	
 	def isApplicationStatusForPermit( application ){
