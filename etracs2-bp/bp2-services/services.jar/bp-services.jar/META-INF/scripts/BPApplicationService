@@ -494,7 +494,14 @@ class BPApplicationService{
 		if( a == b ) return new BigDecimal(amount) - (val * ( new BigDecimal(b) - 1)) ;
 		return val;
 	}
-
+	
+	/* 
+		brc = [
+			surcharge: 0.0,
+			interest: 0.0,
+			discount: 0.0
+		]
+	*/
 	def createReceivable( def qtr, def qtrCount, def businessid, def app, def it ){
 		def brc = [
 			objid: 'BPRC' + new UID(),
@@ -509,9 +516,10 @@ class BPApplicationService{
 			acctid: it.acctid,
 			acctno: it.acctno,
 			accttitle: it.accttitle,
-			amount: getAmount( ( qtr > qtrCount ? 1 : qtr ), qtrCount , it.amountdue ),
+			amount: numSvc.round( getAmount( ( qtr > qtrCount ? 1 : qtr ), qtrCount , it.amountdue ) ),
 			amtpaid: 0.0
-		];
+		]
+		
 		return brc;
 	}
 	
@@ -751,7 +759,7 @@ class BPApplicationService{
 		];
 		
 		def getUnpaidReceivables = { 
-			def list = app.receivables.findAll{ it.amount > it.amtpaid };
+			def list = app.receivables.findAll{ numSvc.round( it.amount) >  numSvc.round(it.amtpaid ) };
 			if( app.txntype.matches('NEW|ADDLOB') ) return list;
 			return list;
 		}

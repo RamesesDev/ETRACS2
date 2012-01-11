@@ -64,9 +64,13 @@ public class BPPermitReportService
 		def c = app.credits[0]
 		def p = app.payments[0]
 				
-		def or = [orno: c.refno+'', 
-				   ordate: dateFormat.parse( c.refdate ),
-				   amount: p.amount];
+		def or = [orno:'-', ordate:null, amount:null ]	
+		if( c && p  ) {
+			or = [orno   : c.refno+'', 
+			      ordate : dateFormat.parse( c.refdate ),
+				  amount : p.amount
+			];
+		}
 		bp.orlist = [ or ];
 		bp.ordetails = bp.orlist[0]
 		
