@@ -21,15 +21,15 @@ class BPCollectionService{
 	
 	@ProxyMethod
 	public def getBill( def entity, year, qtr ){
+		
 		entity.year = (year == 0) ? Integer.parseInt(new java.text.SimpleDateFormat("yyyy").format( dateService.serverDate )) : year;
 		entity.qtr = (qtr == 0) ? 4 : qtr;
 		
-		def app = em.read('bpapplication:bpapplication', [objid: entity.applicationid]);
+		def app = em.read('bpapplication:bpapplication', [objid:entity.applicationid])
 		if( !app ) throw new Exception("Application with objid $entity.applicationid no longer exists.");
-		
 		def bp = em.read('business:business', [objid: app.businessid]);
 		if( !bp ) throw new Exception("Business with objid $app.businessid no longer exists.");
-
+		
 		def bill = [
 			ledgerid      : bp.objid,
 			yearstarted   : bp.yearstarted,
@@ -41,7 +41,7 @@ class BPCollectionService{
 		];
 		
 		def getUnpaidReceivables = { 
-			def list = app.receivables.findAll{ it.amount > it.amtpaid };
+			def list = app.receivables.findAll{ numSvc.round( it.amount ) > numSvc.round( it.amtpaid ) };
 			list = list.each(){ it.amount -= it.amtpaid }
 			if( app.txntype.matches('NEW|ADDLOB') ) return list;
 			return list.findAll{ it.iqtr <= entity.qtr }
@@ -85,10 +85,10 @@ class BPCollectionService{
 						systype : acct.systype,
 					    fundid: acct.fundid,
 					    fundname: acct.fundname,
-					    surcharge: new BigDecimal( (it.surcharge) ? it.surcharge : 0.0 ),
-					    discount: new BigDecimal( (it.discount) ? new BigDecimal( it.discount ) : 0.0 ),
-					    interest: new BigDecimal( (it.interest)  ? new BigDecimal( it.interest ) : 0.0 ),
-					    taxamount: new BigDecimal( it.amount )];
+					    surcharge: new BigDecimal( (it.surcharge) ? numSvc.round( it.surcharge ): 0.0 ),
+					    discount: new BigDecimal( (it.discount) ? numSvc.round( it.discount ) : 0.0 ),
+					    interest: new BigDecimal( (it.interest)  ? numSvc.round( it.interest ) : 0.0 ),
+					    taxamount: new BigDecimal( numSvc.round( it.amount ) )];
 						
 			def amount = item.taxamount + item.surcharge + item.interest - item.discount
 			item.amount = numSvc.round( amount )			
@@ -104,7 +104,7 @@ class BPCollectionService{
 		}
 		
 		entity.applicationlastmodified = app.lastmodified;
-
+		
     	return entity;
 	}
 	
