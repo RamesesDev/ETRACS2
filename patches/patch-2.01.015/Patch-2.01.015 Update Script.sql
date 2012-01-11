@@ -6,6 +6,8 @@ ALTER TABLE rptpaymentmanual add column municity varchar(200) not null;
 ALTER TABLE rptpaymentmanual add column municityid varchar(50) not null;
 ALTER TABLE rptpaymentmanual add column municityname varchar(100) not null; 
 
+alter table bppermit add column info text null;
+
 
 -- update for municipality 
 UPDATE rptpaymentmanual r, lgu l, lgu m  SET
