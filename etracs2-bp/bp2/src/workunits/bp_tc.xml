@@ -2,6 +2,7 @@
     <invokers>
         <invoker type="collection" caption="Business Tax" afid="51" appcode="business_tax" permission="collection_bp.create"/>
         <invoker type="tc:business_tax" action="init" caption="Business Tax" afid="51" permission="collection_bp.create"/>
+        <invoker type="inquiry:tc:business_tax" action="initInquiry" caption="Inquiry" />
         
         <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}" permission="collection_bp.create"  icon="images/doc-new.png"/>
         <invoker type="formActions" action="back" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}" icon="images/back.png"/>
@@ -38,7 +39,7 @@
         def svc;
         
         @Service('ReceiptHtmlService')
-        def htmlSvc;
+        def htmlService
         
         @Service( 'ReportParameterService')
         def paramSvc 
@@ -103,7 +104,7 @@
             return params
         }
         def getService() { return svc; }
-        def getHtmlService() { return htmlSvc; }
+        def getHtmlService() { return htmlService }
         def getCollectionTitle() { return 'Business License Fee'; }
         def getLookupBusiness(){ return InvokerUtil.lookupOpener( 'bp.lookupbusiness',[onselect:onselect] ); }
         def getReportName() { return 'receipt/af51'; }

@@ -6,8 +6,14 @@ class ReceiptHtmlService
 	@PersistenceContext('main')
 	def em
     
+	@Service('NumberService')
+	def numSvc
+	
+	@Service('ReceiptService')
+	def svc 
 	
 	def SCHEMANAME = 'receipt:receipt'
+	
 	
 	@ProxyMethod
 	public def open( receiptid ) {
@@ -16,7 +22,7 @@ class ReceiptHtmlService
 	
 	@ProxyMethod
 	public def getHtml( receiptid ) {
-		def rct = open( receiptid )
+		def rct = svc.open( receiptid )
 		if( ! rct ) return ''
     	def info = buildInfo( rct )
 		def items = buildItems( rct )
@@ -34,6 +40,7 @@ class ReceiptHtmlService
 	
 	@ProxyMethod 
 	public def buildInfo( rct ) {
+		def amount = numSvc.format('#,##0.00', rct.info.amount)
 		return """
 			<table border="0">
 				<tr>
@@ -62,7 +69,7 @@ class ReceiptHtmlService
 				</tr>
 				<tr>
 					<td>Receipt Amount</td>
-					<td align="right">$rct.info.amount</td>
+					<td>$amount</td>
 				</tr>
 			</table>
 		"""
@@ -72,11 +79,12 @@ class ReceiptHtmlService
 	public def buildItems( rct ) {
 		def items = ""
 		rct.items.each {
+			def amt = numSvc.format( '#,##0.00', it.amount )
 			items += """
 				<tr>
 					<td>$it.accttitle</td>
 					<td>$it.fundname</td>
-					<td align="right">$it.amount</td>
+					<td align="right">$amt</td>
 					<td>${it.remarks ? it.remarks : ''}</td>
 				</tr>
 			"""
