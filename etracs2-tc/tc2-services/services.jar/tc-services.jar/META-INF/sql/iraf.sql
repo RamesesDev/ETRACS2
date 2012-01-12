@@ -20,7 +20,7 @@ SELECT o.* FROM iraf o WHERE o.rivrequestedby LIKE $P{requestedby}
 SELECT o.* FROM afinventory o 
 WHERE o.afid =  $P{afid}  
 AND o.docstate = 'OPEN' 
-ORDER BY o.startserialno,  o.stubfrom 
+ORDER BY o.startseries,  o.stubfrom 
 
 [checkConflictSeries] 
 SELECT a.* FROM afinventory a 
