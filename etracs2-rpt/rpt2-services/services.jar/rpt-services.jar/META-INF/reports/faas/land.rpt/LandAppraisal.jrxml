@@ -30,7 +30,7 @@
 	<field name="area" class="java.math.BigDecimal"/>
 	<field name="unitvalue" class="java.math.BigDecimal"/>
 	<field name="basemarketvalue" class="java.math.BigDecimal"/>
-	<field name="hasAgri" class="java.lang.String"/>
+	<field name="areatype" class="java.lang.String"/>
 
 	<variable name="TOTALBASEMV" class="java.math.BigDecimal" resetType="Report" calculation="Sum">
 		<variableExpression><![CDATA[$F{basemarketvalue}]]></variableExpression>
@@ -53,7 +53,7 @@
 					<reportElement
 						x="0"
 						y="0"
-						width="111"
+						width="87"
 						height="21"
 						key="staticText-6"/>
 					<box>					<topPen lineWidth="0.5" lineStyle="Solid"/>
@@ -68,7 +68,7 @@
 				</staticText>
 				<staticText>
 					<reportElement
-						x="111"
+						x="87"
 						y="0"
 						width="79"
 						height="21"
@@ -85,9 +85,9 @@
 				</staticText>
 				<staticText>
 					<reportElement
-						x="190"
+						x="166"
 						y="0"
-						width="111"
+						width="87"
 						height="21"
 						key="staticText-8"/>
 					<box>					<topPen lineWidth="0.5" lineStyle="Solid"/>
@@ -102,7 +102,7 @@
 				</staticText>
 				<staticText>
 					<reportElement
-						x="301"
+						x="253"
 						y="0"
 						width="70"
 						height="21"
@@ -151,6 +151,23 @@
 					</textElement>
 				<text><![CDATA[Base Market Value]]></text>
 				</staticText>
+				<staticText>
+					<reportElement
+						x="323"
+						y="0"
+						width="48"
+						height="21"
+						key="staticText-18"/>
+					<box>					<topPen lineWidth="0.5" lineStyle="Solid"/>
+					<leftPen lineWidth="0.5" lineStyle="Solid"/>
+					<bottomPen lineWidth="0.5" lineStyle="Solid"/>
+					<rightPen lineWidth="0.25" lineStyle="Solid"/>
+</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Type]]></text>
+				</staticText>
 			</band>
 		</columnHeader>
 		<detail>
@@ -159,7 +176,7 @@
 					<reportElement
 						x="0"
 						y="0"
-						width="111"
+						width="87"
 						height="14"
 						key="textField"/>
 					<box leftPadding="3">					<leftPen lineWidth="0.5" lineStyle="Solid"/>
@@ -172,7 +189,7 @@
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="111"
+						x="87"
 						y="0"
 						width="79"
 						height="14"
@@ -187,9 +204,9 @@
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="190"
+						x="166"
 						y="0"
-						width="111"
+						width="87"
 						height="14"
 						key="textField"/>
 					<box leftPadding="3">					<leftPen lineWidth="0.5" lineStyle="Solid"/>
@@ -200,14 +217,14 @@
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$F{actualuse}]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="false" pattern="#,##0.0000" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="false" pattern="#,##0.000000" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="301"
+						x="253"
 						y="0"
 						width="70"
 						height="14"
 						key="textField">
-							<printWhenExpression><![CDATA[new Boolean($F{hasAgri}.equals("1"))]]></printWhenExpression>
+							<printWhenExpression><![CDATA[new Boolean($F{areatype}.equals("HA"))]]></printWhenExpression>
 						</reportElement>
 					<box leftPadding="3" rightPadding="2">					<leftPen lineWidth="0.5" lineStyle="Solid"/>
 					<bottomPen lineWidth="0.5" lineStyle="Solid"/>
@@ -250,12 +267,12 @@
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="301"
+						x="253"
 						y="0"
 						width="70"
 						height="14"
 						key="textField">
-							<printWhenExpression><![CDATA[new Boolean($F{hasAgri}.equals("0"))]]></printWhenExpression>
+							<printWhenExpression><![CDATA[new Boolean($F{areatype}.equals("SQM"))]]></printWhenExpression>
 						</reportElement>
 					<box rightPadding="2">					<leftPen lineWidth="0.5" lineStyle="Solid"/>
 					<bottomPen lineWidth="0.5" lineStyle="Solid"/>
@@ -264,6 +281,21 @@
 						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
 					</textElement>
 				<textFieldExpression   class="java.math.BigDecimal"><![CDATA[$F{area}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="323"
+						y="0"
+						width="48"
+						height="14"
+						key="textField"/>
+					<box>					<leftPen lineWidth="0.5" lineStyle="Solid"/>
+					<bottomPen lineWidth="0.5" lineStyle="Solid"/>
+</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="8" isBold="true"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{areatype}]]></textFieldExpression>
 				</textField>
 			</band>
 		</detail>
@@ -318,7 +350,7 @@
 					<reportElement
 						x="0"
 						y="0"
-						width="111"
+						width="87"
 						height="14"
 						key="staticText-12">
 							<printWhenExpression><![CDATA[new Boolean($V{REPORT_COUNT}.intValue() == 0)]]></printWhenExpression>
@@ -335,7 +367,7 @@
 				</staticText>
 				<staticText>
 					<reportElement
-						x="111"
+						x="87"
 						y="0"
 						width="79"
 						height="14"
@@ -354,9 +386,9 @@
 				</staticText>
 				<staticText>
 					<reportElement
-						x="190"
+						x="166"
 						y="0"
-						width="111"
+						width="87"
 						height="14"
 						key="staticText-14">
 							<printWhenExpression><![CDATA[new Boolean($V{REPORT_COUNT}.intValue() == 0)]]></printWhenExpression>
@@ -373,7 +405,7 @@
 				</staticText>
 				<staticText>
 					<reportElement
-						x="301"
+						x="253"
 						y="0"
 						width="70"
 						height="14"
@@ -422,6 +454,25 @@
 					<leftPen lineWidth="0.5" lineStyle="Solid"/>
 					<bottomPen lineWidth="0.5" lineStyle="Solid"/>
 					<rightPen lineWidth="0.5" lineStyle="Solid"/>
+</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Tahoma"/>
+					</textElement>
+				<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="323"
+						y="0"
+						width="48"
+						height="14"
+						key="staticText-19">
+							<printWhenExpression><![CDATA[new Boolean($V{REPORT_COUNT}.intValue() == 0)]]></printWhenExpression>
+						</reportElement>
+					<box>					<topPen lineWidth="0.0" lineStyle="Solid"/>
+					<leftPen lineWidth="0.5" lineStyle="Solid"/>
+					<bottomPen lineWidth="0.5" lineStyle="Solid"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid"/>
 </box>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font fontName="Tahoma"/>

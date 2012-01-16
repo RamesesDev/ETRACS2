@@ -27,8 +27,7 @@ class BPCollectionInterceptor {
 	@After(pattern="ReceiptService.open")
 	public def afterOpenReceipt( evt ){
 		def receipt = evt.result
-		receipt.items = summarizedItems( receipt )
-		
+		summarizedItems( receipt )
 		return receipt		
 	}
 	
@@ -65,8 +64,7 @@ class BPCollectionInterceptor {
 		payment.items.each(){ println it }
 		ledgerSvc.postPayment( payment );
 		updateAppFullypaid( receipt )
-		receipt.items = summarizedItems( receipt )
-		    
+		summarizedItems( receipt )
 		return receipt
 	}
 	
@@ -171,15 +169,13 @@ class BPCollectionInterceptor {
 			em.sqlContext.createNamedExecutor( "business:updateAppFullypaid" ).setParameter( 'businessid', receipt.businessid ).execute()
 	}
 	
-	private def summarizedItems( def receipt ){
-		if( !'BUSINESS_TAX'.equals( receipt.doctype ) ) return
-				
-		def bt_items = summarizedByBTItems( receipt )
-		receipt.items.removeAll( receipt.items.findAll{ it.systype.equals('BUSINESS_TAX') } )
-		receipt.items.addAll( bt_items )
-		receipt.items = summarizedByAccts( receipt )
-		receipt.items.each(){ println it }
-		return receipt.items
+	private void summarizedItems( def receipt ){
+		if( 'BUSINESS_TAX'.equals( receipt.doctype ) ) {
+			def bt_items = summarizedByBTItems( receipt )
+			receipt.items.removeAll( receipt.items.findAll{ it.systype.equals('BUSINESS_TAX') } )
+			receipt.items.addAll( bt_items )
+			receipt.items = summarizedByAccts( receipt )
+		}
 	}
 	
 	private def summarizedByBTItems( def receipt ){

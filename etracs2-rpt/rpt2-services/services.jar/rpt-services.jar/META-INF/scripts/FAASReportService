@@ -37,25 +37,16 @@ class FaasReportService
 	private def getLandDetails( rpu ) {
     	def data = []
 		def landdetails = rpu.info.landdetails
-		def hasAgri = "0"
-		
-		for( o in landdetails )
-		{
-			if( o.areatype == 'HA' ) {
-				hasAgri = "1"
-				break
-			}
-		}
 		
 		landdetails.each {
 			def item = [
 				classification	: rpu.classname,
 				subclass		: it.subclassname,
 				actualuse 		: it.actualusename,
-				area			: ( hasAgri.equals("1") ? it.areaha : it.areasqm ),
+				area			: ( it.areatype == 'HA' ? it.areaha : it.areasqm ),
 				unitvalue		: it.unitvalue,
 				basemarketvalue	: it.basemarketvalue,
-				hasAgri			: hasAgri
+				areatype		: it.areatype
 			]
 			
 			data.add( item )
@@ -90,17 +81,22 @@ class FaasReportService
 	private def getLandAdjustments( rpu ) {
 		def data = []
 		def landdetails = rpu.info.landdetails
+		def adjpercentage
+		def percentadj
+		def item
 		
 		landdetails.each { itm ->
 			itm.landadjustments?.each {
-				def adjpercentage = ''
+				adjpercentage = ''
 				
 				if(itm.basemarketvalue != 0.00) {
-					def percentadj = (it.adjustment / itm.basemarketvalue) * 100
+					percentadj = (it.adjustment / itm.basemarketvalue) * 100
 					adjpercentage = numberSvc.format("#,##0", percentadj) + ' %'
 				}
 				
-				def item = [
+				item = [
+					itemid			: itm.objid,
+					actualuse		: itm.actualusename,
 					basemarketvalue	: itm.basemarketvalue,
 					adjtypename		: it.adjtypename,
 					adjpercentage	: adjpercentage,
@@ -109,6 +105,35 @@ class FaasReportService
 				]
 				
 				data.add( item )
+			}
+			
+			itm.adjustments?.each {
+				adjpercentage = ''
+				
+				if(itm.basemarketvalue != 0.00) {
+					percentadj = (it.adjustment / itm.basemarketvalue) * 100
+					adjpercentage = numberSvc.format("#,##0", percentadj) + ' %'
+				}
+				
+				item = [
+					itemid			: itm.objid,
+					actualuse		: itm.actualusename,
+					basemarketvalue	: itm.basemarketvalue,
+					adjtypename		: it.adjtypename,
+					adjpercentage	: adjpercentage,
+					adjustment		: it.adjustment,
+					marketvalue		: itm.marketvalue
+				]
+				
+				data.add( item )
+			}
+		}
+		
+		def group = data.groupBy{ it.itemid }
+		group.keySet().each{
+			def list = group[it] 
+			for( int i = 0; i<list.size() -1; i++ ) {
+				list[i].marketvalue = null 
 			}
 		}
 		
@@ -123,7 +148,8 @@ class FaasReportService
 			def assesslevel = numberSvc.format("#,##0", it.assesslevel)
 			def item = [
 				classification	: rpu.classname,
-				basemarketvalue	: it.basemarketvalue,
+				actualuse 		: it.actualusename,
+				marketvalue		: it.marketvalue,
 				assesslevel		: assesslevel + " %",
 				assessedvalue	: it.assessedvalue
 			]
