@@ -238,8 +238,8 @@ class BPLedgerService {
 		return payments
 	}
 	
-	private def removePayments( def application, def paymentrefno ){
-		def credits = application.credits.findAll{ it.refno == paymentrefno.refno };
+	private def removePayments( def application, def pmt ){
+		def credits = application.credits.findAll{ it.refno == pmt.refno };
 		if( !credits ) throw new Exception("There are no credits bind in this payment.");
 		for( c in credits ){
 			application.credits.remove( c );
@@ -247,7 +247,7 @@ class BPLedgerService {
 			if( !brc ) throw new Exception("Missing receivable in credit $c.objid of this payment.");
 			brc.amtpaid -= c.amount;
 		}
-		application.payments.remove( paymentrefno );   
+		application.payments.remove( pmt );   
 		
 		return application
 	}
@@ -265,26 +265,28 @@ class BPLedgerService {
 		em.update( 'bplisting:bplisting', bplisting );
 	}
 	
-	private void validateApplication( def application ){
+	private void validateDeleteReceipt( def application, payment ){
+		def appRefno = application.payments[0].refno
 		if( !application ) throw new Exception('Application reference is no longer exist.');
-		//if( application.docstate.matches('ACTIVE') )
-			//throw new Exception("Unable to process transaction.\nApplication reference status is already $application.docstate.");
+		if( appRefno.equals( payment.refno ) && application.docstate.matches('ACTIVE') )
+			throw new Exception("Unable to process transaction.\nApplication Permit/Reference status is already $application.docstate.");
+		
 	}
 	
 	@ProxyMethod
 	public void deletePayment( def payment ){
 		def application = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
 		def bplisting = em.read('bplisting:bpapplicationlisting', [objid: application.objid]);
-		validateApplication( application )
-		def paymentrefno = getPayments( application, payment )
+		validateDeleteReceipt( application, payment )
+		def pmt = getPayments( application, payment )
 		validateRefNo( payment, application )
 		//if( p.tail != null ) throw new Exception("Unable to process this transaction.\nThis is referred by another payment transaction.");
 				
 		def business = em.read('business:business', [objid: application.businessid]);
-		business.lastqtrpaid = paymentrefno.qtr;
-		business.lastyearpaid = paymentrefno.year;
+		business.lastqtrpaid = pmt.qtr;
+		business.lastyearpaid = pmt.year;
 		
-		application = removePayments( application, paymentrefno )
+		application = removePayments( application, pmt )
 		updateAppListing( application, bplisting )
 	}
 	

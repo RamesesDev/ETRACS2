@@ -33,33 +33,57 @@ WHERE o.taxpayeraddress LIKE $P{search}
 AND   o.docstate = $P{docstate} 
 
 [getForRenewalList]  
-SELECT o.* FROM bpapplicationlisting o 
-WHERE   o.docstate = 'EXPIRED'   
+SELECT 
+ bpl.* 
+FROM bpapplicationlisting bpl 
+INNER JOIN business b on b.objid = bpl.businessid 
+WHERE bpl.docstate = 'EXPIRED'   
+ AND b.docstate != 'RETIRED'  
 
 [getForRenewalListByPermitNo]  
-SELECT o.* FROM bpapplicationlisting o 
-WHERE o.txnno = $P{search} 
-AND   o.docstate = 'EXPIRED'  
+SELECT 
+ bpl.* 
+ FROM bpapplicationlisting bpl 
+INNER JOIN business b on b.objid = bpl.businessid 
+WHERE bpl.txnno = $P{search} 
+ AND bpl.docstate = 'EXPIRED'   
+ AND b.docstate != 'RETIRED' 
 
 [getForRenewalListByTradeName]  
-SELECT o.* FROM bpapplicationlisting o  
-WHERE o.tradename LIKE $P{search}  
-AND   o.docstate = 'EXPIRED'  
+SELECT 
+ bpl.* 
+ FROM bpapplicationlisting bpl 
+INNER JOIN business b on b.objid = bpl.businessid 
+WHERE bpl.tradename LIKE $P{search} 
+ AND bpl.docstate = 'EXPIRED'   
+ AND b.docstate != 'RETIRED' 
+ 
+[getForRenewalListByBusinessAddress]
+SELECT 
+ bpl.* 
+ FROM bpapplicationlisting bpl 
+INNER JOIN business b on b.objid = bpl.businessid 
+WHERE bpl.businessaddress LIKE $P{search} 
+ AND bpl.docstate = 'EXPIRED'   
+ AND b.docstate != 'RETIRED' 
 
-[getForRenewalListByBusinessAddress]  
-SELECT o.* FROM bpapplicationlisting o 
-WHERE o.businessaddress LIKE $P{search}  
-AND   o.docstate = 'EXPIRED'  
+[getForRenewalListByTaxpayerName] 
+SELECT 
+ bpl.* 
+ FROM bpapplicationlisting bpl 
+INNER JOIN business b on b.objid = bpl.businessid 
+WHERE bpl.taxpayername LIKE $P{search} 
+ AND bpl.docstate = 'EXPIRED'   
+ AND b.docstate != 'RETIRED' 
 
-[getForRenewalListByTaxpayerName]  
-SELECT o.* FROM bpapplicationlisting o 
-WHERE o.taxpayername LIKE $P{search} 
-AND   o.docstate = 'EXPIRED'  
-
-[getForRenewalListByTaxpayerAddress]  
-SELECT o.* FROM bpapplicationlisting o 
-WHERE o.taxpayeraddress LIKE $P{search} 
-AND   o.docstate = 'EXPIRED'  
+[getForRenewalListByTaxpayerAddress]
+SELECT 
+ bpl.* 
+ FROM bpapplicationlisting bpl 
+INNER JOIN business b on b.objid = bpl.businessid 
+WHERE bpl.taxpayeraddress LIKE $P{search} 
+ AND bpl.docstate = 'EXPIRED'   
+ AND b.docstate != 'RETIRED'
 
 [getRetiredList]  
 SELECT o.* FROM bpapplicationlisting o 

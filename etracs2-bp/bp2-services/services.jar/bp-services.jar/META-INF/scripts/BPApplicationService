@@ -260,7 +260,6 @@ class BPApplicationService{
 		def app = open( applicationid );
 		if( app.docstate != 'DRAFT' ) throw new Exception("Only DRAFT application can be submitted for assessment.");
 		app.appinfos = ruleSvc.buildInfos( createAppEntity( app ) ).infos;
-		
 		em.sqlContext.createNamedQuery('bpapplication:getApplicationByParentId')
 		.setParameters([parentid: applicationid])
 		.resultList.each{
@@ -268,13 +267,12 @@ class BPApplicationService{
 			it.appinfos = ruleSvc.buildInfos( createAppEntity( it ) ).infos;
 			em.update( SCHEMANAME, it );
 		}
-		
 		if( !app.txntype.matches( 'RETIRE|RETIRELOB' ) ){
 			loadSignatoriesAndRequirements( app );
 		}
-		
 		app.docstate = 'FOR_ASSESSMENT';
 		em.update( SCHEMANAME, app );
+		
 		return app;
 	}
 	
@@ -444,7 +442,7 @@ class BPApplicationService{
 		
 		def business = getBusiness( app );
 		business.applicationid = app.objid;
-		
+		  
 		if( app.txnmode == 'ONLINE' && app.txntype.matches( 'RENEW|LATE_RENEWAL' ) ){
 			updatePreviousApplication( app.parentid );
 		}
@@ -455,22 +453,22 @@ class BPApplicationService{
 			business.lastqtrpaid = 4;
 			business.lastyearpaid = app.iyear - 1;
 		}
-		
+
 		updateParentApplication( app );
-		
+		 
 		em.update( BUSINESS_SCHEMA, business );
 		em.update( SCHEMANAME, app );
-		
+		     
 		addReceivables( business , applist );
 		txnSvc.delete( business.objid );
-		
+
 		if( app.txntype.matches('RETIRE|RETIRELOB') ){
 			app.lobs = app.lobs.findAll{ it.retire = true };
 			if( !getBilling( app.objid ).taxfees ) {
 				app = bpService.retireApplication( app.objid );
 			}
 		}
-		
+
 		return app;
 	}
 	
@@ -759,7 +757,7 @@ class BPApplicationService{
 		];
 		
 		def getUnpaidReceivables = { 
-			def list = app.receivables.findAll{ it.amount > it.amtpaid };
+			def list = app.receivables.findAll{ numSvc.round(it.amount) > numSvc.round(it.amtpaid) };
 			// unknown . . .
 			if( app.txntype.matches('NEW|ADDLOB') ) return list;
 			return list;

@@ -10,36 +10,39 @@ class BPApplicationServiceInterceptor {
 	@After(pattern="BPApplicationService.approveApplication") 
 	public void approveApplication( evt ) {
 		def application = evt.result;
-		def app = [objid : application.objid,
-			   docstate : application.docstate,
-			   txntype : application.txntype,
-			   txndate : application.txndate,
-			   txnno : application.txnno,
-			   barcode : application.barcode,
-			   txnmode : application.txnmode,
-			   tradename : application.tradename,
-			   businessaddress : application.businessaddress,
-			   taxpayerid : application.taxpayerid,
-			   taxpayername : application.info.taxpayername,
-			   taxpayeraddress : application.info.taxpayeraddress,
-			   tin: application.info.tin,
-			   bin: application.info.bin,
-			   pin: application.info.pin,
-			   officetype: application.info.officetype,
-			   organization: application.info.organization,
-			   ctcno: application.info.ctcno,
-			   ctcplaceissued: application.info.ctcplaceissued,
-			   ctcdateissued: application.info.ctcdateissued,
-			   administratorname: application.info.administratorname,
-			   administratoraddress: application.info.administratoraddress,
-			   iyear : application.iyear,
-			   businessid: application.businessid,
-			   parentid: application.parentid,
-			   barangayid: application.info.barangay.barangayid,
-			   barangayname: application.info.barangay.barangayname]
+		def app = [
+			objid : application.objid,
+			docstate : application.docstate,
+			txntype : application.txntype,
+			txndate : application.txndate,
+			txnno : application.txnno,
+			barcode : application.barcode,
+			txnmode : application.txnmode,
+			tradename : application.tradename,
+			businessaddress : application.businessaddress,
+			taxpayerid : application.taxpayerid,
+			taxpayername : application.info.taxpayername,
+			taxpayeraddress : application.info.taxpayeraddress,
+			tin: application.info.tin,
+			bin: application.info.bin,
+			pin: application.info.pin,
+			officetype: application.info.officetype,
+			organization: application.info.organization,
+			ctcno: application.info.ctcno,
+			ctcplaceissued: application.info.ctcplaceissued,
+			ctcdateissued: application.info.ctcdateissued,
+			administratorname: application.info.administratorname,
+			administratoraddress: application.info.administratoraddress,
+			iyear : application.iyear,
+			businessid: application.businessid,
+			parentid: application.parentid,
+			barangayid: application.info.barangay.barangayid,
+			barangayname: application.info.barangay.barangayname,
+			fullypaid: 0
+		]
 		
 		em.validate( 'bplisting:bpapplicationlisting', app );
-		em.create('bplisting:bpapplicationlisting', app);
+		em.create('bplisting:bpapplicationlisting', app );
 		
 		application.lobs.each{
 			def lob = [

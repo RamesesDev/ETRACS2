@@ -67,12 +67,12 @@ class LobService
 	
 	@ProxyMethod
 	public void delete( lob ) {
-		try {
-			em.delete(lob.schemaname, lob)
-		}
-		catch( e ) {
+		def lineob = em.sqlContext.createNamedQuery('lob:getLobInUsed')
+						.setParameter('objid', lob.objid).singleResult
+		if( lineob )   
 			throw new Exception('Delete not allowed. Line of Business has already been referenced.')
-		}
+		
+		em.delete(lob.schemaname, lob)   
 	}
 	
 	@ProxyMethod

@@ -55,10 +55,9 @@
             if( it ){
                 entity.year = 0;
                 entity.qtr = 0;
-
-                entity.applicationid = it.objid;
+                
+                entity.applicationid = it.objid
                 entity = bpcolSvc.getBill( entity, 0, 0 );
-
                 entity.items.collect{ it.iyear }.each{ y ->
                     if( !years?.find{ it == y } ) years << y;
                 }
@@ -122,7 +121,6 @@
                     new Column( name:'amount', caption:'Total', type:'decimal', format:"#,##0.00"),
                 ];
             },
-            
             fetchList  : { 
                 return entity.items;
             }
@@ -131,19 +129,28 @@
         
         void setYear( year )  {
             this.year = year 
-            getBill()
+            if( this.year != 0 ) getBill()
         }
         
         void setQtr( qtr ) {
             this.qtr = qtr 
-            getBill()
+            if( year != 0 ) getBill()
+        }
+        
+        public void updateChange(){
+            if( entity.info.totalpayment >= entity.info.amount )
+                entity.info.change = entity.info.totalpayment - entity.info.amount
+            else
+                entity.info.change = 0.00
+            binding?.refresh("entity.info.change")
         }
         
         void getBill() {
-            if( entity.applicationid ){
+            if( entity.applicationid )
                 entity = bpcolSvc.getBill( entity, year, qtr );
-            }
+            
             listHandler.load()
+            updateChange()
         }
         
         void init() {

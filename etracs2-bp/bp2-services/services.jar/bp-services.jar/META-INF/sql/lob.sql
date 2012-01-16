@@ -22,4 +22,7 @@ SELECT * FROM lob WHERE objid <> $P{objid} AND name = $P{name}
 [getAttributes]
 SELECT * FROM lobattribute WHERE name LIKE $P{name} 
 
+[getLobInUsed]
+SELECT lobid  FROM bploblisting WHERE lobid = $P{objid}
+
 

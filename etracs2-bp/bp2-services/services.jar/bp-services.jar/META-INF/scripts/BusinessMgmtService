@@ -13,6 +13,9 @@ class BusinessMgmtService{
 	@Service('DateService')
 	def dateService;
 	
+	@Service('NumberService')
+	def numSvc
+	
 	@PersistenceContext('main')
 	def em;
 
@@ -42,34 +45,31 @@ class BusinessMgmtService{
 	@ProxyMethod
 	public def getList( def searchText, def docstate, def param ){
 		def list = [];
+		
 		if( !docstate ){
-		
-			if( !searchText )  return getResultList(list, 'bpmgmt:getRetiredList', 'ACTIVE', searchText, param);
-			if( getResultList( list, 'bpmgmt:getRetiredListByPermitNo', 'ACTIVE', searchText, param ) ) return list;
-			if( getResultList( list, 'bpmgmt:getRetiredListByBusinessName', 'ACTIVE', searchText+'%', param ) ) return list;
-			if( getResultList( list, 'bpmgmt:getRetiredListByTaxpayerName', 'ACTIVE', searchText+'%', param ) ) return list;
-			if( getResultList( list, 'bpmgmt:getRetiredListByBusinessAddress', 'ACTIVE', searchText+'%', param ) ) return list;
-			if( getResultList( list, 'bpmgmt:getRetiredListByTaxpayerAddress', 'ACTIVE', searchText+'%', param ) ) return list;
-			
+			if( !searchText )  return getResultList(list, 'bpmgmt:getRetiredList', 'RETIRED', searchText, param);
+			if( getResultList( list, 'bpmgmt:getRetiredListByPermitNo', 'RETIRED', searchText, param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getRetiredListByBusinessName', 'RETIRED', searchText+'%', param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getRetiredListByTaxpayerName', 'RETIRED', searchText+'%', param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getRetiredListByBusinessAddress', 'RETIRED', searchText+'%', param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getRetiredListByTaxpayerAddress', 'RETIRED', searchText+'%', param ) ) return list;
 		}else if( docstate == 'EXPIRED' ){
-		
 			if( !searchText )  return getResultList(list, 'bpmgmt:getForRenewalList', null, searchText, param);
 			if( getResultList( list, 'bpmgmt:getForRenewalListByPermitNo', null, searchText, param ) ) return list;
 			if( getResultList( list, 'bpmgmt:getForRenewalListByTradeName', null, searchText+'%', param ) ) return list;
 			if( getResultList( list, 'bpmgmt:getForRenewalListByTaxpayerName', null, searchText+'%', param ) ) return list;
 			if( getResultList( list, 'bpmgmt:getForRenewalListByBusinessAddress', null, searchText+'%', param ) ) return list;
 			if( getResultList( list, 'bpmgmt:getForRenewalListByTaxpayerAddress', null, searchText+'%', param ) ) return list;
-			
-		}else{
-		
+		}
+		else{
 			if( !searchText )  return getResultList(list, 'bpmgmt:getList', docstate, searchText, param);
 			if( getResultList( list, 'bpmgmt:getListByPermitNo', docstate, searchText, param ) ) return list;
 			if( getResultList( list, 'bpmgmt:getListByBusinessName', docstate, searchText+'%', param ) ) return list;
 			if( getResultList( list, 'bpmgmt:getListByTaxpayerName', docstate, searchText+'%', param ) ) return list;
 			if( getResultList( list, 'bpmgmt:getListByBusinessAddress', docstate, searchText+'%', param ) ) return list;
 			if( getResultList( list, 'bpmgmt:getListByTaxpayerAddress', docstate, searchText+'%', param ) ) return list;
-			
 		}
+		
 		return list;
 	}
 	
@@ -136,11 +136,10 @@ class BusinessMgmtService{
 	
 	private def getBilling( def applicationid ){
 		def app = em.read('bpapplication:bpapplication', [objid: applicationid]);
-		if( !app ) throw new Exception("Application with objid $entity.applicationid is no longer exist.");
-		
+		if( !app ) throw new Exception("Application with objid $applicationid is no longer exist.");
 		def bp = em.read('business:business', [objid: app.businessid]);
 		if( !bp ) throw new Exception("Business with objid $app.businessid is no longer exist.");
-	
+		
 		def bill = [
 			ledgerid      : bp.objid,
 			yearstarted   : bp.yearstarted,
@@ -150,12 +149,14 @@ class BusinessMgmtService{
 		];
 		
 		def getUnpaidReceivables = { 
-			def list = app.receivables.findAll{ it.amount > it.amtpaid };
+			def list = app.receivables.findAll{ numSvc.round(it.amount) > numSvc.round(it.amtpaid) };
 			if( app.txntype.matches('NEW|ADDLOB') ) return list;
-			return list.findAll{ it.qtr <= entity.qtr || ( it.assessmentype.matches('NEW|ADDLOB')) }
+			//return list.findAll{ it.qtr <= entity.qtr || ( it.assessmentype.matches('NEW|ADDLOB')) }
+			return list.findAll{ it.qtr <= dateService.getServerQtr() }
 		}
 		
 		def receivables = getUnpaidReceivables();
+		
 		receivables.each{  
 			it.year = it.iyear;
 			it.qtr = it.iqtr;
@@ -168,31 +169,31 @@ class BusinessMgmtService{
 	public def retireApplication( def applicationid ){
 		def app = open( applicationid );
 		if( !app.txntype.matches('RETIRE|RETIRELOB') ) throw new Exception('Unable to retire '+app.txntype+' transaction.');
+		
 		def billing = getBilling( app.objid );
 		if( billing.taxfees ) throw new Exception("Unable to retire.\nApplication not yet fully paid.");
-		app.docstate = 'ACTIVE';
-		
+				  
 		def bp = em.read('business:business', [objid: app.businessid]);
 		def parentapp = open( app.parentid );
 		
-		if(app.txntype == 'RETIRE'){
+		if( app.txntype == 'RETIRE' ){
 			bp.applicationid = app.objid;
 			bp.docstate = 'RETIRED';
-			parentapp.docstate = 'RETIRED';
+			app.docstate = 'RETIRED'
 			em.update( 'business:business', bp );
 			
 			em.sqlContext.createNamedExecutor('bpapplication:updateApplicationListingDocstate')
-			  .setParameter('objid', parentapp.objid) 
-			  .setParameter('docstate', 'RETIRED')
+			  .setParameter( 'objid', app.objid ) 
+			  .setParameter( 'docstate', 'RETIRED' )
 			  .execute();
 		}
-		
-		em.sqlContext.createNamedExecutor('bpapplication:updateApplicationListingDocstate')
-			  .setParameter('objid', parentapp.objid) 
-			  .setParameter('docstate', 'ACTIVE')
+		else{  
+			em.sqlContext.createNamedExecutor('bpapplication:updateApplicationListingDocstate')
+			  .setParameter( 'objid', a.objid ) 
+			  .setParameter( 'docstate', 'ACTIVE' )
 			  .execute();
+		} 
 		
-		em.update( SCHEMANAME, parentapp );
 		em.update( SCHEMANAME, app );
 		
 		return app;
