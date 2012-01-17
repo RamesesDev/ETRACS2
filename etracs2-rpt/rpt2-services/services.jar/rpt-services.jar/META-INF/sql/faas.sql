@@ -98,6 +98,19 @@ SELECT objid FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPRO
 [getActiveAnnotations] 
 SELECT * FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPROVED' ORDER BY docno DESC 
 
+[updateFAASAnnotationInfo]
+UPDATE faasannotation SET 
+	docstate = $P{docstate},
+	tdno = $P{tdno} 
+WHERE faasid = $P{faasid}	 
+
+[updateFAASAnnotationState]
+UPDATE faasannotation SET 
+	docstate = $P{docstate} 
+WHERE faasid = $P{faasid}	 
+
+[deleteFAASAnnotations]
+DELETE FROM faasannotation WHERE faasid = $P{faasid} 
 
 #----------------------------------------------------------------
 # INSERT
