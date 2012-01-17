@@ -3,7 +3,7 @@
     
     <invokers>
         <invoker type="home.action" folderid="/menu/tc/txn" caption="Liquidations" permission="liquidation.viewlist" index="122" icon="images/folder.png" target="window"/>
-        <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/doc-new.png" permission="liquidation.create"/>
+        <!-- <invoker type="formActions" action="create" shortcut="ctrl N" immediate="true" caption="New" mnemonic="n" icon="images/doc-new.png" permission="liquidation.create"/> -->
         <invoker type="formActions" action="open" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" immediate="true" caption="Open" mnemonic="o" icon="images/open.png" permission="liquidation.create"/>
     </invokers>
     
@@ -57,7 +57,11 @@
             }
             
             def open() {
-                return new WindowOpener( name:"tc2:liquidation", caption:selectedItem.txnno, action:"open", params:[entity:selectedItem] );
+                // return new WindowOpener( name:"tc2:liquidation", caption:selectedItem.txnno, action:"open", params:[entity:selectedItem] );
+                def opener = 'liquidation.' + selectedItem.opener 
+                println '='*50
+                println 'liquidation opener -> ' + opener 
+                return InvokerUtil.lookupOpener( opener , [entity:selectedItem] )
             }
             
             def getHtml() {

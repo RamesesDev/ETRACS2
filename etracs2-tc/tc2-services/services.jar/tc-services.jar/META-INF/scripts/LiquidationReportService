@@ -53,6 +53,51 @@ public class LiquidationReportServices{
 	}
 	
 	@ProxyMethod
+	public def buildRCDByFundReportData( liquidationid, fundid, fundname  ){
+		if( ! fundid  ) throw new Exception('Fund is required.')
+		
+		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
+		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
+		if( liquidation.opener == 'single' ) throw new Exception('This report is applicable to Multi-Cashier transaction only.')
+		
+		//get the rcd for the specified fundTotal
+		def rcd = liquidation.rcds.find{ it.fundid == fundid }
+		if (!rcd ) throw new Exception('No records found for Fund ' + fundname + '.' )
+		
+		def reportData = liquidation.info;
+		
+		reportData.fundname 			= fundname 
+		reportData.totalcash 			= rcd.cash 
+		reportData.totalotherpayment	= rcd.noncash 
+		reportData.amount				= rcd.amount 
+		reportData.amountinwords 		= numsvc.convertString( rcd.amount + "" );
+		reportData.amountformatted 		= decformat.format( rcd.amount );
+		reportData.cashiername			= rcd.cashiername 
+		reportData.cashiertitle			= rcd.cashiertitle 
+		reportData.txndate 				= liquidation.dtposted;
+		
+		liquidation.liquidationid = liquidation.objid
+
+		reportData.otherpayments = rcd.noncashpayments
+
+		reportData.remittances = em.sqlContext.createNamedQuery("liquidation:getRemittancesByLiquidationByFund")
+								   .setParameters( [liquidationid: liquidationid, fundid: fundid ] )
+								   .resultList;
+								   
+		reportData.collectionsummaries = em.sqlContext.createNamedQuery('liquidation:getCollectionSummaryByAFByFund')
+									.setParameters( [liquidationid: liquidationid, fundid: fundid ] )
+								    .resultList;
+									
+		reportData.remittedforms = []
+		
+		reportData.nonserialremittances = []
+		
+		reportData.nonserialsummary = []
+
+		return reportData;
+	}
+	
+	@ProxyMethod
 	public def buildReportBData( def liquidationid, def fundid ){
 		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
 		

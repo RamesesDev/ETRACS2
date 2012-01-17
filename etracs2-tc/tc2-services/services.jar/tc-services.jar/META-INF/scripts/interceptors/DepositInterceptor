@@ -17,11 +17,15 @@ class DepositInterceptor
 	}
 	
 	void postToRevenue( deposit ) {
-		def params = [
-			depositid  : deposit.objid, 
-			timestamp  : dateSvc.buildCustomTimeStamp( deposit.dtposted ) 
-		]
-		em.sqlContext.createNamedExecutor('revenue:postDeposit').setParameters( params ).execute()
+		deposit.liquidations.each{ rcd ->
+			def params = [
+				liquidationrcdid  : rcd.objid, 
+				depositid  : deposit.objid, 
+				timestamp  : dateSvc.buildCustomTimeStamp( deposit.dtposted ) 
+			]
+			// em.sqlContext.createNamedExecutor('revenue:postDeposit').setParameters( params ).execute()
+			em.sqlContext.createNamedExecutor('revenue:postDepositByCashier').setParameters( params ).execute()
+		}
 	}
 	
 		

@@ -6,9 +6,14 @@
 		<field name="schemaversion" required="true" />
 		<field name="docstate" required="true" />
 		<field name="dtposted" required="true" />
+		
+		<!-- single, multi -->
+		<field name="opener" required="true"/>
+		
 		<field name="depositid"/>
 		<field name="dtdeposited"/>
 		<complex name="info" ref="info" serializer="default" />
+		<complex name="rcds" ref="rcd" serializer="default" type="list" required="false" />
 	</element>
 	
 	<element name="info">
@@ -18,9 +23,9 @@
 		<field name="liquidatingofficername" required="true" />
 		<field name="liquidatingofficertitle"/>
 		
-		<field name="depositedbyid" required="true" />
-		<field name="depositedbyname" required="true" />
-		<field name="depositedbytitle" required="true" />
+		<field name="depositedbyid" />
+		<field name="depositedbyname" />
+		<field name="depositedbytitle" />
 		
 		<field name="treasurerid" />
 		<field name="treasurername" />
@@ -29,12 +34,26 @@
 		<field name="totalcash" type="decimal" />
 		<field name="totalotherpayment" type="decimal" />
 		<!--link ref="tc:denomination" /-->
-		<complex name="denominations" type="list" min="1"  serializer="default"/>
+		<complex name="denominations" type="list" serializer="default"/>
+	</element>
+	
+	<element name="rcd" >
+		<field name="fundid" required="true" />
+		<field name="fundname" required="true" />
+		<field name="cashierid" required="true" />
+		<field name="cashiername" required="true" />
+		<field name="cashiertitle" required="true" />
+		<field name="cash" required="true" type="decimal"  />
+		<field name="noncash" required="true" type="decimal"  />
+		<field name="amount" required="true" type="decimal"  />
+		<complex name="denominations" type="list" serializer="default"/>
+		<complex name="noncashpayments" type="list" serializer="default"/>
 	</element>
 	
 	<element name="liquidationlist" tablename="liquidationlist">
 		<field name="objid" primary="true" />
 		<field name="docstate" required="true" />
+		<field name="opener" required="true" />
 		<field name="txnno" required="true" mapfield="info.txnno" />
 		<field name="txndate" required="true" mapfield="info.txndate" />
 		<field name="depositid" />
