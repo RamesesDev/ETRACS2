@@ -10,6 +10,8 @@ public class MiscRYSettingService
     
 	@Service('LogService')
     def logSvc
+	
+	def SCHEMA_NAME = 'miscrysetting'
     
     
     @ProxyMethod
@@ -44,15 +46,15 @@ public class MiscRYSettingService
         if( !setting ) throw new Exception('Revision Year ' + copyYear  + ' setting is not defined.')
         
         //create setting 
-        def settingoldid = setting.objid 
-        setting = em.read( SCHEMA_NAME, [objid:settingoldid] )
-        setting.previd = setting.objid 
+        def oldsettingid = setting.objid 
+        setting = em.read( SCHEMA_NAME, [objid:oldsettingid] )
+        setting.previd = oldsettingid
         setting.objid = 'MS' + new UID()
         setting.ry = newry  
         checkDuplicateSetting( setting )
         em.create( setting.schemaname, setting )
         
-        def assesslevels = getAssessLevels( settingoldid )
+        def assesslevels = getAssessLevels( oldsettingid )
         assesslevels.each {
             it.previd = it.objid 
             it.objid = 'AL' + new UID()
@@ -60,7 +62,7 @@ public class MiscRYSettingService
             saveAssessLevel( it )
         }
         
-        def miscitemvalues = getMiscItemValues( settingoldid );
+        def miscitemvalues = getMiscItemValues( oldsettingid );
         miscitemvalues.each {
         	it.previd = it.objid;
         	it.objid = 'MI' + new UID();
@@ -221,5 +223,12 @@ public class MiscRYSettingService
         if( data ) throw new Exception('Setting for year ' + entity.ry + ' already exists.')
     }
     
+	void required( caption, value ) {
+		def msg = caption + ' is required.' 
+		if( ! value ) 
+			throw new Exception( msg )
+		if( value instanceof String && value.trim().length() == 0 ) 
+			throw new Exception( msg )
+	}
     	
 }
