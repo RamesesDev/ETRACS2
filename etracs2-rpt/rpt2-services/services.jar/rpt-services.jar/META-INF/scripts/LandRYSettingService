@@ -10,6 +10,8 @@ public class LandRYSettingService
      
 	@Service('LogService')
     def logSvc
+	
+	def SCHEMA_NAME = 'landrysetting:landrysetting' 
     
     
     @ProxyMethod
@@ -49,34 +51,55 @@ public class LandRYSettingService
         if( !setting ) throw new Exception('Revision Year ' + copyYear  + ' setting is not defined.')
         
         //create setting 
-        def settingoldid = setting.objid 
-        setting = em.read( SCHEMA_NAME, [objid:settingoldid] )
+        def oldsettingid = setting.objid 
+        setting = em.read( SCHEMA_NAME, [objid:oldsettingid] )
         setting.previd = setting.objid 
         setting.objid = 'LS' + new UID()
         setting.ry = newry  
         checkDuplicateSetting( setting )
         em.create( setting.schemaname, setting )
         
-        def assesslevels = loadAssessLevels( settingoldid )
-        assesslevels.each {
-            it.previd = it.objid 
-            it.objid = 'AL' + new UID()
-            it.landrysettingid = setting.objid 
-            saveAssessLevel( it )
-        }
-        
-        def lcuvs = loadLCUV( settingoldid );
-        lcuvs.each {
+		copyAssessLevels( setting.objid, oldsettingid )
+        copyLcuvs( setting.objid, oldsettingid )
+        copyLandAdjustments( setting.objid, oldsettingid )
+		copyLandActualUseAdjustments( setting.objid, oldsettingid )        
+        return open( setting.objid )
+    }
+	
+	void copyLandActualUseAdjustments( newsettingid, oldsettingid ) {
+		def landactualadjustments = loadLandActualUseAdjustments( oldsettingid );
+        landactualadjustments.each {
         	it.previd = it.objid;
-        	it.objid = 'LC' + new UID();
-        	it.landrysettingid = setting.objid;
-        	saveLCUV( it );
+        	it.objid = 'LAA' + new UID();
+        	it.landrysettingid = newsettingid
+        	saveLandActualUseAdjustment( it );
+        }
+	}
+    
+	void copyLandAdjustments( newsettingid, oldsettingid ) {
+		def landadjustments = loadLandAdjustments( oldsettingid );
+        landadjustments.each {
+        	it.previd = it.objid;
+        	it.objid = 'LA' + new UID();
+        	it.landrysettingid = newsettingid
+        	saveLandAdjustment( it );
+        }
+	}
+	
+	void copyLcuvs( newsettingid, oldsettingid ) {
+		def lcuvs = loadLCUV( oldsettingid );
+        lcuvs.each { lcuv ->
+        	lcuv.previd = lcuv.objid;
+        	lcuv.objid = 'LC' + new UID();
+        	lcuv.landrysettingid = newsettingid
+        	saveLCUV( lcuv );
         	
-        	def specificclasses = openSpecificClass( it.previd );
+        	def specificclasses = openSpecificClass( lcuv.previd );
         	specificclasses.each { sc ->
         		sc.previd = sc.objid;
         		sc.objid = 'SC'	 + new UID();
-        		sc.lcuvid = it.objid;
+        		sc.lcuvid = lcuv.objid;
+				sc.landrysettingid = newsettingid 
         		saveLCUVSpecificClass( sc );
         		
         		def subclasses = openSubClass( sc.previd );
@@ -84,39 +107,32 @@ public class LandRYSettingService
         			sbc.previd = sbc.objid;
         			sbc.objid = 'SB' + new UID();
         			sbc.specificclassid = sc.objid;
+					sbc.landrysettingid = newsettingid 
         			saveLCUVSubClass( sbc );
         		}
         	}
         	
-        	def strippings = openStripping( it.previd );
+        	def strippings = openStripping( lcuv.previd );
         	strippings.each { st ->
         		st.previd = st.objid;
         		st.objid = 'ST' + new UID();
-        		st.lcuvid = it.objid;
+        		st.lcuvid = lcuv.objid;
         		saveLCUVStripping( st );
         	}
 
         }
-        
-        def landadjustments = loadLandAdjustments( settingoldid );
-        landadjustments.each {
-        	it.previd = it.objid;
-        	it.objid = 'LA' + new UID();
-        	it.landrysettingid = setting.objid;
-        	saveLandAdjustment( it );
+	}
+	
+	void copyAssessLevels( newsettingid, oldsettingid ) {
+		def assesslevels = loadAssessLevels( oldsettingid )
+        assesslevels.each {
+            it.previd = it.objid 
+            it.objid = 'AL' + new UID()
+            it.landrysettingid = newsettingid
+            saveAssessLevel( it )
         }
-        
-        def landactualadjustments = loadLandActualUseAdjustments( settingoldid );
-        landactualadjustments.each {
-        	it.previd = it.objid;
-        	it.objid = 'LAA' + new UID();
-        	it.landrysettingid = setting.objid;
-        	saveLandActualUseAdjustment( it );
-        }
-        
-        return open( setting.objid )
-    }
-    
+	}
+	
     @ProxyMethod
     public def update( entity ) {
         validate( entity )
@@ -420,5 +436,13 @@ public class LandRYSettingService
 	void removeLandActualUseAdjustments( objid ) {
         em.sqlContext.createNamedExecutor('landrysetting:deleteLandActualUseAdjustment').setParameter('objid', objid ).execute();
     }
+	
+	void required( caption, value ) {
+		def msg = caption + ' is required.' 
+		if( ! value ) 
+			throw new Exception( msg )
+		if( value instanceof String && value.trim().length() == 0 ) 
+			throw new Exception( msg )
+	}
 	
 }
