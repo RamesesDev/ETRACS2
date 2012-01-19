@@ -10,6 +10,8 @@ public class PlantTreeRYSettingService
     
 	@Service('LogService')
     def logSvc
+	
+	def SCHEMA_NAME = 'planttreerysetting'
     
     
     @ProxyMethod
@@ -49,29 +51,31 @@ public class PlantTreeRYSettingService
         
         //create setting 
         def settingoldid = setting.objid 
-        setting = em.read( SCHEMA_NAME, [objid:settingoldid] )
-        setting.previd = setting.objid 
-        setting.objid = 'PS' + new UID()
-        setting.ry = newry  
+        setting 		= em.read( SCHEMA_NAME, [objid:settingoldid] )
+        setting.previd 	= settingoldid
+        setting.objid 	= 'PS' + new UID()
+        setting.ry 		= newry  
         checkDuplicateSetting( setting )
         em.create( setting.schemaname, setting )
         
         
-        def planttreeunits = getPlantTreeUnits( settingoldid );
-        planttreeunits.each { pt ->
-        	def unitvalue = getUnitValues( pt.objid );
-        	unitvalue.each {
-        		it.previd = it.objid;
-        		it.objid = 'PV' + new UID();
-        		it.planttreerysettingid = setting.objid;
-        		saveUnitValue( it );
-        	}
-        }
-        
+        def planttreeunitvaluelist = getPlantTreeUnitValueList( settingoldid )
+		planttreeunitvaluelist.each{ ptuv ->
+			ptuv.previd = ptuv.objid 
+			ptuv.objid = 'TUV' + new UID()
+			ptuv.planttreerysettingid = setting.objid 
+			saveUnitValue( ptuv )
+		}
         
         return open( setting.objid )
     }
     
+	List getPlantTreeUnitValueList( settingoldid ) {
+		return em.sqlContext.createNamedQuery('planttreerysetting:getTreeUnitValues')
+					.setParameter('rysettingid', settingoldid )
+					.resultList 
+	}
+	
     @ProxyMethod
     public List getPlantTreeUnits( planttreerysettingid ) {
         return em.sqlContext.createNamedQuery('planttreerysetting:getPlantTree').resultList.each {
@@ -130,6 +134,13 @@ public class PlantTreeRYSettingService
     public List getUnitValues( planttreeid )  {
         return em.sqlContext.createNamedQuery('planttreerysetting:geUnitValue').setParameter('planttreeid', planttreeid).resultList
     }
+	
+	@ProxyMethod
+    public List getUnitValueByRYSettingId( rysettingid, planttreeid )  {
+        return em.sqlContext.createNamedQuery('planttreerysetting:geUnitValueByRysetting')
+				.setParameters([rysettingid:rysettingid, planttreeid:planttreeid])
+				.resultList
+    }
     
     /*----------------------------------------------------------
     * Support Methods
@@ -152,5 +163,13 @@ public class PlantTreeRYSettingService
         def data = em.sqlContext.createNamedQuery('planttreerysetting:checkDuplicate').setParameters( entity ).singleResult
         if( data ) throw new Exception('Setting for year ' + entity.ry + ' already exists.')
     }
+	
+	void required( caption, value ) {
+		def msg = caption + ' is required.' 
+		if( ! value ) 
+			throw new Exception( msg )
+		if( value instanceof String && value.trim().length() == 0 ) 
+			throw new Exception( msg )
+	}
   
 }
