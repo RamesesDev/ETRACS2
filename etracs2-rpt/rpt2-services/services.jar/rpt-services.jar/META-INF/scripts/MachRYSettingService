@@ -12,6 +12,8 @@ public class MachRYSettingService
     def logSvc
     
     
+	def SCHEMA_NAME = 'machrysetting'
+	
     @ProxyMethod
     public boolean settingExists() {
         def setting = em.sqlContext.createNamedQuery('machrysetting:getList').setMaxResults(1).singleResult 
@@ -206,5 +208,12 @@ public class MachRYSettingService
         if( data ) throw new Exception('Setting for year ' + entity.ry + ' already exists.')
     }
     
+	void required( caption, value ) {
+		def msg = caption + ' is required.' 
+		if( ! value ) 
+			throw new Exception( msg )
+		if( value instanceof String && value.trim().length() == 0 ) 
+			throw new Exception( msg )
+	}
     	
 }

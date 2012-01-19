@@ -28,4 +28,4 @@ WHERE l.lgutype = 'CITY';
 
 
 create index ix_receiptlist_doctype_voided on receiptlist( doctype, voided);
-
+create index ix_txnlog_refid on txnlog( refid );
