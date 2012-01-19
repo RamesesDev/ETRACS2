@@ -91,13 +91,17 @@ WHERE objid = $P{objid}
 [updateBusinessAddress]
 UPDATE business 
 SET businessaddress = $P{newbusinessaddress} 
-WHERE objid = $P{businessid}
+WHERE objid = $P{objid}
 
 [updateApplicationBusinessAddress]
-UPDATE bpapplication SET businessaddress = $P{businessaddress} WHERE objid = $P{objid} 
+UPDATE bpapplication 
+SET businessaddress = $P{newbusinessaddress} 
+WHERE businessid = $P{businessid} 
 
 [updateApplicationListingBusinessAddress]
-UPDATE bpapplicationlisting SET businessaddress = $P{businessaddress} WHERE objid = $P{objid} 
+UPDATE bpapplicationlisting 
+SET businessaddress = $P{newbusinessaddress} 
+WHERE businessid = $P{businessid} 
 
 
 
