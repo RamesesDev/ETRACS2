@@ -29,7 +29,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         Map params = new HashMap();
         params.put("default.host", "localhost:8080");
-        params.put("app.context", "maribojoc");
+        params.put("app.context", "malaybalay");
         OsirisTestPlatform.runTest( params );
     }
     
