@@ -115,7 +115,7 @@ class RPTLedgerService
     public void post( faasid ) {
         def faas = openFaas( faasid )
         if( faas.datacapture == true ) postNewLedger( faas, PENDING_STATE )
-        else if( 'TR/RE/CE'.indexOf( faas.txntype ) >= 0 ) postLedgerItem( faas ) 
+        else if( 'TR/RE/CE/CC/CT'.indexOf( faas.txntype ) >= 0 ) postLedgerItem( faas ) 
         else if( 'ND/MC'.indexOf( faas.txntype ) >= 0 ) postNewLedger( faas, APPROVED_STATE )
         else throw new Exception('RPTLedgerService.post: Posting of TxnType ' + faas.txntype + ' is not yet supported.')        
     }
@@ -229,6 +229,7 @@ class RPTLedgerService
         def oldstate = oldledger.docstate 
         oldledger.putAll( faas )
         oldledger.objid            = ledgerid
+		oldledger.faasid		   = faas.objid 
         oldledger.docstate         = oldstate 
         oldledger.schemaname       = LEDGER_SCHEMA
         oldledger.schemaversion    = SCHEMA_VERSION
