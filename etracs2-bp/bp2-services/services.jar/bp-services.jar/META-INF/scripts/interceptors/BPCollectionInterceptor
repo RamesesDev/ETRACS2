@@ -27,9 +27,13 @@ class BPCollectionInterceptor {
 	@After(pattern="ReceiptService.open")
 	public def afterOpenReceipt( evt ){
 		def receipt = evt.result
+		
+		if( receipt?.doctype != 'BUSINESS_TAX' ) {
+			return receipt;
+		}
 		receipt.txntype = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]).txntype
 		summarizedItems( receipt )
-		return receipt		
+		return receipt		 
 	}
 	
 	@After(pattern="ReceiptService.create") 
