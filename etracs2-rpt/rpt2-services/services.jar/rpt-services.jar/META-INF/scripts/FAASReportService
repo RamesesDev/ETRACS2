@@ -186,12 +186,10 @@ class FaasReportService
 					brandmodelno		: brandmodel,
 					capacity			: it.capacity,
 					yearacquired		: it.yearacquired,
-					acquiredcondition	: '?',
 					estimatedlife		: it.estimatedlife,
 					remaininglife		: it.remaininglife,
 					yearinstalled		: it.yearinstalled,
-					operationyear		: it.operationyear,
-					remarks				: '?'
+					operationyear		: it.operationyear
 				]
 				
 				data.add( item )
@@ -207,16 +205,32 @@ class FaasReportService
 		
 		machuses?.each { itm ->
 			itm.machdetails?.each {
+				def additionalcost = new BigDecimal( 0.0 )
+				
+				if( it.freightcost )
+					additionalcost.add( it.freightcost )
+				
+				if( it.insurancecost )
+					additionalcost.add( it.insurancecost )
+					
+				if( it.installationcost )
+					additionalcost.add( it.installationcost )
+					
+				if( it.othercost )
+					additionalcost.add( it.othercost )
+					
+				def depreciation = numberSvc.format("#,##0", it.depreciation) + ' %'
+				
 				def item = [
 					machinename			: it.machinename,
-					unitcount			: 1,
+					originalcost		: it.originalcost,
+					additionalcost		: additionalcost,
 					acquisitioncost		: it.acquisitioncost,
-					freightcost			: it.freightcost,
-					insurancecost		: it.insurancecost,
-					installationcost	: it.installationcost,
-					othercost			: it.othercost,
+					conversionfactor	: it.conversionfactor,
+					replacementcost		: it.replacementcost,
+					yearsused			: it.yearsused,
 					marketvalue			: it.marketvalue,
-					depreciation		: it.depreciation,
+					depreciation		: depreciation,
 					depreciationvalue	: it.depreciationvalue
 				]
 				
