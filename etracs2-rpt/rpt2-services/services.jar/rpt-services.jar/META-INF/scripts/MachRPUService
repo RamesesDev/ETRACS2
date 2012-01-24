@@ -73,8 +73,12 @@ class MachRPUService
     }
     
     void calculateDetailAssessment( machuse, machdetail ) {
+		def rptsetting = getRPTSetting()
         machdetail.basemarketvalue  = machdetail.replacementcost
         machdetail.marketvalue      = machdetail.basemarketvalue - machdetail.depreciationvalue
+		if( rptsetting && IS_TRUE( rptsetting.roundadjmarketvalue ) ) {
+			machdetail.marketvalue = numberSvc.roundToTen( machdetail.marketvalue )
+		}
         machdetail.assesslevel      = getAssessLevel( machuse, machdetail.marketvalue )
         machdetail.assessedvalue   = numberSvc.roundToTen( machdetail.marketvalue * machdetail.assesslevel / 100.0)
     }
