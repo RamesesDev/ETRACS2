@@ -27,8 +27,12 @@ class FaasReportService
 			faasdata.planttreesappraisals = getPlantTreeDetails( faas.rpu )
 			faasdata.landadjustments = getLandAdjustments( faas.rpu )
 			faasdata.propertyassessments = getPropertyAssessements( faas.rpu )
-		}
-		else 
+		} else if( faas.rpu.rputype == 'mach' ) {
+			getLandOwnerInfo( faasdata )
+			faasdata.machdetails = getMachDetails( faas.rpu )
+			faasdata.propertyappraisals = getPropertyAppraisals( faas.rpu )
+			faasdata.propertyassessments = getMachPropertyAssessments( faas.rpu )
+		} else 
 			throw new Exception( 'There is no FAAS report for this record yet.' )
 			
 		return faasdata
@@ -151,6 +155,88 @@ class FaasReportService
 				actualuse 		: it.actualusename,
 				marketvalue		: it.marketvalue,
 				assesslevel		: assesslevel + " %",
+				assessedvalue	: it.assessedvalue
+			]
+			
+			data.add( item )
+		}
+		
+		return data
+	}
+	
+	private void getLandOwnerInfo( faasdata ) {
+		def info = em.sqlContext.createNamedQuery('faas:getLandOwnerInfo').setParameter('objid', faasdata.landfaasid).singleResult
+
+		if(info) {
+			faasdata.landownername = info.taxpayername
+			faasdata.landownerpin = info.pin
+		}
+	}
+	
+	private def getMachDetails( rpu ) {
+		def data = []
+		def machuses = rpu.info.machuses
+		
+		machuses?.each { itm ->
+			itm.machdetails?.each {
+				def brandmodel = (it.brand? it.brand : '') + (it.model? '/' + it.model : '')
+				
+				def item = [
+					machinename			: it.machinename,
+					brandmodelno		: brandmodel,
+					capacity			: it.capacity,
+					yearacquired		: it.yearacquired,
+					acquiredcondition	: '?',
+					estimatedlife		: it.estimatedlife,
+					remaininglife		: it.remaininglife,
+					yearinstalled		: it.yearinstalled,
+					operationyear		: it.operationyear,
+					remarks				: '?'
+				]
+				
+				data.add( item )
+			}
+		}
+		
+		return data
+	}
+	
+	private def getPropertyAppraisals( rpu ) {
+		def data = []
+		def machuses = rpu.info.machuses
+		
+		machuses?.each { itm ->
+			itm.machdetails?.each {
+				def item = [
+					machinename			: it.machinename,
+					unitcount			: 1,
+					acquisitioncost		: it.acquisitioncost,
+					freightcost			: it.freightcost,
+					insurancecost		: it.insurancecost,
+					installationcost	: it.installationcost,
+					othercost			: it.othercost,
+					marketvalue			: it.marketvalue,
+					depreciation		: it.depreciation,
+					depreciationvalue	: it.depreciationvalue
+				]
+				
+				data.add( item )
+			}
+		}
+		
+		return data
+	}
+	
+	private def getMachPropertyAssessments( rpu ) {
+		def data = []
+		def machuses = rpu.info.machuses
+		
+		machuses?.each {
+			def assesslevel = numberSvc.format("#,##0", it.assesslevel) + ' %'
+			def item = [
+				actualuse		: it.actualusename,
+				marketvalue		: it.marketvalue,
+				assesslevel		: assesslevel,
 				assessedvalue	: it.assessedvalue
 			]
 			
