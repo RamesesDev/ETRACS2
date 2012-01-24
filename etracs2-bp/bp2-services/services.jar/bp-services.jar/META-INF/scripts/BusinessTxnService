@@ -320,24 +320,25 @@ class BusinessTxnService {
 		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessAdmin' ).setParameters( [businessid:bptxn.businessid, newadminid:bptxn.info.newadminid, newadminname:bptxn.info.newadminname, newadminaddress:bptxn.info.newadminaddress] ).execute();
 	}
 	
-	private void approveChangeAddressList( bptxn ) {
+	private void approveChangeAddressList( bptxn ) { 
+		
 		def business = em.read('business', [objid:bptxn.businessid] )
 		if( !business ) throw new Exception('Cannot open the selected business.')
 		
 		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationBusinessAddress' )
-			.setParameters( [objid:business.applicationid, businessaddress:bptxn.info.newbusinessaddress] )
+			.setParameters( [businessid:bptxn.businessid, newbusinessaddress:bptxn.info.newbusinessaddress] )
 			.execute()
-			
+			  
 		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationListingBusinessAddress' )
-			.setParameters( [objid:business.applicationid, businessaddress:bptxn.info.newbusinessaddress] )
+			.setParameters( [businessid:bptxn.businessid, newbusinessaddress:bptxn.info.newbusinessaddress] )
 			.execute()
 			
 		em.sqlContext.createNamedExecutor( 'bptxn:approvedChangeAddressList' )
-				.setParameters( [objid:bptxn.objid] )
+				.setParameters( [objid:business.applcationid] )
 				.execute();
 				
 		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessAddress' )
-				.setParameters( [businessid:bptxn.businessid, newbusinessaddress:bptxn.info.newbusinessaddress] )
+				.setParameters( [objid:business.objid, newbusinessaddress:bptxn.info.newbusinessaddress] )
 				.execute();
 	}
 	

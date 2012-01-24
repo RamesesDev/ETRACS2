@@ -4,7 +4,6 @@
 * @date      : july 4, 2011
 */
 
-
 import com.rameses.annotations.*
 import com.rameses.rules.common.*
 import java.math.BigDecimal
@@ -268,8 +267,8 @@ public class RPTBillingService
     
     boolean determineFirstQtrPaidOnTime( bill, billitem ) {
         def currdate = dateSvc.parseCurrentDate()
-        if( billitem.lastyearpaid < currdate.year ) return false
-        if( billitem.lastqtrpaid == 1 && currdate.qtr == 1 ) return false 
+        if( currdate.qtr == 1 && billitem.lastyearpaid == currdate.year -1 && billitem.lastqtrpaid == 4 ) return true 
+        if( billitem.lastyearpaid == currdate.year && billitem.lastqtrpaid >= 1 && currdate.qtr == 1 ) return true
         return billitem.firstqtrpaidontime
     }
     
@@ -330,7 +329,8 @@ public class RPTBillingService
 		bill.items = [ billitem ] 
 		billitem.lastyearpaid = ( billitem.fromqtr == 1 ? billitem.fromyear - 1 : billitem.fromyear )
 		billitem.lastqtrpaid  = ( billitem.fromqtr == 1 ? 4 : billitem.fromqtr - 1 )
-        def firstitem = true  
+		
+		def firstitem = true  
         billitem.details = []
         for( int yr = billitem.fromyear; yr <= billitem.toyear; yr++) {
             def ledgeritem = [ assessedvalue : billitem.assessedvalue, basic:0.0, basicint:0.0, basicdisc:0.0, sef:0.0, sefint:0.0, sefdisc:0.0 ]
@@ -439,6 +439,7 @@ public class RPTBillingService
         detail.lastqtrpaid   = billitem.lastqtrpaid 
         detail.partialbasic  = billitem.partialbasic
         detail.partialsef    = billitem.partialsef
+		detail.firstqtrpaidontime = bill.firstqtrpaidontime
 		return detail 
     }
     

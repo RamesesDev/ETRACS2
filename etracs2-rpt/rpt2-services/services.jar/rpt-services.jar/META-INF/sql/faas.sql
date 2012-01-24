@@ -2,10 +2,10 @@
 # GETTERS
 #----------------------------------------------------------------
 [getInfoByTdno]
-SELECT objid, docstate, schemaname, tdno, fullpin, claimno, ledgerid FROM faaslist WHERE tdno = $P{tdno} 
+SELECT objid, docstate, schemaname, tdno, fullpin, claimno, ledgerid, issuedate FROM faaslist WHERE tdno = $P{tdno} 
 
 [getInfoByPin]
-SELECT objid, docstate, schemaname, tdno, fullpin, claimno, ledgerid FROM faaslist WHERE pin = $P{pin} 
+SELECT objid, docstate, schemaname, tdno, fullpin, claimno, ledgerid, issuedate FROM faaslist WHERE pin = $P{pin} 
 
 [getLandReferenceByPin]
 SELECT objid, schemaname, taxpayerid FROM faaslist WHERE fullpin = $P{pin} AND docstate <> 'CANCELLED' 
@@ -100,6 +100,20 @@ SELECT * FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPROVED'
 
 [getLandOwnerInfo]
 SELECT taxpayername, pin from faaslist where objid = $P{objid}
+
+[updateFAASAnnotationInfo]
+UPDATE faasannotation SET 
+	docstate = $P{docstate},
+	tdno = $P{tdno} 
+WHERE faasid = $P{faasid}	 
+
+[updateFAASAnnotationState]
+UPDATE faasannotation SET 
+	docstate = $P{docstate} 
+WHERE faasid = $P{faasid}	 
+
+[deleteFAASAnnotations]
+DELETE FROM faasannotation WHERE faasid = $P{faasid} 
 
 #----------------------------------------------------------------
 # INSERT

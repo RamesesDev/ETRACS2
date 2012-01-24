@@ -12,3 +12,5 @@ Patch-2.01.015
 - Round-off bp billing computed values
 - Exclude retired/retiredlob from permit printout 
 - Add RPT Tax Clearance report
+- Add Change Classification and Change Taxability transactions 
+- Carryover annotations during transaction 

@@ -218,10 +218,27 @@ class FAASService
         em.create( faas.schemaname, faas )
         em.create( LISTSCHEMA_NAME, faas )
         createPIN( faas ) 
+		carryoverAnnotations( faas )
         insertTxnReference( faas )
         logSvc.log('CREATE','Faas', faas.objid)
         return faas 
     }
+	
+	void carryoverAnnotations( faas ) {
+		if( faas.info.annotated == false ) return 
+		//copy annotations of previous faas 
+		faas.previousfaases.each{ prev ->
+			def activeAnnotationList = em.sqlContext.createNamedQuery('faas:getActiveAnnotations')
+										.setParameter( 'faasid', prev.faasid )
+										.resultList 
+			activeAnnotationList.each{ newAnnotation ->
+				newAnnotation.objid 	= 'A' + new UID()
+				newAnnotation.faasid 	= faas.objid 
+				newAnnotation.tdno		= faas.info.tdno 
+				em.create( newAnnotation.schemaname, newAnnotation )
+			}
+		}
+	}
     
     @ProxyMethod
     public Map update( faas ) {
@@ -396,6 +413,7 @@ class FAASService
         validateRPUInfo( faas )
 		updateFaasState( faas, CURRENT_STATE )
 		updateImprovementLandReference( faas ) 
+		approveCarryOverAnnotations( faas )
 		cancelPreviousFaas( faas )
 		deleteTxnReference( faas )
 		ledgerSvc.post( faas.objid )
@@ -403,6 +421,27 @@ class FAASService
 		logSvc.log('APPROVE','FAAS', faas.objid)
     }
     
+	void approveCarryOverAnnotations( faas ){
+		// approve carryover annotations 
+		em.sqlContext.createNamedExecutor('faas:updateFAASAnnotationInfo')
+				.setParameters([
+					faasid:faas.objid, tdno:faas.info.tdno, docstate:'APPROVED'
+				])
+				.execute() 
+	
+		//cancel previous annotations 
+		faas.previousfaases.each{ prev -> 
+			em.sqlContext.createNamedExecutor('faas:updateFAASAnnotationState')
+				.setParameters([faasid:prev.faasid, docstate:'CANCELLED'])
+				.execute() 
+		}
+	}
+	
+	void updateFAASAnnotationState( faasid, docstate ) {
+		
+	}
+	
+	
     @ProxyMethod
     public void delete( faasid ) {
         def faasinfo = getFaasInfo( faasid )
@@ -418,10 +457,15 @@ class FAASService
         if( faasinfo.datacapture ) {
             deletePin( faasinfo )
         }
+		deleteFAASAnnotations( faasid )
         em.delete(LISTSCHEMA_NAME, [objid:faasid] )
         em.delete(SCHEMA_NAME, [objid:faasid ] )
     }
     
+	void deleteFAASAnnotations( faasid ) {
+		em.sqlContext.createNamedExecutor('faas:deleteFAASAnnotations').setParameter('faasid', faasid).execute()
+	}
+	
     @ProxyMethod
     public def getNextParcelNo( barangay, section ) {
         def key = barangay.pin + '-' + buildSectionNo( section )
@@ -523,14 +567,14 @@ class FAASService
 			checkDuplicatePin( txntype, false, faas.fullpin, claimno  )
 		}
 		else {
-			checkLedgerBalance( faas )
+			checkLedgerBalanceByDate( faas, faas.issuedate )
 		}
         faas = open( faas.objid )
         faas.info.claimno = claimno 
         if( txntype == 'TR' ) {
 			return initTransfer( faas, txntype, prevtdno, autonumber )
 		}
-        else if( 'RE,CE'.indexOf( txntype ) >= 0 ) {
+        else if( 'CC,RE,CE,CT'.indexOf( txntype ) >= 0 ) {
 			return initReassessment( faas, txntype, prevtdno, autonumber )
 		}
 		else if( 'MC'.indexOf( txntype ) >= 0 ) {

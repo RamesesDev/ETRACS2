@@ -27,6 +27,7 @@ class BPCollectionInterceptor {
 	@After(pattern="ReceiptService.open")
 	public def afterOpenReceipt( evt ){
 		def receipt = evt.result
+		receipt.txntype = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]).txntype
 		summarizedItems( receipt )
 		return receipt		
 	}
@@ -40,7 +41,6 @@ class BPCollectionInterceptor {
 		if( app.lastmodified != receipt.applicationlastmodified ) 
 			throw new Exception("Unabled to continue.\nThe document has been modified by the other user.");
 		
-		//receipt.items = em.read( 'receipt:receipt', [objid:receipt.objid] ).items
 		def payment = [
 			 applicationid: app.objid,
 			 refid: receipt.objid,
@@ -61,9 +61,10 @@ class BPCollectionInterceptor {
 							 discount		: r.discount,
 							 totalamount	: r.amount ];
 		}
-		payment.items.each(){ println it }
+		
 		ledgerSvc.postPayment( payment );
 		updateAppFullypaid( receipt )
+		receipt.txntype = app.txntype
 		summarizedItems( receipt )
 		return receipt
 	}
@@ -198,6 +199,8 @@ class BPCollectionInterceptor {
 			if( nqtr == 4 ) nqtr = 'Full paid'
 			else if( nqtr == 1 ) nqtr = "$item.iqtr" + fqtr(item.iqtr) + " Qtr"
 			else nqtr = "$item.iqtr-$receipt.qtr Qtr"
+			
+			if( receipt.txntype == 'NEW' ) nqtr = 'Full paid'
 			
 			item.accttitle = "$item.accttitle - $nqtr".toString()
 			item.amount = ( amount ) ? amount : item.amount
