@@ -41,10 +41,14 @@ class FAASReportController
     
     def report =[
         getReportName : { 
-            if(data.rputype == 'land')
-                return 'faas/land'
-            else if(data.rputype == 'mach')
+            if( data.rputype == 'mach' )
                 return 'faas/mach'
+            else if( data.rputype == 'bldg' )
+                return 'faas/bldg'
+            else if( data.rputype == 'misc' )
+                return 'faas/misc'
+            else
+                return 'faas/land'
         },
         getReportData : { return data; },
         getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
