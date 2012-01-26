@@ -160,6 +160,26 @@ class FAASService
 		return result
 	}
 	
+	@ProxyMethod
+	public List getRyList( rputype ) {
+		if( 'land'.equals( rputype ) ) {
+			return em.sqlContext.createNamedQuery('faas:getLandRYSetting').resultList 
+		}
+		else if( 'bldg'.equals( rputype ) ) {
+			return em.sqlContext.createNamedQuery('faas:getBldgRYSetting').resultList 
+		}
+		else if( 'mach'.equals( rputype ) ) {
+			return em.sqlContext.createNamedQuery('faas:getMachRYSetting').resultList 
+		}
+		else if( 'planttree'.equals( rputype ) ) {
+			return em.sqlContext.createNamedQuery('faas:getPlantTreeRYSetting').resultList 
+		}
+		else if( 'misc'.equals( rputype ) ) {
+			return em.sqlContext.createNamedQuery('faas:getMiscRYSetting').resultList 
+		}
+		return []
+	}
+	
 	def buildSearchCriteria( search, docstate ) {
 		return [
             tdno : search,
@@ -452,6 +472,7 @@ class FAASService
 		if( faasinfo.docstate == CANCELLED_STATE ) throw new Exception('FAAS has already been cancelled.' )
 		
         checkFaasTxnReference( faasid )
+		deleteTxnReference( [objid:faasid ] )
         
         //delete record
         if( faasinfo.datacapture ) {
@@ -556,23 +577,31 @@ class FAASService
     }
 	
     @ProxyMethod
-    public Map initTransaction( txntype, prevtdno, autonumber, claimno) {
+	public Map initTransaction( txntype, prevtdno, autonumber, claimno) {
+		return initTransaction2( txntype, prevtdno, autonumber, null )
+	}
+	
+	@ProxyMethod
+    public Map initTransaction2( txntype, prevtdno, autonumber, claimno, newrysetting ) {
 		autonumber = TO_BOOLEAN( var.td_autonumber )
 		def faas = em.sqlContext.createNamedQuery('faas:getInfoByTdno').setParameter('tdno', prevtdno).singleResult
         if( ! faas ) throw new Exception('FAAS ' + prevtdno + ' does not exists.')
         if( faas.docstate == CANCELLED_STATE ) throw new Exception('FAAS ' +  prevtdno + ' has already been cancelled.')
         if( faas.docstate != CURRENT_STATE ) throw new Exception('FAAS ' +  prevtdno + ' is not current.')
-        checkFaasTxnReference( faas.objid )
-		if( txntype == 'MC' )  {
-			checkDuplicatePin( txntype, false, faas.fullpin, claimno  )
-		}
-		else {
+        
+		checkFaasTxnReference( faas.objid )
+		checkDuplicatePin( txntype, false, faas.fullpin, claimno  )
+		if( txntype != 'GR' ) {
 			checkLedgerBalanceByDate( faas, faas.issuedate )
 		}
+		
         faas = open( faas.objid )
         faas.info.claimno = claimno 
         if( txntype == 'TR' ) {
 			return initTransfer( faas, txntype, prevtdno, autonumber )
+		}
+		else if( txntype == 'GR' ) {
+			return initGeneralRevision( faas, txntype, prevtdno, autonumber, newrysetting )
 		}
         else if( 'CC,RE,CE,CT'.indexOf( txntype ) >= 0 ) {
 			return initReassessment( faas, txntype, prevtdno, autonumber )
@@ -580,7 +609,7 @@ class FAASService
 		else if( 'MC'.indexOf( txntype ) >= 0 ) {
 			return initMultipleClaim( faas, txntype, prevtdno, autonumber )
 		}
-        else {
+		else {
             throw new Exception('TxnType ' + txntype + ' not yet supported.')
         }
     }
@@ -1121,6 +1150,49 @@ class FAASService
         return faas 
     }
     
+	
+	Map initGeneralRevision( faas, txntype, prevtdno, autonumber, newrysetting ) {
+		if( !newrysetting ) {
+			throw new Exception('New RY Setting is required.')
+		}
+		
+		faas = initReassessment( faas, txntype, prevtdno, autonumber )
+		if( faas.rpu.ry >= newrysetting.ry ) {
+			throw new Exception('New Revision Year must be greater than ' + faas.rpu.ry + '.' )
+		}
+		
+		
+		//reset txntype to GR 
+		def txn 			= resolveTxnType( txntype )
+		faas.info.txntype	= txn.txntype 
+        faas.info.txn       = txn 
+		faas.rpu.ry			= newrysetting.ry 
+		
+		//recalculate due to gr 
+		def rputype = faas.rpu.rputype 
+		
+		if( 'land'.equals( rputype )  ) {
+			faas = landRpuSvc.initGeneralRevision( faas, newrysetting )
+		}
+		else if( 'bldg'.equals( rputype )  ) {
+			faas = bldgRpuSvc.initGeneralRevision( faas, newrysetting )
+		}
+		else if( 'mach'.equals( rputype )  ) {
+			faas = machRpuSvc.initGeneralRevision( faas, newrysetting )
+		}
+		else if( 'planttree'.equals( rputype )  ) {
+			faas = planttreeRpuSvc.initGeneralRevision( faas, newrysetting )
+		}
+		else if( 'misc'.equals( rputype )  ) {
+			faas = miscRpuSvc.initGeneralRevision( faas, newrysetting )
+		}
+		else {
+			throw new Exception( 'Cannot process rpu type ' + rputype + '.' )
+		}
+		return faas 
+		
+	}
+	
     Map initReassessment( faas, txntype, prevtdno, autonumber ) {
         //
         //set reassessment related info 

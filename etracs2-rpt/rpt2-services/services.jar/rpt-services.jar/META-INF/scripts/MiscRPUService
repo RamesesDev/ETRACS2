@@ -15,6 +15,82 @@ class MiscRPUService
 	@Env
 	def env
     
+	@ProxyMethod
+	public Map initGeneralRevision( faas, newrysetting ) {
+		checkLandFaasIsRevised( faas, newrysetting )
+		reviseActualUse( faas, newrysetting )
+		reviseMiscRpuItems( faas, newrysetting )
+		recalculate( faas ) 
+		return faas 
+	}
+	
+	void recalculate( faas )  {
+		faas.rpu.info.miscrpuitems.each { item ->
+			calculateMiscItemAssessment( item )
+		}
+		
+		//calculate totals 
+		def rpu 		= faas.rpu 
+		def items 		= faas.rpu.info.miscrpuitems
+		rpu.totalbmv    = items.basemarketvalue.sum()
+        rpu.totalmv     = items.marketvalue.sum()
+        rpu.totalav     = items.assessedvalue.sum()
+	}
+    
+	
+	void reviseActualUse( faas, newrysetting ) {
+		def rpuinfo = faas.rpu.info 
+		def actualuse = em.sqlContext.createNamedQuery('miscrpu:getActualUseByPrevId')
+							.setParameter('previd', rpuinfo.actualuseid )
+							.singleResult 
+		if( actualuse ) {
+			rpuinfo.putAll( actualuse ) 
+		}
+	}
+	
+	void reviseMiscRpuItems( faas, newrysetting ) {
+		def deletedItems = [] 
+		faas.rpu.info.miscrpuitems.each { miscitem ->
+			def misc = em.sqlContext.createNamedQuery('miscrpu:getMiscItemByPrevId')
+							.setParameter('previd', miscitem.miscitemvalueid  )
+							.singleResult 
+			
+			if( misc ) {
+				miscitem.misc = misc 
+				miscitem.putAll( misc )
+				miscitem.objid = 'MCI' + new UID()
+				
+				def al = em.sqlContext.createNamedQuery('miscrpu:getAssessLevelByPrevId')
+							.setParameter('previd', miscitem.actualuse.assesslevelid )
+							.singleResult 
+							
+				if( al ) {
+					miscitem.actualuse = al 
+				}
+			}
+			else {
+				deletedItems.add( miscitem )
+			}
+		}
+		faas.rpu.info.miscrpuitems.removeAll( deletedItems )
+	}
+	
+	
+	void checkLandFaasIsRevised( faas, newrysetting) {
+		def pin = faas.rp.pin
+		def landfaas = em.sqlContext.createNamedQuery('miscrpu:getLatestRevisedLandFaas')
+							.setParameters([ pin:pin, ry:newrysetting.ry  ])
+							.singleResult 
+							
+		if( ! landfaas ) {
+			throw new Exception("Land FAAS $pin is not yet revised.\nFirst revise the Land RPU before revising any improvements.")
+		}	
+		
+		faas.info.landfaasid 			= landfaas.objid 
+		faas.info.landfaastaxpayerid 	= landfaas.taxpayerid 
+	}
+	
+	
     
     @ProxyMethod
     public Map initMiscRpu( faas ) {
@@ -60,7 +136,6 @@ class MiscRPUService
 		
 		miscitem.assesslevel = determineAssessLevel( miscitem );
 		miscitem.assessedvalue = numberSvc.roundToTen( miscitem.marketvalue * miscitem.assesslevel / 100.0 );
-		
         return miscitem;
     }
     
@@ -105,8 +180,9 @@ class MiscRPUService
     ----------------------------------------------------------------------------------*/
     def determineAssessLevel( miscitem ) {
         def al = em.sqlContext.createNamedQuery('miscrpu:getAssessLevelById').setParameter('objid', miscitem.actualuse.assesslevelid).singleResult
+		println 'al -> ' + al 
         if( ! al ) throw new Exception('Assess Level for ' + miscitem.actualuse.assesslevelname + ' does not exists or has been deleted.')
-        if( (al.fixrate as boolean ) ==  true ) {
+        if( IS_TRUE(al.fixrate ) ) {
             return al.rate;
         }
         List ranges = em.serializer.read( al.ranges )

@@ -55,6 +55,27 @@ SELECT * FROM planttreerysetting  where ry = $P{ry}
 [getRYSetting_misc]
 SELECT * FROM miscrysetting  where ry = $P{ry}
 
+
+
+[getLandRYSetting] 
+SELECT * FROM landrysetting ORDER BY ry 
+
+[getBldgRYSetting] 
+SELECT * FROM bldgrysetting ORDER BY ry 
+
+[getMachRYSetting] 
+SELECT * FROM machrysetting ORDER BY ry 
+
+[getPlantTreeRYSetting] 
+SELECT * FROM planttreerysetting ORDER BY ry 
+
+[getMiscRYSetting] 
+SELECT * FROM miscrysetting ORDER BY ry 
+
+
+
+
+
 [getLgu]
 SELECT objid, lguname, indexno, parentid FROM lgu WHERE objid = $P{objid} 
 
@@ -110,7 +131,10 @@ WHERE faasid = $P{faasid}
 [updateFAASAnnotationState]
 UPDATE faasannotation SET 
 	docstate = $P{docstate} 
-WHERE faasid = $P{faasid}	 
+WHERE faasid = $P{faasid}	
+
+
+
 
 [deleteFAASAnnotations]
 DELETE FROM faasannotation WHERE faasid = $P{faasid} 

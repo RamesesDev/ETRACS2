@@ -56,6 +56,11 @@ public class PlantTreeRYSettingService
         setting.objid 	= 'PS' + new UID()
         setting.ry 		= newry  
         checkDuplicateSetting( setting )
+		
+		setting.assesslevels.each{ al ->
+			al.previd = al.objid 
+			al.objid  = 'TAL' + new UID()
+		}
         em.create( setting.schemaname, setting )
         
         
