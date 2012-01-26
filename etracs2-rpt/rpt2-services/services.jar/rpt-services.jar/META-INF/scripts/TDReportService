@@ -99,8 +99,6 @@ class TDReportService
 			}
 		}
 		
-		td.each(){ println it }             
-		
 		return td;
     }
 	
@@ -301,6 +299,7 @@ class TDReportService
 		else 
 			planttreedetails = rpu.info.planttreedetails;
 			
+		/*
 		planttreedetails.each {
 			def item = [
 				classification 		: rpu.classname,
@@ -313,6 +312,17 @@ class TDReportService
 			
 			data.add( item );
 		}
+		*/
+		
+		def planttreedetail = planttreedetails[0]
+		data.add([
+			classification 		: rpu.classname,
+			actualuse			: planttreedetail.assesslevelname,
+			planttreename		: planttreedetail.assesslevelname,
+			marketvalue			: planttreedetails.marketvalue.sum(),
+			assesslevel			: planttreedetail.assesslevel,
+			assessedvalue		: planttreedetails.assessedvalue.sum(),
+		])
 		
 		return data;
     }
