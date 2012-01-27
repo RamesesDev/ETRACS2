@@ -91,7 +91,7 @@ class SubdivisionService
         subdivision.dtapproved      = currdate 
         
         def faas = faasSvc.getFaasInfo( subdivision.motherfaasid )
-        faasSvc.checkLedgerBalance( faas )
+        faasSvc.checkLedgerBalanceByDate( faas, faas.issuedate  )
         validateInfo( subdivision )
         em.validate( subdivision.schemaname, subdivision )
         em.create( subdivision.schemaname, subdivision )
