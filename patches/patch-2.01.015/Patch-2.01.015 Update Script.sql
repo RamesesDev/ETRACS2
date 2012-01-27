@@ -32,4 +32,28 @@ create index ix_txnlog_refid on txnlog( refid );
 
 create index ix_bppermit_appid on bppermit( applicationid ) ;
 
+-- bppayment table structure
+CREATE TABLE bppayment (
+	objid VARCHAR(50),
+	applicationid VARCHAR(50),
+	receiptid VARCHAR(50),
+	afid VARCHAR(20),
+	serialno VARCHAR(30),
+	txndate Date,
+	iyear INT,
+	iqtr INT,
+	imonth INT,
+	iday INT,
+	lobid VARCHAR(50),
+	lobname VARCHAR(50),
+	acctid VARCHAR(50),
+	accttitle VARCHAR(50),
+	amount DECIMAL(10, 2),
+	surcharge DECIMAL(10, 2),
+	interest DECIMAL(10, 2),
+	discount DECIMAL(10, 2),
+	totalamount DECIMAL(10, 2),
+	voided INT
+);
+
 
