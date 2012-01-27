@@ -27,8 +27,16 @@ class FaasReportService
 			faasdata.planttreesappraisals = getPlantTreeDetails( faas.rpu )
 			faasdata.landadjustments = getLandAdjustments( faas.rpu )
 			faasdata.propertyassessments = getPropertyAssessements( faas.rpu )
-		}
-		else 
+		} else if( faas.rpu.rputype == 'mach' ) {
+			getLandOwnerInfo( faasdata )
+			faasdata.machdetails = getMachDetails( faas.rpu )
+			faasdata.propertyappraisals = getPropertyAppraisals( faas.rpu )
+			faasdata.propertyassessments = getMachPropertyAssessments( faas.rpu )
+		} else if( faas.rpu.rputype == 'planttree' ) {
+			faasdata.planttreesappraisals = getPlantTreeDetails( faas.rpu )
+			faasdata.landadjustments = getPlantTreeLandAdjustments( faas.rpu )
+			faasdata.propertyassessments = getPlantTreePropertyAssessements( faas.rpu )
+		} else 
 			throw new Exception( 'There is no FAAS report for this record yet.' )
 			
 		return faasdata
@@ -58,6 +66,7 @@ class FaasReportService
 	private def getPlantTreeDetails( rpu ) {
     	def data = []
 		def planttreedetails= []
+		
     	if( rpu.info.planttrees ) 
 			planttreedetails = rpu.info.planttrees
 		else 
@@ -65,7 +74,7 @@ class FaasReportService
 			
 		planttreedetails.each {
 			def item = [
-				subclass	 	: rpu.classname,
+				planttreename 	: it.planttreename,
 				nonbearing		: it.nonbearing,
 				bearing			: it.bearing,
 				unitvalue		: it.unitvalue,
@@ -80,10 +89,10 @@ class FaasReportService
 	
 	private def getLandAdjustments( rpu ) {
 		def data = []
-		def landdetails = rpu.info.landdetails
 		def adjpercentage
 		def percentadj
 		def item
+		def landdetails = rpu.info.landdetails
 		
 		landdetails.each { itm ->
 			itm.landadjustments?.each {
@@ -129,6 +138,9 @@ class FaasReportService
 			}
 		}
 		
+		if( rpu.info.planttotal.basemarketvalue != 0.0 )
+			data = data + getPlantTreeLandAdjustments( rpu )
+		
 		def group = data.groupBy{ it.itemid }
 		group.keySet().each{
 			def list = group[it] 
@@ -142,20 +154,177 @@ class FaasReportService
 	
 	private def getPropertyAssessements( rpu ) {
 		def data = []
-		def landdetails = rpu.info.landdetails
+		def assesslevel
+		def item
 		
-		landdetails.each {
-			def assesslevel = numberSvc.format("#,##0", it.assesslevel)
-			def item = [
+		if( rpu.info.landdetails ) {
+			assesslevel = numberSvc.format("#,##0", rpu.info.landdetails[0].assesslevel) + " %"
+			item = [
 				classification	: rpu.classname,
-				actualuse 		: it.actualusename,
+				actualuse 		: rpu.info.landdetails[0].actualusename,
+				marketvalue		: rpu.info.landtotal.marketvalue,
+				assesslevel		: assesslevel,
+				assessedvalue	: rpu.info.landtotal.assessedvalue
+			]
+			
+			data.add( item )
+		}
+		
+		if( rpu.info.planttrees ) {
+			assesslevel = numberSvc.format("#,##0", rpu.info.planttrees[0].assesslevel) + " %"
+			item = [
+				classification	: rpu.classname,
+				actualuse 		: 'PLANT',
+				marketvalue		: rpu.info.planttotal.marketvalue,
+				assesslevel		: assesslevel,
+				assessedvalue	: rpu.info.planttotal.assessedvalue
+			]
+		}
+		
+		return data
+	}
+	
+	private void getLandOwnerInfo( faasdata ) {
+		def info = em.sqlContext.createNamedQuery('faas:getLandOwnerInfo').setParameter('objid', faasdata.landfaasid).singleResult
+
+		if(info) {
+			faasdata.landownername = info.taxpayername
+			faasdata.landownerpin = info.pin
+		}
+	}
+	
+	private def getMachDetails( rpu ) {
+		def data = []
+		def machuses = rpu.info.machuses
+		
+		machuses?.each { itm ->
+			itm.machdetails?.each {
+				def brandmodel = (it.brand? it.brand : '') + (it.model? '/' + it.model : '')
+				
+				def item = [
+					machinename			: it.machinename,
+					brandmodelno		: brandmodel,
+					capacity			: it.capacity,
+					yearacquired		: it.yearacquired,
+					estimatedlife		: it.estimatedlife,
+					remaininglife		: it.remaininglife,
+					yearinstalled		: it.yearinstalled,
+					operationyear		: it.operationyear
+				]
+				
+				data.add( item )
+			}
+		}
+		
+		return data
+	}
+	
+	private def getPropertyAppraisals( rpu ) {
+		def data = []
+		def machuses = rpu.info.machuses
+		
+		machuses?.each { itm ->
+			itm.machdetails?.each {
+				def additionalcost = new BigDecimal( 0.0 )
+				
+				if( it.freightcost )
+					additionalcost.add( it.freightcost )
+				
+				if( it.insurancecost )
+					additionalcost.add( it.insurancecost )
+					
+				if( it.installationcost )
+					additionalcost.add( it.installationcost )
+					
+				if( it.othercost )
+					additionalcost.add( it.othercost )
+					
+				def depreciation = numberSvc.format("#,##0", it.depreciation) + ' %'
+				
+				def item = [
+					machinename			: it.machinename,
+					originalcost		: it.originalcost,
+					additionalcost		: additionalcost,
+					acquisitioncost		: it.acquisitioncost,
+					conversionfactor	: it.conversionfactor,
+					replacementcost		: it.replacementcost,
+					yearsused			: it.yearsused,
+					marketvalue			: it.marketvalue,
+					depreciation		: depreciation,
+					depreciationvalue	: it.depreciationvalue
+				]
+				
+				data.add( item )
+			}
+		}
+		
+		return data
+	}
+	
+	private def getMachPropertyAssessments( rpu ) {
+		def data = []
+		def machuses = rpu.info.machuses
+		
+		machuses?.each {
+			def assesslevel = numberSvc.format("#,##0", it.assesslevel) + ' %'
+			def item = [
+				actualuse		: it.actualusename,
 				marketvalue		: it.marketvalue,
-				assesslevel		: assesslevel + " %",
+				assesslevel		: assesslevel,
 				assessedvalue	: it.assessedvalue
 			]
 			
 			data.add( item )
 		}
+		
+		return data
+	}
+	
+	private def getPlantTreeLandAdjustments( rpu ) {
+		def data = []
+		def adjpercentage
+		def planttreedetails = []
+		
+		if( rpu.info.planttrees ) 
+			planttreedetails = rpu.info.planttrees
+		else 
+			planttreedetails = rpu.info.planttreedetails
+		
+		if( planttreedetails ) {
+			if( planttreedetails[0].adjustmentrate != 0.0 ) { 
+				adjpercentage = numberSvc.format("#,##0", planttreedetails[0].adjustmentrate) + ' %'
+				
+				def item = [
+					itemid			: 'PLANT',
+					actualuse		: 'PLANT',
+					basemarketvalue	: planttreedetails.basemarketvalue.sum(),
+					adjtypename		: 'TOTAL LAND ADJUSTMENT',
+					adjpercentage	: adjpercentage,
+					adjustment		: planttreedetails.adjustment.sum(),
+					marketvalue		: planttreedetails.marketvalue.sum()
+				]
+				
+				data.add( item )
+			}
+		}
+		
+		return data
+	}
+	
+	private def getPlantTreePropertyAssessements( rpu ) {
+		def data = []
+		
+		def assesslevel = numberSvc.format("#,##0", rpu.info.planttreedetails[0].assesslevel) + ' %'
+		
+		def item = [
+			classification	: rpu.classname,
+			actualuse 		: 'PLANT',
+			marketvalue		: rpu.totalmv,
+			assesslevel		: assesslevel,
+			assessedvalue	: rpu.totalav
+		]
+		
+		data.add( item )
 		
 		return data
 	}
