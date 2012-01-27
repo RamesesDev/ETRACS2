@@ -18,6 +18,9 @@ class BPCollectionInterceptor {
 	
 	@PersistenceContext('main')
 	def em;
+	
+	@Service('NumberService')
+	def numSvc
 		
 	@Before(pattern="ReceiptService.create")
 	public void beforeCreate( evt ){
@@ -29,6 +32,7 @@ class BPCollectionInterceptor {
 		def receipt = evt.result
 		receipt.txntype = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]).txntype
 		summarizedItems( receipt )
+		
 		return receipt		
 	}
 	
@@ -51,19 +55,20 @@ class BPCollectionInterceptor {
 			 qtr: receipt.qtr,
 			 items: []
 		];
-		
-		//change amount -> totalamount
-		receipt.items.each{ r ->
-			payment.items << [ bpreceivableid	: r.taxfeeid,
-							 taxamount		: r.taxamount,
-							 surcharge		: r.surcharge,
-							 interest		: r.interest,
-							 discount		: r.discount,
-							 totalamount	: r.amount ];
+   
+		//change amount -> totalamount 
+		receipt.items.each{ rcpt ->
+			payment.items << [ bpreceivableid	: rcpt.taxfeeid,
+							 taxamount		: rcpt.taxamount,
+							 surcharge		: rcpt.surcharge,
+							 interest		: rcpt.interest,
+							 discount		: rcpt.discount,
+							 totalamount	: rcpt.amount ];
 		}
 		
-		ledgerSvc.postPayment( payment );
+		ledgerSvc.postPayment( payment ); 
 		updateAppFullypaid( receipt )
+		createBPPayments( receipt )
 		receipt.txntype = app.txntype
 		summarizedItems( receipt )
 		return receipt
@@ -95,7 +100,7 @@ class BPCollectionInterceptor {
 							 interest		: r.interest,
 							 discount		: r.discount ];
 		}
-		
+		deleteBPPayments( receipt )
 		ledgerSvc.deletePayment( payment );
 	}
 	
@@ -118,12 +123,14 @@ class BPCollectionInterceptor {
 			 items: []
 		];
 		
-		receipt.items.each{ r ->
-			payment.items << [ bpreceivableid	: r.taxfeeid,
-							 amount			: r.amount,
-							 surcharge		: r.surcharge,
-							 interest		: r.interest,
-							 discount		: r.discount ];
+		//change amount -> totalamount 
+		receipt.items.each{ rcpt ->
+			payment.items << [ bpreceivableid	: rcpt.taxfeeid,
+							 taxamount		: rcpt.taxamount,
+							 surcharge		: rcpt.surcharge,
+							 interest		: rcpt.interest,
+							 discount		: rcpt.discount,
+							 totalamount	: rcpt.amount ];
 		}
 		
 		ledgerSvc.updatePayment( payment );
@@ -148,26 +155,70 @@ class BPCollectionInterceptor {
 			 items: []
 		];
 		  
-		receipt.items.each{ r ->
-			payment.items << [ bpreceivableid	: r.taxfeeid,
-							 amount			: r.amount,
-							 surcharge		: r.surcharge,
-							 interest		: r.interest,
-							 discount		: r.discount ];
+		//change amount -> totalamount 
+		receipt.items.each{ rcpt ->
+			payment.items << [ bpreceivableid	: rcpt.taxfeeid,
+							 taxamount		: rcpt.taxamount,
+							 surcharge		: rcpt.surcharge,
+							 interest		: rcpt.interest,
+							 discount		: rcpt.discount,
+							 totalamount	: rcpt.amount ];
 		}
 		
+		voidBPPayments( receipt )
 		ledgerSvc.deletePayment( payment );
-		
 	}
 	
-	public def updateAppFullypaid( receipt ){	
+	public void updateAppFullypaid( receipt ){	
 		def app = em.read('bpapplication:bpapplication', [objid: receipt.applicationid])
 		if( !app ) throw new Exception("Application with objid $receipt.applicationid no longer exists.")
 		
-		def getUnpaidReceivables = app.receivables.findAll{ it.amount > it.amtpaid }
+		def getUnpaidReceivables = app.receivables.findAll{ numSvc.round( it.amount ) > numSvc.round( it.amtpaid ) }
 				
 		if( !getUnpaidReceivables )
 			em.sqlContext.createNamedExecutor( "business:updateAppFullypaid" ).setParameter( 'businessid', receipt.businessid ).execute()
+	}
+	
+	private void createBPPayments( def receipt ){
+		def currdate = dateService.parseCurrentDate()
+		receipt.items.each{ rcpt ->
+			def bp = [
+				objid : 'BPPMT' + new UID(),
+				applicationid : receipt.applicationid,
+				receiptid : receipt.objid,
+				afid : receipt.info.afid,
+				serialno : receipt.info.serialno,
+				txndate : receipt.info.txndate,
+				iyear : currdate.year,
+				iqtr : currdate.qtr,
+				imonth : currdate.month,
+				iday : currdate.day,
+				lobid : rcpt.lobid,
+				lobname : rcpt.lobname,
+				acctid : rcpt.acctid,
+				accttitle : rcpt.accttitle,
+				amount : rcpt.taxamount,
+				surcharge : rcpt.surcharge,
+				interest : rcpt.interest,
+				discount : rcpt.discount,
+				totalamount : ( rcpt.taxmount + rcpt.surcharge + rcpt.interest - rcpt.discount),
+				voided : 0			
+			]
+			
+			em.create( 'bppayment', bp )	
+		}
+	}
+	
+	private void voidBPPayment( def receipt ){
+		
+		em.sqlContext.createNamedExecutor('bppayments:voidBPPayment')
+			.setParameter('receiptid', receipt.objid ).execute()
+	}
+	
+	private void deleteBPPayment( def receipt ){
+	
+		em.sqlContext.createNamedExecutor('bppayments:deleteBPPayment')
+			.setParameter('receiptid', receipt.objid ).execute()
 	}
 	
 	private void summarizedItems( def receipt ){
@@ -217,7 +268,5 @@ class BPCollectionInterceptor {
 		
 		return receipt.items
 	}
-	
-	
 	
 }
