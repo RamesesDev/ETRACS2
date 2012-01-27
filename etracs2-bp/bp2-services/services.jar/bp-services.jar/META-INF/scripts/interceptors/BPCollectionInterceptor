@@ -100,7 +100,7 @@ class BPCollectionInterceptor {
 							 interest		: r.interest,
 							 discount		: r.discount ];
 		}
-		deleteBPPayments( receipt )
+		deleteBPPayment( receipt )
 		ledgerSvc.deletePayment( payment );
 	}
 	
@@ -165,7 +165,7 @@ class BPCollectionInterceptor {
 							 totalamount	: rcpt.amount ];
 		}
 		
-		voidBPPayments( receipt )
+		voidBPPayment( receipt )  
 		ledgerSvc.deletePayment( payment );
 	}
 	
@@ -197,11 +197,11 @@ class BPCollectionInterceptor {
 				lobname : rcpt.lobname,
 				acctid : rcpt.acctid,
 				accttitle : rcpt.accttitle,
-				amount : rcpt.taxamount,
-				surcharge : rcpt.surcharge,
-				interest : rcpt.interest,
-				discount : rcpt.discount,
-				totalamount : ( rcpt.taxmount + rcpt.surcharge + rcpt.interest - rcpt.discount),
+				amount : numSvc.round(rcpt.taxamount),
+				surcharge : numSvc.round(rcpt.surcharge),
+				interest : numSvc.round(rcpt.interest),
+				discount : numSvc.round(rcpt.discount),
+				total : ( numSvc.round(rcpt.taxamount) + numSvc.round(rcpt.surcharge) + numSvc.round(rcpt.interest) - numSvc.round(rcpt.discount) ),
 				voided : 0			
 			]
 			

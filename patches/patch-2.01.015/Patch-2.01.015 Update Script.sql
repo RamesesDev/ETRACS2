@@ -52,7 +52,7 @@ CREATE TABLE bppayment (
 	surcharge DECIMAL(10, 2),
 	interest DECIMAL(10, 2),
 	discount DECIMAL(10, 2),
-	totalamount DECIMAL(10, 2),
+	total DECIMAL(10, 2),
 	voided INT
 );
 
