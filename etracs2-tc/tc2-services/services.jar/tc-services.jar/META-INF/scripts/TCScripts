@@ -1,0 +1,97 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class TCScripts {
+	
+	@PersistenceContext('main')
+	def em
+		
+	@ProxyMethod
+	public def doRemoveDuplicateCraaf( def craafmonth, def craafyear ){
+		
+		def param = [
+			craafmonth:craafmonth, 
+			craafyear:craafyear
+		]
+		
+		removeMultipleBeginFromNoBeginTo( param )
+		removeMultipleNoBeginTo( param )
+		copyRcvfrmToIssuedfrm( param )
+		
+		return 'Run successfully'
+	}
+	
+	// delete multiple no. of beginfrom and beginto
+	private void removeMultipleBeginFromNoBeginTo( param ){
+		em.sqlContext.createNamedQuery( 'tcscript:getCraafDuplicate' )
+			.setParameters( param ).resultList.each{ crf ->
+				param.aficreditid = crf.aficreditid
+				def listduplicate = em.sqlContext.createNamedQuery( 'tcscript:getCraafByCreditId' ).setParameters( param ).resultList
+				def hasIssuedRcpt = listduplicate.find{ it.issuedfrom != null && it.issuedto != null }
+							
+				if( hasIssuedRcpt )
+					removeNoIssuedCraaf( listduplicate )
+				else
+					removeMultipleNoFromTo( listduplicate )
+		}  
+	}
+	
+	// delete multiple no. of beginfrom and beginto
+	private void removeMultipleNoFromTo( def listduplicate ){
+		def list = listduplicate.clone()
+		listduplicate.each{
+			if( list.size() > 1 ){
+				deleteCraafById( it.objid )
+				list.remove( it )
+			}
+		}
+	}
+	
+	private void removeNoIssuedCraaf( def listduplicate ){
+		listduplicate.each{ 
+			if( !it.issuedfrom  && !it.issuedto )
+				deleteCraafById( it.objid )
+		}
+	}
+	
+	// delete multiple no. of beginto order by beginqty
+	// the smallest no. of beginqty will be left.
+	private void removeMultipleNoBeginTo( def param ){
+		em.sqlContext.createNamedQuery( 'tcscript:getCraafDuplicate_I' )
+			.setParameters( param ).resultList.each{ crf ->
+				param.aficreditid = crf.aficreditid
+				def listduplicate = em.sqlContext.createNamedQuery( 'tcscript:getCraafByCreditId' ).setParameters( param ).resultList
+				def list = listduplicate.clone()
+		
+				listduplicate.each{				
+					if( list.size() > 1 ){
+						def largerqty = list.max{ it.beginqty }
+						deleteCraafById( largerqty.objid )
+						list.remove( largerqty )
+					}
+					
+				}
+		}
+	}
+	
+	
+	//copy receivedfrom to issuedfrom
+	//cause: wrong update of issuedfrom
+	private void copyRcvfrmToIssuedfrm( def param ){
+		em.sqlContext.createNamedQuery( 'tcscript:getConsolatedWrongEntry' ).resultList.each{
+			def map = [ 
+				objid: it.objid, issuedfrom: it.receivedfrom,
+				craafmonth: param.craafmonth, craafyear: param.craafyear
+			]
+			
+			em.sqlContext.createNamedExecutor( 'tcscript:updateConsolatedWrongEntry' ).setParameters( map ).execute()
+		}
+	}
+	
+	private void deleteCraafById( def craafid ){
+		em.sqlContext.createNamedExecutor( 'tcscript:deleteDuplicateCraaf' ).setParameter( 'objid', craafid ).execute()
+	}
+	
+	
+}

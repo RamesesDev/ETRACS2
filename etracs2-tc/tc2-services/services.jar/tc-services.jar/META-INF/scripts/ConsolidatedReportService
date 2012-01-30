@@ -20,143 +20,139 @@ class ConsolidatedReportService {
 	
 	def cal = Calendar.getInstance()
 	
-	private def fetchAFIStateOpen(){
+	private def getAFIStateOpen(){
 	
 		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryStateOpen' ).resultList
 	}
 	
-	private def fetchAFIStateClosed(){
+	private def getAFIStateClosed(){
 	
 		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryStateClosed' ).resultList
 	}
 	
-	private def fetchAFICStateOpen( afi ){
+	private def getAFICStateOpen( afi ){
 	
 		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAfICreditByParentIdOpen' )
 						.setParameter( 'afinventoryid', afi.afinventoryid ).resultList
 	}
-	
-	private def fetchAFCtrlStateApproved( afic ){
-		
-		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFCtrlStateApproved' )
-								.setParameter( 'afinventorycreditid', afic.objid ).singleResult	
+					
+	private def getCraafByAFICId( param ){
+		// checks if afinventorycreditid is already forwared in a particular craaf month and year from previous
+		return em.sqlContext.createNamedQuery('consolidatedreport:getCraafByAFICId').setParameters( param ).singleResult
 	}
 	
-	private def fetchCraafAFICId( param ){
-		
-		return em.sqlContext.createNamedQuery('consolidatedreport:getCraafByAFCId')
-									.setParameters( param ).singleResult
-	}
-	
-	private def doBuildCraafByAFIC( afi, param ){
-
-		def afinventorycredit = fetchAFICStateOpen( afi )
+	private void doBuildCraafByAFIC( afi, param ){
+		def afinventorycredit = getAFICStateOpen( afi )
 		if( afinventorycredit ){
 			afinventorycredit.each(){ afic -> 
-				def afctrl = fetchAFCtrlStateApproved( afic )			
-				if( afctrl ){
-					param.afinvetorycreditid = afic.objid
-					def getCraafAfCId = fetchCraafAFICId( param )
-					if( !getCraafAfCId ){
-						afic.collectorid = afctrl.collectorid
-						afic.collectorname = afctrl.collectorname
-						afic.collectortitle = afctrl.collectortitle
-						afic.beginqty = afctrl.balance
-						afic.currentseries = afctrl.currentseries
-						afic.endseries = afctrl.endseries
-						
-						buildCraaf( null, afic ) 
-					}
-				}	
+				param.afinventorycreditid = afic.objid
+				// checks afinventorycreditid if not exist then forward
+				if( !getCraafByAFICId( param ) )
+					buildCraaf( null, afic ) 
 			}
 		} 
 	}
 	
+	private void doBuildCraafByAFI( def afi ){
+		if( 'OPEN'.equals( afi.docstate ) ) 
+			buildCraaf( afi, null )
+	}
+	
+	private void buildCraaf( afi, afic ){ 
+		def craaf = [:] 
+		craaf.objid = ( afi ? 'C' : 'CC' ) + new UID()
+			
+		craaf.schemaname = schemaname
+		craaf.schemaversion = schemaversion
+		
+		craaf.afinventoryid = afi?.objid
+		craaf.afinventorycreditid = afic?.objid
+		
+		craaf.craafyear = cal.get( Calendar.YEAR )
+		craaf.craafmonth = cal.get( Calendar.MONTH ) + 1
+		craaf.collectorid = afic?.collectorid
+		craaf.collectorname = afic?.collectorname
+		craaf.collectortitle = afic?.collectortitle
+		
+		if( afi ){ 
+			craaf.prefix = ( !afi.prefix ) ? '' : "$afi.prefix-"
+			craaf.suffix = ( !afi.suffix ) ? '' : "-$afi.suffix"
+			afi.issuedto = ( afi.qtyissued == 0 ) ? afi.startseries : ( afi.issuedto + 1 )
+		}
+		else{
+			craaf.prefix = ( !afic.prefix ) ? '' : "$afic.prefix-"
+			craaf.suffix = ( !afic.suffix ) ? '' : "-$afic.suffix" 
+		} 	
+		
+		craaf.afid = ( afi ) ? afi.afid : afic.afid
+		def aftype = ( afi ) ? afi.aftype : afic.aftype
+		if( aftype.equals('serial') ){
+			craaf.beginqty = ( afi ) ? ( afi.qtyonhand * 50 ) : afic.beginqty
+			craaf.beginfrom = ( afi ) ? ( craaf.prefix + ( afi.issuedto ) + craaf.suffix ): ( craaf.prefix + afic.currentseries + craaf.suffix )
+			craaf.beginto = ( afi ) ? ( craaf.prefix + afi.endseries + craaf.suffix ) : ( craaf.prefix + afic.endseries + craaf.suffix )
+		}
+		else{
+			craaf.beginqty = ( afi ) ? ( afi.qtyonhand * 2000 ) : afic.beginqty
+			craaf.beginfrom = null 
+			craaf.beginto = null
+		}
+		
+		craaf.receivedqty = 0
+		craaf.receivedfrom = null
+		craaf.receivedto = null
+		craaf.issuedqty = 0
+		craaf.issuedfrom = null
+		craaf.issuedto = null
+		craaf.cancelqty = 0
+		craaf.endingqty = 0
+		craaf.endingfrom = null
+		craaf.endingto = null
+		craaf.stubno = ( afi ) ? null : afic.stubno
+		 
+		em.create( schemaname, craaf )
+	}
+	
 	@ProxyMethod
-	public def postToCraaf(){	
+	public void postToCraaf(){	
 		    
-		def param = [:]
+		def param = [:]   
 		param.year = cal.get( Calendar.YEAR )
 		param.month = cal.get( Calendar.MONTH ) + 1
 
 		def craaf = em.sqlContext.createNamedQuery('consolidatedreport:getCraaf').setParameters( param ).singleResult		
-		if( craaf ) return ''
+		if( craaf ) return 
 		
-		def afinventory = fetchAFIStateOpen()
+		def afinventory = getAFIStateOpen()
 		if( !afinventory )
-			afinventory = fetchAFIStateClosed()
-			
+			afinventory = getAFIStateClosed()
 		if( afinventory ){
 			afinventory.each(){ afi ->
-				afi.afinventoryid = afi.objid				
-				//build craaf by AFInventory 
-				if( 'OPEN'.equals( afi.docstate ) ) 
-					buildCraaf( afi, null )
-					
-				//build craaf by AFCredit
+				afi.afinventoryid = afi.objid
+					//build craaf by afinventory
+				doBuildCraafByAFI( afi ) 
+					//build craaf by afinventorycredit/collector
 				doBuildCraafByAFIC( afi, param )
 			}
-		}
-				
+		}			
 	}
-	
-	private def buildCraaf( afi, afic ){ 
-		def param = [:] 
-		param.objid = ( afi ) ? 'C-' : 'CC-'
-		param.objid += new UID()
 		
-		param.schemaname = schemaname
-		param.schemaversion = schemaversion
-		
-		param.afinventoryid = afi?.objid
-		param.afinventorycreditid = afic?.objid
-		
-		param.craafyear = cal.get( Calendar.YEAR )
-		param.craafmonth = cal.get( Calendar.MONTH ) + 1
-		param.collectorid = afic?.collectorid
-		param.collectorname = afic?.collectorname
-		param.collectortitle = afic?.collectortitle
-		
-		if( afi ){
-			param.prefix = ( !afi.prefix ) ? '' : "$afi.prefix-"
-			param.suffix = ( !afi.suffix ) ? '' : "-$afi.suffix"
-		}
-		else{
-			param.prefix = ( !afic.prefix ) ? '' : "$afic.prefix-"
-			param.suffix = ( !afic.suffix ) ? '' : "-$afic.suffix" 
-		}   
-		
-		param.afid = ( afi ) ? afi.afid : afic.afid
-		param.beginqty = ( afi ) ? ( afi.qtyonhand * 50 ) : afic.beginqty
-		param.beginfrom = ( afi ) ? ( param.prefix + afi.startseries + param.suffix ): ( param.prefix + afic.currentseries + param.suffix )
-		param.beginto = ( afi ) ? ( param.prefix + afi.endseries + param.suffix ) : ( param.prefix + afic.endseries + param.suffix )
-		
-		param.receivedqty = 0
-		param.receivedfrom = null
-		param.receivedto = null
-		param.issuedqty = 0
-		param.issuedfrom = null
-		param.issuedto = null
-		param.cancelqty = 0
-		param.endingqty = 0
-		param.endingfrom = null
-		param.endingto = null
-		param.stubno = ( afi ) ? null : afic.stubno
-		 
-		em.create( schemaname, param )
-	}
-	
 	@ProxyMethod
 	public def buildReport( entity ){
-	
+	 
 		postToCraaf()
 		def year = Integer.parseInt( entity.year );
+		def craaf = em.sqlContext.createNamedQuery('consolidatedreport:getReportDataGeneral').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
+		// remove existing collectorname in craaf
+		em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCollector')
+			.setParameters( [craafyear:year, craafmonth:entity.month] )
+			.resultList.each{ clctr ->
+				def found = craaf.find{ it.collectorname.equals( clctr.collectorname ) }
+				clctr.collectorname = ( !found ) ? clctr.collectorname : null
+				craaf += clctr
+		}
 		
-		def data = em.sqlContext.createNamedQuery('consolidatedreport:getReportDataGeneral').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
-		data += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCollector').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
-		data += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCanceledSeries').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
-		
-		data.each{
+		craaf += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCanceledSeries').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
+		craaf.each{
 			if( it.beginqty == 0 ) it.beginqty = null;
 			if( it.receivedqty == 0 ) it.receivedqty = null;
 			if( it.issuedqty == 0 ) it.issuedqty = null;
@@ -169,7 +165,7 @@ class ConsolidatedReportService {
 			}
 		}
 		
-		return data
+		return craaf
 	}
 	
 	@ProxyMethod
@@ -181,8 +177,10 @@ class ConsolidatedReportService {
 		if( iraf.info.rivtype == 'LGU' ){
 			iraf.rcvitems.each{ ri ->
 				def craaf = getList( ri.afid );
-				if( !craaf ) init( iraf.objid, ri );
-				else createCRAAFByIRAF( iraf.objid, ri );
+				if( !craaf )
+					init( iraf.objid, ri );
+				else
+					createCRAAFByIRAF( iraf.objid, ri );
 			}
 		}
 		else updateCRAAFbyIRAF( iraf );

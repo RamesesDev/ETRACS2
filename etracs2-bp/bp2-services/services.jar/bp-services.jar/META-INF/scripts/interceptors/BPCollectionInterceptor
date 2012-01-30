@@ -30,10 +30,12 @@ class BPCollectionInterceptor {
 	@After(pattern="ReceiptService.open")
 	public def afterOpenReceipt( evt ){
 		def receipt = evt.result
-		receipt.txntype = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]).txntype
-		summarizedItems( receipt )
-		
-		return receipt		
+		if( receipt?.doctype.equals('BUSINESS_TAX') ){
+			receipt.txntype = em.read('bpapplication:bpapplication', [objid: receipt.applicationid]).txntype
+			summarizedItems( receipt )
+			
+			return receipt		
+		}
 	}
 	
 	@After(pattern="ReceiptService.create") 
@@ -100,7 +102,7 @@ class BPCollectionInterceptor {
 							 interest		: r.interest,
 							 discount		: r.discount ];
 		}
-		deleteBPPayments( receipt )
+		deleteBPPayment( receipt )
 		ledgerSvc.deletePayment( payment );
 	}
 	
@@ -123,7 +125,8 @@ class BPCollectionInterceptor {
 			 items: []
 		];
 		
-		//change amount -> totalamount 
+		//change taxamount -> amount
+		//add total
 		receipt.items.each{ rcpt ->
 			payment.items << [ bpreceivableid	: rcpt.taxfeeid,
 							 taxamount		: rcpt.taxamount,
@@ -165,7 +168,7 @@ class BPCollectionInterceptor {
 							 totalamount	: rcpt.amount ];
 		}
 		
-		voidBPPayments( receipt )
+		voidBPPayment( receipt )  
 		ledgerSvc.deletePayment( payment );
 	}
 	
@@ -197,11 +200,11 @@ class BPCollectionInterceptor {
 				lobname : rcpt.lobname,
 				acctid : rcpt.acctid,
 				accttitle : rcpt.accttitle,
-				amount : rcpt.taxamount,
-				surcharge : rcpt.surcharge,
-				interest : rcpt.interest,
-				discount : rcpt.discount,
-				totalamount : ( rcpt.taxmount + rcpt.surcharge + rcpt.interest - rcpt.discount),
+				amount : numSvc.round(rcpt.taxamount),
+				surcharge : numSvc.round(rcpt.surcharge),
+				interest : numSvc.round(rcpt.interest),
+				discount : numSvc.round(rcpt.discount),
+				total : ( numSvc.round(rcpt.taxamount) + numSvc.round(rcpt.surcharge) + numSvc.round(rcpt.interest) - numSvc.round(rcpt.discount) ),
 				voided : 0			
 			]
 			
