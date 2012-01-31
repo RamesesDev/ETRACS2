@@ -17,7 +17,7 @@ SELECT
 	SUM(CASE WHEN ia.systype = 'BUSINESS_TAX' THEN bpp.amount + bpp.surcharge + bpp.interest - bpp.discount ELSE 0.0 END )AS businesstax, 
 	SUM(CASE WHEN ia.systype = 'REG_FEE' THEN bpp.amount + bpp.surcharge + bpp.interest - bpp.discount ELSE 0.0 END) AS regfee, 
 	SUM(CASE WHEN ia.systype IS NULL OR ia.systype NOT IN( 'BUSINESS_TAX', 'REG_FEE') THEN bpp.amount + bpp.surcharge + bpp.interest - bpp.discount ELSE 0.0 END) AS otherfee, 
-	bpp.totalamount 
+	sum( bpp.total ) as total 
 FROM bppayment bpp 
 INNER JOIN business b ON b.applicationid = bpp.applicationid 
 INNER JOIN incomeaccount ia ON ia.objid = bpp.acctid  

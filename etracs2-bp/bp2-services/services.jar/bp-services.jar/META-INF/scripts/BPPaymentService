@@ -5,7 +5,7 @@ import java.rmi.server.UID
 class BPPaymentService{
 	
 	@PersistenceContext('main')
-	def em;
+	def em
 	
 	@ProxyMethod
 	public def getBPPReportLists( def year, def qtr, def month, def day ){
@@ -16,7 +16,7 @@ class BPPaymentService{
 			imonth : ( month?.month ? month.month : '%' ),
 			iday : ( day ? day : '%' )
 		]
-		println param
+		
 		def result = getBPPReportLists( param )
 		if( !result ) 
 			throw new Exception('Records found')
@@ -66,7 +66,7 @@ class BPPaymentService{
 		return monthlist.find{ it.month == imonth }
 	} 
 	
-	def getMonthName( month ) {
+	private def getMonthName( month ) {
 		def months = getMonthList( null )
 		def mon = months.find{ it.month == month?.month }
 		if( mon ) return mon.name 
@@ -74,7 +74,7 @@ class BPPaymentService{
 	}
 	
 	
-	def getQuarterName( qtr ) {
+	private def getQuarterName( qtr ) {
 		if( qtr == 1 ) return '1ST QUARTER'
 		else if( qtr == 2 ) return '2ND QUARTER'
 		else if( qtr == 3 ) return '3RD QUARTER'

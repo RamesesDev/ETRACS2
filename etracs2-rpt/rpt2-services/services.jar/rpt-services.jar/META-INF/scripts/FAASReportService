@@ -10,6 +10,10 @@ class FaasReportService
 	@Service('NumberService')
 	def numberSvc
 	
+	def LISTLIMITSIZE1 = 20
+	def LISTLIMITSIZE2 = 7
+
+	
 	@ProxyMethod
 	public def getReportData( faasid ) {
 		def faasdata = [:]
@@ -36,7 +40,12 @@ class FaasReportService
 			faasdata.planttreesappraisals = getPlantTreeDetails( faas.rpu )
 			faasdata.landadjustments = getPlantTreeLandAdjustments( faas.rpu )
 			faasdata.propertyassessments = getPlantTreePropertyAssessements( faas.rpu )
-		} else 
+		} else if( faas.rpu.rputype == 'misc' ) {
+			faasdata.miscpropertyappraisals = getMiscPropertyAppraisals( faas.rpu )
+			faasdata.miscadjustments = getMiscAdjustments( faas.rpu )
+			faasdata.propertyassessments = getMiscPropertyAssessments( faas.rpu )
+		} 
+		else 
 			throw new Exception( 'There is no FAAS report for this record yet.' )
 			
 		return faasdata
@@ -313,7 +322,6 @@ class FaasReportService
 	
 	private def getPlantTreePropertyAssessements( rpu ) {
 		def data = []
-		
 		def assesslevel = numberSvc.format("#,##0", rpu.info.planttreedetails[0].assesslevel) + ' %'
 		
 		def item = [
@@ -327,5 +335,79 @@ class FaasReportService
 		data.add( item )
 		
 		return data
+	}
+	
+	private def getMiscPropertyAppraisals( rpu ) {
+		def data = []
+		def miscrpuitems = rpu.info.miscrpuitems
+		
+		miscrpuitems?.each {
+			def item = [
+				classification	: rpu.classname,
+				actualuse		: rpu.info.actualusename,
+				miscitemname	: it.miscitemname,
+				expr			: it.expr,
+				basemarketvalue	: it.basemarketvalue
+			]
+			
+			data.add( item )
+		}
+		
+		LISTLIMITSIZE1 = buildEmptyRows( data, LISTLIMITSIZE1, false )
+		
+		return data
+	}
+	
+	private def getMiscAdjustments( rpu ) {
+		def data = []
+		def miscrpuitems = rpu.info.miscrpuitems
+		
+		miscrpuitems?.each {
+			def depreciationrate = numberSvc.format("#,##0", it.depreciation) + ' %'
+			
+			def item = [
+				actualuse		: rpu.info.actualusename,
+				basemarketvalue	: it.basemarketvalue,
+				adjtypename		: 'DEPRECIATION',
+				depreciationrate: depreciationrate,
+				depreciatedvalue: it.depreciatedvalue,
+				marketvalue		: it.marketvalue
+			]
+			
+			data.add( item )
+		}
+		
+		LISTLIMITSIZE2 = buildEmptyRows( data, LISTLIMITSIZE2, true )
+		
+		return data
+	}
+	
+	private def getMiscPropertyAssessments( rpu ) {
+		def data = []
+		def assesslevel = numberSvc.format("#,##0.00", rpu.info.miscrpuitems[0].assesslevel) + ' %'
+		def item = [
+			classification	: rpu.classname,
+			actualuse 		: rpu.info.actualusename,
+			marketvalue		: rpu.totalmv,
+			assesslevel		: assesslevel,
+			assessedvalue	: rpu.totalav
+		]
+			
+		data.add( item )
+		
+		LISTLIMITSIZE2 = buildEmptyRows( data, LISTLIMITSIZE2, false )
+		
+		return data
+	}
+	
+	private def buildEmptyRows( data, listlimitsize, flag ) {
+		for(int i=data.size +1; i<=listlimitsize; i++) {
+			data.add( [:] )
+		}
+		
+		if( flag && data.size > listlimitsize )
+			listlimitsize = listlimitsize - ( data.size - listlimitsize )
+			
+		return listlimitsize
 	}
 }
