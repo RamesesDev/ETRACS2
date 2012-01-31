@@ -13,6 +13,7 @@ class TCScript {
 		removeMultipleNoBFromBTo()
 		removeMultipleNoBeginTo()
 		copyRcvfrmToIssuedfrm()
+		removeCraafEndingNoBeginIssuedReceived()
 		
 		return 'run successfully'
 	}
@@ -52,7 +53,7 @@ class TCScript {
 	
 	// delete multiple no. of beginto order by beginqty
 	// the smallest no. of beginqty will be left.
-	private void removeMultipleNoBeginTo(){
+	private void removeMultipleNoBeginTo(){ 
 		em.sqlContext.createNamedQuery( 'tcscript:getCraafDuplicateByBto' ).resultList.each{ crf ->
 			def listduplicate = em.sqlContext.createNamedQuery( 'tcscript:getCraafByMonthYearBto' ).setParameters( crf ).resultList
 			def list = listduplicate.clone()
@@ -70,7 +71,7 @@ class TCScript {
 		
 	//copy receivedfrom to issuedfrom
 	//wrong update of issuedfrom 
-	//due to wrong forwarding of craaf end of month.
+	//due to wrong forwarding of craaf at the end of month.
 	private void copyRcvfrmToIssuedfrm(){
 		em.sqlContext.createNamedQuery( 'tcscript:getConsolatedWrongEntry' ).resultList.each{
 			def map = [ 
@@ -79,6 +80,19 @@ class TCScript {
 			
 			em.sqlContext.createNamedExecutor( 'tcscript:updateConsolatedWrongEntry' ).setParameters( map ).execute()
 		}
+	}
+	
+	
+	//get craaf with ending qty, ending from ending to
+	//without begin qty, begin from, begin series,
+	//issued qty, issued from, issued to,
+	//received qty, received from, received to and remove to craaf
+	//due error wrong forwarding of craaf at the end of month.
+	public void removeCraafEndingNoBeginIssuedReceived(){
+		em.sqlContext.createNamedQuery( 'tcscript:getCraafEndingNoBIR' ).resultList.each{ 
+			deleteCraafById( it.objid )
+		}
+		
 	}
 	
 	private void deleteCraafById( def craafid ){

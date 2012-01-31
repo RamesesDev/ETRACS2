@@ -32,6 +32,13 @@ create index ix_txnlog_refid on txnlog( refid );
 
 create index ix_bppermit_appid on bppermit( applicationid ) ;
 
+
+-- permissionset for bp collection report listing
+-- 		module : bp2 
+-- 		permissionset: BP_LICENSING 
+-- 		permissions: [action:'bpreport.bpcollectionreport'	,title:'Generate BP Collection Report Listing' ]
+
+
 -- bppayment table structure
 CREATE TABLE bppayment (
 	objid VARCHAR(50),
