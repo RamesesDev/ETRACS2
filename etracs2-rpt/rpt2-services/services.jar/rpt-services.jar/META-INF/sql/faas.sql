@@ -1,6 +1,9 @@
 #----------------------------------------------------------------
 # GETTERS
 #----------------------------------------------------------------
+[getInfoById]
+SELECT objid, docstate, schemaname, tdno, fullpin, claimno, ledgerid, issuedate FROM faaslist WHERE objid = $P{objid} 
+
 [getInfoByTdno]
 SELECT objid, docstate, schemaname, tdno, fullpin, claimno, ledgerid, issuedate FROM faaslist WHERE tdno = $P{tdno} 
 
@@ -38,6 +41,16 @@ WHERE r.objid = h.parentid
   AND h.faasid = lh.objid 
   AND r.faasid = $P{faasid}   
 ORDER BY h.tdno DESC   
+
+[getFAASIdForRevision]
+SELECT objid 
+FROM faaslist  fl 
+WHERE fl.ry < $P{newry} 
+  AND fl.docstate = 'CURRENT' 
+  AND NOT EXISTS(SELECT * FROM faaslist WHERE prevtdno = fl.tdno AND ry = $P{newry}  )  
+ORDER BY fl.tdno 
+
+
 
 
 [getRYSetting_land]
@@ -111,7 +124,7 @@ SELECT * FROM faasattachment WHERE faasid = $P{faasid}
 SELECT * FROM faasattachment WHERE docstate = 'FORTRANSMITTAL' 
 
 [getBarangays]
-SELECT * FROM lgu WHERE lgutype = 'BARANGAY' ORDER BY lguname 
+SELECT * FROM lgu WHERE lgutype = 'BARANGAY' ORDER BY objid 
 
 [getActiveAnnotationId] 
 SELECT objid FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPROVED' ORDER BY docno DESC 

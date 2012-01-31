@@ -162,7 +162,7 @@ class FAASService
 	
 	@ProxyMethod
 	public List getRyList( rputype ) {
-		if( 'land'.equals( rputype ) ) {
+		if( !rputype || 'land'.equals( rputype ) ) {
 			return em.sqlContext.createNamedQuery('faas:getLandRYSetting').resultList 
 		}
 		else if( 'bldg'.equals( rputype ) ) {
@@ -1150,6 +1150,130 @@ class FAASService
         return faas 
     }
     
+	@ProxyMethod
+	public List getBarangayIdList() {
+		def brgylist = em.sqlContext.createNamedQuery('faas:getBarangays').resultList
+		brgylist.sort{ it.name }
+		return brgylist 
+	}
+	
+	@ProxyMethod
+	public List getFaasIdForRevision( newry ) {
+		return em.sqlContext.createNamedQuery('faas:getFAASIdForRevision')
+				.setParameters([ newry:newry  ])
+				.resultList
+				.objid 
+	} 
+	 
+	
+	@ProxyMethod 
+	public void validateBatchRY( newry ) {
+		def rptsetting = em.sqlContext.createNamedQuery('faas:getCurrentRY').singleResult 
+		if( !rptsetting ) {
+			throw new Exception('RPT Setting is not defined.')
+		}
+		if( rptsetting.ry >= newry ) {
+			throw new Exception('New Revision Year must be greater than current revision year ' + rptsetting.ry )
+		}
+		
+		//check landry setting 
+		def ry = em.sqlContext.createNamedQuery('faas:getRYSetting_land')
+						.setParameter('ry', newry)
+						.singleResult 
+		if( ! ry ) throw new Exception( "Land Revision Year Setting for $newry is not defined.")
+		
+		//check bldgry setting 
+		ry = em.sqlContext.createNamedQuery('faas:getRYSetting_bldg')
+						.setParameter('ry', newry)
+						.singleResult 
+		if( ! ry ) throw new Exception( "Building Revision Year Setting for $newry is not defined.")
+		
+		//check machry setting 
+		ry = em.sqlContext.createNamedQuery('faas:getRYSetting_mach')
+						.setParameter('ry', newry)
+						.singleResult 
+		if( ! ry ) throw new Exception( "Machine Revision Year Setting for $newry is not defined.")
+		
+		//check planttreery setting 
+		ry = em.sqlContext.createNamedQuery('faas:getRYSetting_planttree')
+						.setParameter('ry', newry)
+						.singleResult 
+		if( ! ry ) throw new Exception( "Plant/Tree Revision Year Setting for $newry is not defined.")
+		
+		//check getRYSetting_misc setting 
+		ry = em.sqlContext.createNamedQuery('faas:getRYSetting_misc')
+						.setParameter('ry', newry)
+						.singleResult 
+		if( ! ry ) throw new Exception( "Miscellaneous Revision Year Setting for $newry is not defined.")
+	}
+	
+	
+	def getRySetting( rputype, newry ) {
+		if( rputype == 'land' ) {
+			return em.sqlContext.createNamedQuery('faas:getRYSetting_land')
+						.setParameter('ry', newry)
+						.singleResult 
+		}
+		
+		if( rputype == 'bldg' ) {
+			return em.sqlContext.createNamedQuery('faas:getRYSetting_bldg')
+						.setParameter('ry', newry)
+						.singleResult 
+		}
+		
+		if( rputype == 'mach' ) {
+			return em.sqlContext.createNamedQuery('faas:getRYSetting_mach')
+						.setParameter('ry', newry)
+						.singleResult 
+		}
+		
+		if( rputype == 'planttree' ) {
+			return em.sqlContext.createNamedQuery('faas:getRYSetting_planttree')
+						.setParameter('ry', newry)
+						.singleResult 
+		}
+		
+		if( rputype == 'misc' ) {
+			return em.sqlContext.createNamedQuery('faas:getRYSetting_misc')
+						.setParameter('ry', newry)
+						.singleResult 
+		}
+		return null 
+	}
+	
+	@ProxyMethod
+	public void  reviseFaas( faasidlist, newry ) {
+		println 'Revise FAA --------------------------------'
+		faasidlist.each{ faasid -> 
+			def faas = em.read( SCHEMA_NAME, [objid:faasid] )
+			if( ! faas ) {
+				def msg = 'Cannot open FAAS ' + faasid 
+				println msg 
+				return msg  
+			}
+
+			def prevtdno     = faas.info.tdno
+			def newrysetting = getRySetting( faas.rpu.rputype, newry ) 
+			def autonumber 	 = TO_BOOLEAN( var.td_autonumber )
+				
+			def msg = null 
+			try {
+				faas = initGeneralRevision( faas, 'GR', prevtdno, autonumber, newrysetting )
+				faas.info.memoranda	= 'REVISED PURSUANT TO R.A. 7160' 
+				faas.info.annotated = TO_BOOLEAN( faas.info.annotated )
+				faas = create( faas )
+				logSvc.log('REVISED','Faas', faasid)
+				msg = 'Successfully revised -> ' + prevtdno 
+				println msg 
+			}
+			catch ( e ) {
+				msg = 'Error revising -> ' + prevtdno + '. [Error] ' + e.message 
+				println msg
+			}
+		}
+	}		
+	
+	
 	
 	Map initGeneralRevision( faas, txntype, prevtdno, autonumber, newrysetting ) {
 		if( !newrysetting ) {

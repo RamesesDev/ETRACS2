@@ -35,6 +35,11 @@ create index ix_bpapplicationlisting_sym on bpapplicationlisting( docstate, iyea
 
 create index ix_bploblisting_appid on bploblisting( applicationid );
 
+create index ix_faaslist_prevtdno_ry on faaslist (prevtdno, ry );
+create index ix_faaslist_prevtdno on faaslist(prevtdno);
+
+create index ix_faaslist_rydocstate on faaslist (ry,docstate );
+
 
 
 
