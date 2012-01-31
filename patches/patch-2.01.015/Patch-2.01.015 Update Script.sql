@@ -33,4 +33,12 @@ create index ix_txnlog_refid on txnlog( refid );
 create index ix_bppermit_appid on bppermit( applicationid ) ;
 create index ix_bpapplicationlisting_barcode on bpapplicationlisting(barcode);
 create index ix_bpapplication_barcode on bpapplication(barcode);
+create index ix_bpapplicationlisting_sym on bpapplicationlisting( docstate, iyear, txnmode );
+
+create index ix_bploblisting_appid on bploblisting( applicationid );
+
+create index ix_faaslist_prevtdno_ry on faaslist (prevtdno, ry );
+create index ix_faaslist_prevtdno on faaslist(prevtdno);
+
+create index ix_faaslist_rydocstate on faaslist (ry,docstate );
 

@@ -702,6 +702,7 @@ public class FAASPage extends javax.swing.JPanel {
         xTextArea1.setColumns(20);
         xTextArea1.setLineWrap(true);
         xTextArea1.setRows(5);
+        xTextArea1.setCaption("Memoranda");
         xTextArea1.setHint("Memoranda");
         xTextArea1.setName("faas.info.memoranda");
         xTextArea1.setTextCase(com.rameses.rcp.constant.TextCase.UPPER);

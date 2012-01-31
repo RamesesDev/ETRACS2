@@ -34,7 +34,6 @@ public class FAASMgmtPage extends javax.swing.JPanel {
         jPanel5 = new javax.swing.JPanel();
         xActionBar2 = new com.rameses.rcp.control.XActionBar();
         jPanel4 = new javax.swing.JPanel();
-        formPanel1 = new com.rameses.rcp.util.FormPanel();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xButton1 = new com.rameses.rcp.control.XButton();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
@@ -71,25 +70,18 @@ public class FAASMgmtPage extends javax.swing.JPanel {
 
         jPanel4.setLayout(new java.awt.BorderLayout());
 
-        formPanel1.setCaptionPadding(new java.awt.Insets(0, 5, 0, 5));
-        formPanel1.setCellpadding(new java.awt.Insets(0, 5, 0, 0));
-        formPanel1.setPadding(new java.awt.Insets(0, 0, 0, 0));
-        formPanel1.setPreferredSize(new java.awt.Dimension(350, 22));
         xComboBox1.setCaption("Filter");
         xComboBox1.setCaptionWidth(50);
         xComboBox1.setDynamic(true);
+        xComboBox1.setEmptyText("- Select Filter -");
         xComboBox1.setExpression("#{name}");
         xComboBox1.setImmediate(true);
         xComboBox1.setItems("filterlist");
         xComboBox1.setName("filter");
-        xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));
-        formPanel1.add(xComboBox1);
-
-        jPanel4.add(formPanel1, java.awt.BorderLayout.WEST);
+        jPanel4.add(xComboBox1, java.awt.BorderLayout.CENTER);
 
         xButton1.setText("...");
         xButton1.setName("createFilter");
-        xButton1.setPreferredSize(new java.awt.Dimension(35, 23));
         jPanel4.add(xButton1, java.awt.BorderLayout.EAST);
 
         jPanel5.add(jPanel4, java.awt.BorderLayout.WEST);
@@ -123,7 +115,6 @@ public class FAASMgmtPage extends javax.swing.JPanel {
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private com.rameses.rcp.util.FormPanel formPanel1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;

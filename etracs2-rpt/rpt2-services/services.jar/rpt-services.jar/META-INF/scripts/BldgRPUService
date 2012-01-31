@@ -24,6 +24,140 @@ class BldgRPUService
 	@Env
 	def env
     
+	
+	@ProxyMethod
+	public Map initGeneralRevision( faas, newrysetting ) {
+		checkLandFaasIsRevised( faas, newrysetting )
+		reviseBldgType( faas, newrysetting )
+		reviseBldgKindBucc( faas, newrysetting )
+		reviseBldgUses( faas, newrysetting )
+		recalculate( faas )
+		return faas 
+	}
+	
+	void recalculate( faas ) {
+		calculateAssessment( faas.rpu )
+		recalculateAdditionalItems( faas )
+		calculateAssessment( faas.rpu )
+	}
+	
+	void recalculateAdditionalItems( faas ) {
+		faas.rpu.info.bldguses.each { bu ->
+			bu.floors.each { floor ->
+				floor.additionalitems.each { item  ->
+					item.amount = recalcAdditionalItemAmount( floor, item)
+				}
+			}
+		}
+	}
+	
+	void reviseBldgType( faas, newrysetting ) {
+		def rpuinfo = faas.rpu.info 
+		
+		def bldgtype = em.sqlContext.createNamedQuery('bldgrpu:getBldgTypeByPrevID')
+							.setParameter('previd', rpuinfo.bldgtype.bldgtypeid )
+							.singleResult 
+							
+		if( bldgtype ) {
+			bldgtype.depreciations	= em.serializer.read( bldgtype.depreciations )
+			bldgtype.multistoreyadjustments	= em.serializer.read( bldgtype.multistoreyadjustments )
+			rpuinfo.bldgtype 		= bldgtype 
+			rpuinfo.predominant 	= bldgtype.predominant
+			rpuinfo.depreciatecoreanditemseparately 	= bldgtype.depreciatecoreanditemseparately
+			rpuinfo.computedepreciationbasedonschedule 	= bldgtype.computedepreciationbasedonschedule
+		}
+		else {
+			rpuinfo.bldgtype = null 
+		}
+	}
+	
+	void reviseBldgKindBucc( faas, newrysetting ) {
+		def rpuinfo = faas.rpu.info 
+		
+		def bucc = em.sqlContext.createNamedQuery('bldgrpu:getBldgKindBuccByPrevId')
+							.setParameter('previd', rpuinfo.bldgkindbucc.bldgkindbuccid )
+							.singleResult 
+							
+		if( bucc ) {
+			rpuinfo.bldgkindbucc = bucc 
+			if( bucc.basevaluetype == 'range' ) {
+				rpuinfo.firstfloorbasevalue = bucc.maxbasevalue
+			}
+		}
+		else {
+			rpuinfo.bldgkindbucc = null 
+		}
+	}
+	
+	void reviseBldgUses( faas, newrysetting ) {
+		reviseActualUse( faas, newrysetting  )
+		reviseFloors( faas, newrysetting )
+	}
+	
+	void reviseActualUse( faas, newrysetting  ) {
+		def deletedUses = []
+		def bldguses = faas.rpu.info.bldguses 
+		
+		bldguses.each{ bu ->
+			def actualuse = em.sqlContext.createNamedQuery('bldgrpu:getActualUseByPrevID')
+							.setParameter('previd', bu.actualuse.actualuseid )
+							.singleResult 
+							
+			if( actualuse  ) {
+				actualuse.ranges = em.serializer.read( actualuse.ranges ) 
+				bu.objid 		= 'BU' + new UID() 
+				bu.actualuse 	= actualuse 
+			}
+			else {
+				deletedUses.add( bu )
+			}
+		}
+		
+		bldguses.removeAll( deletedUses )
+	}
+	
+	void reviseFloors( faas, newrysetting ) {
+		faas.rpu.info.bldguses.each{ bu ->
+			bu.floors.each{ floor -> 
+				floor.objid = 'BF' + new UID()
+				
+				def deletedItems = []
+				
+				floor.additionalitems.each{  item ->
+					def addlitem = em.sqlContext.createNamedQuery('bldgrpu:getAdditionalItemByPrevId')
+										.setParameter('previd', item.addlitemid )
+										.singleResult 
+					if( addlitem ) {
+						item.objid 		= 'BA' + new UID()
+						item.addlitem 	= addlitem
+						item.putAll( addlitem )
+					}
+					else {
+						deletedItems.add( item )
+					}
+				}
+				
+				floor.additionalitems.removeAll( deletedItems )
+			}
+		}
+	}
+		
+	
+	
+	void checkLandFaasIsRevised( faas, newrysetting) {
+		def pin = faas.rp.pin
+		def landfaas = em.sqlContext.createNamedQuery('bldgrpu:getLatestRevisedLandFaas')
+							.setParameters([ pin:pin, ry:newrysetting.ry  ])
+							.singleResult 
+							
+		if( ! landfaas ) {
+			throw new Exception("Land FAAS $pin is not yet revised.\nFirst revise the Land RPU before revising any improvements.")
+		}	
+		
+		faas.info.landfaasid 			= landfaas.objid 
+		faas.info.landfaastaxpayerid 	= landfaas.taxpayerid 
+	}
+	
     
     @ProxyMethod
     public Map initBldgRpu( faas ) {
