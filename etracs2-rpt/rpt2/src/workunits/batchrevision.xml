@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker folderid="menu/rpt/txn" action="init" caption="Batch General Revision"  mnemonic="b" permission="batchgr.create"/>
+    </invokers>
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+import com.rameses.rcp.framework.TaskManager;
+
+
+public class BatchGRController {
+    @Binding
+    def binding 
+    
+    @Service( 'FAASService' )
+    def svc 
+    
+    def msg 
+    def fetchidtask
+    def taskmgr
+    def tasklist
+    def newry
+    def processing 
+    def processeditems = 0
+    def faasidlist 
+    def startdate
+    
+    
+    void init(){
+    }
+    
+    void doCancel() {
+        tasklist.each{ task -> 
+            task.setCancelled( true ) 
+            task.setEnded( true )
+        }
+        processing = false 
+        updateMessage('Transaction cancelled.')
+        binding.refresh('revise|doCancel|newry')
+    }
+    
+    def updateMessage = { msg ->
+        this.msg = msg
+        binding.refresh('msg')
+    }
+    
+    def afterfetch = { list ->
+        faasidlist = list
+        if( fetchidtask.cancelled ) {
+            taskmgr.stop()
+        }
+        else {
+            taskmgr.removeTask( fetchidtask )
+            doRevise() 
+        }
+    }
+    
+    def updateProcessedCount = { processeditems ->
+        this.processeditems += processeditems 
+        updateMessage('No. of FAAS processed : ' + this.processeditems )
+    }
+    
+    def onfinish = {
+        def runningtasks = tasklist.findAll{ it.isEnded() == false } 
+        if( runningtasks.size() == 0 ) {
+            processing = false;
+            updateMessage( 'Transaction completed. Total FAAS processed is ' + processeditems + '.')
+            println 'TOTAL PROCESSING TIME :' + timeDiff( startdate, new Date()) 
+            binding.refresh('revise|doCancel|newry')
+        }
+    }
+    
+    def timeDiff( d1, d2 ) {
+        def diff = d2.time - d1.time 
+        int secs = diff / 1000
+        int hours = secs / 60 / 60 
+        secs -= ( hours * 60 * 60 )
+        int mins = secs / 60
+        secs -= ( mins * 60 )
+        def msg = ''
+        if( hours > 0 ) msg += "$hours hour" + ( hours == 1 ? '' : 's')
+        if( mins > 0 ) msg += " $mins min" + ( mins == 1 ? '' : 's')
+        if( secs > 0 ) msg += " $secs sec" + ( secs == 1 ? '' : 's')
+        return msg 
+    }
+
+    void revise() {
+        processing  = false 
+        svc.validateBatchRY( newry )
+
+        if( MsgBox.confirm( 'Revise all FAAS?' ) ) {
+            startdate = new Date()
+            taskmgr = new TaskManager()
+            fetchidtask = new FetchIdListTask( svc:svc, newry:newry, afterfetch:afterfetch  )
+            taskmgr.addTask( fetchidtask )
+            taskmgr.start()
+            processing = true
+            updateMessage( 'Loading FAAS for revision. Please wait...' )
+            binding.refresh('revise|doCancel|newry')
+        }
+    }
+    
+    void doRevise() {
+        updateMessage('Creating general revision tasks...')
+        tasklist = []
+        def partitionlist = partition( faasidlist, 20 )
+        partitionlist.each { list -> 
+            def revisiontask = new RevisionTask( 
+                    taskname    : 'TASK ' + tasklist.size(),
+                    svc         : svc, 
+                    newry       : newry, 
+                    faasidlist  : list, 
+                    updateProcessedCount : updateProcessedCount, 
+                    onfinish             :onfinish 
+            )
+            taskmgr.addTask( revisiontask ) 
+            tasklist.add( revisiontask )
+        }
+        taskmgr.start()
+    }
+    
+    
+    List getFaasIdsForRevision() {
+        def list = svc.getFaasIdForRevision( newry ) 
+        println 'FAAS Count -> ' + list.size() 
+        return list 
+    }
+    
+    List getRylist() {
+        return svc.getRyList( null ).ry
+    }
+    
+    def partition(list, columns) {
+        def partitions = []
+        int size = (int)list.size() / (int)columns
+        int rem = list.size() % columns
+
+        def start = 0
+        columns.times { pn ->
+            def end = start + size - 1
+            end = ( rem > 0 ? end + 1 : end )
+            rem -= 1
+            def newlist = []
+            newlist.addAll( list[start..end] ) 
+            partitions.add( newlist )
+            println partitions 
+            start = end + 1
+        }
+        list.clear()
+        return partitions    
+    }
+
+}
+
+class FetchIdListTask extends com.rameses.rcp.common.Task {
+    def svc 
+    def newry 
+    
+    def ended = false
+    def cancelled = false 
+    
+    def afterfetch                //handler 
+    
+    public boolean accept() {
+       return !ended && !cancelled 
+    }
+    
+    public boolean isEnded() {
+        return ended || cancelled 
+    }
+
+    public void execute() {
+        def list = svc.getFaasIdForRevision( newry ) 
+        if( ! cancelled ) {
+            afterfetch( list )
+        }
+        ended = true 
+    }
+    
+}
+
+
+class RevisionTask extends com.rameses.rcp.common.Task {
+    def taskname 
+    def svc 
+    def newry 
+    
+    def ended = false
+    def cancelled = false 
+    def faasidlist 
+    
+    def updateProcessedCount   //handler
+    def onfinish                //handler 
+    
+    public boolean accept() {
+       return !ended && !cancelled 
+    }
+    
+    public boolean isEnded() {
+        return ended || cancelled 
+    }
+
+    public void execute() {
+        while( faasidlist.size() > 0 && cancelled == false  ) {
+            println taskname + ': item count -> '  + faasidlist.size() 
+            
+            def itemcount = Math.min( 25, faasidlist.size() )
+            def faasidrange = []
+            faasidrange.addAll( faasidlist[ 0..itemcount-1 ] )
+            svc.reviseFaas( faasidrange, newry )
+            faasidlist.removeAll( faasidrange )
+            updateProcessedCount( itemcount )
+
+            try {
+                Thread.sleep( 100 )
+            }
+            catch( e ) {
+                //
+            }
+        }
+        ended = true 
+        if( ! cancelled ) {
+            onfinish()
+        }
+        println taskname + ' is done...' 
+    }
+    
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.rpt.faas.BatchGRInitPage" />
+    </pages>
+</workunit>

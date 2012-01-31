@@ -197,6 +197,76 @@ class CollectionController
     def getCollectorlist() {
         return userService.getCollectorList()
     }
+    
+    /* ------------------------------------------------------------------------------------------------
+    *
+    * BARCODE SUPPORT 
+    *
+    ------------------------------------------------------------------------------------------------ */
+    
+    def minBarcodeLength = 5
+    
+    def readBarcode() {
+        def barcode = MsgBox.prompt('Enter or scan barcode.')
+        if ( ! barcode ) return 
+        if ( barcode.trim().length() < minBarcodeLength ) throw new Exception('Invalid barcode.')
+        return loadBarcodeOpener( barcode ) 
+    }
+    
+    def loadBarcodeOpener(   barcode ) {
+        def openercode  = barcode.substring(0, minBarcodeLength)
+        def afid        = openercode.substring(3)
+        def data        = barcode.substring( minBarcodeLength)
+        
+        String openerType = 'tc:' + openercode
+        
+        try {
+            opener = InvokerUtil.lookupOpener( openerType, [:] )
+        }
+        catch( e ) {
+            //
+        }
+        if( ! opener ) throw new Exception( 'Invalid barcode.'  )
+        
+        def appcode = opener.properties.appcode 
+        
+        //init critical informations
+        af = getAfList().find{ it.objid == afid }
+        if ( ! af ) throw new Exception('Cannot load associated accountable form reference with no. ' + afid )
+        
+        collectiontype = getCollectionTypeList().find{ it.appcode == appcode }
+        if( ! collectiontype ) throw new Exception('Collection type for application code ' + appcode + ' is not defined.' )
+        
+        if( ! afcontrol ) {
+            getAFControlInfo()
+            if( ! afcontrol ) {
+                return 
+            }
+        }
+        
+        def params = [
+            af             : af,
+            afcontrol      : afcontrol,
+            openerType     : openerType,
+            collectiontype : collectiontype,
+            collector      : collector,
+            txnmode        : txnmode,
+            txndate        : txndate,
+            backHandler    : backHandler, 
+            newHandler     : newHandler,
+            barcode        : barcode, 
+        ]
+        
+        opener = InvokerUtil.lookupOpener( openerType, params )
+        try {
+            InvokerUtil.invokeOpener( opener )
+            return 'main' 
+        }
+        catch( e ) {
+            MsgBox.err( e )
+            return null
+        }
+    }
 }
         
     ]]>

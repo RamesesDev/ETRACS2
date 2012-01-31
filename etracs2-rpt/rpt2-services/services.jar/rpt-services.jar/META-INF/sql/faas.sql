@@ -1,6 +1,9 @@
 #----------------------------------------------------------------
 # GETTERS
 #----------------------------------------------------------------
+[getInfoById]
+SELECT objid, docstate, schemaname, tdno, fullpin, claimno, ledgerid, issuedate FROM faaslist WHERE objid = $P{objid} 
+
 [getInfoByTdno]
 SELECT objid, docstate, schemaname, tdno, fullpin, claimno, ledgerid, issuedate FROM faaslist WHERE tdno = $P{tdno} 
 
@@ -39,6 +42,16 @@ WHERE r.objid = h.parentid
   AND r.faasid = $P{faasid}   
 ORDER BY h.tdno DESC   
 
+[getFAASIdForRevision]
+SELECT objid 
+FROM faaslist  fl 
+WHERE fl.ry < $P{newry} 
+  AND fl.docstate = 'CURRENT' 
+  AND NOT EXISTS(SELECT * FROM faaslist WHERE prevtdno = fl.tdno AND ry = $P{newry}  )  
+ORDER BY fl.tdno 
+
+
+
 
 [getRYSetting_land]
 SELECT * FROM landrysetting  where ry = $P{ry}
@@ -54,6 +67,27 @@ SELECT * FROM planttreerysetting  where ry = $P{ry}
 
 [getRYSetting_misc]
 SELECT * FROM miscrysetting  where ry = $P{ry}
+
+
+
+[getLandRYSetting] 
+SELECT * FROM landrysetting ORDER BY ry 
+
+[getBldgRYSetting] 
+SELECT * FROM bldgrysetting ORDER BY ry 
+
+[getMachRYSetting] 
+SELECT * FROM machrysetting ORDER BY ry 
+
+[getPlantTreeRYSetting] 
+SELECT * FROM planttreerysetting ORDER BY ry 
+
+[getMiscRYSetting] 
+SELECT * FROM miscrysetting ORDER BY ry 
+
+
+
+
 
 [getLgu]
 SELECT objid, lguname, indexno, parentid FROM lgu WHERE objid = $P{objid} 
@@ -90,7 +124,7 @@ SELECT * FROM faasattachment WHERE faasid = $P{faasid}
 SELECT * FROM faasattachment WHERE docstate = 'FORTRANSMITTAL' 
 
 [getBarangays]
-SELECT * FROM lgu WHERE lgutype = 'BARANGAY' ORDER BY lguname 
+SELECT * FROM lgu WHERE lgutype = 'BARANGAY' ORDER BY objid 
 
 [getActiveAnnotationId] 
 SELECT objid FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPROVED' ORDER BY docno DESC 
@@ -110,7 +144,10 @@ WHERE faasid = $P{faasid}
 [updateFAASAnnotationState]
 UPDATE faasannotation SET 
 	docstate = $P{docstate} 
-WHERE faasid = $P{faasid}	 
+WHERE faasid = $P{faasid}	
+
+
+
 
 [deleteFAASAnnotations]
 DELETE FROM faasannotation WHERE faasid = $P{faasid} 

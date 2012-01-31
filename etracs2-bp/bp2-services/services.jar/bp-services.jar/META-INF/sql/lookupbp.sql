@@ -72,6 +72,12 @@ FROM bpapplicationlisting bpa
 WHERE bpa.txnno = $P{searchText} 
   AND bpa.docstate IN ('ACTIVE'  ,'APPROVED', 'PERMIT_PENDING', 'EXPIRED')
 
+[lookupApproveApplicationByBarcode] 
+SELECT bpa.objid, bpa.taxpayername, bpa.txnno AS appno, bpa.tradename, bpa.businessaddress, bpa.businessid 
+FROM bpapplicationlisting bpa 
+WHERE bpa.barcode = $P{searchText} 
+  AND bpa.docstate IN ('ACTIVE'  ,'APPROVED', 'PERMIT_PENDING', 'EXPIRED')
+
 
 [lookupApproveApplicationByPermitNo] 
 SELECT bpa.objid, b.taxpayername, bpa.txnno AS appno, b.tradename, b.businessaddress, bpa.businessid FROM bpapplication bpa 

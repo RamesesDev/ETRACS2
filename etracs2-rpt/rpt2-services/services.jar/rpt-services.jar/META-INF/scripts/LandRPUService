@@ -11,13 +11,273 @@ class LandRPUService
     
     @Service('RPUService')
 	def rpuSvc
+	
+	@Service('PlantTreeRPUService')
+	def planttreeSvc
 
 	@Env
 	def env
     
+	
+	@ProxyMethod
+	public Map initGeneralRevision( faas, newrysetting ) {
+		reviseLandDetails( faas, newrysetting )
+		revisePlantTrees( faas, newrysetting )
+		reviseAdjustments( faas, newrysetting )
+		recalculate( faas ) 
+		return faas 
+	}
+	
+	
+	void reviseLandDetails( faas, newrysetting ) {
+		reviseSubclass( faas, newrysetting )
+		reviseLandAdjustments( faas, newrysetting )
+		reviseActualUseAdjustments( faas, newrysetting )
+		reviseStripping( faas, newrysetting )
+	}
+	
+	void reviseSubclass( faas, newrysetting ) {
+		def deletedItems = []
+		
+		faas.rpu.info.landdetails.each { landdetail ->
+			def subclass = em.sqlContext.createNamedQuery('landrpu:lookupSubclassByPrevId')
+							.setParameter('previd', landdetail.subclassid )
+							.singleResult 
+			
+			if( subclass ) {
+				landdetail.objid 	= 'LD' + new UID() 
+				landdetail.subclass = subclass 
+				landdetail.putAll( subclass ) 
+				landdetail.unitvalue = subclass.basevalue 
+			}
+			else {
+				deletedItems.add( landdetail )
+			}
+		}
+		
+		faas.rpu.info.landdetails.removeAll( deletedItems ) 
+	}
+	
+	void reviseLandAdjustments( faas, newrysetting ) {
+		faas.rpu.info.landdetails.each { landdetail ->
+			def deletedItems = []
+			landdetail.landadjustments.each { landadj ->
+				def adj = em.sqlContext.createNamedQuery('landrpu:lookupAdjTypeByPrevId')
+							.setParameter('previd', landadj.adjtypeid )
+							.singleResult 
+			
+				if( adj ) {
+					landadj.objid 		= 'A' + new UID()
+					landadj.putAll( adj )
+				}
+				else {
+					deletedItems.add( landadj )
+				}
+			}
+			landdetail.landadjustments.removeAll( deletedItems ) 
+		}
+	}
+	
+	void reviseActualUseAdjustments( faas, newrysetting ) {
+		faas.rpu.info.landdetails.each { landdetail ->
+			def deletedItems = []
+			landdetail.adjustments.each { landadj ->
+				def adj = em.sqlContext.createNamedQuery('landrpu:lookupAdjTypeByPrevId')
+							.setParameter('previd', landadj.adjtypeid )
+							.singleResult 
+			
+				if( adj ) {
+					landadj.objid 		= 'A' + new UID()
+					landadj.adj 		= adj 
+					landadj.putAll( adj )
+				}
+				else {
+					deletedItems.add( landadj )
+				}
+			}
+			landdetail.adjustments.removeAll( deletedItems ) 
+		}
+	}
+	
+	void reviseStripping( faas, newrysetting ) {
+		faas.rpu.info.landdetails.each { landdetail ->
+			if( landdetail.striplevel ) {
+				def stripping = em.sqlContext.createNamedQuery('landrpu:lookupStrippingByPrevId')
+									.setParameter('previd', landdetail.stripping.strippingid )
+									.singleResult 
+				if( stripping)  {
+					landdetail.stripping = stripping 
+					landdetail.putAll( stripping )
+				}
+				else {
+					landdetail.striplevel = null 
+					landdetail.striprate  = 100.0 
+					landdetail.strippingid = null 
+				}
+			}
+		}
+	}
     
+    void revisePlantTrees( faas, newrysetting ) {
+		def deletedItems = []
+		def rysetting = em.sqlContext.createNamedQuery('planttreerpu:getRYSetting')
+							.setParameter('ry', newrysetting.ry)
+							.singleResult 
+		if( rysetting ) {
+			rysetting.assesslevels = em.serializer.read( rysetting.assesslevels )
+		}
+		
+		faas.rpu.info.planttrees.each { planttree -> 
+			def ptuv = em.sqlContext.createNamedQuery('planttreerpu:lookupUnitValueByPrevId')
+							.setParameter('previd', planttree.unitvalueid )
+							.singleResult 
+			
+			if( ptuv ) {
+				planttree.objid 		= 'PT' + new UID()
+				planttree.ptuv 			= ptuv 
+				planttree.putAll( ptuv )
+				
+				def al = rysetting?.assesslevels?.find{ it.previd = planttree.assesslevelid }
+				if( al ) {
+					planttree.al 				= al 
+					planttree.assesslevelid 	= al.assesslevelid 
+					planttree.assesslevelcode 	= al.assesslevelcode
+					planttree.assesslevelname 	= al.assesslevelname
+					planttree.assesslevel		= al.rate 
+				}
+				
+			}
+			else {
+				deletedItems.add( planttree )
+			}
+		}
+		
+		faas.rpu.info.planttrees.removeAll( deletedItems ) 
+	}
+	
+	void reviseAdjustments( faas, newrysetting ) {
+		def deletedItems = [] 
+		
+		faas.rpu.info.adjustments.each { landadj -> 
+			def adj = em.sqlContext.createNamedQuery('landrpu:lookupAdjTypeByPrevId')
+							.setParameter('previd', landadj.adjtypeid )
+							.singleResult 
+			
+			if( adj ) {
+				landadj.objid 		= 'A' + new UID()
+				landadj.adj 		= adj 
+				landadj.putAll( adj )
+			}
+			else {
+				deletedItems.add( landadj )
+			}
+		}
+		
+		faas.rpu.info.adjustments.removeAll( deletedItems ) 
+	}
+	
+	void recalculate( faas ) {
+		//calculate landdetails 
+		faas.rpu.info.landdetails.each { landdetail -> 
+			calculateLandDetailAssessment( landdetail ) 
+		}
+		
+		// recalc based land value and actual use adjustment 
+		def landdetails = faas.rpu.info.landdetails 
+		faas.rpu.info.adjustments.each { landadj ->
+			calculateLandAdjustment( landdetails, landadj)
+		}
+		
+		landdetails.each { landdetail ->
+			landdetail.adjustments.each { adj ->
+				calculateLandActualUseAdjustment( landdetail, adj)
+			}
+		}
+		
+		
+		// recalculate again to apply all adjustments 
+		recalcLandDetails( landdetails )
+		
+		faas.rpu.info.planttrees.each {
+			planttreeSvc.calculatePlantTreeAssessment( landdetails, it )
+		}
+		
+		
+		calculateTotals( faas )
+		
+	}
+	
+	void calculateTotals( faas ) {
+        def rpu = faas.rpu 
+		
+		clearRpuTotals( rpu )
+        clearLandTotals( rpu  )
+        clearPlantTotals(  rpu  )
+        
+        rpu.info.landdetails.each {
+            rpu.totalbmv     += it.basemarketvalue 
+            rpu.totalmv      += it.marketvalue 
+            rpu.totalav      += it.assessedvalue
+
+            rpu.info.landtotal.basemarketvalue  += it.basemarketvalue
+            rpu.info.landtotal.adjustment       += it.adjustment
+            rpu.info.landtotal.adjustment       += it.adjustment
+            rpu.info.landtotal.marketvalue      += it.marketvalue
+            rpu.info.landtotal.assessedvalue    += it.assessedvalue
+            rpu.info.landtotal.areasqm          += it.areasqm
+            rpu.info.landtotal.areaha           += it.areaha
+
+            rpu.totalareasqm += it.areasqm
+            rpu.totalareaha  += it.areaha 
+        }
+        
+        rpu.info.planttrees?.each {
+            rpu.totalbmv     += it.basemarketvalue 
+            rpu.totalmv      += it.marketvalue 
+            rpu.totalav      += it.assessedvalue
+            
+            rpu.info.planttotal.bearing         += it.bearing 
+            rpu.info.planttotal.nonbearing      += it.nonbearing
+            rpu.info.planttotal.basemarketvalue += it.basemarketvalue
+            rpu.info.planttotal.adjustment      += it.adjustment
+            rpu.info.planttotal.marketvalue     += it.marketvalue 
+            rpu.info.planttotal.assessedvalue   += it.assessedvalue
+        }
+        
+        rpu.info.landvalueadjustment = 0.0
+        if( rpu.info.adjustments ) {
+            rpu.info.landvalueadjustment = rpu.info.adjustments.adjustment.sum()
+        }
+    }
     
+    void clearRpuTotals( rpu ) {
+        rpu.totalbmv     = 0.0
+        rpu.totalmv      = 0.0
+        rpu.totalav      = 0.0
+        rpu.totalareasqm = 0.0
+        rpu.totalareaha  = 0.0
+    }
     
+    void clearLandTotals( rpu ) {
+        rpu.info.landvalueadjustment        = 0.0
+        rpu.info.landtotal.basemarketvalue  = 0.0
+        rpu.info.landtotal.adjustment       = 0.0
+        rpu.info.landtotal.marketvalue      = 0.0
+        rpu.info.landtotal.assessedvalue    = 0.0
+        rpu.info.landtotal.areasqm          = 0.0
+        rpu.info.landtotal.areaha           = 0.0
+    }
+    
+    void clearPlantTotals( rpu ) {
+        rpu.info.planttotal.bearing         = 0
+        rpu.info.planttotal.nonbearing      = 0
+        rpu.info.planttotal.basemarketvalue = 0.0
+        rpu.info.planttotal.adjustment      = 0.0
+        rpu.info.planttotal.marketvalue     = 0.0
+        rpu.info.planttotal.assessedvalue   = 0.0
+    }
+	
+	
     @ProxyMethod
     public Map initLandRpu( rpu ) {
         rpuSvc.buildCommonRpuInfo( rpu )
@@ -102,18 +362,20 @@ class LandRPUService
     
     @ProxyMethod
     public def calculateLandAdjustment( landdetails, adjustment ) {
+		adjustment.adjustment = 0.0
         def result = [landvalueadjustment:0.0]
         landdetails.each {
             // evaluate the expr
             def binding = buildFieldBindings( it ) 
             binding += buildParamBindings( adjustment )
-            def adjamout = numberSvc.round( evaluateExpr( adjustment.expr, binding ) )
-            result.landvalueadjustment += adjamout
+            def adjamount = numberSvc.round( evaluateExpr( adjustment.expr, binding ) )
+            result.landvalueadjustment += adjamount
+			adjustment.adjustment += adjamount 
             //remove existing adjustment
             def oldadj = it.landadjustments.find{ it.adjtypeid == adjustment.adjtypeid }
             if( oldadj ) it.landadjustments.remove( oldadj )
             //add the adjustment 
-            it.landadjustments.add( createAdjustment( adjustment, adjamout ) )
+            it.landadjustments.add( createAdjustment( adjustment, adjamount ) )
             calculateLandDetailAssessment( it )
         }
         result.landdetails = landdetails 

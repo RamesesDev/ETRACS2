@@ -14,6 +14,94 @@ class PlantTreeRPUService
 
 	@Env
 	def env
+	
+	
+	@ProxyMethod
+	public Map initGeneralRevision( faas, newrysetting ) {
+		checkLandFaasIsRevised( faas, newrysetting )
+		revisePlantTrees( faas, newrysetting )
+		calculateTotals( faas )
+		return faas 
+	}
+	
+	void calculateTotals( faas ) {
+		def rpu = faas.rpu 
+		
+		faas.rpu.info.planttreedetails.each { item ->
+			calculatePlantTreeAssessmentByLandId( item.landfaasid, item )
+		}
+		
+		
+		// clear totals 
+		rpu.totalbmv     = 0.0
+        rpu.totalmv      = 0.0
+        rpu.totalav      = 0.0
+		rpu.info.totalbearing       = 0
+        rpu.info.totalnonbearing    = 0
+		
+		def items = rpu.info.planttreedetails
+		rpu.totalbmv     		= items.basemarketvalue.sum()
+		rpu.totalmv      		= items.marketvalue.sum()
+		rpu.totalav      		= items.assessedvalue.sum()
+		rpu.info.totalbearing   = items.bearing.sum()
+		rpu.info.totalnonbearing = items.nonbearing.sum()
+    }
+    
+	void revisePlantTrees( faas, newrysetting ) {
+		def deletedItems = []
+		def rysetting = em.sqlContext.createNamedQuery('planttreerpu:getRYSetting')
+							.setParameter('ry', newrysetting.ry)
+							.singleResult 
+		if( rysetting ) {
+			rysetting.assesslevels = em.serializer.read( rysetting.assesslevels )
+		}
+		
+		faas.rpu.info.planttreedetails.each { planttree -> 
+			def ptuv = em.sqlContext.createNamedQuery('planttreerpu:lookupUnitValueByPrevId')
+							.setParameter('previd', planttree.unitvalueid )
+							.singleResult 
+			
+			if( ptuv ) {
+				planttree.objid 		= 'PT' + new UID()
+				planttree.landfaasid	= faas.info.landfaasid 
+				planttree.ptuv 			= ptuv 
+				planttree.putAll( ptuv )
+				
+				def al = rysetting?.assesslevels?.find{ it.previd = planttree.assesslevelid }
+				if( al ) {
+					planttree.al = [
+						assesslevelid	: al.objid,
+						assesslevelcode	: al.code,
+						assesslevelname	: al.name,
+						assesslevel		: al.rate, 
+					]
+					planttree.assesslevelid 	= al.objid 
+					planttree.assesslevelcode 	= al.code
+					planttree.assesslevelname 	= al.name 
+					planttree.assesslevel		= al.rate 
+				}
+			}
+			else {
+				deletedItems.add( planttree )
+			}
+		}
+		
+		faas.rpu.info.planttreedetails.removeAll( deletedItems ) 
+	}
+	
+	void checkLandFaasIsRevised( faas, newrysetting) {
+		def pin = faas.rp.pin
+		def landfaas = em.sqlContext.createNamedQuery('planttreerpu:getLatestRevisedLandFaas')
+							.setParameters([ pin:pin, ry:newrysetting.ry  ])
+							.singleResult 
+							
+		if( ! landfaas ) {
+			throw new Exception("Land FAAS $pin is not yet revised.\nFirst revise the Land RPU before revising any improvements.")
+		}	
+		
+		faas.info.landfaasid 			= landfaas.objid 
+		faas.info.landfaastaxpayerid 	= landfaas.taxpayerid 
+	}
     
     @ProxyMethod
     public Map initPlantTreeRpu( faas ) {

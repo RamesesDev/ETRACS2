@@ -22,6 +22,81 @@ class MachRPUService
 	def env
     
     
+	@ProxyMethod
+	public Map initGeneralRevision( faas, newrysetting ) {
+		checkLandFaasIsRevised( faas, newrysetting )
+		reviseMachUses( faas, newrysetting )
+		recalculate( faas ) 
+		return faas 
+	}
+	
+	void checkLandFaasIsRevised( faas, newrysetting) {
+		def pin = faas.rp.pin
+		def landfaas = em.sqlContext.createNamedQuery('machrpu:getLatestRevisedLandFaas')
+							.setParameters([ pin:pin, ry:newrysetting.ry  ])
+							.singleResult 
+							
+		if( ! landfaas ) {
+			throw new Exception("Land FAAS $pin is not yet revised.\nFirst revise the Land RPU before revising any improvements.")
+		}	
+		
+		faas.info.landfaasid 			= landfaas.objid 
+		faas.info.landfaastaxpayerid 	= landfaas.taxpayerid 
+		
+	}
+	
+	void reviseMachUses( faas, newrysetting ) {
+		def deletedItems = []
+		
+		faas.rpu.info.machuses.each { machuse ->
+			def actualuse = em.sqlContext.createNamedQuery('machrpu:getActualUseByPrevId')
+								.setParameter('previd', machuse.actualuseid )
+								.singleResult 
+			
+			if( actualuse ) {
+				actualuse.ranges = em.serializer.read( actualuse.ranges )
+				machuse.objid 		= 'MU' + new UID()
+				machuse.actualuse 	= actualuse 
+				machuse.assesslevel = actualuse.rate 
+				machuse.machassesslevelid = actualuse.actualuseid 
+				machuse.putAll( actualuse ) 
+				
+				reviseMachDetails( machuse, newrysetting )
+			}
+			else {
+				deletedItems.add( machuse )
+			}
+		}
+		
+		faas.rpu.info.machuses.removeAll( deletedItems )
+	}
+	
+	void reviseMachDetails( machuse, newrysetting ) {
+		machuse.machdetails.each { machdetail -> 
+			if( machdetail.forexid ) {
+				def forex = em.sqlContext.createNamedQuery('machrpu:getForex')
+								.setParameters([ry:newrysetting.ry, iyear:dateSvc.serverYear ])
+								.singleResult 
+				if( forex ) {
+					machdetail.forexid = forex.objid
+					machdetail.forex   = forex.forex 
+				}
+			}
+		}
+	}
+	
+	void recalculate( faas )  {
+		def rpu 		= faas.rpu 
+		rpu.issuedate 	= dateSvc.serverDate
+		
+		faas.rpu.info.machuses.each{ machuse -> 
+			machuse.machdetails.each { machdetail ->
+				assessMachDetail( machuse, machdetail, rpu.ry, rpu.issuedate )
+			}
+		}
+	}
+	
+	
     @ProxyMethod
     public Map initMachRpu( faas ) {
         rpuSvc.buildCommonRpuInfo( faas )
@@ -84,7 +159,7 @@ class MachRPUService
     }
     
     def getAssessLevel( machuse, mv ) {
-        if( machuse.actualuse.fixrate  == true ) {
+		if( IS_TRUE( machuse.actualuse.fixrate )  ) {
             return machuse.actualuse.rate 
         }
         else {
@@ -234,6 +309,6 @@ class MachRPUService
 	
 	boolean TO_BOOLEAN( value ) {
 		if( value instanceof Boolean ) return value 
-		return '1/y/yes/true/t'.indexOf( value.toString().toLowerCase() ) >= 0
+		return '1/y/yes/true/t'.indexOf( value.toString().trim().toLowerCase() ) >= 0
 	}
 }

@@ -704,6 +704,7 @@ class BPApplicationService{
 	
 	@ProxyMethod
 	public def lookupApproveApplication( def searchText ){
+		println 'searchText -> ' + searchText
 		def fetch = { list, qry, param ->
 			list.clear();
 			def q = em.sqlContext.createNamedQuery(qry);
@@ -715,10 +716,11 @@ class BPApplicationService{
 		
 		def list = [];
 		if( !searchText ) return fetch(list, 'lookupbp:lookupApproveApplication', '' );
+		if( fetch( list, 'lookupbp:lookupApproveApplicationByBarcode', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupApproveApplicationByAppNo', searchText ) ) return list;
 		if( fetch( list, 'lookupbp:lookupApproveApplicationByTradeName' , searchText + '%') ) return list;
 		if( fetch( list, 'lookupbp:lookupApproveApplicationByTaxpayerName',searchText + '%') ) return list;
 		if( fetch( list, 'lookupbp:lookupApproveApplicationByBIN', searchText ) ) return list;
-		if( fetch( list, 'lookupbp:lookupApproveApplicationByAppNo', searchText ) ) return list;
 		return list;
 	}
 	
