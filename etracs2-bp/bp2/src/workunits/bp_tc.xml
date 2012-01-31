@@ -2,6 +2,7 @@
     <invokers>
         <invoker type="collection" caption="Business Tax" afid="51" appcode="business_tax" permission="collection_bp.create"/>
         <invoker type="tc:business_tax" action="init" caption="Business Tax" afid="51" permission="collection_bp.create"/>
+        <invoker type="tc:01151" action="processBarcode" appcode="business_tax" caption="Business Tax" afid="51" permission="collection_bp.create"/>
         <invoker type="inquiry:tc:business_tax" action="initInquiry" caption="Inquiry" />
         
         <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}" permission="collection_bp.create"  icon="images/doc-new.png"/>
@@ -38,6 +39,9 @@
         @Service('ReceiptService')
         def svc;
         
+        @Service('BPApplicationService')
+        def appSvc 
+        
         @Service('ReceiptHtmlService')
         def htmlService
         
@@ -49,6 +53,8 @@
         
         def year = 0;
         def qtr = 4;
+        
+        def barcode 
         
         def onselect = {
             year = 0
@@ -77,7 +83,7 @@
                 entity.items = [];
                 listHandler.load();
             }
-            binding.refresh();
+            binding?.refresh();
         }
         
         public void setBp( def val ){
@@ -159,6 +165,16 @@
             entity.doctype = 'BUSINESS_TAX';
         }
         
+        void processBarcode() {
+            init()
+            def list = appSvc.lookupApproveApplication( barcode )
+            if( ! list ) {
+                throw new Exception( 'Associated assessment does not exists or is already fully paid.')
+            }
+            bp = list[0]
+            onselect( bp )
+        }
+        
         def doNext(){ 
             entity.year = 0;
             entity.qtr = 0;
@@ -177,7 +193,7 @@
         void calculateReceiptAmount() {
         
             entity.info.amount = entity.items.amount.sum()
-            binding.refresh('entity.info.amount|entity.info.totalpayment|entity.info.change')
+            binding?.refresh('entity.info.amount|entity.info.totalpayment|entity.info.change')
         }
         
         public def onpartial = { partial ->
