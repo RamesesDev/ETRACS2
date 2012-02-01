@@ -37,9 +37,10 @@ class BPApplicationService{
 	}
 
 	@ProxyMethod
-	public void delete(def attribute){
+	public def delete(def attribute){
 		if( !em.read( SCHEMANAME, [objid: attribute.objid] ) ) 
 			throw new Exception("Attribute is no longer exist.");
 		em.delete( SCHEMANAME, attribute );
+		return attribute 
 	}
 }
