@@ -6,7 +6,7 @@ ORDER BY txnno
 [getListByTxnno]
 SELECT objid, docstate, txnno, txndate, depositedbyname, depositedbytitle, cash, noncash, amount 
 FROM deposit 
-WHERE txnno = $P{txnno} 
+WHERE txnno LIKE $P{txnno} 
 ORDER BY txnno  
 
 [getListByDepositor]
@@ -24,6 +24,21 @@ SELECT
 	liquidatingofficerid, liquidatingofficername, liquidatingofficertitle 
 FROM liquidationlist 
 WHERE docstate = 'OPEN'  
+
+[getOpenLiquidationsByCashier] 
+SELECT 
+	lr.objid, lr.fundid, lr.fundname, lr.liquidationid, l.txnno, l.txndate, SUM(lr.amount) AS amount, 
+	l.liquidatingofficerid, l.liquidatingofficername, l.liquidatingofficertitle 
+FROM liquidationrcd lr 
+	INNER JOIN liquidationlist l ON lr.liquidationid = l.objid 
+WHERE lr.docstate = 'OPEN'  
+  AND lr.cashierid = $P{cashierid} 
+GROUP BY 
+	lr.objid, lr.fundid, lr.fundname, lr.liquidationid, 
+	l.txnno, l.txndate, l.liquidatingofficerid, l.liquidatingofficername, l.liquidatingofficertitle 
+
+
+
 
 [getOpenFundSummaries]
 SELECT 
@@ -62,6 +77,20 @@ WHERE lq.objid = rem.liquidationid
 GROUP BY ri.fundid, ri.fundname 
 
 
+[getOpenFundTotalsByCashier]
+SELECT 
+	lr.fundid, 
+	lr.fundname, 
+	SUM( lr.amount ) AS amount,  
+	0.0 AS amtdeposited 
+FROM liquidationrcd lr 
+	INNER JOIN liquidationlist l ON lr.liquidationid = l.objid 
+WHERE lr.docstate = 'OPEN'  
+  AND lr.cashierid = $P{cashierid} 
+GROUP BY lr.fundid, lr.fundname 
+ORDER BY lr.fundname 
+
+
 [getOpenNonCashPayments]
 SELECT 
 	p.objid AS paymentitemid, 
@@ -79,6 +108,32 @@ WHERE l.objid = rem.liquidationid
   AND r.voided = 0 
 ORDER BY paytype, particulars  
 
+[getOpenNonCashPaymentsCashier]
+SELECT 
+	p.objid AS paymentitemid, 
+	p.paytype, 
+	p.particulars, 
+	p.amount, 
+	'SYSTEM' AS source, 
+	p.extended 
+FROM liquidationrcd lr 
+	INNER JOIN liquidationlist l ON lr.liquidationid = l.objid 
+	INNER JOIN paymentitem p ON lr.objid = p.liquidationrcdid 
+	INNER JOIN receiptlist rl ON p.receiptid = rl.objid 
+WHERE lr.docstate = 'OPEN'  
+  AND lr.cashierid = $P{cashierid} 
+  AND rl.voided = 0 
+
+
+
+[depositOpenLiquidationRcdByCashier]
+UPDATE liquidationrcd SET	  
+	docstate = 'CLOSED', 
+	depositid = $P{depositid}, 
+	dtdeposited = $P{dtdeposited} 
+WHERE docstate = 'OPEN'  
+  AND cashierid = $P{cashierid}	 
+ 
 [depositOpenLiquidation]
 UPDATE liquidation SET 
 	docstate  = 'CLOSED', 
@@ -117,6 +172,29 @@ FROM deposit d
 WHERE d.objid = $P{depositid} 
   AND rct.voided = 0    
   AND f.fundname LIKE $P{fundname}  
+GROUP BY rct.afid, CASE WHEN af.aftype = 'nonserial' THEN ri.fundname ELSE ia.groupid END   
+ORDER BY rct.afid, ri.fundname , ia.groupid  
+
+[getCollectionSummaryByAFAndFund2]
+SELECT 
+	CASE 
+	WHEN af.objid = '51' AND af.aftype = 'serial' AND ia.groupid IS NULL THEN CONCAT( 'AF#', rct.afid, ': ', ri.fundname ) 
+	WHEN af.objid = '51' AND af.aftype = 'serial' AND ia.groupid IS NOT NULL THEN CONCAT( 'AF#', rct.afid, ': ', ia.groupid ) 
+	WHEN af.aftype = 'nonserial' AND ia.groupid IS NOT NULL THEN CONCAT( rct.afid, ': ', ia.groupid ) 
+	ELSE CONCAT( 'AF#',rct.afid, ': ', af.description,' - ', ri.fundname ) 
+	END AS particulars, 
+	SUM( ri.amount ) AS  amount   
+FROM deposit d  
+	INNER JOIN liquidationrcd lq on d.objid = lq.depositid  
+	INNER JOIN remittancelist rem on lq.liquidationid = rem.liquidationid   
+	INNER JOIN receiptlist rct on rem.objid = rct.remittanceid   
+	INNER JOIN af af ON rct.afid = af.objid  	 
+	INNER JOIN receiptitem ri  on rct.objid = ri.receiptid and ri.liquidationrcdid = lq.objid 
+	INNER JOIN incomeaccount ia ON ri.acctid = ia.objid 
+	INNER JOIN fund f on ri.fundid = f.objid  
+WHERE d.objid = $P{depositid} 
+  AND rct.voided = 0    
+  AND f.fundname LIKE $P{fundname} 
 GROUP BY rct.afid, CASE WHEN af.aftype = 'nonserial' THEN ri.fundname ELSE ia.groupid END   
 ORDER BY rct.afid, ri.fundname , ia.groupid  
 

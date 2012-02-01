@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker type="liquidation.multi" action="open" caption="Liquidate (Multi-Cashier): Open" permission="liquidation.create" index="121" icon="images/cash.png" target="window"/>
+        <invoker type="home.action" action="create" caption="Liquidate (Multi-Cashier)" permission="liquidation.create" index="121" icon="images/cash.png" target="window"/>
+        <invoker folderid="/menu/tc" action="create" caption="Liquidate (Multi-Cashier)" permission="liquidation.create" index="122"/>
+        
+        <invoker type="formActions" action="close" visibleWhen="#{mode != 'view' and mode != 'reports' and mode != 'rcd'}"  immediate="true" caption="Close" mnemonic="c" icon="images/doc-cancel.png"/>
+        <invoker type="formActions" action="create" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/doc-new.png" permission="liquidation.create"/>
+        <invoker type="formActions" action="next" shortcut="ctrl N" visibleWhen="#{mode == 'init'}" caption="Next" mnemonic="n" icon="images/next.png"/>
+        <invoker type="formActions" action="back" shortcut="ctrl B" visibleWhen="#{mode == 'main'}" caption="Back" mnemonic="b" icon="images/back.png"/>
+        <invoker type="formActions" action="submit" shortcut="ctrl S" visibleWhen="#{mode == 'main'}" caption="Submit" mnemonic="s" icon="images/save.png"/>
+        <invoker type="formActions" action="viewRCD" visibleWhen="#{mode == 'view' and entity.objid != null}"  immediate="true" caption="A. RCD Summary" mnemonic="a" icon="images/doc-view.png" />
+        <invoker type="formActions" action="viewRCDByFund" visibleWhen="#{mode == 'view' and entity.objid != null}"  immediate="true" caption="B. RCD By Fund" mnemonic="a" icon="images/doc-view.png" />
+        <invoker type="formActions" action="reports" visibleWhen="#{mode == 'view' and entity.objid != null}"  immediate="true" caption="Reports" mnemonic="r" icon="images/otherReports.png"/>
+        <invoker type="formActions" action="backToMain" shortcut="ctrl B" visibleWhen="#{mode == 'reports' or mode == 'rcd'}" immediate="true" caption="Back" mnemonic="b" icon="images/back.png"/>
+        <invoker type="formActions" action="viewReport" visibleWhen="#{mode == 'reports'}"  immediate="true" caption="Generate" mnemonic="g" icon="images/doc-view.png"/>
+        
+        <invoker type="noncashActions" action="addNonCashPayments" caption="Add" mnemonic="a" immediate="true" visibleWhen="#{showAddNonCashPayment}" />
+        <invoker type="noncashActions" action="removeNonCashPayment" caption="Remove" mnemonic="r" immediate="true" visibleWhen="#{showRemoveNonCashPayment}" />
+    </invokers>
+    
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*
+import java.text.DecimalFormat;
+
+public class LiquidationMultiCashierController {
+
+    @Service('LiquidationService')
+    def svc;
+
+    @Service('ETRACSUserService')
+    def userService;
+
+    @Service("DateService")
+    def dtsvc;
+
+    def entity;
+
+    @Caller
+    def caller;
+
+    @Binding
+    def binding;
+
+    def mode;
+    def numformat = new DecimalFormat("#,##0.00");
+    def denominationOpener;
+    def liquidatingofficer;
+    
+    def selectedRcd
+    def selectedNonCash
+    def openNonCashPayments
+    
+    def create() {
+        liquidatingofficer = getLiquidatingOfficer()
+        openNonCashPayments = []
+        entity = [
+            info            : buildInfo(),
+            remittances     : [],
+            otherpayments   : [],
+            rcds            : [],
+        ];
+        mode = 'init';
+        return 'init';
+    }
+
+    def open() {
+        if (entity) {
+            entity = svc.open( entity.objid );
+        }
+        mode = 'view';
+        return 'main';
+    }
+
+    def getHtml() {
+        return svc.getHtml( entity );
+    }
+
+    def next() {
+        entity.remittances   = []
+        entity.otherpayments = []
+        entity.rcds          = []
+        entity = svc.createLiquidationMultiCashier( entity );
+        openNonCashPayments.addAll( entity.otherpayments )
+        mode = 'main';
+        return 'main';
+    }
+
+    def back(){
+        mode = 'init';
+        return 'init';
+    }
+
+    def submit() {
+    
+        validateCashierInfo()
+        checkAllNonCashPaymentsAdded()
+    
+        if (! MsgBox.confirm( "Do you want to submit this document?" ) ) {
+            return null;
+        }
+        
+        resetRcdDenominations()
+        entity = svc.createMultiCashier( entity );
+        if (caller) {
+            caller.binding.refresh();
+        }
+        denominationOpener.handle.mode = 'view'
+        mode = 'view';
+        binding.refresh();
+        return 'main';
+    }
+    
+    void checkAllNonCashPaymentsAdded(){
+        if( openNonCashPayments ) throw new Exception('There are still non-cash payments which are not added.')
+    }
+    
+    void validateCashierInfo() {
+        def nocashierrcds = entity.rcds.findAll{ it.cashierid == null }
+        if( nocashierrcds ) {
+            throw new Exception('Cashier is required for ' + nocashierrcds[0].fundname + ' collection.' )
+        }
+    }
+    
+
+    def close() {
+        return '_close';
+    }
+
+    def viewOtherPayments() {
+        entity.otherpayments = svc.fetchOtherPayments( entity )
+        return new PopupOpener( outcome:'otherpayments' );
+    }
+
+    def viewRemittances() {
+        return new PopupOpener( outcome:'remittances' );
+    }
+
+    def buildInfo() {
+        return [
+            txndate : dtsvc.getServerDate(),
+            liquidatingofficerid    : liquidatingofficer.objid,
+            liquidatingofficername  : liquidatingofficer.formalname,
+            liquidatingofficertitle : liquidatingofficer.jobtitle,
+            amount                  : 0.00,
+            totalcash               : 0.00,
+            totalotherpayment       : 0.00,
+        ];
+    }
+    
+    def cashierLookup = InvokerUtil.lookupOpener( 'cashier.lookup', [:] )
+    
+    def rcdListHandler = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column( name:'fundname', caption:'Fund' ),
+            new Column( name:'cashier', caption:'Cashier*', type:'lookup', handler:cashierLookup, expression:'#{cashiername}', editable:true ),            
+            new Column( name:'amount', caption:'Total', type:'decimal', format:'#,##0.00'  ),
+            new Column( name:'noncash', caption:'Non-Cash', type:'decimal', format:'#,##0.00'  ),
+            new Column( name:'cash', caption:'Cash', type:'decimal', format:'#,##0.00'  ),
+        ]},
+        onColumnUpdate : { item, colName ->
+            item.cashierid = item.cashier?.objid
+            item.cashiername = item.cashier?.cashiername
+            item.cashiertitle = item.cashier?.cashiertitle
+        },
+        fetchList  : { return entity.rcds },
+    ] as PageListModel
+        
+    
+    void setSelectedRcd( selectedRcd ) {
+        resetRcdDenominations()
+        this.selectedRcd = selectedRcd 
+        lookupDenominationOpener()
+    }
+    
+    void resetRcdDenominations() {
+        if( selectedRcd ) {
+            selectedRcd.denominations = denominationOpener.handle.list 
+        }
+    }
+    
+    void lookupDenominationOpener() {
+        denominationOpener = null
+        if( selectedRcd ) {
+            def mode = ( entity.objid ? 'view' : null )
+            denominationOpener = InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:selectedRcd.cash, list:selectedRcd.denominations, mode:mode])
+        }
+    }
+    
+    
+    def noncashListHandler = [
+        getRows    : { return 250 },
+        getColumns : {
+            return [
+                new Column( name:"paytype", caption:"Type", minWidth:50 ),
+                new Column( name:"particulars", caption:"Info", minWidth:400 ),
+                new Column( name:"amount", caption:"Amount", format: "#,##0.00", width:100 )
+            ];
+        },
+        fetchList : { 
+            return selectedRcd?.noncashpayments 
+        }
+    ] as SubListModel
+
+    
+    def getTotalOtherPayment() {
+        return numformat.format( entity.info.totalotherpayment );
+    }
+
+    def remittanceHandler = [
+
+        getRows    : { return 50; },
+
+        getColumns : {
+            return [
+                new Column( name:"txnno", caption:"Rem. No.", minWidth:100 ),
+                new Column( name:"txndate", caption:"Date", format: "yyyy-MM-dd", minWidth:100 ),
+                new Column( name:"collectorname", caption:"Collector", minWidth:300 ),
+                new Column( name:"amount", caption:"Amount", format: "#,##0.00", width:100 )
+            ];
+        },
+
+        fetchList : { 
+            return entity.remittances;
+        }
+
+    ] as PageListModel;
+
+    def getTotalAmount() {
+        return numformat.format( entity.info.amount );
+    }
+
+    def getLiquidatingOfficer() {
+        return userService.getLiquidatingOfficer( OsirisContext.env.USERID );
+    }
+
+    def reports(){
+        mode = 'reports';
+        return "reports";
+    }
+
+    def selectedreport;
+    def reports = [];
+    public def getReportList(){
+        if( !reports ) reports = InvokerUtil.lookupOpeners("liquidation:report", [liquidation: entity] );
+        return reports;
+    }
+
+    public def viewReport(){
+        println selectedreport;
+        return selectedreport;
+    }
+
+    public def viewRCD(){
+        return new Opener( name:'tc2:liquidation_report_rcd', action:'view', params:[entity:entity] );
+    }
+    
+    public def viewRCDByFund(){
+        return new Opener( name:'tc2:liquidation_report_rcdbyfund', action:'view', params:[entity:entity] );
+    }
+            
+
+    def backToMain() {
+        mode = 'view';
+        return 'main';
+    }
+
+        
+    void updateDenominationHandlerAmount() {
+        denominationOpener?.handle.totalAmount = selectedRcd.cash
+    }
+    
+    void calculateRcdSummary() {
+        def noncash = selectedRcd.noncashpayments.sum( {it.amount} )
+        noncash = (noncash ? noncash : 0.0 )
+        selectedRcd.noncash = noncash 
+        selectedRcd.cash = selectedRcd.amount - selectedRcd.noncash
+        binding.refresh('selectedRcd') 
+    }
+    
+    def addPaymentsHandler = { payments ->
+        if( ! selectedRcd.noncashpayments ) {
+            selectedRcd.noncashpayments = []
+        }
+        def noncashtotal = payments.amount.sum()
+        noncashtotal = ( noncashtotal ? noncashtotal : 0.0 )
+        if(  noncashtotal > selectedRcd.amount ) {
+            throw new Exception('Total Non-Cash Payment exceeds RCD amount by P' + numformat.format( noncashtotal - selectedRcd.amount ) + '.' )
+        }
+        selectedRcd.noncashpayments.addAll( payments ) 
+        openNonCashPayments.removeAll( payments )
+        calculateRcdSummary()
+        updateDenominationHandlerAmount()
+        noncashListHandler.load()
+    }
+    
+    def addNonCashPayments() {
+        if( selectedRcd ) {
+            def params = [cashierid:selectedRcd.cashierid, addHandler:addPaymentsHandler, payments:openNonCashPayments]
+            return InvokerUtil.lookupOpener('noncashpayment.select', params )
+        }
+        return null 
+    }
+    
+    void removeNonCashPayment() {
+        if( selectedRcd && selectedNonCash && MsgBox.confirm('Remove select payment?')) {
+            openNonCashPayments.add( selectedNonCash )
+            selectedRcd.noncashpayments.remove( selectedNonCash )
+            calculateRcdSummary()
+            updateDenominationHandlerAmount()
+            binding.refresh('selectedNonCash')
+        }
+    }
+    
+    boolean getShowAddNonCashPayment() {
+        if( entity.objid ) return false;
+        if( ! selectedRcd ) return false;
+        return true;
+    }
+    
+    boolean getShowRemoveNonCashPayment() {
+        if( entity.objid ) return false;
+        if( ! selectedRcd ) return false;
+        return true;
+    }
+}
+
+]]>
+    </code>
+    
+    <pages>
+        <!--page name="view" template="etracs2.tc.HTMLViewPage" /-->
+        <page name="init" template="etracs2.tc.liquidation.LiquidationInitPage" />
+        <page name="main" template="etracs2.tc.liquidation.LiquidationPage2" />
+        <page name="otherpayments" template="etracs2.tc.liquidation.OtherPaymentListPage" />
+        <page name="remittances" template="etracs2.tc.liquidation.RemittanceListPage" />
+        <page name="reports" template="etracs2.tc.liquidation.LiquidationReportPage" />
+    </pages>
+</workunit>

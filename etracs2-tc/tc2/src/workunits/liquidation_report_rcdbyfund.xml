@@ -1,0 +1,76 @@
+<workunit>
+    <invokers>
+        <invoker type="formActions" action="_close"  immediate="true" caption="Close" mnemonic="c" icon="images/cancel.png"/>
+    </invokers>
+    
+    <code lang="groovy">
+       
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*
+
+public class LiquidationReportByFundController {
+
+    @Service("ReportParameterService")
+    def svcParam;
+
+    @Service("LiquidationReportService")
+    def svc;
+
+    def fund;
+    def entity;
+    def param =[:];
+    def fundid;
+
+    def reportModel = [
+        getReportName : { return 'liquidation/rcd'; },
+        getReportData : { return [liquidationData] },
+        getParameters : { return svcParam.getStandardParameter( 'system' )+param; }
+    ] as ServerReportModel;
+
+    public def getReport(){
+        reportModel.viewReport();
+        return reportModel.report;
+    }
+
+    void view() {
+        initFundToGeneral()        
+    }
+
+    public def getLiquidationData(){
+        if( !fund ) initFundToGeneral()        
+
+        return svc.buildRCDByFundReportData( entity.objid, fund?.objid, fund?.fundname  );
+    }
+    
+    void initFundToGeneral() {
+        setFund( [objid:'GENERAL', fundname:'GENERAL'] );
+    }
+
+    def funds;
+    public def getFundList(){
+        if( !funds ) this.funds = svc.fundList;
+        return funds;
+    }
+
+    void setFund( def val ){
+        this.fund = val;
+        this.fundid = val?.objid;
+        this.param.put("FUND", val?.fundname );
+    }
+
+    def back(){
+        return "_close";
+    }
+
+}
+]]>
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.liquidation.LiquidationReportBPage" />
+    </pages>
+</workunit>

@@ -40,27 +40,126 @@ class LiquidationService {
 	}
 	
 	@ProxyMethod
+	public def createMultiCashier( liq ) {
+		try {
+			validateMulti( liq );
+			updateLiquidationInfo( liq, 'multi' )
+			// from now on, check for open liquidationrcds 
+			liq.docstate = 'CLOSED' 
+			updateCashierInfo( liq )
+			closeRemittance( liq );
+			em.validate( SCHEMANAME, liq );
+			em.create( SCHEMANAME, liq );
+			createListingItem( liq );
+			postLiquidationRcd( liq )
+			return liq;
+		} 
+		catch (ex) { 
+			ex.printStackTrace()
+			throw ex; 
+		}
+	}
+	
+	@ProxyMethod
 	public def create( liq ) {
 		try {
-		validate( liq );
+			validate( liq );
+			updateLiquidationInfo( liq, 'single' )
+			updateCashierInfo( liq )
+			updateRCDCashierInfo( liq )
+			updateRCDDenomination( liq )
+			closeRemittance( liq );
+			liq.fundsummaries = getFundSummaries( liq.objid );
+			em.validate( SCHEMANAME, liq );
+			em.create( SCHEMANAME, liq );
+			createListingItem( liq );
+			postLiquidationRcd( liq )
+			return liq;
+		} 
+		catch (ex) { 
+			throw ex; 
+		}
+	}
+	
+	void updateLiquidationInfo( liq, opener  ) {
 		liq.objid = "LIQ" + new UID();
 		liq.schemaname = SCHEMANAME;
 		liq.schemaversion = SCHEMAVERSION;
 		liq.docstate = 'OPEN';
+		liq.opener = opener 
 		liq.dtposted = dtsvc.getServerDate()
 		liq.info.txnno = generateLiqNo();
 		if( ! liq.info.txndate ) {
 			liq.info.txndate = dtsvc.format( "yyyy-MM-dd", liq.dtposted);
 		}
-		updateCashierInfo( liq )
-		closeRemittance( liq );
-		liq.fundsummaries = getFundSummaries( liq.objid );
-		em.validate( SCHEMANAME, liq );
-		em.create( SCHEMANAME, liq );
-		createListingItem( liq );
-		return liq;
-		} catch (ex) { throw ex; }
 	}
+	
+	
+	private void validateMulti( liq ) {
+		liq.rcds.each { rcd ->
+			//check that noncashpayments total does not exceed rcd amount 
+			if( rcd.noncashpayments && rcd.noncashpayments.size() > 0 && rcd.noncashpayments.amount.sum() > rcd.amount ) {
+				throw new Exception('Total Non-Cash Payment for ' + rcd.fundname + ' collection must not exceed RCD amount.')
+			}
+			
+			//check denominations 
+			def totalcash = rcd.denominations?.amount?.sum() 
+			totalcash = ( totalcash ? totalcash : 0.00 )
+			if ( totalcash != rcd.cash ) {
+				throw new Exception( 'Cash Denomination for ' + rcd.fundname + ' collection is incorrect.'  );
+			}
+		}
+		
+		//check if there are no new remittances not included in the liquidation 
+		def openremittances = getOpenRemittances( liq.info.liquidatingofficerid )
+		if (liq.remittances.size() != openremittances.size() ) {
+			throw new Exception( "There are new remittances not included in this liquidation.\nPlease close and process the liquidation again." );
+		}
+	}
+	
+	void postLiquidationRcd( liq ) {
+		liq.rcds.each{ rcd ->
+			rcd.objid 			= 'LR' + new UID()
+			rcd.schemaname 		= 'liquidationrcd'
+			rcd.schemaversion 	= '1.0'
+			rcd.docstate		= 'OPEN' 
+			rcd.liquidationid   = liq.objid 
+			rcd.liquidationno   = liq.info.txnno 
+			rcd.liquidationdate = liq.info.txndate 
+			rcd.lqofficerid     = liq.info.liquidatingofficerid
+			rcd.lqofficername   = liq.info.liquidatingofficername
+			rcd.lqofficertitle  = liq.info.liquidatingofficertitle 
+			
+			em.validate( rcd.schemaname, rcd )
+			em.create( rcd.schemaname, rcd ) 
+			
+			updateReceiptItemRcdId( rcd )
+			updateNonCashPaymentLiquidationIdReference( rcd )
+		}
+	}
+	
+	void updateReceiptItemRcdId( rcd ) {
+		def params = [
+			liquidationrcdid : rcd.objid, 
+			liquidationid  	 : rcd.liquidationid,
+			fundid 			 : rcd.fundid, 
+		]
+		em.sqlContext.createNamedExecutor('liquidation:updateReceiptItemRcdId')
+					.setParameters( params ).execute()
+	}
+	
+	void updateNonCashPaymentLiquidationIdReference( rcd ) {		
+		rcd.noncashpayments.each{ pmt ->
+			def params = [
+				objid			: pmt.objid, 
+				liquidationid 	: rcd.liquidationid, 
+				liquidationrcdid: rcd.objid, 
+			]
+			em.sqlContext.createNamedExecutor('liquidation:updateNonCashPaymentLiquidationId')
+					.setParameters( params ).execute()
+		}
+	}
+	
 	
 	void updateCashierInfo( liq ) {
 		def cashiers = usrsvc.getUsersByRole( CASHIER_ROLE )
@@ -69,6 +168,23 @@ class LiquidationService {
 		liq.info.depositedbyid 		= cashier.objid 
 		liq.info.depositedbyname 	= cashier.formalname 
 		liq.info.depositedbytitle 	= cashier.jobtitle 
+	}
+	
+	void updateRCDCashierInfo( liq ) {
+		def cashiers = usrsvc.getUsersByRole( CASHIER_ROLE )
+		if( ! cashiers ) throw new Exception('Cashier is not defined.')
+		def cashier = cashiers[0]
+		liq.rcds.each { rcd ->
+			rcd.cashierid 		= cashier.objid 
+			rcd.cashiername 	= cashier.formalname 
+			rcd.cashiertitle 	= cashier.jobtitle 
+		}
+	}
+	
+	void updateRCDDenomination( liq ) {
+		liq.rcds.each { rcd ->
+			rcd.denominations = liq.info.denominations 
+		}
 	}
 	
 	private void validate( liq ) {
@@ -119,6 +235,27 @@ class LiquidationService {
 	}
 	
 	@ProxyMethod
+	public def createLiquidationMultiCashier( liq ) {
+		liq.info.amount = 0.0;
+		liq.info.totalcash = 0.0;
+		liq.info.totalotherpayment = 0.0;
+		liq.info.treasurername = var.get('treasurer_name');
+		liq.info.treasurertitle = var.get('treasurer_title');
+		liq.info.denominations = [] 
+		
+		liq.remittances   	= getOpenRemittances( liq.info.liquidatingofficerid )
+		liq.otherpayments	= getOpenNonCashPayments( liq.info.liquidatingofficerid ) 
+		liq.rcds			= getOpenRcdsByFund( liq.info.liquidatingofficerid )		
+		updateLiquidationAmountInfo( liq )
+		
+		//check liquidation amount = total rcds amount 
+		if( liq.info.amount != liq.rcds.amount.sum() ) {
+			throw new Exception('Liquidation amount is not equal to RCD total amount.\nFix the discrepancy before proceeding.')
+		}
+		return liq;
+	}
+	
+	@ProxyMethod
 	public def createLiquidation( liq ) {
 		liq.info.amount = 0.0;
 		liq.info.totalcash = 0.0;
@@ -126,29 +263,55 @@ class LiquidationService {
 		liq.info.treasurername = var.get('treasurer_name');
 		liq.info.treasurertitle = var.get('treasurer_title');
 		
+		liq.remittances   	= getOpenRemittances( liq.info.liquidatingofficerid )
+		liq.otherpayments	= getOpenNonCashPayments( liq.info.liquidatingofficerid ) 
+		liq.rcds			= getOpenRcdsByFund( liq.info.liquidatingofficerid )		
+		updateLiquidationAmountInfo( liq )
+		return liq;
+	}
+	
+	List getOpenRemittances( lqofficerid ) {
 		def remits = em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceByLiquidatingOfficer" )
-							.setParameter( "liquidatingofficerid", liq.info.liquidatingofficerid )
+							.setParameter( "liquidatingofficerid", lqofficerid )
 							.resultList;
 							
 		if ( ! remits  ) {
-			throw new IllegalStateException( "There are no remittances." );
+			throw new IllegalStateException( "There are no open remittances." );
+		}
+		return remits
+	}
+	
+	List getOpenNonCashPayments( lqofficerid ) {
+		return em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceOtherPaymentsByLiquidatingOfficer" )
+								.setParameter( "liquidatingofficerid", lqofficerid )
+								.resultList;
+	}
+	
+	List getOpenRcdsByFund( lqofficerid ) {
+		def rcdlist = em.sqlContext.createNamedQuery( "liquidation:getOpenFundSummaries" )
+								.setParameter( "lqofficerid", lqofficerid )
+								.resultList;
+		
+		//init denominations 
+		rcdlist.each { rcd ->
+			rcd.cashier = null 
+			rcd.noncashpayments = []
 		}
 		
-		liq.remittances += remits;
-		liq.otherpayments += em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceOtherPaymentsByLiquidatingOfficer" )
-								.setParameter( "liquidatingofficerid", liq.info.liquidatingofficerid )
-								.resultList;
-								
+		return rcdlist 
+	}
+	
+	void updateLiquidationAmountInfo( liq ) {
 		def reminfo = em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceInfoByLiquidatingOfficer" )
 								.setParameter( "liquidatingofficerid", liq.info.liquidatingofficerid ) 
 								.singleResult;
 								
-		liq.info.amount += reminfo.totalamount;
-		liq.info.totalcash += reminfo.totalcash;
-		liq.info.totalotherpayment += reminfo.totalotherpayment;
-		
-		return liq;
+		liq.info.amount 			= reminfo.totalamount;
+		liq.info.totalcash 			= reminfo.totalcash;
+		liq.info.totalotherpayment 	= reminfo.totalotherpayment;
 	}
+	
+	
 	
 	private def getSubordinates( userid ) {
 		return usrsvc.getCollectorsByLqOfficerId( userid );
