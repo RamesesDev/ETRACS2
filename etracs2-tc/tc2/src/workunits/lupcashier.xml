@@ -1,0 +1,60 @@
+<workunit>
+    <invokers>
+        <invoker type="cashier.lookup" caption="Cashier Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+
+class CashierLookupController extends LookupModel 
+{
+    @Service("ETRACSUserService")
+    def svc;
+    
+    def onselect;
+    def searchText;
+    def selected;
+    
+    def ok() {
+        search = null 
+        if( onselect ) {
+            onselect( selected );
+        }
+        return select()
+    }
+    
+    def getListHandler() {
+        return this;
+    }
+    
+    int getRows() { return 25 }
+    
+    Column[] getColumns() {
+        return [
+            new Column(name:"cashiername", caption:"Cashier"),
+            new Column(name:"cashiertitle", caption:"Job Title"),
+        ]
+    }
+    
+    List fetchList( Map params ) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getCashierList( s, params );
+        if( list ) return list;
+        throw new Exception("Record not found.");
+    }
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.tc.LookupPage"/>
+    </pages>
+</workunit>

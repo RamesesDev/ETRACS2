@@ -26,6 +26,15 @@ class ETRACSUserService
 		if( (result = getListByName("etracsuser:findByLastName", criteria, params)) ) return result;
 		return result;
 	}
+	
+	@ProxyMethod
+	public def getCashierList( searchText, params ) {
+		if( ! searchText ) return getListByName("etracsuser:getCashierList", [:], params);
+		def result = [];
+        def criteria = [uid:searchText, name:searchText+'%']
+		if( (result = getListByName("etracsuser:getCashierListByName", criteria, params)) ) return result;
+		return result;
+	}
     
 	@ProxyMethod
 	public void save( user ) {
