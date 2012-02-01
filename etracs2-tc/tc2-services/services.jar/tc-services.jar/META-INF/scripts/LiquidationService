@@ -66,11 +66,14 @@ class LiquidationService {
 			validate( liq );
 			updateLiquidationInfo( liq, 'single' )
 			updateCashierInfo( liq )
+			updateRCDCashierInfo( liq )
+			updateRCDDenomination( liq )
 			closeRemittance( liq );
 			liq.fundsummaries = getFundSummaries( liq.objid );
 			em.validate( SCHEMANAME, liq );
 			em.create( SCHEMANAME, liq );
 			createListingItem( liq );
+			postLiquidationRcd( liq )
 			return liq;
 		} 
 		catch (ex) { 
@@ -165,6 +168,23 @@ class LiquidationService {
 		liq.info.depositedbyid 		= cashier.objid 
 		liq.info.depositedbyname 	= cashier.formalname 
 		liq.info.depositedbytitle 	= cashier.jobtitle 
+	}
+	
+	void updateRCDCashierInfo( liq ) {
+		def cashiers = usrsvc.getUsersByRole( CASHIER_ROLE )
+		if( ! cashiers ) throw new Exception('Cashier is not defined.')
+		def cashier = cashiers[0]
+		liq.rcds.each { rcd ->
+			rcd.cashierid 		= cashier.objid 
+			rcd.cashiername 	= cashier.formalname 
+			rcd.cashiertitle 	= cashier.jobtitle 
+		}
+	}
+	
+	void updateRCDDenomination( liq ) {
+		liq.rcds.each { rcd ->
+			rcd.denominations = liq.info.denominations 
+		}
 	}
 	
 	private void validate( liq ) {
