@@ -15,5 +15,33 @@
          <copy file="D:/ETRACS2/etracs2-tc/tc2/dist/tc2.jar" todir="D:/Applications/jboss-4.0.5.GA/server/etracs2_lguname/apps/lguname.ear/downloads.war/modules" />
          <copy file="D:/ETRACS2/etracs2-bp/bp2/dist/bp2.jar" todir="D:/Applications/jboss-4.0.5.GA/server/etracs2_lguname/apps/lguname.ear/downloads.war/modules" />
          <copy file="D:/ETRACS2/etracs2-rpt/rpt2/dist/rpt2.jar" todir="D:/Applications/jboss-4.0.5.GA/server/etracs2_lguname/apps/lguname.ear/downloads.war/modules" />
+         
+         <!-- deploy to app-libs.rameses-common.jar to modules -->
+        <copy   file="D:/ETRACS2/libs/server-libs/app-libs.jar/rameses-common.jar" 
+                todir="D:/Applications/jboss-4.0.5.GA/server/etracs2_lguname/apps/lguname.ear/downloads.war/modules" 
+                preservelastmodified="true" 
+         />
+         
+         <!-- server-libs  -->
+        <antcall target="deploy-services">
+            <param name="msg" value="deploying server libraries"/>
+            <param name="source.dir" value="D:/ETRACS2/libs/server-libs"/>
+            <param name="target.dir" value="D:/Applications/jboss-4.0.5.GA/server/etracs2_lguname/apps/lguname.ear"/>
+        </antcall>
+        
+        <!-- server-libs  -->
+        <antcall target="deploy-services">
+            <param name="msg" value="module libraries"/>
+            <param name="source.dir" value="D:/ETRACS2/libs/module-libs"/>
+            <param name="target.dir" value="D:/Applications/jboss-4.0.5.GA/server/etracs2_lguname/apps/lguname.ear/downloads.war/modules"/>
+        </antcall>
+    </target>
+    <target name="deploy-services">
+        <echo message="${msg}"/>
+        <copy todir="${target.dir}">
+            <fileset dir="${source.dir}">
+                <modified update="false"/>
+            </fileset>
+        </copy>
     </target>
 </project>
