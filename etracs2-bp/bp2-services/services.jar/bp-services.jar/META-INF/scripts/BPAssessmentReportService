@@ -12,10 +12,13 @@ public class BPApplicationService
 	@Service('BPSettingService')
 	def bpsettingSvc
 	
+	@Service( 'BPBillingService' )
+	def billingSvc
+	
 	def SCHEMANAME = 'bpapplication:bpapplication';
 	
 	@ProxyMethod
-	public def getAssessmentReportInfo( def applicationid ){
+	public def getAssessmentReportInfo( def applicationid ){ 
 		def bpa = em.read( SCHEMANAME, [objid:applicationid] );
 		return [ 
 			reportName: 'bp/assessment',
@@ -35,6 +38,7 @@ public class BPApplicationService
 			businessaddress: bpa.businessaddress, 
 			taxpayername: bpa.info.taxpayername,
 			taxpayeraddress: bpa.info.taxpayeraddress,
+			items: billingSvc.getBilling( bpa ).items,
 			signatories: bpa.info.assessmentsignatories,
 			totalcharge: 0.0,
 			totaltax: 0.0,
