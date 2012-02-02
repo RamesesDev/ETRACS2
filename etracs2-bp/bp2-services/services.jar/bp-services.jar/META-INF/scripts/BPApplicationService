@@ -53,8 +53,8 @@ class BPApplicationService{
 	@ProxyMethod
 	public def save( def application ){
 		if( application.txndate && application.txnmode == 'CAPTURE' ){
+			application.iyear = dateService.getYear( application.txndate )
 			application.txndate = format( application.txndate, 'yyyy-MM-dd');
-			application.iyear = Integer.parseInt( format( application.txndate, 'yyyy' ) );
 		}
 		
 		if( application.txnmode == 'ONLINE' ){
@@ -85,7 +85,7 @@ class BPApplicationService{
 
 		for( it in application.lobs ){
 			if( it.assessmenttype.matches('NEW|ADDLOB') ) it.iyear = Integer.parseInt( format( dateService.serverDate, "yyyy") );
-			if( it.assessmenttype.matches('RENEW|LATE_RENEWAL') ) it.iyear = Integer.parseInt( format( application.txndate, "yyyy") );
+			if( it.assessmenttype.matches('RENEW|LATE_RENEWAL') ) it.iyear = dateService.getYear( application.txndate )
 			if( it.assessmenttype.matches('RETIRE|RETIRELOB') ) it.iyear == Integer.parseInt( format( application.txndate, "yyyy") );
 		}
 		

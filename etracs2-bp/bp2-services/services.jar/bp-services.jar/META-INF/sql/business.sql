@@ -24,10 +24,16 @@ WHERE b.taxpayerid = $P{taxpayerid}
   AND bl.barangayid LIKE $P{barangayid}   
 ORDER BY b.tradename, b.taxpayername 
 
-[getApplicationsByBusinessId] 
+[getApplicationsByBusinessId]  
 SELECT * FROM bpapplication 
 WHERE businessid = $P{businessid} 
 AND docstate IN ( 'APPROVED', 'ACTIVE', 'PERMIT_PENDING', 'EXPIRED' ) 
+ORDER BY txnno 
+
+[getApplicationsByBusinessIdNotActive]
+SELECT * FROM bpapplication 
+WHERE businessid = $P{businessid} 
+AND docstate NOT IN ( 'APPROVED', 'ACTIVE', 'PERMIT_PENDING', 'EXPIRED' ) 
 ORDER BY txnno 
 
 [getApplicationListByBusinessId] 

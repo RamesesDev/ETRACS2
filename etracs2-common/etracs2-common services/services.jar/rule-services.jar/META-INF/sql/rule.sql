@@ -21,4 +21,10 @@ SELECT * FROM rulegroup WHERE objid <> 'APPINFO' ORDER BY sortorder
 SELECT objid FROM rule WHERE objid <> $P{objid} AND rulename = $P{rulename}
 
 
+[getRuleConditions]
+SELECT 
+ conditions 
+FROM rule 
+
+
 

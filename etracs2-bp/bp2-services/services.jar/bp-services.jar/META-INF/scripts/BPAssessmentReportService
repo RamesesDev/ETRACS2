@@ -15,11 +15,21 @@ public class BPApplicationService
 	@Service( 'BPBillingService' )
 	def billingSvc
 	
+	@Service( 'BPApplicationService' )
+	def appSvc
+	
+	@Service('DateService')
+	def dateService
+	
+	@Service('NumberService')
+	def numSvc;
+	
 	def SCHEMANAME = 'bpapplication:bpapplication';
 	
 	@ProxyMethod
 	public def getAssessmentReportInfo( def applicationid ){ 
 		def bpa = em.read( SCHEMANAME, [objid:applicationid] );
+		bpa.applist = appSvc.getApplicationList( applicationid )
 		return [ 
 			reportName: 'bp/assessment',
 			info: buildInfo( bpa )
@@ -28,6 +38,8 @@ public class BPApplicationService
 	
 	def buildInfo( def bpa ){
 		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+		def rcvbls = getBilling( bpa ).items
+		if( !rcvbls ) rcvbls = billingSvc.getBilling( bpa ).items
 		def info = [
 			barcode: bpa.barcode,
 			barcodeurl: var.get('barcode_url').replace('$P{data}', bpa.barcode),
@@ -38,7 +50,7 @@ public class BPApplicationService
 			businessaddress: bpa.businessaddress, 
 			taxpayername: bpa.info.taxpayername,
 			taxpayeraddress: bpa.info.taxpayeraddress,
-			items: billingSvc.getBilling( bpa ).items,
+			items: rcvbls,
 			signatories: bpa.info.assessmentsignatories,
 			totalcharge: 0.0,
 			totaltax: 0.0,
@@ -64,7 +76,7 @@ public class BPApplicationService
 		
 		return info;
 	}
-
+	
 	void addToTax( info, fee ){
 		info.taxes.add( fee );
 		info.totaltax += fee.amountdue;
@@ -79,4 +91,206 @@ public class BPApplicationService
 		info.charges.add( fee );
 		info.totalcharge += fee.amountdue;
 	}
+	
+	private def addReceivables( def businessid, def applist ){
+		def receivables = []
+		applist.each{ a ->
+			def app = appSvc.open( a.objid );
+			def cQtr = dateService.getQtr( app.txndate );
+			app.receivables = [];
+			app.taxfees.each{ 
+				def acct = em.read("incomeacct:incomeacct", [objid: it.acctid]); 
+				
+				def assessmenttype = getAssessmentType( app, it )
+				if( assessmenttype == 'RENEW' && acct.systype == 'BUSINESS_TAX' ){
+					for( int i=1; i <= 4; i++ ){
+						if( it.amountdue > 0 ){							
+							app.receivables <<  createReceivable( i , 4, businessid, app, it );
+						}
+					}
+				}else if( assessmenttype == 'RENEW' || app.txntype == 'RENEW'){
+					app.receivables << createReceivable( 1, 1, businessid, app, it );
+				}else{
+					app.receivables << createReceivable( cQtr, 1, businessid, app, it );
+				}
+				
+				
+			} 
+			receivables += app.receivables
+			
+		}
+		
+		return receivables
+	}
+	
+	def getAssessmentType( app, taxfee ) {
+		def lob = app.lobs.find{ it.lobid == taxfee.lobid }
+		if( lob ) 
+			return lob.assessmenttype 
+		return app.txntype 
+		
+	}
+	
+	def createReceivable( def qtr, def qtrCount, def businessid, def app, def it ){
+		def brc = [
+			objid: new java.rmi.server.UID(),
+			businessid: businessid,
+			applicationid: app.objid,
+			applicationtype: it.assessmenttype,
+			appno: app.txnno,
+			iyear: app.iyear,
+			iqtr: qtr,
+			lobid: it.lobid,
+			lobname: it.lobname,
+			acctid: it.acctid,
+			acctno: it.acctno,
+			accttitle: it.accttitle,
+			amount: numSvc.round( getAmount( ( qtr > qtrCount ? 1 : qtr ), qtrCount , it.amountdue ) ),
+			amtpaid: 0.0
+		]
+		
+		return brc;
+	}
+	
+	def getAmount( def a, def b, def amount ){
+		if( a == 0 ) return amount;
+		def val = new BigDecimal(amount).divide( new BigDecimal(b), 2, BigDecimal.ROUND_HALF_UP)
+		if( a == b ) return new BigDecimal(amount) - (val * ( new BigDecimal(b) - 1)) ;
+		return val;
+	}
+
+	private def getBusinessByTaxpayer( taxpayerid, barangayid  ) {
+		def params = [
+			taxpayerid : taxpayerid, 
+			barangayid : ( barangayid ? barangayid : '%' ),
+		]
+		return em.sqlContext.createNamedQuery( 'business:getListByTaxpayerid' )
+					.setParameters( params ).resultList;
+	}
+		
+	private def getApplicationsByBusinessId( businessid ) {
+		def applist = em.sqlContext.createNamedQuery( 'business:getApplicationsByBusinessIdNotActive' ).setParameters( [businessid:businessid] ).resultList;
+		if( !applist ) 
+			applist = em.sqlContext.createNamedQuery( 'business:getApplicationsByBusinessId' ).setParameters( [businessid:businessid] ).resultList;
+		return applist
+	}
+	
+	private def getUnpaidTaxFeesByApplication( app ) {
+		def taxfees = [];
+		def receivables = em.serializer.read( app.receivables );
+		if( !receivables ) 
+			receivables = addReceivables( app.businessid, app.applist )
+		
+		for ( rc in receivables ) {
+			if ( rc.amtpaid < rc.amount ){
+				rc.year = rc.iyear;
+				rc.qtr = rc.iqtr;
+				taxfees << rc;
+			}
+		}
+		return taxfees;
+	}
+	
+	def getDueDate( def bpsetting, def qtr ){
+		def collection = bpsetting.collection;
+		if( qtr == 1 ) return collection.qtr1surcharge;
+		else if( qtr == 2 ) return collection.qtr2surcharge;
+		else if( qtr == 3 ) return collection.qtr3surcharge;
+		else return collection.qtr4surcharge;
+	}
+	
+	def getQtr( def date ){
+		def sdf = new java.text.SimpleDateFormat("MM");
+		int month = Integer.parseInt( sdf.format( date ) );
+		return (Integer)(month / 3);
+	}
+	
+	public def getBilling( billing ) {
+		
+		def businesslist = getBusinessByTaxpayer( billing.info.taxpayerid, billing.info.barangayid );
+		if( !businesslist ) throw new Exception("There are no businesses registered for this taxpayer.");
+		billing.items = [];
+		billing.grandtotal = 0.0;
+		def bpsetting = bpsettingSvc.getSetting();
+		
+		for ( business in businesslist ) {
+			
+			def applist = getApplicationsByBusinessId( business.objid );
+			for( application in applist ){
+				application.businessid = billing.businessid
+				application.applist = billing.applist
+				def item = [
+					appno       : application.txnno,
+					barcode     : application.barcode,
+					barcodeurl  : var.get('barcode_url').replace('$P{data}', application.barcode),
+					txntype     : application.txntype,
+					docstate	: application.docstate, 
+					txndate     : new java.text.SimpleDateFormat( "yyyy-MM-dd" ).format( application.txndate ),
+					tradename 	: business.tradename,
+					address		: business.businessaddress,
+					ledgerid	: business.objid,
+					yearstarted	: business.yearstarted,
+					lastyearpaid: business.lastyrpaid,
+					lastqtrpaid	: business.lastqtrpaid,
+					taxfees		: getUnpaidTaxFeesByApplication( application ) 
+				];
+				
+				if( item.taxfees ){
+					def bill = billingSvc.buildBill( item );
+					bill.totaldiscount = new BigDecimal('0.0');
+					bill.totalsurcharge = new BigDecimal('0.0');
+					bill.totalamount = new BigDecimal('0.0');
+					bill.totalinterest = new BigDecimal('0.0');
+					bill.grandtotal = new BigDecimal('0.0');
+					
+					bill.first_qtr_total = new BigDecimal('0.0');
+					bill.second_qtr_total = new BigDecimal('0.0');
+					bill.third_qtr_total = new BigDecimal('0.0');
+					bill.fourth_qtr_total = new BigDecimal('0.0');
+					
+					bill.taxfees.each{
+						def duedate = getDueDate( bpsetting, it.qtr );
+						it.discount = ( it.discount ) ? new BigDecimal( it.discount.toString() ) : new BigDecimal('0.0');
+						it.surcharge = ( it.surcharge ) ? new BigDecimal( it.surcharge.toString() ) : new BigDecimal('0.0');
+						it.interest = ( it.interest ) ? new BigDecimal( it.interest.toString() ) : new BigDecimal('0.0');
+						it.amount = ( it.amount ) ? new BigDecimal( it.amount.toString() ) : new BigDecimal('0.0');
+						
+						it.discount = numSvc.round( it.discount )
+						it.surcharge = numSvc.round( it.surcharge )
+						it.interest = numSvc.round( it.interest )
+						it.amount = numSvc.round( it.amount )
+						
+						it.total = it.amount + it.surcharge + it.interest - it.discount;
+						it.duedate = it.year+"-"+duedate.month+"-"+duedate.day;
+						
+						bill.totalamount += it.amount;
+						bill.totalsurcharge += it.surcharge;
+						bill.totalinterest += it.interest;
+						bill.totaldiscount += it.discount;
+						bill.grandtotal += it.total;
+						
+						if( it.qtr == 1 ) bill.first_qtr_total += it.total;
+						if( it.qtr == 2 ) bill.second_qtr_total += it.total;
+						if( it.qtr == 3 ) bill.third_qtr_total += it.total;
+						if( it.qtr == 4 ) bill.fourth_qtr_total += it.total;
+					}
+					
+					bill.taxfees.sort{ a, b ->
+						def sa = a.year+'-'+a.qtr;
+						def sb = b.year+'-'+b.qtr;
+						return sa <=> sb;
+					}
+					
+					billing.grandtotal += bill.grandtotal;
+					billing.items << bill;
+				}
+		
+			}
+		}
+		
+		billing.items.sort{ it.appno };	
+		
+		return billing;
+	}
+	
 }
