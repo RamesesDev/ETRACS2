@@ -38,8 +38,6 @@ public class BPApplicationService
 	
 	def buildInfo( def bpa ){
 		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
-		def rcvbls = getBilling( bpa ).items
-		if( !rcvbls ) rcvbls = billingSvc.getBilling( bpa ).items
 		def info = [
 			barcode: bpa.barcode,
 			barcodeurl: var.get('barcode_url').replace('$P{data}', bpa.barcode),
@@ -50,7 +48,7 @@ public class BPApplicationService
 			businessaddress: bpa.businessaddress, 
 			taxpayername: bpa.info.taxpayername,
 			taxpayeraddress: bpa.info.taxpayeraddress,
-			items: rcvbls,
+			items: getAssesmentItems( bpa ),
 			signatories: bpa.info.assessmentsignatories,
 			totalcharge: 0.0,
 			totaltax: 0.0,
@@ -71,7 +69,7 @@ public class BPApplicationService
 			info.totalamount += it.amountdue;
 		}
 		
-		info.signatories = bpsettingSvc.setting.assessmentsignatories
+		info.signatories = bpsettingSvc.setting.assessmentsignatories?.sort{ it.index }
 		//info.signatories?.sort{ it.index };
 		
 		return info;
@@ -112,12 +110,9 @@ public class BPApplicationService
 					app.receivables << createReceivable( 1, 1, businessid, app, it );
 				}else{
 					app.receivables << createReceivable( cQtr, 1, businessid, app, it );
-				}
-				
-				
+				}					
 			} 
 			receivables += app.receivables
-			
 		}
 		
 		return receivables
@@ -132,7 +127,7 @@ public class BPApplicationService
 	}
 	
 	def createReceivable( def qtr, def qtrCount, def businessid, def app, def it ){
-		def brc = [
+		return [
 			objid: new java.rmi.server.UID(),
 			businessid: businessid,
 			applicationid: app.objid,
@@ -148,8 +143,6 @@ public class BPApplicationService
 			amount: numSvc.round( getAmount( ( qtr > qtrCount ? 1 : qtr ), qtrCount , it.amountdue ) ),
 			amtpaid: 0.0
 		]
-		
-		return brc;
 	}
 	
 	def getAmount( def a, def b, def amount ){
@@ -159,13 +152,14 @@ public class BPApplicationService
 		return val;
 	}
 
-	private def getBusinessByTaxpayer( taxpayerid, barangayid  ) {
-		def params = [
-			taxpayerid : taxpayerid, 
-			barangayid : ( barangayid ? barangayid : '%' ),
+	private def getBusiness( bpa ) {
+		def params = [ 
+			taxpayerid : bpa.info.taxpayerid, 
+			tradename : bpa.tradename,
+			barangayid : ( bpa.info.barangayid ? bpa.info.barangayid : '%' )			
 		]
-		return em.sqlContext.createNamedQuery( 'business:getListByTaxpayerid' )
-					.setParameters( params ).resultList;
+		return em.sqlContext.createNamedQuery( 'business:getBusinessByTaxpayerIdTrade' )
+					.setParameters( params ).singleResult;
 	}
 		
 	private def getApplicationsByBusinessId( businessid ) {
@@ -174,12 +168,17 @@ public class BPApplicationService
 			applist = em.sqlContext.createNamedQuery( 'business:getApplicationsByBusinessId' ).setParameters( [businessid:businessid] ).resultList;
 		return applist
 	}
+	 
+	private def getApplicationById( def appid ){
+		return em.sqlContext.createNamedQuery( 'business:getBPApplicationById' ).setParameter('objid', appid ).resultList
+	}
 	
 	private def getUnpaidTaxFeesByApplication( app ) {
 		def taxfees = [];
-		def receivables = em.serializer.read( app.receivables );
-		if( !receivables ) 
-			receivables = addReceivables( app.businessid, app.applist )
+		def receivables = em.serializer.read( app.receivables )
+		if( !receivables ) println 'ddd'
+		if( !receivables )
+			receivables = addReceivables( app.businessid, app.applist )		
 		
 		for ( rc in receivables ) {
 			if ( rc.amtpaid < rc.amount ){
@@ -205,92 +204,105 @@ public class BPApplicationService
 		return (Integer)(month / 3);
 	}
 	
-	public def getBilling( billing ) {
+	private def buildBusinessList( def bpa ){
+		return [
+			objid		: null ,
+			tradename 	: bpa.tradename,
+			address		: bpa.businessaddress,
+			ledgerid	: 'BUS' + new java.rmi.server.UID(),
+			yearstarted	: Calendar.getInstance().get( Calendar.YEAR ),
+			lastyearpaid: null,
+			lastqtrpaid	: 0
+		]	
+	}
+		   
+	public def getAssesmentItems( def bpa ) {
 		
-		def businesslist = getBusinessByTaxpayer( billing.info.taxpayerid, billing.info.barangayid );
-		if( !businesslist ) throw new Exception("There are no businesses registered for this taxpayer.");
-		billing.items = [];
-		billing.grandtotal = 0.0;
+		def business = getBusiness( bpa );		
+		if( !business ) 	
+			business = buildBusinessList( bpa )
+		
+		bpa.items = [];
+		bpa.grandtotal = 0.0;
 		def bpsetting = bpsettingSvc.getSetting();
 		
-		for ( business in businesslist ) {
+		def app			
+		if( business.objid )
+			app = getApplicationsByBusinessId( business.objid )
+		else
+			app = getApplicationById( bpa.objid )
+								
+		for( application in app ){
+			application.businessid = bpa.businessid
+			application.applist = bpa.applist
+			def item = [ 
+				appno       : application.txnno,
+				barcode     : application.barcode,
+				barcodeurl  : var.get('barcode_url').replace('$P{data}', application.barcode),
+				txntype     : application.txntype,
+				docstate	: application.docstate, 
+				txndate     : new java.text.SimpleDateFormat( "yyyy-MM-dd" ).format( application.txndate ),
+				tradename 	: business.tradename,
+				address		: business.businessaddress,
+				ledgerid	: business.objid,
+				yearstarted	: business.yearstarted,
+				lastyearpaid: business.lastyrpaid,
+				lastqtrpaid	: business.lastqtrpaid,
+				taxfees		: getUnpaidTaxFeesByApplication( application ) 
+			];
 			
-			def applist = getApplicationsByBusinessId( business.objid );
-			for( application in applist ){
-				application.businessid = billing.businessid
-				application.applist = billing.applist
-				def item = [
-					appno       : application.txnno,
-					barcode     : application.barcode,
-					barcodeurl  : var.get('barcode_url').replace('$P{data}', application.barcode),
-					txntype     : application.txntype,
-					docstate	: application.docstate, 
-					txndate     : new java.text.SimpleDateFormat( "yyyy-MM-dd" ).format( application.txndate ),
-					tradename 	: business.tradename,
-					address		: business.businessaddress,
-					ledgerid	: business.objid,
-					yearstarted	: business.yearstarted,
-					lastyearpaid: business.lastyrpaid,
-					lastqtrpaid	: business.lastqtrpaid,
-					taxfees		: getUnpaidTaxFeesByApplication( application ) 
-				];
+			if( item.taxfees ){
+				def bill = billingSvc.buildBill( item );
+				bill.totaldiscount = new BigDecimal('0.0');
+				bill.totalsurcharge = new BigDecimal('0.0');
+				bill.totalamount = new BigDecimal('0.0');
+				bill.totalinterest = new BigDecimal('0.0');
+				bill.grandtotal = new BigDecimal('0.0');
 				
-				if( item.taxfees ){
-					def bill = billingSvc.buildBill( item );
-					bill.totaldiscount = new BigDecimal('0.0');
-					bill.totalsurcharge = new BigDecimal('0.0');
-					bill.totalamount = new BigDecimal('0.0');
-					bill.totalinterest = new BigDecimal('0.0');
-					bill.grandtotal = new BigDecimal('0.0');
+				bill.first_qtr_total = new BigDecimal('0.0');
+				bill.second_qtr_total = new BigDecimal('0.0');
+				bill.third_qtr_total = new BigDecimal('0.0');
+				bill.fourth_qtr_total = new BigDecimal('0.0');
+				
+				bill.taxfees.each{
+					def duedate = getDueDate( bpsetting, it.qtr );
+					it.discount = ( it.discount ) ? new BigDecimal( it.discount.toString() ) : new BigDecimal('0.0');
+					it.surcharge = ( it.surcharge ) ? new BigDecimal( it.surcharge.toString() ) : new BigDecimal('0.0');
+					it.interest = ( it.interest ) ? new BigDecimal( it.interest.toString() ) : new BigDecimal('0.0');
+					it.amount = ( it.amount ) ? new BigDecimal( it.amount.toString() ) : new BigDecimal('0.0');
 					
-					bill.first_qtr_total = new BigDecimal('0.0');
-					bill.second_qtr_total = new BigDecimal('0.0');
-					bill.third_qtr_total = new BigDecimal('0.0');
-					bill.fourth_qtr_total = new BigDecimal('0.0');
+					it.discount = numSvc.round( it.discount )
+					it.surcharge = numSvc.round( it.surcharge )
+					it.interest = numSvc.round( it.interest )
+					it.amount = numSvc.round( it.amount )
 					
-					bill.taxfees.each{
-						def duedate = getDueDate( bpsetting, it.qtr );
-						it.discount = ( it.discount ) ? new BigDecimal( it.discount.toString() ) : new BigDecimal('0.0');
-						it.surcharge = ( it.surcharge ) ? new BigDecimal( it.surcharge.toString() ) : new BigDecimal('0.0');
-						it.interest = ( it.interest ) ? new BigDecimal( it.interest.toString() ) : new BigDecimal('0.0');
-						it.amount = ( it.amount ) ? new BigDecimal( it.amount.toString() ) : new BigDecimal('0.0');
-						
-						it.discount = numSvc.round( it.discount )
-						it.surcharge = numSvc.round( it.surcharge )
-						it.interest = numSvc.round( it.interest )
-						it.amount = numSvc.round( it.amount )
-						
-						it.total = it.amount + it.surcharge + it.interest - it.discount;
-						it.duedate = it.year+"-"+duedate.month+"-"+duedate.day;
-						
-						bill.totalamount += it.amount;
-						bill.totalsurcharge += it.surcharge;
-						bill.totalinterest += it.interest;
-						bill.totaldiscount += it.discount;
-						bill.grandtotal += it.total;
-						
-						if( it.qtr == 1 ) bill.first_qtr_total += it.total;
-						if( it.qtr == 2 ) bill.second_qtr_total += it.total;
-						if( it.qtr == 3 ) bill.third_qtr_total += it.total;
-						if( it.qtr == 4 ) bill.fourth_qtr_total += it.total;
-					}
+					it.total = it.amount + it.surcharge + it.interest - it.discount;
+					it.duedate = it.year+"-"+duedate.month+"-"+duedate.day;
 					
-					bill.taxfees.sort{ a, b ->
-						def sa = a.year+'-'+a.qtr;
-						def sb = b.year+'-'+b.qtr;
-						return sa <=> sb;
-					}
+					bill.totalamount += it.amount;
+					bill.totalsurcharge += it.surcharge;
+					bill.totalinterest += it.interest;
+					bill.totaldiscount += it.discount;
+					bill.grandtotal += it.total;
 					
-					billing.grandtotal += bill.grandtotal;
-					billing.items << bill;
+					if( it.qtr == 1 ) bill.first_qtr_total += it.total;
+					if( it.qtr == 2 ) bill.second_qtr_total += it.total;
+					if( it.qtr == 3 ) bill.third_qtr_total += it.total;
+					if( it.qtr == 4 ) bill.fourth_qtr_total += it.total;
 				}
-		
-			}
-		}
-		
-		billing.items.sort{ it.appno };	
-		
-		return billing;
+				
+				bill.taxfees.sort{ a, b ->
+					def sa = a.year+'-'+a.qtr;
+					def sb = b.year+'-'+b.qtr;
+					return sa <=> sb;
+				}
+				
+				bpa.grandtotal += bill.grandtotal;
+				bpa.items << bill;
+			}	
+		} 
+				
+		return bpa.items.sort{ it.appno }
 	}
 	
 }
