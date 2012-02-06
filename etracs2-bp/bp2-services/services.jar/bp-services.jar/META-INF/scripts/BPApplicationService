@@ -11,6 +11,9 @@ class BPApplicationService{
 	@Service('BPBillingService')
 	def billingSvc;
 	
+	@Service('BPAssessmentReportService')
+	def assessmentSvc
+	
 	@Service( 'BPSettingService' )
 	def settingSvc;
 	
@@ -453,7 +456,9 @@ class BPApplicationService{
 			business.lastqtrpaid = 4;
 			business.lastyearpaid = app.iyear - 1;
 		}
-
+		
+		app.applist = applist 
+		app.assessments = assessmentSvc.buildAssesment( app )
 		updateParentApplication( app );
 		 
 		em.update( BUSINESS_SCHEMA, business );

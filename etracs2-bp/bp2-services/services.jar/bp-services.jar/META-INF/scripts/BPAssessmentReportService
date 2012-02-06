@@ -37,6 +37,7 @@ public class BPApplicationService
 	}
 	
 	def buildInfo( def bpa ){
+		
 		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
 		def info = [
 			barcode: bpa.barcode,
@@ -48,7 +49,7 @@ public class BPApplicationService
 			businessaddress: bpa.businessaddress, 
 			taxpayername: bpa.info.taxpayername,
 			taxpayeraddress: bpa.info.taxpayeraddress,
-			items: getAssesmentItems( bpa ),
+			items: ( bpa.assessments ) ? bpa.assessments : buildAssesment( bpa ),
 			signatories: bpa.info.assessmentsignatories,
 			totalcharge: 0.0,
 			totaltax: 0.0,
@@ -175,18 +176,14 @@ public class BPApplicationService
 	
 	private def getUnpaidTaxFeesByApplication( app ) {
 		def taxfees = [];
-		def receivables = em.serializer.read( app.receivables )
-		if( !receivables ) println 'ddd'
-		if( !receivables )
-			receivables = addReceivables( app.businessid, app.applist )		
+		def	receivables = addReceivables( app.businessid, app.applist )		
 		
 		for ( rc in receivables ) {
-			if ( rc.amtpaid < rc.amount ){
-				rc.year = rc.iyear;
-				rc.qtr = rc.iqtr;
-				taxfees << rc;
-			}
+			rc.year = rc.iyear;
+			rc.qtr = rc.iqtr;
+			taxfees << rc;
 		}
+		
 		return taxfees;
 	}
 	
@@ -216,7 +213,8 @@ public class BPApplicationService
 		]	
 	}
 		   
-	public def getAssesmentItems( def bpa ) {
+	@ProxyMethod
+	public def buildAssesment( def bpa ) {
 		
 		def business = getBusiness( bpa );		
 		if( !business ) 	
