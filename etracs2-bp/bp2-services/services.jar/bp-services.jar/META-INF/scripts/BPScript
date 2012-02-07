@@ -10,8 +10,11 @@ class BPbpscript {
 	@Service( 'BPApplicationService' )
 	def appSvc
 	
-	@Service( 'BPAssessmentReportService' )
-	def assessmentSvc
+	@Service('NumberService')
+	def numSvc	
+	
+	@Service( 'DateService' )
+	def dateService
 	
 	// Method/Script to update fullypaid column into 1 
 	//if the taxpayer is fullypaid for the said business
@@ -87,23 +90,7 @@ class BPbpscript {
 		
 			em.update( 'bplisting:bpapplicationlisting', application )
 		}
-	}
-	
-	
-	
-	
-	@ProxyMethod
-	public def postAssessmentFromReceivable(){
-		em.sqlContext.createNamedQuery( 'bpscript:getApplications' ).resultList.each{
-			def bpa = [:]
-			bpa.objid = it.objid
-			bpa.applist = appSvc.getApplicationList( it.objid )
-			bpa.assessments = assessmentSvc.buildAssesment( bpa )
-		
-			em.sqlContext.createNamedExecutor( 'bpscript:updateAppAssessment' ).setParameters( bpa ).execute()
-		}
-	
-	}
+	}	
 	
 	//Method to paid all receivables 
 	//for a particular application by tradename
@@ -147,8 +134,79 @@ class BPbpscript {
 			.setParameters( application ).execute()
 		
 		return "Trade Name: $tradename successfully unpaid"
+	}  
+	
+	
+	// method to post the assessment from receivables
+	@ProxyMethod
+	public def postAssessmentFromReceivable(){
+		
+		em.sqlContext.createNamedQuery( 'bpscript:getApplications' ).resultList.each{
+			def bpa = [:]
+			bpa.objid = it.objid
+			bpa.applist = appSvc.getApplicationList( it.objid )
+			bpa.assessments = appSvc.buildAssesment( bpa )
+			bpa.assessments.each{
+				it.taxfees.each{ txfs -> 
+					txfs.surcharge = 0.0
+					txfs.interest = 0.0
+					txfs.discount = 0.0
+				}
+			} 
+			bpa.assessments = em.serializer.write( bpa.assessments ) 
+			em.sqlContext.createNamedExecutor( 'bpscript:updateAppAssessment' ).setParameters( bpa ).execute()
+		}
+		return 'Successfully run.'
 	}
-				
+	
+	
+	@ProxyMethod
+	public def postBPPayment(){
+		em.sqlContext.createNamedQuery( 'bpscript:getBTReceipts' ).resultList.each{
+			
+			def receipt = [				
+				applicationid : em.serializer.read( it.extended ).applicationid,
+				objid : it.objid,
+				info : em.serializer.read( it.info ),
+				items: em.serializer.read( it.items ),
+				voided : it.voided
+			]
+			
+			createBPPayments( receipt )   
+		}
+		
+		return 'Successfully run.'
+	} 
+	
+	private void createBPPayments( def receipt ){
+		def currdate = dateService.parseDate( receipt.info.txndate, null )
+		receipt.items.each{ rcpt ->
+			def bp = [
+				objid : 'BPPMT' + new UID(),
+				applicationid : receipt.applicationid,
+				receiptid : receipt.objid,
+				afid : receipt.info.afid,
+				serialno : receipt.info.serialno,
+				txndate : receipt.info.txndate,
+				iyear : currdate.year,
+				iqtr : currdate.qtr,
+				imonth : currdate.month,
+				iday : currdate.day,
+				lobid : rcpt.lobid,
+				lobname : rcpt.lobname, 
+				acctid : rcpt.acctid,
+				accttitle : rcpt.accttitle,  
+				amount : numSvc.round( rcpt.taxamount ),
+				surcharge : numSvc.round( rcpt.surcharge ),
+				interest : numSvc.round( rcpt.interest ),
+				discount : numSvc.round( rcpt.discount ),
+				total : ( numSvc.round( rcpt.taxamount ) + numSvc.round( rcpt.surcharge ) + numSvc.round( rcpt.interest ) - numSvc.round( rcpt.discount ) ),
+				voided : receipt.voided			
+			]
+			
+			em.create( 'bppayment', bp )	
+		}
+	}
 	
 	
 	

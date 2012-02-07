@@ -337,7 +337,9 @@ class BPApplicationService{
 		  .setParameters( [parentid: app.objid] )
 		  .resultList.each{ 
 			it.info = em.serializer.read( it.info );
+			it.taxfees = em.serializer.read( it.taxfees )
 			applist.add( evaluateApplication( it ) ) ;
+			
 		};
 		
 		return applist;
@@ -460,11 +462,11 @@ class BPApplicationService{
 
 		app.assessments = createAssessment( app )
 		updateParentApplication( app );
-		 
+		
+		app.receivables = buildReceivables( business , applist )		
 		em.update( BUSINESS_SCHEMA, business );
 		em.update( SCHEMANAME, app );
 		     
-		addReceivables( business , applist );
 		txnSvc.delete( business.objid );
 
 		if( app.txntype.matches('RETIRE|RETIRELOB') ){
@@ -473,7 +475,7 @@ class BPApplicationService{
 				app = bpService.retireApplication( app.objid );
 			}
 		}
-
+		
 		return app;
 	}
 	
@@ -529,7 +531,7 @@ class BPApplicationService{
 		return brc;
 	}
 	
-	private def addReceivables( def business, def applist ){
+	private def buildReceivables( def business, def applist ){
 		def receivables = [] 
 		applist.each{ a ->
 			def app = open( a.objid );
@@ -552,7 +554,6 @@ class BPApplicationService{
 				}
 			}
 			receivables += app.receivables
-			if( app.docstate.equals('APPROVED')) em.update( SCHEMANAME, app );
 		}
 		
 		return receivables
@@ -790,24 +791,16 @@ class BPApplicationService{
 	@ProxyMethod
 	public def buildAssesment( def bpa ) {
 		
-		def business = getBusinessByTaxperTrade( bpa );
-		if( !business ) 	
-			business = buildTemporaryBusiness( bpa )
-		
 		bpa.items = [];
 		bpa.grandtotal = 0.0;
 		def bpsetting = settingSvc.getSetting();
 		
-		def app	
-		if( business.objid )
-			app = getApplicationsByBusinessId( business.objid )
-		else
-			app = getApplicationById( bpa.objid )
-	
+		def app	= ( bpa.businessid ) ? getApplicationsByBusinessId( bpa.businessid ) : getApplicationById( bpa.objid )
+			
 		for( application in app ){
 			application.businessid = bpa.businessid
 			application.applist = bpa.applist
-			
+						
 			def item = [ 
 				appno       : application.txnno,
 				barcode     : application.barcode,
@@ -815,12 +808,6 @@ class BPApplicationService{
 				txntype     : application.txntype,
 				docstate	: application.docstate, 
 				txndate     : new java.text.SimpleDateFormat( "yyyy-MM-dd" ).format( application.txndate ),
-				tradename 	: business.tradename,
-				address		: business.businessaddress,
-				ledgerid	: business.objid,
-				yearstarted	: business.yearstarted,
-				lastyearpaid: business.lastyrpaid,
-				lastqtrpaid	: business.lastqtrpaid,
 				taxfees		: buildTaxfeesByApps( application ) 
 			];
 			
@@ -888,7 +875,7 @@ class BPApplicationService{
 	
 	private def buildTaxfeesByApps( app ) {
 		def taxfees = [];
-		def	receivables = addReceivables( app, app.applist )		
+		def	receivables = buildReceivables( app, app.applist )		
 		
 		for ( rc in receivables ) {
 			rc.year = rc.iyear;
@@ -912,7 +899,8 @@ class BPApplicationService{
 		]	
 	}
 	
-	private def getBusinessByTaxperTrade( bpa ) {
+	@ProxyMethod
+	public def getBusinessByTaxperTrade( bpa ) {
 		def params = [ 
 			taxpayerid : bpa.info.taxpayerid, 
 			tradename : bpa.tradename,
