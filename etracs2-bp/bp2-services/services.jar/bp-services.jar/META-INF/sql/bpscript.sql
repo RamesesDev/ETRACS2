@@ -24,3 +24,14 @@ WHERE tradename = $P{tradename}
 UPDATE bpapplication 
 SET receivables = $P{receivables} 
 WHERE objid = $P{objid} 
+
+[getApplications]
+SELECT * 
+FROM bpapplication 
+WHERE assessments = '[]' 
+ OR assessments IS NULL  
+
+[updateAppAssessment]
+UPDATE bpapplication 
+SET assessments = $P{assessments} 
+WHERE objid = $P{objid} 

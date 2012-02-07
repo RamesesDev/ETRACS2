@@ -241,7 +241,6 @@ class BPApplicationService{
 	
 	@ProxyMethod
 	public def evaluateTxnType(def application){
-		
 		if( application.businessid ) txnSvc.checkReference( application.businessid );
 		
 		def txndate = dateService.serverDate;
@@ -434,7 +433,7 @@ class BPApplicationService{
 		em.update( SCHEMANAME, app );
 		return app;
 	}
-	
+		
 	@ProxyMethod
 	public def approveApplication( def appid, def applist, def requirements ){
 		def app = open( appid );
@@ -458,7 +457,8 @@ class BPApplicationService{
 		}
 		
 		app.applist = applist 
-		app.assessments = assessmentSvc.buildAssesment( app )
+
+		app.assessments = createAssessment( app )
 		updateParentApplication( app );
 		 
 		em.update( BUSINESS_SCHEMA, business );
@@ -519,6 +519,9 @@ class BPApplicationService{
 			acctid: it.acctid,
 			acctno: it.acctno,
 			accttitle: it.accttitle,
+			surcharge:0.0,
+			interest:0.0,
+			discount:0.0,
 			amount: numSvc.round( getAmount( ( qtr > qtrCount ? 1 : qtr ), qtrCount , it.amountdue ) ),
 			amtpaid: 0.0
 		]
@@ -526,7 +529,8 @@ class BPApplicationService{
 		return brc;
 	}
 	
-	void addReceivables( def business, def applist ){
+	private def addReceivables( def business, def applist ){
+		def receivables = [] 
 		applist.each{ a ->
 			def app = open( a.objid );
 			def cQtr = dateService.getQtr( app.txndate );
@@ -547,8 +551,11 @@ class BPApplicationService{
 					app.receivables << createReceivable( cQtr, 1, business.objid, app, it );
 				}
 			}
-			em.update( SCHEMANAME, app );
+			receivables += app.receivables
+			if( app.docstate.equals('APPROVED')) em.update( SCHEMANAME, app );
 		}
+		
+		return receivables
 	}
 	
 	def getAssessmentType( app, taxfee ) {
@@ -779,4 +786,156 @@ class BPApplicationService{
 		}
 		return billingSvc.buildBill( bill );
 	}
+	
+	@ProxyMethod
+	public def buildAssesment( def bpa ) {
+		
+		def business = getBusinessByTaxperTrade( bpa );
+		if( !business ) 	
+			business = buildTemporaryBusiness( bpa )
+		
+		bpa.items = [];
+		bpa.grandtotal = 0.0;
+		def bpsetting = settingSvc.getSetting();
+		
+		def app	
+		if( business.objid )
+			app = getApplicationsByBusinessId( business.objid )
+		else
+			app = getApplicationById( bpa.objid )
+	
+		for( application in app ){
+			application.businessid = bpa.businessid
+			application.applist = bpa.applist
+			
+			def item = [ 
+				appno       : application.txnno,
+				barcode     : application.barcode,
+				barcodeurl  : var.get('barcode_url').replace('$P{data}', application.barcode),
+				txntype     : application.txntype,
+				docstate	: application.docstate, 
+				txndate     : new java.text.SimpleDateFormat( "yyyy-MM-dd" ).format( application.txndate ),
+				tradename 	: business.tradename,
+				address		: business.businessaddress,
+				ledgerid	: business.objid,
+				yearstarted	: business.yearstarted,
+				lastyearpaid: business.lastyrpaid,
+				lastqtrpaid	: business.lastqtrpaid,
+				taxfees		: buildTaxfeesByApps( application ) 
+			];
+			
+			if( item.taxfees ){
+				def bill = billingSvc.buildBill( item );
+				bill.totaldiscount = new BigDecimal('0.0');
+				bill.totalsurcharge = new BigDecimal('0.0');
+				bill.totalamount = new BigDecimal('0.0');
+				bill.totalinterest = new BigDecimal('0.0');
+				bill.grandtotal = new BigDecimal('0.0');
+				
+				bill.first_qtr_total = new BigDecimal('0.0');
+				bill.second_qtr_total = new BigDecimal('0.0');
+				bill.third_qtr_total = new BigDecimal('0.0');
+				bill.fourth_qtr_total = new BigDecimal('0.0');
+				
+				bill.taxfees.each{
+					def duedate = getDueDate( bpsetting, it.qtr );
+					it.discount = ( it.discount ) ? new BigDecimal( it.discount.toString() ) : new BigDecimal('0.0');
+					it.surcharge = ( it.surcharge ) ? new BigDecimal( it.surcharge.toString() ) : new BigDecimal('0.0');
+					it.interest = ( it.interest ) ? new BigDecimal( it.interest.toString() ) : new BigDecimal('0.0');
+					it.amount = ( it.amount ) ? new BigDecimal( it.amount.toString() ) : new BigDecimal('0.0');
+					
+					it.discount = numSvc.round( it.discount )
+					it.surcharge = numSvc.round( it.surcharge )
+					it.interest = numSvc.round( it.interest )
+					it.amount = numSvc.round( it.amount )
+					
+					it.total = it.amount + it.surcharge + it.interest - it.discount;
+					it.duedate = it.year+"-"+duedate.month+"-"+duedate.day;
+					
+					bill.totalamount += it.amount;
+					bill.totalsurcharge += it.surcharge;
+					bill.totalinterest += it.interest;
+					bill.totaldiscount += it.discount;
+					bill.grandtotal += it.total;
+					
+					if( it.qtr == 1 ) bill.first_qtr_total += it.total;
+					if( it.qtr == 2 ) bill.second_qtr_total += it.total;
+					if( it.qtr == 3 ) bill.third_qtr_total += it.total;
+					if( it.qtr == 4 ) bill.fourth_qtr_total += it.total;
+				}
+				
+				bill.taxfees.sort{ a, b ->
+					def sa = a.year+'-'+a.qtr;
+					def sb = b.year+'-'+b.qtr;
+					return sa <=> sb;
+				}
+				
+				bpa.grandtotal += bill.grandtotal;
+				bpa.items << bill;
+			}	
+		} 
+		
+		return bpa.items.sort{ it.appno }
+	}	
+	
+	def getDueDate( def bpsetting, def qtr ){
+		def collection = bpsetting.collection;
+		if( qtr == 1 ) return collection.qtr1surcharge;
+		else if( qtr == 2 ) return collection.qtr2surcharge;
+		else if( qtr == 3 ) return collection.qtr3surcharge;
+		else return collection.qtr4surcharge;
+	}
+	
+	private def buildTaxfeesByApps( app ) {
+		def taxfees = [];
+		def	receivables = addReceivables( app, app.applist )		
+		
+		for ( rc in receivables ) {
+			rc.year = rc.iyear;
+			rc.qtr = rc.iqtr;
+			taxfees << rc;
+		}
+		
+		return taxfees;
+	}
+	
+	private def buildTemporaryBusiness( def bpa ){
+		
+		return [
+			objid		: null , 
+			tradename 	: bpa.tradename,
+			address		: bpa.businessaddress,
+			ledgerid	: 'BUS' + new java.rmi.server.UID(),
+			yearstarted	: Calendar.getInstance().get( Calendar.YEAR ),
+			lastyearpaid: null,
+			lastqtrpaid	: 0
+		]	
+	}
+	
+	private def getBusinessByTaxperTrade( bpa ) {
+		def params = [ 
+			taxpayerid : bpa.info.taxpayerid, 
+			tradename : bpa.tradename,
+			barangayid : ( bpa.info.barangayid ? bpa.info.barangayid : '%' )			
+		]
+		return em.sqlContext.createNamedQuery( 'business:getBusinessByTaxpayerIdTrade' )
+					.setParameters( params ).singleResult;
+	}
+	
+	private def getApplicationsByBusinessId( businessid ) {
+		// get application not APPROVED|ACTIVE|PERMIT_PENDING|EXPIRED
+		def applist = em.sqlContext.createNamedQuery( 'business:getApplicationsByBusinessIdNotActive' ).setParameters( [businessid:businessid] ).resultList;
+		if( !applist ) // get APPROVED|ACTIVE|PERMIT_PENDING|EXPIRED
+			applist = em.sqlContext.createNamedQuery( 'business:getApplicationsByBusinessId' ).setParameters( [businessid:businessid] ).resultList;
+		return applist
+	}
+	
+	private def getApplicationById( def appid ){
+		return em.sqlContext.createNamedQuery( 'business:getBPApplicationById' ).setParameter('objid', appid ).resultList
+	}
+	
+	private def createAssessment( def bpa ){
+		return buildAssesment( bpa )	
+	}
+	
 }
