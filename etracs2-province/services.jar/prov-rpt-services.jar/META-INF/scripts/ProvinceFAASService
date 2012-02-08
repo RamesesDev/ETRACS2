@@ -158,7 +158,8 @@ class ProvinceFAASService
 		def sectionNo       = buildSectionNo( section )
 		def parcelNo        = buildParcelNo( newSeries )
 		def pin             = key + '-' + parcelNo
-		faas.rp.pin         = pin 
+		println 'pin -> ' + pin 
+        faas.rp.pin         = pin 
         faas.rpu.fullpin    = pin 
 		checkDuplicatePin( faas )
 		seqSvc.updateNextSeries( key, newSeries + 1)
@@ -201,7 +202,12 @@ class ProvinceFAASService
 	
 	
 	
+    @ProxyMethod
+    public List getAttachments( faasid ) {
+        return em.sqlContext.createNamedQuery('faas:getAttachments').setParameter('faasid', faasid).resultList
+    }
     
+	
     @ProxyMethod
     public void checkDuplicateTdNo( faasid, tdno ) {
         if( ! tdno ) return 
@@ -280,12 +286,6 @@ class ProvinceFAASService
 		
 		return result
 	}
-    
-    @ProxyMethod
-    public List getAttachments( faasid ) {
-        return em.sqlContext.createNamedQuery('faas:getAttachments').setParameter('faasid', faasid).resultList
-    }
-    
     
     /*---------------------------------------------------------------------------------
     * Support Methods
@@ -394,7 +394,8 @@ class ProvinceFAASService
         values.keySet().each {
             tdno = tdno.replace( it, values[it] )
         }
-        def seqno = seqSvc.getNextFormattedSeries( tdno )
+		
+		def seqno = seqSvc.getNextFormattedSeries( tdno )
         if( var.td_format.contains( '-') ) {
             return  tdno + '-' + seqno 
         }
