@@ -83,3 +83,17 @@ WHERE u.objid = ex.objid
 ORDER BY u.uid  
 
 
+[getCashierList]
+SELECT DISTINCT u.objid, u.formalname AS cashiername, u.jobtitle AS cashiertitle 
+FROM etracsuser u, user_role ur  
+WHERE u.objid = ur.userid  
+  AND ur.role = 'CASHIER' 
+ORDER BY u.formalname   
+
+[getCashierListByName]
+SELECT DISTINCT u.objid, u.formalname AS cashiername, u.jobtitle AS cashiertitle 
+FROM etracsuser u, user_role ur  
+WHERE u.objid = ur.userid  
+  AND ur.role = 'CASHIER' 
+  AND u.name LIKE $P{name} 
+ORDER BY u.formalname   

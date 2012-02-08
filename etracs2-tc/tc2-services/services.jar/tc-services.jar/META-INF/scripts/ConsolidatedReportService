@@ -31,7 +31,7 @@ class ConsolidatedReportService {
 	}
 	
 	private def getAFICStateOpen( afi ){
-	
+		
 		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAfICreditByParentIdOpen' )
 						.setParameter( 'afinventoryid', afi.afinventoryid ).resultList
 	}
@@ -42,15 +42,14 @@ class ConsolidatedReportService {
 	}
 	
 	private void doBuildCraafByAFIC( afi, param ){
-		def afinventorycredit = getAFICStateOpen( afi )
-		if( afinventorycredit ){
-			afinventorycredit.each(){ afic -> 
-				param.afinventorycreditid = afic.objid
-				// checks afinventorycreditid if not exist then forward
-				if( !getCraafByAFICId( param ) )
-					buildCraaf( null, afic ) 
-			}
-		} 
+		
+		getAFICStateOpen( afi ).each{ afic -> 			
+			param.afinventorycreditid = afic.objid
+			// checks afinventorycreditid if not exist then forward
+			if( !getCraafByAFICId( param ) )
+				buildCraaf( null, afic )   
+		}
+		
 	}
 	
 	private void doBuildCraafByAFI( def afi ){
@@ -122,18 +121,19 @@ class ConsolidatedReportService {
 		def craaf = em.sqlContext.createNamedQuery('consolidatedreport:getCraaf').setParameters( param ).singleResult		
 		if( craaf ) return 
 		
-		def afinventory = getAFIStateOpen()
-		if( !afinventory )
-			afinventory = getAFIStateClosed()
-		if( afinventory ){
-			afinventory.each(){ afi ->
+		def process = { afinventory ->
+			afinventory.each{ afi ->
 				afi.afinventoryid = afi.objid
 					//build craaf by afinventory
 				doBuildCraafByAFI( afi ) 
 					//build craaf by afinventorycredit/collector
 				doBuildCraafByAFIC( afi, param )
 			}
-		}			
+		}
+		   
+		process( getAFIStateOpen() )
+		process( getAFIStateClosed() )
+	
 	}
 		
 	@ProxyMethod
@@ -146,9 +146,9 @@ class ConsolidatedReportService {
 		em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCollector')
 			.setParameters( [craafyear:year, craafmonth:entity.month] )
 			.resultList.each{ clctr ->
-				def found = craaf.find{ it.collectorname.equals( clctr.collectorname ) }
+				def found = craaf.find{ it.collectorid.equals( clctr.collectorid ) || it.collectorname.equals( clctr.collectorname ) }
 				clctr.collectorname = ( !found ) ? clctr.collectorname : null
-				craaf += clctr
+				craaf += clctr  
 		}
 		
 		craaf += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCanceledSeries').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;

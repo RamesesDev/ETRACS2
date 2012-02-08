@@ -20,6 +20,7 @@
         <invoker type="rpttransaction" folderid="/menu/rpt/txn" action="newdiscovery"     caption="New Discovery"         mnemonic="d" target="window" permission="newdiscovery.create"/>
         <invoker type="rpttransaction" folderid="/menu/rpt/txn" action="multipleclaim"    caption="Multiple Claim"        mnemonic="m" target="window" permission="multipleclaim.create"/>
         <invoker type="rpttransaction" folderid="/menu/rpt/txn" action="reassessment"     caption="Re-Assessment"         mnemonic="r" target="window" permission="reassessment.create"/>
+        <invoker type="rpttransaction" folderid="/menu/rpt/txn" action="generalRevision"   caption="General Revision"      mnemonic="g" target="window" permission="generalrevision.create"/>
         
         <invoker type="rpttransaction.initCapture"   action="initCapture"      caption="Data Capture"          target="window" />
         <invoker type="rpttransaction.transfer"      action="transfer"         caption="Transfer of Ownership" target="window" />
@@ -29,6 +30,7 @@
         <invoker type="rpttransaction.reassessment"  action="reassessment"     caption="Re-Assessment"         target="window" />
         <invoker type="rpttransaction.newdiscovery"  action="newdiscovery"     caption="New Discovery"         target="window" />
         <invoker type="rpttransaction.multipleclaim" action="multipleclaim"    caption="Multiple Claim"        target="window" />
+        <invoker type="rpttransaction.generalRevision"  action="generalRevision"     caption="General Revision"         target="window" />
         
         
         <invoker type="formActions" action="_close"         caption="Close"                 shortcut="ctrl W"   mnemonic="c"  immediate="true" icon="images/cancel.png"/>
@@ -357,6 +359,17 @@ public class FAASController
     def correction()    { initTxn( 'CE', 'Correction of Entry Transaction' ) }
     def multipleclaim() { initTxn( 'MC', 'Multiple Claim Transaction' ) }
     
+    
+    def newrysetting
+    def generalRevision() {
+        initTxn( 'GR', 'General Revision Transaction' )
+        return 'grinit' 
+    }
+    
+    List getRylist() {
+        return svc.getRyList( prevtd?.rputype )
+    }
+    
     def getLookupCurrentFaas() {
         return InvokerUtil.lookupOpener( 'faas.lookup', [:] )
     }
@@ -379,7 +392,7 @@ public class FAASController
     } 
     
     def initTransaction() {
-        faas = svc.initTransaction( txntype, prevtdno, autonumber, claimno)
+        faas = svc.initTransaction2( txntype, prevtdno, autonumber, claimno, newrysetting)
         initFormFields( faas )
         return 'default'
     }
@@ -522,6 +535,7 @@ public class FAASController
         <page template="etracs2.rpt.faas.FAASPage"/>
         <page name="new" template="etracs2.rpt.faas.FAASNewPage"/>
         <page name="ndinit" template="etracs2.rpt.faas.FAASNDInitPage"/>
+        <page name="grinit" template="etracs2.rpt.faas.FAASGRInitPage"/>
         <page name="txninit" template="etracs2.rpt.faas.FAASTxnInitPage"/>
     </pages>
 </workunit>

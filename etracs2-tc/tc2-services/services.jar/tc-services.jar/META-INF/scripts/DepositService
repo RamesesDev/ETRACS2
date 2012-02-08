@@ -63,11 +63,21 @@ class DepositService
 			fundsummaries	 : [],
         ]
 		
+		/*
 		deposit.liquidations  = getOpenLiquidations()
 		if( ! deposit.liquidations ) throw new Exception('There are no open liquidations for deposit.')
 		
 		deposit.fundtotals 		= getOpenFundTotals()
 		deposit.noncashpayments = getOpenNonCashPayments()
+		deposit.noncashcount 	= deposit.noncashpayments.size()
+		deposit.amount 			= deposit.liquidations.sum({it.amount})
+		*/
+		
+		deposit.liquidations  = getOpenLiquidationsByCashier( cashierid )
+		if( ! deposit.liquidations ) throw new Exception('There are no open liquidations for deposit.')
+		
+		deposit.fundtotals 		= getOpenFundTotalsByCashier( cashierid )
+		deposit.noncashpayments = getOpenNonCashPaymentsCashier( cashierid )
 		deposit.noncashcount 	= deposit.noncashpayments.size()
 		deposit.amount 			= deposit.liquidations.sum({it.amount})
 		return deposit 
@@ -91,8 +101,9 @@ class DepositService
 	
 	@ProxyMethod
 	public Map create( deposit ) {
+		int year = dateSvc.getServerYear()
 		deposit.dtposted = new Date()
-		deposit.txnno = sequenceSvc.getNextFormattedSeries('DEPOSIT')
+		deposit.txnno = sequenceSvc.getNextFormattedSeries('DEPOSIT' + year) + '-' + year 
 		validateDeposit( deposit )
 		
 		deposit.cash = deposit.fundsummaries.sum( {it.cash} )
@@ -128,8 +139,10 @@ class DepositService
 			nonserialremittances: [[:],[:]],
 			fund 				: fundname, 
 		]
-		data.amount = data.collectionsummaries.amount.sum()
-		data.amountinwords = numSvc.convertString( data.amount + "" )
+		if( data.collectionsummaries ) {
+			data.amount = data.collectionsummaries.amount.sum()
+			data.amountinwords = numSvc.convertString( data.amount + "" )
+		}
 		data.depositedbyname = deposit.depositedbyname
 		data.depositedbytitle = deposit.depositedbytitle
 		return data 
@@ -179,10 +192,10 @@ class DepositService
 	}
 	
 	List getCollectionSummaryByAFAndFund( deposit, fundname ) {
-		def list = em.sqlContext.createNamedQuery('deposit:getCollectionSummaryByAFAndFund')
+		def list = em.sqlContext.createNamedQuery('deposit:getCollectionSummaryByAFAndFund2')
 					.setParameters([depositid:deposit.objid, fundname:fundname])
 					.resultList
-		if( ! list ) throw new Exception('No records found.')
+		//if( ! list ) throw new Exception('No records found.')
 		return list 
 	}
 	
@@ -223,11 +236,12 @@ class DepositService
 	
 	void depositLiquidation( deposit ) {
 		def params = [
+			cashierid		 : deposit.depositedbyid,
 			depositid        : deposit.objid,
 			dtdeposited		 : deposit.dtposted,
 		]
-		em.sqlContext.createNamedExecutor('deposit:depositOpenLiquidation').setParameters(params).execute()
-		em.sqlContext.createNamedExecutor('deposit:depositOpenLiquidationList').setParameters(params).execute()
+		em.sqlContext.createNamedExecutor('deposit:depositOpenLiquidationRcdByCashier').setParameters(params).execute()
+		// em.sqlContext.createNamedExecutor('deposit:depositOpenLiquidationList').setParameters(params).execute()
 	}
 	
 	void validateDeposit( deposit ) {
@@ -299,6 +313,11 @@ class DepositService
 		return em.sqlContext.createNamedQuery('deposit:getOpenLiquidations').resultList 
 	}
 	
+	List getOpenLiquidationsByCashier( cashierid ) {
+		return em.sqlContext.createNamedQuery('deposit:getOpenLiquidationsByCashier')
+				.setParameter( 'cashierid', cashierid ).resultList 
+	}
+	
 	List getOpenFundSummaries() {
 		return em.sqlContext.createNamedQuery('deposit:getOpenFundSummaries').resultList 	
 	}
@@ -307,8 +326,18 @@ class DepositService
 		return em.sqlContext.createNamedQuery('deposit:getOpenFundTotals').resultList 	
 	}
 	
+	List getOpenFundTotalsByCashier( cashierid ) {
+		return em.sqlContext.createNamedQuery('deposit:getOpenFundTotalsByCashier')
+				.setParameter( 'cashierid', cashierid ).resultList 
+	}
+	
 	List getOpenNonCashPayments() {
 		return em.sqlContext.createNamedQuery('deposit:getOpenNonCashPayments').resultList 	
+	}
+	
+	List getOpenNonCashPaymentsCashier( cashierid ) {
+		return em.sqlContext.createNamedQuery('deposit:getOpenNonCashPaymentsCashier')
+				.setParameter( 'cashierid', cashierid ).resultList
 	}
 	
 	List getListByNamedQuery(namedQuery, criteria, params ) {

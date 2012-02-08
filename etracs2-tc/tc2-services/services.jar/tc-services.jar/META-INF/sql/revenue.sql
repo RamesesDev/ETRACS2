@@ -79,6 +79,21 @@ WHERE l.objid = rem.liquidationid
   AND rem.objid = rev.remittanceid  
   AND l.objid = $P{liquidationid} 
   
+  
+[postLiquidationByRcd]  
+UPDATE liquidationrcd lr, receiptitem ri, revenue rev set
+	rev.docstate = 'LIQUIDATED',
+	rev.liquidationid = lr.liquidationid,
+	rev.liquidationrcdid = lr.objid, 
+	rev.liquidationno  = lr.liquidationno,
+	rev.liquidationdate = lr.liquidationdate,
+	rev.liquidationtimestamp = $P{timestamp} 
+WHERE lr.objid = ri.liquidationrcdid 
+  AND rev.receiptitemid = ri.objid 
+  AND lr.objid = $P{liquidationrcdid} 
+ 
+
+
 [postDeposit]
 UPDATE deposit d, liquidationlist l, revenue rev  set
 	rev.docstate = 'DEPOSITED',
@@ -89,3 +104,14 @@ UPDATE deposit d, liquidationlist l, revenue rev  set
 WHERE d.objid = l.depositid
   AND l.objid = rev.liquidationid 
   AND d.objid = $P{depositid}
+  
+[postDepositByCashier]
+UPDATE deposit d, liquidationrcd l, revenue rev  set 
+	rev.docstate = 'DEPOSITED', 
+	rev.depositid = d.objid, 
+	rev.depositno  = d.txnno,
+	rev.depositdate = d.dtposted,
+	rev.deposittimestamp = $P{timestamp} 
+WHERE d.objid = l.depositid 
+  AND l.objid = rev.liquidationrcdid  
+  AND d.objid = $P{depositid} 

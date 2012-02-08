@@ -114,18 +114,13 @@ SELECT
  FROM afinventory  
 WHERE docstate = 'OPEN' 
 
+
 [getAFInventoryStateClosed]
 SELECT i.* FROM afinventory i  
 INNER JOIN afinventorycredit c ON c.afinventoryid = i.objid  
 WHERE i.docstate = 'CLOSED' 
  AND c.docstate = 'OPEN' 
  
-[getAfICreditByParentIdOpenX]  
-SELECT  
- * 
-FROM afinventorycredit   
-WHERE afinventoryid = $P{afinventoryid}  
- AND docstate = 'OPEN' 
  
 [getAfICreditByParentIdOpen]  
 SELECT  
