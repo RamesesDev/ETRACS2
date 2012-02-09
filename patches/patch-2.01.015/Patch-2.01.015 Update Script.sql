@@ -60,6 +60,8 @@ CREATE TABLE bppayment (
 	iqtr INT,
 	imonth INT,
 	iday INT,
+	paidyear INT,
+	paidqtr INT,
 	lobid VARCHAR(50),
 	lobname VARCHAR(50),
 	acctid VARCHAR(50),
@@ -71,6 +73,14 @@ CREATE TABLE bppayment (
 	total DECIMAL(10, 2),
 	voided INT
 );
+
+create index ix_bppayment_applicationid on bppayment( applicationid );
+create index ix_bppayment_txndate on bppayment( txndate );
+create index ix_bppayment_receiptid on bppayment( receiptid );
+
+alter table bppayment add column paidyear int not null;
+alter table bppayment add column paidqtr int not null;
+
 
 /* ------------------------------------------------------------------
 *
