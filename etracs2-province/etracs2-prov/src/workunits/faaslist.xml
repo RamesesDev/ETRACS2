@@ -8,101 +8,156 @@
     </invokers>
     
     <code>
-        <![CDATA[
-        
-        import com.rameses.rcp.common.*
-        import com.rameses.rcp.annotations.*
-        import com.rameses.osiris2.client.*
-        
-        public class FAASListController 
-        {
-            @Service("ProvinceFAASService")
-            def svc
-            
-            @Service("ProvinceFAASHtmlService")
-            def htmlService
-            
-            @Binding
-            def binding
-            
-            @FormTitle
-            def title = "FAAS for Review"
-        
-            def state = "FORPROVAPPROVAL"
-            def selectedItem
-            def search = [:]
-            
-            public void initForReview() {
-                init( "FORPROVAPPROVAL", "FAAS for Review" )
-            }
-            
-            public void initForApproval() {
-                init( "FORAPPROVAL", "FAAS for Approval" )
-            }
-            
-            public void initCurrent() {
-                init( "CURRENT", "Current FAAS" )
-            }
-            
-            public void doSearch() {
-                listHandler.load()
-            }
-            
-            public def open() {
-                return doOpen( selectedItem )
-            }
-            
-            def listHandler = [
-                getRows    : { return 25 },
-                getColumns : {
-                    return [
-                        new Column( name:"munidistrict", caption:"Municipality", width:120),
-                        new Column( name:"fullpin", caption:"PIN", width:150),
-                        new Column( name:"tdno", caption:"TD No.", width:120),
-                    ]
-                },
-                fetchList  : { 
-                    search.docstate = state
-                    return svc.getList( search, it )  
-                },
-                onOpenItem : { item, colname -> doOpen(item) }
-            ] as PageListModel
-        
-            def refreshHandler = {
-                listHandler.load()
-                binding.refresh()
-            } 
-            
-            public def getHtml() {
-                if( selectedItem ) {
-                    if( ! selectedItem.html ) {
-                        selectedItem.html = htmlService.getHtml( selectedItem.objid )
-                    }
-                    return selectedItem.html
-                }
-                return "No record or item selected..."
-                
-            } 
-            
-            public def showAttachment( params ) {
-                def data = params.split("~~")
-                def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] )
-                opener.caption = "Attachment: " + data[1]
-                return opener
-            }
-            
-            private void init( state, title ) {
-                this.state = state
-                this.title = title
-            }
-            
-            private def doOpen( item ) {
-                return InvokerUtil.lookupOpener("faas.open", [ faas: item, listRefreshHandler:refreshHandler] )
-            }
-            
-        }
+<![CDATA[
 
-        ]]>
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import com.rameses.rcp.framework.TaskManager;
+
+public class FAASListController 
+{
+    @Service("ProvinceFAASService")
+    def svc
+
+    @Service("ProvinceFAASHtmlService")
+    def htmlService
+
+    @Binding
+    def binding
+
+    @FormTitle
+    def title = "FAAS for Review"
+
+    def state = "FORPROVAPPROVAL"
+    def selectedItem
+    def search = [:]
+
+    def taskmgr
+    def timertask
+
+    public void initForReview() {
+        init( "FORPROVAPPROVAL", "FAAS for Review" )
+        loadRefreshTimer()
+    }
+
+    public void initForApproval() {
+        init( "FORAPPROVAL", "FAAS for Approval" )
+        loadRefreshTimer()
+    }
+
+    public void initCurrent() {
+        init( "CURRENT", "Current FAAS" )
+    }
+
+    public void doSearch() {
+        listHandler?.load()
+    }
+
+    public def open() {
+        return doOpen( selectedItem )
+    }
+
+    def listHandler = [
+        getRows    : { return 25 },
+        getColumns : {
+            return [
+                new Column( name:"munidistrict", caption:"Municipality", width:120),
+                new Column( name:"fullpin", caption:"PIN", width:150),
+                new Column( name:"tdno", caption:"TD No.", width:120),
+            ]
+        },
+        fetchList  : { 
+            search.docstate = state
+            return svc.getList( search, it )  
+        },
+        onOpenItem : { item, colname -> doOpen(item) }
+    ] as PageListModel
+
+    def refreshHandler = {
+        listHandler.load()
+        binding.refresh()
+    } 
+
+    public def getHtml() {
+        if( selectedItem ) {
+            if( ! selectedItem.html ) {
+                selectedItem.html = htmlService.getHtml( selectedItem.objid )
+            }
+            return selectedItem.html
+        }
+        return "No record or item selected..."
+
+    } 
+
+    public def showAttachment( params ) {
+        def data = params.split("~~")
+        def opener = InvokerUtil.lookupOpener("file:download", [fileName:data[2]] )
+        opener.caption = "Attachment: " + data[1]
+        return opener
+    }
+
+    private void init( state, title ) {
+        this.state = state
+        this.title = title
+    }
+
+    private def doOpen( item ) {
+        return InvokerUtil.lookupOpener("faas.open", [ faas: item, listRefreshHandler:refreshHandler] )
+    }
+
+    def ontimer = {
+        search = [:]
+        doSearch()
+        println 'refreshing...'
+    }
+
+    void loadRefreshTimer() {
+        println 'Loading Refresh Timer...' 
+        taskmgr = new TaskManager()
+        timertask = new RefreshTimerTask( ontimer:ontimer )
+        taskmgr.addTask( timertask )
+        taskmgr.start()
+    }
+    
+    @Close
+    void onCloseWindow() {
+        timertask.setCancelled( true ) 
+        taskmgr.removeTask( timertask )
+        taskmgr.stop()
+        taskmgr = null 
+    }
+
+}
+        
+class RefreshTimerTask extends com.rameses.rcp.common.Task {
+    def ontimer //handler 
+    def ended = false
+    def cancelled = false
+    
+    public boolean accept() {
+       return !ended && !cancelled 
+    }
+    
+    public boolean isEnded() {
+        return ended || cancelled 
+    }
+
+    public void execute() {
+        while( !ended && !cancelled ) {
+            try {
+                Thread.sleep( 5000 )
+            }
+            catch( e ) {
+                // ignore 
+            }
+            if( ontimer ) ontimer() 
+        }
+    }
+    
+}        
+
+]]>
         
     </code>
     

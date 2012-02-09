@@ -143,3 +143,4 @@ create index ix_receiptitem_liquidationrcdid on receiptitem(liquidationrcdid );
 alter table revenue add column liquidationrcdid varchar(50);
 create index ix_revenue_liquidationrcdid on revenue(liquidationrcdid );
 
+alter table faaslist add column message text;
