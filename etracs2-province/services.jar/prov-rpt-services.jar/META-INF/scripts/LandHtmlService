@@ -1,0 +1,313 @@
+import com.rameses.annotations.*
+import groovy.text.SimpleTemplateEngine
+
+class LandHtmlService
+{
+
+	@Service("NumberService")
+	def numberService
+
+	@ProxyMethod
+	public def buildLandHtml(def faas){
+		def assessment = buildLandAssessment( faas )
+		def adjustment = buildLandAdjustments( faas )
+        def actualuseadjustment = buildLandActualUseAdjustment( faas )
+        def planttree = buildPlantTree( faas )
+		return """
+			<table>
+				<tr><td>$assessment</td></tr>
+				<tr><td>$adjustment</td></tr>
+                <tr><td>$actualuseadjustment</td></tr>
+                <tr><td>$planttree</td></tr>
+			</table>
+		"""
+	}
+   
+	private def buildLandAssessment( faas ) {
+		def rpuInfo = faas.rpu.info
+		def html = """
+		<table>
+			<tr>
+				<td class="title"><b>ASSESSMENT DETAIL</td>
+			</tr>
+			
+			<tr>
+			<td>
+				<table width="100%" cellspacing="1">
+					<tr>
+						<td class="caption">Classification</td>
+						<td class="data">$faas.rpu.classname</td>
+					</tr>
+					<tr>
+						<td class="caption">Taxability</td>
+						<td class="data">${faas.rpu.taxable == true ? 'TAXABLE' : 'EXEMPT'}</td>
+					</tr>
+				</table>
+			</td>
+			</tr>
+		"""
+		
+		html += """
+			<tr>
+			<td width="100%">
+				<div style="background-color:silver">
+				<table width="100%" cellspacing="1">
+					<tr>
+						<th>Classification</th>
+						<th>Specific Class</th>
+						<th>SubClass</th>
+						<th>Actual Use</th>
+						<th>Area (sqm)</th>
+						<th>Area (ha)</th>
+						<th>Strip</th>
+						<th>Unit Value</th>
+						<th>Adjustment</th>
+						<th>Market Value</th>
+						<th>Adj Market Value</th>
+						<th>Assess Level</th>
+						<th>Assessed Value</th>
+					</tr>			
+		"""
+		
+		rpuInfo.landdetails.each {
+			def areaSqm = numberService.format("#,##0.00", it.areasqm )
+			def areaHec = numberService.format("#,##0.0000", it.areaha)
+			def unitValue = numberService.format("#,##0.00", it.unitvalue )
+			def totalAdjustment = numberService.format("#,##0.00", it.actualuseadjustment )
+			def baseMarketValue = numberService.format("#,##0.00", it.basemarketvalue )
+			def marketValue = numberService.format("#,##0.00", it.marketvalue )
+			def assessLevel = numberService.format("#,##0", it.assesslevel )
+			def assessedValue = numberService.format("#,##0.00", it.assessedvalue)
+			
+			html += """
+				<tr>
+					<td>$faas.rpu.classcode</td>
+					<td>$it.specificclasscode</td>
+					<td>$it.subclasscode</td>
+					<td>$it.actualusecode</td>
+					<td class="numeric">$areaSqm</td>
+					<td class="numeric">$areaHec</td>
+					<td>${it.striplevel == null ? "" : it.striplevel}</td>
+					<td class="numeric">$unitValue</td>
+					<td class="numeric">$totalAdjustment</td>
+					<td class="numeric">$baseMarketValue</td>
+					<td class="numeric">$marketValue</td>
+					<td align="center" class="numeric">$assessLevel</td>
+					<td class="numeric">$assessedValue</td>
+				</tr>
+			"""
+		}
+		
+		def areaSqm = numberService.format("#,##0.00", rpuInfo.landtotal.areasqm )
+        
+        def areaHa   = numberService.format("#,##0.0000", rpuInfo.landtotal.areaha)
+		def totalBMV = numberService.format("#,##0.00", rpuInfo.landtotal.basemarketvalue)
+		def totalMV = numberService.format("#,##0.00", rpuInfo.landtotal.marketvalue)
+		def totalAV = numberService.format("#,##0.00", rpuInfo.landtotal.assessedvalue)
+		    
+		html += """
+					<tr>
+						<td colspan="4" align="right"><b>TOTALS</td>
+						<td class="numeric"><b>$areaSqm</td>
+						<td class="numeric"><b>$areaHa</td>
+						<td colspan="3"></td>
+						<td class="numeric"><b>$totalBMV</td>
+						<td class="numeric"><b>$totalMV</td>
+						<td></td>
+						<td class="numeric"><b>$totalAV</td>
+					</tr>
+				</table>
+				</div>
+			</td>
+			</tr>
+		</table>
+		"""
+		return html
+	}
+	
+	private def buildLandAdjustments( faas ) {
+		def rpuInfo = faas.rpu.info
+		
+		if( rpuInfo.adjustments?.size() == 0 ) {
+			return ""
+		}
+			
+		def html = """
+			<tr>
+			<td>
+				<table width="100%">
+					<tr>
+						<td><b><u>Land Adjustments:</u></b></td>
+					</tr>
+					<tr>
+						<td>
+						<div style="background-color:silver">
+						<table width="100%" cellspacing="1">
+							<tr>
+								<th>Code</th>
+								<th>Adjustment Name</th>
+								<th>Computation</th>
+                                <th>Adjustment</th>
+							</tr>
+		"""
+		
+		rpuInfo.adjustments.each {
+			html += """
+				<tr>
+					<td style="text-align:center" >$it.adjtypecode</td>
+					<td>$it.adjtypename</td>
+					<td style="text-align:center">$it.expr</td>
+                    <td style="text-align:right">$it.adjustment</td>
+				</tr>
+			"""
+		}
+		
+		html += """
+						</table>
+						</div>
+						<td>
+					</tr>
+				</table>
+			</td>
+			</tr>
+		"""
+		return html
+	}
+ 
+    private def buildLandActualUseAdjustment( faas ) {
+        def landdetails= faas.rpu.info.landdetails 
+        if( ! landdetails  ) {
+			return ""
+		}
+		
+        def auadjustment = ""
+        landdetails.each { ld ->
+            ld.adjustments?.each { adj ->    
+                auadjustment += """
+                    <tr>
+                        <td>$ld.actualusename</td>
+                        <td style="text-align:center" >$adj.adjtypecode</td>
+                        <td>$adj.adjtypename</td>
+                        <td style="text-align:center">$adj.expr</td>
+                        <td style="text-align:right">$adj.adjustment</td>
+                    </tr>
+                """
+            }
+        }
+        if( ! auadjustment ) return ''
+		def html = """
+			<tr>
+			<td>
+				<table width="100%">
+					<tr>
+						<td><b><u>Land Actual Use Adjustments:</u></b></td>
+					</tr>
+					<tr>
+						<td>
+                            <div style="background-color:silver">
+                            <table width="100%" cellspacing="1">
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Adjustment Name</th>
+                                    <th>Computation</th>
+                                    <th>Adjustment</th>
+                                </tr>
+                                $auadjustment
+                            </table>
+                            </div>
+						<td>
+					</tr>
+				</table>
+			</td>
+			</tr>
+		"""
+		return html
+	}
+    
+    
+    private def buildPlantTree( faas ) {
+		def rpuInfo = faas.rpu.info
+        if( ! rpuInfo.planttrees ) {
+            return ""
+        }
+        
+		def html = """
+		<table>
+			<tr>
+                <td><b><u>Plant/Tree Assessment</u></b></td>
+            </tr>
+		"""
+		
+		html += """
+            <tr>
+			<td width="100%">
+				<div style="background-color:silver">
+				<table width="100%" cellspacing="1">
+					<tr>
+						<th>Assessment</th>
+                        <th>Plant/Tree</th>
+						<th>Bearing</th>
+						<th>Non-Bearing</th>
+						<th>Unit Value</th>
+						<th>Base Market Value</th>
+                        <th>Adjustment</th>
+						<th>Market Value</th>
+						<th>Assess Level</th>
+						<th>Assessed Value</th>
+					</tr>			
+		"""
+		
+		rpuInfo.planttrees.each {
+			def bearing = numberService.format("#,##0", it.bearing )
+			def nonbearing = numberService.format("#,##0", it.nonbearing)
+			def unitvalue = numberService.format("#,##0.00", it.unitvalue )
+			def adjustment = numberService.format("#,##0.00", it.adjustment )
+			def basemarketvalue = numberService.format("#,##0.00", it.basemarketvalue )
+			def marketvalue  = numberService.format("#,##0.00", it.marketvalue )
+			def assesslevel = numberService.format("#,##0", it.assesslevel )
+			def assessedvalue = numberService.format("#,##0.00", it.assessedvalue)
+			
+			html += """
+				<tr>
+					<td>$it.assesslevelname</td>
+					<td>$it.planttreename</td>
+					<td class="numeric">$bearing</td>
+					<td class="numeric">$nonbearing</td>
+					<td class="numeric">$unitvalue</td>
+					<td class="numeric">$basemarketvalue</td>
+                    <td class="numeric">$adjustment</td>
+					<td class="numeric">$marketvalue</td>
+					<td align="center" class="numeric">$assesslevel</td>
+					<td class="numeric">$assessedvalue</td>
+				</tr>
+			"""
+		}
+		
+		def bearing = numberService.format("#,##0.00", rpuInfo.planttotal.bearing )
+        def nonbearing   = numberService.format("#,##0.0000", rpuInfo.planttotal.nonbearing)
+		def totalBMV = numberService.format("#,##0.00", rpuInfo.planttotal.basemarketvalue)
+        def totalAdjustment = numberService.format("#,##0.00", rpuInfo.planttotal.adjustment)
+		def totalMV = numberService.format("#,##0.00", rpuInfo.planttotal.marketvalue)
+		def totalAV = numberService.format("#,##0.00", rpuInfo.planttotal.assessedvalue)
+		    
+		html += """
+					<tr>
+						<td colspan="2" align="right"><b>TOTALS</td>
+						<td class="numeric"><b>$bearing</td>
+						<td class="numeric"><b>$nonbearing</td>
+                        <td></td>
+						<td class="numeric"><b>$totalBMV</td>
+                        <td class="numeric"><b>$totalAdjustment</td>
+						<td class="numeric"><b>$totalMV</td>
+                        <td></td>
+						<td class="numeric"><b>$totalAV</td>
+					</tr>
+				</table>
+				</div>
+			</td>
+			</tr>
+		</table>
+		"""
+		return html
+	}
+}

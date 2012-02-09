@@ -1,0 +1,80 @@
+import com.rameses.annotations.*
+import groovy.text.SimpleTemplateEngine
+
+class PlantTreeHtmlService
+{
+   
+	@Service("NumberService")
+	def numberService
+
+	@ProxyMethod
+	public def buildHtml(def faas){
+		def planttree = buildPlantTree( faas )
+		return """
+			<table>
+				<tr><td>$planttree</td></tr>
+			</table>
+		"""
+	}
+   
+    private def buildPlantTree( faas ) {
+		def rpuInfo = faas.rpu.info
+        if( ! rpuInfo.planttreedetails ) {
+            return ""
+        }
+        
+		def html = """
+		<table>
+			<tr>
+                <td><b><u>Plant/Tree Assessment</u></b></td>
+            </tr>
+		"""
+		
+		html += """
+            <tr>
+			<td width="100%">
+				<div style="background-color:silver">
+				<table width="100%" cellspacing="1">
+					<tr>
+						<th>Assessment</th>
+                        <th>Plant/Tree</th>
+						<th>Bearing</th>
+						<th>Non-Bearing</th>
+						<th>Unit Value</th>
+						<th>Base Market Value</th>
+                        <th>Adjustment</th>
+						<th>Market Value</th>
+						<th>Assess Level</th>
+						<th>Assessed Value</th>
+					</tr>			
+		"""
+		
+		rpuInfo.planttreedetails.each {
+			def bearing = numberService.format("#,##0", it.bearing )
+			def nonbearing = numberService.format("#,##0", it.nonbearing)
+			def unitvalue = numberService.format("#,##0.00", it.unitvalue )
+			def adjustment = numberService.format("#,##0.00", it.adjustment )
+			def basemarketvalue = numberService.format("#,##0.00", it.basemarketvalue )
+			def marketvalue  = numberService.format("#,##0.00", it.marketvalue )
+			def assesslevel = numberService.format("#,##0", it.assesslevel )
+			def assessedvalue = numberService.format("#,##0.00", it.assessedvalue)
+			
+			html += """
+				<tr>
+					<td>$it.assesslevelname</td>
+					<td>$it.planttreename</td>
+					<td class="numeric">$bearing</td>
+					<td class="numeric">$nonbearing</td>
+					<td class="numeric">$unitvalue</td>
+					<td class="numeric">$basemarketvalue</td>
+                    <td class="numeric">$adjustment</td>
+					<td class="numeric">$marketvalue</td>
+					<td align="center" class="numeric">$assesslevel</td>
+					<td class="numeric">$assessedvalue</td>
+				</tr>
+			"""
+		}
+		
+		return html
+	}
+}

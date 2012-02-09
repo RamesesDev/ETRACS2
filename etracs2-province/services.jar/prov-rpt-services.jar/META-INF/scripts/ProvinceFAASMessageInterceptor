@@ -19,22 +19,14 @@ class ProvinceFAASMessageInterceptor
         def msg = evt.result 
         if( msg.action == 'faas.receive') {
             def faas = msg.data.faas 
-            
-            def oldfaas = em.sqlContext.createNamedQuery('faas:getState').setParameters( faas ).singleResult 
-            if( ! oldfaas ) {
-                em.create( faas.schemaname, faas )
-                em.create( LISTSCHEMA_NAME, faas )
-            }
-            
-            //insert attachments 
-            def attachmentschema = 'faas:faasattachment'
-            msg.data.attachments.each { 
-                def oldattachment = em.read( attachmentschema, it )
-                if( !oldattachment ) {
-                    em.create(attachmentschema, it )
-                }
-            }
-            
+            em.create( faas.schemaname, faas )
+            em.create( LISTSCHEMA_NAME, faas )
+			
+			// save attachments
+			msg.data.attachments.each { attachment -> 
+				em.create('faas:faasattachment', attachment )
+			}
+			
 			msg.message =[date:new Date(), status:'Processed successfully.']
 			em.update( msg.schemaname, msg )
             logSvc.log('ONLINE-RECEIVED', 'FAAS', faas.objid);
