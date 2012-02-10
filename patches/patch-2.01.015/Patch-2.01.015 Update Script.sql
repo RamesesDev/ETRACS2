@@ -144,3 +144,7 @@ alter table revenue add column liquidationrcdid varchar(50);
 create index ix_revenue_liquidationrcdid on revenue(liquidationrcdid );
 
 alter table faaslist add column message text;
+
+alter table bldgrysetting add column straightdepreciation int not null;
+update bldgrysetting set straightdepreciation = 1 ;
+

@@ -128,6 +128,7 @@ public class BldgRYSettingService
 		entity.fixrate = ( entity.fixrate ) ? 1 : 0
 		entity.depreciatecoreanditemseparately = ( entity.depreciatecoreanditemseparately ) ? 1 : 0
 		entity.computedepreciationbasedonschedule = ( entity.computedepreciationbasedonschedule ) ? 1 : 0
+		entity.straightdepreciation = ( entity.straightdepreciation ) ? 1 : 0
 
         validate( entity )
         em.update( entity.schemaname, entity, { diff ->
@@ -138,7 +139,7 @@ public class BldgRYSettingService
 		entity.fixrate = ( entity.fixrate == 1 )
 		entity.depreciatecoreanditemseparately = ( entity.depreciatecoreanditemseparately == 1 )
 		entity.computedepreciationbasedonschedule = ( entity.computedepreciationbasedonschedule == 1)
-		
+		entity.straightdepreciation = ( entity.straightdepreciation == 1)
         return entity 
     }
     
@@ -149,6 +150,13 @@ public class BldgRYSettingService
         entity.predominant = (entity.predominant == 1 )
         entity.depreciatecoreanditemseparately = (entity.depreciatecoreanditemseparately  == 1)
         entity.computedepreciationbasedonschedule = (entity.computedepreciationbasedonschedule == 1)
+		
+		if( entity.straightdepreciation ) {
+			entity.straightdepreciation = ( entity.straightdepreciation == 1 )
+		} else {
+			entity.straightdepreciation = true
+		}
+		
         entity.assesslevels = loadAssessLevels( objid ) 
         entity.additionalitems = loadAdditionalItems( objid ) 
         entity.bldgtypes = loadBldgTypes( objid ) 

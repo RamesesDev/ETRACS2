@@ -341,17 +341,80 @@ class BldgRPUService
         floor.basemarketvalue   = numberSvc.round( floor.area * floor.unitvalue * percentcompleted )
         floor.adjustment        = calculateTotalFloorAdditionals( floor )
         floor.depreciationvalue = 0.0
-        if( bldgtype.depreciatecoreanditemseparately ){
-            floor.depreciationvalue = numberSvc.round( floor.basemarketvalue * depreciation / 100  )
-        }
-        else {
-            floor.depreciationvalue = numberSvc.round( (floor.basemarketvalue + floor.adjustment )* depreciation / 100  )
-        }
+		
+		if( bldgtype.straightdepreciation ) {
+			calculateStraightDepreciation( rpu, bldgtype, floor, depreciation )
+		}
+		else {
+			calculateStaggeredDepreciation( rpu, bldgtype, floor )
+		}
         floor.marketvalue       = floor.basemarketvalue + floor.adjustment - floor.depreciationvalue 
         floor.assesslevel       = 0.00
         floor.assessedvalue     = 0.00
         return floor 
     }
+	
+	void calculateStraightDepreciation( rpu, bldgtype, floor, depreciation ) {
+		def valuefordepreciation = floor.basemarketvalue
+		if( ! bldgtype.depreciatecoreanditemseparately ) {
+			valuefordepreciation = floor.basemarketvalue + floor.adjustment
+		}
+		floor.depreciationvalue = numberSvc.round( valuefordepreciation * depreciation / 100  )
+	}
+	
+	void calculateStaggeredDepreciation( rpu, bldgtype, floor ) {
+		def valuefordepreciation = floor.basemarketvalue
+		if( ! bldgtype.depreciatecoreanditemseparately ) {
+			valuefordepreciation = floor.basemarketvalue + floor.adjustment
+		}
+		
+		if( ! rpu.issuedate ) return 
+		if( ! rpu.info.dtcompleted ) return 
+		if( ! rpu.info.dtoccupied ) return 
+		
+		def issuedate = dateSvc.parse( 'yyyy-MM-dd', rpu.issuedate )
+        def dtcompleted = dateSvc.parse( 'yyyy-MM-dd', rpu.info.dtcompleted)
+        def dtoccupied = dateSvc.parse( 'yyyy-MM-dd', rpu.info.dtoccupied)
+		
+        if( ! bldgtype.depreciations ) throw new Exception('Depreciation schedule for Type ' + bldgtype.bldgtypecode + ' is not defined.')
+		def depreciationrate = 0
+        
+		def totaldepreciationrate 	= 0.0
+		floor.depreciationvalue 	= 0.0 
+		def depreciationvalue 		= 0.0 
+		int bldgage 				= calculateBldgAge( issuedate, dtcompleted, dtoccupied )
+		def maxdepreciation			= 100 - bldgtype.residualrate 
+		
+        if( bldgage > 0 )  {
+            for ( sked in bldgtype.depreciations ) {
+                if( sked.ageto != 0 && sked.ageto <= bldgage ) {
+					depreciationrate  		 = (sked.ageto - sked.agefrom + 1) * sked.rate
+					
+					//adjust for residual rate
+					if( totaldepreciationrate + depreciationrate > maxdepreciation ) {
+						depreciationrate = maxdepreciation - totaldepreciationrate 
+					}
+					
+					totaldepreciationrate 	+= depreciationrate 
+					depreciationvalue 		 = numberSvc.round( valuefordepreciation * depreciationrate / 100  )
+					floor.depreciationvalue += depreciationvalue 
+					valuefordepreciation 	-= depreciationvalue 
+				}
+				else {
+					depreciationrate = (bldgage - sked.agefrom + 1) * sked.rate
+					
+					//adjust for residual rate
+					if( totaldepreciationrate + depreciationrate > maxdepreciation ) {
+						depreciationrate = maxdepreciation - totaldepreciationrate 
+					}
+					depreciationvalue 		 = numberSvc.round( valuefordepreciation * depreciationrate / 100  )
+					floor.depreciationvalue += depreciationvalue 
+					break
+				}
+			}
+		}
+		
+	}
     
     @ProxyMethod
     public def recalcAdditionalItemAmount( floor, addlitem ) {
