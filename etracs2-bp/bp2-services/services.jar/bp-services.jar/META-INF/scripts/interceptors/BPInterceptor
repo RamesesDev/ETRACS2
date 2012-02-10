@@ -1,0 +1,80 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class BPInterceptor {
+
+	@Service("LogService")
+	def logService
+	
+	@After( pattern="BPApplicationService.approveApplication" ) 
+	public void afterApproveApplication( def evt ){
+		def bpapplication = evt.result
+		
+		logService.logA( "APPROVE", "BPApplication", bpapplication.objid, bpapplication.txntype )
+	}
+		
+	@After( pattern="BusinessMgmtService.releasePermit" ) 
+	public void afterReleasePermit( def evt ){
+		def bppermit = evt.result
+		
+		logService.log( "RELEASE", "BPPermit", bppermit.objid )
+	}
+		
+	@After( pattern="LobAttributeService.create" ) 
+	public void afterCreateLOBAttribute( def evt ){
+		def lob = evt.result
+		
+		logService.log( "CREATE", "LOBAttribute", lob.objid )
+	}
+	
+	@After( pattern="LobAttributeService.update" ) 
+	public void afterUpdateLOBAttribute( def evt ){
+		def lob = evt.result
+		
+		logService.log( "UPDATE", "LOBAttribute", lob.objid )
+	}
+	
+	@After( pattern="LobAttributeService.delete" ) 
+	public void afterDeleteLOBAttribute( def evt ){
+		def lob = evt.result
+		
+		logService.log( "DELETE", "LOBAttribute", lob.objid )
+	}
+	
+	@After( pattern="BusinessTxnService.createChangeAddress" ) 
+	public void afterCreateChangeAddress( def evt ){
+		def bptxn = evt.result
+		
+		logService.logA( "CREATE", "BPTxn", bptxn.objid, bptxn.txntype )
+	}
+	
+	@After( pattern="BusinessTxnService.createChangeAdmin" )
+	public void afterCreateChangeAdmin( def evt ){
+		def bptxn = evt.result
+		
+		logService.logA( "CREATE", "BPTxn", bptxn.objid, bptxn.txntype )
+	}
+	
+	@After( pattern="BusinessTxnService.createChangePermittee" )
+	public void afterCreateChangePermittee( def evt ){
+		def bptxn = evt.result
+		
+		logService.logA( "CREATE", "BPTxn", bptxn.objid, bptxn.txntype )
+	}
+	
+	@After( pattern="BusinessTxnService.createChangeTradename" )
+	public void afterChangeTradename( def evt ){
+		def bptxn = evt.result
+		
+		logService.logA( "CREATE", "BPTxn", bptxn.objid, bptxn.txntype )
+	}
+	
+	@After( pattern="BPSettingService.save" )
+	public void afterUpdateBPSetting( def evt ){
+		def bpsetting = evt.result
+		
+		logService.log( "UPDATE", "BPSetting", bpsetting.objid )
+	}
+		
+}

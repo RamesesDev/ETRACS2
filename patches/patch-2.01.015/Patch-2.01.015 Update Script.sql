@@ -81,7 +81,6 @@ create index ix_bppayment_receiptid on bppayment( receiptid );
 alter table bppayment add column paidyear int not null;
 alter table bppayment add column paidqtr int not null;
 
-
 /* ------------------------------------------------------------------
 *
 * MULTI-CASHIER SUPPORT 
@@ -147,4 +146,3 @@ alter table faaslist add column message text;
 
 alter table bldgrysetting add column straightdepreciation int not null;
 update bldgrysetting set straightdepreciation = 1 ;
-

@@ -35,11 +35,26 @@ class BPApplicationService{
 		em.update( SCHEMANAME, attribute );
 		return attribute;
 	}
-
+ 
 	@ProxyMethod
-	public void delete(def attribute){
+	public def delete(def attribute){
 		if( !em.read( SCHEMANAME, [objid: attribute.objid] ) ) 
 			throw new Exception("Attribute is no longer exist.");
+		checkAttribInUsed( attribute )
 		em.delete( SCHEMANAME, attribute );
+		return attribute 
+	}
+	
+	private void checkAttribInUsed( def attribute ){
+		em.sqlContext.createNamedQuery( 'rule:getRuleConditions' ).resultList.each{ cond ->
+			em.serializer.read( cond.conditions ).findAll{ it.attributes }.each{ attrib ->
+				attrib.attributes.each{
+					if( attribute.name.equals( it.name ) )
+						throw new Exception( 'Delete not allowed. Attribute has already been referenced.' )
+				}
+				
+			}
+
+		}
 	}
 }

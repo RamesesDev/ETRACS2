@@ -65,3 +65,12 @@ LEFT JOIN account p1 ON p.parentid = p1.objid
 LEFT JOIN account p2 ON p1.parentid = p2.objid 
 WHERE ic.docstate = 'APPROVED' 
 GROUP BY p2.acctcode, p2.accttitle, p1.acctcode, p1.accttitle, p.acctcode, p.accttitle, ic.acctno, ic.accttitle
+
+
+
+
+[getAccttitleAtRule]
+SELECT ruletext  
+FROM rule 
+WHERE ruletext LIKE $P{acctid} 
+

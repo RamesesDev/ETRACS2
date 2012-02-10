@@ -24,10 +24,26 @@ WHERE b.taxpayerid = $P{taxpayerid}
   AND bl.barangayid LIKE $P{barangayid}   
 ORDER BY b.tradename, b.taxpayername 
 
-[getApplicationsByBusinessId] 
+[getBusinessByTaxpayerIdTrade]
+SELECT b.*  
+FROM business b  
+	INNER JOIN bpapplicationlisting bl ON b.applicationid = bl.objid   
+WHERE b.taxpayerid = $P{taxpayerid}  
+  AND b.tradename = $P{tradename}   
+  AND bl.barangayid LIKE $P{barangayid} 
+  AND b.docstate in ('ACTIVE', 'EXPIRED')      
+ORDER BY b.tradename, b.taxpayername 
+
+[getApplicationsByBusinessId]  
 SELECT * FROM bpapplication 
 WHERE businessid = $P{businessid} 
 AND docstate IN ( 'APPROVED', 'ACTIVE', 'PERMIT_PENDING', 'EXPIRED' ) 
+ORDER BY txnno 
+
+[getApplicationsByBusinessIdNotActive]
+SELECT * FROM bpapplication 
+WHERE businessid = $P{businessid} 
+AND docstate NOT IN ( 'APPROVED', 'ACTIVE', 'PERMIT_PENDING', 'EXPIRED', 'RENEWED' ) 
 ORDER BY txnno 
 
 [getApplicationListByBusinessId] 
@@ -45,5 +61,11 @@ WHERE businessid = $P{businessid}
 UPDATE bpapplicationlisting 
 SET docstate = 'RENEWED' 
 WHERE businessid = $P{businessid} 
+
+[getBPApplicationById]
+SELECT 
+ * 
+FROM bpapplication  
+WHERE objid = $P{objid} 
 
 
