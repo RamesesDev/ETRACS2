@@ -35,8 +35,6 @@
 	<parameter name="MAYORNAME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="MAYORPOSITION" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="SignatoryItem" isForPrompting="false" class="java.lang.Object"/>
-	<parameter name="BPBillingBusiness" isForPrompting="false" class="java.lang.Object"/>
-	<parameter name="BPBillingBusinessItem" isForPrompting="false" class="java.lang.Object"/>
 
 	<field name="txnno" class="java.lang.String"/>
 	<field name="txndate" class="java.lang.String"/>
@@ -56,35 +54,31 @@
 	<field name="signatories" class="java.lang.Object"/>
 	<field name="barcodeurl" class="java.lang.String"/>
 	<field name="barcode" class="java.lang.String"/>
-	<field name="items" class="java.lang.Object"/>
 
 	<variable name="LIST" class="java.lang.Object" resetType="Report" calculation="Nothing">
 		<variableExpression><![CDATA[$F{regfees} + ""]]></variableExpression>
 	</variable>
 
-		<group  name="BPBillingBusiness" >
+		<group  name="BUSINESSTAX" >
 			<groupExpression><![CDATA[null]]></groupExpression>
 			<groupHeader>
-			<band height="27"  isSplitAllowed="true" >
+			<band height="28"  isSplitAllowed="true" >
 				<subreport  isUsingCache="true">
 					<reportElement
 						mode="Opaque"
-						x="0"
+						x="30"
 						y="0"
-						width="540"
+						width="487"
 						height="25"
 						forecolor="#000000"
 						backcolor="#FFFFFF"
 						key="subreport-1"
 						positionType="Float"/>
 					<subreportParameter  name="TITLE">
-						<subreportParameterExpression><![CDATA["BUSINESS TAXES"]]></subreportParameterExpression>
+						<subreportParameterExpression><![CDATA["TAXES"]]></subreportParameterExpression>
 					</subreportParameter>
-					<subreportParameter  name="BPBillingBusinessItem">
-						<subreportParameterExpression><![CDATA[$P{BPBillingBusinessItem}]]></subreportParameterExpression>
-					</subreportParameter>
-					<dataSourceExpression><![CDATA[$F{items}]]></dataSourceExpression>
-					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{BPBillingBusiness}]]></subreportExpression>
+					<dataSourceExpression><![CDATA[$F{taxes}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{AssessmentNonTax}]]></subreportExpression>
 				</subreport>
 			</band>
 			</groupHeader>
@@ -96,7 +90,25 @@
 		<group  name="REGULATORY_FEE" >
 			<groupExpression><![CDATA[null]]></groupExpression>
 			<groupHeader>
-			<band height="0"  isSplitAllowed="true" >
+			<band height="28"  isSplitAllowed="true" >
+				<subreport  isUsingCache="true">
+					<reportElement
+						mode="Opaque"
+						x="30"
+						y="0"
+						width="487"
+						height="25"
+						forecolor="#000000"
+						backcolor="#FFFFFF"
+						key="subreport-2"
+						positionType="Float"
+						isRemoveLineWhenBlank="true"/>
+					<subreportParameter  name="TITLE">
+						<subreportParameterExpression><![CDATA["REGULATORY FEES"]]></subreportParameterExpression>
+					</subreportParameter>
+					<dataSourceExpression><![CDATA[$F{regfees}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{AssessmentNonTax}]]></subreportExpression>
+				</subreport>
 			</band>
 			</groupHeader>
 			<groupFooter>
@@ -107,7 +119,25 @@
 		<group  name="OTHER_CHARGES" >
 			<groupExpression><![CDATA[null]]></groupExpression>
 			<groupHeader>
-			<band height="0"  isSplitAllowed="true" >
+			<band height="29"  isSplitAllowed="true" >
+				<subreport  isUsingCache="true">
+					<reportElement
+						mode="Opaque"
+						x="30"
+						y="0"
+						width="487"
+						height="25"
+						forecolor="#000000"
+						backcolor="#FFFFFF"
+						key="subreport-2"
+						positionType="Float"
+						isRemoveLineWhenBlank="true"/>
+					<subreportParameter  name="TITLE">
+						<subreportParameterExpression><![CDATA["OTHER CHARGES"]]></subreportParameterExpression>
+					</subreportParameter>
+					<dataSourceExpression><![CDATA[$F{charges}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{AssessmentNonTax}]]></subreportExpression>
+				</subreport>
 			</band>
 			</groupHeader>
 			<groupFooter>
@@ -383,7 +413,7 @@
 					<textElement textAlignment="Center" verticalAlignment="Top" rotation="None" lineSpacing="Single">
 						<font fontName="Tahoma" pdfFontName="Helvetica" size="10" isBold="true" isItalic="false" isUnderline="false" isPdfEmbedded ="false" pdfEncoding ="Cp1252" isStrikeThrough="false" />
 					</textElement>
-				<text><![CDATA[BUSINESS ASSESSMENT]]></text>
+				<text><![CDATA[ASSESSMENT]]></text>
 				</staticText>
 				<line direction="TopDown">
 					<reportElement

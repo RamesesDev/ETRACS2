@@ -19,18 +19,20 @@ class ConsolidatedReportService {
 	def schemaversion = "1.0"
 	
 	def cal = Calendar.getInstance()
-	
-	private def getAFIStateOpen(){
+	  
+	@ProxyMethod        
+	public def getAFIStateOpen(){
 	
 		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryStateOpen' ).resultList
 	}
 	
-	private def getAFIStateClosed(){
+	@ProxyMethod
+	public def getAFIStateClosed(){
 	
 		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryStateClosed' ).resultList
 	}
 	
-	private def getAFICStateOpen( afi ){
+	public def getAFICStateOpen( afi ){
 		
 		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAfICreditByParentIdOpen' )
 						.setParameter( 'afinventoryid', afi.afinventoryid ).resultList
@@ -56,6 +58,7 @@ class ConsolidatedReportService {
 		if( 'OPEN'.equals( afi.docstate ) ) 
 			buildCraaf( afi, null )
 	}
+	
 	
 	private void buildCraaf( afi, afic ){ 
 		def craaf = [:] 
@@ -92,8 +95,8 @@ class ConsolidatedReportService {
 		}
 		else{
 			craaf.beginqty = ( afi ) ? ( afi.qtyonhand * 2000 ) : afic.beginqty
-			craaf.beginfrom = null 
-			craaf.beginto = null
+			craaf.beginfrom = '-' 
+			craaf.beginto = '-'
 		}
 		
 		craaf.receivedqty = 0
@@ -103,9 +106,10 @@ class ConsolidatedReportService {
 		craaf.issuedfrom = null
 		craaf.issuedto = null
 		craaf.cancelqty = 0
-		craaf.endingqty = 0
-		craaf.endingfrom = null
-		craaf.endingto = null
+		
+		craaf.endingqty = craaf.beginqty 
+		craaf.endingfrom = craaf.beginfrom 
+		craaf.endingto = craaf.beginto 
 		craaf.stubno = ( afi ) ? null : afic.stubno
 		 
 		em.create( schemaname, craaf )
@@ -142,15 +146,8 @@ class ConsolidatedReportService {
 		postToCraaf()
 		def year = Integer.parseInt( entity.year );
 		def craaf = em.sqlContext.createNamedQuery('consolidatedreport:getReportDataGeneral').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
-		// remove existing collectorname in craaf
-		em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCollector')
-			.setParameters( [craafyear:year, craafmonth:entity.month] )
-			.resultList.each{ clctr ->
-				def found = craaf.find{ it.collectorid.equals( clctr.collectorid ) || it.collectorname.equals( clctr.collectorname ) }
-				clctr.collectorname = ( !found ) ? clctr.collectorname : null
-				craaf += clctr  
-		}
-		
+		craaf += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCollector')
+					.setParameters( [craafyear:year, craafmonth:entity.month] ).resultList
 		craaf += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCanceledSeries').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
 		craaf.each{
 			if( it.beginqty == 0 ) it.beginqty = null;
@@ -158,11 +155,17 @@ class ConsolidatedReportService {
 			if( it.issuedqty == 0 ) it.issuedqty = null;
 			if( it.endingqty == 0 ) it.endingqty = null;
 			
-			if( it.beginqty == it.endingqty || it.receivedqty == it.endingqty ){
-				it.endingqty = null;
-				it.endingfrom = null;
-				it.endingto = null;
+			def makeBlankBalance = { crf ->
+				crf.endingqty = null
+				crf.endingfrom = null
+				crf.endingto = null			
 			}
+			
+			if( it.beginqty == it.issuedqty && ( it.receivedqty == null || it.receivedqty == 0 ) )
+				makeBlankBalance( it )
+			else if( it.receivedqty == it.issuedqty  && ( it.beginqty == null || it.beginqty == 0) )
+				makeBlankBalance( it )						
+						
 		}
 		
 		return craaf

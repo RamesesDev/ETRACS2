@@ -158,7 +158,8 @@ class ProvinceFAASService
 		def sectionNo       = buildSectionNo( section )
 		def parcelNo        = buildParcelNo( newSeries )
 		def pin             = key + '-' + parcelNo
-		faas.rp.pin         = pin 
+		println 'pin -> ' + pin 
+        faas.rp.pin         = pin 
         faas.rpu.fullpin    = pin 
 		checkDuplicatePin( faas )
 		seqSvc.updateNextSeries( key, newSeries + 1)
@@ -201,7 +202,12 @@ class ProvinceFAASService
 	
 	
 	
+    @ProxyMethod
+    public List getAttachments( faasid ) {
+        return em.sqlContext.createNamedQuery('faas:getAttachments').setParameter('faasid', faasid).resultList
+    }
     
+	
     @ProxyMethod
     public void checkDuplicateTdNo( faasid, tdno ) {
         if( ! tdno ) return 
@@ -223,14 +229,24 @@ class ProvinceFAASService
 		def result = null
 		def docstate = search.docstate
 		def textSearch = search.textSearch
-		if( ! textSearch ) return getListByName('faas:findByState', [docstate:docstate], params)
-		if( (result = getListByName('faas:findByTdNo', [docstate:docstate, tdno:textSearch], params)) ) return result
-		if( (result = getListByName('faas:findByTaxpayerName', [docstate:docstate, taxpayername:textSearch], params)) ) return result
-		if( (result = getListByName('faas:findByPin', [docstate:docstate, pin:textSearch], params)) ) return result
-		if( (result = getListByName('faas:findByBarangay', [docstate:docstate, barangay:textSearch], params)) ) return result
-		if( (result = getListByName('faas:findByCadastralLotNo', [docstate:docstate, cadastrallotno:textSearch], params)) ) return result
-		if( (result = getListByName('faas:findBySurveyNo', [docstate:docstate, surveyno:textSearch], params)) ) return result
-		if( (result = getListByName('faas:findByBlockNo', [docstate:docstate, blockno:textSearch], params)) ) return result
+		def criteria = [
+			docstate 		: search.docstate,
+			tdno			: search.textSearch,
+			taxpayername 	: search.textSearch+'%',
+			pin 			: search.textSearch+'%',
+			barangay 		: search.textSearch,
+			cadastrallotno 	: search.textSearch,
+			surveyno 		: search.textSearch,
+			blockno 		: search.textSearch,
+		]
+		if( ! textSearch ) return getListByName('faas:findByState', criteria, params)
+		if( (result = getListByName('faas:findByTdNo', criteria, params)) ) return result
+		if( (result = getListByName('faas:findByTaxpayerName', criteria, params)) ) return result
+		if( (result = getListByName('faas:findByPin', criteria, params)) ) return result
+		if( (result = getListByName('faas:findByBarangay', criteria, params)) ) return result
+		if( (result = getListByName('faas:findByCadastralLotNo', criteria, params)) ) return result
+		if( (result = getListByName('faas:findBySurveyNo', criteria, params)) ) return result
+		if( (result = getListByName('faas:findByBlockNo', criteria, params)) ) return result
 		return result
 	}
 	
@@ -280,12 +296,6 @@ class ProvinceFAASService
 		
 		return result
 	}
-    
-    @ProxyMethod
-    public List getAttachments( faasid ) {
-        return em.sqlContext.createNamedQuery('faas:getAttachments').setParameter('faasid', faasid).resultList
-    }
-    
     
     /*---------------------------------------------------------------------------------
     * Support Methods
@@ -394,7 +404,8 @@ class ProvinceFAASService
         values.keySet().each {
             tdno = tdno.replace( it, values[it] )
         }
-        def seqno = seqSvc.getNextFormattedSeries( tdno )
+		
+		def seqno = seqSvc.getNextFormattedSeries( tdno )
         if( var.td_format.contains( '-') ) {
             return  tdno + '-' + seqno 
         }

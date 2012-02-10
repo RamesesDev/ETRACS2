@@ -56,7 +56,7 @@ WHERE c.afinventorycreditid = a.afinventorycreditid
   AND c.afinventorycreditid IS NOT NULL   
   AND craafmonth = $P{craafmonth}    
   AND craafyear = $P{craafyear}     
-ORDER BY c.collectorname, c.afid, c.beginfrom, c.receivedfrom  
+ORDER BY c.afid, a.startseries 
 
 [getReportDataCanceledSeries]
 SELECT c.collectorname, a.stubno, c.afid, c.canceledqty AS beginqty,    

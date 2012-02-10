@@ -11,6 +11,9 @@ class BPApplicationService{
 	@Service('BPBillingService')
 	def billingSvc;
 	
+	@Service('BPAssessmentReportService')
+	def assessmentSvc
+	
 	@Service( 'BPSettingService' )
 	def settingSvc;
 	
@@ -53,8 +56,8 @@ class BPApplicationService{
 	@ProxyMethod
 	public def save( def application ){
 		if( application.txndate && application.txnmode == 'CAPTURE' ){
+			application.iyear = dateService.getYear( application.txndate )
 			application.txndate = format( application.txndate, 'yyyy-MM-dd');
-			application.iyear = Integer.parseInt( format( application.txndate, 'yyyy' ) );
 		}
 		
 		if( application.txnmode == 'ONLINE' ){
@@ -85,7 +88,7 @@ class BPApplicationService{
 
 		for( it in application.lobs ){
 			if( it.assessmenttype.matches('NEW|ADDLOB') ) it.iyear = Integer.parseInt( format( dateService.serverDate, "yyyy") );
-			if( it.assessmenttype.matches('RENEW|LATE_RENEWAL') ) it.iyear = Integer.parseInt( format( application.txndate, "yyyy") );
+			if( it.assessmenttype.matches('RENEW|LATE_RENEWAL') ) it.iyear = dateService.getYear( application.txndate )
 			if( it.assessmenttype.matches('RETIRE|RETIRELOB') ) it.iyear == Integer.parseInt( format( application.txndate, "yyyy") );
 		}
 		
@@ -238,7 +241,6 @@ class BPApplicationService{
 	
 	@ProxyMethod
 	public def evaluateTxnType(def application){
-		
 		if( application.businessid ) txnSvc.checkReference( application.businessid );
 		
 		def txndate = dateService.serverDate;
@@ -335,7 +337,9 @@ class BPApplicationService{
 		  .setParameters( [parentid: app.objid] )
 		  .resultList.each{ 
 			it.info = em.serializer.read( it.info );
+			it.taxfees = em.serializer.read( it.taxfees )
 			applist.add( evaluateApplication( it ) ) ;
+			
 		};
 		
 		return applist;
@@ -431,7 +435,7 @@ class BPApplicationService{
 		em.update( SCHEMANAME, app );
 		return app;
 	}
-	
+		
 	@ProxyMethod
 	public def approveApplication( def appid, def applist, def requirements ){
 		def app = open( appid );
@@ -453,13 +457,12 @@ class BPApplicationService{
 			business.lastqtrpaid = 4;
 			business.lastyearpaid = app.iyear - 1;
 		}
-
+			
 		updateParentApplication( app );
-		 
+		app.receivables = buildReceivables( business , applist )		
 		em.update( BUSINESS_SCHEMA, business );
 		em.update( SCHEMANAME, app );
 		     
-		addReceivables( business , applist );
 		txnSvc.delete( business.objid );
 
 		if( app.txntype.matches('RETIRE|RETIRELOB') ){
@@ -468,7 +471,7 @@ class BPApplicationService{
 				app = bpService.retireApplication( app.objid );
 			}
 		}
-
+		
 		return app;
 	}
 	
@@ -514,6 +517,9 @@ class BPApplicationService{
 			acctid: it.acctid,
 			acctno: it.acctno,
 			accttitle: it.accttitle,
+			surcharge:0.0,
+			interest:0.0,
+			discount:0.0,
 			amount: numSvc.round( getAmount( ( qtr > qtrCount ? 1 : qtr ), qtrCount , it.amountdue ) ),
 			amtpaid: 0.0
 		]
@@ -521,7 +527,8 @@ class BPApplicationService{
 		return brc;
 	}
 	
-	void addReceivables( def business, def applist ){
+	private def buildReceivables( def business, def applist ){
+		def receivables = [] 
 		applist.each{ a ->
 			def app = open( a.objid );
 			def cQtr = dateService.getQtr( app.txndate );
@@ -542,8 +549,10 @@ class BPApplicationService{
 					app.receivables << createReceivable( cQtr, 1, business.objid, app, it );
 				}
 			}
-			em.update( SCHEMANAME, app );
+			receivables += app.receivables
 		}
+		
+		return receivables
 	}
 	
 	def getAssessmentType( app, taxfee ) {
@@ -774,4 +783,5 @@ class BPApplicationService{
 		}
 		return billingSvc.buildBill( bill );
 	}
+			
 }

@@ -1,0 +1,47 @@
+import com.rameses.annotations.*
+import groovy.text.SimpleTemplateEngine
+
+class MiscHtmlService
+{
+   @ProxyMethod
+   def buildMiscHTML(def faas) {
+      def bldg = [
+         [
+            title:'Assessment Detail',
+            cols:1,
+            tables:[
+               [
+                  title:'Miscellaneous Property Detail',
+                  cols:1,
+                  headers:[
+                     [name:'miscitemcode', caption:'Code'],
+                     [name:'miscitemname', caption:'Item Name'],
+                     [name:'basemarketvalue', caption:'Base Market Value'],
+                     [name:'depreciation', caption:'Depreciation'],
+                     [name:'depreciatedvalue', caption:'Depreciated Value'],
+                     [name:'marketvalue', caption:'Market Value'],
+                  ],
+                  items:[
+                     [miscitemcode:faas.rpu.info.miscrpuitems.miscitemcode],
+                     [miscitemname:faas.rpu.info.miscrpuitems.miscitemname],
+                     [basemarketvalue:faas.rpu.info.miscrpuitems.basemarketvalue],
+                     [depreciation:faas.rpu.info.miscrpuitems.depreciation],
+                     [depreciatedvalue:faas.rpu.info.miscrpuitems.depreciatedvalue],
+                     [marketvalue:faas.rpu.info.miscrpuitems.marketvalue],
+                  ],
+                  leftItems:'',
+                  data:'',
+                  rightItems:''
+                ],
+            ],
+            items:[
+               [caption:'Base Market Value', value:faas.rpu.totalbmv],
+               [caption:'Market Value', value:faas.rpu.totalmv],
+               [caption:'Assessed Value', value:faas.rpu.totalav],
+            ]
+         ]
+      ]
+      
+      return bldg
+   }
+}

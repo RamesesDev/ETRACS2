@@ -1,0 +1,322 @@
+import com.rameses.annotations.*
+import groovy.text.SimpleTemplateEngine
+
+class BldgHtmlService
+{
+
+	@Service("NumberService")
+	def numberService
+
+	@ProxyMethod
+	public def buildBldgHtml(def faas) {
+		def info = buildBldgInfo( faas )
+		def assessment = buildBldgAssessment( faas )
+		return """
+			<table width="100%">
+				<tr>
+					<td valign="top">$info</td>
+				</tr>
+				<tr>
+					<td valign="top">$assessment</td>
+				</tr>
+			</table>
+		"""
+	}
+   
+   private def buildBldgInfo( faas ) {
+		def info = faas.rpu.info
+		def structureList = ""
+		faas.rpu.bldgstructures.each {
+			structureList += """
+				<tr>
+					<td>$it.structurename</td>
+					<td>${it.materialname ? it.materialname : ''}</td>
+				</tr>
+			"""
+		}
+		
+		def html = """
+			<table width="100%">
+				<tr>
+					<td>
+						<table width="100%">
+							<tr>
+								<td class="title"><b>BUILDING INFORMATION</td>
+							</tr>
+							<tr>
+								<td>
+									<table width="50%">
+										<tr>
+											<td class="caption">Date Completed</td>
+											<td class="data">${info.dtcompleted == null ? '' : info.dtcompleted}</td>
+										</tr>
+										<tr>
+											<td class="caption">Date Occupied</td>
+											<td class="data">${info.dtoccupied == null ? '' : info.dtoccupied}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg Age</td>
+											<td class="data">${info.bldgage == null ? '' : info.bldgage}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg Class</td>
+											<td class="data">${info.bldgclass == null ? '' : info.bldgclass}</td>
+										</tr>
+										<tr>
+											<td class="caption">Is Condominium?</td>
+											<td class="data">${info.condominium == true ? 'YES' : 'NO'}</td>
+										</tr>
+										<tr>
+											<td class="caption">PSIC</td>
+											<td class="data">${info.psic == null ? '' : info.psic}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg. Permit No.</td>
+											<td class="data">${info.permitno == null ? '' : info.permitno}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg. Permit Date</td>
+											<td class="data">${info.permitdate == null ? '' : info.permitdate}</td>
+										</tr>
+										<tr>
+											<td class="caption">Bldg. Permit Issuer</td>
+											<td class="data">${info.permitissuedby == null ? '' : info.permitissuedby}</td>
+										</tr>
+										<tr>
+											<td class="caption">Additional Info</td>
+											<td class="data">${info.additionalinfo == null ? '' : info.additionalinfo}</td>
+										</tr>
+									</table>
+								</td>
+							</tr>
+						</table>
+					</td>
+					<td>
+						<table width="100%">
+							<tr>
+								<td class="title" colspan="2"><b>STRUCTURES</td>
+							</tr>
+							$structureList
+						</table>
+					</td>
+				</tr>
+			</table>			
+		"""
+	}	
+   
+	private def buildBldgAssessment( faas ) {
+		def info = faas.rpu.info
+		def bldgAssessmentInfo = buildBldgAssessmentInfo( faas, info ) 
+		def actualUses = buildBldgActualUses( info )
+		def floors = buildBldgFloors( info )
+		def floorAdjustments = buildBldgFloorAdjustments( info )
+		return """
+			<table width="100%">
+				<tr>
+					<td class="title">ASSESSMENT DETAIL</td>
+				</tr>
+				<tr>
+					<td>$bldgAssessmentInfo</td>
+				</tr>
+				<tr>
+					<td>$actualUses</td>
+				</tr>
+				<tr>
+					<td>$floors</td>
+				</tr>
+				<tr>
+					<td>$floorAdjustments</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildBldgAssessmentInfo( faas, info ) {
+		return """
+			<table>
+				<tr>
+					<td class="caption">Classification</td>
+					<td class="data">$faas.rpu.classname</td>
+				</tr>
+				<tr>
+					<td class="caption">Building Type</td>
+					<td class="data">$info.bldgtype.bldgtypecode</td>
+				</tr>
+				<tr>
+					<td class="caption">Kind of Building</td>
+					<td class="data">$info.bldgkindbucc.bldgkindname</td>
+				</tr>
+				<tr>
+					<td class="caption">Base Value</td>
+					<td class="data">$info.firstfloorbasevalue</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildBldgActualUses( info ) {
+		def html = """
+			<div style="background-color:silver">
+			<table width="100%" cellspacing="1">
+				<tr>
+					<th>Actual Use</th>
+					<th>Area</th>
+					<th>Adjustment</th>
+					<th>Base Market Value</th>
+					<th>Market Value</th>
+					<th>Assess Level (%)</th>
+					<th>Assessed Value</th>
+				</tr>
+		"""
+		
+		info.bldguses.each {
+			def assessLevel = (info.predominant ? info.assessLevel : it.assessLevel )
+			
+			def area = numberService.format("#,##0.0000", it.area )
+			def adj = numberService.format("#,##0.00", it.adjustment )
+			def mv = numberService.format("#,##0.00", it.basemarketvalue )
+			def amv = numberService.format("#,##0.00", it.marketvalue )
+			def al = numberService.format("#,##0", it.assesslevel )
+			def av = numberService.format("#,##0.00", it.assessedvalue)
+				
+			html += """
+				<tr>
+					<td>$it.actualuse.actualusename</td>
+					<td class="numeric">$area</td>
+					<td class="numeric">$adj</td>
+					<td class="numeric">$mv</td>
+					<td class="numeric">$amv</td>
+					<td class="numeric">$al</td>
+					<td class="numeric">$av</td>
+				</tr>
+			"""
+		}
+		
+		html += "</table></div>"
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>ACTUAL USES:</u></b></td>
+				</tr>
+				<tr>
+					<td>$html</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildBldgFloors( info ) {
+		def floors = ""
+		info.bldguses.each { bu ->
+			bu.floors.each { f ->
+				def area = numberService.format("#,##0.0000", f.area )
+				def adjustment = numberService.format("#,##0.00", f.adjustment )
+				def bmv = numberService.format("#,##0.00", f.basemarketvalue )
+				def mv = numberService.format("#,##0.00", f.marketvalue )
+				floors += """
+					<tr>
+						<td>$bu.actualuse.actualusename</td>
+						<td align="center">$f.floorno</td>
+						<td class="numeric">$area</td>
+						<td class="numeric">$adjustment</td>
+						<td class="numeric">$bmv</td>
+						<td class="numeric">$mv</td>
+					</tr>
+				"""
+			}
+		}
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>FLOOR DETAIL:</u></b></td>
+				</tr>
+				<tr>
+					<td>
+						<div style="background-color:silver">
+							<table width="100%" cellspacing="1">
+								<tr>
+									<th>Actual Use</th>
+									<th>Floor #</th>
+									<th>Area</th>
+									<th>Adjustment</th>
+									<th>Market Value</th>
+									<th>Adj. Market Value</th>
+								</tr>
+								$floors
+							</table>
+						</div>
+					</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildBldgFloorAdjustments( info ) {
+		def adjs = ""
+		info.bldguses.each { bu ->
+			bu.floors.each { f ->
+				f.additionalitems.each {
+					def params = buildParams( it.params )
+					adjs += """
+						<tr>
+							<td align="center">$f.floorno</td>
+							<td align="center">$it.addlitemcode</td>
+							<td>$it.addlitemname</td>
+							<td>$it.addlitemunit</td>
+							<td class="numeric">$it.amount</td>
+							<td>$params</td>
+						</tr>
+					"""
+				}
+			}
+		}
+		
+		if( ! adjs ) return ""
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>FLOOR ADJUSTMENTS:</u></b></td>
+				</tr>
+				<tr>
+					<td>
+						<div style="background-color:silver">
+							<table cellspacing="1" width="100%">
+								<tr>
+									<th>Floor #</th>
+									<th>Code</th>
+									<th>Description</th>
+									<th>Unit</th>
+									<th>Amount</th>
+									<th>Parameters</th>
+								</tr>
+								$adjs
+							</table>
+						</div>
+					</td>
+				</tr>
+			</table>
+		"""
+	}
+    
+    
+	private def buildParams( params ) {
+		def paramList = ""
+		params.each {
+			paramList += """
+				<tr>
+					<td>$it.paramname</td>
+					<td>:</td>
+					<td>$it.paramvalue</td>
+				</tr>
+			"""
+		}
+		return """
+			<table>
+				$paramList
+			</table>
+		"""
+	}
+}

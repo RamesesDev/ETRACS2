@@ -1,0 +1,215 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class BPbpscript {
+	
+	@PersistenceContext('main')
+	def em
+	
+	@Service( 'BPApplicationService' )
+	def appSvc
+	
+	@Service('NumberService')
+	def numSvc	
+	
+	@Service( 'DateService' )
+	def dateService
+	
+	// Method/Script to update fullypaid column into 1 
+	//if the taxpayer is fullypaid for the said business
+	@ProxyMethod
+	public def updateFullyPaid(){
+		def sql = """
+			SELECT businessid, receivables FROM bpapplication
+		"""
+		
+		def bpapplication = em.sqlContext.createQuery( sql ).resultList
+	
+		bpapplication.each(){ bpapps ->
+			bpapps.receivables = em.serializer.read( bpapps.receivables )
+			def unpaidRcvbls = bpapps.receivables.findAll{ it.amount > it.amtpaid }
+			if( !unpaidRcvbls ) {
+				
+				//em.update( 'bplisting:bplisting', bpapps )
+				em.sqlContext.createNamedExecutor( "bpscript:updateAppFullypaid" ).
+					setParameter( 'businessid', bpapps.businessid ).execute()
+			} 
+		}
+	}
+	
+	
+	// Method/Script to update docstate column into 'PERMIT_PENDING'
+	//if the taxpayer is quarterly/yearly paid for the said business
+	@ProxyMethod
+	public def updateDocState(){
+		def sql = """
+			SELECT 
+				objid, docstate, receivables  
+			FROM bpapplication 
+			WHERE docstate = 'APPROVED'		
+		"""
+		
+		def bpapplication = em.sqlContext.createQuery( sql ).resultList
+		if( bpapplication ){
+			bpapplication.each(){ apps ->
+				apps.receivables = em.serializer.read( apps.receivables )
+				def receivables = apps.receivables.findAll{ it.iqtr == 1 && it.amount > it.amtpaid }
+				if( !receivables ){
+				
+					em.sqlContext.createNamedExecutor( "bpscript:updateStateApps" )
+						.setParameter( 'objid', apps.objid ).execute()
+						
+					em.sqlContext.createNamedExecutor( "bpscript:updateStateAppListing" )
+						.setParameter( 'objid', apps.objid ).execute()
+				}			
+			}
+		}
+	}
+	
+	
+	// Method/Script to copy ctcno from bpapplication to bpapplicationlisting table
+	@ProxyMethod
+	public def copyCTCNoToBPAppListing(){
+		def sql = """
+			SELECT 
+				list.objid, list.ctcno, list.businessid, 
+				apps.businessid, apps.info 
+			FROM bpapplicationlisting LIST  
+			INNER JOIN bpapplication apps ON apps.businessid = list.businessid 
+			WHERE ctcno IS NULL 		
+		"""
+		def applications = em.sqlContext.createQuery( sql ).resultList
+				
+		applications.each(){ apps ->
+			apps.info =  em.serializer.read( apps.info )
+			def application = [
+				objid: apps.objid,
+				ctcno: apps.info.ctcno
+			]
+		
+			em.update( 'bplisting:bpapplicationlisting', application )
+		}
+	}	
+	
+	//Method to paid all receivables 
+	//for a particular application by tradename
+	@ProxyMethod
+	public def doPaidReceivables( def tradename ){
+		def application = em.sqlContext.createNamedQuery('bpscript:getreceivables').setParameter( 'tradename', tradename ).singleResult
+		if( !application ) {
+			return "Tradename: doesn't exist. "
+		}
+		
+		application.receivables = em.serializer.read( application.receivables ).each(){
+			it.amtpaid = it.amount
+		}
+		application.receivables = em.serializer.write( application.receivables )
+		
+		//application.credits = [] //do something
+		// application.extended = [] // do something
+		
+		em.sqlContext.createNamedExecutor("bpscript:updatereceivables")
+			.setParameters( application ).execute()
+		
+		return "Trade Name: $tradename successfully paid"
+	}
+	
+	// 
+	@ProxyMethod
+	public def doUnpaidReceivables( def tradename ){
+		def application = em.sqlContext.createNamedQuery('bpscript:getreceivables').setParameter( 'tradename', tradename ).singleResult
+		if( !application ) {
+			return "Tradename: doesn't exist. "
+		}
+		
+		application.receivables = em.serializer.read( application.receivables ).each(){
+			it.amount -= it.amtpaid
+		}
+		
+		application.receivables = em.serializer.write( application.receivables )
+		application.credits = []
+		application.extended = [:]
+		em.sqlContext.createNamedExecutor("bpscript:updatereceivables")
+			.setParameters( application ).execute()
+		
+		return "Trade Name: $tradename successfully unpaid"
+	}  
+	
+	
+	// method to post the assessment from receivables
+	@ProxyMethod
+	public def postAssessmentFromReceivable(){
+		
+		em.sqlContext.createNamedQuery( 'bpscript:getApplications' ).resultList.each{
+			def bpa = [:]
+			bpa.objid = it.objid
+			bpa.applist = appSvc.getApplicationList( it.objid )
+			bpa.assessments = appSvc.buildAssesment( bpa )
+			bpa.assessments.each{
+				it.taxfees.each{ txfs -> 
+					txfs.surcharge = 0.0
+					txfs.interest = 0.0
+					txfs.discount = 0.0
+				}
+			} 
+			bpa.assessments = em.serializer.write( bpa.assessments ) 
+			em.sqlContext.createNamedExecutor( 'bpscript:updateAppAssessment' ).setParameters( bpa ).execute()
+		}
+		return 'Successfully posted assessment.'
+	}
+	
+	
+	@ProxyMethod
+	public def postBPPayment(){
+		em.sqlContext.createNamedQuery( 'bpscript:getBTReceipts' ).resultList.each{
+			
+			def receipt = [				
+				applicationid : em.serializer.read( it.extended ).applicationid,
+				objid : it.objid,
+				info : em.serializer.read( it.info ),
+				items: em.serializer.read( it.items ),
+				voided : it.voided
+			]
+			
+			createBPPayments( receipt )   
+		}
+		
+		return 'Successfully posted bp payment.'
+	} 
+	
+	private void createBPPayments( def receipt ){
+		def currdate = dateService.parseDate( receipt.info.txndate, null )
+		receipt.items.each{ rcpt ->
+			def bp = [
+				objid : 'BPPMT' + new UID(),
+				applicationid : receipt.applicationid,
+				receiptid : receipt.objid,
+				afid : receipt.info.afid,
+				serialno : receipt.info.serialno,
+				txndate : receipt.info.txndate,
+				iyear : currdate.year,
+				iqtr : currdate.qtr,
+				imonth : currdate.month,
+				iday : currdate.day,
+				lobid : rcpt.lobid,
+				lobname : rcpt.lobname, 
+				acctid : rcpt.acctid,
+				paidyear : rcpt.iyear,
+				paidqtr: rcpt.iqtr,
+				accttitle : rcpt.accttitle,  
+				amount : numSvc.round( rcpt.taxamount ),
+				surcharge : numSvc.round( rcpt.surcharge ),
+				interest : numSvc.round( rcpt.interest ),
+				discount : numSvc.round( rcpt.discount ),
+				total : ( numSvc.round( rcpt.taxamount ) + numSvc.round( rcpt.surcharge ) + numSvc.round( rcpt.interest ) - numSvc.round( rcpt.discount ) ),
+				voided : receipt.voided			
+			]
+			
+			em.create( 'bppayment', bp )	
+		}
+	}
+	
+	
+	
+}

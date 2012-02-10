@@ -11,12 +11,19 @@ public class BPApplicationService
 	
 	@Service('BPSettingService')
 	def bpsettingSvc
+		
+	@Service('DateService')
+	def dateService
+	
+	@Service('NumberService')
+	def numSvc;
 	
 	def SCHEMANAME = 'bpapplication:bpapplication';
 	
 	@ProxyMethod
-	public def getAssessmentReportInfo( def applicationid ){
+	public def getAssessmentReportInfo( def applicationid ){ 
 		def bpa = em.read( SCHEMANAME, [objid:applicationid] );
+				
 		return [ 
 			reportName: 'bp/assessment',
 			info: buildInfo( bpa )
@@ -24,7 +31,9 @@ public class BPApplicationService
 	}
 	
 	def buildInfo( def bpa ){
+		
 		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+		
 		def info = [
 			barcode: bpa.barcode,
 			barcodeurl: var.get('barcode_url').replace('$P{data}', bpa.barcode),
@@ -39,12 +48,13 @@ public class BPApplicationService
 			totalcharge: 0.0,
 			totaltax: 0.0,
 			totalregfee: 0.0,
-			totalamount: 0.0,
+			totalamount: 0.0, 
 			regfees: [],
 			charges: [],
 			taxes: []
-		];
-
+			
+		]; 
+		     
 		bpa.taxfees.each{
 			def acct = em.read('incomeacct:incomeacct', [objid: it.acctid]);
 			it.amountdue = new BigDecimal( it.amountdue );
@@ -55,12 +65,11 @@ public class BPApplicationService
 			info.totalamount += it.amountdue;
 		}
 		
-		info.signatories = bpsettingSvc.setting.assessmentsignatories
-		//info.signatories?.sort{ it.index };
-		
+		info.signatories = bpsettingSvc.setting.assessmentsignatories?.sort{ it.index }
+				
 		return info;
 	}
-
+	
 	void addToTax( info, fee ){
 		info.taxes.add( fee );
 		info.totaltax += fee.amountdue;
@@ -74,5 +83,6 @@ public class BPApplicationService
 	void addToCharge( info, fee ){
 		info.charges.add( fee );
 		info.totalcharge += fee.amountdue;
-	}
+	}  
+	
 }

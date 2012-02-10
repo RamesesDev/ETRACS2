@@ -83,5 +83,49 @@ WHERE ( beginqty IS NULL OR beginqty = 0 )
  AND ( endingqty IS NOT NULL OR endingqty = 0 ) 
  AND endingfrom IS NOT NULL 
  AND endingto IS NOT NULL 
+ 
+[getNoEndingBalByBgnQty]
+SELECT 
+ objid, beginqty, beginfrom, beginto,
+ receivedqty, receivedfrom, receivedto,
+ issuedqty, issuedfrom, issuedto,
+ endingqty, endingfrom, endingto 
+FROM craaf 
+WHERE ( beginqty IS NOT NULL AND ( issuedqty IS NULL OR issuedqty = 0 ) ) 
+ AND ( ( endingqty IS NULL OR endingqty = 0 ) 
+ AND endingfrom IS NULL  
+ AND endingto IS NULL )
+ 
+[getNoEndingBalByRrcvQty] 
+SELECT 
+ objid, beginqty, beginfrom, beginto,
+ receivedqty, receivedfrom, receivedto,
+ issuedqty, issuedfrom, issuedto,
+ endingqty, endingfrom, endingto 
+FROM craaf 
+WHERE ( receivedqty IS NOT NULL AND ( issuedqty IS NULL OR issuedqty = 0 ) ) 
+ AND ( ( endingqty IS NULL OR endingqty = 0 ) 
+ AND endingfrom IS NULL 
+ AND endingto IS NULL ) 
+ 
+[updateEndingBal]
+UPDATE craaf 
+SET endingqty = $P{endingqty}, 
+ endingfrom = $P{endingfrom}, 
+ endingto = $P{endingto}  
+WHERE objid = $P{objid} 
 
-  
+[getFirstCraafRec]  
+SELECT 
+ MIN(craafmonth) AS craafmonth, MIN(craafyear) AS craafyear 
+FROM craaf
+
+[getCraafByAfinventoryid]
+SELECT  
+ objid 
+FROM craaf 
+WHERE afinventoryid = $P{afinventoryid} 
+ AND craafmonth = $P{craafmonth} 
+ AND craafyear = $P{craafyear}
+
+ 

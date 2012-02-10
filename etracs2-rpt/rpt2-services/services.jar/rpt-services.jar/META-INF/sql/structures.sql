@@ -16,3 +16,20 @@ SELECT COUNT(*) AS count FROM structures WHERE structuredesc = $P{structuredesc}
 [checkDuplicateCode]
 SELECT COUNT(*) AS count FROM structures WHERE structurecode = $P{structurecode}
 
+
+[getMaterial]
+SELECT objid AS materialid, materialcode, materialdesc AS materialname 
+FROM materials 
+ORDER BY materialcode 
+
+[getMaterialByCode]
+SELECT objid AS materialid, materialcode, materialdesc AS materialname 
+FROM materials 
+WHERE materialcode LIKE $P{code} 
+ORDER BY materialcode 
+
+[getMaterialByName]
+SELECT objid AS materialid, materialcode, materialdesc AS materialname 
+FROM materials 
+WHERE materialdesc LIKE $P{name} 
+ORDER BY materialcode 
