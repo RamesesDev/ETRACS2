@@ -277,15 +277,20 @@ public class BldgRPUController
     def selectedStructure
     def lookupMaterial
     
-    def getLookupMaterial() {
+    def getLookupMaterial(){
         return InvokerUtil.lookupOpener('structurematerial.lookup',[item:selectedStructure])
     }
 
     def structureListHandler = [
         getColumns   : { return [
             new Column(name:'structurename', caption:'Structure' ),
-            new Column(name:'materialname', caption:'Material', editable:true ),
+            new Column(name:'material', caption:'Material', editable:true, type:'lookup', handler:lookupMaterial, expression:'#{materialname}' ),
         ]},
+        validate : { li -> 
+            li.item.materialid = li.item.material?.materialid
+            li.item.materialcode = li.item.material?.materialcode
+            li.item.materialname = li.item.material?.materialname
+        },
         fetchList : { return rpu.bldgstructures },
     ] as SubListModel
     
