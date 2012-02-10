@@ -61,6 +61,7 @@
         <field name="landfaasid" />
         <field name="landfaastaxpayerid"/>
         <field name="autonumber" type="boolean" required="true"/>
+		<field name="annotated" type="boolean" />
         
         <field name="tdno" />
         <field name="arpno" />
@@ -81,7 +82,7 @@
 		<field name="owneraddress" required="true" />
 		<!-- taxpayer info : links to entity -->
 		<field name="taxpayerid" required="true" />
-		<field name="taxpayerno" required="true" />
+		<field name="taxpayerno"  />
 		<field name="taxpayername" required="true"  />
 		<field name="taxpayeraddress" required="true" />
         <!-- administrator info -->        
@@ -107,16 +108,15 @@
         <field name="taxmappedby" />
 		<field name="taxmappedbytitle" />
 		<field name="dttaxmapped" />
-		<field name="recommendedby" required="true"  />
-		<field name="recommendedbytitle" required="true" />
-		<field name="dtrecommended" required="true" />
+		<field name="recommendedby"  />
+		<field name="recommendedbytitle" />
+		<field name="dtrecommended" />
 		<field name="reviewedby"  />
 		<field name="reviewedtitle" />
 		<field name="dtreviewed" />
 		<field name="approvedby" required="true"  />
 		<field name="approvedbytitle" required="true" />
 		<field name="dtapproved" required="true" />		
-        <field name="sys_dtapproved" required="true" />
         <!-- cancel info --> 
         <field name="cancelreason"  />
 		<field name="canceldate" />
@@ -128,14 +128,17 @@
         <field name="schemaname" required="true"/>
 		<field name="schemaversion" required="true"/>
 		<field name="docstate" required="true"  />
+        <field name="ledgerid"   />
         <field name="datacapture" type="boolean" mapfield="info.datacapture"/>
         <field name="claimno" mapfield="info.claimno"/>
+		<field name="annotated" type="boolean" mapfield="info.annotated"/>
         <field name="autonumber" type="boolean" required="true" mapfield="info.autonumber" />
         <field name="backtaxyrs" type="integer" mapfield="info.backtaxyrs"/>
         <field name="landfaasid" mapfield="info.landfaasid" />
         <field name="landfaastaxpayerid" mapfield="info.landfaastaxpayerid"  />
 		<field name="txntype" mapfield="info.txntype" required="true"  />
 		<field name="tdno"  mapfield="info.tdno" />
+		<field name="prevtdno"  mapfield="info.prevtdno" />
 		<field name="issuedate" mapfield="info.issuedate" required="true" />
 		<field name="effectivityyear" mapfield="info.effectivityyear" required="true" type="integer" />
 		<field name="effectivityqtr" mapfield="info.effectivityqtr" required="true" type="integer" />
@@ -144,9 +147,11 @@
 		<field name="titledate" mapfield="info.titledate" />
         <field name="prevtaxpayerid" mapfield="info.prevtaxpayerid"/>
 		<field name="taxpayerid"  mapfield="info.taxpayerid" />
-        <field name="taxpayerno" required="true"  mapfield="info.taxpayerno" />
+        <field name="taxpayerno" mapfield="info.taxpayerno" />
 		<field name="taxpayername" required="true"  mapfield="info.taxpayername" />
 		<field name="taxpayeraddress" required="true"  mapfield="info.taxpayeraddress" />
+		<field name="ownername" required="true"  mapfield="info.ownername" />
+		<field name="owneraddress" required="true"  mapfield="info.owneraddress" />
         <field name="administratorid"  mapfield="info.administratorid" />
         <field name="administratorno"  mapfield="info.administratorno" />
 		<field name="administratorname"  mapfield="info.administratorname" />
@@ -158,12 +163,15 @@
 		<field name="recommendedbytitle"  mapfield="info.recommendedbytitle" />
 		<field name="approvedby" required="true"  mapfield="info.approvedby" />
 		<field name="approvedbytitle" required="true"  mapfield="info.approvedbytitle" />
+		<field name="memoranda"  mapfield="info.memoranda" />
 		<!-- rpu info -->
 		<field name="ry" required="true"  type="integer" mapfield="rpu.ry" />
         <field name="rputype" required="true"  mapfield="rpu.rputype" />
         <field name="fullpin" required="true"  mapfield="rpu.fullpin" />
         <field name="classid" mapfield="rpu.classid" />
         <field name="classcode" mapfield="rpu.classcode" />
+		<field name="exemptid" mapfield="rpu.exemptid" />
+		<field name="exemptcode" mapfield="rpu.exemptcode" />
         <field name="taxable" required="true"  mapfield="rpu.taxable" />
         <field name="totalareasqm" required="true" type="decimal" mapfield="rpu.totalareasqm"/>
         <field name="totalareaha" required="true" type="decimal" mapfield="rpu.totalareaha"/>
@@ -178,20 +186,24 @@
         <field name="provcity" required="true"  mapfield="rp.provcity"/>
         <field name="munidistrict" required="true"  mapfield="rp.munidistrict"/>
 		<field name="barangay" required="true"  mapfield="rp.barangay"/>
+        <field name="barangayid" required="true"  mapfield="rp.barangayid"/>
+		<field name="section" required="true"  mapfield="rp.section"/>
+		<field name="parcel" required="true"  mapfield="rp.parcel"/>
 		<field name="cadastrallotno" required="true"  mapfield="rp.cadastrallotno" />
 		<field name="blockno" mapfield="rp.blockno" />
 		<field name="surveyno" mapfield="rp.surveyno" />
-        <field name="cancelreason"  />
+		<field name="cancelreason"  />
 		<field name="canceldate" />
 		<field name="cancelledbytdnos"  />
+		<field name="txntimestamp"  />
 	</element>
     
 	<element name="previousfaas">
 		<field name="faasid" required="true" />
 		<field name="tdno" required="true" />
 	</element>
-    
-    <element name="faasattachment" tablename="faasattachment">
+	
+	<element name="faasattachment" tablename="faasattachment">
         <field name="objid" required="true" primary="true"/>
         <field name="faasid" required="true" />
         <!-- INTERIM, FORTRANSMITTAL, SUBMITTED, ERROR -->

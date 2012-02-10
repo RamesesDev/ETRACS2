@@ -18,7 +18,7 @@ SELECT * FROM pin WHERE pin = $P{pin} AND claimno = $P{claimno}
 SELECT objid, pin FROM faaslist WHERE objid <> $P{objid}  AND docstate = 'FORAPPROVAL' ORDER BY pin 
 
 [getAttachments]
-SELECT * FROM faasattachment WHERE faasid = $P{faasid}
+SELECT * FROM faasattachment WHERE faasid = $P{faasid} 
 
 #----------------------------------------------------------------
 # CHECKS
@@ -58,28 +58,34 @@ INSERT INTO pin ( pin, claimno, docstate ) VALUES( $P{pin}, $P{claimno}, $P{docs
 # FINDERS
 #----------------------------------------------------------------
 [findByState]
-SELECT * FROM faaslist WHERE docstate = $P{docstate} ORDER BY pin
+select objid, tdno, taxpayerid, fullpin, pin, rputype, taxpayername, ownername, munidistrict, totalmv, totalav from faaslist 
+WHERE docstate = $P{docstate} ORDER BY pin
 
 [findByTdNo]
-SELECT * FROM faaslist WHERE tdno = $P{tdno} AND docstate = $P{docstate} ORDER BY pin
+select objid, tdno, taxpayerid, fullpin, pin, rputype, taxpayername, ownername, munidistrict, totalmv, totalav from faaslist 
+WHERE tdno = $P{tdno} AND docstate = $P{docstate} ORDER BY pin
 
 [findByTaxpayerName]
-SELECT * FROM faaslist WHERE taxpayername LIKE $P{taxpayername} AND docstate = $P{docstate} ORDER BY pin
+select objid, tdno, taxpayerid, fullpin, pin, rputype, taxpayername, ownername, munidistrict, totalmv, totalav from faaslist 
+WHERE taxpayername LIKE $P{taxpayername} AND docstate = $P{docstate} ORDER BY pin
 
 [findByPin]
-SELECT * FROM faaslist WHERE pin LIKE $P{pin} AND docstate = $P{docstate} ORDER BY pin
+select objid, tdno, taxpayerid, fullpin, pin, rputype, taxpayername, ownername, munidistrict, totalmv, totalav from faaslist 
+WHERE pin LIKE $P{pin} AND docstate = $P{docstate} ORDER BY pin
 
 [findByBarangay]
 SELECT * FROM faaslist WHERE barangay = $P{barangay} AND docstate = $P{docstate} ORDER BY pin
 
 [findByCadastralLotNo]
-SELECT * FROM faaslist WHERE cadastrallotno = $P{cadastrallotno} AND docstate = $P{docstate} ORDER BY pin
+select objid, tdno, taxpayerid, fullpin, pin, rputype, taxpayername, ownername, munidistrict, totalmv, totalav from faaslist 
+WHERE cadastrallotno = $P{cadastrallotno} AND docstate = $P{docstate} ORDER BY pin
 
 [findBySurveyNo]
 SELECT * FROM faaslist WHERE surveyno = $P{surveyno} AND docstate = $P{docstate} ORDER BY pin
 
 [findByBlockNo]
-SELECT * FROM faaslist WHERE blockno = $P{blockno} AND docstate = $P{docstate} ORDER BY pin
+select objid, tdno, taxpayerid, fullpin, pin, rputype, taxpayername, ownername, munidistrict, totalmv, totalav from faaslist 
+WHERE blockno = $P{blockno} AND docstate = $P{docstate} ORDER BY pin
 
 #----------------------------------------------------------------
 # FINDERS ( BY ASSIGNED LGU )

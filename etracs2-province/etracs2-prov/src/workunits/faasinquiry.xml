@@ -22,7 +22,7 @@
             def binding;
             
             def CURRENT_STATE = 'CURRENT'
-            def state = CURRENT_STATE;
+            def docstate = CURRENT_STATE;
             def selectedItem;
             def search = [:];
             
@@ -39,23 +39,23 @@
                 getRows    : { return 25; },
                 getColumns : {
                     return [
-                        new Column( name:"item.municipality", caption:"Municipality", width:120),
-                        new Column( name:"item.tdNo", caption:"TD No.", width:120),
-                        new Column( name:"item.pin", caption:"PIN", width:150),
+                        new Column( name:"munidistrict", caption:"Municipality"),
+                        new Column( name:"tdno", caption:"TD No."),
+                        new Column( name:"fullpin", caption:"PIN"),
                     ]
                 },
                 fetchList  : { 
-                    search.state = state;
+                    search.docstate = docstate;
                     return svc.getListAll( search, it );  
                 },
             ] as PageListModel;
-        
+            
             public def getHtml() {
-                if( selectedItem?.item ) {
-                    if( ! selectedItem.item.html ) {
-                        selectedItem.item.html = htmlService.getHtml( selectedItem.item.objid );
+                if( selectedItem  ) {
+                    if( ! selectedItem.html ) {
+                        selectedItem.html = htmlService.getHtml( selectedItem.objid );
                     }
-                    return selectedItem.item.html;
+                    return selectedItem.html;
                 }
                 return "No record or item selected...";
             } 

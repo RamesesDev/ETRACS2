@@ -61,6 +61,7 @@ public class ListPage extends javax.swing.JPanel {
         jPanel5.add(jPanel8, java.awt.BorderLayout.NORTH);
 
         xDataTable1.setHandler("listHandler");
+        xDataTable1.setImmediate(true);
         xDataTable1.setName("selectedItem");
         jPanel5.add(xDataTable1, java.awt.BorderLayout.CENTER);
 

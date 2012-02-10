@@ -1,0 +1,206 @@
+import com.rameses.annotations.*
+import groovy.text.SimpleTemplateEngine
+
+class MachHtmlService
+{
+
+	@Service("NumberService")
+	def numberService
+
+	@ProxyMethod
+	public def buildMachHtml(def faas) {
+		def assessment = buildMachAssessment( faas )
+		return """
+			<table width="100%">
+				<tr>
+					<td valign="top">$assessment</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildMachAssessment( faas ) {
+		def info = faas.rpu.info
+		def machineUses = buildMachUses( info )
+		def machineDetails = buildMachDetails( info )
+		return """
+			<table width="100%">
+				<tr>
+					<td class="title">ASSESSMENT DETAIL</td>
+				</tr>
+				<tr>
+					<td>$machineUses</td>
+				</tr>
+				<tr>
+					<td>$machineDetails</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildMachUses( info ) {
+		def html = """
+			<div style="background-color:silver">
+			<table width="100%" cellspacing="1">
+				<tr>
+					<th>Actual Use</th>
+					<th>Market Value</th>
+					<th>Adj. Market Value</th>
+					<th>Assess Level (%)</th>
+					<th>Assessed Value</th>
+				</tr>
+		"""
+		
+		info.machuses.each{
+			def bmv = numberService.format("#,##0.00", it.basemarketvalue )
+			def mv = numberService.format("#,##0.00", it.marketvalue )
+			def al = numberService.format("#,##0.00", it.assesslevel )
+			def av = numberService.format("#,##0.00", it.assessedvalue )
+			html += """
+				<tr>
+					<td>$it.actualusename</td>
+					<td class="numeric">$bmv</td>
+					<td class="numeric">$mv</td>
+					<td class="numeric">$al</td>
+					<td class="numeric">$av</td>
+				</tr>
+			"""
+		}
+		
+		html += "</table></div>"
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>MACHINE USES:</u></b></td>
+				</tr>
+				<tr>
+					<td>$html</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildMachDetails( info ) {
+		def mach = ""
+		info.machuses.each { mu ->
+			mu.machdetails.each { md ->
+				def replacementcost = numberService.format("#,##0.00", md.replacementcost )
+				def depreciation = numberService.format("#,##0", md.depreciation )
+				def depreciationvalue = numberService.format("#,##0.00", md.depreciationvalue )
+				def originalcost = numberService.format("#,##0.00", md.originalcost )
+				def freightcost = numberService.format("#,##0.00", md.freightcost )
+				def insurancecost = numberService.format("#,##0.00", md.insurancecost )
+				def installationcost = numberService.format("#,##0.00", md.installationcost )
+				def brokeragecost = numberService.format("#,##0.00", md.brokeragecost )
+				def arrastrecost = numberService.format("#,##0.00", md.arrastrecost )
+				def othercost = numberService.format("#,##0.00", md.othercost )
+				def acquisitioncost = numberService.format("#,##0.00", md.acquisitioncost )
+				def ferac = numberService.format("#,##0.00", md.ferac )
+				def forex = numberService.format("#,##0.00", md.forex )
+				def swornamount = numberService.format("#,##0.00", md.swornamount )
+				def residualrate = numberService.format("#,##0.00", md.residualrate )
+				def conversionfactor = numberService.format("#,##0.00", md.conversionfactor )
+				def bmv = numberService.format("#,##0.00", md.basemarketvalue )
+				def mv = numberService.format("#,##0.00", md.marketvalue )
+				def av = numberService.format("#,##0.00", md.assessedvalue )
+				mach += """
+					<tr>
+						<td>$md.machinecode</td>
+						<td>$md.machinetitle</td>
+						<td align="center">$md.operationyear</td>
+						<td>$replacementcost</td>
+						<td>$depreciation</td>
+						<td>$depreciationvalue</td>
+						<td>$bmv</td>
+						<td>$mv</td>
+						<td>$av</td>
+						<td>$md.brand</td>
+						<td>$md.capacity</td>
+						<td>$md.model</td>
+						<td>$md.serialno</td>
+						<td>$md.status</td>
+						<td align="center">$md.yearacquired</td>
+						<td align="center">$md.estimatedlife</td>
+						<td align="center">$md.remaininglife</td>
+						<td align="center">$md.yearinstalled</td>
+						<td align="center">$md.yearsused</td>
+						<td>$originalcost</td>
+						<td>$freightcost</td>
+						<td>$insurancecost</td>
+						<td>$installationcost</td>
+						<td>$brokeragecost</td>
+						<td>$arrastrecost</td>
+						<td>$othercost</td>
+						<td>$acquisitioncost</td>
+						<td>$ferac</td>
+						<td>$forex</td>
+						<td>$md.useswornamount</td>
+						<td>$swornamount</td>
+						<td>$md.imported</td>
+						<td>$residualrate</td>
+						<td>$conversionfactor</td>
+						<td>$md.newlyinstalled</td>
+						<td>$md.autodepreciate</td>
+					</tr>
+				"""
+			}
+		}
+		
+		return """
+			<table width="100%">
+				<tr>
+					<td><b><u>MACHINE DETAIL:</u></b></td>
+				</tr>
+				<tr>
+					<td>
+						<div style="background-color:silver">
+							<table width="100%" cellspacing="1">
+								<tr>
+									<th>Code</th>
+									<th>Title</th>
+									<th>Operation Year</th>
+									<th>Replacement Cost</th>
+									<th>Depreciation</th>
+									<th>Depreciation Value</th>
+									<th>Market Value</th>
+									<th>Adj. Market Value</th>
+									<th>Assessed Value</th>
+									<th>Brand</th>
+									<th>Capacity</th>
+									<th>Model</th>
+									<th>Serial No.</th>
+									<th>Status</th>
+									<th>Year Acquired</th>
+									<th>Estimated Life</th>
+									<th>Remaining Life</th>
+									<th>Year Installed</th>
+									<th>Years Used</th>
+									<th>Original Cost</th>
+									<th>Freight Cost</th>
+									<th>Insurance Cost</th>
+									<th>Installation Cost</th>
+									<th>Brokerage Cost</th>
+									<th>Arrastre Cost</th>
+									<th>Other Cost</th>
+									<th>Acquisition Cost</th>
+									<th>Ferac</th>
+									<th>Forex</th>
+									<th>Use Sworn Amount</th>
+									<th>Sworn Amount</th>
+									<th>Imported</th>
+									<th>Residual Rate</th>
+									<th>Local Index</th>
+									<th>Newly Installed</th>
+									<th>Auto Depreciate</th>
+								</tr>
+								$mach
+							</table>
+						</div>
+					</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+}

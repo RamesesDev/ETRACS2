@@ -10,7 +10,7 @@ class FaasReportService
 	@Service('NumberService')
 	def numberSvc
 	
-	def LISTLIMITSIZE1 = 20
+	def LISTLIMITSIZE1 = 10
 	def LISTLIMITSIZE2 = 7
 
 	
@@ -24,7 +24,8 @@ class FaasReportService
     	faasdata.putAll( faas.rp )
     	faasdata.putAll( faas.rpu )
 		faasdata.taxeffectivity = faas.info.effectivityqtr + "Q - " + faas.info.effectivityyear
-		faasdata.taxability = ( faasdata.info.taxable ? "TAXABLE" : "EXEMPT" )
+		println faasdata.info.taxable
+		faasdata.taxability = ( faasdata.taxable ? "TAXABLE" : "EXEMPT" )
 		
 		if( faas.rpu.rputype == 'land' ) {
 			faasdata.landappraisals = getLandDetails( faas.rpu )
@@ -32,21 +33,32 @@ class FaasReportService
 			faasdata.landadjustments = getLandAdjustments( faas.rpu )
 			faasdata.propertyassessments = getPropertyAssessements( faas.rpu )
 		} else if( faas.rpu.rputype == 'mach' ) {
-			getLandOwnerInfo( faasdata )
+			LISTLIMITSIZE2 = 14
+			getLandReference( faasdata )
 			faasdata.machdetails = getMachDetails( faas.rpu )
 			faasdata.propertyappraisals = getPropertyAppraisals( faas.rpu )
 			faasdata.propertyassessments = getMachPropertyAssessments( faas.rpu )
 		} else if( faas.rpu.rputype == 'planttree' ) {
+			faasdata.landappraisals = getDummy()
 			faasdata.planttreesappraisals = getPlantTreeDetails( faas.rpu )
 			faasdata.landadjustments = getPlantTreeLandAdjustments( faas.rpu )
 			faasdata.propertyassessments = getPlantTreePropertyAssessements( faas.rpu )
 		} else if( faas.rpu.rputype == 'misc' ) {
+			LISTLIMITSIZE1 = 25			
 			faasdata.miscpropertyappraisals = getMiscPropertyAppraisals( faas.rpu )
 			faasdata.miscadjustments = getMiscAdjustments( faas.rpu )
 			faasdata.propertyassessments = getMiscPropertyAssessments( faas.rpu )
 		} 
-		else 
-			throw new Exception( 'There is no FAAS report for this record yet.' )
+		else {
+			LISTLIMITSIZE1 = 30
+			LISTLIMITSIZE2 = 3
+			getLandReference( faasdata )
+			def depreciation = numberSvc.format("#,##0.00", faasdata.info.depreciation) + ' %'
+			faasdata.depreciation = depreciation
+			faasdata.bldgstructures = getBldgStructures( faas.rpu )
+			faasdata.additionalitems = getAdditionalItems( faas.rpu )
+			faasdata.propertyassessments = getBldgPropertyAssessment( faas.rpu )
+		}
 			
 		return faasdata
 	}
@@ -68,6 +80,8 @@ class FaasReportService
 			
 			data.add( item )
 		}
+		
+		LISTLIMITSIZE1 = buildEmptyRows( data, LISTLIMITSIZE1, true )
 		
 		return data
     }
@@ -92,6 +106,8 @@ class FaasReportService
 			
 			data.add( item )
 		}
+		
+		LISTLIMITSIZE1 = buildEmptyRows( data, LISTLIMITSIZE1, false )
 		
 		return data
     }
@@ -158,6 +174,8 @@ class FaasReportService
 			}
 		}
 		
+		LISTLIMITSIZE2 = buildEmptyRows( data, LISTLIMITSIZE2, true )
+		
 		return data
 	}
 	
@@ -188,17 +206,24 @@ class FaasReportService
 				assesslevel		: assesslevel,
 				assessedvalue	: rpu.info.planttotal.assessedvalue
 			]
+			
+			data.add( item )
 		}
+		
+		LISTLIMITSIZE2 = buildEmptyRows( data, LISTLIMITSIZE2, false )
 		
 		return data
 	}
 	
-	private void getLandOwnerInfo( faasdata ) {
-		def info = em.sqlContext.createNamedQuery('faas:getLandOwnerInfo').setParameter('objid', faasdata.landfaasid).singleResult
+	private void getLandReference( faasdata ) {
+		def info = em.sqlContext.createNamedQuery('faas:getLandReference').setParameter('objid', faasdata.landfaasid).singleResult
 
 		if(info) {
 			faasdata.landownername = info.taxpayername
 			faasdata.landownerpin = info.pin
+			faasdata.landlotno = info.cadastrallotno
+			faasdata.landtdno = info.tdno
+			faasdata.landarea = info.totalareasqm
 		}
 	}
 	
@@ -224,6 +249,8 @@ class FaasReportService
 				data.add( item )
 			}
 		}
+		
+		LISTLIMITSIZE1 = buildEmptyRows( data, LISTLIMITSIZE1, true )
 		
 		return data
 	}
@@ -267,6 +294,8 @@ class FaasReportService
 			}
 		}
 		
+		LISTLIMITSIZE1 = buildEmptyRows( data, LISTLIMITSIZE1, false )
+		
 		return data
 	}
 	
@@ -285,6 +314,8 @@ class FaasReportService
 			
 			data.add( item )
 		}
+		
+		LISTLIMITSIZE2 = buildEmptyRows( data, LISTLIMITSIZE2, false )
 		
 		return data
 	}
@@ -317,6 +348,9 @@ class FaasReportService
 			}
 		}
 		
+		if( rpu.rputype == 'planttree' )
+			LISTLIMITSIZE2 = buildEmptyRows( data, LISTLIMITSIZE2, true )
+		
 		return data
 	}
 	
@@ -333,6 +367,7 @@ class FaasReportService
 		]
 		
 		data.add( item )
+		LISTLIMITSIZE2 = buildEmptyRows( data, LISTLIMITSIZE2, false )
 		
 		return data
 	}
@@ -342,11 +377,15 @@ class FaasReportService
 		def miscrpuitems = rpu.info.miscrpuitems
 		
 		miscrpuitems?.each {
+			def binding = buildFieldBindings( it, rpu.rputype )
+			binding += buildParamBindings( it.params )
+			def expr = replaceExpr( it.expr, binding )
+		
 			def item = [
 				classification	: rpu.classname,
 				actualuse		: rpu.info.actualusename,
 				miscitemname	: it.miscitemname,
-				expr			: it.expr,
+				expr			: expr,
 				basemarketvalue	: it.basemarketvalue
 			]
 			
@@ -400,9 +439,123 @@ class FaasReportService
 		return data
 	}
 	
+	private def getBldgStructures( rpu ) {
+		def data = []
+		def bldgstructures = rpu.bldgstructures
+		
+		bldgstructures?.each {
+			def item = [
+				structurename : it.structurename,
+				materialname  : it.materialname
+			]
+			
+			data.add( item )
+		}
+		
+		LISTLIMITSIZE1 = buildEmptyRows( data, LISTLIMITSIZE1, false )
+		
+		return data
+		
+	}
+	
+	private def getAdditionalItems( rpu ) {
+		def data = []
+		def bldguses = rpu.info.bldguses
+		
+		bldguses?.each { bldguse ->
+			bldguse.floors?.each { floor ->
+				floor.additionalitems?.each {
+					def binding = buildFieldBindings( floor, rpu.rputype )
+					binding += buildParamBindings( it.params )
+					def  expr = replaceExpr( it.expr, binding )
+					
+					def item = [
+						floorno 	: floor.floorno,
+						addlitemcode: it.addlitemcode,
+						addlitemname: it.addlitemname,
+						expr		: expr,
+						amount		: it.amount
+					]
+					
+					data.add( item )
+				}
+			}
+		}
+		
+		LISTLIMITSIZE2 = buildEmptyRows( data, LISTLIMITSIZE2, true )
+		
+		return data
+	}
+	
+	private def getBldgPropertyAssessment( rpu ) {
+		def data = []
+		def bldguses = rpu.info.bldguses
+		
+		bldguses?.each {
+			def assesslevel = numberSvc.format("#,##0", it.assesslevel) + ' %'
+			
+			def item = [
+				actualuse	 : it.actualuse.actualusename,
+				marketvalue	 : it.marketvalue,
+				assesslevel	 : assesslevel,
+				assessedvalue: it.assessedvalue
+			]
+			
+			data.add( item )
+		}
+		
+		LISTLIMITSIZE2 = buildEmptyRows( data, LISTLIMITSIZE2, false )
+		
+		return data
+	}
+	
+	private def buildFieldBindings( item, rputype ) {
+		if( rputype == 'misc' ) {
+			return [
+				SYS_BASE_MARKET_VALUE       : item.basemarketvalue,
+				SYS_MARKET_VALUE            : item.marketvalue,
+				SYS_DEPRECIATED_VALUE		: item.depreciatedvalue,
+				SYS_ASSESSED_VALUE          : item.assessedvalue
+			]
+		}
+		else {
+			return [
+				SYS_BASE_MARKET_VALUE       : item.basemarketvalue,
+				SYS_MARKET_VALUE            : item.marketvalue,
+				SYS_BASE_VALUE              : item.basevalue,
+				SYS_UNIT_VALUE              : item.unitvalue,
+				SYS_AREA                    : item.area
+			]
+		}
+	}
+	
+	private def buildParamBindings( params ) {
+		def binding = [:]
+        params.each {
+            binding[it.paramname] = it.paramvalue 
+        }
+		
+        return binding
+	}
+	
+	private def replaceExpr( expr, binding ) {
+		binding.keySet().each { key ->
+			expr = expr.replace( key, numberSvc.format( "#,##0.00", binding[key] ) )
+		}
+		
+		return expr
+	}
+	
+	private def getDummy() {
+		def data = []
+		LISTLIMITSIZE1 = buildEmptyRows( data, LISTLIMITSIZE1, false )
+		
+		return data
+	}
+	
 	private def buildEmptyRows( data, listlimitsize, flag ) {
 		for(int i=data.size +1; i<=listlimitsize; i++) {
-			data.add( [:] )
+			data.add( [areatype:null] )
 		}
 		
 		if( flag && data.size > listlimitsize )

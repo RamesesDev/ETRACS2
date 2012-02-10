@@ -132,8 +132,8 @@ SELECT objid FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPRO
 [getActiveAnnotations] 
 SELECT * FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPROVED' ORDER BY docno DESC 
 
-[getLandOwnerInfo] 
-SELECT taxpayername, pin FROM faaslist WHERE objid = $P{objid} 
+[getLandReference] 
+SELECT tdno, taxpayername, pin, cadastrallotno, totalareasqm FROM faaslist WHERE objid = $P{objid} 
 
 [updateFAASAnnotationInfo]
 UPDATE faasannotation SET 

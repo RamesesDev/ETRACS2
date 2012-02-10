@@ -60,6 +60,8 @@ CREATE TABLE bppayment (
 	iqtr INT,
 	imonth INT,
 	iday INT,
+	paidyear INT,
+	paidqtr INT,
 	lobid VARCHAR(50),
 	lobname VARCHAR(50),
 	acctid VARCHAR(50),
@@ -72,6 +74,12 @@ CREATE TABLE bppayment (
 	voided INT
 );
 
+create index ix_bppayment_applicationid on bppayment( applicationid );
+create index ix_bppayment_txndate on bppayment( txndate );
+create index ix_bppayment_receiptid on bppayment( receiptid );
+
+alter table bppayment add column paidyear int not null;
+alter table bppayment add column paidqtr int not null;
 
 /* ------------------------------------------------------------------
 *
@@ -134,3 +142,4 @@ create index ix_receiptitem_liquidationrcdid on receiptitem(liquidationrcdid );
 alter table revenue add column liquidationrcdid varchar(50);
 create index ix_revenue_liquidationrcdid on revenue(liquidationrcdid );
 
+alter table faaslist add column message text;

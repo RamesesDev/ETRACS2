@@ -362,7 +362,7 @@ class FAASService
     @ProxyMethod
     public Map onlineApprove( faasid, approvaldata  ) {
         def faas = open( faasid )
-        if( faas.docstate == CURRENT_STATE || faas.docstate == CANCELLED_STATE)  {
+		if( faas.docstate == CURRENT_STATE || faas.docstate == CANCELLED_STATE)  {
             //the faas is already approve
             //this happens if the approval was done manually
             //so just return the faas 
@@ -373,7 +373,7 @@ class FAASService
         faas.message            = null 
         //update pin for land type 
         if( faas.info.datacapture == false && faas.rpu.rputype == LAND_TYPE) {
-            deletePin( faas.rpu.fullpin )
+            deletePin( [fullpin: faas.rpu.fullpin] )
             faas.rp.pin         = approvaldata.pin 
             faas.rpu.fullpin    = approvaldata.fullpin 
             createOnlinePIN( faas ) 
@@ -720,6 +720,12 @@ class FAASService
 			def pin = [pin:faas.rpu.fullpin, claimno:faas.info.claimno, docstate:faas.docstate]
 			em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
 		}
+    }
+	
+	@ProxyMethod
+    public void createOnlinePIN( faas ) {
+        def pin = [pin:faas.rpu.fullpin, claimno:faas.info.claimno, docstate:faas.docstate]
+		em.sqlContext.createNamedExecutor('faas:insertPin').setParameters( pin ).execute()
     }
     
     
