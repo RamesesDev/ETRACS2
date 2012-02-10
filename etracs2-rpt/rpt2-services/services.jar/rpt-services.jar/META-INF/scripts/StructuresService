@@ -30,13 +30,17 @@ class StructuresService{
     
     @ProxyMethod
     public List lookupStructureMaterials( structureid, searchText, params) {
-        if( ! structureid ) return []
-        def structure = em.read( schemaname, [objid:structureid] )
-        def materials = structure.materials?.collect {
-            if( it.materialcode.startsWith( searchText ) || it.materialdesc.startsWith(searchText) )
-                [materialid:it.objid, materialcode:it.materialcode, materialname:it.materialdesc]
-        }
-        return materials.sort{ a,b -> a.materialcode <=> b.materialcode }
+		if( ! searchText ) return getListByQuery( 'structures:getMaterial', [:], params )
+		def result = [] 
+        
+		def criteria = [
+			code  : searchText+'%',
+			name  : searchText+'%',
+		]
+		
+		if((result = getListByQuery('structures:getMaterialByCode', criteria, params))) return result ;
+		if((result = getListByQuery('structures:getMaterialByName', criteria, params))) return result ;
+		return result 
     }
 	
 	@ProxyMethod

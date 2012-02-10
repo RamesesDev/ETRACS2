@@ -212,10 +212,27 @@ public class LandRPUController
         rpu.info.adjustments.addAll( data.adjustments )
     }
     
+    void recalcLandActualAdjustments( landdetail  )  {
+        landdetail.actualuseadjustment = 0.0
+        landdetail.adjustments.each{ 
+            def adj = svc.calculateLandActualUseAdjustment( landdetail, it )
+            it.clear()
+            it.putAll( adj )
+            landdetail.actualuseadjustment += adj.adjustment 
+        }
+    }
+    
     void calculateLandDetailAssessment( item ) {
         def data = svc.calculateLandDetailAssessment( item  )
         item.clear()
         item.putAll( data )
+        if( rpu.info.adjustments ) {
+            applyLandAdjustments( item )
+        }
+        if( item.adjustments ){
+            recalcLandActualAdjustments( item )
+        }
+        item.adjustment = item.landvalueadjustment + item.actualuseadjustment
     }
     
     void calculateTotals() {
@@ -229,7 +246,6 @@ public class LandRPUController
             rpu.totalav      += it.assessedvalue
 
             rpu.info.landtotal.basemarketvalue  += it.basemarketvalue
-            rpu.info.landtotal.adjustment       += it.adjustment
             rpu.info.landtotal.adjustment       += it.adjustment
             rpu.info.landtotal.marketvalue      += it.marketvalue
             rpu.info.landtotal.assessedvalue    += it.assessedvalue
@@ -310,7 +326,7 @@ public class LandRPUController
             new Column(name:'ptuv', caption:'Code*', type:'lookup', handler:lookupTreeUnitValue, expression:'#{unitvaluecode}', editable:true, maxWidth:80),
             new Column(name:'planttreename', caption:'Plant/Tree', maxWidth:120),
             new Column(name:'unitvalue', caption:'Unit Value', maxWidth:100, type:'decimal'),
-            new Column(name:'al', caption:'Assess Level*', maxWidth:100, type:'lookup', handler:lookupPlantTreeAssessLevel, expression:'#{assesslevelcode}', editable:true, maxWidth:80),
+            new Column(name:'al', caption:'Actual Use*', maxWidth:100, type:'lookup', handler:lookupPlantTreeAssessLevel, expression:'#{assesslevelcode}', editable:true, maxWidth:80),
             new Column(name:'bearing', caption:'Bearing*', maxWidth:100, type:'integer', editable:true),
             new Column(name:'nonbearing', caption:'NonBearing*', maxWidth:100, type:'integer', editable:true ),
             new Column(name:'basemarketvalue', caption:'Base Market Value', type:'decimal'),

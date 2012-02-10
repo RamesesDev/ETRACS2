@@ -145,8 +145,15 @@ class PlantTreeRPUService
 				agrilands = landdetails.findAll{ it.actualusecode == 'AGR' }
 			}
 			def totallandbmv 	  = agrilands.basemarketvalue.sum()
-			def totalvalueadj     = landdetails.landvalueadjustment.sum()
-			def totalactualuseadj = landdetails.actualuseadjustment.sum()
+			def totalvalueadj     = 0.0 
+			def totalactualuseadj = 0.0 
+			
+			if( landdetails.landadjustments ) {
+				totalvalueadj     = landdetails.landvalueadjustment.sum()
+			}
+			if( landdetails.adjustments ) {
+				totalactualuseadj = landdetails.actualuseadjustment.sum()
+			}
 		
 			totallandbmv 		= ( totallandbmv ? totallandbmv : 0.0 )
 			totalvalueadj 		= ( totalvalueadj ? totalvalueadj : 0.0 )
