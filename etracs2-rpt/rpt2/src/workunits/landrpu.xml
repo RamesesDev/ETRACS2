@@ -212,10 +212,27 @@ public class LandRPUController
         rpu.info.adjustments.addAll( data.adjustments )
     }
     
+    void recalcLandActualAdjustments( landdetail  )  {
+        landdetail.actualuseadjustment = 0.0
+        landdetail.adjustments.each{ 
+            def adj = svc.calculateLandActualUseAdjustment( landdetail, it )
+            it.clear()
+            it.putAll( adj )
+            landdetail.actualuseadjustment += adj.adjustment 
+        }
+    }
+    
     void calculateLandDetailAssessment( item ) {
         def data = svc.calculateLandDetailAssessment( item  )
         item.clear()
         item.putAll( data )
+        if( rpu.info.adjustments ) {
+            applyLandAdjustments( item )
+        }
+        if( item.adjustments ){
+            recalcLandActualAdjustments( item )
+        }
+        item.adjustment = item.landvalueadjustment + item.actualuseadjustment
     }
     
     void calculateTotals() {
@@ -229,7 +246,6 @@ public class LandRPUController
             rpu.totalav      += it.assessedvalue
 
             rpu.info.landtotal.basemarketvalue  += it.basemarketvalue
-            rpu.info.landtotal.adjustment       += it.adjustment
             rpu.info.landtotal.adjustment       += it.adjustment
             rpu.info.landtotal.marketvalue      += it.marketvalue
             rpu.info.landtotal.assessedvalue    += it.assessedvalue
