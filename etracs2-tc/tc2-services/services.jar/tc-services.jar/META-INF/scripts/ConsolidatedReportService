@@ -110,7 +110,7 @@ class ConsolidatedReportService {
 		craaf.endingqty = craaf.beginqty 
 		craaf.endingfrom = craaf.beginfrom 
 		craaf.endingto = craaf.beginto 
-		craaf.stubno = ( afi ) ? null : afic.stubno
+		craaf.stubno = afic?.stubno
 		 
 		em.create( schemaname, craaf )
 	}
@@ -160,7 +160,7 @@ class ConsolidatedReportService {
 				crf.endingfrom = null
 				crf.endingto = null			
 			}
-			
+			  
 			if( it.beginqty == it.issuedqty && ( it.receivedqty == null || it.receivedqty == 0 ) )
 				makeBlankBalance( it )
 			else if( it.receivedqty == it.issuedqty  && ( it.beginqty == null || it.beginqty == 0) )
@@ -415,8 +415,10 @@ class ConsolidatedReportService {
 			
 			if( !craafitem )
 				createCRAAFbyRem( rem, rf, afcontrol );
-			
-			def craaf = getCRAAFItem( "", rf.afid, afcontrol.afinventorycreditid );
+    
+			//def craaf = getCRAAFItem( "", rf.afid, afcontrol.afinventorycreditid );   			
+			def craaf = em.sqlContext.createNamedQuery( 'consolidatedreport:getCraafItemByMonthYear' )
+			   .setParameters([afid: rf.afid, afinventorycreditid: afcontrol.afinventorycreditid ]).singleResult
 			
 			if( craaf.craafyear == year && craaf.craafmonth == month && rf.issuedqty != 0 )
 				updateCRAAFbyRem( rem.objid, craaf, rf, afcontrol, rem.info.txndate );

@@ -4,6 +4,14 @@ SELECT * FROM craaf WHERE afid = $P{afid}
 [getCRAAFItem]
 SELECT * FROM craaf WHERE afinventoryid = $P{afinventoryid} OR afinventorycreditid = $P{afinventorycreditid} AND afid = $P{afid} 
 
+[getCraafItemByMonthYear]
+SELECT 
+ * 
+FROM craaf 
+WHERE afinventorycreditid = $P{afinventorycreditid} 
+ AND afid = $P{afid} 
+ORDER BY craafyear DESC, craafmonth DESC 
+
 [getAFInventoryIdStubfrom]
 SELECT objid FROM afinventory 
 WHERE irafid = $P{irafid} 
@@ -125,7 +133,7 @@ WHERE i.docstate = 'CLOSED'
 [getAfICreditByParentIdOpen]  
 SELECT  
  afic.objid, afic.prefix, afic.suffix, 
- afic.afid, afic.aftype, afic.stubno, 
+ afic.afid, afic.aftype, afctrl.stubno, 
  afctrl.collectorid, afctrl.collectorname, 
  afctrl.collectortitle, afctrl.balance as beginqty,  
  afctrl.currentseries, afctrl.endseries   
