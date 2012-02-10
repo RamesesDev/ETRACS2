@@ -154,6 +154,10 @@ public class RPTLedgerController  {
     }
     
     def editFaas() {
+        if( ! selectedItem ) return 
+        if( selectedItem.systemcreated == 1 || selectedItem.systemcreated ) {
+            throw new Exception('System posted item is not editable.')
+        }
         return InvokerUtil.lookupOpener('rptledgeritem.open',[onupdateHandler:onupdateHandler, ledger:ledger, ledgeritem:selectedItem])
     }
     
