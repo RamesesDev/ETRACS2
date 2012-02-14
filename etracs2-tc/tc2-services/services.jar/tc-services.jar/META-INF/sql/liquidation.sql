@@ -162,6 +162,25 @@ SET docstate = 'CLOSED',
 WHERE docstate = 'OPEN' 
 AND collectorid = $P{collectorid}
 
+
+[closeRemittanceByLiquidatingOfficer]
+UPDATE remittance SET 
+	docstate = 'CLOSED', 
+	liquidationid = $P{liquidationid}, 
+	liquidationno = $P{liquidationno}, 
+	liquidationdate = $P{liquidationdate} 
+WHERE docstate = 'OPEN' 
+AND liquidatingofficerid = $P{liquidatingofficerid}
+
+
+[closeRemittanceListByLiquidatingOfficer]
+UPDATE remittancelist  
+SET docstate = 'CLOSED', 
+	liquidationid = $P{liquidationid}, 
+	liquidationno = $P{liquidationno} 
+WHERE docstate = 'OPEN' 
+AND liquidatingofficerid = $P{liquidatingofficerid} 
+
 [getOtherPaymentNoLiq]
 SELECT  
  rl.objid, rl.remittanceid, r.objid, r.liquidationid,
