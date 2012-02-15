@@ -39,6 +39,7 @@
 	<parameter name="TREASURERNAME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="TREASURERTITLE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="ReportNonSerialSummary" isForPrompting="false" class="java.lang.Object"/>
+	<parameter name="ReportCollectionSummary" isForPrompting="false" class="java.lang.Object"/>
 
 	<field name="otherpayments" class="java.lang.Object"/>
 	<field name="collectorName" class="java.lang.String"/>
@@ -56,16 +57,41 @@
 	<field name="collectiontype" class="java.lang.Object"/>
 	<field name="totalchecks" class="java.math.BigDecimal"/>
 	<field name="nonserialsummary" class="java.lang.Object"/>
+	<field name="collectionsummaries" class="java.lang.Object"/>
 
 
 		<group  name="TYPE_GROUP" >
 			<groupExpression><![CDATA[]]></groupExpression>
 			<groupHeader>
-			<band height="43"  isSplitAllowed="true" >
+			<band height="15"  isSplitAllowed="true" >
+				<subreport  isUsingCache="true">
+					<reportElement
+						mode="Transparent"
+						x="0"
+						y="1"
+						width="540"
+						height="13"
+						forecolor="#000000"
+						backcolor="#FFFFFF"
+						key="subreport-6"/>
+					<dataSourceExpression><![CDATA[$F{collectiontype}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{ReportCollectionType}]]></subreportExpression>
+				</subreport>
+			</band>
+			</groupHeader>
+			<groupFooter>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+			</groupFooter>
+		</group>
+		<group  name="COLL_SUMMARY" >
+			<groupExpression><![CDATA[]]></groupExpression>
+			<groupHeader>
+			<band height="41"  isSplitAllowed="true" >
 				<staticText>
 					<reportElement
 						x="0"
-						y="14"
+						y="12"
 						width="540"
 						height="29"
 						key="staticText-42"
@@ -81,23 +107,10 @@
 					</textElement>
 				<text><![CDATA[]]></text>
 				</staticText>
-				<subreport  isUsingCache="true">
-					<reportElement
-						mode="Transparent"
-						x="0"
-						y="1"
-						width="540"
-						height="13"
-						forecolor="#000000"
-						backcolor="#FFFFFF"
-						key="subreport-6"/>
-					<dataSourceExpression><![CDATA[$F{collectiontype}]]></dataSourceExpression>
-					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{ReportCollectionType}]]></subreportExpression>
-				</subreport>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="86"
-						y="26"
+						y="24"
 						width="157"
 						height="13"
 						key="textField"
@@ -111,7 +124,7 @@
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="289"
-						y="26"
+						y="24"
 						width="157"
 						height="13"
 						key="textField-8"
@@ -125,7 +138,7 @@
 				<staticText>
 					<reportElement
 						x="445"
-						y="26"
+						y="24"
 						width="17"
 						height="13"
 						key="staticText-41"
@@ -136,6 +149,20 @@
 					</textElement>
 				<text><![CDATA[Php]]></text>
 				</staticText>
+				<subreport  isUsingCache="true">
+					<reportElement
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="540"
+						height="12"
+						forecolor="#000000"
+						backcolor="#FFFFFF"
+						key="subreport-8"
+						positionType="Float"/>
+					<dataSourceExpression><![CDATA[$F{collectionsummaries}]]></dataSourceExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{ReportCollectionSummary}]]></subreportExpression>
+				</subreport>
 			</band>
 			</groupHeader>
 			<groupFooter>

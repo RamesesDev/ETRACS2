@@ -32,11 +32,18 @@ class RemittanceReportService {
 			nonserialremittances 	: getNonSerialRemittedFormsByRemittance( rem.objid ),
 			nonserialsummary	 	: getNonSerialRemittedFormsSummary( rem.objid ),
 			otherpayments		: getOtherPayments( rem ),
-			denominations		: rem.info.denominations
+			denominations		: rem.info.denominations,
+			collectionsummaries : getCollectionSummary( rem.objid ),
 		]
 		
 		return data;
 		
+	}
+	
+	def getCollectionSummary( remid ) {
+		return em.sqlContext.createNamedQuery('remittance:getCollectionSummaryByAF')
+									.setParameters( [remittanceid: remid ] )
+								    .resultList;
 	}
 	
 	private def getOtherPayments( rem ){
