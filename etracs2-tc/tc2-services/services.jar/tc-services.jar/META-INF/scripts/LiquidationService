@@ -210,6 +210,15 @@ class LiquidationService {
 	}
 	
 	private void closeRemittance( liq ) {
+		def params = [
+			liquidationid : liq.objid,
+			liquidationno : liq.info.txnno,
+			liquidationdate : liq.info.txndate,
+			liquidatingofficerid : liq.info.liquidatingofficerid
+		];
+		em.sqlContext.createNamedExecutor( "liquidation:closeRemittanceByLiquidatingOfficer" ).setParameters( params ).execute();
+		em.sqlContext.createNamedExecutor( "liquidation:closeRemittanceListByLiquidatingOfficer" ).setParameters( params ).execute();
+		/*
 		for ( collector in getSubordinates( liq.info.liquidatingofficerid ) ) {
 			def params = [
 				liquidationid : liq.objid,
@@ -221,6 +230,7 @@ class LiquidationService {
 			em.sqlContext.createNamedExecutor( "liquidation:closeRemittances" ).setParameters( params ).execute();
 			em.sqlContext.createNamedExecutor( "liquidation:closeRemittanceLists" ).setParameters( params ).execute();
 		}
+		*/
 	}
 	
 	private void closeMultiCashierRemittance( liq ) { 	
