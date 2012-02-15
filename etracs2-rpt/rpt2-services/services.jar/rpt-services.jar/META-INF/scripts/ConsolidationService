@@ -152,7 +152,24 @@ class ConsolidationService
     
     @ProxyMethod
     public Map disapprove( consolidationid ) {
-        throw new Exception('Action not yet implemented.')
+        def consolidation = em.read( SCHEMA_NAME, [objid:consolidationid] )
+        if( !consolidation ) throw new Exception('Consolidation does not exists or is already deleted.\nPlease requiry and verify that the document still exists.')
+        if( consolidation.docstate == DRAFT_STATE ) throw new Exception('Consolidation is not yet submitted for approval.')
+        if( consolidation.docstate == FORPROVAPPROVAL_STATE ) throw new Exception('Consolidation has already been submitted to province.')
+        if( consolidation.docstate == APPROVED_STATE ) throw new Exception('Consolidation has already been approved.')      
+        
+		//delete consolidate faas 
+		faasSvc.delete( consolidation.newfaasid )
+		
+		//delete affected rpus 
+		getAffectedRpus( consolidation.objid ).each{ arpu -> 
+			faasSvc.delete( arpu.newfaasid )
+		}
+		
+		consolidation.docstate = FORAPPROVAL_STATE
+        em.update(consolidation.schemaname, consolidation )
+		
+        return consolidation
     }
     
     @ProxyMethod
@@ -214,7 +231,24 @@ class ConsolidationService
     
     @ProxyMethod
     public Map disapproveByProvince( consolidationid ) {
-        throw new Exception('Action not yet implemented.')
+        def consolidation = em.read( SCHEMA_NAME, [objid:consolidationid] )
+        if( !consolidation ) throw new Exception('Consolidation does not exists or is already deleted.\nPlease requiry and verify that the document still exists.')
+        if( consolidation.docstate == DRAFT_STATE ) throw new Exception('Subdivision is not yet submitted for approval.')
+        if( consolidation.docstate == FORAPPROVAL_STATE ) throw new Exception('Subdivision has already been submitted to province.')
+        if( consolidation.docstate == APPROVED_STATE ) throw new Exception('Subdivision has already been approved.')      
+        
+		//delete consolidate faas 
+		faasSvc.delete( consolidation.newfaasid )
+		
+		//delete affected rpus 
+		getAffectedRpus( consolidation.objid ).each{ arpu -> 
+			faasSvc.delete( arpu.newfaasid )
+		}
+		
+		consolidation.docstate = FORAPPROVAL_STATE
+        em.update(consolidation.schemaname, consolidation )
+		
+		return consolidation
     }
     
     @ProxyMethod
@@ -264,18 +298,14 @@ class ConsolidationService
     /*------------------------------------------------------------------------------------
     * ConsolidatedLand Support 
     ------------------------------------------------------------------------------------*/
-	
-	def calculateArea( def cland ){
-		println cland;
-	}
+
 	
     @ProxyMethod
     public Map createConsolidatedLand( cland ) {
         required( 'TD No.', cland.landfaasid )
         checkDuplicateConsolidatedLand( cland )
         cland.objid = 'CL' + new UID()
-		calculateArea( cland )
-        em.validate( CONSOLIDATEDLAND_SCHEMANAME, cland )
+		em.validate( CONSOLIDATEDLAND_SCHEMANAME, cland )
         em.create( CONSOLIDATEDLAND_SCHEMANAME, cland )
         refSvc.insert(cland.landfaasid, cland.consolidationid, 'Consolidation', 'Land property is referenced by a consolidation.')
         return cland 
@@ -285,8 +315,7 @@ class ConsolidationService
     public Map updateConsolidatedLand( cland )  {
         required( 'TD No.', cland.landfaasid )
         //checkDuplicateConsolidatedLand( cland )
-		calculateArea( cland )
-        em.validate( CONSOLIDATEDLAND_SCHEMANAME, cland )
+		em.validate( CONSOLIDATEDLAND_SCHEMANAME, cland )
         em.update( CONSOLIDATEDLAND_SCHEMANAME, cland )
         return cland 
     }

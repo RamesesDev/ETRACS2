@@ -165,4 +165,9 @@ update craaf c, afinventorycredit cr set
 	c.stubno = cr.stubno
 where c.afinventorycreditid = cr.objid ;
 
+create index ix_liquidationlist_period on liquidationlist( iyear, iqtr, imonth );
+
+
+alter table faaslist change column prevtdno prevtdno varchar(200) not null;
+
   
