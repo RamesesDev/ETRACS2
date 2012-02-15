@@ -42,8 +42,12 @@ public class LiquidationReportByFundController {
 
     public def getLiquidationData(){
         if( !fund ) initFundToGeneral()        
-
-        return svc.buildRCDByFundReportData( entity.objid, fund?.objid, fund?.fundname  );
+        try {
+            return svc.buildRCDByFundReportData( entity.objid, fund?.objid, fund?.fundname  );
+        }
+        catch(e ) {
+            return [:]
+        }
     }
     
     void initFundToGeneral() {
