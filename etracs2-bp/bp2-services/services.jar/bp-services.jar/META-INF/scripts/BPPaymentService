@@ -9,17 +9,17 @@ class BPPaymentService{
 	
 	@ProxyMethod
 	public def getBPPReportLists( def year, def qtr, def month, def day ){
-		
+
 		def param = [
 			iyear : year,
 			iqtr : qtr,
 			imonth : ( month?.month ? month.month : '%' ),
-			iday : ( day ? day : '%' )
+			iday : month?.month ? ( day ? day : '%' ) : '%'
 		]
 		
 		def result = getBPPReportLists( param )
 		if( !result ) 
-			throw new Exception('Records found')
+			throw new Exception('Records found.')
 		
 		return result
 	}
@@ -83,7 +83,7 @@ class BPPaymentService{
 	
 	@ProxyMethod
 	public def buildPeriod( year, qtr, month, day ) {
-		if( day ) return 'For the day of ' + getMonthName( month ) + ' ' + day + ', ' + year 
+		if( month && day ) return 'For the day of ' + getMonthName( month ) + ' ' + day + ', ' + year 
 		if( month ) return 'For the month of ' + getMonthName( month ) + ', ' + year 
 		if( qtr ) return 'For the ' + getQuarterName( qtr ) + ' of ' + year 
 		return 'For the Year ' + year 
