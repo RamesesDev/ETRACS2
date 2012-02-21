@@ -1,0 +1,90 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/rpt/reports/assessor" action="init" caption="Report on Real Property Assessment" permission="rptreport.reportonrpa" index="9" />
+        <invoker type="rptreport"               action="init" opener="reportrpa" caption="Report on Real Property Assessment" target="window" permission="rptreport.comparativemv" index="6" />
+        <invoker type="rptreport.reportrpa" action="init"     caption="Report on Real Property Assessment" />
+        
+        <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png" immediate="true"/>
+        <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
+        <invoker type="formActions"     action="preview" caption="Preview" mnemonic="v"             icon="images/doc-view.png"/>
+        
+        <invoker type="previewActions"  action="back" caption="Back" icon="images/back.png" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class ReportOnRealPropertyAssessment
+{
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('RPTReportService') 
+    def svc 
+    
+    @Service('DateService')
+    def dateSvc
+    
+    def year
+    def qtr
+    def month
+    
+    
+    def data
+    
+    void init() {
+        year = dateSvc.serverYear 
+    }
+
+    def preview() {
+        generateReport()
+        return 'preview' 
+    }
+    
+    void generateReport() {
+        data = svc.generateReportOnRPA( year, qtr, month?.month )
+        report.viewReport()
+    }
+    
+    void print(){
+        generateReport()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def report = [
+        getReportName : { 'reportonrpa' },
+        getReportData : { return data.reportdata },
+        getParameters : { svcParams.getStandardParameter( OsirisContext.env.USERNAME ) + [
+                            TITLE       : data.title, 
+                            PERIOD      : data.period,
+                            PERIODTYPE  : data.periodtype,
+                            LGUTYPE     : data.lgutype,
+                            BRGYCOUNT   : data.brgycount,
+                        ]}
+    ] as ServerReportModel;
+        
+    def back() {
+        return 'default' 
+    }
+    
+    List getQuarterlist() {
+        return [1,2,3,4]
+    }
+    
+    List getMonthlist() {
+        return svc.getMonthList( qtr )
+    }
+    
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.rpt.report.RPTReportInitialPage" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>

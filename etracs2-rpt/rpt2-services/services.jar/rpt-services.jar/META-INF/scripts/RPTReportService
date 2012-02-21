@@ -147,6 +147,79 @@ class RPTReportService
 		return list 
 	}
 	
+	def buildQuarterlyPeriod( year, qtr ) {
+		def period = 'JAN - MAR, ' + year 
+		if( qtr == 2 ) period = 'APR - JUN, ' + year 
+		else if( qtr == 3 ) period = 'JUL - SEP, ' + year 
+		else if( qtr == 4 ) period = 'OCT - NOV, ' + year 
+		return period 
+	}
+	
+	@ProxyMethod
+	public Map generateReportOnRPA( year, qtr, month ) {
+		def title 		= 'QUARTERLY REPORT ON REAL PROPERTY ASSESSMENTS'
+		def period = buildQuarterlyPeriod( year, qtr )
+		def periodtype 	= 'QUARTER'
+		if( month && month > 0 ) {
+			title = 'MONTHLY REPORT ON REAL PROPERTY ASSESSMENTS'
+			period = getMonthName( month ) + ', ' + year 
+			periodtype = 'MONTH' 
+		}
+		
+		def params = [ lguindex:var.lgu_index ]
+		params.txntimestamp	= calculateCurrentTimeStamp( year, qtr, month )
+		
+		def taxables = em.sqlContext.createNamedQuery('rptreport:getReportOnRPATaxable').setParameters(params).resultList 
+		
+		int lineno = 1
+		int charindex = 'a' 
+		def taxableclasses = getClassificationList()
+		def firstspecial = taxableclasses.find{ it.special == 1 }
+		taxableclasses.add( taxableclasses.indexOf( firstspecial), [objid:'SPECIAL', classname:'SPECIAL', special:0] )
+		
+		taxableclasses.each{ item ->
+			def taxable = taxables.find{ it.classid == item.objid }
+			if( taxable ) {
+				item.putAll( taxable )
+			}
+			item.taxability = 'TAXABLE' 
+			if( item.special == 0 ) {
+				item.classname = lineno + '. ' + item.classname 
+				lineno += 1
+			}
+			else {
+				item.classname = '   ' + ((char)charindex) + '. ' + item.classname 
+				charindex += 1;
+			}
+		}
+		
+		def exempts  = em.sqlContext.createNamedQuery('rptreport:getReportOnRPAExempt').setParameters(params).resultList 
+		
+		lineno = 1 
+		def exemptclasses  = getExemptionList();
+		exemptclasses.each { item -> 
+			def exempt = exempts.find{ it.classid == item.objid }
+			if( exempt ) {
+				item.putAll( exempt )
+			}
+			item.classname = lineno + '. ' + item.classname 
+			item.taxability = 'EXEMPT'
+			lineno += 1
+		}
+		
+		
+		return [
+			period 		: period,
+			periodtype 	: periodtype,
+			title 		: title,
+			lguname     : var.lgu_name,
+			lgutype     : var.lgu_type, 
+			brgycount   : getBarangayList().size(),
+			reportdata  : taxableclasses + exemptclasses,
+		]
+	}
+	
+	
 	@ProxyMethod
 	public Map generateAccomplishmentRPA( year, qtr, month ) {
 		def title 		= 'QUARTERLY ACCOMPLISHMENT REPORT ON REAL PROPERTY ASSESSMENTS'
