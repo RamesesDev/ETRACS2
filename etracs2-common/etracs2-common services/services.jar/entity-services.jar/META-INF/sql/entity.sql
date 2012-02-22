@@ -1,15 +1,15 @@
 [getList] 
-SELECT objid, schemaname, schemaversion, entityno, entitytype, entityname, entityaddress, contactno  
+SELECT objid, schemaname, schemaversion, entityno, entitytype, entityname, entityaddress 
 FROM entity 
 ORDER BY entityname 
 
 [getListByNo] 
-SELECT objid, schemaname, schemaversion, entityno, entitytype, entityname, entityaddress, contactno  
+SELECT objid, schemaname, schemaversion, entityno, entitytype, entityname, entityaddress  
 FROM entity 
 WHERE entityno = $P{entityno} 
 
 [getListByName] 
-SELECT objid, schemaname, schemaversion, entityno, entitytype, entityname, entityaddress, contactno   
+SELECT objid, schemaname, schemaversion, entityno, entitytype, entityname, entityaddress 
 FROM entity 
 WHERE entityname LIKE $P{entityname} 
 ORDER BY entityname 
