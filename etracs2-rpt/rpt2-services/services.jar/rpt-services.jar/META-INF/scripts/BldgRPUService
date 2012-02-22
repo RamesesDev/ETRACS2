@@ -202,7 +202,7 @@ class BldgRPUService
         if( ! bldgtype.depreciations ) throw new Exception('Depreciation schedule for Type ' + bldgtype.bldgtypecode + ' is not defined.')
 		def depreciationrate = 0
         
-		int bldgage = calculateBldgAge( issuedate, dtcompleted, dtoccupied )
+		int bldgage = calculateBldgAge( bldgtype, issuedate, dtcompleted, dtoccupied )
         if( bldgage > 0 )  {
             for ( sked in bldgtype.depreciations ) {
                 if( sked.ageto != 0 && sked.ageto <= bldgage ) {
@@ -218,21 +218,28 @@ class BldgRPUService
 		def maxdepreciation = 100.0 - bldgtype.residualrate 
 		if( maxdepreciation < depreciationrate) 
 			return maxdepreciation
-		return depreciationrate
+		return new BigDecimal(depreciationrate +'')
 	}
 	
 	@ProxyMethod
-	public def calculateBldgAge( issuedate, dtcompleted, dtoccupied ) {
+	public def calculateBldgAge( bldgtype, issuedate, dtcompleted, dtoccupied ) {
 		if( ! (issuedate && dtcompleted && dtoccupied ) ) {
             return 0
-        }
+        } 
+		
 		
         issuedate = dateSvc.parse( 'yyyy-MM-dd', issuedate )
         dtcompleted = dateSvc.parse( 'yyyy-MM-dd', dtcompleted)
         dtoccupied = dateSvc.parse( 'yyyy-MM-dd', dtoccupied)
         
 		def refdate = dtcompleted
-		if( dtoccupied < dtcompleted) {
+		
+		//check calcbldgagebasedondtoccupied option
+		if( bldgtype.calcbldgagebasedondtoccupied 
+			&& TO_BOOLEAN( bldgtype.calcbldgagebasedondtoccupied ) == true ) {
+				refdate = dtoccupied 
+		}
+		else if( dtoccupied < dtcompleted) {
 			refdate = dtoccupied
 		}
 		int refyear = dateSvc.getYear( refdate )
@@ -382,7 +389,7 @@ class BldgRPUService
 		def totaldepreciationrate 	= 0.0
 		floor.depreciationvalue 	= 0.0 
 		def depreciationvalue 		= 0.0 
-		int bldgage 				= calculateBldgAge( issuedate, dtcompleted, dtoccupied )
+		int bldgage 				= calculateBldgAge( bldgtype, issuedate, dtcompleted, dtoccupied )
 		def maxdepreciation			= 100 - bldgtype.residualrate 
 		
         if( bldgage > 0 )  {

@@ -99,6 +99,7 @@ public class BldgRPUController
         rpu.info.bldgtype = bt 
         bldgtype = bt.bldgtypecode 
         clearBldgKindInfo()
+        calcBldgAge();
         binding.refresh('bldgtype|rpu.info.bldgtype.*')
     }
     
@@ -115,6 +116,7 @@ public class BldgRPUController
         rpu.info.firstfloorbasevalue = firstfloorbasevalue
         
         bldgkind = bk.bldgkindcode 
+        calcBldgAge()
         binding.refresh('bldgkind|rpu.info.bldgkind.*|rpu.info.firstfloorbasevalue')
     }
     
@@ -169,7 +171,7 @@ public class BldgRPUController
     }
     
     void calcBldgAge() {
-        rpu.info.bldgage = svc.calculateBldgAge( rpu.issuedate, rpu.info.dtcompleted, rpu.info.dtoccupied ) 
+        rpu.info.bldgage = svc.calculateBldgAge( rpu.info.bldgtype, rpu.issuedate, rpu.info.dtcompleted, rpu.info.dtoccupied ) 
         bldgage = rpu.info.bldgage 
         binding.refresh('bldgage')
     }
