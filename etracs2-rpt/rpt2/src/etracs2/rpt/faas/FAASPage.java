@@ -546,7 +546,7 @@ public class FAASPage extends javax.swing.JPanel {
         xTextField12.setBounds(198, 40, 128, 19);
 
         xLabel11.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        xLabel11.setFont(new java.awt.Font("Arial", 1, 11));
+        xLabel11.setFont(new java.awt.Font("Arial", 1, 14));
         xLabel11.setName("faas.rpu.fullpin");
         xLabel11.setPreferredSize(new java.awt.Dimension(99, 19));
         jPanel10.add(xLabel11);
