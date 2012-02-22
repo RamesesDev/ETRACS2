@@ -59,6 +59,7 @@ public class FAASNewPage extends javax.swing.JPanel {
         xComboBox1.setCaption("Transaction");
         xComboBox1.setCaptionWidth(100);
         xComboBox1.setExpression("#{caption}");
+        xComboBox1.setImmediate(true);
         xComboBox1.setIndex(-10);
         xComboBox1.setItems("txnTypes");
         xComboBox1.setName("faas.info.txn");
@@ -77,6 +78,7 @@ public class FAASNewPage extends javax.swing.JPanel {
         xComboBox3.setCaption("Barangay");
         xComboBox3.setCaptionWidth(100);
         xComboBox3.setExpression("#{lguname}");
+        xComboBox3.setImmediate(true);
         xComboBox3.setIndex(-10);
         xComboBox3.setItems("barangays");
         xComboBox3.setName("barangay");
@@ -110,7 +112,7 @@ public class FAASNewPage extends javax.swing.JPanel {
 
         xTextField2.setCaption("Claim No.");
         xTextField2.setCaptionWidth(100);
-        xTextField2.setDepends(new String[] {"faas.info.txn"});
+        xTextField2.setDepends(new String[] {"faas.info.txn", "barangay"});
         xTextField2.setName("faas.info.claimno");
         xTextField2.setPreferredSize(new java.awt.Dimension(100, 19));
         xTextField2.addActionListener(new java.awt.event.ActionListener() {
