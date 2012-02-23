@@ -29,7 +29,6 @@ ORDER BY dtissued, stubno
 SELECT * FROM afcontrol 
 WHERE collectorid = $P{collectorid} 
   AND docstate = 'APPROVED' 
-  AND afid = '51' 
   AND mode = 'CAPTURE' 
   AND aftype = 'serial' 
   AND balance > 0 

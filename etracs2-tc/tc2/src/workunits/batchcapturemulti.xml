@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workunit>
     <invokers>
-        <invoker folderid="/menu/tc" action="init" caption="Batch Capture" permission="batchcapture.create" />
-        <invoker type="batchcapture.create" action="init" caption="Batch Capture (New)" target="window" permission="batchcapture.create"/>
-        <invoker type="batchcapture.view"  action="open" caption="Batch Capture" target="window" permission="batchcapture.view"/>
+        <invoker folderid="/menu/tc" action="init" caption="Batch Capture (Multi-Account)" permission="batchcapture.create" />
+        <invoker type="batchcapturemulti.create" action="init" caption="Batch Capture (New)" target="window" permission="batchcapture.create"/>
+        <invoker type="batchcapturemulti.view"  action="open" caption="Batch Capture" target="window" permission="batchcapture.view"/>
         
-        <invoker type="formActions" action="_close" caption="Close" mnemonic="c" shortcut="ctrl + W" icon="images/cancel.png" />
+        <invoker type="formActions" action="_close" caption="Close" mnemonic="c" shortcut="ctrl+W" icon="images/cancel.png" />
         <invoker type="formActions" action="save" caption="Save" mnemonic="s" shortcut="ctrl + S" icon="images/doc-save.png" visibleWhen="#{entity.docstate == DRAFT_STATE}" />
         <invoker type="formActions" action="delete" caption="Delete" mnemonic="d" shortcut="ctrl + D" icon="images/doc-delete.png" visibleWhen="#{entity.docstate == DRAFT_STATE and entity.objid != null }" permission="batchcapture.delete" />
         <invoker type="formActions" action="post" caption="Post" mnemonic="p" shortcut="ctrl + P" icon="images/doc-approve.png" visibleWhen="#{entity.docstate == DRAFT_STATE and entity.objid != null }" permission="batchcapture.post" />
@@ -19,7 +19,7 @@ import com.rameses.rcp.common.*
 import com.rameses.osiris2.client.*
 
 
-public class BatchCaptureController
+public class BatchCaptureMultiController
 {
     @Binding
     def binding
@@ -91,11 +91,49 @@ public class BatchCaptureController
         }
     }
 
+    def addItem() {
+        if( entity.series > afcontrol.endseries ) 
+            throw new Exception('Last series has already been added.')
+            
+        return InvokerUtil.lookupOpener('batchcapturemulti.add', [
+            batch       : entity,
+            afcontrol   : afcontrol, 
+            onadd       : { receipt ->
+                entity.items.add( receipt )
+                entity.series += 1
+                listHandler.load()
+                binding.refresh('total')
+            }
+        ]) 
+    }
+    
+    def editItem() {
+        if( !selectedItem) return 
+        return InvokerUtil.lookupOpener('batchcapturemulti.edit', [
+            batch       : entity,
+            entity      : selectedItem ,
+            afcontrol   : afcontrol, 
+            onedit    : { receipt ->
+                listHandler.load()
+                binding.refresh('total')
+            }
+        ]) 
+    }
+    
+    void deleteLastItem() {
+        if( ! entity.items ) return 
+        if( MsgBox.confirm('Delete last item?') ) {
+            entity.items.remove( entity.items.size() -1 )
+            entity.series -= 1 
+        }
+    }
+    
+    
     def createBatch() {
         defaulttxndate = svc.validateTxnDate( defaulttxndate )
         entity = [
                 docstate        : DRAFT_STATE, 
-                opener          : 'batchcapture', 
+                opener          : 'batchcapturemulti', 
                 collector 	: collector, 
                 afcontrol	: afcontrol,
                 collectiontype	: collectiontype,
@@ -106,88 +144,12 @@ public class BatchCaptureController
                 series          : afcontrol.currentseries,
                 encodedbyid     : OsirisContext.env.USERID, 
                 encodedby       : OsirisContext.env.USERNAME,
-                encodedbytitle  : OsirisContext.env.JOBTITLE,
                 collectorid     : collector.objid,
                 collectorname   : collector.name, 
         ]
         return 'default'
     }
-
-    def lookupAccount = InvokerUtil.lookupOpener( 'incomeacct:lookup', [:] )
-
-    def allowColumnEdit = { item ->
-        if( item.series <= afcontrol.endseries ) return true 
-        if( entity.series <= afcontrol.endseries ) return true
-        return false
-    } as Map
     
-    def listHandler = [
-        createItem  : { return createItem() },
-        getRows     : { return 50 },
-        getColumns  : { return [
-            new Column( name:'serialno', caption:'Serial No.', maxWidth:130 ),
-            new Column( name:'txndate', caption:'Txn Date*', editable:'true', maxWidth:110, editableWhen:'#{root.allowColumnEdit[item]}' ),
-            new Column( name:'paidby', caption:'Paid By*', editable:'true', editableWhen:'#{root.allowColumnEdit[item]}' ),
-            new Column( name:'paidbyaddress', caption:'Address*', editable:'true', editableWhen:'#{root.allowColumnEdit[item]}' ),
-            new Column( name:'account', caption:'Account*', type:'lookup', expression:'#{accttitle}', handler:lookupAccount, editable:'true', minWidth:250, editableWhen:'#{root.allowColumnEdit[item]}' ),
-            new Column( name:'amount', caption:'Amount*', type:'decimal', format:'#,##0.00', editable:'true' , editableWhen:'#{root.allowColumnEdit[item]}' ),
-            new Column( name:'remarks', caption:'Remarks', editable:'true', editableWhen:'#{root.allowColumnEdit[item]}' ),
-            new Column( name:'voided', caption:'Voided', type:'boolean', editable:'true' , editableWhen:'#{root.allowColumnEdit[item]}' ),
-        ]},
-        validate 	: { li -> validateItem( li.item ) },
-        onAddItem  : { item -> 
-            entity.items.add( item ) 
-            entity.series += 1 
-            binding.refresh('total')
-        },
-        onRemoveItem  : { item ->
-            if( item != entity.items.get( entity.items.size()-1) )      
-                return false 
-            if( MsgBox.confirm("Delete selected item?") ) {
-                entity.items.remove( item )
-                entity.series -= 1 
-                binding.refresh('total')
-            }
-        },
-        fetchList 	: { return entity?.items },
-    ] as SubListModel 
-
-    void validateItem( item ) {
-        try {
-            required( 'Txn Date', item.txndate )
-            item.txndate = svc.validateTxnDate( item.txndate )
-            required( 'Paid By', item.paidby )
-            required( 'Address', item.paidbyaddress )
-            required( 'Account', item.account )
-            required( 'Amount', item.amount )
-            if( item.amount <= 0 ) throw new Exception('Amount must be greater than zero.')
-            defaulttxndate = item.txndate 
-            errormsg = null
-            binding.refresh( 'errormsg|total' ) 
-        }
-        catch( e ) {
-            errormsg = e.message 
-            binding.refresh( 'errormsg' ) 
-            throw e 
-        }
-    }
-
-
-    void required( caption, value ) {
-        if( ! value ) throw new Exception(caption + ' is required.')
-    }
-
-
-    def createItem() {
-        return [
-            txndate         : defaulttxndate, 
-            paidbyaddress   : VAR.lgu_name,
-            series          : entity?.series,
-            voided          : false, 
-            serialno        : formatSeries( entity?.series, afcontrol?.prefix, afcontrol?.suffix, afcontrol?.serieslength ), 
-        ]
-    }
-
     def formatSeries( series, prefix, suffix, serieslength ) {
         if( !serieslength ) serieslength = 7
         def p = (prefix ? prefix + '-' : '')
@@ -214,6 +176,29 @@ public class BatchCaptureController
             return 0.0
         return total
     }
+    
+    def listHandler = [
+        getRows     : { return 50 },
+        getColumns  : { return [
+            new Column( name:'serialno', caption:'Serial No.', maxWidth:130 ),
+            new Column( name:'txndate', caption:'Txn Date*', maxWidth:110),
+            new Column( name:'paidby', caption:'Paid By*' ),
+            new Column( name:'paidbyaddress', caption:'Address*' ),
+            new Column( name:'amount', caption:'Amount*', type:'decimal', format:'#,##0.00'),
+            new Column( name:'remarks', caption:'Remarks' ),
+            new Column( name:'voided', caption:'Voided', type:'boolean'),
+        ]},
+        fetchList : { return entity?.items },
+    ] as SubListModel 
+    
+    def itemHandler = [
+        getColumns  : { return [
+            new Column( name:'account', caption:'Account', expression:'#{accttitle}' ),
+            new Column( name:'amount', caption:'Amount' ),
+            new Column( name:'remarks', caption:'Remarks'),
+        ]},
+        fetchList 	: { return selectedItem?.items },
+    ] as SubListModel 
 }
 
 ]]>
@@ -221,7 +206,7 @@ public class BatchCaptureController
     
     <pages>
        <page name="init" template="etracs2.tc.collection.BatchCaptureInitPage" />
-       <page template="etracs2.tc.collection.BatchCapturePage" />
+       <page template="etracs2.tc.collection.BatchCaptureMultiPage" />
     </pages>
 </workunit>
 

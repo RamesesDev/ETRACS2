@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="batchcapturemulti.add" action="init" caption="Add Receipt Item" target="popup"  />
+        <invoker type="batchcapturemulti.edit" action="open" caption="Edit Receipt Item" target="popup"  />
+    </invokers>
+    
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+
+
+public class BatchCaptureMultiAddController
+{
+    @Binding
+    def binding
+
+    @Service('DateService')
+    def dateSvc
+    
+    @Service('Var')
+    def VAR 
+
+    def onadd //handler
+    def onedit //handler
+    
+    def mode 
+
+    def batch 
+    def afcontrol 
+    def entity 
+    def selectedItem 
+    def errormsg 
+    
+    void init() {
+        mode = 'create' 
+        entity = [
+            txndate         : batch.defaulttxndate, 
+            paidbyaddress   : VAR.lgu_name,
+            series          : batch?.series,
+            voided          : false, 
+            serialno        : formatSeries( batch?.series, afcontrol?.prefix, afcontrol?.suffix, afcontrol?.serieslength ), 
+            items           : [],
+        ]
+    }
+    
+    void open() {
+        mode = 'edit' 
+    }
+    
+    def ok() {
+        calcReceiptAmount()
+        if( entity.amount <= 0.0 ) throw new Exception('Amount must be greater than zero.')
+        if( mode == 'create' ) {
+            if( onadd ) onadd( entity )
+        }
+        else{
+            if( onedit ) onedit( entity )
+        }
+        return '_close' 
+    }
+    
+    void calcReceiptAmount() {
+        def total = entity.items.amount.sum()
+        total = ( total ? total : 0.0 )
+        entity.amount = total 
+        binding.refresh('entity.amount')
+    }
+    
+    
+    def lookupAccount = InvokerUtil.lookupOpener( 'incomeacct:lookup', [:] )
+
+    def listHandler = [
+        createItem  : { return [:] },
+        getColumns  : { return [
+            new Column( name:'account', caption:'Account*', type:'lookup', expression:'#{accttitle}', handler:lookupAccount, editable:'true', minWidth:250 ),
+            new Column( name:'amount', caption:'Amount*', type:'decimal', format:'#,##0.00', editable:'true'),
+            new Column( name:'remarks', caption:'Remarks', editable:'true' ),
+        ]},
+        validate   : { li -> validateReceiptItem( li.item ) },
+        onAddItem  : { item -> 
+            entity.items.add( item ) 
+            calcReceiptAmount()
+        },
+        onRemoveItem  : { item ->
+            if( MsgBox.confirm("Delete selected item?") ) {
+                entity.items.remove( item )
+                calcReceiptAmount()
+            }
+        },
+        fetchList 	: { return entity.items },
+    ] as SubListModel 
+    
+    void validateReceiptItem( item ) {
+        try {
+            required( 'Account', item.account )
+            required( 'Amount', item.amount )
+            if( item.amount <= 0 ) throw new Exception('Amount must be greater than zero.')
+            calcReceiptAmount()
+            errormsg = null
+            binding.refresh( 'errormsg' ) 
+        }
+        catch( e ) {
+            errormsg = e.message 
+            binding.refresh( 'errormsg' ) 
+            throw e 
+        }
+    }
+    
+    def formatSeries( series, prefix, suffix, serieslength ) {
+        if( !serieslength ) serieslength = 7
+        def p = (prefix ? prefix + '-' : '')
+        def s  = (suffix ? '-' + suffix : '')
+        return p + (series+'').padLeft(serieslength, '0') + s  
+    }
+    
+    void required( caption, value ) {
+        if( ! value ) throw new Exception(caption + ' is required.')
+    }
+}
+
+]]>
+    </code>
+    
+    <pages>
+       <page template="etracs2.tc.collection.BatchCaptureMultiAddPage" />
+    </pages>
+</workunit>
+

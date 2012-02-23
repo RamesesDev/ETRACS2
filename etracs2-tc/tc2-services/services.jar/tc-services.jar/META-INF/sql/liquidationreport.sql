@@ -47,7 +47,7 @@ SELECT
 	WHEN af.objid = '51' AND af.aftype = 'serial' AND ia.groupid IS NULL THEN CONCAT( 'AF#', rl.afid, ': ', ri.fundname ) 
 	WHEN af.objid = '51' AND af.aftype = 'serial' AND ia.groupid IS NOT NULL THEN CONCAT( 'AF#', rl.afid, ': ', ia.groupid ) 
 	WHEN af.aftype = 'nonserial' AND ia.groupid IS NOT NULL THEN CONCAT( rl.afid, ': ', ia.groupid ) 
-	ELSE CONCAT( rl.afid, ': ', af.description,' - ', ri.fundname ) 
+	ELSE CONCAT( 'AF#',rl.afid, ': ', af.description,' - ', ri.fundname ) 
 	END AS particulars, 
 	SUM( ri.amount ) AS  amount   
 FROM receiptitem ri   

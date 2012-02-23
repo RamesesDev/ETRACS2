@@ -101,6 +101,7 @@ class BatchCaptureService
 			doctype			: getDocType( batch.collectiontype ),
 			opener			: 'tc:' + batch.collectiontype.appcode,
 			collectorid		: batch.collector.objid,
+			capturedbyid	: batch.encodedbyid,
 			remittanceid	: null,
 			remittanceno	: null,
 			remittancedate	: null,
@@ -131,17 +132,30 @@ class BatchCaptureService
 		]]
 	}
 	
-	def buildItems( batch, item ) {
-		return [[
-			objid 		: 'BCI' + new UID(),
-			acctid		: item.account.objid, 
-			accttitle	: item.account.accttitle, 
-			fundid		: item.account.fundid, 
-			fundname	: item.account.fundname, 
-			amount		: item.amount,
-			remarks		: item.remarks,
-			refid		: null, 
-		]]
+	def buildItems( batch, receipt ) {
+		def list = []
+		if( receipt.items && receipt.items.size() > 0 ) {
+			receipt.items.each { item ->
+				list.add( createReceiptItem( item ) )
+			}
+		}
+		else {
+			list.add( createReceiptItem( receipt ) )
+		}
+		return list 
+	}
+	
+	def createReceiptItem( item ) {
+		return [
+				objid 		: 'BCI' + new UID(),
+				acctid		: item.account.objid, 
+				accttitle	: item.account.accttitle, 
+				fundid		: item.account.fundid, 
+				fundname	: item.account.fundname, 
+				amount		: item.amount,
+				remarks		: item.remarks,
+				refid		: null, 
+			]
 	}
 	
 	def buildReceiptInfo( batch, item ) {
@@ -165,6 +179,9 @@ class BatchCaptureService
 			collectorid		: batch.collector.objid, 
 			collectorname	: batch.collector.name, 
 			collectortitle	: batch.collector.jobtitle, 
+			capturedbyid	: batch.encodedbyid,
+			capturedbyname	: batch.encodedby,
+			capturedbytitle	: batch.encodedbytitle,
 			totalpayment	: item.amount,
 			cash			: item.amount,
 			otherpayment	: 0.0,
@@ -210,8 +227,10 @@ class BatchCaptureService
 			required("Item $index: Txn Date", item.txndate )
 			required("Item $index: Paid By", item.paidby )
 			required("Item $index: Address", item.paidbyaddress )
-			required("Item $index: Account", item.account )
-			required("Item $index: Amount", item.amount )
+			if( ! item.items ) {
+				required("Item $index: Account", item.account )
+				required("Item $index: Amount", item.amount )
+			}
 			if( item.amount == 0 ) throw new Exception("Item $index: Amount must be greater than zero.")
 			index += 1 
 		}

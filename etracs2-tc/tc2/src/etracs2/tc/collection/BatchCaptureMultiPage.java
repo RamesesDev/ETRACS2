@@ -13,10 +13,10 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  * @author  jzamora
  */
 @StyleSheet("etracs2/tc/collection/BatchCapturePage.style")
-public class BatchCapturePage extends javax.swing.JPanel {
+public class BatchCaptureMultiPage extends javax.swing.JPanel {
     
     /** Creates new form BatchCapturePage */
-    public BatchCapturePage() {
+    public BatchCaptureMultiPage() {
         initComponents();
     }
     
@@ -33,11 +33,16 @@ public class BatchCapturePage extends javax.swing.JPanel {
         xLabel2 = new com.rameses.rcp.control.XLabel();
         xLabel3 = new com.rameses.rcp.control.XLabel();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
-        xDataTable1 = new com.rameses.rcp.control.XDataTable();
         jPanel2 = new javax.swing.JPanel();
-        xLabel5 = new com.rameses.rcp.control.XLabel();
         formPanel2 = new com.rameses.rcp.util.FormPanel();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
+        jPanel3 = new javax.swing.JPanel();
+        XDataTable2 = new com.rameses.rcp.control.XDataTable();
+        jPanel4 = new javax.swing.JPanel();
+        xDataTable1 = new com.rameses.rcp.control.XDataTable();
+        xButton1 = new com.rameses.rcp.control.XButton();
+        xButton2 = new com.rameses.rcp.control.XButton();
+        xButton3 = new com.rameses.rcp.control.XButton();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -90,22 +95,7 @@ public class BatchCapturePage extends javax.swing.JPanel {
         );
         add(jPanel1, java.awt.BorderLayout.NORTH);
 
-        com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("Collection Details");
-        xDataTable1.setBorder(xTitledBorder1);
-        xDataTable1.setFont(new java.awt.Font("Tahoma", 0, 14));
-        xDataTable1.setHandler("listHandler");
-        xDataTable1.setImmediate(true);
-        xDataTable1.setName("selectedItem");
-        xDataTable1.setShowRowHeader(true);
-        add(xDataTable1, java.awt.BorderLayout.CENTER);
-
         jPanel2.setLayout(new java.awt.BorderLayout());
-
-        xLabel5.setForeground(new java.awt.Color(153, 51, 0));
-        xLabel5.setFont(new java.awt.Font("Arial", 1, 14));
-        xLabel5.setName("errormsg");
-        jPanel2.add(xLabel5, java.awt.BorderLayout.CENTER);
 
         formPanel2.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         formPanel2.setCaptionFont(new java.awt.Font("Arial", 1, 14));
@@ -125,20 +115,91 @@ public class BatchCapturePage extends javax.swing.JPanel {
 
         add(jPanel2, java.awt.BorderLayout.SOUTH);
 
+        jPanel3.setLayout(new java.awt.BorderLayout());
+
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder1.setTitle("Receipt Items");
+        XDataTable2.setBorder(xTitledBorder1);
+        XDataTable2.setDepends(new String[] {"selectedItem"});
+        XDataTable2.setDynamic(true);
+        XDataTable2.setFocusable(false);
+        XDataTable2.setHandler("itemHandler");
+        XDataTable2.setImmediate(true);
+        XDataTable2.setName("receiptItem");
+        XDataTable2.setPreferredSize(new java.awt.Dimension(200, 120));
+        jPanel3.add(XDataTable2, java.awt.BorderLayout.SOUTH);
+
+        com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
+        xTitledBorder2.setTitle("Collection Details");
+        xDataTable1.setBorder(xTitledBorder2);
+        xDataTable1.setFont(new java.awt.Font("Tahoma", 0, 14));
+        xDataTable1.setHandler("listHandler");
+        xDataTable1.setImmediate(true);
+        xDataTable1.setIndex(-10);
+        xDataTable1.setName("selectedItem");
+        xDataTable1.setShowRowHeader(true);
+
+        xButton1.setMnemonic('a');
+        xButton1.setText("Add Item");
+        xButton1.setDefaultCommand(true);
+        xButton1.setName("addItem");
+
+        xButton2.setMnemonic('e');
+        xButton2.setText("Edit Item");
+        xButton2.setName("editItem");
+
+        xButton3.setMnemonic('d');
+        xButton3.setText("Delete Last Item");
+        xButton3.setName("deleteLastItem");
+
+        org.jdesktop.layout.GroupLayout jPanel4Layout = new org.jdesktop.layout.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 833, Short.MAX_VALUE)
+            .add(jPanel4Layout.createSequentialGroup()
+                .addContainerGap()
+                .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(xButton3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(548, Short.MAX_VALUE))
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel4Layout.createSequentialGroup()
+                .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 23, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(xButton3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 197, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        jPanel3.add(jPanel4, java.awt.BorderLayout.CENTER);
+
+        add(jPanel3, java.awt.BorderLayout.CENTER);
+
     }// </editor-fold>//GEN-END:initComponents
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private com.rameses.rcp.control.XDataTable XDataTable2;
     private com.rameses.rcp.util.FormPanel formPanel1;
     private com.rameses.rcp.util.FormPanel formPanel2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
     private com.rameses.rcp.control.XActionBar xActionBar1;
+    private com.rameses.rcp.control.XButton xButton1;
+    private com.rameses.rcp.control.XButton xButton2;
+    private com.rameses.rcp.control.XButton xButton3;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XLabel xLabel1;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
-    private com.rameses.rcp.control.XLabel xLabel5;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     // End of variables declaration//GEN-END:variables
     

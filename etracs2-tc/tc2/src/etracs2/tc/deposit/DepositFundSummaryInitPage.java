@@ -53,7 +53,7 @@ public class DepositFundSummaryInitPage extends javax.swing.JPanel {
         xComboBox1.setCaption("Fund");
         xComboBox1.setCaptionWidth(60);
         xComboBox1.setDynamic(true);
-        xComboBox1.setExpression("#{fund}");
+        xComboBox1.setExpression("#{fundname}");
         xComboBox1.setImmediate(true);
         xComboBox1.setItems("fundlist");
         xComboBox1.setName("fund");
