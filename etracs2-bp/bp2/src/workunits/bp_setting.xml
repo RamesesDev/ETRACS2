@@ -32,6 +32,12 @@ class BPSettingController
         if( !setting.requirements ) setting.requirements = [];
     }
     
+    def removeItem( def item, def obj ){
+        if( MsgBox.confirm('Delete selected setting?') ) {
+            item.remove( obj )
+        }
+    }
+    
     def applicationHandler = [
         getRows: {return 50;},
         getColumns: {
@@ -45,6 +51,9 @@ class BPSettingController
         validate:{ validateSignatory( it.item ); },
         createItem: { return [:]; },
         onAddItem :{ if( it ) setting.applicationsignatories.add( it ); },
+        onRemoveItem : { bpsttng ->
+            removeItem( setting.applicationsignatories, bpsttng )
+        },
         fetchList : { return setting.applicationsignatories; }
     ] as SubListModel;
     
@@ -61,6 +70,9 @@ class BPSettingController
         validate: { validateSignatory(it.item); },
         createItem: { return [:]; },
         onAddItem : { if( it ) setting.assessmentsignatories.add( it ); },
+        onRemoveItem : { bpbsttng ->
+            removeItem( setting.assessmentsignatories, bpsttng)
+        },
         fetchList : { return setting.assessmentsignatories; }
     ] as SubListModel;
     
@@ -75,6 +87,9 @@ class BPSettingController
         validate : { validateRequirement( it.item ); },
         createItem: { return [:]; },
         onAddItem : { if( it ) setting.requirements.add( it ); },
+        onRemoveItem : { bpsttng ->
+            removeItem( setting.requirements, bpsttng )
+        },
         fetchList : { return setting.requirements; }
     ] as SubListModel;
     

@@ -20,8 +20,10 @@ class TCScript {
 		copyRcvfrmToIssuedfrm()
 		removeCraafEndingNoBeginIssuedReceived()
 		postUnconsolidateEndingBalance()
-		forwardCraaf( craafSvc.getAFIStateOpen() )
-				  
+		updateStubno()
+		resolveBFromBtoBlank()
+		//forwardCraaf( craafSvc.getAFIStateOpen() )           
+			
 		return 'run successfully'
 	}
 	
@@ -124,17 +126,20 @@ class TCScript {
 	
 	//forward afinventory open those not forwarded in particular month
 	private def forwardCraaf( def afiventory ){		
-		def craafRec = em.sqlContext.createNamedQuery( 'tcscript:getFirstCraafRec' ).singleResult
+		//def craafRec = em.sqlContext.createNamedQuery( 'tcscript:getFirstCraafRec' ).singleResult
 		afiventory.each{ afi ->
+			def craafRec = em.sqlContext.createNamedQuery( 'tcscript:getFirstCraafRecByAfinventoryid' ).setParameter( 'afinventoryid', afi.objid ).singleResult
+			craafRec.craafmonth += 1
 			def craaf = [ craafmonth: craafRec.craafmonth, craafyear: craafRec.craafyear ]			
+			
 			while( craaf.craafmonth <= 12 ){ 
 				if( craaf.craafyear == cal.get( Calendar.YEAR ) && craaf.craafmonth == cal.get( Calendar.MONTH ) + 1 )
 					break
 				
 				craaf.afinventoryid = afi.objid  
-				afi.craafmonth = craaf.craafmonth
+				afi.craafmonth = craaf.craafmonth    
 				afi.craafyear = craaf.craafyear 
-				
+				//println " $craaf.craafmonth  $craaf.craafyear $craaf.afinventoryid  "
 				def afirec = em.sqlContext.createNamedQuery( 'tcscript:getCraafByAfinventoryid' ).setParameters( craaf ).singleResult
 				if( !afirec ) 
 					buildCraafByAFI( afi )
@@ -204,12 +209,29 @@ class TCScript {
 		craaf.endingqty = craaf.beginqty 
 		craaf.endingfrom = craaf.beginfrom 
 		craaf.endingto = craaf.beginto 
-		craaf.stubno = ( afi ) ? null : afic.stubno
+		craaf.stubno = afic?.stubno
 		 
 		em.create( craaf.schemaname, craaf )  
 	}
 	
+	// update null stubno from craaf 
+	private void updateStubno(){
+		em.sqlContext.createNamedExecutor( 'tcscript:updateStubno' ).execute() 
+	}
 	
+	// get craaf where Begin qty is 0 and begin from and begin to is null
+	// 
+	private def getBFromBToBlank(){
+		return em.sqlContext.createNamedQuery( 'tcscript:getBFromBToBlank' ).resultList
+	}
+	
+	private void resolveBFromBtoBlank(){  
+		getBFromBToBlank().each{
+			em.sqlContext.createNamedExecutor( 'tcscript:resolveBFromBToBlank' ).setParameters(
+			 [ objid: it.objid, beginqty: it.issuedqty, beginfrom: it.issuedfrom, beginto: it.issuedto ]
+			).execute()
+		}
+	}
 	
 	/*
 	// remove existing collectorname in craaf
@@ -219,9 +241,7 @@ class TCScript {
 				def found = craaf.find{ it.collectorid.equals( clctr.collectorid ) || it.collectorname.equals( clctr.collectorname ) }
 				clctr.collectorname = ( !found ) ? clctr.collectorname : null
 				craaf += clctr  
-		} 
-	
-	
+		} 	
 	*/
 	
 }  

@@ -117,8 +117,16 @@ WHERE objid = $P{objid}
 
 [getFirstCraafRec]  
 SELECT 
- MIN(craafmonth) AS craafmonth, MIN(craafyear) AS craafyear 
-FROM craaf
+ craafmonth, craafyear 
+FROM craaf 
+ORDER BY craafyear ASC, craafmonth ASC 
+
+[getFirstCraafRecByAfinventoryid]
+SELECT 
+ craafmonth, craafyear 
+FROM craaf 
+WHERE afinventoryid = $P{afinventoryid}
+ORDER BY craafyear ASC, craafmonth ASC 
 
 [getCraafByAfinventoryid]
 SELECT  
@@ -127,5 +135,25 @@ FROM craaf
 WHERE afinventoryid = $P{afinventoryid} 
  AND craafmonth = $P{craafmonth} 
  AND craafyear = $P{craafyear}
+ 
+[updateStubno]
+UPDATE craaf c SET c.stubno = ( 
+ SELECT a.stubno FROM afcontrol a WHERE a.afinventorycreditid = c.afinventorycreditid ) 
+WHERE c.stubno IS NULL 
+ AND c.afinventorycreditid IS NOT NULL 
 
+[getBFromBToBlank]
+SELECT 
+ * 
+FROM craaf 
+WHERE beginqty = 0 
+ AND beginfrom IS NOT NULL 
+ AND beginto IS NOT NULL 
+ 
+[resolveBFromBToBlank]
+UPDATE craaf 
+SET beginqty = $P{beginqty}, 
+ beginfrom = $P{beginfrom}, 
+ beginto = $P{beginto} 
+WHERE objid = $P{objid} 
  
