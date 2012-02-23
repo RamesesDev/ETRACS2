@@ -18,11 +18,14 @@ class TDReportService
 	
 	@Service('DateService')
 	def dateSvc
+	
+	@Service('FAASService')
+	def faasSvc 
     
     @ProxyMethod 
     public def getReportData( faasid ) {
 		def td =[:]
-		def faas = em.read('faas', [objid:faasid]);
+		def faas = faasSvc.open( faasid  )
 		if( ! faas ) throw new Exception('Cannot open FAAS with ID no. ' + faasid + '.')
     	
 		buildAnnotationInfo( td, faas )

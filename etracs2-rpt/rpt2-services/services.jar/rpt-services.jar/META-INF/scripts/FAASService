@@ -838,6 +838,12 @@ class FAASService
     public void initOpenRpuInfo( rpu ) {
         if( rpu.rputype == LAND_TYPE ) {
             rpu.info.landdetails.each{ it.taxable = TO_BOOLEAN( it.taxable )}
+			rpu.info.planttreedetails.each {
+				it.bearing = it.bearing * 1.0 
+				it.nonbearing = it.nonbearing * 1.0 
+			}
+			rpu.info.planttotal.bearing  = rpu.info.planttotal.bearing * 1.0 
+			rpu.info.planttotal.nonbearing  = rpu.info.planttotal.nonbearing * 1.0 
         }
         else if( rpu.rputype == BLDG_TYPE ) {
             rpu.info.swornstatement = TO_BOOLEAN( rpu.info.swornstatement  )
@@ -850,7 +856,12 @@ class FAASService
             //throw new Exception('FAASService.initOpenRpuInfo not yet implemented')
         }
         else if( rpu.rputype == PLANTTREE_TYPE ) {
-            rpu.info.planttreedetails;
+            rpu.info.planttreedetails.each{
+				it.bearing = it.bearing * 1.0 
+				it.nonbearing = it.nonbearing * 1.0 
+			}
+			rpu.info.totalbearing = rpu.info.totalbearing * 1.0
+			rpu.info.totalnonbearing = rpu.info.totalnonbearing * 1.0
         }
         else if( rpu.rputype == MISC_TYPE ) {
             rpu.info.miscrpuitems;
