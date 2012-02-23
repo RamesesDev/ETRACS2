@@ -202,9 +202,8 @@ public class ApplicationMainPage extends javax.swing.JPanel {
         xTextField6.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel5.add(xTextField6);
 
-        xTextField7.setText("application.info.ctcplaceissued");
         xTextField7.setCaption("Place Issued");
-        xTextField7.setName("application.info..ctcplaceissued");
+        xTextField7.setName("application.info.ctcplaceissued");
         xTextField7.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel5.add(xTextField7);
 
