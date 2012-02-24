@@ -173,9 +173,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder4.setTitle("Structure Information");
         xDataTable1.setBorder(xTitledBorder4);
-        xDataTable1.setDynamic(true);
         xDataTable1.setHandler("structureListHandler");
-        xDataTable1.setImmediate(true);
         xDataTable1.setName("selectedStructure");
         xDataTable1.setShowRowHeader(true);
 

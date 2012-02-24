@@ -58,6 +58,7 @@ public class BldgRYSettingPage extends javax.swing.JPanel {
         xCheckBox2 = new com.rameses.rcp.control.XCheckBox();
         xCheckBox3 = new com.rameses.rcp.control.XCheckBox();
         xCheckBox4 = new com.rameses.rcp.control.XCheckBox();
+        xCheckBox5 = new com.rameses.rcp.control.XCheckBox();
         xLabel1 = new com.rameses.rcp.control.XLabel();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
 
@@ -296,7 +297,7 @@ public class BldgRYSettingPage extends javax.swing.JPanel {
         xNumberField1.setCaptionWidth(100);
         xNumberField1.setFieldType(Integer.class);
         xNumberField1.setName("entity.ry");
-        xNumberField1.setPreferredSize(new java.awt.Dimension(80, 19));
+        xNumberField1.setPreferredSize(new java.awt.Dimension(50, 19));
         xNumberField1.setRequired(true);
         formPanel1.add(xNumberField1);
 
@@ -304,7 +305,7 @@ public class BldgRYSettingPage extends javax.swing.JPanel {
         xCheckBox1.setText(" Pre-Dominant");
         xCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
         xCheckBox1.setName("entity.predominant");
-        xCheckBox1.setPreferredSize(new java.awt.Dimension(95, 19));
+        xCheckBox1.setPreferredSize(new java.awt.Dimension(90, 19));
         xCheckBox1.setShowCaption(false);
         formPanel1.add(xCheckBox1);
 
@@ -312,15 +313,16 @@ public class BldgRYSettingPage extends javax.swing.JPanel {
         xCheckBox2.setText("Depreciate Core and Additional Items Separately");
         xCheckBox2.setMargin(new java.awt.Insets(0, 0, 0, 0));
         xCheckBox2.setName("entity.depreciatecoreanditemseparately");
-        xCheckBox2.setPreferredSize(new java.awt.Dimension(260, 19));
+        xCheckBox2.setPreferredSize(new java.awt.Dimension(250, 19));
         xCheckBox2.setShowCaption(false);
         formPanel1.add(xCheckBox2);
 
         xCheckBox3.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        xCheckBox3.setText("Compute Depreciation based on Schedule");
+        xCheckBox3.setText("Auto-Depreciate");
+        xCheckBox3.setCaption("Auto-Depreciate");
         xCheckBox3.setMargin(new java.awt.Insets(0, 0, 0, 0));
         xCheckBox3.setName("entity.computedepreciationbasedonschedule");
-        xCheckBox3.setPreferredSize(new java.awt.Dimension(230, 19));
+        xCheckBox3.setPreferredSize(new java.awt.Dimension(105, 19));
         xCheckBox3.setShowCaption(false);
         formPanel1.add(xCheckBox3);
 
@@ -328,9 +330,17 @@ public class BldgRYSettingPage extends javax.swing.JPanel {
         xCheckBox4.setText("Straight Depreciation");
         xCheckBox4.setMargin(new java.awt.Insets(0, 0, 0, 0));
         xCheckBox4.setName("entity.straightdepreciation");
-        xCheckBox4.setPreferredSize(new java.awt.Dimension(260, 19));
+        xCheckBox4.setPreferredSize(new java.awt.Dimension(130, 19));
         xCheckBox4.setShowCaption(false);
         formPanel1.add(xCheckBox4);
+
+        xCheckBox5.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        xCheckBox5.setText("Calculate Age based on Date Occupied");
+        xCheckBox5.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        xCheckBox5.setName("entity.calcbldgagebasedondtoccupied");
+        xCheckBox5.setPreferredSize(new java.awt.Dimension(300, 19));
+        xCheckBox5.setShowCaption(false);
+        formPanel1.add(xCheckBox5);
 
         xLabel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         xLabel1.setForeground(new java.awt.Color(153, 0, 0));
@@ -393,6 +403,7 @@ public class BldgRYSettingPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XCheckBox xCheckBox2;
     private com.rameses.rcp.control.XCheckBox xCheckBox3;
     private com.rameses.rcp.control.XCheckBox xCheckBox4;
+    private com.rameses.rcp.control.XCheckBox xCheckBox5;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XDataTable xDataTable2;

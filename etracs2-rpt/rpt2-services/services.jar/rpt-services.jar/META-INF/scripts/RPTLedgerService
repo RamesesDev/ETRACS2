@@ -87,7 +87,7 @@ class RPTLedgerService
     }
     
     @ProxyMethod
-    public void insertLedgerItem( ledgeritem ) {
+    public void insertLedgerItem( ledgeritem ) { 
         ledgeritem.schemaname = LEDGERITEM_SCHEMA
         ledgeritem.schemaversion = SCHEMA_VERSION
         em.validate( ledgeritem.schemaname, ledgeritem ) 
@@ -101,6 +101,12 @@ class RPTLedgerService
         em.update( ledgeritem.schemaname, ledgeritem )
         logSvc.log('CREATE_ITEM', 'RPTLedger', ledgeritem.parentid)
     }
+	
+	@ProxyMethod
+	public void removeLedgerItem( ledgeritem ) {
+		em.delete( ledgeritem.schemaname, ledgeritem )
+        logSvc.log('DELETE_ITEM', 'RPTLedger', ledgeritem.parentid)
+	}
     
     @ProxyMethod
     public List getStates() {

@@ -296,8 +296,8 @@ public class LandRPUController
     }
     
     void clearPlantTotals() {
-        rpu.info.planttotal.bearing         = 0
-        rpu.info.planttotal.nonbearing      = 0
+        rpu.info.planttotal.bearing         = 0.0
+        rpu.info.planttotal.nonbearing      = 0.0
         rpu.info.planttotal.basemarketvalue = 0.0
         rpu.info.planttotal.adjustment      = 0.0
         rpu.info.planttotal.marketvalue     = 0.0
@@ -327,8 +327,8 @@ public class LandRPUController
             new Column(name:'planttreename', caption:'Plant/Tree', maxWidth:120),
             new Column(name:'unitvalue', caption:'Unit Value', maxWidth:100, type:'decimal'),
             new Column(name:'al', caption:'Actual Use*', maxWidth:100, type:'lookup', handler:lookupPlantTreeAssessLevel, expression:'#{assesslevelcode}', editable:true, maxWidth:80),
-            new Column(name:'bearing', caption:'Bearing*', maxWidth:100, type:'integer', editable:true),
-            new Column(name:'nonbearing', caption:'NonBearing*', maxWidth:100, type:'integer', editable:true ),
+            new Column(name:'bearing', caption:'Productive*', maxWidth:100, type:'decimal', editable:true, format:'#,##0.####'),
+            new Column(name:'nonbearing', caption:'NonProductive*', maxWidth:100, type:'decimal', editable:true, format:'#,##0.####' ),
             new Column(name:'basemarketvalue', caption:'Base Market Value', type:'decimal'),
             new Column(name:'adjustment', caption:'Adjustment', type:'decimal'),
             new Column(name:'marketvalue', caption:'Market Value', type:'decimal'),
@@ -453,8 +453,8 @@ public class LandRPUController
     Map createPlantTree() {
         return [
             objid           : 'TP' + new UID(),
-            bearing         : 0,
-            nonbearing      : 0, 
+            bearing         : 0.0,
+            nonbearing      : 0.0, 
             basemarketvalue : 0.0,
             adjustment      : 0.0,
             marketvalue     : 0.0,

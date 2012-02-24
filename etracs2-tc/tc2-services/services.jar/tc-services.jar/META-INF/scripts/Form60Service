@@ -1,0 +1,315 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class Form60Service{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('LogService')
+	def logService
+	
+	@Service('Var')
+	def var 
+	
+	@Service('DateService')
+	def dateSvc
+	
+	@Service('NumberService')
+	def numSvc 
+	
+	def OBJID = 'FS01' 
+	
+	
+	@ProxyMethod
+	public def generateForm60( year, imonth ) {
+		def form60setup = openSetup(null) 
+		if( !form60setup ) throw new Exception('Form 60 Setup is not defined.')
+		
+		def iqtr 	= dateSvc.getQtrByMonth( imonth )
+		def timestamp = calculateCurrentTimeStamp( year, iqtr, imonth )
+		
+		return [
+			treasurername 	: var.treasurer_name,
+			treasurertitle 	: var.treasurer_title,
+			period			: 'Covering the Period ' + getMonthName( imonth ) + ', ' + year,
+			items			: buildForm60Report( form60setup, timestamp ),
+		]
+	}
+	
+	List buildForm60Report( form60setup, timestamp ) {
+		def acctsummarylist = em.sqlContext.createNamedQuery('form60:getDepositedSummary')
+						.setParameter('timestamp', timestamp )
+						.resultList 
+						
+		def form60items = form60setup.items 
+		form60items.each { item ->
+			def acct = acctsummarylist.find{ it.parentid == item.objid }
+			if( acct ) {
+				initShares( item) 
+				calculateShares( item, acct )
+				adjustRoundingDiscrepancy( item )
+				calculateTotals( item )
+			}
+		}
+		//remove categories, the report displays it as a group 
+		def categories = form60items.findAll{ it.type == 'category' }
+		form60items.removeAll( categories )
+		return form60items 
+	}
+	
+	void initShares( item )  {
+		item.national = 0.0
+		item.provgen  = 0.0
+		item.provsef  = 0.0
+		item.provtrust  = 0.0
+		item.munigen  = 0.0
+		item.munisef  = 0.0
+		item.munitrust  = 0.0
+		item.barangay  = 0.0
+	}
+	
+	void calculateTotals( item ) {
+		item.provtotal = item.provgen + item.provsef + item.provtrust 
+		item.munitotal = item.munigen + item.munisef + item.munitrust 
+	}
+	
+	void adjustRoundingDiscrepancy( item ) {
+		// In case there are multiple shares then adjust according to this priority:
+		// 		if nationalshare > 0 adjust nationalshare 
+		// 		if barangayshare > 0 adjust barangayshare
+		// 		if provshare > 0 adjust provshare
+		
+		if( ! hasMultipleShares( item ) ) return
+		
+		//multiple shares, apply the above rule 
+		if( item.national > 0.0 ) {
+			item.national = item.total - ( item.provgen + item.provsef + item.provtrust + 
+										   item.munigen + item.munisef + item.munitrust + item.barangay )
+		}
+		else if( item.barangay > 0.0 ) {
+			item.barangay = item.total - ( item.provgen + item.provsef + item.provtrust + 
+										   item.munigen + item.munisef + item.munitrust )
+		}
+		else if( item.provgen > 0.0 ) {
+			item.provgen = item.total - ( item.provsef + item.provtrust + 
+										   item.munigen + item.munisef + item.munitrust )
+		}
+		else if( item.provsef > 0.0 ) {
+			item.provsef = item.total - ( item.provtrust + item.munigen + item.munisef + item.munitrust )
+		}
+		else if( item.provtrust > 0.0 ) {
+			item.provtrust = item.total - ( item.munigen + item.munisef + item.munitrust )
+		}
+		else if( item.munigen > 0.0 ) {
+			item.munigen = item.total - ( item.munisef + item.munitrust )
+		}
+		else if( item.munisef > 0.0 ) {
+			item.munisef = item.total - item.munitrust
+		}
+	}
+	
+	boolean hasMultipleShares( item ) {
+		int sharecount = 0
+		if( item.national > 0.0 ) sharecount++
+		if( item.provgen > 0.0 ) sharecount++
+		if( item.provsef > 0.0 ) sharecount++
+		if( item.provtrust > 0.0 ) sharecount++
+		if( item.munigen > 0.0 ) sharecount++
+		if( item.munisef > 0.0 ) sharecount++
+		if( item.munitrust > 0.0 ) sharecount++
+		if( item.barangay > 0.0 ) sharecount++
+		
+		return ( sharecount > 1  )
+	}
+	
+	void calculateShares( item, acct ) {
+		item.total = acct.total
+		
+		//calculate national share 
+		item.national = numSvc.round( acct.total * item.nationalrate / 100  )
+		
+		//calculate province shares 
+		item.provgen = numSvc.round( acct.total * item.provgenrate / 100)
+		item.provsef = numSvc.round( acct.total * item.provsefrate / 100)
+		item.provtrust = numSvc.round( acct.total * item.provtrustrate / 100)
+		
+		//calculate municipal shares 
+		item.munigen = numSvc.round( acct.total * item.munigenrate / 100)
+		item.munisef = numSvc.round( acct.total * item.munisefrate / 100)
+		item.munitrust = numSvc.round( acct.total * item.munitrustrate / 100)
+		
+		//calculate barangay share 
+		item.barangay = numSvc.round( acct.total * item.barangayrate / 100  )
+	}
+	
+	
+	@ProxyMethod
+	public void saveSetup( form60setup ) {
+		def oldform60setup = openSetup( form60setup ) 
+		if( oldform60setup ) {
+			updateSetup(form60setup)
+		}
+		else {
+			createSetup(form60setup) 
+		}
+	}
+	
+	@ProxyMethod
+	public def openSetup( form60setup ) {
+		def data = em.sqlContext.createNamedQuery('form60:getForm60Setup')
+					.setParameter('objid', OBJID)
+					.singleResult
+		if ( data ) {
+			data.items = em.serializer.read( data.items )
+		}
+		return data 
+	}
+	
+	@ProxyMethod
+	public def createSetup( form60setup ) {
+		form60setup.objid = OBJID
+		form60setup.items = em.serializer.write( form60setup.items )
+		em.sqlContext.createNamedExecutor('form60:insertSetup')
+					.setParameters(form60setup)
+					.execute()
+		return form60setup
+	}
+	
+	@ProxyMethod
+	public void updateSetup( form60setup ) {
+		form60setup.objid = OBJID
+		form60setup.items = em.serializer.write( form60setup.items )
+		em.sqlContext.createNamedExecutor('form60:updateSetup')
+				.setParameters(form60setup)
+				.execute() 
+	}
+	
+	
+	@ProxyMethod
+	public List getAccountList( searchText, params ) {
+		if( ! searchText ) return getListByQuery( 'form60:getAccountList', [:], params )
+		def criteria = [
+			accttitle  : searchText+'%' 
+		]
+		List result = []
+		if((result = getListByQuery( 'form60:getAccountListByTitle', criteria, params ))) return result 
+		return result 
+	}
+	
+	
+	
+	@ProxyMethod
+	public void insertAccount( form60itemid, incomeaccount ) {
+		def acctitem = [
+			objid 		: 'FA' + new UID(),
+			parentid	: form60itemid, 
+			acctid		: incomeaccount.acctid,
+			accttitle	: incomeaccount.accttitle, 
+		]
+		em.sqlContext.createNamedExecutor('form60:insertAccount').setParameters(acctitem).execute()
+	}
+	
+	@ProxyMethod
+	public List getAccountsByParentId( parentid ) {
+		return em.sqlContext.createNamedQuery('form60:getAccountsByParentId').setParameter('parentid', parentid).resultList 
+	}
+	
+	@ProxyMethod
+	public void removeAccountByParentId( parentid  ) {
+		em.sqlContext.createNamedExecutor('form60:removeAccountByParentId')
+				.setParameter('parentid', parentid)
+				.execute()
+	}
+	
+	@ProxyMethod
+	public void removeAccount( form60itemid, acctid ) {
+		em.sqlContext.createNamedExecutor('form60:removeAccount')
+				.setParameters([parentid:form60itemid, acctid:acctid])
+				.execute()
+	}
+	
+	@ProxyMethod
+	public def getMonth( imonth ) {
+		def monthlist = getMonthList( null )
+		return monthlist.find{ it.month == imonth } 
+	}
+	
+	@ProxyMethod
+	public List getMonthList( qtr ) {
+		def months = [
+			[name:'JANUARY', 	month:1, qtr:1 ],
+			[name:'FEBRUARY', 	month:2, qtr:1 ],
+			[name:'MARCH', 		month:3, qtr:1 ],
+			
+			[name:'APRIL', 	month:4, qtr:2 ],
+			[name:'MAY', 	month:5, qtr:2 ],
+			[name:'JUNE', 	month:6, qtr:2 ],
+			
+			[name:'JULY', 		month:7, qtr:3 ],
+			[name:'AUG', 		month:8, qtr:3 ],
+			[name:'SEPTEMBER', 	month:9, qtr:3 ],
+			
+			[name:'OCTOBER', 	month:10, qtr:4 ],
+			[name:'NOVEMBER', 	month:11, qtr:4 ],
+			[name:'DECEMBER', 	month:12, qtr:4 ],
+		]
+		
+		if( ! qtr ) return months 
+		return months.findAll{ it.qtr == qtr }
+	}
+	
+	List getListByQuery( namedQuery, criteria, params ) {
+        if( ! params ) params = [ _start:0, _limit:25]
+		return em.sqlContext.createNamedQuery( namedQuery )
+						.setParameters( criteria )
+						.setFirstResult( params._start )
+						.setMaxResults( params._limit )
+						.resultList
+	}
+	
+	String getMonthName( month ) {
+		def smonth = null 
+		switch( month ) {
+			case 1   : smonth = 'JANUARY'; break;
+			case 2   : smonth = 'FEBRUARY'; break;
+			case 3   : smonth = 'MARCH'; break;
+			case 4   : smonth = 'APRIL'; break;
+			case 5   : smonth = 'MAY'; break;
+			case 6   : smonth = 'JUNE'; break;
+			case 7   : smonth = 'JULY'; break;
+			case 8   : smonth = 'AUGUST'; break;
+			case 9   : smonth = 'SEPTEMBER'; break;
+			case 10  : smonth = 'OCTOBER'; break;
+			case 11  : smonth = 'NOVEMBER'; break;
+			case 12   : smonth = 'DECEMBER'; break;
+		}
+		if( ! smonth ) throw new Exception('Invalid month ' + month + '.')
+		return smonth 
+	}
+	
+	def calculateCurrentTimeStamp(year, qtr, month ) {
+		if( month && month > 0 ) {
+			return resolveTimeStamp( year, qtr, month, null )
+		}
+		return resolveTimeStamp( year, qtr, null, null )
+	}
+	
+	def resolveTimeStamp( year, qtr, month, day ) {
+		//build timestamp progressively based on the passed values, e.g.,
+		//if month is null then timestamp is resolve upto the qtr info, such as "20111%" for 1st qtr
+		//if month is notnull thne it is resolve upto the month, such as "2011102%" for 2nd qtr 
+		def timestamp = year + '' + qtr 
+		if( month != null ) timestamp += padLeft( month, 2 )
+		if( day != null ) timestamp += padLeft( day, 2 )
+		if( month == null  || day == null ) timestamp += '%'
+		return timestamp
+		
+	}
+	
+	String padLeft( val, len ) {
+		return "$val".padLeft( len, '0' )
+	}
+	
+}

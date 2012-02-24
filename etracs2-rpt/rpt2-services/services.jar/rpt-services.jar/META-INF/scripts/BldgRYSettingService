@@ -35,6 +35,7 @@ public class BldgRYSettingService
             it.predominant = it.predominant as boolean 
             it.depreciatecoreanditemseparately = it.depreciatecoreanditemseparately as boolean 
             it.computedepreciationbasedonschedule = it.computedepreciationbasedonschedule as boolean 
+			it.calcbldgagebasedondtoccupied = it.calcbldgagebasedondtoccupied == 1 
         }
         return list 
     }
@@ -48,6 +49,7 @@ public class BldgRYSettingService
         entity.predominant = ( entity.predominant ) ? 1 : 0
 		entity.depreciatecoreanditemseparately = ( entity.depreciatecoreanditemseparately ) ? 1 : 0
 		entity.computedepreciationbasedonschedule = ( entity.computedepreciationbasedonschedule ) ? 1 : 0
+		entity.calcbldgagebasedondtoccupied = (entity.calcbldgagebasedondtoccupied ? 1 : 0 )
 		
         validate( entity )		
         em.create( entity.schemaname, entity )
@@ -128,6 +130,7 @@ public class BldgRYSettingService
 		entity.fixrate = ( entity.fixrate ) ? 1 : 0
 		entity.depreciatecoreanditemseparately = ( entity.depreciatecoreanditemseparately ) ? 1 : 0
 		entity.computedepreciationbasedonschedule = ( entity.computedepreciationbasedonschedule ) ? 1 : 0
+		entity.calcbldgagebasedondtoccupied = ( entity.calcbldgagebasedondtoccupied ) ? 1 : 0
 		entity.straightdepreciation = ( entity.straightdepreciation ) ? 1 : 0
 
         validate( entity )
@@ -139,6 +142,7 @@ public class BldgRYSettingService
 		entity.fixrate = ( entity.fixrate == 1 )
 		entity.depreciatecoreanditemseparately = ( entity.depreciatecoreanditemseparately == 1 )
 		entity.computedepreciationbasedonschedule = ( entity.computedepreciationbasedonschedule == 1)
+		entity.calcbldgagebasedondtoccupied = ( entity.calcbldgagebasedondtoccupied == 1)
 		entity.straightdepreciation = ( entity.straightdepreciation == 1)
         return entity 
     }
@@ -150,6 +154,13 @@ public class BldgRYSettingService
         entity.predominant = (entity.predominant == 1 )
         entity.depreciatecoreanditemseparately = (entity.depreciatecoreanditemseparately  == 1)
         entity.computedepreciationbasedonschedule = (entity.computedepreciationbasedonschedule == 1)
+		
+		if (entity.calcbldgagebasedondtoccupied ) {
+			entity.calcbldgagebasedondtoccupied = (entity.calcbldgagebasedondtoccupied == 1)
+		}
+		else {
+			entity.calcbldgagebasedondtoccupied = false ;
+		}
 		
 		if( entity.straightdepreciation ) {
 			entity.straightdepreciation = ( entity.straightdepreciation == 1 )

@@ -7,11 +7,11 @@ WHERE lgutype = 'BARANGAY'
 ORDER BY lguname 
 
 [getClassificationList] 
-SELECT objid, propertydesc AS classname, special   
+SELECT objid, objid AS classid, propertydesc AS classname, special   
 FROM propertyclassification  ORDER BY orderno  
 
 [getExemptionList]
-SELECT objid, exemptdesc AS classname, 0 AS special 
+SELECT objid, objid AS exemptid, exemptdesc AS classname, 0 AS special 
 FROM exemptiontype ORDER BY orderno  
  
 [getDelinquentLedger] 
@@ -135,6 +135,83 @@ FROM faaslist fl
 WHERE fl.annotated = 1  
   AND fl.docstate = 'CURRENT'  
   AND fa.docstate = 'APPROVED'  
+
+#----------------------------------------------------------------------
+#
+# Report on Real Property Assessments  
+#
+#----------------------------------------------------------------------
+[getReportOnRPATaxable]
+SELECT 
+	pc.objid AS classid,
+	pc.propertydesc AS classname, 
+	COUNT( 1 ) AS rpucount,
+	SUM( fl.totalareasqm ) AS areasqm, 
+	SUM( fl.totalareaha) AS areaha,
+
+	SUM( CASE WHEN rputype = 'land' THEN fl.totalmv ELSE 0.0 END ) AS landmv,
+	SUM( CASE WHEN rputype = 'bldg' AND fl.totalmv <= 150000 THEN fl.totalmv ELSE 0.0 END ) AS bldgmv150less,
+	SUM( CASE WHEN rputype = 'bldg' AND fl.totalmv > 150000 THEN fl.totalmv ELSE 0.0 END ) AS bldgmvover150,
+	SUM( CASE WHEN rputype = 'mach' THEN fl.totalmv ELSE 0.0 END ) AS machmv,
+	SUM( CASE WHEN rputype NOT IN( 'land', 'bldg', 'mach') THEN fl.totalmv ELSE 0.0 END ) AS othermv, 
+	SUM( fl.totalmv ) AS totalmv,
+	
+	SUM( CASE WHEN rputype = 'land' THEN fl.totalav ELSE 0.0 END ) AS landav,
+	SUM( CASE WHEN rputype = 'bldg' AND fl.totalav <= 150000 THEN fl.totalav ELSE 0.0 END ) AS bldgav150less,
+	SUM( CASE WHEN rputype = 'bldg' AND fl.totalav > 150000 THEN fl.totalav ELSE 0.0 END ) AS bldgavover150,
+	SUM( CASE WHEN rputype = 'mach' THEN fl.totalav ELSE 0.0 END ) AS machav,
+	SUM( CASE WHEN rputype NOT IN( 'land', 'bldg', 'mach') THEN fl.totalav ELSE 0.0 END ) AS otherav, 
+	SUM( fl.totalav ) AS totalav,
+	
+	SUM( CASE WHEN fl.restriction = 'CARP' THEN fl.totalav ELSE 0.0 END ) AS carpav,
+	SUM( CASE WHEN fl.restriction = 'UNDER_LITIGATION' THEN fl.totalav ELSE 0.0 END ) AS litigationav,
+	SUM( CASE WHEN fl.restriction = 'OTHER' THEN fl.totalav ELSE 0.0 END ) AS otherrestrictionav,
+	SUM( CASE WHEN fl.restriction IS NOT NULL THEN fl.totalav ELSE 0.0 END ) AS totalrestriction 
+
+FROM faaslist fl 
+	INNER JOIN propertyclassification pc ON fl.classid = pc.objid 
+WHERE fl.txntimestamp <= $P{txntimestamp} 
+  AND fl.docstate = 'CURRENT' 
+  AND fl.taxable = 1 
+GROUP BY pc.objid, pc.propertydesc  
+ORDER BY pc.orderno  
+
+[getReportOnRPAExempt]
+SELECT 
+	et.objid AS classid,
+	et.exemptdesc AS classname, 
+	COUNT( 1 ) AS rpucount,
+	SUM( fl.totalareasqm ) AS areasqm, 
+	SUM( fl.totalareaha) AS areaha,
+
+	SUM( CASE WHEN rputype = 'land' THEN fl.totalmv ELSE 0.0 END ) AS landmv,
+	SUM( CASE WHEN rputype = 'bldg' AND fl.totalmv <= 150000 THEN fl.totalmv ELSE 0.0 END ) AS bldgmv150less,
+	SUM( CASE WHEN rputype = 'bldg' AND fl.totalmv > 150000 THEN fl.totalmv ELSE 0.0 END ) AS bldgmvover150,
+	SUM( CASE WHEN rputype = 'mach' THEN fl.totalmv ELSE 0.0 END ) AS machmv,
+	SUM( CASE WHEN rputype NOT IN( 'land', 'bldg', 'mach') THEN fl.totalmv ELSE 0.0 END ) AS othermv, 
+	SUM( fl.totalmv ) AS totalmv,
+	
+	SUM( CASE WHEN rputype = 'land' THEN fl.totalav ELSE 0.0 END ) AS landav,
+	SUM( CASE WHEN rputype = 'bldg' AND fl.totalav <= 150000 THEN fl.totalav ELSE 0.0 END ) AS bldgav150less,
+	SUM( CASE WHEN rputype = 'bldg' AND fl.totalav > 150000 THEN fl.totalav ELSE 0.0 END ) AS bldgavover150,
+	SUM( CASE WHEN rputype = 'mach' THEN fl.totalav ELSE 0.0 END ) AS machav,
+	SUM( CASE WHEN rputype NOT IN( 'land', 'bldg', 'mach') THEN fl.totalav ELSE 0.0 END ) AS otherav, 
+	SUM( fl.totalav ) AS totalav,
+	
+	SUM( CASE WHEN fl.restriction = 'CARP' THEN fl.totalav ELSE 0.0 END ) AS carpav,
+	SUM( CASE WHEN fl.restriction = 'UNDER_LITIGATION' THEN fl.totalav ELSE 0.0 END ) AS litigationav,
+	SUM( CASE WHEN fl.restriction = 'OTHER' THEN fl.totalav ELSE 0.0 END ) AS otherrestrictionav,
+	SUM( CASE WHEN fl.restriction IS NOT NULL THEN fl.totalav ELSE 0.0 END ) AS totalrestriction 
+
+FROM faaslist fl 
+	INNER JOIN exemptiontype et ON fl.exemptid = et.objid  
+WHERE fl.txntimestamp <= $P{txntimestamp} 
+  AND fl.docstate = 'CURRENT' 
+  AND fl.taxable = 0 
+GROUP BY et.objid, et.exemptdesc  
+ORDER BY et.orderno  
+
+
 
 
 #----------------------------------------------------------------------
