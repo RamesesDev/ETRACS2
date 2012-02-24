@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="form60.addAccount" action="initAdd" caption="Add Account " target="popup" />
+        <invoker type="form60.editAccount" action="initEdit" caption="Add Account " target="popup" />
+    </invokers>
+    <code lang="groovy">
+
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import java.rmi.server.UID
+
+
+public class Form60AccountController {
+    @Binding 
+    def binding
+    
+    def entity
+    def onsaveHandler 
+    def parent
+    
+    def mode
+    
+    
+    void initAdd() {
+        def parentaccttitle = ( parent.type == 'category' ? parent.accttitle : parent.parentaccttitle )
+        entity = [ 
+            objid           : 'F' + new UID(),
+            type            : 'item', 
+            nationalrate    : 0.0,
+            provgenrate     : 0.0,
+            provsefrate     : 0.0,
+            provtrustrate   : 0.0,
+            munigenrate     : 0.0,
+            munisefrate     : 0.0,
+            munitrustrate   : 0.0,
+            barangayrate    : 0.0,
+            parentaccttitle : parentaccttitle,
+            parentid        : parent.objid, 
+        ]
+        mode = "create" 
+    }
+    
+    void initEdit() {
+        mode = "edit"
+    }
+    
+    void saveAndCreate() {
+        setCaption()
+        validate()
+        invokeHandler()
+        initAdd()
+        binding.refresh();
+        binding.focus('entity.acctcode')
+    }
+    
+    def save() {
+        setCaption()
+        validate()
+        invokeHandler()
+        return '_close' 
+    }
+    
+    void invokeHandler() {
+        if( onsaveHandler ) {
+            onsaveHandler( mode, entity )
+        }
+    }
+    
+    void validate() {
+        def totalrate = entity.nationalrate + 
+                        entity.provgenrate + entity.provsefrate + entity.provtrustrate +
+                        entity.munigenrate + entity.munisefrate + entity.munitrustrate +
+                        entity.barangayrate 
+                        
+        if( totalrate == 0.0 ) throw new Exception('Sharing rate must be greater than zero.')
+
+    }
+    
+    void setCaption() {
+        entity.caption = '     - ' + entity.accttitle 
+    }
+}
+
+
+]]>
+   
+</code>
+    
+    <pages>
+        <page template="etracs2.tc.form60.AccountPage" />
+    </pages>
+</workunit>
