@@ -273,7 +273,8 @@ class ReceiptService
 			throw new Exception('Amount Due must be greater than zero.')
 		}
 		if( receipt.info.amount != numSvc.round(receipt.items.amount.sum()) ) {
-			throw new Exception('A data problem is encountered during validation.\nThe Receipt Amount is not equal to item amount total.\nClose the form and recreate the transaction to correct the problem.')
+			def receiptinfo = (receipt.info.serialno ? receipt.info.serialno : receipt.objid  )
+			throw new Exception('A data problem is encountered during validation of Receipt No. ' + receiptinfo + '.\nThe Receipt Amount is not equal to item amount total.\nClose the form and recreate the transaction to correct the problem.')
 		}
 		if( receipt.info.totalpayment < receipt.info.amount ) {
 			throw new Exception('Total Payment must be greater than or equal to amount due.')
