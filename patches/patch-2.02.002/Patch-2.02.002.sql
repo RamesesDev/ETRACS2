@@ -182,27 +182,44 @@ update bldgrysetting set calcbldgagebasedondtoccupied = 0;
 
 
 CREATE TABLE `cancelfaas` (                
-              `objid` varchar(50) NOT NULL,            
-              `docstate` varchar(50) NOT NULL,         
-              `schemaname` varchar(50) NOT NULL,       
-              `schemaversion` varchar(5) NOT NULL,     
-              `tdno` varchar(30) NOT NULL,             
-              `ownername` varchar(800) NOT NULL,       
-              `fullpin` varchar(35) NOT NULL,          
-              `classcode` varchar(10) NOT NULL,        
-              `faasid` varchar(50) NOT NULL,           
-              `rputype` varchar(20) NOT NULL,          
-              `remarks` varchar(200) NOT NULL,         
-              `dtapproved` date default NULL,          
-              `approvedby` varchar(100) default NULL,  
-              `cancelreasonid` varchar(50) NOT NULL,   
-              `cancelreason` varchar(25) NOT NULL,     
-              `extended` text,                         
-              PRIMARY KEY  (`objid`)                   
-            ) ENGINE=InnoDB DEFAULT CHARSET=latin1   ;
+	  `objid` varchar(50) NOT NULL,            
+	  `docstate` varchar(50) NOT NULL,         
+	  `schemaname` varchar(50) NOT NULL,       
+	  `schemaversion` varchar(5) NOT NULL,     
+	  `tdno` varchar(30) NOT NULL,             
+	  `ownername` varchar(800) NOT NULL,       
+	  `fullpin` varchar(35) NOT NULL,          
+	  `classcode` varchar(10) NOT NULL,        
+	  `faasid` varchar(50) NOT NULL,           
+	  `rputype` varchar(20) NOT NULL,          
+	  `remarks` varchar(200) NOT NULL,         
+	  `dtapproved` date default NULL,          
+	  `approvedby` varchar(100) default NULL,  
+	  `cancelreasonid` varchar(50) NOT NULL,   
+	  `cancelreason` varchar(25) NOT NULL,     
+	  `extended` text,                         
+	  PRIMARY KEY  (`objid`)                   
+	) ENGINE=InnoDB DEFAULT CHARSET=latin1   ;
 
 			
 			
+CREATE TABLE `form60setup` (            
+   `objid` varchar(50) NOT NULL,         
+   `items` text NOT NULL,                 
+   PRIMARY KEY  (`objid`)                
+ ) ENGINE=InnoDB DEFAULT CHARSET=latin1  ;			
 			
 			
+CREATE TABLE `form60account` (          
+	 `objid` varchar(50) NOT NULL,         
+	 `parentid` varchar(50) NOT NULL,      
+	 `acctid` varchar(50) NOT NULL,        
+	 `accttitle` varchar(250) NOT NULL,    
+	 PRIMARY KEY  (`objid`)                
+   ) ENGINE=InnoDB DEFAULT CHARSET=latin1  
+
+create index ix_form60account_parentid on form60account( parentid );
+create index ix_form60account_acctid on form60account( acctid);
+
+
   
