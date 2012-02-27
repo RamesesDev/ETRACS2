@@ -27,5 +27,7 @@ Patch-2.02.002 (CUMMULATIVE)
 - Add option to calculate bldg age based on dtoccupied only (surigao)
 - Blank material info when material code is "-". This is a temporary fix 
   since the bugs in framework related.
-  
+- Liquidation: allow selection of cashier instead of automatically assigned
+- Add "Close" on deposit screen
+- 
 
