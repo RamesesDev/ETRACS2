@@ -21,4 +21,11 @@ Patch-2.02.002 (CUMMULATIVE)
 - Fix ending values ( Accomplishment Report of RPA)
 - Add faaslist.restriction field 
 - Add Monthly/Quarterly Report on Real Property Assessment 
+- Add Provincial Form60 Reort
+- Support for non-integer Productive/Non-Productive plant/tree RPU such as per area
+- Implement delete rpt ledger item
+- Add option to calculate bldg age based on dtoccupied only (surigao)
+- Blank material info when material code is "-". This is a temporary fix 
+  since the bugs in framework related.
+  
 
