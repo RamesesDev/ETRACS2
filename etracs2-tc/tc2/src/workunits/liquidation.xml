@@ -80,6 +80,7 @@
             def next() {
                 entity.remittances = []
                 entity.otherpayments = []
+                addCashierInfo()
                 entity = svc.createLiquidation( entity );
                 mode = 'main';
                 denominationOpener = InvokerUtil.lookupOpener('cashreceipt:breakdown', [totalAmount:entity.info.totalcash, list:entity.info.denominations]);
@@ -199,7 +200,6 @@
             }
 
             public def viewReport(){
-                println selectedreport;
                 return selectedreport;
             }
             
@@ -210,6 +210,21 @@
             def backToMain() {
                 mode = 'view';
                 return 'main';
+            }
+            
+            def cashier
+            
+            void addCashierInfo() {
+                entity.cashierinfo = [
+                    cashierid : cashier.objid,
+                    cashiername : cashier.formalname,
+                    cashiertitle : cashier.jobtitle
+                ]
+                
+            }
+            
+            def getCashierlist() {
+                return svc.getCashierlist()
             }
 
         }

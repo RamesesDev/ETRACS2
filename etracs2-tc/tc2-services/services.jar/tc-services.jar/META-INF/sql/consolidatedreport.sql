@@ -135,8 +135,8 @@ SELECT
  afic.objid, afic.prefix, afic.suffix, 
  afic.afid, afic.aftype, afctrl.stubno, 
  afctrl.collectorid, afctrl.collectorname, 
- afctrl.collectortitle, afctrl.balance as beginqty,  
- afctrl.currentseries, afctrl.endseries   
+ afctrl.collectortitle, afctrl.beginqty,  
+ afctrl.beginseries, afctrl.endseries   
 FROM afinventorycredit afic    
 INNER JOIN afcontrol afctrl on afctrl.afinventorycreditid = afic.objid   
 WHERE afic.afinventoryid = $P{afinventoryid}  

@@ -39,6 +39,7 @@ public class PostCaptureInitPage extends javax.swing.JPanel {
         formPanel1.setBorder(xTitledBorder1);
         xComboBox1.setCaption("Collector");
         xComboBox1.setExpression("#{name}");
+        xComboBox1.setFont(new java.awt.Font("Arial", 1, 12));
         xComboBox1.setItems("collectorList");
         xComboBox1.setName("collector");
         xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));
