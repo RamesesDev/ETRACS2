@@ -29,5 +29,6 @@ Patch-2.02.002 (CUMMULATIVE)
   since the bugs in framework related.
 - Liquidation: allow selection of cashier instead of automatically assigned
 - Add "Close" on deposit screen
-- 
+- Fix RPTLedger item update and remove bugs
+- Add class code in RPT Billing Report 
 
