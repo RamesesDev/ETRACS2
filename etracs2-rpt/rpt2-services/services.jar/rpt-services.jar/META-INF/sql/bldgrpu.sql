@@ -25,7 +25,7 @@ SELECT
     bt.objid AS bldgtypeid, bt.code AS bldgtypecode, bt.name AS bldgtypename, 
     bt.depreciations, bt.multistoreyadjustments, bt.basevaluetype, bt.residualrate, 
     s.predominant, s.depreciatecoreanditemseparately, s.computedepreciationbasedonschedule ,
-	s.calcbldgagebasedondtoccupied  
+	s.calcbldgagebasedondtoccupied, s.straightdepreciation   
 FROM bldgrysetting s, bldgtype bt  
 WHERE s.objid = bt.bldgrysettingid  
  AND s.ry = $P{ry} AND bt.code LIKE $P{code}   
