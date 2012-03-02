@@ -110,6 +110,7 @@ class TDReportService
 		if( IS_TRUE( faas.info.annotated ) ) {
 			def data = em.sqlContext.createNamedQuery('faas:getActiveAnnotationId').setParameter('faasid', faas.objid).singleResult
 			def annotation = em.read('annotation', data )
+			if( ! annotation ) throw new Exception('Annotation record does not exists.')
 			td.annotated 		= true 
 			td.annotationtype 	= annotation.doctype 
 			def mortgagedate 	= null
