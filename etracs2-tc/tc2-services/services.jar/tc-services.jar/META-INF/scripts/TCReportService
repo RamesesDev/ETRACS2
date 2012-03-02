@@ -73,26 +73,31 @@ class TDReportService {
 						.singleResult
 		if( ! chart ) throw new Exception('Chart Type ' + charttype + ' is not defined.' )
 		
-		def acctlist = getChildAccounts( charttype, chart.objid  ) 
-		
 		def items = []
+		items.addAll( getUnmappedIncomeAccounts(charttype) )
+		
+		def acctlist = getChildAccounts( charttype, chart.objid  ) 
 		buildChildAccount( charttype, items, acctlist )
 		return items
+	}
+	
+	List getUnmappedIncomeAccounts(charttype) {
+		return em.sqlContext.createNamedQuery("tcreport:getUnmappedIncomeAccountBy$charttype").resultList 
 	}
 	
 	void buildChildAccount( charttype, items, acctlist ) {
 		acctlist.each { acct ->
 			if( acct.accttype.toLowerCase() == 'glaccount' ) {
-				acct.accttitle = ('    ' * acct.acctlevel ) + acct.acctcode + '  ' + acct.accttitle 
+				acct.accttitle = ('     ' * acct.acctlevel ) + acct.acctcode + '  ' + acct.accttitle 
 			}
 			else {
-				acct.accttitle = ('    ' * acct.acctlevel ) + acct.accttitle 
+				acct.accttitle = ('     ' * acct.acctlevel ) + acct.accttitle 
 			}
 			items.add( acct )
 			
 			//load incomeaccounts 
 			def ialist = getIncomeAccountByChart( charttype, acct.objid ).each {
-				it.accttitle = ('    ' * (acct.acctlevel+1) ) + it.accttitle 
+				it.accttitle = ('     ' * (acct.acctlevel+1) ) + it.accttitle 
 			}
 			items.addAll( ialist )
 			

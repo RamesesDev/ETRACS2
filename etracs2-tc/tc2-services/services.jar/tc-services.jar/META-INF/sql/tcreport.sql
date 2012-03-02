@@ -25,6 +25,21 @@ FROM incomeaccount
 WHERE sreid = $P{objid} 
 ORDER BY acctno, accttitle  
 
+
+[getUnmappedIncomeAccountByNGAS]
+SELECT objid, 'SRE' AS charttype, CONCAT('<unmapped> - ', accttitle) AS accttitle, acctcode, 
+	'incomeaccount' AS accttype, fundname 
+FROM incomeaccount 
+WHERE ngasid IS NULL 
+ORDER BY acctno, accttitle  
+
+[getUnmappedIncomeAccountBySRE]
+SELECT objid, 'SRE' AS charttype, CONCAT('<unmapped>  -  ', accttitle) AS accttitle, acctcode, 
+	'incomeaccount' AS accttype, fundname 
+FROM incomeaccount 
+WHERE sreid IS NULL 
+ORDER BY acctno, accttitle  
+
 [getAbstractOfCollection]
 SELECT afid, serialno, receiptdate, payorname, payoraddress, accttitle, fundname, amount, collectorname, collectortitle  
 FROM revenue  
