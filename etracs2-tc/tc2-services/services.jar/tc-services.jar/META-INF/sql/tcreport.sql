@@ -1,6 +1,29 @@
 [getFundList]
 SELECT objid AS fundid, fundname  FROM fund ORDER BY fundname 
 
+[getChart]
+SELECT objid FROM account WHERE charttype = $P{charttype} AND parentid IS NULL 
+  
+[getAccountByParentId]  
+SELECT objid, charttype, accttitle, acctcode, accttype, acctlevel - 1 AS acctlevel 
+FROM account 
+WHERE parentid = $P{parentid} 
+ORDER BY acctcode 
+
+[getIncomeAccountByNGAS]
+SELECT 
+	objid, 'NGAS' AS charttype, CONCAT('- ', accttitle) AS accttitle, acctcode, 
+	'incomeaccount' AS accttype, fundname 
+FROM incomeaccount 
+WHERE ngasid = $P{objid} 
+ORDER BY acctno, accttitle 
+
+[getIncomeAccountBySRE]
+SELECT objid, 'SRE' AS charttype, CONCAT('- ', accttitle) AS accttitle, acctcode, 
+	'incomeaccount' AS accttype, fundname 
+FROM incomeaccount 
+WHERE sreid = $P{objid} 
+ORDER BY acctno, accttitle  
 
 [getAbstractOfCollection]
 SELECT afid, serialno, receiptdate, payorname, payoraddress, accttitle, fundname, amount, collectorname, collectortitle  
