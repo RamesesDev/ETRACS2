@@ -31,4 +31,6 @@ Patch-2.02.002 (CUMMULATIVE)
 - Add "Close" on deposit screen
 - Fix RPTLedger item update and remove bugs
 - Add class code in RPT Billing Report 
+- Fix BldgType entry focus bug 
+
 
