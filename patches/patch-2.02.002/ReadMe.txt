@@ -33,5 +33,8 @@ Patch-2.02.002 (CUMMULATIVE)
 - Add class code in RPT Billing Report 
 - Fix BldgType entry focus bug 
 - Add Transfer with Reassessment support 
-- Add Provincial Form 60 report 
+- Add Provincial Form 60 report
+- Fix actual use adjustment null pointer error
+- Fix property payer entry
+
 
