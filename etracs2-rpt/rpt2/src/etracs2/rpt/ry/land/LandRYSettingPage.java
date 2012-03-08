@@ -51,11 +51,6 @@ public class LandRYSettingPage extends javax.swing.JPanel {
         xButton3 = new com.rameses.rcp.control.XButton();
         xButton4 = new com.rameses.rcp.control.XButton();
         xDataTable10 = new com.rameses.rcp.control.XDataTable();
-        jPanel8 = new javax.swing.JPanel();
-        xButton5 = new com.rameses.rcp.control.XButton();
-        xButton6 = new com.rameses.rcp.control.XButton();
-        xButton7 = new com.rameses.rcp.control.XButton();
-        xDataTable11 = new com.rameses.rcp.control.XDataTable();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -271,51 +266,6 @@ public class LandRYSettingPage extends javax.swing.JPanel {
         );
         jTabbedPane1.addTab("Land Adjustment", jPanel7);
 
-        xButton5.setMnemonic('n');
-        xButton5.setText("New");
-        xButton5.setName("createLandActualUseAdjustment");
-
-        xButton6.setMnemonic('o');
-        xButton6.setText("Open");
-        xButton6.setName("openLandActualUseAdjustment");
-
-        xButton7.setMnemonic('r');
-        xButton7.setText("Remove");
-        xButton7.setName("removeLandActualUseAdjustment");
-
-        xDataTable11.setHandler("landActualUseAdjustmentListHandler");
-        xDataTable11.setName("selectedLandActualUseAdjustment");
-
-        org.jdesktop.layout.GroupLayout jPanel8Layout = new org.jdesktop.layout.GroupLayout(jPanel8);
-        jPanel8.setLayout(jPanel8Layout);
-        jPanel8Layout.setHorizontalGroup(
-            jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel8Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(xDataTable11, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 760, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jPanel8Layout.createSequentialGroup()
-                        .add(xButton5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(xButton6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(xButton7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(18, Short.MAX_VALUE))
-        );
-        jPanel8Layout.setVerticalGroup(
-            jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel8Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(xButton5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(xButton6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(xButton7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(xDataTable11, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 411, Short.MAX_VALUE)
-                .addContainerGap())
-        );
-        jTabbedPane1.addTab("Land Actual Use Adjustment", jPanel8);
-
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -352,18 +302,13 @@ public class LandRYSettingPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
-    private javax.swing.JPanel jPanel8;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTabbedPane jTabbedPane2;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XButton xButton2;
     private com.rameses.rcp.control.XButton xButton3;
     private com.rameses.rcp.control.XButton xButton4;
-    private com.rameses.rcp.control.XButton xButton5;
-    private com.rameses.rcp.control.XButton xButton6;
-    private com.rameses.rcp.control.XButton xButton7;
     private com.rameses.rcp.control.XDataTable xDataTable10;
-    private com.rameses.rcp.control.XDataTable xDataTable11;
     private com.rameses.rcp.control.XDataTable xDataTable4;
     private com.rameses.rcp.control.XDataTable xDataTable5;
     private com.rameses.rcp.control.XDataTable xDataTable6;
