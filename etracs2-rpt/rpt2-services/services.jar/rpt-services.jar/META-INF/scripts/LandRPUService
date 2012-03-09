@@ -414,8 +414,8 @@ class LandRPUService
     @ProxyMethod
     public def removeLandAdjustment( landdetails, item ) {
         landdetails.each {
-            def adj = it.landadjustments.find{ it.adjtypeid == item.adjtypeid }
-            if( adj ) it.landadjustments.remove( adj )
+			def adjs = it.landadjustments.findAll{ it.adjtypeid == item.adjtypeid }
+			if( adjs ) it.landadjustments.removeAll( adjs )
             calculateLandDetailAssessment( it )
         }
         return landdetails 
@@ -423,8 +423,8 @@ class LandRPUService
     
     @ProxyMethod
     public def removeActualUseAdjustment( landDetail, item ) {
-        def adj = landDetail.adjustments.find{ it.adjtypeid == item.adjtypeid }
-        if( adj ) landDetail.adjustments.remove( adj )
+        def adjs = landDetail.adjustments.findAll{ it.adjtypeid == item.adjtypeid }
+        if( adjs ) landDetail.adjustments.removeAll( adjs )
         calculateLandDetailAssessment( landDetail )
         return landDetail 
     }
