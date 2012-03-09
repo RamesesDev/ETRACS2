@@ -15,18 +15,12 @@ class LookupEntityListController extends LookupModel
 {
     @Service('EntityService')
     def svc;
-    def selected;
+    
     def searchText;
-    def txntype;
-    def onselect;
     
     
     public int getRows(){
         return 50; 
-    }
-    
-    public void setSelected( business ){
-        selected = business
     }
     
     public Column[] getColumns() {
@@ -40,14 +34,13 @@ class LookupEntityListController extends LookupModel
     public List  fetchList(Map param) { 
         def s = search
         if( !s ) s = searchText 
-        def list = svc.getList(searchText, null)
+        def list = svc.getList(s, null)
         if( !list ) throw new Exception( 'There are no records found.' );
         return list;
     }
     
     def ok(){
         search = null
-        if( onselect ) onselect( selected );
         return select();
     }
     

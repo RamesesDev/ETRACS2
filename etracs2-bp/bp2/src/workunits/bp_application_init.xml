@@ -135,14 +135,16 @@ class BusinessApplication
         return InvokerUtil.lookupOpener( 'bp.lookupbusiness', [searchText:app.appno, txntype:application.txntype] );
     }
     
-    public def lookupPayer(){
-        return InvokerUtil.lookupOpener( 'entity:lookup', [onselect: onselect, searchText:application.info.taxpayername] );
+    def taxpayer    
+    def getLookupTaxpayer(){ 
+        return InvokerUtil.lookupOpener( 'entity:lookup1', [:] )
     }
     
-    def taxpayerSearch
-    def getLookupTaxpayer(){ 
-        return InvokerUtil.lookupOpener( 'entity:lookup1', [onselect: onselect, searchText:taxpayerSearch?.taxpayername] )
+    void setTaxpayer( taxpayer ) {
+        this.taxpayer = taxpayer
+        onselect( taxpayer )
     }
+    
 }
 
 ]]>        
