@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="form60.lookupaccount" action="init" caption="Lookup Account" target="popup"  />
+    </invokers>
+    <code lang="groovy">
+
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+public class Form60LookupAccountController {
+    @Binding 
+    def binding
+    
+    def svc
+    
+    def parent  //form60item 
+    
+    def onaddHandler //
+    
+    def selectedItem 
+    def searchText 
+    def list 
+    
+    boolean searching 
+    
+    void init() {
+        searching = true
+        list = []
+    }
+    
+    void search() {
+        searching = true
+        listHandler.load()
+    }
+    
+    void selectAll(){
+        searching = false
+        list.each{ it.selected = true }
+        listHandler.load()
+    }
+    
+    void deselectAll() {
+        searching = false
+        list.each{ it.selected = false }
+        listHandler.load()
+    }
+    
+    def doOk() {
+        if( ! parent ) throw new Exception('Form60 Item is required.')
+        def selectedlist = list.findAll{ it.selected == true }
+        selectedlist.each{ 
+            svc.insertAccount( parent.objid, it )
+        }
+        if( onaddHandler ) onaddHandler( selectedlist )
+        return '_close' 
+    }
+    
+    
+    def listHandler = [
+        getRows     : { return 50 },
+        getColumns  : { return [
+            new Column(name:'selected', caption:'', type:'boolean', editable:'true', maxWidth:30 ),
+            new Column(name:'accttitle', caption:'Account Title' ),
+            new Column(name:'acctcode', caption:'Code', maxWidth:80 ),
+            new Column(name:'fundname', caption:'Fund', maxWidth:150 ),
+        ]},
+        fetchList   : {
+            if( searching ) {
+                list = svc.getAccountList( searchText, it )    
+            }
+            return list 
+        }
+    ] as PageListModel
+    
+    
+}
+
+
+]]>
+   
+</code>
+    
+    <pages>
+        <page template="etracs2.tc.form60.LookupAccountPage" />
+    </pages>
+</workunit>

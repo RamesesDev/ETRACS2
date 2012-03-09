@@ -1,5 +1,5 @@
 [getCurrentRYSettingInfo]
-SELECT predominant, depreciatecoreanditemseparately, computedepreciationbasedonschedule 
+SELECT predominant, depreciatecoreanditemseparately, computedepreciationbasedonschedule, calcbldgagebasedondtoccupied 
 FROM bldgrysetting WHERE ry = $P{ry} 
 
 [getRPTSetting]
@@ -24,7 +24,8 @@ WHERE pin = $P{pin}
 SELECT 
     bt.objid AS bldgtypeid, bt.code AS bldgtypecode, bt.name AS bldgtypename, 
     bt.depreciations, bt.multistoreyadjustments, bt.basevaluetype, bt.residualrate, 
-    s.predominant, s.depreciatecoreanditemseparately, s.computedepreciationbasedonschedule 
+    s.predominant, s.depreciatecoreanditemseparately, s.computedepreciationbasedonschedule ,
+	s.calcbldgagebasedondtoccupied, s.straightdepreciation   
 FROM bldgrysetting s, bldgtype bt  
 WHERE s.objid = bt.bldgrysettingid  
  AND s.ry = $P{ry} AND bt.code LIKE $P{code}   
@@ -65,7 +66,8 @@ WHERE s.objid = bi.bldgrysettingid
 SELECT 
     bt.objid AS bldgtypeid, bt.code AS bldgtypecode, bt.name AS bldgtypename, 
     bt.depreciations, bt.multistoreyadjustments, bt.basevaluetype, bt.residualrate, 
-    s.predominant, s.depreciatecoreanditemseparately, s.computedepreciationbasedonschedule 
+    s.predominant, s.depreciatecoreanditemseparately, s.computedepreciationbasedonschedule ,
+	s.calcbldgagebasedondtoccupied 
 FROM bldgrysetting s, bldgtype bt  
 WHERE s.objid = bt.bldgrysettingid  
  AND bt.previd = $P{previd} 

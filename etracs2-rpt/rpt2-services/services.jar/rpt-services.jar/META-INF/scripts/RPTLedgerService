@@ -52,6 +52,7 @@ class RPTLedgerService
             taxpayername    : searchText + '%',
             cadastrallotno  : searchText,
             blockno         : searchText,
+			barangay		: searchText + '%'
         ]
 		
 		if( (result = getListByQuery('rptledger:getListByTdno', criteria, params)) ) return result
@@ -59,6 +60,7 @@ class RPTLedgerService
 		if( (result = getListByQuery('rptledger:getListByTaxpayer', criteria, params)) ) return result
 		if( (result = getListByQuery('rptledger:getListByCadastral', criteria, params)) ) return result
 		if( (result = getListByQuery('rptledger:getListByBlock', criteria, params)) ) return result
+		if( (result = getListByQuery('rptledger:getBarangay', criteria, params)) ) return result
 		return result
     }
     
@@ -87,7 +89,7 @@ class RPTLedgerService
     }
     
     @ProxyMethod
-    public void insertLedgerItem( ledgeritem ) {
+    public void insertLedgerItem( ledgeritem ) { 
         ledgeritem.schemaname = LEDGERITEM_SCHEMA
         ledgeritem.schemaversion = SCHEMA_VERSION
         em.validate( ledgeritem.schemaname, ledgeritem ) 
@@ -97,10 +99,24 @@ class RPTLedgerService
     
     @ProxyMethod
     public void updateLedgerItem( ledgeritem ) {
+		if( ! ledgeritem.schemaname ) {
+			ledgeritem.schemaname = LEDGERITEM_SCHEMA
+			ledgeritem.schemaversion = SCHEMA_VERSION
+		}
         em.validate( ledgeritem.schemaname, ledgeritem ) 
         em.update( ledgeritem.schemaname, ledgeritem )
-        logSvc.log('CREATE_ITEM', 'RPTLedger', ledgeritem.parentid)
+        logSvc.log('UPDATE_ITEM', 'RPTLedger', ledgeritem.parentid)
     }
+	
+	@ProxyMethod
+	public void removeLedgerItem( ledgeritem ) {
+		if( ! ledgeritem.schemaname ) {
+			ledgeritem.schemaname = LEDGERITEM_SCHEMA
+			ledgeritem.schemaversion = SCHEMA_VERSION
+		}
+		em.delete( ledgeritem.schemaname, ledgeritem )
+        logSvc.log('DELETE_ITEM', 'RPTLedger', ledgeritem.parentid)
+	}
     
     @ProxyMethod
     public List getStates() {

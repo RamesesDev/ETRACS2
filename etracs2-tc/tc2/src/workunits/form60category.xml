@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker type="form60.addCategory" action="initAdd" caption="Add Category" target="popup" />
+        <invoker type="form60.editCategory" action="initEdit" caption="Edit Category" target="popup" />
+    </invokers>
+    <code lang="groovy">
+
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+import java.rmi.server.UID
+
+
+public class Form60CategoryController {
+    @Binding 
+    def binding
+    
+    def mode 
+    def entity
+    def onsaveHandler
+    
+    
+    void initAdd() {
+        entity = [ 
+            objid : 'F' + new UID(),
+            type  : 'category',
+        ]
+        mode = 'create' 
+    }
+    
+    void initEdit() {
+        mode = 'edit' 
+    }
+    
+    void saveAndCreate() {
+        setCaption();
+        invokeHandler()
+        initAdd()
+        binding.refresh();
+        binding.focus('entity.accttitle')
+    }
+    
+    def save() {
+        setCaption()
+        invokeHandler()
+        return '_close' 
+    }
+    
+    void invokeHandler() {
+        if( onsaveHandler ) {
+            onsaveHandler( mode, entity )
+        }
+    }
+    
+    void setCaption() {
+        entity.caption = entity.accttitle
+    }
+}
+
+
+]]>
+   
+</code>
+    
+    <pages>
+        <page template="etracs2.tc.form60.CategoryPage" />
+    </pages>
+</workunit>

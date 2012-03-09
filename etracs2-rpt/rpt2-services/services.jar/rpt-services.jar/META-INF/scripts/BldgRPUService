@@ -202,7 +202,7 @@ class BldgRPUService
         if( ! bldgtype.depreciations ) throw new Exception('Depreciation schedule for Type ' + bldgtype.bldgtypecode + ' is not defined.')
 		def depreciationrate = 0
         
-		int bldgage = calculateBldgAge( issuedate, dtcompleted, dtoccupied )
+		int bldgage = calculateBldgAge( bldgtype, issuedate, dtcompleted, dtoccupied )
         if( bldgage > 0 )  {
             for ( sked in bldgtype.depreciations ) {
                 if( sked.ageto != 0 && sked.ageto <= bldgage ) {
@@ -218,21 +218,28 @@ class BldgRPUService
 		def maxdepreciation = 100.0 - bldgtype.residualrate 
 		if( maxdepreciation < depreciationrate) 
 			return maxdepreciation
-		return depreciationrate
+		return new BigDecimal(depreciationrate +'')
 	}
 	
 	@ProxyMethod
-	public def calculateBldgAge( issuedate, dtcompleted, dtoccupied ) {
+	public def calculateBldgAge( bldgtype, issuedate, dtcompleted, dtoccupied ) {
 		if( ! (issuedate && dtcompleted && dtoccupied ) ) {
             return 0
-        }
+        } 
+		
 		
         issuedate = dateSvc.parse( 'yyyy-MM-dd', issuedate )
         dtcompleted = dateSvc.parse( 'yyyy-MM-dd', dtcompleted)
         dtoccupied = dateSvc.parse( 'yyyy-MM-dd', dtoccupied)
         
 		def refdate = dtcompleted
-		if( dtoccupied < dtcompleted) {
+		
+		//check calcbldgagebasedondtoccupied option
+		if( bldgtype.calcbldgagebasedondtoccupied 
+			&& TO_BOOLEAN( bldgtype.calcbldgagebasedondtoccupied ) == true ) {
+				refdate = dtoccupied 
+		}
+		else if( dtoccupied < dtcompleted) {
 			refdate = dtoccupied
 		}
 		int refyear = dateSvc.getYear( refdate )
@@ -252,8 +259,8 @@ class BldgRPUService
         calculateTotalArea( rpu )
         calculateFirstFloorBaseValue( rpu )  
         
-        //calculate depreciation 
-        if( rpu.info.bldgtype.computedepreciationbasedonschedule )  {
+		//calculate depreciation 
+        if( IS_TRUE( rpu.info.bldgtype.computedepreciationbasedonschedule ))  {
             rpu.info.depreciation = calculateBldgDepreciation( rpu.info.bldgtype, rpu.issuedate, rpu.info.dtcompleted, rpu.info.dtoccupied )
         }
         //calculate market value
@@ -263,7 +270,7 @@ class BldgRPUService
         
         //calculate rpu market value
         rpu.totalareasqm    = calculateSum('area', rpu.info.bldguses )
-		
+			
 		if( rpu.info.useswornamount == true  ) {
 			rpu.totalbmv        = rpu.info.swornamount 
 			rpu.info.depreciationvalue = numberSvc.round( rpu.totalbmv * rpu.info.depreciation / 100 )
@@ -342,7 +349,7 @@ class BldgRPUService
         floor.adjustment        = calculateTotalFloorAdditionals( floor )
         floor.depreciationvalue = 0.0
 		
-		if( bldgtype.straightdepreciation ) {
+		if( !bldgtype.straightdepreciation ||  IS_TRUE(bldgtype.straightdepreciation )) {
 			calculateStraightDepreciation( rpu, bldgtype, floor, depreciation )
 		}
 		else {
@@ -382,7 +389,7 @@ class BldgRPUService
 		def totaldepreciationrate 	= 0.0
 		floor.depreciationvalue 	= 0.0 
 		def depreciationvalue 		= 0.0 
-		int bldgage 				= calculateBldgAge( issuedate, dtcompleted, dtoccupied )
+		int bldgage 				= calculateBldgAge( bldgtype, issuedate, dtcompleted, dtoccupied )
 		def maxdepreciation			= 100 - bldgtype.residualrate 
 		
         if( bldgage > 0 )  {

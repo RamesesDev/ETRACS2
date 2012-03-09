@@ -53,6 +53,7 @@ abstract class AbstractRuleController
     }
     
     void save() {
+        
         rule.ruletext = ruleService.buildRuleText( rule )
         if( mode == 'create' ) 
             rule = abstractRuleService.create( rule )
@@ -121,6 +122,12 @@ abstract class AbstractRuleController
             }
         }   
     }
+
+    void doRemoveVar(){
+        selectedCondition.constraints.each{
+            rule.varlist.remove( it.fieldvar )
+        }
+    }
     
     def openCondition() {
         editedIndex = rule.conditions.indexOf( selectedCondition )
@@ -138,6 +145,7 @@ abstract class AbstractRuleController
     
     void removeCondition() {
         if( ! selectedCondition ) return 
+        doRemoveVar()
         rule.conditions.remove( selectedCondition )
     }
     

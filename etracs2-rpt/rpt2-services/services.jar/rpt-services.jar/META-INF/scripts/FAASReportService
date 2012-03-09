@@ -12,19 +12,21 @@ class FaasReportService
 	
 	def LISTLIMITSIZE1 = 10
 	def LISTLIMITSIZE2 = 7
+	
+	@Service('FAASService')
+	def faasSvc 
 
 	
 	@ProxyMethod
 	public def getReportData( faasid ) {
 		def faasdata = [:]
-		def faas = em.read('faas', [objid:faasid])
+		def faas = faasSvc.open(faasid)
 		if( !faas ) throw new Exception('Cannot open FAAS with ID No. ' + faasid + '.')
 		
 		faasdata.putAll( faas.info )
     	faasdata.putAll( faas.rp )
     	faasdata.putAll( faas.rpu )
 		faasdata.taxeffectivity = faas.info.effectivityqtr + "Q - " + faas.info.effectivityyear
-		println faasdata.info.taxable
 		faasdata.taxability = ( faasdata.taxable ? "TAXABLE" : "EXEMPT" )
 		
 		if( faas.rpu.rputype == 'land' ) {
@@ -70,7 +72,7 @@ class FaasReportService
 		landdetails.each {
 			def item = [
 				classification	: rpu.classname,
-				subclass		: it.subclassname,
+				subclass		: it.specificclassname + '  (' + it.subclassname + ')',
 				actualuse 		: it.actualusename,
 				area			: ( it.areatype == 'HA' ? it.areaha : it.areasqm ),
 				unitvalue		: it.unitvalue,
@@ -98,8 +100,8 @@ class FaasReportService
 		planttreedetails.each {
 			def item = [
 				planttreename 	: it.planttreename,
-				nonbearing		: it.nonbearing,
-				bearing			: it.bearing,
+				nonbearing		: it.nonbearing * 1.0,
+				bearing			: it.bearing * 1.0,
 				unitvalue		: it.unitvalue,
 				basemarketvalue	: it.basemarketvalue
 			]

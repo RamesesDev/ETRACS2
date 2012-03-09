@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/tc/master" action="init" caption="Form 60 Setup" permission="form60.setup"/>
+    </invokers>
+    <code lang="groovy">
+
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+public class Form60SetupController {
+    @Binding 
+    def binding
+    
+    @FormTitle
+    def title = "Form 60 Setup Page" 
+    
+    @Service('Form60Service')
+    def svc
+    
+    def selectedItem 
+    def selectedAccount 
+    
+    def entity
+    def accountList = [];
+    
+    void init() {
+        entity = svc.openSetup( [:] )
+        if( ! entity ) {
+            entity = [ items:[] ]
+        }
+    }
+    
+    def onsaveCategory = { mode, category ->
+        checkDuplicate( mode, category )
+        if( mode == 'create' ) {
+            entity.items.add( category )
+            listHandler.load()
+        }
+        else {
+            selectedItem.putAll( category )
+        }
+        svc.saveSetup( entity )
+    }
+    
+    def addCategory() {
+        return InvokerUtil.lookupOpener('form60.addCategory', [onsaveHandler:onsaveCategory])
+    }
+    
+    def editCategory() {
+        return InvokerUtil.lookupOpener('form60.editCategory', [entity:selectedItem, onsaveHandler:onsaveCategory])
+    }
+    
+    def idx = -1
+    
+    def onsaveAccount = { mode, account ->
+        checkDuplicate( mode, account )
+        if( mode == 'create' ) {
+            //insert below last inserted item
+            if( idx < 0 ) {
+                // this is the first item inserted since addAccount is invoke
+                idx = entity.items.indexOf( selectedItem )
+            }
+            idx++;
+            entity.items.add( idx, account )
+            listHandler.load()
+        }
+        else {
+            selectedItem.putAll( account )
+        }
+        svc.saveSetup( entity )
+    }
+    
+    def addAccount() {
+        idx = -1 
+        def opener = null
+        if( selectedItem ) {
+            opener = InvokerUtil.lookupOpener('form60.addAccount', [onsaveHandler:onsaveAccount, parent:selectedItem])
+        }
+        return opener
+    }
+    
+    def editAccount() {
+        idx = -1 
+        def opener = null
+        if( selectedItem ) {
+            opener = InvokerUtil.lookupOpener('form60.editAccount', [onsaveHandler:onsaveAccount, entity:selectedItem ])
+        }
+        return opener
+    }
+    
+    
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : { return [
+            new Column(name:'caption', caption:'Sources of Collection', minWidth:250),
+            new Column(name:'acctcode', caption:'Code', minWidth:50),
+            new Column(name:'nationalrate', caption:'National', type:'decimal', format:'#,##0.00'),
+            new Column(name:'provgenrate', caption:'Province-Gen.', type:'decimal', format:'#,##0.00'),
+            new Column(name:'provsefrate', caption:'Province-SEF', type:'decimal', format:'#,##0.00'),
+            new Column(name:'provtrustrate', caption:'Province-Trust', type:'decimal', format:'#,##0.00'),
+            new Column(name:'munigenrate', caption:'Municipality-Gen.', type:'decimal', format:'#,##0.00'),
+            new Column(name:'munisefrate', caption:'Municipality-SEF', type:'decimal', format:'#,##0.00'),
+            new Column(name:'munitrustrate', caption:'Municipality-Trust', type:'decimal', format:'#,##0.00'),
+            new Column(name:'barangayrate', caption:'Barangay', type:'decimal', format:'#,##0.00'),
+        ]},
+        fetchList       : { return entity.items },
+        onOpenItem      : { item, colName -> 
+            if( item.type == 'category' ) {
+                return editCategory() 
+            }
+            return editAccount()
+        },
+        onRemoveItem    : { item -> 
+            if( MsgBox.confirm('Remove selected item?') ) {
+                if( item.type == 'category' ) {
+                    def children = entity.items.findAll{ it.parentid == item.objid }
+                    children.each{ c ->
+                        svc.removeAccountByParentId( c.objid )                
+                    }
+                    entity.items.removeAll( children)
+                    def parent = entity.items.find{ it.objid == item.objid }
+                    entity.items.remove(parent)
+                }
+                else {
+                    svc.removeAccountByParentId( item.objid )                
+                    def parent = entity.items.find{ it.objid == item.objid }
+                    entity.items.remove(parent)
+                }
+                svc.saveSetup( entity )
+            }
+        },
+    ] as SubListModel
+    
+    void setSelectedItem( item ) {
+        selectedItem = item
+        accountList = []
+        if( selectedItem) {
+            accountList = svc.getAccountsByParentId( selectedItem.objid)
+        }
+    }
+    
+    
+    def accountListHandler = [
+        getRows     : { return 50 },
+        getColumns  : { return [
+            new Column(name:'accttitle', caption:'Account Title'),
+            new Column(name:'acctcode', caption:'Code', minWidth:200, width:200),
+        ]},
+        fetchList   : { return accountList },
+        onOpenItem  : { item, colName -> return editAccount() },
+        onRemoveItem    : { item -> 
+            if( MsgBox.confirm('Remove selected item?') ) {
+                svc.removeAccount( selectedItem.objid, item.acctid )
+                accountList.remove( item );
+            }
+        },
+    ] as PageListModel
+    
+ 
+    void checkDuplicate( mode, account ) {
+        def dupaccts = entity.items.findAll{ it.accttitle == account.accttitle && it.objid != account.objid }
+        if( dupaccts.size() > 0 ) {
+            throw new Exception('Duplicate Category or Account is not allowed.')
+        }
+    }
+    
+    
+    
+    def onaddIncomeAccounts = { items ->
+        accountList.addAll( items )
+        accountListHandler.load()
+    }
+    
+    def addIncomeAccount() {
+        if( selectedItem && selectedItem.type == 'item') {
+            return InvokerUtil.lookupOpener('form60.lookupaccount', [svc:svc, parent:selectedItem, onaddHandler:onaddIncomeAccounts])
+        }
+        return null
+    }
+    
+}
+
+
+]]>
+   
+</code>
+    
+    <pages>
+        <page template="etracs2.tc.form60.Form60SetupPage" />
+    </pages>
+</workunit>

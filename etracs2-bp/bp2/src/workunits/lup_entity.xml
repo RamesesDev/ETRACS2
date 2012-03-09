@@ -1,0 +1,62 @@
+<workunit>
+    <invokers>
+        <invoker type="entity:lookup1" caption="Entity Lookup" target="popup" />
+    </invokers>
+    
+    <code>
+        
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+class LookupEntityListController extends LookupModel
+{
+    @Service('EntityService')
+    def svc;
+    
+    def searchText;
+    
+    
+    public int getRows(){
+        return 50; 
+    }
+    
+    public Column[] getColumns() {
+        return [
+            new Column(name:"entityno", caption:"Account No.", maxWidth:90),
+            new Column(name:"entityname", caption:"Account Name"),
+            new Column(name:"entityaddress", caption:"Address")
+        ];
+    }
+
+    public List  fetchList(Map param) { 
+        def s = search
+        if( !s ) s = searchText 
+        def list = svc.getList(s, null)
+        if( !list ) throw new Exception( 'There are no records found.' );
+        return list;
+    }
+    
+    def ok(){
+        search = null
+        return select();
+    }
+    
+    void search(){
+        getListHandler().load();
+    }
+    
+    def getListHandler(){ return this;}
+}  
+
+
+]]>
+
+    </code>
+    
+    <pages>
+        <page template="etracs2.bp.LookupPage"/>
+    </pages>
+</workunit>

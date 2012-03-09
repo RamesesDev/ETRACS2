@@ -180,7 +180,7 @@ public class MachDetailPage extends javax.swing.JPanel {
         xNumberField2.setPreferredSize(new java.awt.Dimension(0, 18));
         formPanel3.add(xNumberField2);
 
-        xNumberField3.setCaption("Opeartion Year");
+        xNumberField3.setCaption("Operation Year");
         xNumberField3.setCaptionWidth(100);
         xNumberField3.setFieldType(int.class);
         xNumberField3.setName("operationyear");

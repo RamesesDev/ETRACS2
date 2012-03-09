@@ -1,0 +1,85 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/tc/reports" action="init" caption="Provincial Form 60" target="window" index="10" permission="tcreport.statementofrevenue"/>
+        
+        <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
+        <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
+        <invoker type="formActions"     action="preview" caption="Preview" mnemonic="v"             icon="images/doc-view.png"/>
+        
+        <invoker type="previewActions"  action="back" caption="Back" icon="images/back.png" immediate="true" />
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+
+class Form60Controller
+{
+    @Binding
+    def binding
+    
+    @Service("ReportParameterService")
+    def svcParams;
+    
+    @Service('Form60Service') 
+    def svc 
+    
+    @Service('DateService')
+    def dateSvc
+    
+    def year 
+    def month
+    def reportdata
+    
+    void init() {
+        def parsedate = dateSvc.parseCurrentDate()
+        year = parsedate.year 
+        month = svc.getMonth( parsedate.month )
+    }
+    
+    def preview() {
+        generateReport()
+        return 'preview' 
+    }
+    
+    void generateReport() {
+        reportdata = svc.generateForm60( year, month?.month  )
+        report.viewReport()
+    }
+    
+    void print(){
+        generateReport()
+        ReportUtil.print( report.report, true )
+    }
+    
+    def report = [
+        getReportName : { return 'treasury/form60' }, 
+        getReportData : { return reportdata.items },
+        getParameters : { 
+            def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )
+            params.PERIOD = reportdata.period
+            return params 
+        }
+    ] as ServerReportModel;
+        
+    def back() {
+        return 'default' 
+    }
+    
+    List getMonthlist() {
+        return svc.getMonthList( null )
+    }
+    
+    
+}
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.report.ReportInitPage" />
+        <page name="preview" template="etracs2.common.PreviewPage" />
+    </pages>
+</workunit>

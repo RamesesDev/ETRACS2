@@ -83,6 +83,8 @@ public class FormulaEditorPage extends javax.swing.JPanel {
 
         xTextArea3.setColumns(20);
         xTextArea3.setRows(5);
+        xTextArea3.setFont(new java.awt.Font("Tahoma", 1, 14));
+        xTextArea3.setName("expr");
         jScrollPane3.setViewportView(xTextArea3);
 
         add(jScrollPane3, java.awt.BorderLayout.NORTH);

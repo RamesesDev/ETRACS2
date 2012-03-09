@@ -230,7 +230,6 @@ public class GeneralCollectionPage extends javax.swing.JPanel {
         xDateField1.setFont(new java.awt.Font("Arial", 0, 12));
         xDateField1.setName("entity.info.txndate");
         xDateField1.setPreferredSize(new java.awt.Dimension(0, 19));
-        xDateField1.setReadonly(true);
         formPanel1.add(xDateField1);
 
         jPanel5.add(formPanel1, java.awt.BorderLayout.NORTH);

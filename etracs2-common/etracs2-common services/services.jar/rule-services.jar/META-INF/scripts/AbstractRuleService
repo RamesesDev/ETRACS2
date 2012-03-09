@@ -213,6 +213,7 @@ public class AbstractRuleService
 	void validate( rule ) {
 		em.validate(rule.schemaname, rule )
 		checkDuplicateRuleName( rule )
+		checkEmptyConditionAction( rule )
 	}
 	
 	void checkDuplicateRuleName( rule ) {
@@ -220,6 +221,15 @@ public class AbstractRuleService
 		if( data ) throw new Exception('Rule ' + rule.rulename + ' already exists.' )
 	}
 	
+	void checkEmptyConditionAction( rule ){
+		if( isEmptyConditionAction( rule ) )
+			throw new Exception( 'There must at least one Rule Condition and Action.' )
+	}
+
+	Boolean isEmptyConditionAction( rule ){
+		return ( !rule.conditions || !rule.actions ) ? true : false
+	}
+
 	void deployRulePackage( rule ) {
 		ruleMgmt.removeRulePackage( rule.ruleset, '', rule.packagename, false )
 		ruleMgmt.addRulePackage( rule.ruleset, '', rule.packagename, rule.ruletext, true )
