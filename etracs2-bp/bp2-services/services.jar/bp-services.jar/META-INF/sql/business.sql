@@ -20,6 +20,7 @@ SELECT b.*
 FROM business b  
 	INNER JOIN bpapplicationlisting bl ON b.applicationid = bl.objid   
 WHERE b.taxpayerid = $P{taxpayerid}  
+  AND b.tradename = $P{tradename} 
   AND b.docstate in ('ACTIVE', 'EXPIRED') 
   AND bl.barangayid LIKE $P{barangayid}   
 ORDER BY b.tradename, b.taxpayername 
