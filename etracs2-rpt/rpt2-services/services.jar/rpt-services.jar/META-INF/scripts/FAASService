@@ -423,7 +423,7 @@ class FAASService
         validateRPUInfo( faas )
         updateFaasState( faas, CURRENT_STATE )
         cancelPreviousFaas( faas )
-        deleteTxnReference( faas )
+		deleteTxnReference( faas )
         ledgerSvc.postConsolidatedFaas( faas.objid )
         logSvc.log('APPROVE','FAAS', faas.objid)
         return faas 
@@ -665,6 +665,8 @@ class FAASService
 	
 	@ProxyMethod
     public void checkLedgerBalanceByDate( faas, refdate ) {
+		if( faas.txntype == 'MC' ) return 
+		
 		def ledger = em.sqlContext.createNamedQuery('faas:getLedgerInfo').setParameter('objid', faas.ledgerid ).singleResult
         if( !ledger) throw new Exception('Cannot open Ledger for FAAS ' + faas.tdno + '.')
         
@@ -1026,7 +1028,7 @@ class FAASService
         checkDuplicateTdNo( faasinfo.objid, faasinfo.tdno )
         validateTransactionInfo( faasinfo )
 		
-		if( faasinfo.txntype != 'GR' ) {
+		if( 'GR/ND'.indexOf(faasinfo.txntype) == -1 ) {
 			checkLedgerBalanceByDate( faasinfo, faasinfo.issuedate )
 		}
 		
