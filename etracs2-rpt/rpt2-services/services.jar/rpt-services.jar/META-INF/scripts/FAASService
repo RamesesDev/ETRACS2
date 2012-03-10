@@ -423,7 +423,7 @@ class FAASService
         validateRPUInfo( faas )
         updateFaasState( faas, CURRENT_STATE )
         cancelPreviousFaas( faas )
-        deleteTxnReference( faas )
+		deleteTxnReference( faas )
         ledgerSvc.postConsolidatedFaas( faas.objid )
         logSvc.log('APPROVE','FAAS', faas.objid)
         return faas 
@@ -591,13 +591,13 @@ class FAASService
         
 		checkFaasTxnReference( faas.objid )
 		checkDuplicatePin( txntype, false, faas.fullpin, claimno  )
-		if( txntype != 'GR' ) {
-			checkLedgerBalanceByDate( faas, faas.issuedate )
-		}
 		
         faas = open( faas.objid )
         faas.info.claimno = claimno 
         if( txntype == 'TR' ) {
+			return initTransfer( faas, txntype, prevtdno, autonumber )
+		}
+		else if( txntype == 'TRE' ) {
 			return initTransfer( faas, txntype, prevtdno, autonumber )
 		}
 		else if( txntype == 'GR' ) {
@@ -635,6 +635,7 @@ class FAASService
             [txntype:'GR', caption:'General Revision'],
             [txntype:'ND', caption:'New Discovery'],
             [txntype:'TR', caption:'Transfer of Ownership'],
+			[txntype:'TRE', caption:'Transfer with Reassessment'],
             [txntype:'SD', caption:'Subdivision'],
             [txntype:'CS', caption:'Consolidation'],
             [txntype:'CC', caption:'Change Classification'],
@@ -664,6 +665,8 @@ class FAASService
 	
 	@ProxyMethod
     public void checkLedgerBalanceByDate( faas, refdate ) {
+		if( faas.txntype == 'MC' ) return 
+		
 		def ledger = em.sqlContext.createNamedQuery('faas:getLedgerInfo').setParameter('objid', faas.ledgerid ).singleResult
         if( !ledger) throw new Exception('Cannot open Ledger for FAAS ' + faas.tdno + '.')
         
@@ -838,7 +841,7 @@ class FAASService
     public void initOpenRpuInfo( rpu ) {
         if( rpu.rputype == LAND_TYPE ) {
             rpu.info.landdetails.each{ it.taxable = TO_BOOLEAN( it.taxable )}
-			rpu.info.planttreedetails.each {
+			rpu.info.planttrees.each {
 				it.bearing = it.bearing * 1.0 
 				it.nonbearing = it.nonbearing * 1.0 
 			}
@@ -1018,12 +1021,17 @@ class FAASService
     }
     
     void validateSubmit( faasinfo ) {
-        if( faasinfo.docstate == FORAPPROVAL_STATE ) throw new Exception('FAAS has already been submitted.')
+		if( faasinfo.docstate == FORAPPROVAL_STATE ) throw new Exception('FAAS has already been submitted.')
         if( faasinfo.docstate == FORPROVAPPROVAL_STATE ) throw new Exception('FAAS has already been submitted to province.')
         if( faasinfo.docstate == CURRENT_STATE) throw new Exception('FAAS is already current.')
         if( faasinfo.docstate == CANCELLED_STATE ) throw new Exception('FAAS has already been cancelled.')
         checkDuplicateTdNo( faasinfo.objid, faasinfo.tdno )
         validateTransactionInfo( faasinfo )
+		
+		if( 'GR/ND'.indexOf(faasinfo.txntype) == -1 ) {
+			checkLedgerBalanceByDate( faasinfo, faasinfo.issuedate )
+		}
+		
     }
     
     void validateSubmitToProvince( faasinfo ) {
@@ -1045,7 +1053,7 @@ class FAASService
     }
     
     void validateTransactionInfo( faasinfo ) {
-        if( faasinfo.txntype == 'TR' ) {
+        if( faasinfo.txntype == 'TR' || faasinfo.txntype == 'TRE' ) {
             if( faasinfo.prevtaxpayerid == faasinfo.taxpayerid ) {
                 throw new Exception('Taxpayer should not be equal to previous taxpayer or owner.')
             }
@@ -1260,7 +1268,6 @@ class FAASService
 	
 	@ProxyMethod
 	public void  reviseFaas( faasidlist, newry ) {
-		println 'Revise FAA --------------------------------'
 		faasidlist.each{ faasid -> 
 			def faas = em.read( SCHEMA_NAME, [objid:faasid] )
 			if( ! faas ) {

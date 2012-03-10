@@ -88,13 +88,13 @@ alter table bppayment add column paidqtr int not null;
 ------------------------------------------------------------------ */
 
 alter table liquidation add column rcds text;
-update liquidation set rcds = '[]';
+update liquidation set rcds = '[]' where rcds is null ;
 
 alter table liquidation add column opener varchar(50) not null;
 alter table liquidationlist add column opener varchar(50) not null;
 
-update liquidation set opener='single';
-update liquidationlist set opener='single';
+update liquidation set opener='single' where opener is null;
+update liquidationlist set opener='single' where opener is null;
 
 CREATE TABLE `liquidationrcd` (                                                                     
   `objid` varchar(50) NOT NULL,        
@@ -139,7 +139,8 @@ create index ix_paymentitem_liquidationrcdid on paymentitem( liquidationrcdid );
 update paymentitem p, receiptlist rl, remittancelist rem  set
 	p.liquidationid = rem.liquidationid 
 where p.receiptid = rl.objid 
-  and rl.remittanceid = rem.objid; 
+  and rl.remittanceid = rem.objid
+  and p.liquidationid is null; 
 
 alter table receiptitem add column liquidationrcdid varchar(50);
 create index ix_receiptitem_liquidationrcdid on receiptitem(liquidationrcdid );
@@ -216,7 +217,7 @@ CREATE TABLE `form60account` (
 	 `acctid` varchar(50) NOT NULL,        
 	 `accttitle` varchar(250) NOT NULL,    
 	 PRIMARY KEY  (`objid`)                
-   ) ENGINE=InnoDB DEFAULT CHARSET=latin1  
+   ) ENGINE=InnoDB DEFAULT CHARSET=latin1  ;
 
 create index ix_form60account_parentid on form60account( parentid );
 create index ix_form60account_acctid on form60account( acctid);

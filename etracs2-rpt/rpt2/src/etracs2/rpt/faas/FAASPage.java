@@ -106,6 +106,7 @@ public class FAASPage extends javax.swing.JPanel {
         xTextField11 = new com.rameses.rcp.control.XTextField();
         xTextField12 = new com.rameses.rcp.control.XTextField();
         xLabel11 = new com.rameses.rcp.control.XLabel();
+        xLabel4 = new com.rameses.rcp.control.XLabel();
         jPanel11 = new javax.swing.JPanel();
         jLabel35 = new javax.swing.JLabel();
         jLabel36 = new javax.swing.JLabel();
@@ -550,7 +551,14 @@ public class FAASPage extends javax.swing.JPanel {
         xLabel11.setName("faas.rpu.fullpin");
         xLabel11.setPreferredSize(new java.awt.Dimension(99, 19));
         jPanel10.add(xLabel11);
-        xLabel11.setBounds(72, 4, 254, 19);
+        xLabel11.setBounds(72, 4, 226, 19);
+
+        xLabel4.setBorder(javax.swing.BorderFactory.createMatteBorder(1, 1, 1, 1, new java.awt.Color(153, 153, 153)));
+        xLabel4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        xLabel4.setFont(new java.awt.Font("Arial", 1, 14));
+        xLabel4.setName("faas.info.claimno");
+        jPanel10.add(xLabel4);
+        xLabel4.setBounds(298, 4, 28, 20);
 
         jPanel8.add(jPanel10);
         jPanel10.setBounds(6, 22, 330, 64);
@@ -788,6 +796,7 @@ public class FAASPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XLabel xLabel11;
     private com.rameses.rcp.control.XLabel xLabel2;
     private com.rameses.rcp.control.XLabel xLabel3;
+    private com.rameses.rcp.control.XLabel xLabel4;
     private com.rameses.rcp.control.XLabel xLabel5;
     private com.rameses.rcp.control.XLabel xLabel6;
     private com.rameses.rcp.control.XLabel xLabel7;
