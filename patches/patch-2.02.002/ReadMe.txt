@@ -36,5 +36,6 @@ Patch-2.02.002 (CUMMULATIVE)
 - Add Provincial Form 60 report
 - Fix actual use adjustment null pointer error
 - Fix property payer entry
-
+- Remove JAT Report from transaction menu
+- 
 

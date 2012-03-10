@@ -217,7 +217,7 @@ CREATE TABLE `form60account` (
 	 `acctid` varchar(50) NOT NULL,        
 	 `accttitle` varchar(250) NOT NULL,    
 	 PRIMARY KEY  (`objid`)                
-   ) ENGINE=InnoDB DEFAULT CHARSET=latin1  
+   ) ENGINE=InnoDB DEFAULT CHARSET=latin1  ;
 
 create index ix_form60account_parentid on form60account( parentid );
 create index ix_form60account_acctid on form60account( acctid);
