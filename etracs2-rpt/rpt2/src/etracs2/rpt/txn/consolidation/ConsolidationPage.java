@@ -80,7 +80,7 @@ public class ConsolidationPage extends javax.swing.JPanel {
         add(xActionBar1, java.awt.BorderLayout.NORTH);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("Consolidation Information");
+        xTitledBorder1.setTitle("Consolidated Land Information");
         jPanel3.setBorder(xTitledBorder1);
 
         formPanel3.setCaptionWidth(95);
@@ -244,7 +244,9 @@ public class ConsolidationPage extends javax.swing.JPanel {
 
         jScrollPane1.setPreferredSize(new java.awt.Dimension(0, 70));
         xTextArea1.setColumns(20);
+        xTextArea1.setLineWrap(true);
         xTextArea1.setRows(5);
+        xTextArea1.setWrapStyleWord(true);
         xTextArea1.setCaption("Remarks");
         xTextArea1.setCaptionWidth(70);
         xTextArea1.setName("consolidation.memoranda");
@@ -365,7 +367,7 @@ public class ConsolidationPage extends javax.swing.JPanel {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
         );
-        jTabbedPane1.addTab("Consolidated Land", jPanel4);
+        jTabbedPane1.addTab("Lands to Consolidate", jPanel4);
 
         xDataTable2.setHandler("affectedrpuListHandler");
         xDataTable2.setImmediate(true);
