@@ -31,8 +31,16 @@ class ReportParameterService{
 	@ProxyMethod
 	public def getStandardParameter( def username ){
 		def lguname = var.get('lgu_name');
-        def parentlguname = var.get('parent_lgu_name');
+        if( lguname ){
+            def lgutype = var.get('lgu_type');
+            if( lgutype == 'province' ) lguname = 'PROVINCE OF ' + lguname;
+            else if( lgutype == 'city' ) lguname = 'CITY OF ' + lguname;
+            else lguname = 'MUNICIPALITY OF ' + lguname;
+        }
         
+        def parentlguname = var.get('parent_lgu_name');
+        if( parentlguname ) parentlguname = 'PROVINCE OF ' + parentlguname;
+		
 		//set default item count 
 		def itemcount = 10
 		if( var.receipt_item_printout_count ) {
@@ -79,7 +87,9 @@ class ReportParameterService{
 			RECEIPTITEMCOUNT : receiptitemcount,
 			
 			SECRETARYNAME	: var.secretary_name,
-			SECRETARYTITLE	: var.secretary_title
+			SECRETARYTITLE	: var.secretary_title,
+			PROVINCIALTREASURERNAME	: var.provincial_treasurer_name,
+			PROVINCIALTREASURERTITLE		: var.provincial_treasurer_title
 		];
 	}
 	
