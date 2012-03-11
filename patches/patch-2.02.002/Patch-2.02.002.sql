@@ -65,7 +65,7 @@ CREATE TABLE bppayment (
 	lobid VARCHAR(50),
 	lobname VARCHAR(50),
 	acctid VARCHAR(50),
-	accttitle VARCHAR(50),
+	accttitle VARCHAR(150),
 	amount DECIMAL(10, 2),
 	surcharge DECIMAL(10, 2),
 	interest DECIMAL(10, 2),

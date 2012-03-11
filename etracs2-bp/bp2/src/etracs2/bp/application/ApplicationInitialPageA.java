@@ -55,7 +55,8 @@ public class ApplicationInitialPageA extends javax.swing.JPanel {
         xLookupField2.setCaption("Permitee");
         xLookupField2.setExpression("#{entityname}");
         xLookupField2.setHandler("lookupTaxpayer");
-        xLookupField2.setName("taxpayerSearch");
+        xLookupField2.setHint("Search Tax payer");
+        xLookupField2.setName("taxpayer");
         xLookupField2.setPreferredSize(new java.awt.Dimension(0, 19));
         xLookupField2.setRequired(true);
         formPanel1.add(xLookupField2);
