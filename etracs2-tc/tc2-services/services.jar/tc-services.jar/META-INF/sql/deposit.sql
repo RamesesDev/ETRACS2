@@ -149,6 +149,26 @@ UPDATE liquidationlist SET
 WHERE docstate = 'OPEN'	 
 
 
+[closeLiquidationByDeposit]
+UPDATE liquidationlist ll SET 
+	ll.docstate = 'CLOSED' 
+WHERE ll.objid IN ( 
+	SELECT a.liquidationid FROM 
+	( SELECT lr.liquidationid,  
+		 COUNT(*) AS itemcount,  
+		 SUM( CASE WHEN lr.docstate = 'CLOSED' THEN 1 ELSE 0 END ) AS closeditemcount 
+	  FROM liquidationrcd lr, liquidationlist ll 
+	  WHERE lr.liquidationid = ll.objid  
+	    AND ll.docstate = 'OPEN' 
+	    AND lr.depositid = $P{depositid} 
+	  GROUP BY lr.liquidationid
+	) a
+	WHERE a.itemcount = a.closeditemcount 
+)
+
+
+
+
 [getBankAccountList]
 SELECT * FROM bankaccount WHERE fundid = $P{fundid} ORDER BY fund, acctno 
 
