@@ -28,6 +28,7 @@ public class BaseValueTypePage extends javax.swing.JPanel {
         xLabel1 = new com.rameses.rcp.control.XLabel();
 
         xDataTable1.setDynamic(true);
+        xDataTable1.setFocusable(false);
         xDataTable1.setHandler("listHandler");
         xDataTable1.setShowRowHeader(true);
 

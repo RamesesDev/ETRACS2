@@ -125,6 +125,7 @@ public class BldgRYSettingPage extends javax.swing.JPanel {
 
         xSubFormPanel1.setDepends(new String[] {"selectedBldgType", "baseValueType"});
         xSubFormPanel1.setDynamic(true);
+        xSubFormPanel1.setFocusable(false);
         xSubFormPanel1.setHandler("baseValueHandler");
         xSubFormPanel1.setName("baseValueSubform");
         org.jdesktop.layout.GroupLayout xSubFormPanel1Layout = new org.jdesktop.layout.GroupLayout(xSubFormPanel1);
@@ -297,7 +298,6 @@ public class BldgRYSettingPage extends javax.swing.JPanel {
         xNumberField1.setCaptionWidth(100);
         xNumberField1.setFieldType(Integer.class);
         xNumberField1.setName("entity.ry");
-        xNumberField1.setPreferredSize(new java.awt.Dimension(50, 19));
         xNumberField1.setRequired(true);
         formPanel1.add(xNumberField1);
 

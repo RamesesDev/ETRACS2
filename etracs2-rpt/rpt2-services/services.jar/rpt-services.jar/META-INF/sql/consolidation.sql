@@ -37,6 +37,13 @@ WHERE landfaasid = $P{landfaasid}
 SELECT SUM( areasqm ) AS totalareasqm FROM consolidationland WHERE consolidationid = $P{consolidationid}
 
 
+[cancelConsolidationLandLedgers]
+UPDATE rptledger rl, consolidationland cl SET 
+	rl.docstate = 'CANCELLED' 
+WHERE rl.faasid = cl.landfaasid  
+  AND cl.consolidationid = $P{consolidationid}  
+
+
 #---------------------------------------------------------------
 # DELETE
 #---------------------------------------------------------------
@@ -67,5 +74,4 @@ DELETE FROM txnreference WHERE refid = $P{refid}
 #---------------------------------------------------------------
 [checkDuplicateLand]
 SELECT objid FROM consolidationland WHERE landfaasid = $P{landfaasid} 
-
 
