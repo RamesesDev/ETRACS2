@@ -111,9 +111,11 @@ class DepositService
 		
 		em.create( deposit.schemaname, deposit )
 		depositLiquidation( deposit )
+		closeLiquidation( deposit )
 		logSvc.log('CREATE', 'Deposit', deposit.objid )
 		return deposit
 	}
+	
 	
 	@ProxyMethod
 	public def closeDeposit( deposit ) {
@@ -243,6 +245,12 @@ class DepositService
 		em.sqlContext.createNamedExecutor('deposit:depositOpenLiquidationRcdByCashier').setParameters(params).execute()
 		// em.sqlContext.createNamedExecutor('deposit:depositOpenLiquidationList').setParameters(params).execute()
 	}
+	void closeLiquidation( deposit ){
+		em.sqlContext.createNamedExecutor('deposit:closeLiquidationByDeposit')
+				.setParameter('depositid', deposit.objid)
+				.execute()
+	}
+	
 	
 	void validateDeposit( deposit ) {
 		

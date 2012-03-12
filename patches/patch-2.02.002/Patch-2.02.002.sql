@@ -222,5 +222,144 @@ CREATE TABLE `form60account` (
 create index ix_form60account_parentid on form60account( parentid );
 create index ix_form60account_acctid on form60account( acctid);
 
+alter table faaslist change column prevtdno prevtdno varchar(300) null;
+
+alter table truecopy change column authority authority varchar(300) null;
+
+
+/*========================================================================================
+//
+//  MIGRATE LiquidationRCD records 
+//
+========================================================================================*/
+
+
+/* ===========================================================================
+* insert liquidationrcd record for "single" type liquidation
+* that have no equivalent liquidationrcd entry which is possible
+* for liquidations before the "multi" type was implemented
+=========================================================================== */
+insert into liquidationrcd (
+	objid, 
+	docstate, 
+	schemaname, 
+	schemaversion, 
+	liquidationid, 
+	liquidationno, 
+	liquidationdate, 
+	lqofficerid, 
+	lqofficername, 
+	lqofficertitle, 
+	fundid, 
+	fundname, 
+	cashierid, 
+	cashiername, 
+	cashiertitle, 
+	cash, 
+	noncash, 
+	amount, 
+	denominations, 
+	noncashpayments, 
+	depositid, 
+	dtdeposited
+)
+select 
+	concat(ll.objid, '-', ia.fundname) as objid, 
+	'CLOSED' as docstate, 
+	'liquidationrcd' as schemaname, 
+	'1.0' as schemaversion, 
+	ll.objid as liquidationid, 
+	ll.txnno as liquidationno, 
+	ll.txndate as liquidationdate, 
+	ll.liquidatingofficerid as lqofficerid, 
+	ll.liquidatingofficername as lqofficername, 
+	ll.liquidatingofficertitle as lqofficertitle, 
+	ia.fundid, 
+	ia.fundname, 
+	ll.depositedbyid as cashierid, 
+	ll.depositedbyname as cashiername, 
+	ll.depositedbytitle as cashiertitle, 
+	SUM(ri.amount) as cash, 
+	0.0 as noncash, 
+	SUM(ri.amount) as amount, 
+	'[[:]]' as denominations, 
+	'[]' as noncashpayments, 
+	ll.depositid, 
+	ll.dtdeposited
+from liquidationlist ll
+	inner join liquidation lq on ll.objid = lq.objid 
+	inner join remittancelist rl on ll.objid = rl.liquidationid 
+	inner join receiptlist r on rl.objid = r.remittanceid
+	inner join receiptitem ri on r.objid = ri.receiptid
+	inner join incomeaccount ia on ri.acctid = ia.objid 
+where not exists(select * from liquidationrcd where liquidationid = ll.objid )
+  and ll.depositid is not null
+group by ll.objid, ia.fundid;
+
+
+/* ===========================================================================
+* update the receiptitem.liquidationrcdid field 
+=========================================================================== */
+update receiptitem ri, receiptlist r, remittancelist rl, incomeaccount ia set
+	ri.liquidationrcdid = concat(rl.liquidationid, '-', ia.fundname)
+where ri.receiptid = r.objid 
+  and ri.acctid = ia.objid 
+  and r.remittanceid = rl.objid 
+  and ri.liquidationrcdid is null 
+  and rl.liquidationid is not null;
+
+
+/* ===========================================================================
+* update the revenue.liquidationrcdid field 
+=========================================================================== */
+update revenue rev, receiptitem ri set
+	rev.liquidationrcdid = ri.liquidationrcdid
+where rev.receiptitemid = ri.objid 
+  and rev.liquidationrcdid is null ;
+
+
+/* ===========================================================================
+* update the revenue.liquidationrcdid field 
+=========================================================================== */
+update liquidationlist ll set 
+	docstate = 'CLOSED'
+where ll.objid in (
+	select a.liquidationid from 
+	( select lr.liquidationid, 
+		 count(*) as itemcount, 
+		 sum( case when lr.docstate = 'closed' then 1 else 0 end ) as closeditemcount
+	  from liquidationrcd lr, liquidationlist ll
+	  where lr.liquidationid = ll.objid  and ll.docstate = 'open'
+	  group by lr.liquidationid
+	) a
+	where a.itemcount = a.closeditemcount 
+);
+
+update liquidation l, liquidationlist lq set
+	l.docstate = lq.docstate
+where l.docstate = 'open'
+  and lq.docstate = 'closed';
+
+  
+/* ===========================================================================
+* update renveue deposit related info  
+=========================================================================== */
+update revenue rev, liquidationrcd lr, deposit d set
+	rev.depositid = d.objid,
+	rev.depositno = d.txnno,
+	rev.depositdate = lr.dtdeposited,
+	rev.deposittimestamp = concat( year(lr.dtdeposited), 
+		quarter(lr.dtdeposited), 
+		case when month(lr.dtdeposited) < 10 then concat('0', month(lr.dtdeposited)) else month(lr.dtdeposited) end,
+		case when day(lr.dtdeposited) < 10 then concat('0', day(lr.dtdeposited)) else day(lr.dtdeposited) end 
+	)
+where rev.liquidationrcdid = lr.objid 
+  and lr.depositid = d.objid 
+  and rev.liquidationrcdid is not null 
+  and rev.depositid is null;
+
+/* ===============================================
+//
+=============================================== */
 
   

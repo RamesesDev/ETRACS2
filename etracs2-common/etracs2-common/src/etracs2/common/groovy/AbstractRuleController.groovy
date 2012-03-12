@@ -198,7 +198,7 @@ abstract class AbstractRuleController
     def openAction() {
         editedIndex = rule.actions.indexOf( selectedAction )
         def actionOpener = selectedAction.opener + '.open'
-        def opener = InvokerUtil.lookupOpener(actionOpener, [rule:rule, varlist:rule.varlist, action:selectedAction])
+        def opener = InvokerUtil.lookupOpener(actionOpener, [rule:rule, varlist:rule.varlist.unique(), action:selectedAction])
         return InvokerUtil.lookupOpener('abstractruleaction.open', [
                 abstractRuleSvc : abstractRuleService, 
                 ruleSvc         : ruleService, 
