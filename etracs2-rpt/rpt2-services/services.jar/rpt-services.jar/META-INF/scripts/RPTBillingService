@@ -154,7 +154,7 @@ public class RPTBillingService
 			bill.item.sefprior 		= prior.sef.sum()
 			bill.item.sefpriorint	= prior.sefint.sum()
 		}
-		
+		bill.item.period = bill.items[0]?.period 
 		bill.items.clear()
 		return bill 
 	}
@@ -339,21 +339,44 @@ public class RPTBillingService
 		
 		def firstitem = true  
         billitem.details = []
-        for( int yr = billitem.fromyear; yr <= billitem.toyear; yr++) {
-            def ledgeritem = [ assessedvalue : billitem.assessedvalue, basic:0.0, basicint:0.0, basicdisc:0.0, sef:0.0, sefint:0.0, sefdisc:0.0 ]
-            if( ledgeritem ) { //possible null if there is a gap in the ledgeritems due to nontaxability
-                if( yr < currdate.year ) {
-                    def av = adjustAssessedValue( bill, billitem, ledgeritem, firstitem, yr )
-                    def lastitem = ( yr == billitem.toyear )
-                    billitem.details.add( createBillItemDetail( bill, billitem, ledgeritem, av, yr, 0, firstitem , lastitem ) )
-                    firstitem = false 
-                }
-                else {
-                    billitem.details.addAll( createQtrlyItemDetails( bill, billitem, ledgeritem, yr, firstitem, false ) )
-                    firstitem = false 
-                }
-            }
-        }
+		if( isPreviousLedgerItemQuarterly() == true ) {
+			//previous year ledger is quarterly 
+			def startqtr = ( billitem.lastqtrpaid == 4 ? 1 : billitem.lastqtrpaid + 1)
+			for( int yr = billitem.fromyear; yr <= billitem.toyear; yr++) {
+				def ledgeritem = [ assessedvalue : billitem.assessedvalue, basic:0.0, basicint:0.0, basicdisc:0.0, sef:0.0, sefint:0.0, sefdisc:0.0 ]
+				if( ledgeritem ) { //possible null if there is a gap in the ledgeritems due to nontaxability
+					def endqtr = ( yr == bill.billtoyear ? bill.billtoqtr : 4 )
+					def qrtrlyav = numSvc.round( ledgeritem.assessedvalue / 4 )
+					for( int qtr = startqtr ; qtr <= endqtr ; qtr++ ) {
+						def av = qrtrlyav
+						if( qtr == 4 ) { 
+							av = ledgeritem.assessedvalue - qrtrlyav * 3
+						}
+						billitem.details.add( createBillItemDetail( bill, billitem, ledgeritem, av, yr, qtr, false , false ) )
+					}
+					startqtr = 1
+					billitem.isadvance = ( yr > currdate.year )
+				}
+			}
+		}
+		else {
+			for( int yr = billitem.fromyear; yr <= billitem.toyear; yr++) {
+				def ledgeritem = [ assessedvalue : billitem.assessedvalue, basic:0.0, basicint:0.0, basicdisc:0.0, sef:0.0, sefint:0.0, sefdisc:0.0 ]
+				if( ledgeritem ) { //possible null if there is a gap in the ledgeritems due to nontaxability
+					if( yr < currdate.year ) {
+						def av = adjustAssessedValue( bill, billitem, ledgeritem, firstitem, yr )
+						def lastitem = ( yr == billitem.toyear )
+						billitem.details.add( createBillItemDetail( bill, billitem, ledgeritem, av, yr, 0, firstitem , lastitem ) )
+						firstitem = false 
+					}
+					else {
+						billitem.isadvance = ( yr > currdate.year )
+						billitem.details.addAll( createQtrlyItemDetails( bill, billitem, ledgeritem, yr, firstitem, false ) )
+						firstitem = false 
+					}
+				}
+			}
+		}
     }
     
 	boolean isPreviousLedgerItemQuarterly() {
@@ -546,25 +569,7 @@ public class RPTBillingService
                 detail.sefnet   = detail.sef + detail.sefdp 
                 detail.total    = detail.basicnet + detail.sefnet 
                 
-                detail.period   = ( detail.qtr == 0 ? detail.year+'' : detail.year +'-' + detail.qtr )
-				
-				if( detail.firstitem ){
-					if( detail.partialbasic > 0)
-                        detail.period = detail.year + '-' + detail.lastqtrpaid 
-					else if( detail.year == bill.billtoyear && detail.qtr > 0)
-						detail.period = detail.year + '-' + detail.qtr 
-                    else if( detail.year == bill.billtoyear && detail.lastqtrpaid == 4 )
-                        detail.period = detail.year + '-1' + bill.billtoqtr 
-                    else if( detail.year == bill.billtoyear && detail.lastqtrpaid + 1 == bill.billtoqtr )
-                        detail.period = detail.year + '-' + bill.billtoqtr 
-                    else if( detail.year == bill.billtoyear )
-						detail.period = detail.year + (detail.lastqtrpaid != 4 ? '-' + (detail.lastqtrpaid + 1) + bill.billtoqtr : '')
-                    else
-                        detail.period   = detail.year + (detail.lastqtrpaid != 4 ? '-' + (detail.lastqtrpaid + 1) + '4' : '')
-                }
-                else if( detail.lastitem ) {
-                    detail.period   = detail.year + ( bill.billtoqtr == 1 ? '-1' : '-1' + bill.billtoqtr )
-                }
+				updateDetailPeriod( detail )
                 
                 item.basic      += detail.basic
                 item.basicint   += detail.basicint 
@@ -622,6 +627,27 @@ public class RPTBillingService
         return item.fromqtr + 'Q,' + item.fromyear + '-' + item.toqtr + 'Q,' + item.toyear 
     }
     
+	void updateDetailPeriod( detail ) {
+		detail.period   = ( detail.qtr == 0 ? detail.year+'' : detail.year +'-' + detail.qtr )
+				
+		if( detail.firstitem ){
+			if( detail.partialbasic > 0)
+				detail.period = detail.year + '-' + detail.lastqtrpaid 
+			else if( detail.year == bill.billtoyear && detail.qtr > 0)
+				detail.period = detail.year + '-' + detail.qtr 
+			else if( detail.year == bill.billtoyear && detail.lastqtrpaid == 4 )
+				detail.period = detail.year + '-1' + bill.billtoqtr 
+			else if( detail.year == bill.billtoyear && detail.lastqtrpaid + 1 == bill.billtoqtr )
+				detail.period = detail.year + '-' + bill.billtoqtr 
+			else if( detail.year == bill.billtoyear )
+				detail.period = detail.year + (detail.lastqtrpaid != 4 ? '-' + (detail.lastqtrpaid + 1) + bill.billtoqtr : '')
+			else
+				detail.period   = detail.year + (detail.lastqtrpaid != 4 ? '-' + (detail.lastqtrpaid + 1) + '4' : '')
+		}
+		else if( detail.lastitem ) {
+			detail.period   = detail.year + ( bill.billtoqtr == 1 ? '-1' : '-1' + bill.billtoqtr )
+		}
+	}
     
 }
     
