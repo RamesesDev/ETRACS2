@@ -134,13 +134,15 @@ class RPTReceiptService
     }
 	
 	void calculateManualReceiptTotals( receipt, items ) {
-        receipt.checknos   =  ''
-        receipt.checkbank  = ''
+        receipt.checknos   = ''
+        receipt.checkbanks = ''
+		receipt.checkdates = ''
         
         def noncashpmts = receipt.payments.findAll{ it.paytype == 'CHECK' } 
         if( noncashpmts ){
             receipt.checknos    = noncashpmts.checkno.join(',')
             receipt.checkbanks  = noncashpmts.bank.join(',')
+			receipt.checkdates	= noncashpmts.checkdate.join(',')
             receipt.checkamount = noncashpmts.amount.sum()
         }
         
@@ -326,13 +328,15 @@ class RPTReceiptService
     }
     
     void updateReceiptInfos( receipt, items ) {
-        receipt.checknos   =  ''
-        receipt.checkbank  = ''
+        receipt.checknos   = ''
+        receipt.checkbanks = ''
+		receipt.checkdates = ''
         
         def noncashpmts = receipt.payments.findAll{ it.paytype == 'CHECK' } 
         if( noncashpmts ){
             receipt.checknos    = noncashpmts.checkno.join(',')
             receipt.checkbanks  = noncashpmts.bank.join(',')
+			receipt.checkdates	= noncashpmts.checkdate.join(',')
             receipt.checkamount = noncashpmts.amount.sum()
         }
         
