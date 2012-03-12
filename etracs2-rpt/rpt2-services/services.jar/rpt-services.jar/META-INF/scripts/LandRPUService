@@ -15,6 +15,9 @@ class LandRPUService
 	@Service('PlantTreeRPUService')
 	def planttreeSvc
 
+	@Service('Var')
+	def varSvc 
+	
 	@Env
 	def env
     
@@ -364,19 +367,26 @@ class LandRPUService
     public def calculateLandAdjustment( landdetails, adjustment ) {
 		adjustment.adjustment = 0.0
         def result = [landvalueadjustment:0.0]
+		def adjustall = TO_BOOLEAN( varSvc.landrpu_calculate_landvalueadjustment_all )
         landdetails.each {
-            // evaluate the expr
-            def binding = buildFieldBindings( it ) 
-            binding += buildParamBindings( adjustment )
-            def adjamount = numberSvc.round( evaluateExpr( adjustment.expr, binding ) )
-            result.landvalueadjustment += adjamount
-			adjustment.adjustment += adjamount 
-            //remove existing adjustment
-            def oldadj = it.landadjustments.find{ it.adjtypeid == adjustment.adjtypeid }
-            if( oldadj ) it.landadjustments.remove( oldadj )
-            //add the adjustment 
-            it.landadjustments.add( createAdjustment( adjustment, adjamount ) )
-            calculateLandDetailAssessment( it )
+			//apply adjustment only if actualuseid matches the adjustment.classid 
+			//this is a transition to deprecate the actual use adjustment button.
+			//if classid is null, allow the addition to retain previous behaviour
+			def classid = adjustment.adj.classid 
+			if( !classid || classid == it.actualuseid || adjustall == true ) {
+				// evaluate the expr
+				def binding = buildFieldBindings( it )  
+				binding += buildParamBindings( adjustment )
+				def adjamount = numberSvc.round( evaluateExpr( adjustment.expr, binding ) )
+				result.landvalueadjustment += adjamount
+				adjustment.adjustment += adjamount 
+				//remove existing adjustment
+				def oldadj = it.landadjustments.find{ it.adjtypeid == adjustment.adjtypeid }
+				if( oldadj ) it.landadjustments.remove( oldadj )
+				//add the adjustment 
+				it.landadjustments.add( createAdjustment( adjustment, adjamount ) )
+				calculateLandDetailAssessment( it )
+			}
         }
         result.landdetails = landdetails 
         return result 
@@ -413,7 +423,7 @@ class LandRPUService
     
     @ProxyMethod
     public def removeLandAdjustment( landdetails, item ) {
-        landdetails.each {
+		landdetails.each {
 			def adjs = it.landadjustments.findAll{ it.adjtypeid == item.adjtypeid }
 			if( adjs ) it.landadjustments.removeAll( adjs )
             calculateLandDetailAssessment( it )
@@ -456,8 +466,8 @@ class LandRPUService
     @ProxyMethod
     public List lookupLandAdjustments( ry, classid, searchText, params) {
         def searchValue = (searchText ? searchText+'%' : '%')
-        def criteria = [ry:ry, classid:'%'+classid+'%', code:searchValue ]
-        return getListByName('landrpu:lookupAdjType', criteria, params)
+        def criteria = [ry:ry, classidvalue:classid, classid:'%'+classid+'%', code:searchValue ]
+        return getListByName('landrpu:lookupAdjType', criteria, params) 
     }
     
     
