@@ -7,7 +7,8 @@ SELECT
 	name AS varname, 
 	datatype AS vartype, 
 	caption AS varcaption , 
-	arrayvalues AS arrayvalues 
+	arrayvalues AS arrayvalues,
+	printtopermit AS printtopermit  
 FROM variable 
 WHERE objid = $P{objid} 
 

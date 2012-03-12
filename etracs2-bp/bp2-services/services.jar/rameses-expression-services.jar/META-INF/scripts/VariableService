@@ -28,9 +28,11 @@ class VariableService
 	
 	@ProxyMethod
 	public def create( var ) {
+		var.each{ println it }
 		var.objid = 'V' + new UID()
 		var.schemaname = SCHEMA_NAME
 		var.schemaversion = SCHEMA_VERSION
+		var.printtopermit = ( var.printtopermit ? 1 : 0 )
 		validate( var )
 		em.create( var.schemaname, var )
 		logService.log( 'CREATE', 'Variable', var.objid )
@@ -39,6 +41,7 @@ class VariableService
 	
 	@ProxyMethod
 	public def update( var ) {
+		var.printtopermit = ( var.printtopermit ? 1 : 0 )
 		validate( var )
 		em.update( var.schemaname, var, { diff -> 
 			logService.logB('UPDATE', 'Variable', var.objid, null, diff) 

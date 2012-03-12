@@ -358,8 +358,8 @@ where rev.liquidationrcdid = lr.objid
   and rev.liquidationrcdid is not null 
   and rev.depositid is null;
 
-/* ===============================================
-//
-=============================================== */
 
-  
+/* ===========================================================================
+* new field for variable printtopermit 
+=========================================================================== */
+ALTER TABLE variable ADD COLUMN printtopermit INT NULL; 
