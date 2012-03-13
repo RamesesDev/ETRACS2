@@ -37,5 +37,13 @@ Patch-2.02.002 (CUMMULATIVE)
 - Fix actual use adjustment null pointer error
 - Fix property payer entry
 - Remove JAT Report from transaction menu
-- 
+--------------
+- Allow editing of LandRPU assessed value to match manual assessed value  
+  that resulted in rounding-off problems
+- Correct grid cell-locking problem in Bldg Structures
+- Add indexno to structures to facilitate easier entry in bldg structures
+- Fix bill parameter to updateDetailPeriod 
+- Properly handle billing for currentyear with partial payment
+- Correct rpt partial payment voiding error 
+
 

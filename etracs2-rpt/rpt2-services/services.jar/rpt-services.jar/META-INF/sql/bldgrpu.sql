@@ -6,7 +6,7 @@ FROM bldgrysetting WHERE ry = $P{ry}
 SELECT * FROM rptsetting 
 
 [getStructures]
-SELECT  objid AS structureid, structurecode, structuredesc AS structurename FROM structures  ORDER BY structuredesc 
+SELECT  objid AS structureid, structurecode, structuredesc AS structurename FROM structures  ORDER BY indexno  
 
 
 

@@ -110,6 +110,13 @@ public class LandRPUController
         return InvokerUtil.lookupOpener('landassesslevel.lookup', [ry:rpu.ry] )
     }
     
+    def allowRangeColumnEdit = { item ->
+        if( ! faas || ! faas.info ) return false
+        return faas.info.datacapture 
+    } as Map
+    
+    def updateav = false 
+    
     def landListHandler = [
         createItem : { return createLandDetail() },
         getColumns : { return [
@@ -123,7 +130,7 @@ public class LandRPUController
             new Column(name:'basemarketvalue', caption:'Base Market Value', type:'decimal', maxWidth:100),
             new Column(name:'adjustment', caption:'Adjustment', type:'decimal', maxWidth:100),
             new Column(name:'marketvalue', caption:'Market Value', type:'decimal', maxWidth:100),
-            new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal', maxWidth:100),
+            new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal', maxWidth:100, editableWhen:'#{root.allowRangeColumnEdit[item]}' ),
         ]},
         validate       : { li -> validateLandDetail( li.item ) },
         onRemoveItem   : { item -> removeLandDetail( item ) },
@@ -133,9 +140,11 @@ public class LandRPUController
             calculateTotals()
         },
         onColumnUpdate : { item, colName -> 
+            updateav = false
             if( colName == 'subclass' ) updateSubClassInfo( item )
             else if( colName == 'al' ) updateAssessLevelInfo( item )
             else if( colName == 'striplevel') updateStrippingInfo( item )
+            else if( colName == 'assessedvalue' ) updateav = true 
         },
         fetchList      : { return rpu.info.landdetails  },
     ] as SubListModel
@@ -145,7 +154,9 @@ public class LandRPUController
             required( 'Subclass', item.subclassid )
             required( 'Assess Level', item.assesslevelid )
             required( 'Area', item.area )
-            calculateLandDetailAssessment( item )
+            if( ! updateav ) {
+                calculateLandDetailAssessment( item )
+            }
             if( ! newLandItem(item )  ) {
                 calculateTotals()
             }

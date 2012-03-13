@@ -363,3 +363,15 @@ where rev.liquidationrcdid = lr.objid
 * new field for variable printtopermit 
 =========================================================================== */
 ALTER TABLE variable ADD COLUMN printtopermit INT NULL; 
+
+
+/* add indexno */
+alter table structures add column indexno int;
+update structures set indexno = 0 where indexno is null;
+
+
+
+
+/* ------------------------------------------------- */
+alter table rptpayment change column period period varchar(25) not null;
+
