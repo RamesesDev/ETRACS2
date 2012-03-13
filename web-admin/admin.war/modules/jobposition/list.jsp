@@ -64,12 +64,15 @@
 		</script>
 	</jsp:attribute>
 
+	<jsp:attribute name="actions">
+		<ui:button action="add" caption="Add"  context="jobpositionlist"/>
+	</jsp:attribute>
+	
 	<jsp:body>
 		<ui:context name="jobpositionlist">
 			<ui:form>
 				<ui:combo items="orgUnits" name="orgUnit" itemLabel="title" caption="Org Unit : " allowNull="true" emptyText="- Select an org unit -"/>
 			</ui:form>
-			<ui:button action="add" caption="Add"/>
 			<ui:grid model="listModel" name="selectedItem">
 				<ui:col name="code" caption="Code"/>
 				<ui:col name="title" caption="Title"/>

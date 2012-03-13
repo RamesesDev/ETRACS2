@@ -50,12 +50,16 @@
 		</script>
 	</jsp:attribute>
 
+	<jsp:attribute name="actions">
+		<ui:button action="add" caption="Add" context="orgunitlist"/>
+	</jsp:attribute>
+	
 	<jsp:body>
 		<ui:context name="orgunitlist">
 			<ui:form>
-				<ui:combo name="orgType" items="orgTypes" itemKey="name" itemLabel="name"/>
+				<ui:combo name="orgType" items="orgTypes" itemKey="name" itemLabel="name" caption="Org Type" 
+					allowNull="true" emptyText="Select an org type" />
 			</ui:form>
-			<ui:button action="add" caption="Add"/>
 			<ui:grid model="listModel" name="selectedItem">
 				<ui:col caption="Code" name="code" width="20%"/>
 				<ui:col caption="Title" name="title" width="60%"/>

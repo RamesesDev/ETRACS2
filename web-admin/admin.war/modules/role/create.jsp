@@ -54,7 +54,7 @@
 	<jsp:body>
 		<div r:context="create_role" r:visibleWhen="#{mode == 'create'}">
 			<ui:form context="create_role" object="role">
-				<ui:combo name="roleclass" items="roleClasses" itemKey="name" itemLabel="description" caption="Role Class" />
+				<ui:combo name="roleclass" items="roleClasses" itemKey="name" itemLabel="description" caption="Role Class" allowNull="true" required="true"/>
 				<ui:text name="name" required="true" caption="Name" style="width:350px;" maxlength="50" />
 				<ui:textarea name="description" required="true" caption="Description" style="width:350px;height:50px"/>
 			</ui:form>

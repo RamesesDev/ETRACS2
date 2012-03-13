@@ -16,7 +16,7 @@ class TerminalService {
 		assert x.parentid;
 		assert x.parentcode;
 		assert x.parenttype;
-		int sz = x.remove("size"); 	
+		int sz = x.remove("size");
 		for( int i=0; i< sz; i++) {
 			x.terminalid = KeyGen.generateAlphanumKey( null, 10 );
 			x.state = 0;
@@ -26,7 +26,7 @@ class TerminalService {
 
 	@ProxyMethod
     public def getList( param ) {
-		print "terminal list params " + param;
+		print param;
         if( !param.parentid)  {
 			return em.sqlContext.createNamedQuery("terminal:list-all.sql").setParameters(param).setFirstResult( param._start ).setMaxResults( param._limit).resultList;
 		}

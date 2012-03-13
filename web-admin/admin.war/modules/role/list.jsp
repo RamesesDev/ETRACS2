@@ -23,6 +23,7 @@
 					this.listModel = {
 						rows: 10,
 						fetchList: function(o) {
+							o.exclude_system = true;
 							if( self.roleClass ) {
 								o.roleclass = self.roleClass.name;
 							}
@@ -83,17 +84,20 @@
 		</script>
 	</jsp:attribute>
 
+	<jsp:attribute name="actions">
+		<ui:button action="add" caption="Add" context="rolelist"/>
+	</jsp:attribute>
+	
 	<jsp:body>
 		<ui:context name="rolelist">
 			<ui:form>
 				<ui:combo caption="Role Classes : " items="roleClasses" 
 				name="roleClass" itemLabel="name" allowNull="true" emptyText="All"/>
 			</ui:form>
-			<ui:button action="add" caption="Add"/>
 			<ui:grid model="listModel" name="selectedItem">
 				<ui:col caption="Role" name="name"/>
-				<ui:col caption="Description" name="description"/>
 				<ui:col caption="Role Class" name="roleclass"/>
+				<ui:col caption="Description" name="description"/>
 				<ui:col width="10">
 					<a r:context="rolelist" r:name="edit">
 						<img src="${pageContext.servletContext.contextPath}/img/edit.gif"/>

@@ -20,9 +20,13 @@ class PersonnelService {
 		if(params) {
 			if(params._start) qry.setFirstResult( params._start );
 			if(params._limit) qry.setMaxResults( params._limit );
-			
+			if( params.staffno  ) {
+				params.staffno += '%';
+				sb.append( ''' staffno like $P{staffno} ''' ); 	
+			}
 			if( params.lastname  ) {
 				params.lastname += '%';
+				if( sb.length() > 0 ) sb.append( " and " );
 				sb.append( ''' lastname like $P{lastname} ''' ); 	
 			}
 			if( params.firstname ) {
@@ -40,8 +44,7 @@ class PersonnelService {
 	
 	
 	@ProxyMethod
-	public def create(@Param(schema="personnel") o) {
-		o.objid = "PERSNL" + new java.rmi.server.UID();
+	public def create(o) {
 		return em.create( "personnel", o );
 	}
 	
@@ -53,7 +56,7 @@ class PersonnelService {
 	}
 
 	@ProxyMethod
-	public def update(@Param(schema="personnel") o) {
+	public def update(o) {
 		return em.update( "personnel", o );
 	}
 	

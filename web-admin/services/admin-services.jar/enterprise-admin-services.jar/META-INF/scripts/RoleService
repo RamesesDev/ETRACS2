@@ -15,7 +15,9 @@ class RoleService {
 	@ProxyMethod
 	public def getList(def params) {
 		def sql = "role:list";
-		if( params?.roleclass ) sql = "role:list-by-roleclass"; 
+		if( params?.roleclass ) sql = "role:list-by-roleclass";
+		if( params.exclude_system ) sql += "-exclude-system";
+		
 		def qry = em.sqlContext.createNamedQuery( sql );
 		if(params) {
 			if(params._start) qry.setFirstResult( params._start );

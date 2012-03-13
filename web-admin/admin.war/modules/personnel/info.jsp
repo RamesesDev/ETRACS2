@@ -6,6 +6,13 @@
 	<jsp:attribute name="head">
 		<style>
 			.headmenu {
+				padding:4px;
+				padding-right:8px;
+				padding-left:8px;
+				color:black;
+				font-size:11px;
+			}
+			.headmenu_selected {
 				background-color:red;
 				padding:4px;
 				padding-right:8px;
@@ -52,10 +59,45 @@
 						p.title = "Job Role Permissions";
 						return p;
 					}
+					
+					
+					this.createAccount = function() {
+						
+					}
+					
+					this.useraccount;
+					this.viewUserAccount = function() {
+						if(!this.useraccount) {
+							var usvc = ProxyService.lookup( "UserAccountService" );		
+							this.useraccount = usvc.getAccount( {objid:this.info.objid} );
+							if( !this.useraccount ) {
+								if( confirm("This person does not have a login account yet. Create now?")) {
+									var info  = {
+										objid: this.info.objid,
+										lastname: this.info.lastname,
+										firstname: this.info.firstname,
+										middlename: this.info.middlename,
+										usertype: "personnel",
+										email: this.info.email
+									}
+									var h = function(x) {
+										self.useraccount = usvc.createLoginAccount(x);	
+									}
+									return new PopupOpener( "personnel:useraccount", {saveHandler:h, info: info} );
+								}
+								else {
+									return null;
+								}
+							}
+						}
+						return "useraccount";
+					}
+					
 				},
 				{
 					"default": "modules/personnel/info_data.jsp",
 					"positions": "modules/personnel/info_positions.jsp",
+					"useraccount": "modules/personnel/info_useraccount.jsp",
 				}
 			);
 		</script>
@@ -65,13 +107,16 @@
 	<jsp:body>
 		<table width="100%" cellpadding="4">
 			<tr>
-				<td>
-					<a class="headmenu" r:name="_default" r:context="personnelinfo">Information</a>
+				<td width="50">
+					<a r:name="_default" r:context="personnelinfo">Information</a>
 				</td>
-				<td>
-					<a class="headmenu" r:name="_positions" r:context="personnelinfo">Positions</a>
+				<td width="50">
+					<a r:name="_positions" r:context="personnelinfo">Positions</a>
 				</td>
-				<td width="100%">&nbsp;</td>
+				<td width="120">
+					<a r:name="viewUserAccount" r:context="personnelinfo">User Account</a>
+				</td>
+				<td>&nbsp;</td>
 			</tr>
 		</table>
 

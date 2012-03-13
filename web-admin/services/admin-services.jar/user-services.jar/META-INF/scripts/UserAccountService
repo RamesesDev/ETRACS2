@@ -20,6 +20,19 @@ class UserAccountService
 	}
 
 	@ProxyMethod
+	public def getAccount( o ) 
+	{
+		return em.read( "useraccount", o );
+	}
+	
+	@ProxyMethod
+	public def update( o ) 
+	{
+		return em.update( "useraccount", o );
+	}
+	
+	
+	@ProxyMethod
 	public void changePassword( credential ) 
 	{		
 		def acct = em.sqlContext.createQuery('select * from useraccount where uid=$P{username}').setParameters(credential).singleResult;
