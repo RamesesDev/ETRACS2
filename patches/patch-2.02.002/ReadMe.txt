@@ -37,5 +37,6 @@ Patch-2.02.002 (CUMMULATIVE)
 - Fix actual use adjustment null pointer error
 - Fix property payer entry
 - Remove JAT Report from transaction menu
-- 
+- Correct grid cell-locking problem in Bldg Structures
+- Add indexno to structures to facilitate easier entry in bldg structures
 
