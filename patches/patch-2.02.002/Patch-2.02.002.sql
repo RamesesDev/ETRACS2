@@ -372,3 +372,6 @@ update structures set indexno = 0 where indexno is null;
 
 
 
+/* ------------------------------------------------- */
+alter table rptpayment change column period period varchar(25) not null;
+

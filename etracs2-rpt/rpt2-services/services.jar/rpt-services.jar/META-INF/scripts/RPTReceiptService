@@ -317,10 +317,14 @@ class RPTReceiptService
     void voidRPTPayments( receiptid ) {
         def paymentinfos = em.sqlContext.createNamedQuery('rptreceipt:getRPTPaymentInfo').setParameter('receiptid', receiptid).resultList
         paymentinfos.each { pmt  ->
-            updateLedgerLastYearQtrPaid([ 
+			updateLedgerLastYearQtrPaid([ 
                 objid           : pmt.rptledgerid, 
                 lastyearpaid    : ( pmt.fromqtr == 1 ? pmt.fromyear - 1 : pmt.fromyear ),
                 lastqtrpaid     : ( pmt.fromqtr == 1 ? 4 : pmt.fromqtr - 1 ),
+				partialbasic     : 0.0,
+				partialsef      : 0.0,
+				partialbasicint : 0.0,
+				partialsefint   : 0.0,
             ])
             //void rptpayment
             em.sqlContext.createNamedExecutor('rptreceipt:voidRPTPayment').setParameter('objid', pmt.objid).execute()
@@ -367,9 +371,9 @@ class RPTReceiptService
     
     
     void updateLedgerLastYearQtrPaid( params ) {
-        em.sqlContext.createNamedExecutor('rptreceipt:updateLedgerLastYearQtrPaid').setParameters( params ).execute()
+		em.sqlContext.createNamedExecutor('rptreceipt:updateLedgerLastYearQtrPaid').setParameters( params ).execute()
     }
-    
+     
     Map createRPTPayment( receipt, item ) {
         def pmt = [:]
         pmt.putAll( item )
