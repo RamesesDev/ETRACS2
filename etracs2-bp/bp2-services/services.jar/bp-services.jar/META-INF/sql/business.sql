@@ -4,16 +4,18 @@ WHERE docstate IN ( 'ACTIVE', 'FOR_RELEASE' )
 ORDER BY tradename
 
 [getListByTradename]
-SELECT * FROM business 
-WHERE tradename LIKE CONCAT( $P{tradename}, '%' ) 
-AND docstate = 'ACTIVE' 
-ORDER BY tradename, taxpayername
+SELECT a.txnno, b.* FROM business b 
+INNER JOIN bpapplication a ON a.businessid = b.objid 
+WHERE b.tradename LIKE CONCAT( $P{tradename}, '%' ) 
+AND b.docstate = 'ACTIVE' 
+ORDER BY b.tradename, b.taxpayername
 
 [getListByOwnername]
-SELECT * FROM business 
-WHERE taxpayername LIKE CONCAT( $P{taxpayername}, '%' ) 
-AND docstate = 'ACTIVE' 
-ORDER BY tradename, taxpayername
+SELECT a.txnno, b.* FROM business b 
+INNER JOIN bpapplication a ON a.businessid = b.objid 
+WHERE b.taxpayername LIKE CONCAT( $P{taxpayername}, '%' ) 
+AND b.docstate = 'ACTIVE' 
+ORDER BY b.tradename, b.taxpayername
 
 [getListByTaxpayerid]
 SELECT b.*  

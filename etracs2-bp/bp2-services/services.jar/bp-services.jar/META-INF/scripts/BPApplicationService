@@ -219,9 +219,10 @@ class BPApplicationService{
 						.resultList
 	}
 	
-	private def buildTxndateYear( txndate ){
+	private def buildTxndateYear( txndate , txnmode ){
 		def application = [:]
-		application.txndate = format( txndate, 'yyyy-MM-dd' );
+		if( txnmode.equals('ONLINE'))
+			application.txndate = format( txndate, 'yyyy-MM-dd' );
 		application.iyear = format( txndate, 'yyyy' );
 		
 		return application
@@ -244,7 +245,7 @@ class BPApplicationService{
 		if( application.businessid ) txnSvc.checkReference( application.businessid );
 		
 		def txndate = dateService.serverDate;
-		application.putAll( buildTxndateYear( txndate ) )
+		application.putAll( buildTxndateYear( txndate, application.txnmode ) )
 		application.putAll( checkExpiredApp( application, txndate ) )
 					
 		if( application.txntype == 'NEW' || application.txnmode == 'CAPTURE' ) return application;

@@ -144,7 +144,7 @@ public class BPBillingService
 	private def getBusinessByTaxpayer( billing ) {
 		def params = [
 			taxpayerid : billing.info.taxpayerid, 
-			tradename : billing.info.tradename,
+			tradename : ( billing.info.tradename ? billing.info.tradename : '%' ),
 			barangayid : ( billing.info.barangayid ? billing.info.barangayid : '%' ),
 		]
 		return em.sqlContext.createNamedQuery( 'business:getListByTaxpayerid' )
