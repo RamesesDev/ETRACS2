@@ -299,6 +299,12 @@ public class BldgRPUController
                 li.item.materialcode = null
                 li.item.materialname = null
             }
+            if( ! li.item.material ) structureListHandler.load()
+        },
+        onColumnUpdate : { item, colName -> 
+            if( colName == 'material' && ! item.material ) {
+                item.material = [materialname:'']
+            }
         },
         fetchList : { return rpu.bldgstructures },
     ] as SubListModel
