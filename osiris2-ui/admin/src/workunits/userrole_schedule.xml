@@ -1,0 +1,47 @@
+<workunit>
+    <invokers>
+        <invoker type="userrole:option" caption="Schedule"  index="2"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class UserRoleOptionScheduleController {
+
+            @Binding
+            def binding;
+            
+            def schedule;
+            def userrole;
+            
+            public def getSchedules() {
+                return userrole.schedules;
+            }
+            
+            def saveHandler = { o->
+                userrole.schedules.add( o.toString() );
+                binding.refresh();
+            }
+            
+            public def addSchedule() {
+                return InvokerUtil.lookupOpener( "schedule:entry", [saveHandler:saveHandler] );
+            }
+            
+            public def removeSchedule() {
+                if(schedule) {
+                    userrole.schedules.remove( schedule );
+                    binding.refresh();
+                }
+            }
+            
+            
+        }
+        ]]>
+    </code>
+    <pages>
+        <page template="user.ui.UserRoleSchedulePage"/>
+    </pages>
+</workunit>

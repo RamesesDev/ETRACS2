@@ -1,0 +1,26 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import  groovy.lang.*;
+
+class ScriptServiceAnalyzer {
+
+	@Env
+	def env;
+
+	@ProxyMethod
+	public def execute(def script) {
+		def svc = LookupUtil.lookupResource("ScriptService/local");  	
+		
+		def map = [:];
+		map.RESOURCE = new LookupUtil.ResourceUtil();
+		map.SERVICE = new LookupUtil.ServiceUtil(svc, env);
+		map.SQL = new LookupUtil.SqlContextUtil();
+		map.PERSISTENCE = new LookupUtil.PersistenceUtil();
+		
+		def b = new Binding(map);
+		def shell = new GroovyShell(getClass().getClassLoader(), b);
+		return shell.evaluate(script);
+	}
+   
+
+}

@@ -1,0 +1,37 @@
+import com.rameses.annotations.*;
+
+class SchedulerTestService {
+
+	@Env
+	def env;
+
+	@ProxyMethod 
+	public void test( def tsk ) {
+		def dt = java.sql.Timestamp.valueOf( "2011-01-01 10:00:00" );
+		/*
+		if( dt.before(tsk.currentdate) ) {
+			print "yes after 10:00 oclock";
+			throw new Exception("stopping the service");
+		}
+		*/
+		print env.userid + " processing " + tsk.currentdate.toString() + " params " + tsk.parameters.name;
+	}
+	
+	@Resource("SessionService")
+	def session;
+	
+	@AsyncEvent
+	def evt;
+	
+	@ProxyMethod
+	@Async
+	public void fireAsync() {
+		session.notifyUser( env.userid, [requestId: evt.requestId, started:"1"] );
+		for(int i=0;i<100;i++) {
+			print "process " + i;
+			session.notifyUser( env.userid, [requestId: evt.requestId, msg: i] );
+		}
+		session.notifyUser( env.userid, [requestId: evt.requestId, finished:"1"] );
+	}
+	
+}

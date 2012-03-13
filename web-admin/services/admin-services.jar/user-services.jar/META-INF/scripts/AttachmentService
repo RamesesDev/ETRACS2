@@ -1,0 +1,66 @@
+import com.rameses.annotations.*;
+import java.io.*;
+import com.rameses.io.FileTransfer;
+import java.util.concurrent.*;
+import java.util.*;
+
+class AttachmentService {
+
+	@PersistenceContext("main")
+	def em;
+
+	@Env
+	def env;
+	
+	@Service("DateService")
+	def dateSvc;
+
+	def df = new java.text.SimpleDateFormat("EEE MMMM dd yyyy KK:mm a");
+	
+	
+	@ProxyMethod
+	public def addAttachment(param) {
+		param.objid = "MA" + new java.rmi.server.UID();
+		param.dtposted = dateSvc.serverDate;
+		param.userid = env.userid;
+		def a = em.create("attachment", param);
+		
+		if( param.subscribers ) {
+			param.subscribers.each {
+				em.create("attachment:subscriber", [userid: it.userid, attachmentid: a.objid]);
+			}
+		}
+		
+		return a;
+	}
+	
+	@ProxyMethod
+	public def updateAttachment(param) {
+		def a = em.read("attachment", param);
+		param.remove("dtposted");
+		a.putAll( param );		
+		em.update("attachment", a);
+		
+		if( param.subscribers ) {
+			param.subscribers.each {
+				em.save("attachment:subscriber", [userid: it.userid, attachmentid: a.objid]);
+			}
+		}
+		
+		return a;
+	}
+	
+	@ProxyMethod
+	public void removeAttachment(param) {
+		em.delete("attachment", param);
+	}
+	
+	@ProxyMethod
+	public def getAttachments(param) {
+		param.userid = env.userid;
+		return em.sqlContext.createNamedQuery("attachment:list").setParameters(param).resultList.each {
+			it.dtposted = df.format( it.dtposted );
+		};
+	}
+	
+}

@@ -1,0 +1,39 @@
+<workunit>
+    <invokers>
+        <invoker type="schedule:entry" action="init" target="popup" caption="New Schedule"/>
+        <invoker type="formActions" action="doOk" caption="OK" />
+        <invoker type="formActions" action="_close" caption="Cancel" immediate="true"/>
+    </invokers>
+    <code>
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.util.*;
+        
+        public class ScheduleEntryController {
+
+            def entry;
+            
+            def value;
+            def saveHandler;
+            
+            public void init() {
+                if(value) 
+                    entry = new TimeUtil.ScheduleBean(value);
+                else
+                    entry = new TimeUtil.ScheduleBean();
+            }
+            
+            public def doOk() {
+                if(saveHandler) saveHandler( entry );
+                return "_close";
+            }
+            
+        }
+        ]]>
+    </code>
+    <pages>
+        <page template="admin.ui.ScheduleEntryPage"/>
+    </pages>
+</workunit>

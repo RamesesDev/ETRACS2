@@ -1,0 +1,58 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/mgmt" windowmode="explorer" caption="Reports" action="init" permission="viewReports"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class ReportController {
+
+            def selection;
+            def rootNode;
+            
+            public void init() {
+                rootNode = new Node(id:"/report", caption:"Reports"); 
+            }
+
+            def tree = [
+                getRootNode : { 
+                    return rootNode;
+                },
+                
+                fetchNodes : { o->
+                    def folders;
+                    def nodes = [];
+                    if ( !o.item ) {
+                        folders = OsirisContext.session.getFolders( o.id );
+                    }
+                    else {
+                        folders = OsirisContext.session.getFolders( o.item );
+                    }
+                    folders.each {
+                        if ( it.invoker )
+                            nodes << new Node(id: it.invoker.workunitid, caption: it.invoker.caption, item: it.invoker, leaf: true);
+                        else
+                            nodes << new Node(id: it.id, caption: it.caption, item: it);
+                    }
+                    return nodes;
+                },
+
+                openLeaf: { n ->
+                    if( n.item ) {
+                        InvokerUtil.invoke( n.item );
+                    }    
+                }
+            ] as TreeNodeModel;
+        }
+        
+        ]]>
+    </code>
+    <pages>
+        <page template="system.reports.ui.ReportsPage"/>
+    </pages>
+</workunit>

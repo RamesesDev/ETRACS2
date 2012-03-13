@@ -1,0 +1,157 @@
+import com.rameses.annotations.*;
+import java.io.*;
+import com.rameses.io.FileTransfer;
+import java.util.concurrent.*;
+import java.util.*;
+
+class MessageService {
+
+	@PersistenceContext("main")
+	def em;
+
+	@Env
+	def env;
+	
+	@Service("DateService")
+	def dateSvc;
+
+	def df = new java.text.SimpleDateFormat("EEE MMMM dd yyyy KK:mm a");
+	
+	@Resource("CacheService")
+	def cacheService;
+	
+	private int LIMIT = 5;
+
+
+	private def getLastMessageDate( o ) {
+		if( o.lastmsgid ) {
+			def x = em.sqlContext.createNamedQuery('message:last-dtposted').setParameter(1, o.lastmsgid).singleResult;
+			if(x?.dtposted) return x.dtposted;
+		}
+		return new Date();
+	}
+	
+	private def formatMessages(list) {
+		list.each {
+			if(it.message) {
+				StringBuilder result = new StringBuilder();
+				StringTokenizer t = new StringTokenizer(it.message, "\n");
+				while (t.hasMoreTokens()) {	
+					result.append(t.nextToken().trim()).append("<br>");
+				} 
+				it.message = result.toString();
+			}
+			if(it.dtposted) it.dtposted = df.format(it.dtposted);
+		}
+		return list;
+	}
+	
+	@ProxyMethod
+	public def getMessages(o) {
+		def channelid = o.channelid;
+		def dtposted = getLastMessageDate(o);
+		def m = [userid: env.userid, channelid: channelid, limit:LIMIT, lastdtposted: dtposted, msgtype: o.msgtype, threadid: o.threadid ];
+		def qryname = (o.threadid? "message:thread-messages" : "message:messages");
+		def list = em.sqlContext.createNamedQuery(qryname).setParameters(m).resultList;
+		return formatMessages(list);
+	}
+	
+	@ProxyMethod
+	public def getMessage( msgid ) {
+		return em.read("message", [objid: msgid]);
+	}
+	
+	@ProxyMethod
+	public def getResponses(o) {
+		def filter = [];
+		if(o.resptype) filter << 'resptype = $P{resptype}';
+		filter = filter.size()>0? ' and ' + filter.join(' and ') : ' ';
+		if(o.orderby != 'desc') 
+			filter += ' order by msg.dtposted asc';
+		else
+			filter += ' order by msg.dtposted desc';
+
+		def query = em.sqlContext.createNamedQuery("message:responses").setVars([filter:filter]).setParameters(o);
+		return formatMessages(query.resultList);
+	}
+	
+	@ProxyMethod
+	public def send(o) {
+		if(!o.objid) o.objid = "MSGFD:" + new java.rmi.server.UID();
+		if(!o.msgtype) throw new Exception("Please provide a message type");
+		o.dtposted = dateSvc.serverDate;
+		
+		if(!o.userid) o.userid = env.userid;
+		if(o.privacy == null) o.privacy = 0;
+		
+		if(o._update) {
+			em.save("message", o);
+		}
+		else {
+			em.create("message", o);
+		}
+		o.dtposted = df.format( o.dtposted );
+		
+		//if this is a message update, remove all subscribers first
+		if( o._update ) {
+			em.sqlContext.createExecutor('delete from message_subscriber where msgid=?')
+			  .setParameter(1,o.objid).execute();
+		}
+		
+		//if message is private add also sender as recipient.
+		if( o.subscribers ) {
+			o.subscribers.each {
+				def x = [:];
+				x.msgid = o.objid;
+				x.userid = it.userid;
+				em.save( "message:subscriber", x );
+			}
+		}
+		
+		o.replies = 0;
+		return o;
+	}
+	
+	@ProxyMethod
+	public def respond(o) {
+		try {
+			def subscribers = em.sqlContext.createNamedQuery("message:subscribers").setParameter(1, o.msgid).resultList;
+			
+			o.objid = "MSGRS:" + new java.rmi.server.UID();
+			o.dtposted = dateSvc.serverDate;
+			
+			if(!o.userid)  o.userid = env.userid;
+			if(!o.resptype) o.resptype = 'comment';
+			
+			em.create( "message:response", o );
+			def s = [msgid: o.msgid, userid: o.userid];
+			em.sqlContext.createNamedExecutor("message:add-subscriber").setParameters(s).execute();
+			
+			o.dtposted = df.format( o.dtposted );
+			o.subscribers = subscribers;
+			o.parent = em.read("message", [objid: o.msgid]);
+			o.parent.dtposted = df.format( o.parent.dtposted );
+			o.msgtype = o.parent.msgtype + "-response";
+
+			return o;
+		}
+		catch(e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+	
+	@ProxyMethod
+	public def removeMessage(o) {
+		assert o.objid;
+		em.sqlContext.createNamedExecutor("message:remove-subscribers").setParameters(o).execute();
+		em.sqlContext.createNamedExecutor("message:remove-responses").setParameters(o).execute();
+		em.sqlContext.createNamedExecutor("message:remove-message").setParameters(o).execute();
+	}
+	
+	@ProxyMethod
+	public def getSubscribers(param) {
+		return em.sqlContext.createNamedQuery("message:subscribers").setParameter(1, param.msgid).resultList;
+	}
+	
+}

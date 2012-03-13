@@ -1,0 +1,35 @@
+<workunit>
+    <invokers>
+        <invoker type="address_format:lookup" caption="Select an Address Format" target="popup"/>
+        <invoker type="formActions" caption="Ok" action="doSelect" />
+        <invoker type="formActions" caption="Cancel" action="_close" />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class AddressFormatLookupController {
+
+            def formatTypes;
+            def selectHandler;
+            def selection;
+            
+            public def doSelect() {
+                if(!selection)
+                    throw new Exception("Plase make a selection");
+                selectHandler( selection );    
+                return "_close";
+            }
+            
+        }
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="shared.custom.address.LookupAddressPage"/>
+    </pages>
+    
+</workunit>

@@ -8,6 +8,10 @@ class ETRACSUserService
     @PersistenceContext("java:main")
     def em;
 	
+	@PersistenceContext("main")
+	def adminEm;
+	
+	
 	@Service('LogService')
 	def logSvc
 	
@@ -29,11 +33,9 @@ class ETRACSUserService
 	
 	@ProxyMethod
 	public def getCashierList( searchText, params ) {
-		if( ! searchText ) return getListByName("etracsuser:getCashierList", [:], params);
-		def result = [];
-        def criteria = [uid:searchText, name:searchText+'%']
-		if( (result = getListByName("etracsuser:getCashierListByName", criteria, params)) ) return result;
-		return result;
+		if( !params ) params = [:];
+		params.searchText = searchText;
+		return getUsersByRole2( CASHIER_ROLE, params );
 	}
     
 	@ProxyMethod
@@ -52,9 +54,9 @@ class ETRACSUserService
 	
 	
 	@ProxyMethod
-	public def getUserByRole( userid, role ) {
-		def user = em.sqlContext.createNamedQuery('etracsuser:getUserByRole').setParameters([objid:userid, role:role]).singleResult
-		if( ! user ) throw new Exception('User does not exists or is not assigned the ' + role + ' role.' )
+	public def getUserByRole( userid, tagid ) {
+		def user = adminEm.sqlContext.createNamedQuery('etracsuser:getUserByRole').setParameters([objid:userid, tagid:tagid]).singleResult
+		if( ! user ) throw new Exception('User does not exists or is not assigned as ' + tagid + '.' )
 		return user 
 	}
 	
@@ -80,8 +82,23 @@ class ETRACSUserService
 	}
 	
 	@ProxyMethod
-	public List getUsersByRole( role ) {
-		return em.sqlContext.createNamedQuery('etracsuser:getUsersByRole').setParameters([role:role]).resultList
+	public List getUsersByRole( tagid ) {
+		return getUsersByRole2( tagid, null );
+	}
+	
+	@ProxyMethod
+	public List getUsersByRole2( tagid, param ) {
+		def qry = adminEm.sqlContext.createNamedQuery('etracsuser:getUsersByRole');
+		
+		if( !param ) param = [:];
+		param.tagid = tagid;
+		
+		if(param._start) qry.setFirstResult(param._start);
+		if(param._limit) qry.setMaxResults(param._limit);
+		
+		qry.setParameters(param);
+		
+		return qry.resultList;
 	}
 	
 	@ProxyMethod
@@ -96,8 +113,9 @@ class ETRACSUserService
 	
 	@ProxyMethod
 	public List getLiquidatingOfficers(searchText, params) {
-		if( ! searchText ) searchText = ''
-		return getListByName('etracsuser:getLiquidatingOfficers', [name: searchText+'%'], params )
+		if( !params ) params = [:];
+		params.searchText = searchText;
+		return getUsersByRole2( LIQUIDATING_OFFICER_ROLE, params );
 	}
 		
 	private def getListByName( namedQuery, values, params ) {

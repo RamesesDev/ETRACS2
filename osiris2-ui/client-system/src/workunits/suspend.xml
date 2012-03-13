@@ -1,0 +1,47 @@
+<workunit>
+    <invokers>
+        <invoker type="system:suspend" caption="Suspend" target="popup"/>
+        <invoker folderid="/menu/system" caption="Suspend ... " index="17000" separator="before" target="popup" permission="system"/>
+    </invokers>
+    
+    <code>
+    <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.util.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class SuspendController 
+        {
+            def pwd;
+            
+            @Script("User")
+            def user;
+            
+            boolean canclose;
+            
+            @Close
+            public boolean canClose() {
+                return canclose;
+            }
+            
+            def resetHandler;
+            
+            public def resume() {
+                user.checkPwd( pwd );
+                if(resetHandler) resetHandler();
+                canclose = true;
+                return "_exit";
+            }
+            
+            public void exit() {
+                canclose = true;
+                OsirisContext.clientContext.platform.shutdown();
+            }
+        }
+        ]]>
+    </code>
+    <pages>
+        <page template="system.user.ui.SuspendPage" />
+    </pages>
+</workunit>

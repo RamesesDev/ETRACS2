@@ -1,0 +1,82 @@
+<workunit>    
+    
+    <invokers>
+        <invoker type="userrole" action="init" />
+        <invoker type="userrole:edit" action="edit" />
+        <invoker type="formActions"  caption="OK" action="save"/>
+        <invoker type="formActions" caption="Cancel" action="_exit" immediate="true"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class UserRoleHandler {
+            
+            @Service("AdminService")
+            def adminSvc;
+        
+            @Binding
+            def binding;
+
+            def userrole;
+            def user;
+            def formTitle;
+            def group;
+            def groupType;
+            def roleOptions;
+            def saveHandler;
+            def parent;
+            
+            boolean editgroup;
+            
+            def init() {
+                editgroup = true;
+                parent = [objid:user.parentid, code:user.parentcode,name:user.parentname,type:user.parenttype];
+                if( parent.type == groupType ) {
+                    group = parent.code;
+                    userrole.grouptype = groupType;
+                    userrole.groupid = parent.objid;
+                    userrole.groupcode = parent.code;
+                    editgroup = false;
+                }
+                roleOptions = InvokerUtil.lookupOpeners( "userrole:option", [ userrole: userrole ] );
+            }
+            
+            def edit() {
+                groupType = userrole.grouptype;
+                group = userrole.groupcode;
+                editgroup = false;
+                roleOptions = InvokerUtil.lookupOpeners( "userrole:option", [ userrole: userrole ] );
+            }
+            
+            def lookupGroup() {
+                return InvokerUtil.lookupOpener(groupType+":lookup", [
+                    parent: parent,
+                    selectHandler: {o->
+                        userrole.grouptype = groupType;
+                        userrole.groupid = o.objid;
+                        userrole.groupcode = o.code;
+                        group = o.code;
+                        userrole.disallowedterminals = [];
+                        binding.refresh("group");
+                    }
+                ] );
+            }
+            
+            public def save() {
+                if(saveHandler) saveHandler(userrole);
+                return "_exit";
+            }
+        }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="user.ui.UserRolePage"/>
+    </pages>
+    
+</workunit>

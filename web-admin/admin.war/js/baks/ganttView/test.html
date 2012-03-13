@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<head>
+	<title>jQuery Gantt</title>
+	<link rel="stylesheet" type="text/css" href="lib/css/jquery-ui/jquery.css" />
+	<link rel="stylesheet" type="text/css" href="lib/css/reset.css" />
+	<link rel="stylesheet" type="text/css" href="lib/css/ganttView.css" />
+
+	<script type="text/javascript" src="lib/jquery-all.js"></script>
+	<script type="text/javascript" src="lib/date.js"></script>
+	<script type="text/javascript" src="lib/ganttView.js"></script>
+	<!--script src="lib/rameses-ext-lib.js"></script-->
+	<script src="lib/rameses-ui.js"></script>
+	<script src="lib/rameses-proxy.js"></script>
+	<script src="lib/rameses-session.js"></script>
+	<script src="lib/gantt.js"></script>
+	
+	<style type="text/css">
+		body {
+			font-family: tahoma, verdana, helvetica;
+			font-size: 0.8em;
+			padding: 10px;
+		}
+	</style>
+	
+	<script type='text/javascript'>
+		$put("gantt",
+			new function() {
+				var xevents = [
+					{from:"2012-01-05", to:"2012-03-08", caption:"Event 01", color:'yellow'},
+					{from:"2012-05-08", to:"2012-08-09", caption:"Event 02", color:'green'},
+					{from:"2012-03-04", to:"2012-06-12", caption:"Event 03", color:'orange'}
+				];
+			
+				this.model = {
+					fetchList: function() {
+						return xevents;
+					},
+					clickable: true,
+					draggable: true,
+					resizable: true,
+					onclick : function(data, elem) {
+						console.log(data);
+						console.log(elem);
+					},
+					ondrag : function(data, elem) {
+						console.log("DRAGGED");
+					},
+					onresize : function(data, elem) {
+						console.log("RESIZED");
+					}
+				};
+			}
+		);
+	</script>
+</head>
+<body>
+	<div r:context="gantt" r:type="gantt" r:model="model" r:width="600" r:showNoOfDays="false">
+	</div>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<workunit>    
+    <invokers>
+        <invoker type="statusbar" index="0" permission="status" action="init"  allowOffline="true"/> 
+    </invokers> 
+    
+    <code>
+        import com.rameses.rcp.common.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.util.*;
+        
+        public class InfoController   
+        {        
+            @Script("User")
+            def user;
+            
+            @Binding
+            def binding;
+            
+            public void init() {
+                OsirisContext.clientContext.taskManager.addTask( new TimerTask(controller:this) );
+            }
+        }        
+        
+        public class TimerTask extends ScheduledTask {
+            def controller;
+            public boolean isEnded() {
+                return false;
+            }
+            public long getInterval() {
+                return 2000;
+            }
+            public void execute() {
+                //OsirisContext.env.LOCALE_TIME = DateUtil.add(  OsirisContext.env.LOCALE_TIME, "2s" );
+                OsirisContext.env.LOCALE_TIME = new java.util.Date();
+                controller.binding.refresh("time");
+            }
+        }
+    </code>
+    
+    <pages>
+        <page template="system.tools.ui.StatusInfoPage"/>
+    </pages>
+</workunit>

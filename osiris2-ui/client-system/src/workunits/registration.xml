@@ -1,0 +1,86 @@
+<workunit>
+    
+    <invokers>
+        <invoker type="loader" caption="Registration" index="-5000" action="check"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.util.*;
+        import system.registration.TerminalKey;
+        import com.rameses.osiris2.client.*;
+        
+        public class RegistrationController {
+        
+            int option = 0;
+        
+            String clientcode;
+            String terminalkey;
+            String name;
+            
+            @Script("User")
+            def user;
+            
+            public def check() {
+                user.macaddress = MachineInfo.instance.macAddress;
+                TerminalKey t = new TerminalKey();
+                if(t.open()) {
+                    user.terminalId = t.terminalid;
+                    user.clientCode = t.clientcode;
+                    return "_close";
+                }
+                return "default";	
+            }
+
+            public def next() {
+                switch(option)  {
+                    case 0: return "new";
+                    case 1: return "recover";
+                }    
+                return null;
+            }
+            
+            private void saveTerminal(def o) {
+                def t = new TerminalKey( o );
+                t.save();
+                user.terminalId = t.terminalid;
+                user.clientCode = t.clientcode;
+            }
+
+            public def registerNew() {
+                def svc = InvokerProxy.instance.create( "TerminalService");
+                def o = [
+                    terminalid: terminalkey,
+                    macaddress: user.macaddress,
+                    clientcode: clientcode,
+                    registeredby:name
+                ];
+                svc.register( o );
+                saveTerminal( o );
+                return "_close";
+            }
+            
+            public def recoverTerminal() {
+                def svc = InvokerProxy.instance.create( "TerminalService");
+                def o = [
+                    macaddress: user.macaddress,
+                    clientcode:clientcode
+                ];
+                def m = svc.recover( o );
+                o.terminalid = m.terminalid;
+                saveTerminal( o );
+                return "_close";
+            }
+        }
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="system.registration.ui.RegistrationInitPage"/>
+        <page name="new" template="system.registration.ui.NewTerminalRegistrationPage"/>
+        <page name="recover" template="system.registration.ui.RecoverTerminalPage"/>
+    </pages>
+    
+</workunit>

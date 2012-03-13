@@ -1,0 +1,24 @@
+<workunit>
+    
+    <invokers>
+        <!-- This invoker is triggered when server returns an Warning with SESSION_EXPIRED message -->
+        <invoker type="SESSION_EXPIRED" action="init" target="process" />
+    </invokers>
+    
+    <code>
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.rcp.framework.ClientContext;
+        import com.rameses.osiris2.client.*;
+        
+        
+        public class ExpiredSessionController {
+        
+            public void init() {
+                OsirisContext.mainWindowListener.clear();
+                ClientContext.currentContext.platform.logoff();
+            }
+
+        }
+    </code>
+</workunit>

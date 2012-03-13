@@ -1,0 +1,26 @@
+<workunit>
+    
+    <invokers>
+        <!-- This invoker is triggered when server returns an Warning with the message specified-->
+        <invoker type="INVALID_MACHINE_REGISTERED" action="init" target="process" />
+    </invokers>
+    
+    <code>
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.rcp.framework.ClientContext;
+        import com.rameses.osiris2.client.*;
+        
+        
+        public class InvalidMachineRegisteredController {
+        
+            public void init() {
+                new system.registration.TerminalKey().delete();
+                MsgBox.alert( "The system has detected wrong machine registration. You need to register again");
+                OsirisContext.mainWindowListener.clear();
+                ClientContext.currentContext.platform.logoff();
+            }
+
+        }
+    </code>
+</workunit>

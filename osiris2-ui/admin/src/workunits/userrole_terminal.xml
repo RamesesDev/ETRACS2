@@ -1,0 +1,60 @@
+<workunit>
+    <invokers>
+        <invoker type="userrole:option" caption="Terminals"  index="1"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class UserRoleOptionTerminalController {
+
+            @Service("TerminalService")
+            def svc;
+
+            @Binding
+            def binding;
+            
+            def allowselection;
+            def disallowselection;
+            def groupid;
+            def userrole;
+            
+            def _allowedterminals = [];
+            def disallowedterminals = [];
+            
+            public def getAllowedterminals() {
+                if(groupid!=userrole.groupid) {
+                    disallowedterminals = userrole.disallowedterminals;
+                    groupid = userrole.groupid;
+                    _allowedterminals = svc.getList( [parentid: groupid] )*.terminalid;
+                    _allowedterminals = allowedterminals - disallowedterminals;  
+                }
+                return _allowedterminals;
+            }
+            
+            def addDisallow() {
+                allowselection.each {
+                    disallowedterminals.add( it );
+                    allowedterminals.remove(it);
+                }  
+                binding.refresh();
+            }
+
+            void removeDisallow() {
+                disallowselection.each {
+                    allowedterminals.add( it );
+                    disallowedterminals.remove(it);
+                }  
+                binding.refresh();
+            }
+            
+        }
+        ]]>
+    </code>
+    <pages>
+        <page template="user.ui.UserRoleTerminalPage"/>
+    </pages>
+</workunit>

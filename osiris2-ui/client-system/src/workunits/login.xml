@@ -1,0 +1,51 @@
+<workunit>
+    
+    <invokers>
+        <invoker type="loader" caption="Login" index="-1000"/> 
+    </invokers>
+    
+    <code>
+    <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.util.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class LoginController
+        {
+            @Service
+            def invoker;
+            
+            @Script("User")
+            def user;
+            
+            def uid;
+            def pwd;
+            
+            boolean offline = false;
+            
+            def login()
+            {
+                if(!offline) {
+                    OsirisContext.env.CLIENTTYPE='desktop';
+                    def loginSvc = InvokerProxy.instance.create("LoginService");                
+                    def usr = loginSvc.login( [ username:uid, password:pwd ] );
+                    
+                    String _pwd = user.encodePwd(pwd, uid);
+                    user.init( usr, _pwd );
+                }
+                else {
+                    user.fetchProfile( uid, _pwd ); 
+                    OsirisContext.session.offline = true;
+                }
+                return "_close";
+            }            
+            
+        }
+        ]]>
+    </code>
+    <pages>
+        <page template="system.user.ui.LoginPage"/>
+    </pages>
+    
+</workunit>

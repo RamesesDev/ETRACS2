@@ -1,0 +1,100 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class TerminalService {
+
+    @PersistenceContext("main")
+    def em; 		
+
+    @Service("DateService")
+    def dateSvc;	
+
+    //allocates terminal sizes	
+    @ProxyMethod	
+    public void allocate( x ) {
+		assert x.size > 0; 
+		assert x.parentid;
+		assert x.parentcode;
+		assert x.parenttype;
+		int sz = x.remove("size"); 	
+		for( int i=0; i< sz; i++) {
+			x.terminalid = KeyGen.generateAlphanumKey( null, 10 );
+			x.state = 0;
+			em.create( "terminal", x );		
+		}
+    }
+
+	@ProxyMethod
+    public def getList( param ) {
+		print "terminal list params " + param;
+        if( !param.parentid)  {
+			return em.sqlContext.createNamedQuery("terminal:list-all.sql").setParameters(param).setFirstResult( param._start ).setMaxResults( param._limit).resultList;
+		}
+		else {
+			return em.sqlContext.createNamedQuery("terminal:list.sql").setParameters(param).resultList;
+		}	
+    }
+
+    @ProxyMethod	
+	public def register( def o ) {
+		//search first if terminal exists
+		def terminal = em.read("terminal", o );
+		if(!terminal) throw new Exception("Terminal id does not exist");
+		
+		//check if client is correct
+		if(terminal.parentcode != o.clientcode) throw new Exception("This terminal is already assigned to the wrong client"); 
+		if(terminal.macaddress) {
+			if( terminal.macaddress == o.macaddress) 
+				throw new Exception("This terminal already exists. Please choose the recover option instead"); 
+			else 	
+				throw new Exception("This terminal is already assigned"); 
+		}
+		def test = em.sqlContext.createNamedQuery("terminal:find-macaddress").setParameter("macaddress",o.macaddress).singleResult;
+		if(test) throw new Exception("This machine is already assigned to " + test.parentcode + ". Use terminal recovery instead" );
+		terminal.macaddress = o.macaddress;
+		terminal.registeredby = o.registeredby;
+		terminal.dtregistered = dateSvc.serverDate;
+		return em.update("terminal", terminal );
+	}
+
+    @ProxyMethod	
+	public def recover( def o ) {
+		assert o.macaddress;
+		def terminal = em.sqlContext.createNamedQuery("terminal:find-macaddress").setParameter("macaddress",o.macaddress).singleResult;
+		if(!terminal) throw new Exception("Terminal is not registered");
+		if(terminal.parentcode != o.clientcode) throw new Exception("This terminal is already assigned to the wrong client"); 
+		return terminal;	
+	}
+	
+	/**
+	* checks first client terminal id
+	* if verified, returns the parentid 
+ 	*/
+	@ProxyMethod
+	public def verifyClient( String terminalid, String clientcode ) {
+		if( !terminalid ) throw new Exception("Terminal ID must be provided");
+		def terminal = em.read("terminal", [terminalid: terminalid] );
+		if(!terminal)
+			throw new Exception("Terminal does not exist");
+		if(terminal.parentcode != clientcode)
+			throw new Exception("Terminal is not registered with " + clientcode );
+		return terminal;		
+	}
+	
+	@ProxyMethod	
+	public def unregister( def o ) {
+		em.sqlContext.createNamedExecutor("terminal:unregister-terminal").setParameters(o).execute();
+	}
+	
+	@ProxyMethod	
+    public def getGroupTerminals( def param ) {
+		def list = em.sqlContext.createNamedQuery( "terminal:list").setParameters( param ).resultList;
+		if(param.excludes) {
+			return list.findAll{ !param.excludes.contains( it.terminalid )  }
+		}	
+		else	
+			return list;
+	}
+	
+
+}

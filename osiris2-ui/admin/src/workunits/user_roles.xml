@@ -1,0 +1,115 @@
+<workunit>
+    <invokers>
+        <invoker type="user:formActions" caption="Roles" action="viewRoles" index="20" immediate="true" visibleWhen="#{mode=='read' and entity.objid!=null}" />
+
+        <invoker type="formActions" action="close" icon="images/back16.png" tooltip="Back" immediate="true" />
+        <invoker type="formActions" action="addNew" icon="images/new16.png" tooltip="Add New Role" immediate="true" visibleWhen="#{entity!=null and entity.objid!=null}"/>
+        <invoker type="formActions" action="edit" icon="images/edit16.png" tooltip="Edit" immediate="true" visibleWhen="#{role!=null and role.item!=null}" />
+        <invoker type="formActions" action="removeRole" icon="images/delete16.png" tooltip="Remove" immediate="true" visibleWhen="#{role!=null and role.item!=null}" />
+    </invokers>
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class UserRolesController  {
+        
+            @Service("UserService")
+            def svc;
+            
+            @Caller
+            def caller;
+            
+            @Binding
+            def binding;
+            
+            def entity;
+            def role;
+            
+            //parameters passed
+            def rowSelector;
+            def editHandler;
+            def saveHandler;
+            def cancelHandler;
+            def usertype;
+            
+            public void viewRoles() {
+                if(rowSelector) {
+                    rowSelector.handler = { o->
+                        entity = o;
+                        binding.refresh();
+                    }
+                }
+            }
+    
+            def getFormTitle() {
+                if( entity.objid )
+                    return "Roles for " + entity.lastname + ", " + entity.firstname;
+                else
+                    return "";
+            }
+            
+            def saveNewHandler = { o->
+                svc.createUserRole(o);
+                listHandler.load();
+            }
+            
+            def updateHandler = { o->
+                svc.updateUserRole(o);
+                listHandler.load();
+            }
+            
+            public def close() {
+                if(rowSelector) rowSelector.handler = null;
+                return "_close";
+            }
+            
+            public def addNew() {
+                return InvokerUtil.lookupOpener( "userrole:add", [user:entity, saveHandler: saveNewHandler] );
+            }
+            
+            public def edit() {
+                def t = "Role for " + entity.lastname + ", " + entity.firstname;
+                def opener =  InvokerUtil.lookupOpener( "userrole:edit", [
+                        user:entity, 
+                        userrole:role.item,
+                        saveHandler: updateHandler, 
+                        formTitle: t
+                    ] );
+                    
+                opener.target = "_popup";
+                opener.caption = t;
+                return opener;
+            }
+            
+            public def removeRole() {
+                if(MsgBox.confirm("You are about to remove this role. Continue?")) {
+                    svc.removeUserRole(role.item);
+                    listHandler.load();
+                }
+            }
+
+            def listHandler = [
+                getColumns: {
+                    return [
+                        new Column(name:"item.role", caption:"Role"),
+                        new Column(name:"item.groupcode", caption:"Group"),
+                        new Column(name:"item.description", caption:"Description")
+                    ]
+                },
+                fetchList: { o->
+                    if(!entity?.objid) return [];
+                    return svc.getUserRoles( [userid: entity.objid] );
+                },
+                onOpenItem: { o,col->return edit(); }
+            ] as PageListModel;
+        
+        }
+        ]]>
+    </code>
+    <pages>
+        <page template="user.ui.UserRolesPage"/>
+    </pages>
+</workunit>

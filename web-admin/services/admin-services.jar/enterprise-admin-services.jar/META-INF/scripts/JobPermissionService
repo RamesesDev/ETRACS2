@@ -1,0 +1,141 @@
+import com.rameses.annotations.*;
+
+class JobPermissionService {
+
+	@PersistenceContext("main")
+	def em;
+	
+	@Resource("CacheService")
+	def cacheService;
+	
+	@Service("PermissionService")
+	def permSvc;
+	
+	@Env
+	def env;
+	
+	private def getUserJobpositions() {
+		//check first if the job positions are cached. If not then cache it.
+		def poskey = "" + (env.sessionid + env.userid + "_job_positions").hashCode();
+		def positions = cacheService.get( poskey );
+		if( !positions ) {
+			positions = [];
+			def joblist = em.sqlContext.createNamedQuery("jobposition:user-job-position-list").setParameters(env).resultList;
+			joblist.each { 
+				def info = [:];
+				info.objid = it.objid;
+				info.code = it.code;
+				info.title = it.title;
+				info.roleclass = it.roleclass;
+				info.orgunitid = it.orgunitid;	
+				info.included = (it.included) ? em.serializer.read( it.included ) : [];
+				info.excluded = (it.excluded) ? em.serializer.read( it.excluded ) : [];
+				positions.add( info );
+			}
+			cacheService.put( poskey, positions );	
+		}
+		return positions;
+	}
+	
+	@ProxyMethod
+	public def getUserJobposition( param ) {
+		def jobpositions = getUserJobpositions();
+		//if there is a job id provided. 
+		if( !jobpositions ) return null;
+		String jobid =  param.jobid? param.jobid : jobpositions[0].objid;
+		def job = jobpositions.find { it.objid == jobid };	
+		if(!job) return null;
+		
+		def key = "" + (env.sessionid + env.userid + jobid + "_permissions" ).hashCode();
+		def perms = cacheService.get( key ); 
+		if( !perms ) {
+			perms = [];
+			permSvc.fetchPermissions( job.roleclass, job.included, job.excluded, {x->perms.add(x.id)} );
+			cacheService.put( key, perms );
+		}
+		
+		//package the result
+		def result = job;
+		result.others = jobpositions.collect{ [objid: it.objid, title: it.title] };
+		result.permissions = perms;
+		return result;
+	}
+	
+	@ProxyMethod
+	public def getPermissions( param ) {
+		def r = getUserJobposition( param );
+		return r.permissions;
+	}
+	
+	@ProxyMethod
+	public def getPermissionsForAdmin( param ) {
+		def x = em.sqlContext.createNamedQuery( "jobposition:role-permission").setParameter("jobpositionid", param.objid).singleResult;
+		if( x.included ) x.included = em.serializer.read( x.included );
+		def excluded = ( x.excluded ) ? em.serializer.read( x.excluded ) : [];
+		 
+		def modules = [:];
+		
+		permSvc.fetchPermissions( x.roleclass, x.included, null, { o->
+			boolean item_disallowed = excluded.find{ii->o.id.matches(ii) };
+			
+			def m = modules[(o.modulename)];
+			if( !m ) {
+				m = [id:o.modulename, title:o.moduletitle, all_count: 0, allowed_count: 0, status: 0, objects: [] ];
+				modules.put(o.modulename, m);
+			}	
+			//check number of items vs disallowed.
+			m.all_count+=1;
+			if( !item_disallowed ) m.allowed_count+=1; 
+			
+			//add the module object from the module.objects list
+			def obj = m.objects.find{ it.id == o.object };
+			if( !obj ) {
+				obj = [id:o.object, title: o.object, all_count:0, allowed_count:0, actions: [] ];
+				m.objects.add( obj );
+			}
+			//check number of items vs disallowed.
+			obj.all_count+=1;	
+			if( !item_disallowed ) obj.allowed_count+=1; 
+			
+			//add the action
+			obj.actions.add( [id:o.id, title:o.title, allowed: !item_disallowed, action: o.action ] );
+		});
+		return [modules: modules*.value];
+	}	
+	
+	@ProxyMethod
+	public def updatePermissions( param ) {
+		def excluded = [];
+		param.modules.each { _module ->
+			if( _module.allowed_count == 0 ) {
+				excluded.add( _module.id + ":.*" );
+			}	
+			else if( _module.allowed_count > 0 ){
+				_module.objects.each { _object ->
+					if( _object.allowed_count == 0 ) {
+						excluded.add( _module.id+":"+_object.id+".*" );
+					}
+					else if(_object.allowed_count>0) {
+						boolean atleast_one_disallowed = false;
+						StringBuffer sb = new StringBuffer();
+						sb.append( _module.id+":"+_object.id+"\\.(" );
+						boolean f = true;
+						_object.actions.each { _action->
+							if( !_action.allowed ) {
+								atleast_one_disallowed = true;
+								if( f ) f = false;
+								else sb.append("|");	
+								sb.append( _action.action );
+							}
+						}
+						sb.append( ")");
+						if(atleast_one_disallowed) excluded.add( sb.toString() );
+					}
+				}
+			}
+		}
+		def o = em.read( "jobposition", [objid:param.objid] );
+		o.excluded = excluded;
+		em.save( "jobposition", o );
+	}
+}

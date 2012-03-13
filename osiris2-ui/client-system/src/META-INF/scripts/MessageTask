@@ -1,0 +1,34 @@
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.rcp.framework.ClientContext;  
+
+public class MessageTask extends ScheduledTask 
+{
+    @Service("MessageService")
+    def service; 
+
+    def source;
+    int counter = 1;
+    long l = 5000;
+
+    public long getInterval() {
+        println "interval is " + l; 
+        return l; 
+    } 
+
+    public void execute()
+    {      
+        source.messages = service.messageList + " " +  counter++; 
+        source.binding.refresh(); 
+    }    
+
+    public boolean isEnded1(){
+        return false; 
+    }
+
+    public void load(def source)
+    {
+        this.source = source;
+        ClientContext.currentContext.taskManager.addTask(this); 
+    }
+}

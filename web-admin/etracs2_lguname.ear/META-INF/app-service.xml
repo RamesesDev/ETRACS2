@@ -1,0 +1,72 @@
+<server>
+  <mbean code="org.jboss.varia.property.SystemPropertiesService" name="rameses:etracs2_lguname=Service,name=SystemProperties">
+    <attribute name="URLList">
+      ./apps/etracs2_lguname.ear/META-INF/app.conf
+    </attribute>
+  </mbean>
+  
+  <mbean code="com.rameses.server.cluster.ClusterService" name="rameses:etracs2_lguname=ClusterService">
+	<depends proxy-type="attribute">jboss.jdbc:datasource=etracs2_lguname_system,service=metadata</depends>
+	<attribute name="HostName">${hostname}</attribute>
+  </mbean>
+
+  <mbean code="com.rameses.eserver.ServerMgmt" name="rameses:etracs2_lguname=ServerMgmt">
+	<depends>jboss.jdbc:datasource=etracs2_lguname_system,service=metadata</depends>
+  </mbean>
+
+  <mbean code="com.rameses.server.session.SessionService" name="rameses:etracs2_lguname=SessionService">
+	<depends>jboss.jdbc:datasource=etracs2_lguname_system,service=metadata</depends>
+	<depends  optional-attribute-name="Cluster" proxy-type="com.rameses.server.cluster.ClusterServiceMBean">rameses:etracs2_lguname=ClusterService</depends>
+	<attribute name="Timeout">180000</attribute>
+  </mbean>
+
+  <mbean code="com.rameses.cache.CacheService" name="rameses:etracs2_lguname=CacheService">
+	<depends  optional-attribute-name="Cluster" proxy-type="com.rameses.server.cluster.ClusterServiceMBean">rameses:etracs2_lguname=ClusterService</depends>
+	<attribute name="ScriptHandler">CacheServiceHandler</attribute>
+  </mbean>
+
+  <mbean code="com.rameses.eserver.TemplateService" name="rameses:etracs2_lguname=TemplateService">
+	<depends>jboss.jdbc:datasource=etracs2_lguname_system,service=metadata</depends>
+  </mbean>
+
+  <mbean code="com.rameses.scheduler2.SchedulerService" name="rameses:etracs2_lguname=SchedulerService">
+	<depends>jboss.jdbc:datasource=etracs2_lguname_system,service=metadata</depends>
+	<depends>jboss.j2ee:ear=etracs2_lguname.ear,jar=rameses-server.jar,name=ScriptService,service=EJB3</depends>
+	<depends optional-attribute-name="Session" proxy-type="com.rameses.server.session.SessionServiceMBean">rameses:etracs2_lguname=SessionService</depends>
+	<depends optional-attribute-name="Cluster" proxy-type="com.rameses.server.cluster.ClusterServiceMBean">rameses:etracs2_lguname=ClusterService</depends>
+  </mbean>
+  
+  <mbean code="com.rameses.ruleserver.RuleMgmt" name="rameses:lguname=RuleMgmt">
+	<depends>jboss.jdbc:datasource=etracs2_lguname_system,service=metadata</depends>
+  </mbean>
+  
+  <mbean code="com.rameses.reports.jasper.JasperReportCache" name="rameses:lguname=JasperReportMgmt"/>
+  
+  
+  <!--
+  <mbean code="com.rameses.eserver.ScriptDeployer" name="rameses:etracs2_lguname=ScriptDeployer">
+	<depends>jboss.j2ee:ear=etracs2_lguname.ear,jar=rameses-server.jar,name=ScriptService,service=EJB3</depends>
+	<depends>rameses:etracs2_lguname=CacheService</depends>
+	<depends>jboss.jdbc:datasource=etracs2_lguname_system,service=metadata</depends>
+  </mbean>
+  -->
+  
+  <mbean code="org.jboss.mail.MailService" name="jboss:etracs2_lguname=Mail">
+    <attribute name="JNDIName">etracs2_lguname/Mail</attribute>
+    <attribute name="User">${mailuser}</attribute>
+    <attribute name="Password">${mailpwd}</attribute>
+    <attribute name="Configuration">
+      <configuration>
+		<property name="mail.smtp.starttls.enable" value="true"/>  
+        <property name="mail.transport.protocol" value="smtp"/>
+        <property name="mail.smtp.host" value="smtp.gmail.com"/>
+        <property name="mail.smtp.port" value="587"/>
+        <property name="mail.from" value="${mailfrom}"/>
+        <property name="mail.smtp.auth" value="true"/>  
+        <property name="mail.debug" value="false"/>
+      </configuration>
+    </attribute>
+    <depends>jboss:service=Naming</depends>
+  </mbean>
+  
+</server>

@@ -1,0 +1,28 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+
+
+class SessionInterceptor {
+
+	@Service('SessionService')
+	def sessSvc;
+
+	@Env
+	def env;
+
+	@Before(
+		pattern=".*", 
+		exclude="interceptors.*|schedulers.*|LoginService.*|LogoutService.*|SessionService.*", 
+		eval="env?.sessionid && !env?.has_session"
+	)
+	public void injectEnv( evt ) {
+		if( env?.sessionid && !env?.has_session ) {
+			def m = sessSvc.getInfo( env.sessionid );
+			if( m ) {
+				env.putAll( m );
+				env.has_session = true;
+			}
+		}
+	}
+
+}

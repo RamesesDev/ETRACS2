@@ -1,0 +1,121 @@
+<workunit>
+    <invokers>
+        <invoker type="user_form"/>
+        <invoker type="formActions" action="create" icon="images/new16.png" tooltip="Add New" immediate="true" target="root" visibleWhen="#{canCreate and mode=='read'}"/>
+        <invoker type="formActions" action="edit"  icon="images/edit16.png" tooltip="Edit"  immediate="true" visibleWhen="#{canEdit and mode=='read' and entity.objid!=null}"/>
+
+        <invoker type="formActions" action="save" icon="images/save16.png" tooltip="Save"  visibleWhen="#{mode!='read'}"/>
+        <invoker type="formActions" action="cancelEdit" icon="images/cancel16.png" tooltip="Cancel" immediate="true"  visibleWhen="#{mode!='read'}"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class UserFormController  {
+        
+            @Service("UserService")
+            def svc;
+            
+            @Binding
+            def binding;
+            
+            def entity;
+            def parent;
+            
+            def editHandler;
+            def saveHandler;
+            def cancelHandler;
+            
+            def oldEntity;
+            def mode = "read";
+            def rowSelector = [handler:null];
+            
+            public def getFormActions() {
+                def _list = InvokerUtil.lookupActions( "user:formActions", 
+                    { return [
+                            entity:entity, 
+                            rowSelector: rowSelector,
+                            cancelHandler: cancelHandler,
+                            saveHandler: saveHandler,
+                            editHandler: editHandler,
+                            usertype: "user"
+                        ]
+                    } as InvokerParameter  ).findAll{ checkPermittedAction(it.name)  };
+                return _list;
+            }
+            
+            public def setData(def e) {
+                entity = e;
+                binding.refresh();
+                if(rowSelector.handler) rowSelector.handler(entity);
+            }
+            
+            public def create() {
+                mode = "create";
+                entity = [:];
+                entity.parentid = parent.objid;
+                entity.parentcode = parent.code;
+                entity.parenttype = parent.type;
+                entity.contact = [phone:null, mobile:null, email:null];
+                if(editHandler) editHandler(entity, mode);
+            }
+            
+            //always get a fresh model when editing
+            public def edit() {
+                mode = "edit";
+                oldEntity = entity;
+                entity = svc.open( [objid:entity.objid] );
+                if(editHandler) return editHandler(entity, mode);
+            }
+            
+            public def cancelEdit() {
+                if(MsgBox.confirm("Changes will be discarded. Continue?")) {
+                    def oldMode = mode;
+                    mode = "read";
+                    entity = oldEntity;
+                    if(cancelHandler) return cancelHandler(entity, oldMode);
+                }
+            }
+            
+            public def save() {
+                if(MsgBox.confirm("You are about to save this record. Continue?")) {
+                    if(mode=="create")
+                        entity = svc.create(entity);
+                    else
+                        entity = svc.update(entity);
+                    def oldMode = mode;
+                    mode = "read";
+                    if(saveHandler) return saveHandler(entity, oldMode);
+                }
+            }
+            
+            public boolean getCanCreate() {
+                String _ptype = parent.type;
+                if( _ptype == 'root' ) _ptype = "admin";
+                return  OsirisContext.session.securityProvider.checkPermission( _ptype + ":user.create" );
+            }
+
+            public boolean getCanEdit() {
+                String _ptype = parent.type;
+                if( _ptype == 'root' ) _ptype = "admin";
+                return OsirisContext.session.securityProvider.checkPermission( _ptype + ":user.edit" );
+            }
+            
+            private boolean checkPermittedAction( String action ) {
+                String _ptype = parent.type;
+                if( _ptype == 'root' ) _ptype = "admin";
+                return OsirisContext.session.securityProvider.checkPermission( _ptype + ":user." + action );
+            }
+            
+        }
+        
+        ]]>
+    </code>
+    <pages>
+        <page template="user.ui.UserFormPage"/>
+    </pages>
+</workunit>

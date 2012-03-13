@@ -1,0 +1,58 @@
+<html>
+	<head>
+		<link href="../js/css/jquery-ui/jquery.css" rel="stylesheet" />
+		<link href="../js/css/rameses-lib.css" rel="stylesheet" />
+		
+		<script src="../js/jquery-all.js"></script>
+		<script src="../js/rameses-ext-lib.js"></script>
+		<script src="../js/rameses-ui.js"></script>
+		<script src="../js/plugins/datetime.js"></script>
+		
+		<script>
+			$put(
+				"test",
+				new function() {
+					this.data = [
+						{firstname: 'Jayrome', lastname: 'Vergara', items: ["item1", "item2", "item3"]},
+						{firstname: 'Windhel', lastname: 'Palen'},
+						{firstname: 'Arnel', lastname: 'Retiza', items: ["item1", "item2", "item3", "item4"]},
+						{firstname: 'Mike', lastname: 'Ramos'},
+						{firstname: 'Dandee', lastname: 'Alejandrino'}
+					];
+				}
+			);
+		</script>
+	</head>
+
+	<body>
+		<h2>Normal Div Sample</h2>
+		<div r:context="test" r:type="label">
+			#{$template('test-tpl', data, true)}
+		</div>
+		
+		<h2>Table Sample</h2>
+		<table r:context="test" r:items="data" r:varName="item">
+			<tr>
+				<td>
+					#{item.firstname} #{item.lastname} 
+					#{$template('sub-tpl', item.items, true)}
+				</td>
+			</tr>
+		</table>
+		
+		<!-- templates -->
+		<div id="test-tpl" r:varName="item" style="display:none">
+			<div>
+				Name: #{item.firstname} #{item.lastname}
+				#{$template('sub-tpl', item.items, true)}
+			</div>
+		</div>
+		
+		<div id="sub-tpl" style="display:none">
+			<div>
+				&nbsp;&nbsp;#{it}
+			</div>
+		</div>
+	</body>
+
+</html>

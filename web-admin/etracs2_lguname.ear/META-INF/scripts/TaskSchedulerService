@@ -1,0 +1,54 @@
+import com.rameses.annotations.*;
+
+class TaskSchedulerService {
+
+	@Resource("SchedulerService")
+	def schedulerService;
+	
+	@PersistenceContext("java:system")
+	def em;
+	
+	@ProxyMethod 
+	public def getActiveTasks( def param ) {
+		def qry = em.sqlContext.createNamedQuery("scheduler:active-tasks");
+		if(param?._start) qry.setFirstResult(param._start);
+		if(param?._limit) qry.setMaxResults(param._limit);		
+		def list = qry.resultList;
+		list.each {
+			if(it.currentdate) it.currentdate = it.currentdate.toString();
+		}
+		return list;
+	}
+	
+	@ProxyMethod 
+	public def getSessionId() {
+		return schedulerService.getSessionId();
+	}
+	
+	@ProxyMethod 
+	public void suspend(p) {
+		schedulerService.suspend(p.id);
+	}
+	
+	@ProxyMethod 
+	public void resume(p) {
+		schedulerService.resume(p.id);
+	}
+
+	@ProxyMethod 
+	public void resumeError(p) {
+		schedulerService.resumeError(p.id);
+	}
+	
+	@ProxyMethod 
+	public void create(p) {
+		schedulerService.addTask(p);
+	}
+	
+	@ProxyMethod 
+	public void update(p) {
+		schedulerService.updateTask(p);
+	}
+
+	
+}

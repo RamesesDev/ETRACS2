@@ -1,0 +1,104 @@
+<workunit>
+
+    <invokers>
+        <invoker type="user:formActions" action="manageAccount" caption="Account" index="10" immediate="true" visibleWhen="#{mode=='read' and entity.objid!=null}"/>
+
+         <invoker type="formActions" icon="images/back16.png" tooltip="Back" action="close" immediate="true"/>
+        <invoker type="formActions" icon="images/edit16.png" tooltip="Edit" action="edit" immediate="true" visibleWhen="#{editmode=='read'}"/>
+        <invoker type="formActions" icon="images/save16.png" tooltip="Save" action="save" visibleWhen="#{editmode!='read'}"/>
+        <invoker type="formActions" caption="Password" action="changePwd" visibleWhen="#{editmode=='read'}"/>
+        <invoker type="formActions" caption="Reactivate" action="reactivate" visibleWhen="#{editmode=='read'}"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        
+        public class LoginAccountController {
+        
+            @Service("LoginAccountService")
+            def svc;
+        
+            def user;
+            def usertype;
+            def account;
+            def entity;
+            def formTitle;
+            def editmode;
+            
+            def editHandler;
+            def cancelHandler;
+            def saveHandler;
+            def rowSelector;
+            
+            public void manageAccount() {
+                if( entity.loginid ) {
+                    account = svc.getAccount( [uid: entity.loginid] );
+                    editmode = "read";
+                }
+                else {
+                    editmode = "create";
+                    account = [:];
+                    account.uid = (entity.uid + "@" + entity.parentcode).toLowerCase();
+                    account.active = true;
+                    account.checkterminal = true;
+                    account.displayname = entity.firstname;
+                    account.email = entity.contact.email;
+                    account.changepwdonlogin = true;
+                    if(editHandler) editHandler( entity, "create" );
+                 }   
+            }
+            
+            public void edit() {
+                editmode = "update";
+            }
+            
+            public def save() {
+                if(!MsgBox.confirm("You are about to save this account. Continue?")) return null;
+                if( editmode == "create" ) {
+                    account.userid = entity.objid;
+                    account.usertype = usertype;
+                    account = svc.create(account);
+                    entity.loginid = account.uid;
+                    editmode = "read";
+                    saveHandler(entity, "create");
+                    return "default";
+                }
+                else {
+                    editmode = "read";
+                    account = svc.update(account);
+                    saveHandler(entity, "edit");
+                    return null;
+                }
+            }
+            
+            public def changePwd() {
+                return new PopupOpener( name:"user_loginaccount_changepwd", caption:"Change Password", params: [account: account]);
+            }
+            
+            public def reactivate() {
+                if(MsgBox.confirm("You are about to reactivate this account. Continue?")) {
+                    svc.reactivate( [uid: entity.uid] );
+                    MsgBox.alert( "User account reactivated");
+                }
+            }
+            
+            public def close() {
+                if(editmode=="read" || MsgBox.confirm("Changes will be discarded. Continue?") ) {
+                    if(cancelHandler) cancelHandler(entity, "read" );
+                    return "_close";
+                }
+            }
+            
+        }
+         
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="user.ui.UserLoginAccountFormPage"/>
+    </pages>
+    
+</workunit>

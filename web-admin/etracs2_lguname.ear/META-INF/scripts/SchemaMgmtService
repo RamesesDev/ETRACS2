@@ -1,0 +1,55 @@
+import com.rameses.annotations.*;
+
+class SchemaMgmtService 
+{
+	
+    @PersistenceContext("system")
+    def em;
+    
+	@Resource("ServerMgmt")
+	def serverMgmt;
+	
+	
+    @ProxyMethod
+    public def getList( def o ) {
+		if(!o) o = [:];
+		if(!o.FILTER) o.FILTER = '';
+		def qry = em.sqlContext.createNamedQuery("schema:get-list").setVars(o);	
+		
+		if( o._start ) qry.setFirstResult(o._start);
+		if( o._limit ) qry.setMaxResults(o._limit);
+		
+		return qry.resultList;
+    }
+	
+	@ProxyMethod
+    public def create( def o ) {
+		em.create("schema:xml", o );
+    }
+	
+	@ProxyMethod
+    public def read( def o ) {
+		return em.read("schema:xml", o );
+    }
+	
+	@ProxyMethod
+    public def update( def o ) {
+		em.update("schema:xml", o );
+    }
+	
+	@ProxyMethod
+    public def remove( def o ) {
+		em.delete("schema:xml", o );
+    }
+
+	@ProxyMethod
+    public def redeployAll() {
+		serverMgmt.reloadSchema();
+    }
+	
+	@ProxyMethod
+	public def redeploy( name ) {
+		serverMgmt.reloadSchema( name );
+	}
+	
+}

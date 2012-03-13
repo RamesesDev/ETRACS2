@@ -1,0 +1,21 @@
+import com.rameses.annotations.*;
+
+class TagService {
+
+	@PersistenceContext("admin")
+	def em;
+
+	@Service("RoleService")
+	def roleSvc;
+	
+	@ProxyMethod
+	public def getList(def params) {
+		def qry = em.sqlContext.createQuery( "select * from tag" );
+		if(params) {
+			if(params._start) qry.setFirstResult( params._start );
+			if(params._limit) qry.setMaxResults( params._limit );
+		}
+		return qry.resultList;
+	}
+	
+}

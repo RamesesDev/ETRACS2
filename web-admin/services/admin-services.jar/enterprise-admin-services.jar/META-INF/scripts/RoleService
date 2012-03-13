@@ -1,0 +1,89 @@
+import com.rameses.annotations.*;
+
+class RoleService {
+
+	@PersistenceContext("main")
+	def em;
+
+	@Service("RoleclassService")
+	def roleclassSvc;
+	
+	@Service("PermissionService")
+	def permSvc;
+	
+	
+	@ProxyMethod
+	public def getList(def params) {
+		def sql = "role:list";
+		if( params?.roleclass ) sql = "role:list-by-roleclass"; 
+		def qry = em.sqlContext.createNamedQuery( sql );
+		if(params) {
+			if(params._start) qry.setFirstResult( params._start );
+			if(params._limit) qry.setMaxResults( params._limit );
+			qry.setParameters( params );
+		}
+		return qry.resultList;
+	}
+	
+	@ProxyMethod
+	public def create(def o) {
+		return em.create( "role", o );
+	}
+	
+	@ProxyMethod
+	public def read(def o) {
+		return em.read( "role", o );
+	}
+
+	@ProxyMethod
+	public def update(def o) {
+		return em.update( "role", o );
+	}
+	
+	@ProxyMethod
+	public def remove(def o) {
+		em.delete( "role", o );
+	}
+	
+	@ProxyMethod
+	public def getRolesByClass(def params) {
+		def qry = em.sqlContext.createNamedQuery( "role:list-by-roleclass" );
+		if(params) {
+			qry.setParameters( params );
+		}
+		return qry.resultList;
+	}
+	
+
+	/*
+	@ProxyMethod
+	public def getAllPermissions(def rolename) {
+		def role = em.read( "role", [name: rolename] );
+		def m = [:];
+		m.modules = roleclassSvc.getModulePermissions( role.roleclass, null );
+		m.included = ( !role.included ) ? [] : role.included;
+		
+		def allperms = [];
+		m.modules.each{ mod ->
+			mod.rows.each{ row ->
+				mod.cols.each{ col -> 
+					allperms.add("${mod.modulename}:${row}.${col}".toString()) 
+				}
+			}
+		}
+		
+		m.included = permSvc.filterIncludes( allperms, m.included );
+		
+		return m;
+	}
+	*/
+	
+	@ProxyMethod
+	public def updatePermissions(def r) {
+		def role = em.read( "role", r );
+		role.included = r.included;
+		em.update( "role", role );	
+	}
+	
+
+}

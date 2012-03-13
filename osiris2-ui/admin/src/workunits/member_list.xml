@@ -1,0 +1,62 @@
+<workunit>
+    
+    <invokers>
+        <invoker type="formActions" icon="images/back16.png" tooltip="Back" action="close"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        
+        public class MemberListController {
+        
+            @Service("UserService")
+            def svc;
+
+            @Binding
+            def binding;
+            
+            def parent;
+            def parenttype;
+            def rowSelector;
+            
+            void viewMembers() {
+                if(rowSelector)rowSelector.handler={ o->
+                    parent = o;
+                    binding.refresh();
+                }
+            }
+            
+            def getFormTitle() {
+                if(!parent?.code) return ""; 
+                return parent.code + " Members";
+            }
+            
+            def close() {
+                if(rowSelector)rowSelector.handler=null;
+                return "_close";
+            }
+            
+            def listHandler = [
+                getColumns : {
+                    return [ 
+                        new Column(name:"item.username", caption:"User"),
+                        new Column(name:"item.role", caption:"Role"),
+                        new Column(name:"item.disallowedterminals", caption:"Disallowed Terminals"),
+                        new Column(name:"item.schedules", caption:"Schedule")
+                    ];    
+                },
+                fetchList :  { o-> 
+                    if(!parent?.objid) return [];
+                    return svc.getUserGroupList( parent.objid ); 
+                }
+            ] as PageListModel;
+        }
+        
+        ]]>
+    </code>
+    <pages>
+        <page template="admin.ui.MemberListPage"/>
+    </pages>
+</workunit>

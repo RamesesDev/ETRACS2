@@ -1,0 +1,95 @@
+import com.rameses.annotations.*;
+
+
+class RoleclassService {
+
+	@PersistenceContext("system")
+	def em;
+	
+	@Service("PermissionService")
+	def permSvc;
+	
+
+	@ProxyMethod
+	public def getList(def params) {
+		if(!params) params = [rolelevel:0];
+		if(!params.rolelevel) params.rolelevel = 0;
+		return em.sqlContext.createNamedQuery( "roleclass:list" ).setParameters(params).resultList;
+	}
+	
+	@ProxyMethod
+	public def getAvailableTags( param ) {
+		def rc = em.read("roleclass", param);
+		return rc?.tags? rc.tags : [];
+	}
+	
+	@ProxyMethod
+	public def read(def o) {
+		def x = em.read( "roleclass", o );
+		x.modules = em.sqlContext.createNamedQuery("roleclass:module-list").setParameters( [roleclass: x.name] ).resultList;
+		return x;
+	}
+
+	@ProxyMethod
+	public def addModule(def o) {
+		assert o.roleclass;
+		assert o.module;
+		em.create( "roleclass:module", o );
+	}
+	
+	@ProxyMethod
+	public def removeModule(def o) {
+		assert o.roleclass;
+		assert o.module;
+		em.delete( "roleclass:module", o );
+	}
+	
+	@ProxyMethod
+	public def getModulePermissions( def roleclass, def included ) 
+	{
+		try {
+			def o = [roleclass: roleclass ];
+			def list = em.sqlContext.createNamedQuery( "roleclass:module-permissions" ).setParameters( o ).resultList;
+
+			def emptyMod = [];
+			list.each { m->
+				def sublist  = (!m.permissions ? [] : em.serializer.read(m.permissions) ); 
+				m.remove( "permissions" ); 
+				if( included ) {
+					def perms = sublist.collect{ m.modulename + ":" + it.action };
+					perms = permSvc.filterIncludes( perms, new ArrayList(included) );
+					sublist = filterModPermissions(sublist, perms);
+				}
+				if( sublist.size() > 0 ) {
+					m.rows = sublist.collect { x-> x.action.substring(0, x.action.indexOf(".")) }.unique();
+					m.cols = sublist.collect { x-> x.action.substring( x.action.indexOf(".") + 1 ) }.unique();
+					m.index = sublist.collect{ x->[action:m.modulename +":"+ x.action] }.groupBy { y->y.action }; 
+				}
+				else {
+					emptyMod << m;
+				}
+			}
+			
+			if( emptyMod ) list.removeAll( emptyMod );
+			
+			return list;
+		}
+		catch(e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+	
+	def filterModPermissions = { sublist, included, list=[] ->
+		if( !included )
+			return list;
+		else {
+			def filter = included.pop();
+			def result = sublist.findAll{ filter.endsWith(it.action) };
+			sublist.removeAll( result );
+			list.addAll( result );
+			return filterModPermissions( sublist, included, list );
+		}
+	};
+	
+}

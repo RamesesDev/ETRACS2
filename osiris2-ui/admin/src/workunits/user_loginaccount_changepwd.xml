@@ -1,0 +1,52 @@
+<workunit>
+    
+    <invokers>
+        <invoker type="formActions" caption="OK" action="changePwd"/>
+        <invoker type="formActions" caption="Cancel" action="_close" immediate="true"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.util.*;
+        
+        public class LoginAccountChangePwdController {
+        
+            @Service("LoginAccountService")
+            def svc;
+
+            def account;
+
+            boolean useSystemPwd = true;
+            def confirmPwd;
+            def pwd;
+            
+            public def changePwd() {
+                def _pwd;
+                if(!useSystemPwd) {
+                    if(!pwd)
+                        throw new Exception( "Please provide a password");
+                    if( pwd != confirmPwd )
+                        throw new Exception( "Password must match confirmed password");
+                        
+                    _pwd = Encoder.md5.encode(pwd, account.uid);
+                }
+                
+                if( MsgBox.confirm( "You are about to reset the password. Continue?")) {
+                    def param = [uid:account.uid, pwd: _pwd, changepwdonlogin: account.changepwdonlogin];
+                    def ret = svc.resetPwd( param );
+                    return "_close";
+                }
+                return null;
+            }
+        }
+         
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="user.ui.LoginAccountChangePwdPage"/>
+    </pages>
+</workunit>

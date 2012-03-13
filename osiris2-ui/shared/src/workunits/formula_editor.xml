@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    
+    <invokers>
+        <invoker type="formula_editor" caption="Formula Editor" target="popup"/>
+    </invokers>
+    
+    <code lang="groovy">
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class TestController extends LookupModel {
+            
+            @Binding
+            def binding;
+        
+            def formula;
+            
+            def variable;
+            def variableList;
+            
+            def function;
+            def functionList;
+            
+            def handler = [
+                getKeywords: { variableList }
+            ] as FormulaEditorModel;
+        
+            void setSearch(String txt) {
+                formula = txt;
+            }
+            
+            def getSelectedValue() {
+                return formula;
+            }
+            
+            void selectVariable() {
+                handler.insert( variable );
+                binding.focus('formula');
+            }
+            
+            void selectFunction() {
+                handler.insert( function.expr );
+                binding.focus('formula');
+            }
+        
+        }
+        
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="shared.editor.FormulaEditor"/>
+    </pages>
+</workunit>

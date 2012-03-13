@@ -1,0 +1,31 @@
+import com.rameses.rcp.common.*;
+import com.rameses.util.*;
+
+
+public class TimeoutTask extends ScheduledTask {
+    
+    def timeout;
+    def timein;
+
+    def parent;
+
+
+    long getInterval() {
+        return 1000;
+    }
+    
+    void execute() {                                
+        timein = DateUtil.add(timein, '1s');
+        if ( timein >= timeout ) {
+            parent.systemTimeout();
+        }
+    }
+    
+    boolean isEnded() {
+        return false;
+    }
+    
+    boolean isImmediate() {
+        return true;
+    }    
+}

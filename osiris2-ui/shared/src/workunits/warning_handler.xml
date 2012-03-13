@@ -1,0 +1,63 @@
+<!--
+    this is called when reusing a wizard screen.
+    parameters:
+        list = list of openers.
+    each opener must implement     
+-->
+<workunit>
+    <invokers>
+        <invoker type="warning_handler" action="init"/>
+        <invoker type="leftFormActions" caption="Back" action="back" mnemonic="b" visibleWhen="#{idx &gt; 0 }" />
+        <invoker type="formActions" caption="Accept" action="next" mnemonic="a"/>
+        <invoker type="formActions" caption="Cancel" action="_close" mnemonic="c" immediate="true"/>
+    </invokers>
+
+    <code>
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class WarningController {
+        
+            def warning;
+            def openers = [];
+            def opener;
+            int idx;
+            def acceptHandler;
+            def messages = [:];
+            def properties;
+            
+            public void init() {
+                warning.info.handlers.each {
+                    def params = [info:it.info, source:warning.info.source, messages:messages];
+                    if( properties )
+                        params.properties = properties;
+                        
+                    def o = InvokerUtil.lookupOpener( it.name, params );
+                    openers.add( o );
+                    if(!opener) opener = o;
+                }
+            }
+            
+            public def next() {
+                def r = opener.handle.accept();
+                if(r =="_close") {
+                    idx++;
+                    if( idx >= openers.size() ) {
+                        if(!acceptHandler) return "_close";
+                        return acceptHandler(warning.info.source, messages);
+                    }
+                    opener = openers[idx];
+                }
+            }
+            
+        }
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="shared.warning.WarningPage"/>
+    </pages>
+    
+</workunit>

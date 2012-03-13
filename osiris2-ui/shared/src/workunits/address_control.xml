@@ -1,0 +1,75 @@
+<workunit>
+    <invokers>
+        <invoker type="control:address" />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class AddressController extends SubControlModel {
+
+            @Binding
+            def binding;
+
+            def opener;
+            def formatTypes;
+            
+            public void onInit() {
+                if(!formatTypes) {
+                    formatTypes = InvokerUtil.lookupOpeners( "control:addressformat", [context:context, properties:properties] );
+                }    
+            }
+            
+            public void onRefresh() {
+                if( !context._format_  ) context._format_="default";
+                opener = formatTypes?.find{ it.properties.format == context._format_};
+                if( opener ) {
+                    InvokerUtil.invokeOpener(opener);
+                    opener.handle.context = context;
+                    opener.handle.properties = properties;
+                    opener.handle.fixFormat( context );
+                }
+            }
+            
+            public def createContext() {
+                return [:];
+            }
+            
+            public String getHtmlFormat() {
+                if(!opener)
+                    return "Address format " + context._format_ + " is not recognized";
+                return opener.handle.htmlFormat+"";
+            }
+            
+            public String getPrintFormat() {
+                if(!opener)
+                    return "";                    
+                return opener.handle.printFormat;
+            }
+            
+            public def changeFormat() {
+                InvokerUtil.lookupOpener("address_format:lookup", 
+                    [  formatTypes:formatTypes, 
+                       selectHandler: { o->
+                           opener = o;
+                           InvokerUtil.invokeOpener(opener);
+                           opener.handle.fixFormat( context );
+                           context._format_ = o.properties.format;
+                           binding.refresh();
+                       }
+                    ]
+                );    
+            }
+            
+        }
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="shared.custom.address.AddressControl"/>
+    </pages>
+    
+</workunit>

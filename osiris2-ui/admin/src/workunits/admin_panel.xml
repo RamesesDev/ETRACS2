@@ -1,0 +1,49 @@
+<workunit>
+    
+    <invokers>
+        <invoker folderid="menu/mgmt" caption="Administration" action="init" permission="adminpanel.manage" />
+        <invoker type="home:menu" caption="Administration" icon="images/admin/admin32.png" action="init" permission="adminpanel.manage" target="window"/>
+        <invoker type="admin:subpanel" action="init" target="window" />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class AdminPanelController  {
+        
+            def context;
+        
+            @Script("User")
+            def user;
+            
+            @FormTitle
+            def formTitle;
+            
+            @FormId
+            def formId;
+            
+            def adminMenus;
+            
+            public void init() {
+                def org = user.org;
+                formId = "ADMIN:"+ org.id;
+                formTitle = "ADMIN:"+ org.code;
+                def type = org.type;
+                if(type=='root') type = 'admin';
+                context = [objid: org.id, code: org.code, name: org.name, type: org.type];
+                adminMenus = InvokerUtil.lookupActions( "adminpanel:" + type, [parent:context] ); 
+                InvokerUtil.lookupActions( "adminpanel-home", [parent:context] ).each {
+                    if( org.type != it.properties.excludeContext ) adminMenus.add( it );
+                }
+            }
+        }
+        ]]>
+    </code>
+    <pages>
+        <page template="admin.ui.AdminPanelPage"/>
+    </pages>
+</workunit>

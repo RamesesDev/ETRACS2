@@ -1,0 +1,46 @@
+<workunit>
+    
+    <invokers>
+         <invoker type="preferences" caption="System Info" index="1"/>
+    </invokers>
+    
+    <code>
+    <![CDATA[
+    
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.util.*;
+        
+        public class SystemInfoController
+        {
+
+            @Script("User")
+            def user;
+            
+            def handler = [
+                getRows: {
+                    return 20;
+                },
+                getColumns : {
+                    return [
+                        new Column( name:"item.key", caption:"Key", width:100, maxWidth:150),
+                        new Column( name:"item.value", caption:"Value", alignment:"left")
+                    ]
+                },
+            
+                fetchList : {o->
+                    return user.env.collect{ [ key: it.key, value: it.value ] }
+                }
+            ] as SubListModel;
+            
+            public void save() {}
+        
+            
+        }
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="system.tools.ui.SystemInfoPage" />
+    </pages>
+</workunit>

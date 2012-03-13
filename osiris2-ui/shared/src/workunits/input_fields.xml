@@ -1,0 +1,83 @@
+<workunit>
+    <invokers>
+        <invoker type="input_fields" action="init"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.util.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.rcp.support.*;
+        
+        /**
+         * datatypes supported:
+         *   string, string_array, date, decimal, integer, boolean
+         */
+        public class InputFieldsController
+        {        
+            //passed by the caller
+            def fields;
+            
+            def formControls = [];
+            def entity = [:];
+            
+            void init() {
+                formControls.clear();
+                def category;
+                fields.eachWithIndex{ fld, idx ->
+                    def type = 'text';
+                    
+                    if( fld.datatype ) {
+                        if ( fld.datatype.matches(/decimal|integer/) )
+                            type = 'number';
+                        else if ( fld.datatype == 'boolean' ) {
+                            type = 'combo';
+                            fld.items = [true, false];
+                        }
+                        else if ( fld.datatype == 'string_array' )
+                            type = 'combo';
+                        else if ( fld.datatype == 'date' )
+                            type = 'date';
+                    }
+                    
+                    if( fld.category && category != fld.category ) {
+                        category = fld.category;
+                        def lbl = new FormControl(type: 'label', properties: [
+                            text: '<html><b>' + category + '</b></html>',
+                            opaque: true,
+                            showCaption: false,
+                            background: java.awt.Color.LIGHT_GRAY,
+                            preferredSize: '0, 30'
+                        ]);
+                        
+                        if( idx > 0 ) 
+                            lbl.properties.cellPadding = new java.awt.Insets(15,0,0,0);
+
+                        formControls << lbl;
+                    }
+                        
+                    formControls << new FormControl(type: type, properties: [
+                        name: 'fields[' + idx + '].value',
+                        caption: fld.caption,
+                        preferredSize: '0, 20',
+                        required: fld.required != null? fld.required : true,
+                        fieldType: fld.datatype == 'integer'? Integer.class : java.math.BigDecimal.class,
+                        pattern: fld.datatype == 'integer'? '#,##0' : '#,##0.00',
+                        items: 'fields[' + idx + '].items',
+                    ]);
+                };
+            }
+        
+        }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="shared.inputfields.FormPage"/>   
+    </pages>
+    
+</workunit>

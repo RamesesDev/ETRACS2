@@ -1,0 +1,49 @@
+<workunit>
+    
+    <invokers>
+        <invoker type="xloader" index="10" action="init" target="process"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.rcp.framework.ClientContext;
+        
+                        
+        public class SessionController {
+        
+            @Script('TimeoutTask')
+            def timeoutTask;
+            
+            @Binding
+            def binding;
+        
+            void init() {
+                def ctx = ClientContext.currentContext;
+                def taskMgr = ctx.taskManager;
+                def headers = ctx.headers;
+                
+                if ( headers.TIMEIN && headers.TIMEOUT ) {
+                    timeoutTask.parent = this;
+                    timeoutTask.timein = headers.TIMEIN;
+                    timeoutTask.timeout = headers.TIMEOUT;
+                    taskMgr.addTask( timeoutTask );
+                }
+            }
+            
+            void systemTimeout() {
+                def ctx = ClientContext.currentContext;
+                ctx.taskManager.stop();
+                def opener = new PopupOpener(
+                    name: 'system:sessionTimeout', caption: 'Session Timed Out',
+                    params: [ 'acct.uid': ctx.headers.user ]
+                );
+                
+                binding.fireNavigation( opener );
+            }
+        }
+        ]]>
+    </code>
+</workunit>

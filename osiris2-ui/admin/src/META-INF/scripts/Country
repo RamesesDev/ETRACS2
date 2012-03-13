@@ -1,0 +1,33 @@
+import com.rameses.rcp.annotations.*;
+import com.rameses.rcp.framework.ClientContext;
+
+public class Country extends HashMap{
+
+    @Service("LocaleService")
+    def countrySvc;
+    
+    def _list;
+
+    public def getList(){
+        if(!_list){
+            def props = ClientContext.currentContext.properties;
+            _list = props._countryList;
+            if(!_list){
+                _list = countrySvc.countryList;
+                props._countryList = _list;
+            }
+        }
+        return _list;
+    }
+
+    public Object get( def name ) {
+        if(name==null) return null;
+
+        if(name == 'list') return getList();
+
+        for( o in getList() ) {
+            if( o.code == name ) return o;
+        }
+        return null;
+    }
+}

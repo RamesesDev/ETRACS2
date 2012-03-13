@@ -62,7 +62,7 @@ class ETRACSUserInterceptor
 	
 	
 	
-	@After(pattern="LoginService.login.*") 
+	@After(pattern="LoginService.login.*", eval="env.CLIENTTYPE=='desktop'") 
 	public void loginIntercept( def evt )  {
 		def env = evt.result.env;
 		def user = em.sqlContext.createNamedQuery("etracsuser:getUserInfo").setParameter("objid", env.USERID ).singleResult;

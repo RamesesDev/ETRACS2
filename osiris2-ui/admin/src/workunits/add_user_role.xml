@@ -1,0 +1,66 @@
+<workunit>
+    
+    <invokers>
+        <invoker type="userrole:add" action="init" caption="Add Role" target="popup"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class AddUserRoleController  {
+        
+            @Service("RoleService")
+            def svc;
+            
+            def user;
+            def role;
+            def formTitle;
+            def saveHandler;
+            
+            def groupTypes;
+            def groupType;
+            
+            void init() {
+                groupTypes = InvokerUtil.lookupOpeners( "role:group", [:] ).findAll{
+                    !it.properties.includeContext || user.parenttype.matches( it.properties.includeContext ) 
+                }*.caption;
+                if(groupTypes) groupType = groupTypes[0];
+                formTitle = "New Role for " + user.lastname + ", " + user.firstname;
+            }
+            
+            def getRoleList() {
+                return svc.getAvailableRoles( [user:user, groupclass:groupType] );
+            }
+            
+            def next() {
+                def userrole = [:];
+                userrole.userid = user.objid;
+                userrole.role = role.name;
+                userrole.roleclass = role.roleclass;
+                userrole.description = "";
+                userrole.excludepermissions = [];
+                userrole.disallowedterminals = [];
+                userrole.schedules = [];
+                userrole.info = [:];
+                def opener = InvokerUtil.lookupOpener( "userrole",
+                    [   user:user, 
+                        userrole:userrole, 
+                        formTitle:formTitle, 
+                        groupType : role.groupclass,
+                        saveHandler: saveHandler
+                    ] );
+                if(!opener) 
+                    throw new Exception("There is no handler for " + role.roleclass + " found." );
+                return opener;    
+            }
+        }
+        ]]>
+    </code>
+    <pages>
+        <page template="user.ui.AddUserRolePage"/>
+    </pages>
+</workunit>

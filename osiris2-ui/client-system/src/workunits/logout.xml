@@ -1,0 +1,49 @@
+<workunit>
+    
+    <!-- this loader hooks to logout session -->
+    <invokers>
+        <invoker type="loader" caption="Logout" index="-900" action="init" target="process" /> 
+    </invokers>
+    
+    <code>
+    <![CDATA[
+        import com.rameses.platform.interfaces.*;
+        import com.rameses.rcp.common.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.util.*;
+
+        public class LogoutController {
+        
+            @Script("User")
+            def user;
+
+            public void init() {
+                def loginSvc = null;
+                if( user.sessionId ) {
+                    loginSvc = InvokerProxy.instance.create("LoginService");       
+                }
+                
+                def logout = new LogoutSession( loginSvc: loginSvc, user: user );
+                OsirisContext.mainWindowListener.add(logout);
+            }
+        }
+        
+        public class LogoutSession implements MainWindowListener {
+            def loginSvc;
+            def user;
+            public Object onEvent(String eventName, Object evt) {
+                return null;
+            }
+            public boolean onClose() {
+                if( MsgBox.confirm( "Are you sure you want to logout this application?") ) {
+                    if(loginSvc) loginSvc.logout( user.env );
+                    return true;
+                }
+                return false;
+            }
+        }
+        ]]>
+    </code>
+    
+</workunit>

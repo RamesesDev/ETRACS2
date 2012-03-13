@@ -1,0 +1,27 @@
+<workunit>
+    
+    <invokers> 
+        <invoker type="loader" action="init" index="500" permission="side_window_launcher"  allowOffline="true" target="_process" />
+    </invokers> 
+    
+    <code>
+        <![CDATA[        
+        import com.rameses.rcp.common.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.util.*;
+        
+        public class SideWindowLauncher 
+        {
+            public void init() 
+            {
+                def list = InvokerUtil.lookup("slidingwindow"); 
+                for (inv in list) {
+                    String target = inv.properties.target;
+                    InvokerUtil.showWindow(inv, null, [windowmode:target]);  
+                }
+            }        
+        }
+        ]]>
+    </code>
+</workunit>

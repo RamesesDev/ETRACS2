@@ -1,0 +1,61 @@
+<workunit>
+    
+    <invoker>
+        <invoker type="userrole:option" caption="Permission" action="init" index="0" />
+    </invoker>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        
+        public class PermissionController {
+        
+            @Service("PermissionService")
+            def permService;
+        
+            def userrole;
+            def selectedItem;
+            def permissionSets;
+            
+            public void init() {
+                permissionSets = permService.getPermissionSetByRole( userrole.role );   
+            }
+            
+            public def getPermissionGroups() {
+                return permissionSets*.key;
+            }
+            
+            def permissionHandler = [
+                getRows: { return 50; },
+                getColumns: {
+                    return [
+                        new Column( name:"selected", caption: "", maxWidth:25, type:"boolean", editable: true ),
+                        new Column( name:"item.title", caption: "Name" )
+                    ];
+                },
+                fetchList : {
+                    if(selectedItem==null) {
+                        if(permissionGroups) selectedItem = permissionGroups[0]; 
+                    }
+                    return permissionSets[selectedItem]; 
+                },
+                checkItem : { item,selected->
+                    if(selected) 
+                        userrole.excludepermissions.remove( item.action )
+                    else
+                        if(userrole.excludepermissions.indexOf(item.action)<0) userrole.excludepermissions.add( item.action );
+                },
+                checkSelected : { o->
+                    return !userrole.excludepermissions.contains( o.action );
+                }
+            ] as SubListModel;
+        }
+        
+        ]]>
+    </code>
+    <pages>
+        <page template="user.ui.UserRolePermissionPage"/>
+    </pages>
+</workunit>

@@ -1,0 +1,22 @@
+import com.rameses.rcp.annotations.*;
+import com.rameses.rcp.framework.ClientContext;
+
+public class TimeZones {
+
+    @Service("LocaleService")
+    def timezoneSvc;
+    
+    public def getList( def country ){
+        if(!country) return [];
+        def tz = ClientContext.currentContext.properties._timezones;
+        if( tz == null ) {
+            tz = [:];
+            ClientContext.currentContext.properties._timezones = tz;
+        }
+        if( !tz.containsKey( country) ) {
+            tz[country] = timezoneSvc.getTimezoneList( country );
+        }
+        return tz[country];
+    }
+
+}

@@ -1,0 +1,46 @@
+import com.rameses.annotations.*;
+
+
+public class DesktopLoginInterceptor
+{
+	@Env
+	def env;
+	
+	@Service("JobPermissionService")
+	def jobpermSvc;
+	
+	@After(pattern="LoginService.login.*", eval="env.CLIENTTYPE=='desktop'")
+	public void loadProfile( evt )
+	{
+		def profile = evt.result;
+
+		//set env value
+		env.userid = profile.objid;
+		env.sessionid = profile.sessionid;
+		
+		def job = jobpermSvc.getUserJobposition([:]);
+		def perms = [];
+		if( job.permissions ) perms.addAll(job.permissions);
+		
+		job.others.each {
+			if( it.objid == job.objid ) return;
+			def j = jobpermSvc.getUserJobposition([jobid: it.objid]);
+			if( j.permissions ) perms.addAll(j.permissions);
+		};
+		
+		profile.env = [
+			userid              : profile.objid,
+			USERID              : profile.objid,
+			USERTYPE            : profile.usertype,
+			LOGINID             : profile.uid, 
+			CHANGE_PWD_ON_LOGIN : profile.changepwdonlogin,
+			FIRSTNAME           : profile.firstname,
+			LASTNAME            : profile.lastname,
+		];
+		
+		//load permissions
+		profile.permissions = perms;
+		profile.permissions.add("system.*");
+	}
+	
+}

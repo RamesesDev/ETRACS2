@@ -1,0 +1,84 @@
+<workunit>
+    <invokers>
+        <invoker type="formActions" icon="images/back16.png" tooltip="Back" index="0" action="close" visibleWhen="#{parent!=null}"/>
+        <invoker type="formActions" caption="Generate" index="1" action="generateKeys" visibleWhen="#{parent!=null}"/>
+        <invoker type="formActions" caption="Unregister" index="2" action="unregister" visibleWhen="#{selection!=null and selection.item!=null}"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        
+        public class TerminalListController {
+        
+            @Service("TerminalService")
+            def svc;
+    
+            def parent;
+            def parenttype;
+            def selection;
+            
+            def rowSelector;
+            
+            @Binding
+            def binding;
+            
+            def getFormTitle() {
+                if(!parent?.code) return "Terminals"; 
+                return parent.code + " Terminals";
+            }
+            
+            public void viewTerminals() {
+                if(rowSelector)rowSelector.handler={ o->
+                    parent = o;
+                    binding.refresh();
+                }
+            }
+            
+            def close() {
+                if(rowSelector)rowSelector.handler=null;
+                return "_close";
+            }
+
+            def listHandler = [
+                getColumns : {
+                    return [ 
+                        new Column(name: 'item.terminalid', caption: 'Terminal ID'),
+                        new Column(name: 'item.macaddress', caption: 'Mac Address'),
+                        new Column(name: 'item.parentcode', caption: 'Client Code'),
+                        new Column(name: 'item.parenttype', caption: 'Client Type'),
+                        new Column(name: 'item.dtregistered', caption: 'Date Registered', type: 'date')
+                    ]; 
+                 },
+
+                 fetchList : { o->
+                    if( parent?.objid ) o.parentid = parent.objid;
+                    return svc.getList( o )
+                 }
+            ] as PageListModel;
+
+            public void generateKeys() {
+                String size = MsgBox.prompt("Indicate the no. of keys to generate.");
+                if ( size && size.matches(/\d+/) ) {
+                  int sz = size.toInteger();
+                  svc.allocate([size: sz, parentcode: parent.code, parentid: parent.objid, parenttype:parenttype]);
+                  listHandler.load();
+                }
+            }            
+            
+            public void unregister() {
+                if( MsgBox.confirm("You are about to unregister this machine. Continue?"))  {
+                    svc.unregister(selection.item);
+                    listHandler.load();
+                }
+            }
+            
+        }
+        
+        ]]>
+    </code>
+    <pages>
+        <page template="admin.ui.TerminalListPage"/>
+    </pages>
+</workunit>

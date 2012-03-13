@@ -1,0 +1,107 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class ETRACSTemplateService
+{
+	@Resource('TemplateService')
+	def tmp;
+
+	@ProxyMethod
+	public def getStyle(def fontSize) {
+	   if(fontSize == 0)
+	      fontSize = 12;
+		
+	   return tmp.getResult('META-INF/templates/style.groovy', [fontSize:fontSize]);
+	}
+	
+	private def getMain(def data) {
+	   def result = [:];
+	   
+	   if(data.style != null)
+	      result.style = data.style;
+      if(data.body != null)
+         result.body = data.body;
+	   
+	   return tmp.getResult('META-INF/templates/main.groovy', result);
+	}
+	
+	@ProxyMethod
+	public def buildHTML(def htmlType, def data) {
+      def temp = [:];
+
+      temp.body = tmp.getResult('META-INF/templates/' + htmlType + '.groovy', data);
+
+      if(data.style == null)
+         temp.style = getStyle(data.fontSize);
+      else
+         temp.style = data.style;
+         
+      return getMain(temp);
+	}
+	
+	@ProxyMethod
+	public def buildComplexHTML(def data) {
+      def temp = [:];
+      temp.body = "";
+      
+      if(data.data != null) {
+         for(Map map : data.data) {
+            if(map.data.state == null)
+               map.data.state = "";
+            temp.body += tmp.getResult('META-INF/templates/' + map.name +'.groovy', map.data);
+         }
+      }
+      
+      if(data.style == null)
+         temp.style = getStyle(data.fontSize);
+      else
+         temp.style = data.style;
+      
+	   return getMain(temp);
+	}
+	
+	@ProxyMethod
+	public def buildDocHTML(def data) {
+	   def temp = [:];
+	   
+	   temp.body = tmp.getResult('META-INF/templates/document-header.groovy', data);
+
+	   if(data.items != null) {
+         for(a in 0..data.items.size() - 1) {
+            data.items[a].x = ''
+         
+            try {
+               if(data.items[a].tables != null) {
+                  for(b in 0..data.items[a].tables.size()) {
+                     data.items[a].x = tmp.getResult('META-INF/templates/simple-list.groovy', data.items[a].tables[b]);
+                  }
+               }
+            }catch(Exception ex){}
+                           
+            /*if(data.items[a].ifValue != null) {
+               if( genStatement(data.ifAgainst, data.ifOperator, data.items[a].ifValue) ) {
+                  temp.body += tmp.getResult('META-INF/templates/split-info.groovy', data.items[a]);
+               } else {
+                  temp.body += '';
+               }
+            } else {*/
+               temp.body += tmp.getResult('META-INF/templates/split-info.groovy', data.items[a]);
+            //}
+         }
+	   }
+      if(data.style == null)
+         temp.style = getStyle(data.fontSize);
+      else
+         temp.style = data.style;
+      
+	   return getMain(temp);
+	}
+	
+	private def genStatement(def against, def operator, def value) {
+	   if(operator.equals('=='))
+	      if(against == value) 
+	         return true;
+	      
+	   return false;
+	}
+}

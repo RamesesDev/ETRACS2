@@ -1,0 +1,46 @@
+<workunit>
+    
+    <invokers>
+        <invoker folderid="/menu/system" caption="Preferences" action="init" index="2" target="popup"/>
+        <invoker type="quick_launcher" code="syspref" 
+                 caption="Preferences" desc="System Preferences" 
+                 action="init" target="popup"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+    
+        import com.rameses.osiris2.client.*;
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.util.*;
+        
+        
+        public class PreferenceController
+        {
+            def preferences;
+            def selection;
+            
+            void init() {
+                preferences = [];
+                for( o in InvokerUtil.lookup( "preferences" )) {
+                    def opener = new Opener(name: o.workunitid, caption: o.caption, action: o.action);
+                    preferences.add( opener );
+                }
+                if( preferences ) selection = preferences[0];
+            }
+            
+            public def save() {
+                for(o in preferences) {
+                    if(o.handle) o.handle.save(); 
+                }
+                return "_close";
+            }
+            
+        }
+        ]]>
+    </code>
+    <pages>
+        <page template="system.preferences.ui.MainPage" />
+    </pages>
+</workunit>

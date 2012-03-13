@@ -1,0 +1,168 @@
+<workunit>
+    <invokers>
+        <invoker type="leftFormActions" caption="Update Schema" action="updateDef"/>
+        
+        <invoker type="formActions" caption="OK" action="commit" mnemonic="o"/>
+        <invoker type="formActions" caption="Cancel" action="_exit" mnemonic="c" immediate="true" />
+        
+        <invoker type="custom_fields_lookup" target="popup" caption="Custom Fields" action="init"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+
+        /*
+        * This is called to add custom fields to an entity.
+        * This UI simply facilitates the adding of the fields and not much more.  
+        * parameters that must be set by the caller
+        *   entity = the object that we must add custom fields to
+        *   meta = the meta information of the entity. it contains list of fields
+        *   
+        *   meta must have the ff fields:
+        *       name = name of the entity
+        *       list = collection of [name, type] maps
+        */
+
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.util.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.rcp.support.*;
+        
+        
+        public class CustomFieldsController
+        {        
+            //input parameters 
+            def entity;         
+            def fields;
+            def metaName;
+            def caption;
+            
+            //caller fields used by the UI
+            def available;
+            def current;
+            
+            def selectedAvailable = [];
+            def selectedCurrent = [];
+            
+            def updateHandler;
+            
+            @Binding
+            def binding;
+        
+            public void init() {
+                if(!entity && !metaName)
+                    throw new Exception("entity and metaName must be passed when using the custom field lookup"); 
+
+                available = [];
+                current = [];
+                def _fNames = entity*.key;
+                fields.each { 
+                    if(it.mode!="hidden") {
+                        if(it.mode != "fixed" ) {
+                            if( _fNames.contains(it.name)) 
+                                current.add(it); 
+                            else 
+                                available.add(it); 
+                        }    
+                    }    
+                }
+            }
+            
+            
+            public void addFields() {
+                if(!selectedAvailable ) 
+                    throw new Exception("Please select field to add");
+                for(fld in selectedAvailable ) {     
+                    available.remove( fld );
+                    def x = current.find{ it.index > fld.index }
+                    if(x) {
+                        def pos = current.indexOf( x );
+                        current.add( pos, fld );
+                    }
+                    else {
+                        current.add( fld );
+                    }
+                }    
+                binding.refresh();
+            }
+
+            public void removeFields() {
+                 if(!selectedCurrent ) 
+                    throw new Exception("Please provide field");
+                 for(fld in selectedCurrent) {   
+                     current.remove( fld );
+                     def x = available.find{ it.index > fld.index }
+                     if(x) {
+                        def pos = available.indexOf( x );
+                        available.add( pos, fld );
+                     }
+                     else {
+                        available.add( fld );
+                     }
+                 }    
+                 binding.refresh();
+            }
+            
+            public def commit() {
+                def o = FormSupport.buildModel(entity, fields, current*.name );
+                if(updateHandler) updateHandler( o );
+                return "_close"; 
+            }
+            
+            public void updateDef() {
+                def meta = updateCustomFields(metaName);
+                fields = meta.fields;
+                def _current = [];
+                _current.addAll( current );
+                init();
+                current = _current;
+                available.removeAll( current );
+                binding.refresh();
+            }
+            
+            /*---- custom fields support ----*/
+            
+            def _fieldSvc;
+            
+            def getFieldSvc() {
+                if( _fieldSvc == null )
+                    _fieldSvc = InvokerProxy.instance.create( "CustomFieldService" );
+                    
+                return _fieldSvc;
+            }
+            
+            private def updateCustomFields(String name) {
+                String n = "schema:"+name;
+                def o = getCustomFields(name);
+                def ns = fieldSvc.getFields(name);
+                if( o != ns) {
+                    if( MsgBox.confirm( "There are new changes in the definition. Update now?")) {
+                        OsirisContext.clientContext.properties.put( n, ns );
+                    }
+                }
+                else {
+                    MsgBox.alert( "Definition is up to date." );
+                }
+                return ns;
+            }
+            
+
+            private def getCustomFields(String name) {
+                String n = "schema:"+name;
+                def cache = OsirisContext.clientContext.properties;
+                if( !cache.containsKey(n)) {
+                    cache.put(n, fieldSvc.getFields(name)); 
+                }
+                return cache[n];  
+            }
+                
+        }
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="shared.custom.CustomFieldsLookupPage"/>   
+    </pages>
+    
+</workunit>

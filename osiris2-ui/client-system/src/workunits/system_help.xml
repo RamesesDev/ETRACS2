@@ -1,0 +1,95 @@
+<workunit>
+    
+    <invokers>
+        <invoker folderid="/menu/help" caption="Help Contents" action="init" separator="before" index="18000" target="popup" modal="false" permission="help"/>
+        
+        <invoker type="formActions" tooltip="Back" action="back" icon="system/images/arrowleft.gif" shortcut="ctrl B"/>
+        <invoker type="formActions" tooltip="Forward" action="forward" icon="system/images/arrowright.gif" shortcut="ctrl F"/>
+        <invoker type="formActions" tooltip="Refresh" action="htmlModel.refresh" icon="system/images/refresh.png" shortcut="ctrl R"/>
+        <invoker type="formActions" tooltip="Home" action="clear" icon="system/images/home.png" shortcut="ctrl C"/>
+        <invoker type="formActions" caption="Index" tooltip="Index" action="index" permission="sysadmin:admin.index"/>
+        <invoker type="formActions" caption="Clear Cache" action="htmlModel.clearCache" shortcut="ctrl L"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.rcp.framework.ClientContext;
+        import com.rameses.osiris2.client.*;
+        import system.tools.ui.*;
+        
+        
+        public class SystemHelpController {
+        
+            @Service('system/HelpService')
+            def svc;
+            
+            @Service
+            def invoker;
+            
+            @Binding
+            def binding;
+        
+            def searchTxt;
+            def searchResult;
+            def _selectedResult;
+            
+            def helpPath;
+            def htmlModel;
+            
+            void init() {
+                helpPath = OsirisContext.session.env['app.help'];
+                if ( !helpPath.endsWith('/') ) helpPath += '/';
+                htmlModel = new WebBrowserModel( helpPath );
+            }
+
+            public void doSearch() {
+                _selectedResult = null;
+                searchResult = svc.search( searchTxt );
+                if ( searchResult ) {
+                    _selectedResult = searchResult[0];
+                }
+                binding.refresh('selectedResult|formActions');
+            }
+            
+            public def getSelectedResult() { _selectedResult }
+            
+            public void setSelectedResult( value ) {
+                _selectedResult = value;
+                if ( _selectedResult ) {
+                    htmlModel.setLocation( helpPath + _selectedResult.path );
+                    binding.refresh('formActions');
+                }
+            }
+            
+            public void clear() {
+                htmlModel.clear();
+                _selectedResult = null;
+            }
+            
+            public void back() {
+                _selectedResult = null;
+                htmlModel.back();
+            }
+            
+            public void forward() {
+                _selectedResult = null;
+                htmlModel.forward();
+            }
+            
+            public def index() {
+                def indexer = invoker.create("system/HelpIndexerService");
+                indexer.index();
+                MsgBox.alert("index finished");
+            }
+            
+        }
+        
+        ]]>
+    </code>
+    <pages>
+        <page template="system.tools.ui.SystemHelpPage" />
+    </pages>
+</workunit>

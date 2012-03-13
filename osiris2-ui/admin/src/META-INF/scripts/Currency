@@ -1,0 +1,20 @@
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+
+
+public class Currency {
+
+    @Service("CurrencyService")
+    def svc;
+
+    @Script("User")
+    def user;
+
+    def _list = [];
+
+    public def getList() {
+        if(!_list) _list = svc.getAllowedList( [parentid:user.org?.id]  )*.code;
+        return _list;
+    }
+
+}

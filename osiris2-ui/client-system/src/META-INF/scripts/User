@@ -1,0 +1,137 @@
+import com.rameses.util.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.io.*;
+import com.rameses.rcp.common.*;
+
+
+public class User {
+    
+    public void setMacaddress(String macaddress) {
+        OsirisContext.env.MACADDRESS = macaddress;
+    } 
+
+    public String getMacaddress() {
+        return  OsirisContext.env.MACADDRESS;
+    } 
+
+    public void setTerminalId(String terminalId) {
+        OsirisContext.env.TERMINALID = terminalId;
+    } 
+
+    public String getTerminalId() {
+        return OsirisContext.env.TERMINALID;
+    } 
+
+    public void setClientCode( String clientCode ) {
+        OsirisContext.env.CLIENTCODE = clientCode;
+    }
+
+    public String getClientCode() {
+        return OsirisContext.env.CLIENTCODE;
+    }
+
+    public void init( def usr, def pwd ) {
+        def sp = OsirisContext.session.securityProvider;
+        sp.permissions.addAll(usr.permissions);
+        OsirisContext.env.putAll( usr.env );
+        OsirisContext.clientContext.properties.put("PWD", pwd );
+
+        
+        //remove the uneccesary fields
+        usr.env.remove( "CHANGE_PWD_ON_LOGIN" );
+        usr.env.remove( "SESSIONID" );
+        usr.env.remove( "TIMEOUT" );
+
+        //add current password
+        usr.pwd = pwd;
+        OsirisContext.clientContext.properties.put("PROFILE", usr );
+    }
+
+    public def getEnv() {
+        return OsirisContext.env;
+    }
+
+    public String getName() {
+        return OsirisContext.env.USER;
+    }
+
+    public def getOrg() {
+        return OsirisContext.env.ORG;
+    }
+    
+    public String getOrgCode() {
+        return OsirisContext.env.ORG?.code;
+    }
+
+    public String getClientTime() {
+        return OsirisContext.env.LOCALE_TIME;
+    }
+
+    public String getTimeZone() {
+        return OsirisContext.env.TIMEZONE;
+    }
+
+    public String getSessionId() {
+        return OsirisContext.env.SESSIONID;
+    }
+
+    public void changePwd( String oldpwd, String newpwd, String confirmpwd ) {
+        if( !newpwd ) throw new Exception("Please provide new password");
+        if( newpwd != confirmpwd ) throw new Exception( "New password must match confirm password");
+
+        def svc = InvokerProxy.instance.create("UserAccountService");
+        svc.changePassword([username: env.LOGINID, newpassword: newpwd, oldpassword: oldpwd]);
+
+        def pwd =  encodePwd(newpwd, env.LOGINID );
+        OsirisContext.clientContext.properties.put("PWD", pwd );
+    }
+
+    public String encodePwd( String pwd, String uid ) {
+        return Encoder.md5.encode( pwd, uid );
+    }
+
+    public void checkPwd( String pwd ) {
+        def newPwd = Encoder.md5.encode( pwd, env.LOGINID );
+        def oldPwd = OsirisContext.clientContext.properties.PWD; 
+        if( newPwd != oldPwd )
+            throw new Exception("Password is incorrect");
+    }
+
+    public def getProfile() {
+        return  OsirisContext.clientContext.properties.PROFILE;
+    }
+
+    public def createProfile() {
+        def dir = new File( System.getProperty("user.dir") + "/osiris2/profiles" );
+        if( !dir.exists() ) dir.mkdirs();
+        File f = new File(dir.path + "/" + name.toLowerCase() );
+        if(f.exists()) f.delete();
+        f.createNewFile();
+        profile.put("expirydate", DateUtil.add( new Date(), "1d") );
+        FileUtil.writeObject( f, profile );
+    }
+
+    public void fetchProfile( String userName, String pwd ) {
+        def f = new File( System.getProperty("user.dir") + "/osiris2/profiles/" + userName.toLowerCase() );
+        if( !f.exists() )
+            throw new Exception("Offline profile does not exist."); 
+        def m = FileUtil.readObject( f );
+        if(m.expirydate && m.expirydate.before(new Date())) 
+            throw new Exception("Profile is already expired. Please use another profile");
+
+        def oldPwd = m.remove("pwd");
+        if( oldPwd != pwd )
+            throw new Exception("Password is invalid");
+        m.mode = "OFFLINE";   
+        init( m, oldPwd );    
+    }
+
+    public def getMode() {
+        if( OsirisContext.clientContext.properties.PROFILE.mode == "OFFLINE")
+            return "OFFLINE";
+        else
+            return "ONLINE";
+    }
+
+}

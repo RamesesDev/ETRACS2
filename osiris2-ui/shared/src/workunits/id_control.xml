@@ -1,0 +1,63 @@
+<workunit>
+    <invokers>
+        <invoker type="control:id"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        
+        public class IdController extends SubControlModel{
+
+            def opener;
+            def idTypes;
+            
+            public void onInit() {
+                idTypes = InvokerUtil.lookupOpeners( "control:idformat", [context:context, properties:properties] );
+                if( !context._format_  ) context._format_="default";
+                opener = idTypes.find{ it.properties.format == context._format_};
+                if(opener) {
+                    InvokerUtil.invokeOpener(opener);
+                    opener.handle.fixFormat( context );
+                }    
+            }
+            
+            public void onRefresh() {
+                if( opener ) {
+                    opener.handle.context = context;
+                    opener.handle.properties = properties;
+                }
+            }
+            
+            public def createContext() {
+                return [:];
+            }
+            
+            public String getHtmlFormat() {
+                if(!opener)
+                    return "Id format " + context._format_ + " is not recognized";
+                return opener.handle.htmlFormat;
+            }
+            
+            public void setFormat(def o ) {
+                opener = o;
+                InvokerUtil.invokeOpener(opener);
+                opener.handle.fixFormat( context );
+                context._format_ = o.properties.format;
+            }
+            
+            public def getFormat() {
+                return opener;
+            }
+            
+        }
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="shared.custom.id.IdControlPage"/>
+    </pages>
+    
+</workunit>

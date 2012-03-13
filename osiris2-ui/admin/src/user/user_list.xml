@@ -1,0 +1,77 @@
+<workunit>
+    <code>
+        <![CDATA[
+        
+        import com.rameses.rcp.common.*;
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.util.*;
+        
+        public class UserListController  {
+        
+            @Service("UserService")
+            def svc;
+            
+            @Binding
+            def binding;
+
+            def cacheMap;
+            def parent;
+            
+            def _selection;
+            def formOpener;
+            def mode = "read";
+            def searchtext;
+            
+            @FormTitle
+            def formTitle;
+            
+            @FormId
+            def formId;
+            
+            public void init() {
+                formTitle = "USERS:" + parent.code;
+                formId = "USERS:"+ parent.objid;
+                formOpener = InvokerUtil.lookupOpener("user_form", 
+                    [
+                        parent: parent,
+                        editHandler: { e,m->mode = m; binding.refresh(); },
+                        saveHandler: { e,m-> cacheMap.put(e.objid,e); mode = "read";binding.refresh();},
+                        cancelHandler: { e,m-> mode = "read"; binding.refresh(); },
+                    ]);
+                cacheMap = [ fetch: {id->svc.open( [objid:id] ); } ] as CacheMap;    
+            }
+            
+            
+            public void setSelection(o) {
+                if(mode!='read') return ;
+                 _selection = o;
+                formOpener.handle.data = (o) ? cacheMap[o.objid] : null ;
+            }
+            
+            public def getSelection() {
+                return _selection;
+            }
+            
+            def listHandler = [
+                getColumns: {
+                    return [
+                        new Column(name:"uid", caption:"UID",  width:100, maxWidth:100),
+                        new Column(name:"lastname", caption:"Last Name"),
+                        new Column(name:"firstname", caption:"First Name")
+                    ]
+                },
+                fetchList: { o->
+                    o.parentid = parent.objid;
+                    if( searchtext ) o.searchtext = searchtext;
+                    return svc.getList( o );
+                }
+            ] as PageListModel;
+        }
+        
+        ]]>
+    </code>
+    <pages>
+        <page template="org.ui.UserListPage"/>
+    </pages>
+</workunit>
