@@ -63,16 +63,31 @@
                 return 'report';
             }
             
-            
             def onselectTaxpayer = { st ->
-                entity.info.taxpayerid = st.objid;
-                entity.info.taxpayername = st.entityname;
-                entity.info.taxpayeraddress = st.entityaddress;
+                if( st ) {
+                    entity.info.taxpayerid = st.payorid;
+                    entity.info.taxpayername = st.taxpayername;
+                    entity.info.tradename = st.tradename
+                    entity.info.businessaddress = st.businessaddress
+                    entity.info.taxpayeraddress = st.taxpayeraddress;
+                }else{
+                    entity.info.taxpayerid = null;
+                    entity.info.taxpayername = null;
+                    entity.info.tradename = null
+                    entity.info.businessaddress = null
+                    entity.info.taxpayeraddress = null
+                }
                 binding.refresh();
             }
             
-            def lookupTaxpayer() {
-                return InvokerUtil.lookupOpener( 'entity:lookup', [onselect:onselectTaxpayer, searchText:entity.info.taxpayername] );
+            def bp
+            def getLookupTaxpayer(){
+                return InvokerUtil.lookupOpener( 'bp.lookupbusiness', [:] );
+            }
+            
+            void setBp( bp ){
+                this.bp = bp
+                onselectTaxpayer( bp )
             }
 
         }

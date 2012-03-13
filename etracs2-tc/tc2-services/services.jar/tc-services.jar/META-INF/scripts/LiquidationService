@@ -74,7 +74,7 @@ class LiquidationService {
 			em.validate( SCHEMANAME, liq );
 			em.create( SCHEMANAME, liq );
 			createListingItem( liq );
-			postLiquidationRcd( liq )
+			postLiquidationRcd2( liq )
 			return liq;
 		} 
 		catch (ex) { 
@@ -139,6 +139,44 @@ class LiquidationService {
 		}
 	}
 	
+	void postLiquidationRcd2( liq ) {
+		liq.rcds.each{ rcd ->
+			rcd.objid 			= 'LR' + new UID()
+			rcd.schemaname 		= 'liquidationrcd'
+			rcd.schemaversion 	= '1.0'
+			rcd.docstate		= 'OPEN' 
+			rcd.liquidationid   = liq.objid 
+			rcd.liquidationno   = liq.info.txnno 
+			rcd.liquidationdate = liq.info.txndate 
+			rcd.lqofficerid     = liq.info.liquidatingofficerid
+			rcd.lqofficername   = liq.info.liquidatingofficername
+			rcd.lqofficertitle  = liq.info.liquidatingofficertitle 
+			
+			em.validate( rcd.schemaname, rcd )
+			em.create( rcd.schemaname, rcd ) 
+			
+			updateReceiptItemRcdId( rcd )
+			updateNonCashPaymentLiquidationIdReference( rcd )
+			updatePaymentItemLiquidationIdReference( liq, rcd )
+		}
+		
+	}
+	
+	private void updatePaymentItemLiquidationIdReference( def liq, def rcd ){
+		liq.remittances.each{ r ->	
+			em.sqlContext.createNamedQuery( 'liquidation:getPaymentItem').setParameter( 'remittanceid', r.objid ).resultList.each{
+				em.sqlContext.createNamedExecutor( 'liquidation:updateNonCashPaymentLiquidationId' )
+					.setParameters( 
+						[
+							objid: it.objid,
+							liquidationid: liq.objid,
+							liquidationrcdid: rcd.objid
+						]
+					).execute()
+			}			
+		}
+	}	
+	
 	void updateReceiptItemRcdId( rcd ) {
 		def params = [
 			liquidationrcdid : rcd.objid, 
@@ -146,6 +184,8 @@ class LiquidationService {
 			fundid 			 : rcd.fundid, 
 		]
 		em.sqlContext.createNamedExecutor('liquidation:updateReceiptItemRcdId')
+					.setParameters( params ).execute()
+		em.sqlContext.createNamedExecutor('liquidation:updateRevenueReceiptItemRcdId')
 					.setParameters( params ).execute()
 	}
 	

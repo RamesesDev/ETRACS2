@@ -57,7 +57,11 @@ public class LandRPUActualUseAdjustmentController
         ]},
         validate       : { li -> validateAdjustment( li.item ) },
         onRemoveItem   : { item -> removeAdjustment( item ) },
-        onAddItem      : { item -> landDetail.adjustments.add( item )  },
+        onAddItem      : { item -> 
+            if( item && item.adj ) {
+                landDetail.adjustments.add( item )  
+            }
+        },
         onColumnUpdate : { item, colName -> 
             if( colName == 'adj' ) updateAdjustmentInfo( item )
         },
@@ -66,7 +70,7 @@ public class LandRPUActualUseAdjustmentController
     
     void validateAdjustment( item ) {
         try {
-            required( 'Code', item.adjtypeid )
+            required( 'Code', item?.adjtypeid )
             checkDuplicate( item )
             calculateAdjustment( item )
             clearError()
@@ -85,12 +89,14 @@ public class LandRPUActualUseAdjustmentController
     }
     
     void updateAdjustmentInfo( item ) {
-        item.adjtypeid =  item.adj?.adjtypeid 
-        item.adjtypecode =  item.adj?.adjtypecode 
-        item.adjtypename =  item.adj?.adjtypename 
-        item.expr =  item.adj?.expr 
-        item.params.addAll(item.adj?.params)
-        item.adj?.remove('params') 
+        if( item && item.adj ) {
+            item.adjtypeid =  item.adj?.adjtypeid 
+            item.adjtypecode =  item.adj?.adjtypecode 
+            item.adjtypename =  item.adj?.adjtypename 
+            item.expr =  item.adj?.expr 
+            item.params.addAll(item.adj?.params)
+            item.adj?.remove('params') 
+        }
     }
     
     void calculateAdjustment( item ) {

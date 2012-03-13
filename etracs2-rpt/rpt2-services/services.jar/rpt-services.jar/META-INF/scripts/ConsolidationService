@@ -143,6 +143,7 @@ class ConsolidationService
         
         def landfaas = faasSvc.approveConsolidatedFaas( consolidation.newfaasid )
         approveAffectedRpus( consolidation, landfaas )
+		cancelConsolidatedLandLedgers( consolidation) 
         consolidation.newtdno = landfaas.info.tdno 
         consolidation.newpin  = landfaas.rpu.fullpin 
         consolidation.docstate = APPROVED_STATE
@@ -195,6 +196,7 @@ class ConsolidationService
         
         def landfaas = faasSvc.approveConsolidatedFaas( consolidation.newfaasid )
         approveAffectedRpus( consolidation, landfaas )
+		cancelConsolidatedLandLedgers( consolidation) 
         consolidation.newtdno = landfaas.info.tdno 
         consolidation.newpin  = landfaas.rpu.fullpin 
         consolidation.docstate = APPROVED_STATE
@@ -202,6 +204,12 @@ class ConsolidationService
         return consolidation 
         
     }
+	
+	void cancelConsolidatedLandLedgers( consolidation)  {
+		em.sqlContext.createNamedExecutor('consolidation:cancelConsolidationLandLedgers')
+				.setParameter('consolidationid', consolidation.objid )
+				.execute() 
+	}
     
     void approveAffectedRpus( consolidation, landfaas ) {
         def affectedrpus = getAffectedRpus( consolidation.objid )

@@ -27,7 +27,6 @@ class FaasReportService
     	faasdata.putAll( faas.rp )
     	faasdata.putAll( faas.rpu )
 		faasdata.taxeffectivity = faas.info.effectivityqtr + "Q - " + faas.info.effectivityyear
-		println faasdata.info.taxable
 		faasdata.taxability = ( faasdata.taxable ? "TAXABLE" : "EXEMPT" )
 		
 		if( faas.rpu.rputype == 'land' ) {
@@ -73,7 +72,7 @@ class FaasReportService
 		landdetails.each {
 			def item = [
 				classification	: rpu.classname,
-				subclass		: it.specificclassname + '(' + it.subclassname + ')',
+				subclass		: it.specificclassname + '  (' + it.subclassname + ')',
 				actualuse 		: it.actualusename,
 				area			: ( it.areatype == 'HA' ? it.areaha : it.areasqm ),
 				unitvalue		: it.unitvalue,

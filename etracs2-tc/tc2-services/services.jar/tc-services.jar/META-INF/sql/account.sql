@@ -20,13 +20,29 @@ WHERE a.objid = $P{objid}
 SELECT * FROM account WHERE parentid = $P{parentid} 
 
 [getAccountList]
-SELECT objid, acctcode, accttitle FROM account WHERE accttype = 'GLACCOUNT' AND charttype = $P{charttype} 
+SELECT a.objid, a.acctcode, a.accttitle, p.accttitle AS parentaccttitle 
+FROM account a 
+	LEFT JOIN account p ON a.parentid = p.objid 
+WHERE a.accttype = 'GLACCOUNT' 
+AND a.charttype = $P{charttype} 
 
 [getAccountListByCode]
-SELECT objid, acctcode, accttitle FROM account WHERE acctcode = $P{acctcode} AND accttype = 'GLACCOUNT' AND charttype = $P{charttype} 
+SELECT a.objid, a.acctcode, a.accttitle, p.accttitle AS parentaccttitle 
+FROM account a 
+	LEFT JOIN account p ON a.parentid = p.objid 
+WHERE a.accttype = 'GLACCOUNT'
+  AND a.acctcode = $P{acctcode} 
+  AND a.charttype = $P{charttype} 
+
 
 [getAccountListByTitle]
-SELECT objid, acctcode, accttitle FROM account WHERE accttitle LIKE $P{accttitle} AND accttype = 'GLACCOUNT' AND charttype = $P{charttype}    
+SELECT a.objid, a.acctcode, a.accttitle, p.accttitle AS parentaccttitle 
+FROM account a 
+	LEFT JOIN account p ON a.parentid = p.objid 
+WHERE a.accttype = 'GLACCOUNT'
+  AND a.accttitle LIKE $P{accttitle} 
+  AND a.charttype = $P{charttype} 
+  
 
 [getSubAccountList]
 SELECT objid, acctcode, accttitle FROM account WHERE accttype = 'SUBACCOUNT' AND charttype = $P{charttype} AND parentid = $P{parentid}

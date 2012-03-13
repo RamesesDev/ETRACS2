@@ -214,7 +214,7 @@ class TCScript {
 		em.create( craaf.schemaname, craaf )  
 	}
 	
-	// update null stubno from craaf 
+	// resoleve null stubno from craaf 
 	private void updateStubno(){
 		em.sqlContext.createNamedExecutor( 'tcscript:updateStubno' ).execute() 
 	}
@@ -225,11 +225,16 @@ class TCScript {
 		return em.sqlContext.createNamedQuery( 'tcscript:getBFromBToBlank' ).resultList
 	}
 	
+	//resolve beginqty 0, null beginfrom, beginto
 	private void resolveBFromBtoBlank(){  
 		getBFromBToBlank().each{
-			em.sqlContext.createNamedExecutor( 'tcscript:resolveBFromBToBlank' ).setParameters(
-			 [ objid: it.objid, beginqty: it.issuedqty, beginfrom: it.issuedfrom, beginto: it.issuedto ]
-			).execute()
+			em.sqlContext.createNamedExecutor( 'tcscript:resolveBFromBToBlank' )
+				.setParameters(
+					[ 
+						objid: it.objid, beginqty: it.issuedqty, 
+						beginfrom: it.issuedfrom, beginto: it.issuedto
+					]
+				).execute()
 		}
 	}
 	

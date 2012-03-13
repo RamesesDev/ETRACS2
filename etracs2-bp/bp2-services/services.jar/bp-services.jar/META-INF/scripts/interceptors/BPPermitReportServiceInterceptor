@@ -1,0 +1,54 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class BPPermitReportServiceInterceptor {
+	
+	@Service('Var')
+	def var
+	
+	@PersistenceContext('main')
+	def em
+	
+	@After(pattern="BPPermitReportService.getPermitReportInfo")
+	public def afterGetPermitReportInfo( def evt ){
+		def bppermit = evt.result
+		return createPermitLantapan( bppermit )
+	}
+		
+	private def createPermitLantapan( def bppermit ){
+
+		if( 'LANTAPAN'.equals( var.get('lgu_name') )){
+			def permit = em.sqlContext.createNamedQuery( 'bpreport:getPermitInfo' ).setParameter('applicationid', bppermit.info.applicationid).singleResult
+			if( permit.info ){
+				permit = em.serializer.read( permit.info )
+				bppermit.info.model = permit.model
+				bppermit.info.type = permit.type
+				bppermit.info.color = permit.color
+				bppermit.info.engineno = permit.engineno
+				bppermit.info.chassisno = permit.chassisno
+				bppermit.info.orno = permit.orno
+				bppermit.info.plateno = permit.plateno
+			}
+			
+			def lobclassification = em.read( 'lobclassification', [objid:bppermit.info.lines[0].classificationid] ).name
+			
+			if( lobclassification.equals('PEDDLER') )
+				bppermit.reportName += '_lantapan_peddler'
+			else if( bppermit.info.lines[0].name.equals('MOTORELA'))
+				bppermit.reportName += '_lantapan_motorela'
+			else if( bppermit.info.lines[0].name.equals('HABAL-HABAL') )
+				bppermit.reportName += '_lantapan_habal2'
+			else
+				bppermit.reportName += '_lantapan_mp'
+			
+			bppermit.info.orno = bppermit.info.orlist[0].orno
+			bppermit.info.ordate = bppermit.info.orlist[0].ordate
+			bppermit.info.amount = bppermit.info.orlist[0].amount
+					
+			return bppermit
+		}
+	}
+	
+	
+}

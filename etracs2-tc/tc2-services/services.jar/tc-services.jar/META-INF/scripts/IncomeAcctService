@@ -125,8 +125,8 @@ class IncomeAcctService
 	private void checkReferencedId( incomeacct ){
 		def data = em.sqlContext.createNamedQuery('incomeacct:checkReferencedId').setParameter("acctid", incomeacct.objid).singleResult
 		if( data.count > 0 ) util.checkDuplicateError( data.count, "Delete not allowed. Income Account has already been referenced." )
-		
-		def acct = em.sqlContext.createNamedQuery( 'incomeacct:getAccttitleAtRule' ).setParameter( 'acctid', '%' + incomeacct.acctid + '%' ).singleResult
+				
+		def acct = em.sqlContext.createNamedQuery( 'incomeacct:getAccttitleAtRule' ).setParameter( 'acctid', '%' + incomeacct.objid + '%' ).singleResult
 		if( acct ) throw new Exception('Delete not allowed. Income Account has already been referenced at Business Rule.')
 	}
 	

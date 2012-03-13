@@ -56,7 +56,9 @@ public class SubdivisionInitPage extends javax.swing.JPanel {
 
         jScrollPane1.setPreferredSize(new java.awt.Dimension(0, 110));
         xTextArea1.setColumns(20);
+        xTextArea1.setLineWrap(true);
         xTextArea1.setRows(5);
+        xTextArea1.setWrapStyleWord(true);
         xTextArea1.setCaption("Default Memoranda");
         xTextArea1.setCaptionWidth(145);
         xTextArea1.setName("subdivision.memoranda");

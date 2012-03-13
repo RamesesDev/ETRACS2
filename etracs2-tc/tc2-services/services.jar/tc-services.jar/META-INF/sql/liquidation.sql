@@ -28,6 +28,17 @@ WHERE ri.receiptid = r.objid
   AND rem.liquidationid = $P{liquidationid}   
   AND ia.fundid = $P{fundid} 
 
+[updateRevenueReceiptItemRcdId]
+UPDATE revenue rev, receiptitem ri, receiptlist r, remittancelist rem, incomeaccount ia SET  
+	rev.liquidationrcdid = $P{liquidationrcdid}  
+WHERE rev.receiptitemid = ri.objid 
+  AND ri.receiptid = r.objid  
+  AND ri.acctid = ia.objid  
+  AND r.remittanceid = rem.objid  
+  AND rem.liquidationid = $P{liquidationid}   
+  AND ia.fundid = $P{fundid} 
+
+  
 [updateNonCashPaymentLiquidationId]
 UPDATE paymentitem SET 
 	liquidationid = $P{liquidationid}, 
@@ -198,5 +209,15 @@ FROM etracsuser u
 INNER JOIN user_role r ON r.userid = u.objid 
 WHERE role = 'CASHIER' 
 ORDER BY NAME  
+
+
+
+[getPaymentItem]
+SELECT  
+ p.objid 
+FROM paymentitem p  
+INNER JOIN receipt r ON p.receiptid = r.objid  
+WHERE r.remittanceid = $P{remittanceid} 
+ AND paytype = 'CHECK'
 
 

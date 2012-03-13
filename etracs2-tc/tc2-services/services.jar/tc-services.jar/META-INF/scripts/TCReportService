@@ -66,18 +66,56 @@ class TDReportService {
 		return monthlist.find{ it.month == imonth }
 	}
 	
-	@ProxyMethod
+	@ProxyMethod 
 	public List generateIncomeAccountListing( charttype ) {
-		//get chart 
-		def chart = em.sqlContext.createQuery('''
-			SELECT objid FROM account WHERE charttype = $P{charttype} AND parentid IS NULL 
-		''')
-		.setParameter('charttype', charttype).singleResult 
-		if( !chart ) throw new Exception('Chart Type ' + charttype + ' is invalid.')
-		def list = []
-		buildAccounts( charttype, list, chart.objid , 1 )
-		return list 
-	}	
+		def chart = em.sqlContext.createNamedQuery('tcreport:getChart')
+						.setParameter('charttype', charttype)
+						.singleResult
+		if( ! chart ) throw new Exception('Chart Type ' + charttype + ' is not defined.' )
+		
+		def items = []
+		items.addAll( getUnmappedIncomeAccounts(charttype) )
+		
+		def acctlist = getChildAccounts( charttype, chart.objid  ) 
+		buildChildAccount( charttype, items, acctlist )
+		return items
+	}
+	
+	List getUnmappedIncomeAccounts(charttype) {
+		return em.sqlContext.createNamedQuery("tcreport:getUnmappedIncomeAccountBy$charttype").resultList 
+	}
+	
+	void buildChildAccount( charttype, items, acctlist ) {
+		acctlist.each { acct ->
+			if( acct.accttype.toLowerCase() == 'glaccount' ) {
+				acct.accttitle = ('     ' * acct.acctlevel ) + acct.acctcode + '  ' + acct.accttitle 
+			}
+			else {
+				acct.accttitle = ('     ' * acct.acctlevel ) + acct.accttitle 
+			}
+			items.add( acct )
+			
+			//load incomeaccounts 
+			def ialist = getIncomeAccountByChart( charttype, acct.objid ).each {
+				it.accttitle = ('     ' * (acct.acctlevel+1) ) + it.accttitle 
+			}
+			items.addAll( ialist )
+			
+			buildChildAccount( charttype, items, getChildAccounts( charttype, acct.objid ) )
+		}
+	}
+	
+	List getChildAccounts( charttype, parentid ) {
+		return em.sqlContext.createNamedQuery('tcreport:getAccountByParentId')
+						.setParameter('parentid', parentid)
+						.resultList
+	}
+	
+	List getIncomeAccountByChart( charttype, glacctid ) {
+		return em.sqlContext.createNamedQuery("tcreport:getIncomeAccountBy$charttype")
+					.setParameter('objid', glacctid)
+					.resultList
+	}
 	
 	@ProxyMethod
 	public Map generateReportOfCollectionListing( year, qtr, month, day, fund ) {
@@ -97,6 +135,8 @@ class TDReportService {
 			acctsummaries : acctsummaries,
 		]
 	}
+	
+
 	
 	@ProxyMethod
 	public Map generateAbstractOfCollection( year, qtr, month, day, fund ) {
@@ -319,57 +359,6 @@ class TDReportService {
 		if( day != null ) timestamp += padLeft( day, 2 )
 		if( month == null  || day == null ) timestamp += '%'
 		return timestamp
-		
-	}
-	
-	
-	void buildAccounts( charttype, list, parentid , level ){
-		def accounts = em.sqlContext.createQuery('''
-			SELECT objid, acctcode, accttitle, acctlevel 
-			FROM account 
-			WHERE parentid = $P{parentid}
-			ORDER BY acctcode 
-		''')
-		.setParameter('parentid', parentid )
-		.resultList 
-		
-		accounts.each { acct ->
-			if( level == 1) list.add([charttype:charttype, account:''])
-			def acctcode = ( acct.acctcode ? acct.acctcode : '***' ).padRight( 10, ' ' )
-			list.add([
-				charttype : charttype, 
-				account   : ( ' '*(level-1)*12 ) + acctcode + '  ' + acct.accttitle ,
-			])
-			buildAccounts( charttype, list, acct.objid, level+1 )
-		}
-		
-		// parentid is the glaccount, populate the incomeaccount
-		def subacctlist = null 
-		if( !accounts ) {
-			def incomeaccts = []
-			if( charttype == 'NGAS' ) {
-				incomeaccts = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE ngasid = $P{ngasid} ORDER BY acctno')
-								.setParameter( 'ngasid', parentid ).resultList 
-				subacctlist = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE ngassubacctid = $P{ngasid} ORDER BY acctno')
-								.setParameter( 'ngasid', parentid ).resultList 
-				incomeaccts.addAll( subacctlist )
-			}
-			else {
-				incomeaccts = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE sreid = $P{sreid} ORDER BY acctno')
-								.setParameter( 'sreid', parentid ).resultList 
-				subacctlist = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE sresubacctid = $P{sreid} ORDER BY acctno')
-								.setParameter( 'sreid', parentid ).resultList 
-				incomeaccts.addAll( subacctlist )
-			}
-			
-			incomeaccts.each { acct ->
-				def acctno = ( acct.acctno ? acct.acctno : '***' ).padRight( 10, ' ' )
-				list.add([
-					charttype : charttype,
-					account   : ( ' '*level* 12 ) + '*' + acctno + ' - ' + acct.accttitle ,
-				])
-			}
-		}
 		
 	}
 	

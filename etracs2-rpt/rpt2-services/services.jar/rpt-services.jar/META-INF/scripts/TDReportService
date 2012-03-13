@@ -48,7 +48,7 @@ class TDReportService
 			td.appraisedbytitle = null 
 		}
 		
-		
+		concatHousenoStreetPurok( td ) 
 		
 		
 		if( faas.rpu.rputype != 'land' ) {
@@ -105,11 +105,39 @@ class TDReportService
 		return td;
     }
 	
+	private void concatHousenoStreetPurok( def td ){
+		
+		def houseno = { 
+			return ( it.houseno ) ? "$it.houseno".toString() : ''
+		}
+		
+		def street = {
+			def strt = ''
+			if( it.street ){
+				strt = ( it.houseno && it.street ) ? ', ' : ''
+				strt += "$it.street".toString()
+			}
+			return strt
+		}
+		
+		def purok = {
+			def prk = ''
+			if( it.purok ){
+				prk = ( it.houseno || it.street ) ? ', ' : ''
+				prk += "$it.purok".toString()
+			}
+			return prk
+		}
+		
+		td.street = houseno( td ) + street( td ) + purok( td )
+	}
+	
 	void buildAnnotationInfo( td, faas ) {
 		td.annotated  = false 
 		if( IS_TRUE( faas.info.annotated ) ) {
 			def data = em.sqlContext.createNamedQuery('faas:getActiveAnnotationId').setParameter('faasid', faas.objid).singleResult
 			def annotation = em.read('annotation', data )
+			if( ! annotation ) throw new Exception('Annotation record does not exists.')
 			td.annotated 		= true 
 			td.annotationtype 	= annotation.doctype 
 			def mortgagedate 	= null
