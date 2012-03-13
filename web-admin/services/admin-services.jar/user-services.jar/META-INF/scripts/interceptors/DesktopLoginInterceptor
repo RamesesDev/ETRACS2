@@ -13,12 +13,20 @@ public class DesktopLoginInterceptor
 	public void loadProfile( evt )
 	{
 		def profile = evt.result;
-		profile.permissions = [];
+
+		//set env value
+		env.userid = profile.objid;
+		env.sessionid = profile.sessionid;
 		
-		def perms = jobpermSvc.getAllPermissions([userid: profile.userid]);
-		if( perms ) {
-			profile.permissions.addAll( perms );
-		}
+		def job = jobpermSvc.getUserJobposition([:]);
+		def perms = [];
+		if( job.permissions ) perms.addAll(job.permissions);
+		
+		job.others.each {
+			if( it.objid == job.objid ) return;
+			def j = jobpermSvc.getUserJobposition([jobid: it.objid]);
+			if( j.permissions ) perms.addAll(j.permissions);
+		};
 		
 		profile.env = [
 			userid              : profile.objid,
@@ -28,11 +36,10 @@ public class DesktopLoginInterceptor
 			CHANGE_PWD_ON_LOGIN : profile.changepwdonlogin,
 			FIRSTNAME           : profile.firstname,
 			LASTNAME            : profile.lastname,
-			USERNAME            : profile.lastname + ', ' + profile.firstname + (profile.middlename? ' ' + profile.middlename : ''),
-			USERFORMALNAME      : profile.firstname + (profile.middlename? ' ' + profile.middlename : '') + ' ' + profile.lastname,
 		];
 		
-		//add system permission
+		//load permissions
+		profile.permissions = perms;
 		profile.permissions.add("system.*");
 	}
 	
