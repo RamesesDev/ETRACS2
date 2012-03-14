@@ -32,13 +32,35 @@
 						self.listModel.refresh(true);	
 					}
 			
+					var permissionViewer = function( jobpos ) {
+						var jobid = jobpos.objid;
+						var rsvc = ProxyService.lookup( "JobPermissionService" );	
+						var result = rsvc.getPermissionsForAdmin({objid: jobid, role: jobpos.role });
+						var params = {};
+						params.modules = result.modules;
+						params.title = "Job Position: (" + jobpos.code +") " + jobpos.title;
+						params.saveHandler = function(x) {
+							var p = {objid: jobid, modules: x };
+							rsvc.updatePermissions( p );
+							return "_close"; 
+						};
+						var p= new PopupOpener("admin:permission", params);
+						p.title = "Job Role Permissions";
+						return p;
+					}
+
 					this.add = function() {
-						return new PopupOpener( "jobposition:info", {saveHandler:refreshList, 
-							jobposition : {orgunitid: this.orgUnit.objid, orgunitcode: this.orgUnit.code, jobstatus: "R" } } );
+						if(!this.orgUnit)
+							throw new Error("Please select an org unit first");
+						return new PopupOpener( "jobposition:create", {saveHandler:refreshList, 
+							jobposition : {orgunitid: this.orgUnit.objid, orgunitcode: this.orgUnit.code } } );
 					}
 
 					this.edit = function() {
-						return new PopupOpener( "jobposition:info", {saveHandler:refreshList, objid:this.selectedItem.objid, mode:"edit" } );
+						return new PopupOpener( "jobposition:edit", {
+							saveHandler:refreshList, 
+							objid:this.selectedItem.objid
+						} );
 					}
 			
 					this.propertyChangeListener = {
@@ -58,6 +80,10 @@
 							jobpossvc.unassign( {objid: self.selectedItem.objid  } );
 							refreshList();
 						}
+					}
+					
+					this.viewPermissions = function() {
+						return permissionViewer( this.selectedItem );
 					}
 				}
 			);
@@ -85,6 +111,9 @@
 						<b>#{item.assignee}</b>
 						<a r:context="jobpositionlist" r:name="removeAssignee"> [Unassign]</a>
 					</div>
+				</ui:col>
+				<ui:col>
+					<a r:context="jobpositionlist" r:name="viewPermissions">Permissions</a>
 				</ui:col>
 				<ui:col>
 					<a r:context="jobpositionlist" r:name="edit">

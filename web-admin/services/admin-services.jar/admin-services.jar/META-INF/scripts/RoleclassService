@@ -6,15 +6,15 @@ class RoleclassService {
 	@PersistenceContext("system")
 	def em;
 	
-	@Service("PermissionService")
-	def permSvc;
-	
-
 	@ProxyMethod
 	public def getList(def params) {
 		if(!params) params = [rolelevel:0];
 		if(!params.rolelevel) params.rolelevel = 0;
-		return em.sqlContext.createNamedQuery( "roleclass:list" ).setParameters(params).resultList;
+		def list = em.sqlContext.createNamedQuery( "roleclass:list" ).setParameters(params).resultList;
+		list.each {
+			if(it.tags) it.tags = em.serializer.read( it.tags );
+		}
+		return list;
 	}
 	
 	@ProxyMethod
@@ -43,6 +43,10 @@ class RoleclassService {
 		assert o.module;
 		em.delete( "roleclass:module", o );
 	}
+	
+	/*
+	@Service("PermissionService")
+	def permSvc;
 	
 	@ProxyMethod
 	public def getModulePermissions( def roleclass, def included ) 
@@ -91,5 +95,5 @@ class RoleclassService {
 			return filterModPermissions( sublist, included, list );
 		}
 	};
-	
+	*/
 }

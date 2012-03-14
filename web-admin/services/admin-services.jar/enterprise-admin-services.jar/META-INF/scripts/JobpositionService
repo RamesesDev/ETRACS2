@@ -5,13 +5,10 @@ class JobpositionService
 
 	@PersistenceContext("main")
 	def em;
-
-	@Service("RoleService")
-	def roleSvc;
 	
 	@Service("RoleclassService")
 	def roleclassSvc;
-	
+
 	
 	@ProxyMethod
 	public def getList(def params) {
@@ -26,20 +23,19 @@ class JobpositionService
 	
 	@ProxyMethod
 	public def create(@Param(schema="jobposition") o) {
-		o.objid = "JOBP" + new java.rmi.server.UID();
-		return em.create( "jobposition", o );
+		if(!o.objid) throw new Exception("Please provide an objid");
+		em.create( "jobposition", o );
+		o.tags.each {
+			em.save("jobposition:tag", [jobid: o.objid, tagid: it]);
+		}
+		return o;
 	}
 	
 	@ProxyMethod
 	public def read(def o) {
 		def jp = em.read( "jobposition", o );
-		
-		//load tags
-		if( jp ) {
-			jp.tags = getTags(jp).collect{ it.tagid };
-			jp.availableTags = getAvailableTags(jp);
-		}
-
+		jp.tags = em.sqlContext.createNamedQuery('jobposition:get-tags').setParameters([jobid:o.objid]).resultList.collect{it.tagid};
+		jp.availableTags = roleclassSvc.getAvailableTags( [name: jp.roleclass] );
 		return jp;
 	}
 
@@ -49,7 +45,7 @@ class JobpositionService
 		if( o.tags != null ) {
 			em.sqlContext.createNamedExecutor("jobposition:remove-tags").setParameters([jobid:o.objid]).execute();
 			o.tags.each{
-				em.create("jobposition:tag", [jobid: o.objid, tagid: it]);
+				em.save("jobposition:tag", [jobid: o.objid, tagid: it]);
 			};
 		}
 		return read( o );
@@ -58,22 +54,6 @@ class JobpositionService
 	@ProxyMethod
 	public def remove(def o) {
 		em.delete( "jobposition", o );
-	}
-	
-	@ProxyMethod
-	public def getPermissions(def o) {
-		def jobpos = em.read( "jobposition", o );
-		def m = [:];
-		m.modules = roleSvc.getRoleModulePermissions(jobpos.role);
-		m.excluded = (jobpos.excluded) ? jobpos.excluded : [];
-		return m;
-	}
-	
-	@ProxyMethod
-	public def updatePermissions(def o) {
-		def jobpos = em.read( "jobposition", o );
-		jobpos.excluded = o.excluded;
-		em.update( "jobposition", jobpos );	
 	}
 	
 	@ProxyMethod
@@ -92,13 +72,36 @@ class JobpositionService
 		return x;
 	}
 	
+	/*	
+	@Service("RoleclassService")
+	def roleclassSvc;
+	
+	@Service("RoleService")
+	def roleSvc;
+
+	@ProxyMethod
+	public def getPermissions(def o) {
+		def jobpos = em.read( "jobposition", o );
+		def m = [:];
+		m.modules = roleSvc.getRoleModulePermissions(jobpos.role);
+		m.excluded = (jobpos.excluded) ? jobpos.excluded : [];
+		return m;
+	}
+	
+	@ProxyMethod
+	public def updatePermissions(def o) {
+		def jobpos = em.read( "jobposition", o );
+		jobpos.excluded = o.excluded;
+		em.update( "jobposition", jobpos );	
+	}
+
 	@ProxyMethod
 	public def getJobPermissions( jobid ) {
 		return em.sqlContext.createNamedQuery('jobposition:get-job-permissions')
 			     .setParameter('jobid', jobid)
 				 .singleResult;
 	}
-	
+
 	@ProxyMethod
 	public def getTags( param ) {
 		def qry = em.sqlContext.createNamedQuery('jobposition:get-tags').setParameters([jobid:param.objid]);
@@ -116,4 +119,5 @@ class JobpositionService
 		
 		return roleclassSvc.getAvailableTags([name: job.roleclass]);
 	}
+	*/
 }
