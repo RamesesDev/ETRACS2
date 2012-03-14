@@ -1,4 +1,5 @@
 import com.rameses.annotations.*;
+import com.rameses.util.*;
 
 
 public class DesktopLoginInterceptor
@@ -6,8 +7,23 @@ public class DesktopLoginInterceptor
 	@Env
 	def env;
 	
+	@PersistenceContext("main")
+	def em;
+	
 	@Service("JobPermissionService")
 	def jobpermSvc;
+	
+	
+	@Before(pattern="LoginService.login.*", eval="env.CLIENTTYPE=='desktop'")
+	public void validateTerminal( evt ) 
+	{
+		if(!env.TERMINALID) return;
+		
+		def term = em.read( "terminal", [terminalid: env.TERMINALID] );
+		if(!term || term.macaddress != env.MACADDRESS || term.parentcode != env.CLIENTCODE)
+			throw new Warning("INVALID_MACHINE_REGISTERED");
+
+	}
 	
 	@After(pattern="LoginService.login.*", eval="env.CLIENTTYPE=='desktop'")
 	public void loadProfile( evt )
@@ -18,15 +34,20 @@ public class DesktopLoginInterceptor
 		env.userid = profile.objid;
 		env.sessionid = profile.sessionid;
 		
-		def job = jobpermSvc.getUserJobposition([:]);
 		def perms = [];
-		if( job.permissions ) perms.addAll(job.permissions);
-		
-		job.others.each {
-			if( it.objid == job.objid ) return;
-			def j = jobpermSvc.getUserJobposition([jobid: it.objid]);
-			if( j.permissions ) perms.addAll(j.permissions);
-		};
+		def job = jobpermSvc.getUserJobposition([:]);
+		if( job ) {		
+			if( job.permissions && job.orgunitid == env.CLIENTCODE ) 
+				perms.addAll(job.permissions);
+			
+			job.others.each {
+				if( it.objid == job.objid ) return;
+				if( it.orgunitid != env.CLIENTCODE ) return;
+				
+				def j = jobpermSvc.getUserJobposition([jobid: it.objid]);
+				if( j.permissions ) perms.addAll(j.permissions);
+			};
+		}
 		
 		profile.env = [
 			userid              : profile.objid,
@@ -36,6 +57,9 @@ public class DesktopLoginInterceptor
 			CHANGE_PWD_ON_LOGIN : profile.changepwdonlogin,
 			FIRSTNAME           : profile.firstname,
 			LASTNAME            : profile.lastname,
+			USER				: "${profile.lastname}, ${profile.firstname}".toUpperCase(),
+			USERNAME            : profile.lastname + ', ' + profile.firstname + (profile.middlename? ' ' + profile.middlename : ''),
+			USERFORMALNAME      : profile.firstname + (profile.middlename? ' ' + profile.middlename : '') + ' ' + profile.lastname,
 		];
 		
 		//load permissions

@@ -26,7 +26,6 @@ class TerminalService {
 
 	@ProxyMethod
     public def getList( param ) {
-		print param;
         if( !param.parentid)  {
 			return em.sqlContext.createNamedQuery("terminal:list-all.sql").setParameters(param).setFirstResult( param._start ).setMaxResults( param._limit).resultList;
 		}
@@ -42,12 +41,12 @@ class TerminalService {
 		if(!terminal) throw new Exception("Terminal id does not exist");
 		
 		//check if client is correct
-		if(terminal.parentcode != o.clientcode) throw new Exception("This terminal is already assigned to the wrong client"); 
+		if(terminal.parentcode != o.clientcode) throw new Exception("This Terminal ID is assigned to the wrong client"); 
 		if(terminal.macaddress) {
 			if( terminal.macaddress == o.macaddress) 
-				throw new Exception("This terminal already exists. Please choose the recover option instead"); 
+				throw new Exception("This Terminal ID already exists. Please choose the recover option instead"); 
 			else 	
-				throw new Exception("This terminal is already assigned"); 
+				throw new Exception("This Terminal ID is already assigned"); 
 		}
 		def test = em.sqlContext.createNamedQuery("terminal:find-macaddress").setParameter("macaddress",o.macaddress).singleResult;
 		if(test) throw new Exception("This machine is already assigned to " + test.parentcode + ". Use terminal recovery instead" );

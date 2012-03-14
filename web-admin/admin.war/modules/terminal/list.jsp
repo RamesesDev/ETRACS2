@@ -31,9 +31,14 @@
 					}
 					
 					this.unassign = function() {
-						if( confirm("You are about to unassign this terminal. Continue?")) {
-
-						}	
+						if( !this.selectedItem ) return;
+						MsgBox.confirm(
+							"You are about to unassign this terminal. Continue?",
+							function(){
+								svc.unregister( self.selectedItem );
+								reloadList();
+							}
+						);
 					}
 					
 					this.orgunitList;
