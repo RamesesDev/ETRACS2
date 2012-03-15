@@ -6,6 +6,8 @@
 <%@ taglib tagdir="/WEB-INF/tags/page" prefix="page" %>
 <%@ taglib tagdir="/WEB-INF/tags/ui" prefix="ui" %>
 
+<%@ taglib uri="http://ramesesinc.com/jsp/tags" prefix="ram" %>
+
 <s:invoke service="JobPermissionService" method="getUserJobposition" params="${param}" var="JOB" debug="true"/>
 <c:set var="PERMISSIONS" value="${JOB.permissions}" scope="request"/>
 
@@ -46,6 +48,7 @@
 	</jsp:attribute>
 	
 	<jsp:body>
+		has permission? ${ram:checkPermission(PERMISSIONS, 'etracs2-admin:etracstask.manage' )}
 		<ui:panel cols="2">
 			<ui:section>
 				<img src="${pageContext.request.contextPath}/photo/profile/${SESSION_INFO.objid}"/>

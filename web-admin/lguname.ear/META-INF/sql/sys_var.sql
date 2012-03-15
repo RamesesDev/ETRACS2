@@ -5,4 +5,9 @@ select value, type from sys_var where name=$P{name}
 update sys_var set value=$P{value} where name=$P{name}
 
 [list]
-select * from sys_var order by name
+select * from sys_var 
+where category=$P{category} 
+order by name 
+
+[category]
+select distinct category from sys_var where not(category is null) order by category 
