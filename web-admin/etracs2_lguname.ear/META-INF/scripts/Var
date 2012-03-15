@@ -39,6 +39,13 @@ class Var {
 		}	
    }
 
-   
+   @ProxyMethod(local=true)
+   public def getAllVariables(def param) {
+		def qry = em.sqlContext.createNamedQuery("sys_var:list");	
+		if( param?._start ) qry.setFirstResult( param._start );
+		if( param?._limit ) qry.setMaxResults( param._limit );
+		return qry.resultList;
+   }
 
+   
 }
