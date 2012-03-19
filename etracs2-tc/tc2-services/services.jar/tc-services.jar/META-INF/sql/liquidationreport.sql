@@ -95,7 +95,7 @@ AND o.voided = 0
 GROUP BY o.remittanceno, o.collectorname   
 
 [getFundList] 
-SELECT o.objid, o.fundname FROM fund o 
+SELECT o.objid, o.fundname FROM fund o ORDER BY fundname 
 
 [getRevenueByGLAccountSRE]  
 SELECT  

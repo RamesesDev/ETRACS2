@@ -136,6 +136,11 @@ alter table paymentitem add column liquidationrcdid varchar(50);
 create index ix_paymentitem_liquidationid on paymentitem( liquidationid );
 create index ix_paymentitem_liquidationrcdid on paymentitem( liquidationrcdid );
 
+update paymentitem p, receiptlist rl, remittancelist rem  set
+	p.liquidationid = rem.liquidationid 
+where p.receiptid = rl.objid 
+  and rl.remittanceid = rem.objid; 
+
 alter table receiptitem add column liquidationrcdid varchar(50);
 create index ix_receiptitem_liquidationrcdid on receiptitem(liquidationrcdid );
 
@@ -146,3 +151,23 @@ alter table faaslist add column message text;
 
 alter table bldgrysetting add column straightdepreciation int not null;
 update bldgrysetting set straightdepreciation = 1 ;
+
+
+update craaf c, afcontrol a set 
+	c.collectorid = a.collectorid 
+where c.afid = a.afid
+  and c.afinventorycreditid = a.afinventorycreditid 
+  and c.collectorid is null ;
+  
+  
+
+update craaf c, afinventorycredit cr set
+	c.stubno = cr.stubno
+where c.afinventorycreditid = cr.objid ;
+
+create index ix_liquidationlist_period on liquidationlist( iyear, iqtr, imonth );
+
+
+alter table faaslist change column prevtdno prevtdno varchar(200) not null;
+
+  

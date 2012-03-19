@@ -63,7 +63,7 @@ SELECT
 	barangay, barangayindex, 
 	ownername, owneraddress, tdno, effectivityyear, 
 	cadastrallotno, classcode, rputype, totalav, 
-	CASE WHEN claimno = '-' THEN fullpin ELSE CONCAT(fullpin, '-', claimno) END AS fullpin, 
+	fullpin, 
 	prevtdno, memoranda, barangayid 
 FROM faaslist   
 WHERE barangayid = $P{barangayid} 
@@ -80,7 +80,7 @@ SELECT
 	barangay, barangayindex, 
 	ownername, owneraddress, tdno, effectivityyear, 
 	cadastrallotno, classcode, rputype, totalav, 
-	CASE WHEN claimno = '-' THEN fullpin ELSE CONCAT(fullpin, '-', claimno) END AS fullpin,  
+	fullpin,  
 	memoranda, barangayid, exemptcode AS legalbasis  
 FROM faaslist   
 WHERE barangayid = $P{barangayid} 
@@ -93,7 +93,7 @@ ORDER BY fullpin
 [getTmcrList]
 SELECT
 	barangay, cadastrallotno, classcode, docstate,  
-	CASE WHEN claimno = '-' THEN fullpin ELSE CONCAT(fullpin, '-', claimno) END AS fullpin, 
+	fullpin, 
 	memoranda, ownername, owneraddress, rputype, section, surveyno, 
 	tdno, titleno, totalareasqm, totalareasqm, totalav, totalmv 
 FROM faaslist   
@@ -106,7 +106,7 @@ ORDER BY fullpin
 [getORF]  
 SELECT
 	barangay, cadastrallotno, classcode, 
-	CASE WHEN claimno = '-' THEN fullpin ELSE CONCAT(fullpin, '-', claimno) END AS fullpin, 
+	fullpin, 
 	prevtdno, taxpayeraddress, taxpayername, tdno, 
 	totalareasqm, totalareaha, totalav, txntype 
 FROM faaslist   
@@ -123,7 +123,7 @@ SELECT
 FROM faaslist  
 WHERE barangayid = $P{barangayid} 
  AND docstate IN ( 'CURRENT', 'CANCELLED' ) 
-ORDER BY convert(replace(tdno,'-',''), UNSIGNED ) 
+ORDER BY issuedate, tdno
 
 [getAnnotationListing]
 SELECT  
@@ -152,7 +152,7 @@ SELECT
 	SUM( CASE WHEN f.taxable = 0 THEN f.totalav ELSE 0 END ) AS preceedingexemptav 
 FROM faaslist f 
 	LEFT JOIN lgu l ON l.objid = f.barangayid 
-WHERE f.txntimestamp < $P{txntimestamp} 
+WHERE f.txntimestamp < $P{currenttimestamp} 
   AND f.docstate = 'CURRENT' 
   AND l.parentid = $P{lguindex} 
 GROUP BY l.objid, l.lguname  
@@ -168,7 +168,7 @@ SELECT
 	SUM( CASE WHEN f.taxable = 0 THEN f.totalav ELSE 0 END ) AS currentexemptav 
 FROM faaslist f 
 	LEFT JOIN lgu l ON l.objid = f.barangayid 
-WHERE f.txntimestamp LIKE $P{txntimestamp} 
+WHERE f.txntimestamp LIKE $P{currenttimestamp} 
   AND f.docstate = 'CURRENT' 
   AND l.parentid = $P{lguindex} 
 GROUP BY l.objid, l.lguname  
@@ -184,7 +184,7 @@ SELECT
 	SUM( CASE WHEN f.taxable = 0 THEN f.totalav ELSE 0 END ) AS cancelledexemptav 
 FROM faaslist f 
 	LEFT JOIN lgu l ON l.objid = f.barangayid 
-WHERE f.txntimestamp LIKE $P{txntimestamp}  
+WHERE f.txntimestamp LIKE $P{currenttimestamp}  
   AND f.docstate = 'CANCELLED' 
   AND l.parentid = $P{lguindex} 
 GROUP BY l.objid, l.lguname  
@@ -200,7 +200,7 @@ SELECT
 	SUM( CASE WHEN f.taxable = 0 THEN f.totalav ELSE 0 END ) AS endingexemptav 
 FROM faaslist f 
 	LEFT JOIN lgu l ON l.objid = f.barangayid  
-WHERE f.txntimestamp < $P{txntimestamp} 
+WHERE f.txntimestamp < $P{endingtimestamp} 
   AND f.docstate = 'CURRENT' 
   AND l.parentid = $P{lguindex} 
 GROUP BY l.objid, l.lguname  
@@ -224,7 +224,7 @@ SELECT
 	SUM( f.totalav ) AS preceedingtotal 
 FROM faaslist f 
 	INNER JOIN propertyclassification c ON f.classid = c.objid  
-WHERE f.txntimestamp < $P{preceedingtimestamp}   
+WHERE f.txntimestamp < $P{currenttimestamp}   
   AND f.docstate = 'CURRENT'  
   AND f.taxable = 1 
 GROUP BY c.objid, c.propertydesc, c.special 
@@ -242,7 +242,7 @@ SELECT
 	SUM( f.totalav ) AS currenttotal 
 FROM faaslist f 
 	INNER JOIN propertyclassification c ON f.classid = c.objid  
-WHERE f.txntimestamp LIKE $P{txntimestamp}    
+WHERE f.txntimestamp LIKE $P{currenttimestamp}    
   AND f.docstate = 'CURRENT'  
   AND f.taxable = 1 
 GROUP BY c.objid, c.propertydesc, c.special 
@@ -260,7 +260,7 @@ SELECT
 	SUM( f.totalav ) AS cancelledtotal  
 FROM faaslist f 
 	INNER JOIN propertyclassification c ON f.classid = c.objid  
-WHERE f.txntimestamp LIKE $P{txntimestamp}    
+WHERE f.txntimestamp LIKE $P{currenttimestamp}    
   AND f.docstate = 'CANCELLED'  
   AND f.taxable = 1 
 GROUP BY c.objid, c.propertydesc, c.special 
@@ -297,7 +297,7 @@ SELECT
 	SUM( f.totalav ) AS preceedingtotal  
 FROM faaslist f  
 	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
-WHERE f.txntimestamp < $P{preceedingtimestamp}    
+WHERE f.txntimestamp < $P{currenttimestamp}    
   AND f.docstate = 'CURRENT'   
   AND f.taxable = 0 
 GROUP BY e.objid, e.exemptdesc 
@@ -309,12 +309,12 @@ SELECT
 	e.objid AS classid,  
 	e.exemptdesc AS classname,  
 	0 AS special,  
-	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS preceedinglandav,  
-	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS preceedingimpav,  
-	SUM( f.totalav ) AS preceedingtotal  
+	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS currentlandav,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS currentimpav,  
+	SUM( f.totalav ) AS currenttotal  
 FROM faaslist f  
 	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
-WHERE f.txntimestamp LIKE $P{txntimestamp}    
+WHERE f.txntimestamp LIKE $P{currenttimestamp}    
   AND f.docstate = 'CURRENT'   
   AND f.taxable = 0 
 GROUP BY e.objid, e.exemptdesc 
@@ -327,12 +327,12 @@ SELECT
 	e.objid AS classid,  
 	e.exemptdesc AS classname,  
 	0 AS special,  
-	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS preceedinglandav,  
-	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS preceedingimpav,  
-	SUM( f.totalav ) AS preceedingtotal  
+	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS cancelledlandav,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS cancelledimpav,  
+	SUM( f.totalav ) AS cancelledtotal  
 FROM faaslist f  
 	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
-WHERE f.txntimestamp LIKE $P{txntimestamp}    
+WHERE f.txntimestamp LIKE $P{currenttimestamp}    
   AND f.docstate = 'CANCELLED'   
   AND f.taxable = 0 
 GROUP BY e.objid, e.exemptdesc 
@@ -345,9 +345,9 @@ SELECT
 	e.objid AS classid,  
 	e.exemptdesc AS classname,  
 	0 AS special,  
-	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS preceedinglandav,  
-	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS preceedingimpav,  
-	SUM( f.totalav ) AS preceedingtotal  
+	SUM( CASE WHEN f.rputype = 'land' THEN totalav ELSE 0.0 END ) AS endinglandav,  
+	SUM( CASE WHEN f.rputype <> 'land' THEN totalav ELSE 0.0 END ) AS endingimpav,  
+	SUM( f.totalav ) AS endingtotal  
 FROM faaslist f  
 	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
 WHERE f.txntimestamp < $P{endingtimestamp}    
@@ -375,7 +375,7 @@ SELECT
 	SUM( 1 ) AS preceedingtotal 
 FROM faaslist f 
 	INNER JOIN propertyclassification c ON f.classid = c.objid  
-WHERE f.txntimestamp < $P{preceedingtimestamp}   
+WHERE f.txntimestamp < $P{currenttimestamp}   
   AND f.docstate = 'CURRENT'  
   AND f.taxable = 1 
 GROUP BY c.objid, c.propertydesc, c.special 
@@ -393,7 +393,7 @@ SELECT
 	SUM( 1 ) AS newdiscoverytotal  
 FROM faaslist f 
 	INNER JOIN propertyclassification c ON f.classid = c.objid  
-WHERE f.txntimestamp LIKE $P{txntimestamp}    
+WHERE f.txntimestamp LIKE $P{currenttimestamp}    
   AND f.docstate = 'CURRENT'  
   AND f.taxable = 1 
   AND f.txntype = 'ND' 
@@ -412,7 +412,7 @@ SELECT
 	SUM( 1 ) AS cancelledtotal  
 FROM faaslist f 
 	INNER JOIN propertyclassification c ON f.classid = c.objid   
-WHERE f.txntimestamp LIKE $P{txntimestamp}    
+WHERE f.txntimestamp LIKE $P{currenttimestamp}    
   AND f.docstate = 'CANCELLED'  
   AND f.taxable = 1 
 GROUP BY c.objid, c.propertydesc, c.special 
@@ -449,7 +449,7 @@ SELECT
 	SUM( 1.0 ) AS preceedingtotal     
 FROM faaslist f  
 	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
-WHERE f.txntimestamp < $P{preceedingtimestamp}    
+WHERE f.txntimestamp < $P{currenttimestamp}    
   AND f.docstate = 'CURRENT'   
   AND f.taxable = 0 
 GROUP BY e.objid, e.exemptdesc 
@@ -466,7 +466,7 @@ SELECT
 	SUM( 1.0 ) AS newdiscoverytotal     
 FROM faaslist f  
 	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
-WHERE f.txntimestamp LIKE $P{txntimestamp}    
+WHERE f.txntimestamp LIKE $P{currenttimestamp}    
   AND f.docstate = 'CURRENT'   
   AND f.txntype = 'ND' 
   AND f.taxable = 0 
@@ -485,7 +485,7 @@ SELECT
 	SUM( 1.0 ) AS cancelledtotal     
 FROM faaslist f  
 	INNER JOIN exemptiontype e ON f.exemptid = e.objid   
-WHERE f.txntimestamp LIKE $P{txntimestamp}    
+WHERE f.txntimestamp LIKE $P{currenttimestamp}    
   AND f.docstate = 'CANCELLED'   
   AND f.taxable = 0 
 GROUP BY e.objid, e.exemptdesc 
@@ -530,7 +530,7 @@ SELECT
 	SUM( f.totalmv ) AS starttotal  
 FROM faaslist f  
 	INNER JOIN propertyclassification c ON f.classid = c.objid   
-WHERE f.txntimestamp < $P{starttxntimestamp}  
+WHERE f.txntimestamp < $P{currenttimestamp}  
   AND f.docstate = 'CURRENT'   
   AND f.taxable = 1  
 GROUP BY c.objid, c.propertydesc, c.special  
@@ -547,7 +547,7 @@ SELECT
 	SUM( f.totalmv ) AS endtotal 
 FROM faaslist f  
 	INNER JOIN propertyclassification c ON f.classid = c.objid   
-WHERE f.txntimestamp < $P{endtxntimestamp}  
+WHERE f.txntimestamp < $P{endingtimestamp}  
   AND f.docstate = 'CURRENT'   
   AND f.taxable = 1  
 GROUP BY c.objid, c.propertydesc, c.special  
@@ -565,7 +565,7 @@ SELECT
 	SUM( f.totalmv ) AS starttotal  
 FROM faaslist f  
 	INNER JOIN exemptiontype e ON f.exemptid = e.objid    
-WHERE f.txntimestamp < $P{starttxntimestamp}  
+WHERE f.txntimestamp < $P{currenttimestamp}  
   AND f.docstate = 'CURRENT'   
   AND f.taxable = 0   
 GROUP BY e.objid, e.exemptdesc 
@@ -584,7 +584,7 @@ SELECT
 	SUM( f.totalmv ) AS endtotal  
 FROM faaslist f  
 	INNER JOIN exemptiontype e ON f.exemptid = e.objid    
-WHERE f.txntimestamp < $P{endtxntimestamp}  
+WHERE f.txntimestamp < $P{endingtimestamp}  
   AND f.docstate = 'CURRENT'   
   AND f.taxable = 0   
 GROUP BY e.objid, e.exemptdesc 

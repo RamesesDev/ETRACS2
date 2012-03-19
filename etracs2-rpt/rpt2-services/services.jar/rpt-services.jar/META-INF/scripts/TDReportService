@@ -314,18 +314,30 @@ class TDReportService
 		}
 		*/
 		
-		def planttreedetail = planttreedetails[0]
-		data.add([
-			classification 		: rpu.classname,
-			actualuse			: planttreedetail.assesslevelname,
-			planttreename		: planttreedetail.assesslevelname,
-			marketvalue			: planttreedetails.marketvalue.sum(),
-			assesslevel			: planttreedetail.assesslevel,
-			assessedvalue		: planttreedetails.assessedvalue.sum(),
-		])
-		
+		if( planttreedetails ) {
+			def planttreedetail = planttreedetails[0]
+			if( planttreedetail ) {
+				data.add([
+					classification 		: rpu.classname,
+					actualuse			: planttreedetail.assesslevelname,
+					planttreename		: planttreedetail.assesslevelname,
+					marketvalue			: calculateListFieldSum( planttreedetails, 'marketvalue', 0.0),
+					assesslevel			: planttreedetail.assesslevel,
+					assessedvalue		: calculateListFieldSum(planttreedetails, 'assessedvalue', 0.0), 
+				])
+			}
+		}
 		return data;
     }
+	
+	def calculateListFieldSum( list, field, defvalue  ) {
+		try {
+			return list."$field".sum()
+		}
+		catch ( e ) {
+			return defvalue 
+		}
+	}
     
     private def getMiscDetails( rpu ) {
     	def data = [];

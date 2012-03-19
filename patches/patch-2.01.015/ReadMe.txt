@@ -16,3 +16,7 @@ Patch-2.01.015
   to avoid the hassle of changing liquidating officers in cases of leave, absence etc
 - Provide Multi-Cashier Support on liquidation 
 - General Revision Transaction and Batch GR Transaction 
+- Fix fullpin info in Assessment Roll, TMCR, etc.
+- Add Status info in Journal of Assessment Transaction 
+- Fix ending values ( Accomplishment Report of RPA)
+

@@ -147,7 +147,6 @@ class RPTReportService
 		return list 
 	}
 	
-	
 	@ProxyMethod
 	public Map generateAccomplishmentRPA( year, qtr, month ) {
 		def title 		= 'QUARTERLY ACCOMPLISHMENT REPORT ON REAL PROPERTY ASSESSMENTS'
@@ -160,14 +159,12 @@ class RPTReportService
 		}
 		
 		def params = [ lguindex:var.lgu_index ]
-		params.txntimestamp = resolveTimeStamp( year, qtr, month, (month ? 1 : null)  )
-		def preceedingassessments = em.sqlContext.createNamedQuery('rptreport:getPreceedingRPAAccomplishment').setParameters( params ).resultList 
+		params.currenttimestamp		= calculateCurrentTimeStamp( year, qtr, month )
+		params.endingtimestamp 		= calculateEndingTimeStamp( year, qtr, month )
 		
-		params.txntimestamp = resolveTimeStamp( year, qtr, month, null )
+		def preceedingassessments = em.sqlContext.createNamedQuery('rptreport:getPreceedingRPAAccomplishment').setParameters( params ).resultList 
 		def currentassessments = em.sqlContext.createNamedQuery('rptreport:getCurrentRPAAccomplishment').setParameters( params ).resultList 
 		def cancelledassessments = em.sqlContext.createNamedQuery('rptreport:getCancelledRPAAccomplishment').setParameters( params ).resultList 
-		
-		params.txntimestamp = resolveTimeStamp( year, qtr, (month ? month+1 : null ), (month ? 1 : null) )
 		def endingassessments = em.sqlContext.createNamedQuery('rptreport:getEndingRPAAccomplishment').setParameters( params ).resultList 
 		
 		def loadSumaryInfo = { lgu, list ->
@@ -247,14 +244,9 @@ class RPTReportService
 			periodtype = 'MONTH' 
 		}
 		
-		def iyear  = getNextYear( year, qtr )
-		def iqtr   = getNextQtr( year, qtr )
-		def imonth = getNextMonth( year, qtr, month )
-		
 		def params = [ lguindex:var.lgu_index ]
-		params.preceedingtimestamp 	= resolveTimeStamp( year, qtr, month, (month ? 1 : null)  )
-		params.txntimestamp 		= resolveTimeStamp( year, qtr, month, null )
-		params.endingtimestamp 		= resolveTimeStamp( iyear, iqtr, imonth, (imonth ? 1 : null) )
+		params.currenttimestamp		= calculateCurrentTimeStamp( year, qtr, month )
+		params.endingtimestamp 		= calculateEndingTimeStamp( year, qtr, month )
 		
 		def taxablepreceedings 	= em.sqlContext.createNamedQuery('rptreport:getPreceedingComparativeAV').setParameters( params ).resultList 
 		def taxablecurrents 	= em.sqlContext.createNamedQuery('rptreport:getCurrentComparativeAV').setParameters( params ).resultList 
@@ -344,14 +336,9 @@ class RPTReportService
 			periodtype = 'MONTH' 
 		}
 		
-		def iyear  = getNextYear( year, qtr )
-		def iqtr   = getNextQtr( year, qtr )
-		def imonth = getNextMonth( year, qtr, month )
-		
 		def params = [ lguindex:var.lgu_index ]
-		params.preceedingtimestamp 	= resolveTimeStamp( year, qtr, month, (month ? 1 : null)  )
-		params.txntimestamp 		= resolveTimeStamp( year, qtr, month, null )
-		params.endingtimestamp 		= resolveTimeStamp( iyear, iqtr, imonth, (imonth ? 1 : null) )
+		params.currenttimestamp		= calculateCurrentTimeStamp( year, qtr, month )
+		params.endingtimestamp 		= calculateEndingTimeStamp( year, qtr, month )
 		
 		def taxablepreceedings 	= em.sqlContext.createNamedQuery('rptreport:getPreceedingComparativeRpuCount').setParameters( params ).resultList 
 		def taxablecurrents 	= em.sqlContext.createNamedQuery('rptreport:getNewDiscoveryComparativeRpuCount').setParameters( params ).resultList 
@@ -441,13 +428,9 @@ class RPTReportService
 			periodtype = 'MONTH' 
 		}
 		
-		def iyear  = getNextYear( year, qtr )
-		def iqtr   = getNextQtr( year, qtr )
-		def imonth = getNextMonth( year, qtr, month )
-		
 		def params = [ lguindex:var.lgu_index ]
-		params.starttxntimestamp = resolveTimeStamp( year, qtr, month, null )
-		params.endtxntimestamp 	 = resolveTimeStamp( iyear, iqtr, imonth, null )
+		params.currenttimestamp		= calculateCurrentTimeStamp( year, qtr, month )
+		params.endingtimestamp 		= calculateEndingTimeStamp( year, qtr, month )
 		
 		def starttaxables 	= em.sqlContext.createNamedQuery('rptreport:getStartComparativeMV').setParameters( params ).resultList 
 		def endtaxables		= em.sqlContext.createNamedQuery('rptreport:getEndComparativeMV').setParameters( params ).resultList 
@@ -599,20 +582,44 @@ class RPTReportService
 		
 	}
 	
-	def getNextYear( year, qtr ) {
-		return ( qtr == 4 ? year + 1 : year )
+	def calculatePreceedingTimeStamp(year, qtr, month ) {
+		if( month && month > 0 ) {
+			return calculatePreceedingMonthTimeStamp(year, qtr, month )
+		}
+		else {
+			return calculatePreceedingQtrTimeStamp( year, qtr)
+		}
 	}
 	
-	def getNextQtr( year, qtr ) {
-		return ( qtr == 4 ? 1 : qtr + 1 ) 
+	def calculateCurrentTimeStamp(year, qtr, month ) {
+		if( month && month > 0 ) {
+			return resolveTimeStamp( year, qtr, month, null )
+		}
+		return resolveTimeStamp( year, qtr, null, null )
 	}
 	
-	def getNextMonth( year, qtr, month ) {
-		if( !month ) return null 
+	def calculateEndingTimeStamp(year, qtr, month ) {
+		if( month && month > 0 ) {
+			return calculateEndingMonthTimeStamp(year, qtr, month )
+		}
+		else {
+			return calculateEndingQtrTimeStamp( year, qtr)
+		}
+	}
+	
+	def calculateEndingMonthTimeStamp( year, qtr, month ) {
+		def imonth 	= ( month + 1 > 12 ? 1 : month + 1 )
+		def iqtr 	= dateSvc.getQtrByMonth( imonth )
+		def iyear 	= (month + 1 > 12 ? year + 1 : year )
 		
-		if( month == 12 ) 
-			return 1 
-		return month + 1
+		return resolveTimeStamp( iyear, iqtr, imonth, 1)
+	}
+	
+	def calculateEndingQtrTimeStamp( year, qtr  ) {
+		def iqtr 	= ( qtr + 1 > 4 ? 1 : qtr + 1 )
+		def iyear 	= ( qtr + 1 > 4 ? year + 1 : year )
+		
+		return resolveTimeStamp( iyear, iqtr, null, null)
 	}
 	
 }
