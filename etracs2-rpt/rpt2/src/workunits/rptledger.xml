@@ -7,7 +7,7 @@
     <invokers>
         <invoker type="rptledger.open" action="open" shortcut="ctrl N" visibleWhen="#{mode == 'view'}" immediate="true" caption="New" mnemonic="n" icon="images/doc-new.png" />
         
-        <invoker type="formActions" action="_close" caption="Back" mnemonic="b" icon="images/back.png" immediate="true" />
+        <invoker type="formActions" action="close" caption="Back" mnemonic="b" icon="images/back.png" immediate="true" />
         <invoker type="formActions" action="approve" caption="Approve" shortcut="ctrl A" visibleWhen="#{ledger.docstate == 'PENDING'}" mnemonic="a" icon="images/approve.png" permission="rptledger.approve" />
         <invoker type="formActions" action="capturePayment" caption="Capture Payment" shortcut="ctrl m" visibleWhen="#{ledger.docstate == 'APPROVED'}" mnemonic="M" icon="images/capturePayment.png" permission="rptledger.capturepayment"/>        
         <invoker type="formActions" action="previewBill" caption="Preview" visibleWhen="#{ledger.docstate == 'APPROVED'}" mnemonic="v" icon="images/doc-view.png" permission="rptledger.previewbill" />        
@@ -30,6 +30,9 @@ import java.rmi.server.UID;
 public class RPTLedgerController  {
     @Binding
     def binding
+    
+    @Caller
+    def caller
     
     @Service("RPTLedgerService")
     def svc;
@@ -71,6 +74,11 @@ public class RPTLedgerController  {
                 binding.refresh('ledger.lastyearpaid|ledger.lastqtrpaid')
             }
         ])
+    }
+    
+    def close(){
+        caller.search()
+        return '_close'
     }
     
     
