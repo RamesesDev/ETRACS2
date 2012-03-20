@@ -42,6 +42,14 @@ WHERE u.objid = ur.userid
   AND ur.role = $P{role} 
 ORDER BY u.name   
 
+[getRPTOfficersByRole]
+SELECT DISTINCT u.objid, u.formalname as name, u.jobtitle as title  
+FROM etracsuser u, user_role ur  
+WHERE u.objid = ur.userid  
+  AND ur.role = $P{role} 
+  AND u.name LIKE $P{name} 
+ORDER BY u.name   
+
 
 [getLiquidatingOfficers]
 SELECT * FROM etracsuser WHERE isliquidating = 1 ORDER BY name 
