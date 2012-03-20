@@ -47,5 +47,5 @@ Patch-2.02.002 (CUMMULATIVE)
 - Correct rpt partial payment voiding error 
 --------------
 - Deprecate RPTOfficers. Lookup rpt officers from etracs users using roles
-
+- Fix RPTBilling bug affected by previous years quarterly computation 
 
