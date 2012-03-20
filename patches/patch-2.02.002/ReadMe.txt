@@ -45,5 +45,7 @@ Patch-2.02.002 (CUMMULATIVE)
 - Fix bill parameter to updateDetailPeriod 
 - Properly handle billing for currentyear with partial payment
 - Correct rpt partial payment voiding error 
+--------------
+- Deprecate RPTOfficers. Lookup rpt officers from etracs users using roles
 
 
