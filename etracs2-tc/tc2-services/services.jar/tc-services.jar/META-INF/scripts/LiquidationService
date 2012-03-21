@@ -62,6 +62,7 @@ class LiquidationService {
 	
 	@ProxyMethod
 	public def create( liq ) {
+		
 		try {
 			validate( liq );
 			updateLiquidationInfo( liq, 'single' )
@@ -170,7 +171,20 @@ class LiquidationService {
 		liq.info.depositedbytitle 	= cashier.jobtitle 
 	}
 	
-	void updateRCDCashierInfo( liq ) {
+	@ProxyMethod  
+	public def getCashierlist(){
+		return em.sqlContext.createNamedQuery( 'liquidation:getCashierlist' ).resultList
+	}
+	
+	void updateRCDCashierInfo( liq ){
+		liq.rcds.each { rcd ->
+			rcd.cashierid 		= liq.cashierinfo.cashierid 
+			rcd.cashiername 	= liq.cashierinfo.cashiername 
+			rcd.cashiertitle 	= liq.cashierinfo.cashiertitle
+		}
+	}
+	
+	void updateRCDCashierInfo2( liq ) {
 		def cashiers = usrsvc.getUsersByRole( CASHIER_ROLE )
 		if( ! cashiers ) throw new Exception('Cashier is not defined.')
 		def cashier = cashiers[0]

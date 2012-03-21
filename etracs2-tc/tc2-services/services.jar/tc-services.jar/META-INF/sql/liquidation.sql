@@ -191,8 +191,12 @@ INNER JOIN paymentitem i ON i.receiptid = rl.objid
 WHERE rl.voided = 0  
  AND r.liquidationid IS NULL 
  AND paytype = 'CHECK' 
-
-
-
+ 
+[getCashierlist]
+SELECT u.objid, u.name as name, u.formalname, u.jobtitle   
+FROM etracsuser u 
+INNER JOIN user_role r ON r.userid = u.objid 
+WHERE role = 'CASHIER' 
+ORDER BY NAME  
 
 

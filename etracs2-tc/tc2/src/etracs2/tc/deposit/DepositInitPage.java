@@ -1,5 +1,5 @@
 /*
- * LiquidationInitPage.java
+ * DepositInitPage.java
  *
  * Created on May 2, 2011, 3:01 PM
  */
@@ -13,7 +13,7 @@ package etracs2.tc.deposit;
 public class DepositInitPage extends javax.swing.JPanel {
     
     /**
-     * Creates new form LiquidationInitPage
+     * Creates new form DepositInitPage
      */
     public DepositInitPage() {
         initComponents();
@@ -29,31 +29,31 @@ public class DepositInitPage extends javax.swing.JPanel {
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
         jPanel1 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xLabel1 = new com.rameses.rcp.control.XLabel();
+        xTextField1 = new com.rameses.rcp.control.XTextField();
 
         setLayout(new java.awt.BorderLayout());
 
-        setPreferredSize(new java.awt.Dimension(583, 466));
-        xActionBar1.setBorder(new com.rameses.rcp.control.border.XUnderlineBorder());
+        setPreferredSize(new java.awt.Dimension(643, 466));
+        xActionBar1.setButtonFont(new java.awt.Font("Arial", 1, 12));
         xActionBar1.setName("initActions");
         add(xActionBar1, java.awt.BorderLayout.NORTH);
 
         jPanel1.setLayout(null);
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
-        xTitledBorder1.setTitle("Deposit Initial Information");
+        xTitledBorder1.setTitle("Remittance Initial Information");
         formPanel1.setBorder(xTitledBorder1);
         formPanel1.setPadding(new java.awt.Insets(10, 10, 5, 5));
-        xLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        xLabel1.setCaption("Deposited By");
-        xLabel1.setCaptionWidth(100);
-        xLabel1.setFont(new java.awt.Font("Arial", 1, 11));
-        xLabel1.setName("cashiername");
-        xLabel1.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel1.add(xLabel1);
+        xTextField1.setCaption("Deposited By");
+        xTextField1.setCaptionWidth(120);
+        xTextField1.setFont(new java.awt.Font("Arial", 1, 14));
+        xTextField1.setName("cashiername");
+        xTextField1.setPreferredSize(new java.awt.Dimension(0, 24));
+        xTextField1.setReadonly(true);
+        formPanel1.add(xTextField1);
 
         jPanel1.add(formPanel1);
-        formPanel1.setBounds(10, 10, 440, 156);
+        formPanel1.setBounds(10, 10, 504, 220);
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
 
@@ -64,7 +64,7 @@ public class DepositInitPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel1;
     private javax.swing.JPanel jPanel1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
-    private com.rameses.rcp.control.XLabel xLabel1;
+    private com.rameses.rcp.control.XTextField xTextField1;
     // End of variables declaration//GEN-END:variables
     
 }
