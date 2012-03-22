@@ -43,7 +43,17 @@ class BPBillingRuleController  extends etracs2.common.groovy.AbstractRuleControl
     String getRuleset()          { return 'bpbilling' }
     
     /*--------------------------------------------------------------*/
+
+    def refreshHandler;
+    def updateHandler;
     
+    @Close
+    void onClose() {
+        if( refreshHandler ) 
+            refreshHandler()
+        else if( updateHandler )
+             updateHandler( rule )
+    }
 
 }
 

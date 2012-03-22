@@ -93,7 +93,6 @@ class RIVController
     
     void save() {
         if( mode == "create") {
-            
             entity = svc.create( entity );
             insertItem( entity );
         }
@@ -212,7 +211,6 @@ class RIVController
     }
     
     def createEntity() {
-        if( !env.USERID ) dummyCol = svcUser.getCollector( env.USERID );
         def afo = getAFO()
         return [
             docstate    : "DRAFT",
@@ -351,6 +349,7 @@ class RIVController
         entity.info.approvedbyid = user.objid;
         entity.info.approvedby = user.name;
         entity.info.approvedbytitle = user.jobtitle;
+        
         binding.refresh("entity.info.approved.*");
     }
     

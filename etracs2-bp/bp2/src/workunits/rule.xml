@@ -80,7 +80,6 @@ class RuleController
         else 
             rule = svc.update( rule )
         mode = 'view'
-        invokeUpdateHandler()
     }
     
     void deploy() {
@@ -117,7 +116,8 @@ class RuleController
     }
 
     def updateConditionHandler = { condition ->
-        binding.refresh('selectedCondition') 
+        //binding.refresh('selectedCondition') 
+        conditionListHandler.load()
     }
     
     def openCondition() {
@@ -152,7 +152,8 @@ class RuleController
     
     
     def updateActionHandler = { action -> 
-        binding.refresh('selectedAction') 
+        //binding.refresh('selectedAction') 
+        actionListHandler.load()
     }
     
     def openAction() {
@@ -222,12 +223,22 @@ class RuleController
     ] as SubListModel
     
     void invokeUpdateHandler() {
-        if( updateHandler ) updateHandler()
+        if( updateHandler ) updateHandler( rule )
     }
     
     def fixRuleName( ) {
         rule.rulename = rule.rulename.replaceAll('\\W', '_')
         binding.refresh('rule.rulename')
+    }
+    
+    def refreshHandler;
+    
+    @Close
+    void onClose() {
+        if( refreshHandler ) 
+            refreshHandler()
+        else
+            invokeUpdateHandler()
     }
 }
 

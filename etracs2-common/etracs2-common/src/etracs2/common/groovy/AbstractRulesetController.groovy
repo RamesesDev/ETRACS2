@@ -22,8 +22,12 @@ public abstract class AbstractRulesetController
         search()
     }
     
+    def refreshHandler = {
+        search()
+    };
+    
     def create() {
-        return InvokerUtil.lookupOpener(openerName+'.create', [ruleset:ruleset])
+        return InvokerUtil.lookupOpener(openerName+'.create', [ruleset:ruleset, refreshHandler: refreshHandler])
     }
     
     def copy() {
@@ -36,7 +40,9 @@ public abstract class AbstractRulesetController
         return InvokerUtil.lookupOpener(openerName+'.copy', [rule:rule, ruleset:ruleset])
     }
     
-    def updateHandler = {
+    def updateHandler = { rule ->
+        if( selectedItem ) selectedItem.putAll( rule );
+        listHandler.refresh()
         binding.refresh('html')
     }
     
