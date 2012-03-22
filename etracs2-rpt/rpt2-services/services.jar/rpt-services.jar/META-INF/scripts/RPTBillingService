@@ -204,7 +204,7 @@ public class RPTBillingService
         
         def dt = dateSvc.parseDate( bill.billdate, null )
         def list = []
-        def params = [ currentyr:dt.year ]
+        def params = [ currentyr:bill.billtoyear ]
         bill.ledgerids.each{ id ->
             params.objid = id 
             list.addAll( em.sqlContext.createNamedQuery('rptbill:getOpenLedgersById').setParameters( params ).resultList )
