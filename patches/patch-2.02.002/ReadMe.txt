@@ -51,4 +51,5 @@ Patch-2.02.002 (CUMMULATIVE)
 - Set surcharge and interest acct when generating the bill
 - Temporary fix number to word conversion - the bug is on rameses internal library
 - Always display declared owner name when printing receipt 
+- Stretch annotation text field to accommodate long annotations remarks
 
