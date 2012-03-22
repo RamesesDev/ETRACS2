@@ -248,9 +248,7 @@ class FAASService
 		if( faas.info.annotated == false ) return 
 		//copy annotations of previous faas 
 		faas.previousfaases.each{ prev ->
-			def activeAnnotationList = em.sqlContext.createNamedQuery('faas:getActiveAnnotations')
-										.setParameter( 'faasid', prev.faasid )
-										.resultList 
+			def activeAnnotationList = getActiveAnnotationList( prev.faasid )
 			activeAnnotationList.each{ newAnnotation ->
 				newAnnotation.objid 	= 'A' + new UID()
 				newAnnotation.faasid 	= faas.objid 
@@ -258,6 +256,20 @@ class FAASService
 				em.create( newAnnotation.schemaname, newAnnotation )
 			}
 		}
+	}
+	
+	@ProxyMethod
+	public def getActiveAnnotationList( faasid ) {
+		return em.sqlContext.createNamedQuery('faas:getActiveAnnotations')
+						.setParameter( 'faasid', faasid )
+						.resultList 
+	}
+	
+	@ProxyMethod
+	public def getActiveAnnotationTexts( faasid ) {
+		return em.sqlContext.createNamedQuery('faas:getActiveAnnotationTexts')
+						.setParameter( 'faasid', faasid )
+						.resultList 
 	}
     
     @ProxyMethod
