@@ -375,3 +375,26 @@ update structures set indexno = 0 where indexno is null;
 /* ------------------------------------------------- */
 alter table rptpayment change column period period varchar(25) not null;
 
+alter table receiptlist change column amount amount decimal(18,2);
+alter table receiptlist change column cash cash decimal(18,2);
+alter table receiptlist change column otherpayment otherpayment decimal(18,2);
+
+alter table receiptitem change column amount amount decimal(18,2);
+alter table paymentitem change column amount amount decimal(18,2);
+
+alter table revenue change column amount amount decimal(18,2);
+alter table revenue change column receiptamount receiptamount decimal(18,2);
+
+alter table liquidationlist change column amount amount decimal(18,2);
+alter table liquidationlist change column totalcash totalcash decimal(18,2);
+alter table liquidationlist change column totalotherpayment totalotherpayment decimal(18,2);
+
+alter table remittancelist change column amount amount decimal(18,2);
+alter table remittancelist change column totalcash totalcash decimal(18,2);
+alter table remittancelist change column totalotherpayment totalotherpayment decimal(18,2);
+
+
+alter table deposit change column amount amount decimal(18,2);
+alter table deposit change column cash cash decimal(18,2);
+alter table deposit change column noncash noncash decimal(18,2);
+

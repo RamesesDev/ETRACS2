@@ -16,6 +16,11 @@ class ETRACSUserService
 	def COLLECTOR_ROLE = 'COLLECTOR'
 	def LIQUIDATING_OFFICER_ROLE = 'LIQUIDATING_OFFICER' 
 	
+	def RPT_APPRAISER_ROLE = 'APPRAISER'
+	def RPT_PROVINCIAL_ASSESSOR_ROLE = 'PROVINCIAL_ASSESSOR' 
+	def RPT_CITY_ASSESSOR_ROLE = 'CITY_ASSESSOR' 
+	def RPT_MUNICIPAL_ASSESSOR_ROLE = 'ASSESSOR' 
+	
 	
 	@ProxyMethod
 	public def getList( searchText, params ) {
@@ -38,6 +43,7 @@ class ETRACSUserService
     
 	@ProxyMethod
 	public void save( user ) {
+		buildNames( user) 
 		em.update( user.schemaname, user, { diff ->
 			logSvc.logB('UPDATE', 'ETRACSUser', user.objid, null, diff  )
 		} as UpdateChangeHandler )
@@ -89,6 +95,44 @@ class ETRACSUserService
 		return getUsersByRole( COLLECTOR_ROLE )
 	}
 	
+	
+	@ProxyMethod
+	public List lookupRPTOfficers( searchText, officerType, params ) {
+		if( officerType == 'APPRAISER' )
+			return getRPTAppraiserList( searchText )
+		else if( officerType == 'APPROVER' )
+			return getRPTApproverList( searchText )
+		else if( officerType == 'RECOMMENDER' )
+			return getRPTRecommenderList( searchText )
+		throw new Exception('Invalid Officer Type ' + officerType + '.' )
+	}
+	
+	@ProxyMethod
+	public List getRPTAppraiserList( searchText ) {
+		return getRPTOfficersByRole( searchText, RPT_APPRAISER_ROLE )
+	}
+	
+	@ProxyMethod
+	public List getRPTApproverList(searchText) {
+		def approvers = []
+		approvers.addAll( getRPTOfficersByRole( searchText,  RPT_PROVINCIAL_ASSESSOR_ROLE ) )
+		approvers.addAll( getRPTOfficersByRole( searchText, RPT_CITY_ASSESSOR_ROLE ) )
+		return approvers
+	}
+	
+	@ProxyMethod
+	public List getRPTRecommenderList(searchText) {
+		return getRPTOfficersByRole( searchText, RPT_MUNICIPAL_ASSESSOR_ROLE )
+	}
+	
+	@ProxyMethod
+	public List getRPTOfficersByRole( criteria, role ) {
+		criteria = criteria ? criteria + '%' : '%'
+		return em.sqlContext.createNamedQuery('etracsuser:getRPTOfficersByRole')
+					.setParameters([role:role, name:criteria])
+					.resultList
+	}
+	
 	@ProxyMethod
 	public List getCollectorsByLqOfficerId( lqofficerid ) {
 		return em.sqlContext.createNamedQuery('etracsuser:getCollectorsByLqOfficerId').setParameter('lqofficerid', lqofficerid).resultList
@@ -106,6 +150,11 @@ class ETRACSUserService
 					.setFirstResult( params._start )
 					.setMaxResults( params._limit )
 					.resultList;
+	}
+	
+	void buildNames( user ) {
+		user.name = user.lastname + ', ' + user.firstname + ( user.middlename ? ' ' + user.middlename : '')
+		user.formalname = user.firstname + ' ' + ( user.middlename ? user.middlename + ' ' : '') + user.lastname 
 	}
     
 }

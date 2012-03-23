@@ -1,6 +1,7 @@
 package etracs2.tc.groovy
 
 import com.rameses.util.NumberToWords
+import etracs2.groovy.CommonUtil
 
 static class ReceiptUtil
 {
@@ -36,7 +37,7 @@ static class ReceiptUtil
     }
     
     static  void buildAmountInWords( entity ) {
-        entity.amountinwords =  NumberToWords.instance.convert( entity.info.amount ) + ' PESOS ONLY'
+        entity.amountinwords =  CommonUtil.wordFromNumber( entity.info.amount ) + ' PESOS ONLY'
         entity.amountinwords = entity.amountinwords.toUpperCase()
     }    
 
