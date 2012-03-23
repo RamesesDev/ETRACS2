@@ -1,0 +1,612 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workunit>
+    <invokers>
+        <invoker folderid="menu/rpt/txn" action="init" caption="Batch Collection"  permission="rptreceipt.batch" />
+        
+        <invoker type="initActions" action="_close" caption="Close" mnemonic="c" immediate="true" icon="images/cancel.png" />
+        <invoker type="initActions" action="next" caption="Next" mnemonic="n" />
+        
+        <invoker type="listActions" action="_close" caption="Close" mnemonic="c" immediate="true" icon="images/cancel.png" />
+        <invoker type="listActions" action="validate" caption="Next" mnemonic="n" />
+    </invokers>
+    
+    <code lang="groovy">
+<![CDATA[
+
+import com.rameses.rcp.annotations.*
+import com.rameses.rcp.common.*
+import com.rameses.osiris2.client.*
+import com.rameses.osiris2.reports.*
+import java.text.DecimalFormat;
+import java.rmi.server.UID
+import etracs2.rpt.groovy.*;
+
+public class RPTBatchCollectionController {
+    @Binding
+    def binding
+    
+    @Service('RPTReceiptService')
+    def svc
+        
+    @Service('RPTBillingService')
+    def billingSvc
+    
+    @Service('DateService')
+    def dateSvc
+    
+    @Service('ETRACSUserService')
+    def userService
+    
+    @Service('AFService')
+    def afService
+    
+    @Service('AFControlService')
+    def afcontrolService
+        
+    @Service('CollectionTypeService')
+    def collTypeService
+    
+    @Service('ReportParameterService')
+    def svcParams
+        
+    
+    
+    def ONE_ITEM_PER_RECEIPT = 'single'
+    def MAX_ITEMS_PER_RECEIPT = 'max' 
+    
+    def payor
+    def paidby
+    def paidbyaddress
+    def issuanceoption = MAX_ITEMS_PER_RECEIPT 
+    def paytoqtr = 4
+    
+    def parsedate
+    
+    def init() {
+        parsedate = dateSvc.parseCurrentDate()
+        return 'init' 
+    }
+    
+    def getLookupTaxpayer() {
+        return InvokerUtil.lookupOpener('entity.lookup', [:])
+    }
+
+    void setPayor( payor ) {
+        this.payor = [
+            objid           : payor?.objid,
+            payorname       : payor?.entityname,
+            payoraddress    : payor?.entityaddress,
+        ]
+        paidby          = payor?.entityname
+        paidbyaddress   = payor?.entityaddress
+    }
+    
+    def next() {
+        loadBill()
+        return 'list' 
+    }
+    
+    
+    /* --------------------------------------------------------------------------------
+    **
+    ** List Page Support
+    **
+    -------------------------------------------------------------------------------- */
+    
+    def selectedItem
+    def amtdue
+    def items = []
+    def decformatter = new DecimalFormat('#,##0.00')
+    def intformatter = new DecimalFormat('#,##0')
+    
+    def validate() {
+        if( amtdue < 0.0 ) throw new Exception('Amount Due must be greater than zero.')
+        loadCollector()
+        loadAF51()
+        loadCollectionType()
+        loadAFControl()
+        activateNewAFControl()
+        propertyforpaymentlist = items.findAll{ it.pay == true && it.amount > 0.0 }
+        return 'main'
+    }
+    
+    
+    def listHandler = [
+        getRows     : { return 50 },
+        getColumns  : { return [
+            new Column(name:'pay', caption:'Pay?', type:'boolean', maxWidth:60, editable:true),
+            new Column(name:'tdno', caption:'TD No.', width:150),
+            new Column(name:'pin', caption:'PIN', width:150),
+            new Column(name:'fromyear', caption:'From Year', format:'0000', type:'integer'),
+            new Column(name:'fromqtr', caption:'From Qtr', format:'0', type:'integer'),
+            new Column(name:'toyear', caption:'To Year*', editable:true, type:'integer', format:'0000'),
+            new Column(name:'toqtr', caption:'To Qtr*', editable:true, type:'integer', format:'0'),
+            new Column(name:'amount', caption:'Amount', type:'decimal'),
+        ]},
+        onColumnUpdate : { item, colname -> processColumnUpdate( item, colname) },
+        fetchList   : { return items }
+    ] as SubListModel
+    
+    
+    void processColumnUpdate( item, colname) {
+        try {
+            if( colname == 'pay' ) {
+                processPayColumn( item )
+            }
+            else if( colname == 'toyear' || colname == 'toqtr' ) {
+                // if( item.toyear > (item.toyear + 4) ) throw new Exception('To Year must not exceed ' + (item.toyear+4) + '.' )
+                // if( item.toqtr < 0 || item.toqtr > 4 ) throw new Exception('To Qtr must be between 1 and 4.')
+
+                int maxtoyear = parsedate.year + 3
+                if( item.toyear  > maxtoyear ) {
+                    showError('To Year must not exceed ' + maxtoyear + '.' ) 
+                    item.toyear =parsedate.year 
+                }
+                if( item.toqtr < 0 || item.toqtr > 4 ) {
+                    showError('To Qtr must be between 1 and 4.')
+                    item.toqtr = 4
+                }
+
+                if( item.toyear < item.fromyear ) {
+                    showError('To Year must be greater than or equal to From Year.')
+                    item.toyear = item.fromyear
+                }
+                if( item.toyear == item.fromyear && item.toqtr < item.fromqtr) {
+                    showError('To Qtr must be greater than or equal to From Qtr.')
+                    item.toqtr = item.fromqtr 
+                }   
+                processBillTo( item )
+            }
+            calculateAmountDue()
+        }
+        catch( e ) {
+            e.printStackTrace()
+            showError( e.message )
+            item.total  = 0.0
+            item.amount = 0.0
+        }
+    }
+    
+    void loadBill() {
+        def ledgerids = items.objid
+        def bill = createBill()
+        bill.ledgerids = ledgerids
+        
+        bill = billingSvc.generateBill( bill )
+
+        //add pay and amount fields in every item
+        bill.items.each { 
+            it.pay    = true 
+            it.amount = it.total
+        }
+        items.clear()
+        items.addAll( bill.items )
+        listHandler.load()
+        calculateAmountDue()
+    }
+    
+    void processPayColumn( item ) {
+        if( item.pay  ) {
+            item.amount = item.total
+        }
+        else {
+            item.amount = 0.0
+        }
+    }
+    
+    void processBillTo( item ) {
+        def newbill = createBill()
+        newbill.ledgerids.add( item.objid )
+        newbill.billtoyear = item.toyear
+        newbill.billtoqtr  = item.toqtr 
+        newbill.fullpayment = ( item.toyear == parsedate.year && item.toqtr == 4 )
+        newbill.qtrlypaymentavailed = ( item.toqtr != 4 )
+        newbill.advancepayment  = (item.toyear > parsedate.year )
+
+        newbill = billingSvc.generateBill( newbill )
+        def newitem = newbill.items[0]
+        if( !newitem )  throw new Exception('Cannot process bill for this item.')
+
+        def toyear = item.toyear
+        def toqtr = item.toqtr
+
+        item.details.clear()
+        item.putAll( newitem )
+        item.toyear = toyear
+        item.toqtr  = toqtr 
+        item.pay = true
+        item.amount = newitem.total
+        calculateAmountDue()
+    }
+
+    void calculateAmountDue() {
+        def paidlist = items.findAll{ it.pay == true}
+        amtdue = 0.0
+        if( paidlist ) {
+            amtdue = paidlist.amount.sum()
+        }
+        binding.refresh('amtdue')
+    }
+    
+    def getAssessedvalue() {
+        if( selectedItem ) {
+            return decformatter.format( selectedItem.assessedvalue )
+        }
+        return ''
+    }
+    
+    def getAmtdue() {
+        return decformatter.format( amtdue )
+    }
+    
+    void selectAll() {
+        items.each { 
+            it.pay    = true
+            it.amount = it.total 
+        }
+        listHandler.load()
+        calculateAmountDue()
+    }
+
+    void deselectAll() {
+        items.each { 
+            it.pay    = false
+            it.amount = 0.0
+        }
+        listHandler.load()
+        calculateAmountDue()
+    }
+
+    void fullPayment() {
+        loadBill()
+        listHandler.load()
+        calculateAmountDue()
+    }
+    
+    Map createBill() {
+        return [
+            taxpayerid     : payor.objid,
+            ledgerids      : [],
+            advancepayment : false,
+            billdate       : parsedate.date,
+            billtoyear     : parsedate.year,
+            billtoqtr      : paytoqtr,
+            fullpayment    : true,
+            qtrlypaymentavailed : false, 
+            advancepayment : false,
+            items          : []
+        ]
+    }
+    
+    
+    /* --------------------------------------------------------------------------------
+    **
+    ** Main Page Support
+    **
+    -------------------------------------------------------------------------------- */
+    def PAY_TYPE_CASH = 'cash'
+    def PAY_TYPE_CHECK = 'check' 
+    
+    def amtreceived = 0.0
+    def change = 0.0
+    def paytype = PAY_TYPE_CASH
+    def bank
+    def checkno
+    def checkdate 
+    def receiptlist = [] 
+    
+    def runningamount = 0.0
+    def itemsprocessed = 0
+    
+    def processing = false
+    def enableActivateButton = false
+    
+    def msg
+    def collector 
+    def afcontrol 
+    def af 
+    def txnmode = 'ONLINE'
+    def collectiontype 
+    
+    def opener 
+    def entity 
+    
+    def MAX_RECEIPT_ITEM = 5
+    
+    def propertyforpaymentlist
+    
+    def processPayment() {
+        activateNewAFControl()
+        if( !afcontrol ) throw new Exception('AF Control is required.\nActivate a control and process the payment again.')
+        
+        if (issuanceoption ==  ONE_ITEM_PER_RECEIPT ) {
+            MAX_RECEIPT_ITEM = 1
+        }
+        
+        processing = true
+        enableActivateButton = false
+        
+        try {
+            while (propertyforpaymentlist && afcontrol  ) {
+                def itemsforpayment = getItemsForPayment( propertyforpaymentlist )
+                entity = createEntity()
+                updateAmountInfo( entity, itemsforpayment )
+                addPaymentItem( entity, itemsforpayment )
+                entity = svc.create( entity, itemsforpayment  )
+                receiptlist.add([serialno:entity.info.serialno, amount:entity.info.amount])
+                receiptListHandler.load()
+                runningamount += entity.info.amount
+                itemsprocessed += 1 
+                MsgBox.alert("Insert Receipt No. $entity.info.serialno and print.")
+                print()
+                propertyforpaymentlist.removeAll( itemsforpayment )
+                loadAFControl()
+            }
+        }
+        catch( e ) {
+            println '='*50
+            e.printStackTrace()
+            MsgBox.error( e.message )
+        }
+        if( propertyforpaymentlist ) {
+            processing = false
+            enableActivateButton = true 
+            activateNewAFControl()
+            return null
+        }
+        return 'summary'
+    }
+    
+    def report = [
+        getReportName : { return 'rptreceipt/af56'  },
+        getReportData : { return entity } ,
+        getParameters : { return svcParams.getStandardParameter( OsirisContext.env.USERNAME ) }
+    ] as ServerReportModel;
+    
+    void print() {
+        try {
+            RPTReceiptUtil.buildReportInfo( entity )
+            report.viewReport()
+            ReportUtil.print( report.report, true )
+        }
+        catch( e ) {
+            MsgBox.alert( e.message )
+        }
+    }
+    
+    void updateAmountInfo( entity, itemsforpayment ) {
+        def amount = itemsforpayment.amount.sum()
+        entity.info.amount       = amount
+        entity.info.totalpayment = amount
+        entity.info.change       = 0.00
+        
+        if( paytype == PAY_TYPE_CASH )
+            entity.info.cash = amount
+         else
+            entity.info.otherpayment = amount   
+    }
+    
+    void addPaymentItem( entity, itemsforpayment ) {
+        def payment = [
+            objid       : 'P' + new UID(),
+            paytype     : paytype,
+            particulars : 'CASH PAYMENT', 
+            amount      : itemsforpayment.amount.sum(),   
+        ]
+        if ( paytype == PAY_TYPE_CHECK) {
+            payment.particulars = 'CHECK NO.: ' + checkno + ' DATE: ' + checkdate + ' BANK: ' + bank 
+            payment.bank        = bank
+            payment.checkno     = checkno
+            payment.checkdate   = checkdate 
+        }
+        
+        entity.payments.add( payment )
+    }
+    
+    def getItemsForPayment( propertyforpaymentlist ) {
+        def list = []
+        if( propertyforpaymentlist.size() > MAX_RECEIPT_ITEM ) {
+            list.addAll( propertyforpaymentlist[0..(MAX_RECEIPT_ITEM-1)] )
+        }
+        else {
+            list.addAll( propertyforpaymentlist )
+        }
+        return list 
+    }
+    
+    def receiptListHandler = [
+        getRows     : { return 100 },
+        getColumns  : { return [
+            new Column(name:'serialno', caption:'Serial No.' ),
+            new Column(name:'amount', caption:'Amount', type:'decimal', format:'#,##0.00' ),
+        ]},
+        fetchList   : { return receiptlist },
+    ] as SubListModel
+    
+    void setAmtreceived( amtreceived ) {
+        if( amtreceived < amtdue ) throw new Exception('Amount Received must be greater than or equal to Amount Due.')
+        this.amtreceived = amtreceived
+        change = 0.0
+        if ( amtreceived ) {
+            change = amtreceived - amtdue
+        }
+    }
+    
+    def getChange() {
+        return decformatter.format( change )
+    }
+    
+    def getAmttendered() {
+        return decformatter.format( amtreceived )
+    }
+    
+    def getRunningamount() {
+        return decformatter.format( runningamount )
+    }
+    
+    def getItemsprocessed() {
+        return intformatter.format( itemsprocessed )
+    }
+    
+    void setPaytype( paytype ) {
+        this.paytype = paytype
+        if( paytype == PAY_TYPE_CASH ) {
+            bank = null
+            checkno = null
+            checkdate = null 
+        }
+        else {
+            amtreceived = 0.0
+            change = 0.0 
+            binding.focus('amtreceived')
+        }
+    }   
+    
+    List getPaymentTypeList() {
+        return [ PAY_TYPE_CASH, PAY_TYPE_CHECK]
+    }
+    
+    void loadCollector(){
+        collector = userService.getCollector( OsirisContext.env.USERID  )
+        if( ! collector  ) throw new Exception('User is not a collector.')
+    }
+    
+    
+    def loadAFControl() {
+        getAFControlInfo()
+        return 'main'
+    }
+    
+    void getAFControlInfo( ) {
+        afcontrol = afcontrolService.getActiveAFControl( collector.objid, af.objid, txnmode ) 
+    }
+    
+    void activateNewAFControl() {
+        if( !afcontrol ) {
+            def afcontrolList = afcontrolService.getInactiveList( collector.objid, af.objid, txnmode )
+            if( afcontrolList ) {
+                selectStubToUse( af, afcontrolList )
+            }
+            else {
+                throw new Exception('No assigned Accountable Form for this collector.')
+            }
+        }
+    }
+    
+    def onselectStubHandler = { afc ->
+        afcontrol = afc
+        enableActivateButton = false
+    }
+    
+    void selectStubToUse( af, afcontrolList ) {
+        def params = [
+            afid : af.objid,
+            mode : txnmode,
+            collector: collector,
+            onselectHandler : onselectStubHandler,
+            list : afcontrolList,
+        ]
+        def o = InvokerUtil.lookupOpener('afcontrol:activate', params)
+        binding.refresh('af')
+        binding.fireNavigation( o )   
+    }
+    
+    
+    void loadAF51() {
+        af = [objid:56, pcsperunit:50, serieslength:7, aftype:'serial']
+    }
+    
+    void loadCollectionType() {
+        def colltypes = collTypeService.getListByAfId( af.objid )
+        collectiontype = colltypes.find{ it.appcode = 'real_property' }
+    }
+    
+    void lookupOpener() {
+        String openerType = 'tc:' + collectiontype.appcode
+        def params = [
+            af             : af,
+            afcontrol      : afcontrol,
+            openerType     : openerType,
+            collectiontype : collectiontype,
+            collector      : collector,
+            txnmode        : txnmode,
+        ]
+        opener = InvokerUtil.lookupOpener( openerType, params )
+    }
+    
+    
+    def createEntity() {
+        return [
+            docstate        : 'OPEN',
+            opener          : 'tc:real_property',
+            voided          : 0,
+            collectorid     : collector.objid,
+            doctype         : 'RPT', 
+            info     : [
+                mode             : 'ONLINE',
+                afid             : af.objid,
+                aftype           : af.aftype,
+                afcontrolid      : afcontrol.objid,
+                series           : afcontrol.currentseries,
+                serialno         : afcontrol.serialno,
+                stubno           : afcontrol.stubno,
+                collectiontypeid : collectiontype.objid,
+                collectiontype   : collectiontype.name,
+                payorrequired    : collectiontype.payorrequired,
+                collectorid      : collector.objid,
+                collectorname    : collector.name,
+                collectortitle   : collector.jobtitle,
+                payorid          : payor.objid,
+                payorname        : payor.payorname,
+                payoraddress     : payor.payoraddress,
+                paidby           : paidby,
+                paidbyaddress    : paidbyaddress, 
+                amount       : 0.00,
+                totalpayment : 0.00,
+                cash         : 0.00,
+                otherpayment : 0.00,
+                change       : 0.00,
+            ],
+            items    : [],
+            payments : [],
+        ]
+    }
+    
+    
+    def create() {
+        if( bill == null ) {
+            throw new Exception('At least one ledger for payment is required.')
+        }
+
+        def itemsForPayment = bill.items.findAll{ it.pay == true && it.amount > 0}
+        if( itemsForPayment.size() == 0 ) {
+            throw new Exception('At least one ledger for payment is required.')
+        }
+
+        if( MsgBox.confirm("Save collection?") ) {
+            validateTxnDate()
+            entity = svc.create( entity, itemsForPayment  )
+            print()
+            mode = 'view'
+            return 'view'
+        }
+        return null
+    }
+    
+    
+    List getQuarterList(){
+        return [1,2,3,4]
+    }
+}
+
+
+]]>
+    </code>
+    
+    <pages>
+        <page name="init" template="etracs2.rpt.collection.batch.RPTBatchCollectionInitPage" />
+        <page name="list" template="etracs2.rpt.collection.batch.RPTBatchCollectionListPage" />
+        <page name="main" template="etracs2.rpt.collection.batch.RPTBatchCollectionPage" />
+        <page name="summary" template="etracs2.rpt.collection.batch.RPTBatchSummaryPage" />
+    </pages>
+</workunit>
