@@ -12,10 +12,7 @@ abstract class AbstractRuleController
     def selectedAction
     def agendagroup
     def agendalist 
-    int editedIndex
-    
-    def updateHandler 
-    
+    int editedIndex    
             
     abstract def getBinding()
     abstract def getAbstractRuleService()
@@ -60,7 +57,6 @@ abstract class AbstractRuleController
         else 
             rule = abstractRuleService.update( rule )
         mode = 'view'
-        invokeUpdateHandler()
     }
     
     void deploy() {
@@ -112,7 +108,7 @@ abstract class AbstractRuleController
         rule.conditions.set(editedIndex, condition )
         selectedCondition = condition
         doBuildVarList()
-        binding.refresh('selectedCondition') 
+        conditionListHandler.load()
     }
     
     void doBuildVarList() {
@@ -192,7 +188,7 @@ abstract class AbstractRuleController
     def updateActionHandler = { action -> 
         rule.actions.set(editedIndex, action )
         selectedAction = action 
-        binding.refresh('selectedCondition') 
+        actionListHandler.load()
     }
     
     def openAction() {
@@ -251,13 +247,21 @@ abstract class AbstractRuleController
         return agendaGroups.find{ it.objid == rule.agendagroupid }
     }
     
-    void invokeUpdateHandler() {
-        if( updateHandler ) updateHandler()
-    }
-    
     def fixRuleName( ) {
         rule.rulename = rule.rulename.replaceAll('\\W', '_')
         binding.refresh('rule.rulename')
+    }
+    
+    /*------  caller refresh support --------*/
+    def refreshHandler;
+    def updateHandler;
+    
+    @Close
+    void onClose() {
+        if( refreshHandler ) 
+            refreshHandler()
+        else if( updateHandler )
+             updateHandler( rule )
     }
     
 }
