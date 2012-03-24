@@ -38,14 +38,13 @@ public class PreviewPage extends javax.swing.JPanel {
         );
         xReportPanel1Layout.setVerticalGroup(
             xReportPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 260, Short.MAX_VALUE)
+            .add(0, 279, Short.MAX_VALUE)
         );
         add(xReportPanel1, java.awt.BorderLayout.CENTER);
 
         xActionBar1.setButtonBorderPainted(false);
         xActionBar1.setButtonContentAreaFilled(false);
         xActionBar1.setName("formActions");
-        xActionBar1.setPreferredSize(new java.awt.Dimension(104, 40));
         add(xActionBar1, java.awt.BorderLayout.NORTH);
 
     }// </editor-fold>//GEN-END:initComponents
