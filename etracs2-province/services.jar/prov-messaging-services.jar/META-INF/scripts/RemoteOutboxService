@@ -7,17 +7,22 @@ class RemoteOutboxService
 	@PersistenceContext('main')
 	def em
 	
+	@Service('DomainService')
+	def domainSvc
+	
 	def OUTBOX_SCHEMA = 'message:outbox'
 	def PROCESSEDOUTBOX_SCHEMA = 'message:processedoutbox'
 	
 	@ProxyMethod
 	public def fetchMessage( params ) {
 		println 'Fetching messages for LGU ' + params.lguindexno
-		def msg = em.sqlContext.createNamedQuery('message:getOutboxMessageId').setParameter('tolguindex', params.lguindexno ).setMaxResults(1).singleResult
-		if( msg ) {
-			msg = em.read(OUTBOX_SCHEMA, msg)
+		domainSvc.connected( params.lguindexno, params.lguname, params.lgutype, [:])
+		def msgidlist = em.sqlContext.createNamedQuery('message:getOutboxMessageId').setParameter('tolguindex', params.lguindexno ).resultList
+		def msglist = []
+		msgidlist.each{ msgid ->
+			msglist.add( em.read(OUTBOX_SCHEMA, msgid) )
 		}
-		return msg 
+		return msglist 
 	}
 	
 	@ProxyMethod
