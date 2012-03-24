@@ -204,7 +204,7 @@ public class RPTBillingService
         
         def dt = dateSvc.parseDate( bill.billdate, null )
         def list = []
-        def params = [ currentyr:dt.year ]
+        def params = [ currentyr:bill.billtoyear ]
         bill.ledgerids.each{ id ->
             params.objid = id 
             list.addAll( em.sqlContext.createNamedQuery('rptbill:getOpenLedgersById').setParameters( params ).resultList )
@@ -467,12 +467,12 @@ public class RPTBillingService
 			lastqtr = bill.billtoqtr 
 		}
 		
-		def startqtr = ( billitem.lastqtrpaid == 4 ? 1 : billitem.lastqtrpaid + 1 )
+		def startqtr = 1
 		if( firstitem && billitem.partialbasic > 0 ) {
 			startqtr = billitem.lastqtrpaid
 		}
-		else if( billitem.isadvance ) {
-			startqtr = 1 
+		else if( firstitem ) {
+			startqtr = ( billitem.lastqtrpaid == 4 ? 1 : billitem.lastqtrpaid + 1 )
 		}
 		
 		for( int qtr = startqtr ; qtr <= lastqtr; qtr++) {
