@@ -1,8 +1,8 @@
 <workunit>
     <invokers>
-        <invoker folderid="/menu/bp/reports"         action="init" caption="Line of Business Count Listing" target="window" index="4" permission="bpreport.lobcountlisting" />
-        <invoker type="bpreport"         action="init" opener="lobcountlisting" caption="Line of Business Count Listing" target="window" index="4" permission="bpreport.lobcountlisting" />
-        <invoker type="bpreport.lobcountlisting"    action="init" caption="Line of Business Count Listing" target="window" />
+        <invoker folderid="/menu/bp/reports" action="init" caption="Top Business Listing" target="window" index="4" permission="bpreport.lobtoplisting" />
+        <invoker type="bpreport"         action="init" opener="topbusinesslisting" caption="Top Business Listing" target="window" index="4" permission="bpreport.lobtoplisting" />
+        <invoker type="bpreport.topbusinesslisting"    action="init" caption="Top Business Listing" target="window" />
         
         <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
         <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
@@ -18,7 +18,7 @@ import com.rameses.rcp.annotations.*;
 import com.rameses.osiris2.client.*;
 import com.rameses.osiris2.reports.*;
 
-class LOBCountListingController
+class TopBusinessListingController
 {
     @Binding
     def binding
@@ -32,15 +32,16 @@ class LOBCountListingController
     @Service('DateService')
     def dateSvc
     
-    def year 
-    def docstate
-    def barangay
-    def reportdata
+    def year
+    def topsize
+    def txntype
     def classification
+    def reportdata
     
     void init() {
         def parsedate = dateSvc.parseCurrentDate()
         year = parsedate.year 
+        topsize = 10
     }
     
     def preview() {
@@ -49,7 +50,11 @@ class LOBCountListingController
     }
     
     void generateReport() {
-        reportdata = svc.getLOBCountListing( barangay?.barangayid, year, docstate, classification )
+        def entity = [
+            year: year, topsize:topsize,
+            txntype:txntype, classification:classification
+        ]
+        reportdata = svc.generateTopBusinessList( entity )
         report.viewReport()
     }
     
@@ -59,13 +64,13 @@ class LOBCountListingController
     }
     
     def report = [
-        getReportName : { 'bp/lobcountlisting' },
-        getReportData : { return reportdata },
+        getReportName : { 'bp/topbusinesslisting' },
+        getReportData : { return reportdata.items },
         getParameters : { 
             def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )
-            params.STATE = docstate
-            params.BARANGAYNAME = ( barangay  ? barangay.barangayname : 'ALL' )
-            return params 
+            params.TITLE = reportdata.title.toString()
+            
+            return params
         }
     ] as ServerReportModel;
         
@@ -73,15 +78,10 @@ class LOBCountListingController
         return 'default' 
     }
     
-    
-    def getStatelist() {
-        return ['APPROVED','PERMIT_PENDING','ACTIVE']
+    def getTypelist() {
+        return ['NEW','RENEW']
     }
-    
-    def getBarangaylist() {
-        return svc.getBarangayList()
-    }
-    
+        
     def getClassificationlist() {
         return svc.getClassificationList()
     }
@@ -90,7 +90,7 @@ class LOBCountListingController
         
     </code>
     <pages>
-        <page template="etracs2.bp.report.BPReportInit2Page" />
+        <page template="etracs2.bp.report.BPReportTopListPage" />
         <page name="preview" template="etracs2.common.PreviewPage" />
     </pages>
 </workunit>
