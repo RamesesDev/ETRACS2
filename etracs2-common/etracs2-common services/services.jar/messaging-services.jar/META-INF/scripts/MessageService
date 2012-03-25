@@ -1,20 +1,81 @@
 import com.rameses.annotations.*
 import com.rameses.common.*
+import java.rmi.server.UID
+import com.rameses.common.*;
 
 /*
-* Serves as message dispatcher. It invokes onreceive method which is 
-* hooked by interceptors that would process the message 
+* Serves as message manager and dispatcher. 
 */
 class MessageService
 {
 	@PersistenceContext('main')
 	def em
 	
+	@Env
+	def env
+	
+	@Service('Var')
+	def var
+	
+	@Service('DomainService')
+	def domainSvc
+	
+	
+	/*-------------------------------------------------------------------------------- 
+	* This method serves as a message dispatcher. Interceptors hook and listen
+	* to this method and process the message they are concerned about.
+	-------------------------------------------------------------------------------- */
 	@ProxyMethod
 	public def onreceive( msg ) {
-		//move msg to processed and delegate to interceptors/handlers
+		//dispatch msg and let interceptors/handlers process it
 		return msg 
 	}
 	
+	@ProxyMethod 
+	public void send( refid, action, data  ) {
+        def msg = createMessage( refid, action, data )
+        em.create('message:outbox', msg ) 
+    }
+	
+	@ProxyMethod
+	public void broadcast( refid, action, data ) {
+		def domainlist = domainSvc.getList()
+		domainlist.each{ domain -> 
+			def msg = createMessage( refid, action, data )
+			msg.tolguindex = domain.domainid 
+			msg.tolguname  = domain.domainname 
+			em.create('message:outbox', msg ) 
+		}
+	}
+	
+	/* Move the specified refid from outbox to processedoutbox */
+	@ProxyMethod
+	public void processOutboxMessage( refid ) {
+		def msg = em.sqlContext.createNamedQuery('message:getOutboxMessageByRefId').setParameter('refid', refid).singleResult
+        if( msg ) {
+            msg = em.read('message:outbox', msg )
+            em.create('message:processedoutbox', msg )
+            em.delete('message:outbox', msg )
+        }
+	}
+	
+	def createMessage( refid, action, data ) {
+		return [
+            objid           : 'MI' + new UID(),
+            schemaname      : 'message:outbox',
+            schemaversion   : '1.0',
+            refid           : refid, 
+            fromlguindex    : var.lgu_index,
+            fromlguname     : var.lgu_name,
+            tolguindex      : var.remote_lgu_index,
+            tolguname       : var.remote_lgu_name, 
+            dtsent          : new Date(),
+            sentby          : ( env.USERNAME ? env.USERNAME : 'SYSTEM' ),
+            sentbytitle     : ( env.JOBTITLE ? env.JOBTITLE : 'SYSTEM' ),
+            action          : action,
+            data            : data,
+            messages        : [],
+        ]
+	}
 	
 }
