@@ -1,0 +1,150 @@
+<workunit>
+    <invokers>
+        <invoker folderid="/menu/domain" action="init" caption="Manage Entity Mapping" index="21" permission="entity.mapping" />
+        
+        <invoker type="formActions" action="_close" caption="Close"  shortcut="ctrl W"   mnemonic="c"  immediate="true" icon="images/cancel.png" visibleWhen="${mode=='view' and showClose}"/>
+        <invoker type="formActions" action="edit" shortcut="ctrl E" visibleWhen="#{mode == 'view' and selectedItem.objid != null}" immediate="true" caption="Edit" mnemonic="e" icon="images/doc-edit.png" />
+        <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/doc-save.png"/>
+        <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/doc-cancel.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*
+import com.rameses.rcp.annotations.*
+import com.rameses.osiris2.client.*
+
+class EntityMappingMgmtController 
+{
+    @Binding
+    def binding
+    
+    @Service("EntityMappingService")
+    def svc
+    
+    def selectedItem
+    def searchText
+    def list = []
+    def mode = 'view'
+    def entity = [:]
+    
+    def mapping
+    boolean showClose = false
+    def selectedMapping
+    
+    void init() {
+        search()
+    }
+    
+    void edit() {
+        changeMode( 'edit' )
+    }
+    
+    void cancel() {
+        open()
+        mappingListHandler.load()
+        changeMode( 'view' )
+    }
+    
+    void save() {
+        svc.update( entity )
+        changeMode( 'view' )
+    }
+    
+	
+    void setSelectedItem( item ) {
+        selectedItem = item 
+        if( selectedItem ) {
+            open()
+        }
+        else {
+            entity = [:]
+            mappingListHandler.load()
+        }
+    }
+    
+    void open() {
+        mapping = null
+        entity.clear()
+        entity.putAll( svc.open( selectedItem.objid ) )
+        mappingListHandler.load()
+    }
+    
+    def listHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column(name:"domainname", caption:"Domain"),
+                new Column(name:"entityname", caption:"Name"),
+                new Column(name:"entityaddress", caption:"Address"),
+            ]
+        },
+        fetchList : { return list },
+    ] as SubListModel
+    
+    def mappingListHandler = [
+        getRows    : { return 50 },
+        getColumns : {
+            return [
+                new Column(name:"entityno", caption:"Entity No."),
+                new Column(name:"entityname", caption:"Name"),
+                new Column(name:"entityaddress", caption:"Address"),
+            ]
+        },
+        onRemoveItem : { item -> 
+            if( MsgBox.confirm('Delete selected item?') ){
+                def items = entity.mappings.findAll{ it.entityid == item.entityid }
+                entity.mappings.removeAll( items )
+            }
+        },
+        fetchList : { return entity?.mappings },
+    ] as SubListModel
+    
+    void search() {
+        doFetchList( [_start:0, _limit:50] )
+    }
+    
+    void doFetchList( params ) {
+        list = svc.getList( searchText, params )
+        listHandler.load()
+    }
+    
+    void changeMode( md ) {
+        mode = md
+        binding.refresh()
+    }
+    
+    
+    void setMapping( mapping ) {
+        if( mapping ) {
+            if( ! entity.mappings ) entity.mappings = []
+            if( ! alreadyMapped( mapping ) ) {
+                entity.mappings.add( [
+                    entityid        : mapping.objid,
+                    entityno        : mapping.entityno,
+                    entityname      : mapping.entityname,
+                    entityaddress   : mapping.entityaddress, 
+                ] )
+                mapping = null 
+                mappingListHandler.load()
+                binding?.focus('mapping') 
+            }
+        }
+    }
+    
+    boolean alreadyMapped( mapping ) {
+        def list = entity.mappings.findAll{it.entityid == mapping.objid }
+        return list.size() > 0 
+    }
+    
+    def getLookupEntity() {
+        return InvokerUtil.lookupOpener('entity.lookup', [:])
+    }
+}
+
+]]>
+    </code>
+    <pages>
+        <page template="etracs2.entity.EntityForMappingPage"/>
+    </pages>
+</workunit>
