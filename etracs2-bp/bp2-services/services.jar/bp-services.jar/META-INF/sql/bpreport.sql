@@ -68,7 +68,8 @@ FROM (
 		INNER JOIN bpapplicationlisting bl ON bi.applicationid = bl.objid  
 		INNER JOIN lob l ON l.objid = bi.lobid 
 		INNER JOIN lobclassification lc ON lc.objid = l.classificationid 
-	WHERE bl.txntype = $P{txntype}    
+	WHERE bl.txntype = $P{txntype} 
+	  AND bl.iyear = $P{year} 
 	  AND bl.docstate IN ('APPROVED', 'PERMIT_PENDING', 'ACTIVE') 
 	  AND bi.varname = $P{varname}     
 	  AND lc.name LIKE $P{classification}  
@@ -99,7 +100,8 @@ FROM bpapplicationlisting ba,
 		) t 
 		WHERE t.amount = $P{amount}	
 	) pa 
-WHERE ba.txntype = $P{txntype} 
+WHERE ba.txntype = $P{txntype}  
+  AND ba.iyear = $P{year} 
   AND ba.docstate IN ('APPROVED', 'PERMIT_PENDING', 'ACTIVE') 
   AND ba.objid = pa.objid 
 ORDER BY pa.amount DESC  
