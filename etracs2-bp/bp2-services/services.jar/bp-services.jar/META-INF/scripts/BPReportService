@@ -105,7 +105,7 @@ public class BPReportService
 		entity.classification = entity.classification?.classification
 		def param = [ classification:entity.classification, txntype:entity.txntype, topsize:entity.topsize]
 		def reportdata = [:]
-		reportdata.title = buildTitlePrefix( param )
+		reportdata.title = buildTitle( param )
 		reportdata.items = []
 
 		em.sqlContext.createNamedQuery('bpreport:getBusinessTopList')
@@ -114,7 +114,8 @@ public class BPReportService
 				  classification:( entity.classification ? entity.classification : '%' ),
 				  varname:( entity.txntype == 'NEW' ? 'CAPITAL' : 'GROSS')
 			]).resultList.each{ 
-			reportdata.items = em.sqlContext.createNamedQuery('bpreport:getBusinessTopListGroupByAmount')
+			
+			reportdata.items += em.sqlContext.createNamedQuery('bpreport:getBusinessTopListGroupByAmount')
 				.setParameters([
 					txntype:entity.txntype, amount:it.amount, year:entity.year,
 					classification:( entity.classification ? entity.classification : '%' ),
@@ -140,7 +141,7 @@ public class BPReportService
 		return reportdata
 	}
 	
-	private def buildTitlePrefix( def param ){
+	private def buildTitle( def param ){
 		def	titleprefix = ( param.txntype == 'NEW' ? "NEW $param.classification" : "RENEWED $param.classification" )
 		if( !param.classification )
 			titleprefix = ( param.txntype == 'NEW' ? 'NEW BUSINESSES' : 'BUSINESS RENEWALS' )
