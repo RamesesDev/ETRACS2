@@ -37,6 +37,12 @@ class MessageService
         em.create('message:outbox', msg ) 
     }
 	
+	@ProxyMethod 
+	public void sendCustomMessage( msg  ) {
+        em.create('message:outbox', msg ) 
+    }
+	
+	
 	@ProxyMethod
 	public void broadcast( refid, action, data ) {
 		def domainlist = domainSvc.getList()
@@ -59,7 +65,8 @@ class MessageService
         }
 	}
 	
-	def createMessage( refid, action, data ) {
+	@ProxyMethod 
+	public def createMessage( refid, action, data ) {
 		return [
             objid           : 'MI' + new UID(),
             schemaname      : 'message:outbox',

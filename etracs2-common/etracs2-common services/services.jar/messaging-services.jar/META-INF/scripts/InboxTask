@@ -15,8 +15,12 @@ class InboxTask
     @Service('MessageService')
     def msgSvc
 	
+	@Service('Var')
+	def var
+
 	def INBOX_SCHEMA = 'message:inbox'
 	def PROCESSEDINBOX_SCHEMA = 'message:processedinbox'
+	
 	
 	@ProxyMethod
 	public def processMessage( task ) {
@@ -42,12 +46,14 @@ class InboxTask
 	}
 	
 	void logMessage( msg, errorMsg ) {
-        msg.message = [date:new Date(), msg:errorMsg]
+        msg.status = [date:new Date(), msg:errorMsg]
         em.update( msg.schemaname, msg )
     }
     
     def getInboxMessages() {
-        return em.sqlContext.createNamedQuery('message:getInboxMessageId').resultList
+        return em.sqlContext.createNamedQuery('message:getInboxMessageId')
+					.setParameter('tolguindex', var.lgu_index )
+					.resultList
     }
     		
 	void moveMessageToProcessedInbox( msg ) {
