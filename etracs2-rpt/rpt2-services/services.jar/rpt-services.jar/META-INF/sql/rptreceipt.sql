@@ -39,6 +39,8 @@ WHERE objid = $P{objid}
 [voidRPTPayment]
 UPDATE rptpayment SET voided = 1 WHERE objid = $P{objid} 
 
+[deleteRemoteRPTPayment]
+DELETE FROM rptpayment WHERE objid = $P{objid} 
 
 
 [getRPTIncomeAccounts]
@@ -61,3 +63,15 @@ SELECT propertycode AS classcode  FROM propertyclassification ORDER BY orderno
 [deleteRPTPaymentManual] 
 DELETE FROM rptpaymentmanual WHERE receiptid = $P{receiptid} 
 
+[getExtendedInfo]
+SELECT extended FROM receipt WHERE objid = $P{objid} 
+
+
+#----------------------------------
+# Remote Collection Support
+#----------------------------------
+[getDomainList]
+SELECT domainid, domainname FROM domain ORDER BY domainname  
+
+[getEntityMappings]
+SELECT entityid, entityname, entityaddress FROM entitymapping  WHERE parentid = $P{parentid} AND domainid = $P{domainid} 

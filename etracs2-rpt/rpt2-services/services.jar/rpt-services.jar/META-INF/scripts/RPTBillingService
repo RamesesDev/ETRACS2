@@ -10,6 +10,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.math.MathContext
 import etracs2.rpt.billing.facts.*
+import java.rmi.server.UID
 
 public class RPTBillingService
 {
@@ -27,6 +28,9 @@ public class RPTBillingService
 	
 	@Service('NumberService')
 	def numSvc 
+	
+	@Service('MessageService')
+	def msgSvc 
     
 	
     def RULESET = 'rptbilling'
@@ -111,6 +115,70 @@ public class RPTBillingService
 		executeBillingRules( bill )
         return bill
 	}	
+	
+	@ProxyMethod
+	public void generateRemoteRequestedBill( msg ) {
+		def tolguindex   = msg.fromlguindex 
+		def tolguname    = msg.fromlguname 
+		msg.action       = 'rptbill_post_generated'
+		msg.fromlguindex = msg.tolguindex 
+		msg.fromlguname  = msg.tolguname 
+		msg.tolguindex   = tolguindex
+		msg.tolguname    = tolguname
+		
+		def bill = msg.data.bill 
+		try {
+			generateBill( bill )
+			msg.status =[date:new Date(), iserror:false, errormsg:'']
+			msg.data = [sessionid:bill.sessionid, bill:bill] 
+			msgSvc.sendCustomMessage( msg ) 
+		}
+		catch( e ) {
+			msg.data = [sessionid:bill.sessionid, bill:[:]] 
+			msg.status =[date:new Date(), iserror:true, errormsg:e.message]
+			msgSvc.sendCustomMessage( msg ) 
+			throw e 
+		}
+		
+		//return [date:new Date(), status:'Processed successfully.']
+	}
+	
+	@ProxyMethod
+	public void postRemoteGeneratedBill( msg ) {
+		def data = [
+			objid		: msg.objid, 
+			sessionid	: msg.data.sessionid, 
+			status		: em.serializer.write(msg.status), 
+			data		: em.serializer.write( msg.data ),
+			fromlguindex : msg.fromlguindex,
+			fromlguname  : msg.fromlguname,
+			tolguindex   : msg.tolguindex,
+			tolguname    : msg.tolguname,
+		]
+		em.sqlContext.createNamedExecutor('rptbill:insertResponseData')
+				.setParameters( data )
+				.execute()
+	}	
+	
+	@ProxyMethod 
+	public def getRemoteResponse( sessionid ) {
+		def response = em.sqlContext.createNamedQuery('rptbill:getResponseData')
+						.setParameter('sessionid', sessionid )
+						.singleResult
+		if( response ) {
+			response.status = em.serializer.read( response.status )
+			response.data = em.serializer.read( response.data )
+			deleteRemoteGeneratedBill( sessionid )
+		}
+		return response 
+	}
+	
+	@ProxyMethod
+	public void deleteRemoteGeneratedBill( sessionid ) {
+		em.sqlContext.createNamedExecutor('rptbill:deleteResponseDataBySessionId')
+					.setParameter('sessionid', sessionid )
+					.execute()
+	}
 	
 	@ProxyMethod
 	public def generateManualBill( bill ) {
