@@ -42,7 +42,6 @@ class EntityMappingMgmtController
     
     void cancel() {
         open()
-        mappingListHandler.load()
         changeMode( 'view' )
     }
     
@@ -58,15 +57,14 @@ class EntityMappingMgmtController
             open()
         }
         else {
-            entity = [:]
+            entity = null
             mappingListHandler.load()
         }
     }
     
     void open() {
         mapping = null
-        entity.clear()
-        entity.putAll( svc.open( selectedItem.objid ) )
+        entity = svc.open( selectedItem.objid )
         mappingListHandler.load()
     }
     
@@ -111,6 +109,7 @@ class EntityMappingMgmtController
     
     void changeMode( md ) {
         mode = md
+        mappingListHandler.load()
         binding.refresh()
     }
     
