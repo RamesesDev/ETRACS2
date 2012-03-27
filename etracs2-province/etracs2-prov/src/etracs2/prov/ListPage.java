@@ -83,6 +83,7 @@ public class ListPage extends javax.swing.JPanel {
         xActionBar1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
         xActionBar1.setButtonCaptionOrientation(javax.swing.SwingConstants.BOTTOM);
         xActionBar1.setDepends(new String[] {"selectedItem"});
+        xActionBar1.setDynamic(true);
         xActionBar1.setName("formActions");
         jPanel6.add(xActionBar1, java.awt.BorderLayout.NORTH);
 

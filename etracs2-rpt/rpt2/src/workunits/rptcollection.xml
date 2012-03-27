@@ -26,7 +26,10 @@
     import com.rameses.osiris2.reports.*
     import etracs2.groovy.*
     import etracs2.tc.groovy.*
+    import etracs2.rpt.groovy.*
     import java.text.DecimalFormat;
+    import java.rmi.server.UID
+    import com.rameses.rcp.framework.TaskManager;
 
     class RPTCollectionController extends AbstractCollectionController
     {
@@ -48,6 +51,7 @@
         def currdate 
         def parsedate 
         def payments = []
+        def response
         
         
         def getParameters() { return svcParams.getStandardParameter( OsirisContext.env.USERNAME ); }
@@ -91,7 +95,12 @@
             
             if( MsgBox.confirm("Save collection?") ) {
                 validateTxnDate()
-                entity = svc.create( entity, itemsForPayment  )
+                if( payoption == 'remote' ) {
+                    entity = svc.createRemoteCollection( entity, itemsForPayment, response.fromlguindex, response.fromlguname  )
+                }
+                else {
+                    entity = svc.create( entity, itemsForPayment  )
+                }
                 print()
                 mode = 'view'
                 return 'view'
@@ -150,6 +159,10 @@
             else if ( payoption == 'bytd' ) {
                 return 'bytd'
             }
+            else if ( payoption == 'remote' ) {
+                sendRemoteBillingRequest()
+                return 'remote'
+            }
             return 'init' 
             
         }
@@ -176,6 +189,7 @@
         
         Map createBill() {
             return [
+                sessionid      : 'S' + new UID(),
                 taxpayerid     : entity.info.payorid,
                 ledgerids      : [],
                 advancepayment : false,
@@ -238,7 +252,11 @@
                         showError('To Qtr must be greater than or equal to From Qtr.')
                         item.toqtr = item.fromqtr 
                     }   
-                    processBillTo( item )
+                    
+                    if( payotion == 'remote' )
+                        processBillToRemote( item )
+                    else 
+                        processBillTo( item )
                 }
                 calculateReceiptAmount()
             }
@@ -348,7 +366,7 @@
         
         
         void selectAll() {
-            if( bill == null ) return 
+            if( bill == null || !bill.items ) return 
             bill.items.each { 
                 it.pay    = true
                 it.amount = it.total 
@@ -358,7 +376,7 @@
         }
         
         void deselectAll() {
-            if( bill == null ) return 
+            if( bill == null || !bill.items ) return 
             bill.items.each { 
                 it.pay    = false
                 it.amount = 0.0
@@ -368,7 +386,7 @@
         }
         
         void fullPayment() {
-            if( bill == null ) return 
+            if( bill == null || !bill.items) return 
             loadBill()
             listHandler.load()
             calculateReceiptAmount()
@@ -388,6 +406,142 @@
             }
             return ''
         }
+        
+        
+        /*================================================================================================
+        *
+        * Remote Collection Support 
+        *
+        ================================================================================================*/
+        def remotedomain
+        def itemrecalculated = false 
+        
+        def taskmgr 
+        def timertask
+        boolean displaymsg = false
+        def stopped = false
+        def msg 
+        
+        def ontimer = {
+            if( ! stopped ) {
+                updateRemoteMessage()
+                manualRefresh()
+            }
+        }
+        
+        void updateRemoteMessage() {
+            if( displaymsg ) {
+                displaymsg = false
+                showError('')
+            }
+            else {
+                displaymsg = true
+                showError( msg )
+            }
+        }
+        
+        void sendRemoteBillingRequest() {
+            if( ! remotedomain ) {
+                binding.focus('remoteadmin')
+                throw new Exception('LGU is required.')
+            }
+            bill = createBill()
+            svc.sendRemoteBillingRequest( payor.objid, remotedomain, bill )
+            
+            msg = 'Sending request to ' + remotedomain.domainname + ' server. Please wait...' 
+            
+            taskmgr = new TaskManager()
+            timertask = new TTimerTask( ontimer : ontimer, sleeptime:1000)
+            taskmgr.addTask( timertask )
+            taskmgr.start()   
+            
+        }
+        
+        void processBillToRemote( item ) {
+            return 
+            /*
+            def newbill = createBill()
+            newbill.ledgerids.add( item.objid )
+            newbill.billtoyear = item.toyear
+            newbill.billtoqtr  = item.toqtr 
+            newbill.fullpayment = ( item.toyear == parsedate.year && item.toqtr == 4 )
+            newbill.qtrlypaymentavailed = ( item.toqtr != 4 )
+            newbill.advancepayment  = (item.toyear > parsedate.year )
+            itemrecalculated = true 
+            svc.sendRemoteBillingRequest( payor.objid, remotedomain, newbill )
+            */
+        }
+        
+        List getRemoteDomainList() {
+            return svc.getRemoteDomainList()
+        }
+        
+        void manualRefresh() {
+            response = billingSvc.getRemoteResponse( bill.sessionid )
+            if( ! response ) return 
+
+            def status = response.status
+            if( status.iserror ) {
+                msg = status.errormsg 
+                updateRemoteMessage()
+                stopTimer( msg )
+            }
+            else {
+                def newbill = response.data.bill 
+                if( ! newbill ) return 
+                billingSvc.deleteRemoteGeneratedBill( bill.sessionid )
+
+                newbill.items.each { 
+                    it.pay    = true 
+                    it.amount = it.total
+                }
+                if( ! bill ) {
+                    bill = newbill 
+                }
+                else if( itemrecalculated )  {
+                    updateRecalculatedItem( newbill )
+                    itemrecalculated = false 
+                }
+                else {
+                    bill.items.addAll( newbill.items )
+                }
+                listHandler.load()
+                calculateReceiptAmount()
+                msg = ''
+                updateRemoteMessage()
+                stopTimer('')
+            }
+        }
+        
+        void updateRecalculatedItem( newbill ) {
+            def newitem = newbill.items[0]
+            if( !newitem )  throw new Exception('Cannot process bill for this item.')
+            
+            def toyear = item.toyear
+            def toqtr = item.toqtr
+            
+            item.details.clear()
+            item.putAll( newitem )
+            item.toyear = toyear
+            item.toqtr  = toqtr 
+            item.pay = true
+            item.amount = newitem.total
+            calculateReceiptAmount()
+        }
+        
+        void stopTimer( msg ) {
+            stopped = true 
+            displaymsg = true 
+            timertask.setCancelled( true )
+            timertask.setEnded( true )
+            taskmgr.remoteTask( timertask )
+            taskmgr.stop()
+            taskmgr = null
+            showError( msg )
+        }
+        
+        
+        
         
         
         /*----------------------------------------------------------------------
@@ -413,13 +567,17 @@
                 
             ])
         }
-    }
+    }    
+
+
+
 ]]>        
     </code>
     <pages>
         <page name="init" template="etracs2.rpt.collection.RPTReceiptInitPage" />
         <page name="main" template="etracs2.rpt.collection.RPTReceiptPage" />
         <page name="bytd" template="etracs2.rpt.collection.RPTReceiptByTDPage" />
+        <page name="remote" template="etracs2.rpt.collection.RPTReceiptByRemotePage" />
         <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
         <page name="html" template="etracs2.tc.HtmlPage"/>
     </pages>

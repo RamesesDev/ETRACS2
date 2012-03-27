@@ -25,4 +25,6 @@ SELECT * FROM entity
 WHERE objid <> $P{objid} 
   AND entityname = $P{entityname} AND entityaddress = $P{entityaddress} 
 
+[getMappingList]  
+SELECT * FROM entitymapping WHERE parentid = $P{parentid}
 
