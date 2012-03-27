@@ -6,6 +6,8 @@ import com.rameses.common.*
 * it dispatches the message by calling MessageService.onreceive
 * and move the message from inbox to processedinbox 
 *
+* Messages bound for other recepients are automatically routed
+* and delivered
 */
 class InboxTask
 {
@@ -19,6 +21,7 @@ class InboxTask
 	def var
 
 	def INBOX_SCHEMA = 'message:inbox'
+	def OUTBOX_SCHEMA = 'message:outbox'
 	def PROCESSEDINBOX_SCHEMA = 'message:processedinbox'
 	
 	
@@ -42,7 +45,21 @@ class InboxTask
 		else {
 			println 'Inbox is empty...'
 		}
+		moveOtherDestinationMessagesToOutbox()
         return true
+	}
+	
+	void moveOtherDestinationMessagesToOutbox() {
+		def msglist = em.sqlContext.createNamedQuery('message:getOtherDestinationMessages')
+							.setParameter('tolguindex', var.lgu_index )
+							.resultList
+		msglist.each{ id ->
+			println 'id -> ' + id 
+			def msg = em.read( INBOX_SCHEMA, id)
+			em.delete( msg.schemaname, msg )
+			msg.schemaname = OUTBOX_SCHEMA
+			em.create( msg.schemaname, msg )
+		}
 	}
 	
 	void logMessage( msg, errorMsg ) {
