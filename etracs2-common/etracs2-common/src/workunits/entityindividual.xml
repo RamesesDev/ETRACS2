@@ -10,7 +10,11 @@
         <invoker type="formActions" action="save" shortcut="ctrl S" visibleWhen="#{mode != 'view'}" caption="Save" mnemonic="s" icon="images/doc-save.png"/>
         <invoker type="formActions" action="cancel" visibleWhen="#{mode != 'view'}"  immediate="true" caption="Cancel" mnemonic="c" icon="images/doc-cancel.png"/>
         <invoker type="formActions" action="delete" shortcut="ctrl D" visibleWhen="#{mode == 'view' and entity.objid != null}" immediate="true" caption="Delete" mnemonic="d" icon="images/doc-delete.png" permission="individual.delete"/>
+        <invoker type="formActions" action="showMapping" shortcut="ctrl M" visibleWhen="#{mode == 'view' and entity.objid != null and allowMapping == true}" immediate="true" caption="Mapping" mnemonic="m" permission="entity.mapping" />
 
+        <invoker type="mappingActions" action="_default" caption="Back" mnemonic="b" icon="images/back.png" immediate="true" />
+        <invoker type="mappingActions" action="broadcastRequest" caption="Broadcast Mapping Request" immediate="true" />
+        
     </invokers>
     <code>
 <![CDATA[        
@@ -23,6 +27,9 @@ class EntityIndividualController extends etracs2.groovy.AbstractEntityController
 {
     @Service("EntityService")
     def svc
+    
+    @Service('Var')
+    def var 
     
     boolean showClose = true
     
@@ -57,11 +64,51 @@ class EntityIndividualController extends etracs2.groovy.AbstractEntityController
     def getProfessionList() {
         return svc.getProfessionList()
     }
+    
+    
+    /* ----------------------------------------------------------------
+    *
+    * Mapping Support
+    *
+    ------------------------------------------------------------------*/
+    def showMapping() {
+        listHandler.load()
+        return 'mapping'
+    }
+    
+    def getEntityinfo() {
+        return 'Mapping information for ' + entity.entityname + ' (' + entity.entityno + ')'
+    }
+    
+    void broadcastRequest() {
+        if( MsgBox.confirm('Broadcast mapping request to all registered domain?') ) {
+            svc.broadcastMappingRequest( entity )
+        }
+    }
+    
+    def listHandler = [
+        getColumns : { return [
+            new Column(name:'domainid', caption:'LGU No.' ),
+            new Column(name:'domainname', caption:'LGU Name' ),
+            new Column(name:'entityno', caption:'ID No.' ),
+            new Column(name:'entityname', caption:'Name' ),
+            new Column(name:'entityaddress', caption:'Address' ),
+        ]},
+        fetchList : {
+            return svc.getMappingList( entity.objid )
+        }
+    ] as SubListModel
+    
+    boolean getAllowMapping() {
+        return true
+    }
+
 }        
 
 ]]>
     </code>
     <pages>
         <page template="etracs2.entity.IndividualPage"/>
+        <page name="mapping" template="etracs2.entity.EntityMappingPage"/>
     </pages>
 </workunit>

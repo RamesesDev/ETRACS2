@@ -28,3 +28,6 @@ WHERE objid <> $P{objid}
 [getContactNo]
 SELECT contactno FROM entity WHERE objid = $P{objid} 
 
+[getMappingList]  
+SELECT * FROM entitymapping WHERE parentid = $P{parentid} 
+

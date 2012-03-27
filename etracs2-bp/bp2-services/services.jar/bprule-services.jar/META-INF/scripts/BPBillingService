@@ -389,8 +389,11 @@ class CalcSurchargeHandler implements RuleActionHandler
 		tf.surcharge = 0.0
 		if( taxfee ) {
 			tf.surchargeacctid = taxfee.surchargeacctid
+			tf.surchargeaccttitle = taxfee.surchargeaccttitle
+			tf.surchargetaxfeeid = taxfee.taxfeeid
 			tf.surcharge = taxfee.surcharge 
 		}
+		
 	}
 }
 
@@ -409,7 +412,9 @@ class CalcInterestHandler implements RuleActionHandler
 		def tf = bill.taxfees.find{ it.objid == taxfee.taxfeeid }
 		tf.interest = 0.0
 		if( taxfee ) {
-			tf.interestacctid = taxfee.interestacctid 
+			tf.interestacctid = taxfee.interestacctid
+			tf.interestaccttitle = taxfee.interestaccttitle
+			tf.interesttaxfeeid = taxfee.taxfeeid
 			tf.interest = taxfee.interest
 		}
 	}

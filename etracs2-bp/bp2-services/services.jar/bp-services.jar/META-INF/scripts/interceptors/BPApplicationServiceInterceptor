@@ -7,6 +7,9 @@ class BPApplicationServiceInterceptor {
 	@PersistenceContext('main')
 	def em;
 	
+	@Service("DateService")
+	def dtSvc
+	
 	@After(pattern="BPApplicationService.approveApplication") 
 	public void approveApplication( evt ) {
 		def application = evt.result;
@@ -91,5 +94,17 @@ class BPApplicationServiceInterceptor {
 			em.create("bplisting:taxfeelisting", taxfee);
 		}
 		
+		calculateStatExpired( application )
+		
+	}
+	
+	private void calculateStatExpired( application ){
+		if( application.iyear < dtSvc.getServerYear() ){		
+			em.sqlContext.createNamedExecutor("bprenwal:updatebpapplicationStatExpiredById")
+				.setParameter( 'objid', application.objid ).execute()
+				
+			em.sqlContext.createNamedExecutor("bprenwal:updatebpapplicationlistingStatExpiredById")
+				.setParameter( 'objid', application.objid ).execute()
+		}
 	}
 }

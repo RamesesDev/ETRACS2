@@ -43,6 +43,9 @@ class FAASService
     
     @Service('MiscRPUService')
     def miscRpuSvc
+	
+	@Service('MessageService')
+	def msgSvc
 
     def INTERIM_STATE = 'INTERIM'
     def FORAPPROVAL_STATE = 'FORAPPROVAL'
@@ -322,7 +325,7 @@ class FAASService
         return faas 
     }
     
-    @ProxyMethod
+    @ProxyMethod 
     public Map submitToProvince( faasid ) {
         def faasinfo = getFaasInfo( faasid )
         validateSubmitToProvince( faasinfo )
@@ -1429,32 +1432,15 @@ class FAASService
     }
     
     void sendToOutbox( faas ) {
-        def msg = [
-            objid           : 'MI' + new UID(),
-            schemaname      : 'message:outbox',
-            schemaversion   : '1.0',
-            refid           : faas.objid, 
-            fromlguindex    : var.lgu_index,
-            fromlguname     : var.lgu_name,
-            tolguindex      : faas.rp.provcityindex,
-            tolguname       : faas.rp.provcity, 
-            dtsent          : new Date(),
-            sentby          : ( env.USERNAME ? env.USERNAME : 'SYSTEM' ),
-            sentbytitle     : ( env.JOBTITLE ? env.JOBTITLE : 'SYSTEM' ),
-            action          : 'faas.receive',
-            data            : [ faas:faas, attachments:getAttachments( faas.objid) ],
-            messages        : [],
-        ]
-        em.create('message:outbox', msg )
+		msgSvc.send( 
+			faas.objid, 
+			'faas.receive', 
+			[ faas:faas, attachments:getAttachments( faas.objid) ]
+		)
     }
     
     void moveOutboxMessageToProcessed( refid ) {
-        def msg = em.sqlContext.createNamedQuery('message:getOutboxMessageByRefId').setParameter('refid', refid).singleResult
-        if( msg ) {
-            msg = em.read('message:outbox', msg )
-            em.create('message:processedoutbox', msg )
-            em.delete('message:outbox', msg )
-        }
+		msgSvc.processOutboxMessage( refid )
     }
     
     void updateAttachmentStates( faas, docstate ) {

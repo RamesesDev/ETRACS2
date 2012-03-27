@@ -52,12 +52,14 @@ public class BPReportService
 	}
 	
 	@ProxyMethod
-	public List getLOBCountListing( barangayid, year, docstate ) {
+	public List getLOBCountListing( barangayid, year, docstate, classification ) {
 		def params 	= [ 
 			iyear			: year,
 			docstate		: ( docstate ? docstate : '%' ),
-			barangayid		: ( barangayid ? barangayid : '%' )
+			barangayid		: ( barangayid ? barangayid : '%' ),
+			classification	: ( classification ? classification : '%' )			
 		]
+		
 		def list = em.sqlContext.createNamedQuery('bpreport:getLOBCountListing').setParameters( params ).resultList 
 		if( ! list ) throw new Exception('No records found.')
 		return list 		
@@ -98,6 +100,54 @@ public class BPReportService
 		}
 	}
 	
+	@ProxyMethod
+	public def generateTopBusinessList( entity ){
+		entity.classification = entity.classification?.classification
+		def param = [ classification:entity.classification, txntype:entity.txntype, topsize:entity.topsize]
+		def reportdata = [:]
+		reportdata.title = buildTitle( param )
+		reportdata.items = []
+
+		em.sqlContext.createNamedQuery('bpreport:getBusinessTopList')
+			.setParameters([
+				  txntype:entity.txntype, topsize:entity.topsize, year:entity.year,
+				  classification:( entity.classification ? entity.classification : '%' ),
+				  varname:( entity.txntype == 'NEW' ? 'CAPITAL' : 'GROSS')
+			]).resultList.each{ 
+			
+			reportdata.items += em.sqlContext.createNamedQuery('bpreport:getBusinessTopListGroupByAmount')
+				.setParameters([
+					txntype:entity.txntype, amount:it.amount, year:entity.year,
+					classification:( entity.classification ? entity.classification : '%' ),
+					varname:( entity.txntype == 'NEW' ? 'CAPITAL' : 'GROSS')
+				]).resultList	
+		} 
+		
+		reportdata.total = reportdata.items.amount.sum()
+		def ctr = 0
+		def prvamt = -1
+		reportdata.items.each{
+			if( it.amount != prvamt ){
+				prvamt = it.amount
+				it.rankno = ++ctr
+			}
+			else{
+				it.rankno = null
+			}
+		}
+		
+		if( !reportdata.items ) throw new Exception('No records found.')
+		
+		return reportdata
+	}
+	
+	private def buildTitle( def param ){
+		def	titleprefix = ( param.txntype == 'NEW' ? "NEW $param.classification" : "RENEWED $param.classification" )
+		if( !param.classification )
+			titleprefix = ( param.txntype == 'NEW' ? 'NEW BUSINESSES' : 'BUSINESS RENEWALS' )
+		
+		return "TOP $param.topsize " + titleprefix
+	}
 	
 	@ProxyMethod
 	public List getBarangayList() {

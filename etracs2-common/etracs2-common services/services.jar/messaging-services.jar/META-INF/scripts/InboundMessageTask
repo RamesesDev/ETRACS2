@@ -20,27 +20,29 @@ class InboundMessageTask
 	public def fetchMessage( task ) {
         try {
             println 'Fetching message...'
-            def params = [ lguindexno : var.lgu_index ]
-            def msg = invokerSvc.invokeRemoteService( 'RemoteOutboxService', 'fetchMessage', [params] as Object[])
-            if( msg ) {
-                println 'Processing message from ' + msg.fromlguname 
-                //check if msg has already been fetched, check both inbox and processedinbox 
-                def oldmsg = em.read(INBOX_SCHEMA, [objid:msg.objid])
-                if( !oldmsg ) oldmsg = em.read(PROCESSEDINBOX_SCHEMA, [objid:msg.objid])
-                if( !oldmsg ) {
-                    saveToInbox( msg ) 
-                    invokerSvc.invokeRemoteService( 'RemoteOutboxService', 'fetchSuccess', [msg.objid] as Object[])
-                }
-                else {
-                    invokerSvc.invokeRemoteService( 'RemoteOutboxService', 'fetchSuccess', [oldmsg.objid] as Object[])
-                }
+            def params = [ lguindexno:var.lgu_index, lguname:var.lgu_name, lgutype:var.lgu_type ]
+            def msglist = invokerSvc.invokeRemoteService( 'RemoteOutboxService', 'fetchMessage', [params] as Object[])
+            if( msglist ) {
+				msglist.each{ msg ->
+					println 'Processing message from ' + msg.fromlguname 
+					//check if msg has already been fetched, check both inbox and processedinbox 
+					def oldmsg = em.read(INBOX_SCHEMA, [objid:msg.objid])
+					if( !oldmsg ) oldmsg = em.read(PROCESSEDINBOX_SCHEMA, [objid:msg.objid])
+					if( !oldmsg ) {
+						saveToInbox( msg ) 
+						invokerSvc.invokeRemoteService( 'RemoteOutboxService', 'fetchSuccess', [msg.objid] as Object[])
+					}
+					else {
+						invokerSvc.invokeRemoteService( 'RemoteOutboxService', 'fetchSuccess', [oldmsg.objid] as Object[])
+					}
+				}
             }
             else {
                 println 'No inbound messages for processing...'
             }
         }
         catch ( e ) {
-            println 'Cannot connect to remote outbox of ' + var.lgu_name 
+			println 'Cannot connect to remote outbox of ' + var.remote_lgu_name 
         }
         return true
 	}

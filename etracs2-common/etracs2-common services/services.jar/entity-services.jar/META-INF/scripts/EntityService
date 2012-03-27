@@ -14,6 +14,12 @@ class EntityService
 	@Service('LogService')
 	def logService
 	
+	@Service('MessageService')
+	def msgSvc 
+	
+	@Service('Var')
+	def var 
+	
 	def SCHEMANAME = 'entity:entity'
 	def SCHEMAVERSION = '1.0'
 	def MEMBER_SCHEMA = 'entity:member'
@@ -143,6 +149,95 @@ class EntityService
 		return ['SINGLE_PROPRIETORSHIP', 'PARTNERSHIP', 'CORPORATION', 'COOPERATIVE', 'ASSOCIATION', 'INCORPORATED']
 	}
 	
+	@ProxyMethod
+	public void createEntityForMapping( parententity ) {
+		parententity.mappings = []
+		parententity.schemaname = 'entityformapping'
+		parententity.schemaversion = '1.0'
+		
+		//do not create if record is already existing 
+		//this means a request is rebroadcast 
+		def old = em.read( parententity.schemaname, parententity )
+		if( ! old ) {
+			em.create( parententity.schemaname, parententity ) 
+		}
+	}
+	
+	
+	@ProxyMethod
+	public def createEntityMapping( data ) {
+		def entity  	= data.entity 
+		def domainid 	= data.domainid 
+		def domainname 	= data.domainname 
+		if( ! entity.mappings ) entity.mappings = []
+		
+		entity.mappings.each { mapping ->
+			if( ! existsEntityMapping( entity.objid, domainid, mapping.entityid ) ) {
+				insertEntityMapping( entity, domainid, domainname, mapping )
+			}
+		}
+		return [date:new Date(), status:'Processed successfully.']
+	}
+	
+	@ProxyMethod
+	public def deleteEntityMapping( data ) {
+		def parentid  	= data.parentid
+		def domainid 	= data.domainid 
+		def domainname 	= data.domainname 
+		data.deleteditems.each{ di ->
+			def params = [
+				domainid : domainid,
+				parentid : parentid,
+				entityid : di.entityid,
+			]
+			em.sqlContext.createNamedExecutor('entitymapping:deleteMapping')
+				.setParameters( params )
+				.execute()
+		}
+		return [date:new Date(), status:'Processed successfully.']
+	}
+	
+	void insertEntityMapping( entity, domainid, domainname, mapping ) {
+		def newmapping = [
+			objid 			: 'M' + new UID(),
+			schemaname		: 'entitymapping',
+			schemaversion	: '1.0',
+			parentid     	: entity.objid,
+			entityid		: mapping.entityid, 
+			domainid		: domainid,
+			domainname		: domainname,
+			entityno		: mapping.entityno,
+			entityname		: mapping.entityname,
+			entityaddress	: mapping.entityaddress,
+		]
+		em.create( newmapping.schemaname, newmapping )
+	}
+	
+	boolean existsEntityMapping( parentid, domainid, entityid ) {
+		def entity = em.sqlContext.createNamedQuery('entitymapping:getMapping')
+						.setParameters([parentid:parentid, domainid:domainid, entityid:entityid] )
+						.singleResult 
+		return entity != null 
+	}
+	
+	
+	
+	@ProxyMethod 
+	public void broadcastMappingRequest( entity ) {
+		if ( entity ){
+			entity.domainid   = var.lgu_index
+			entity.domainname = var.lgu_name
+			def data = [ parententity:entity ]
+			msgSvc.broadcast( entity.objid, 'entity.create_entity_for_mapping', data )
+		}
+	}
+	
+	@ProxyMethod
+	public List getMappingList( entityid ) {
+		if( entityid )
+			return em.sqlContext.createNamedQuery('entity:getMappingList').setParameter('parentid', entityid ).resultList 
+		return []
+	}
 	
 	
 	void checkDuplicateEntityNo( entity ) {
