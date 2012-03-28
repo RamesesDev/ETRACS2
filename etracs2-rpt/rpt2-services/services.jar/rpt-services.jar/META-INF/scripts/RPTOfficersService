@@ -7,11 +7,14 @@ class RPTOfficersService{
 	@PersistenceContext('main')
 	def em
 	
-	@Service('ETRACSUtilService')
+	@Service('ETRACSUtilService') 
 	def util
 	
 	@Service('LogService')
 	def logService
+	
+	@Service('ETRACSUserService')
+	def userSvc 
 	
 	def schemaname = 'rptofficers:rptofficers';
 	def schemaversion = '1.0';
@@ -31,16 +34,24 @@ class RPTOfficersService{
     
     @ProxyMethod
     public List lookup( searchText, officerType, params ) {
-        if( !searchText ) return getListByQuery( 'rptofficers:lookupList', [officertype:officerType], params );
+		println "$searchText, $officerType"
 		def result = [];
-        def criteria = [
-            officertype : officerType,
-            lastname   : searchText+ '%',
-            firstname  : searchText+ '%',
-        ]
-        if((result = getListByQuery( 'rptofficers:lookupListByLastName', criteria, params ))) return result;
-		if((result = getListByQuery( 'rptofficers:lookupListByFirstName', criteria, params ))) return result;
-		return result;
+        if( !searchText ) {
+			result =  getListByQuery( 'rptofficers:lookupList', [officertype:officerType], params );
+		}
+		else {
+			def criteria = [
+				officertype : officerType,
+				lastname   : searchText+ '%',
+				firstname  : searchText+ '%',
+			]
+			if((result = getListByQuery( 'rptofficers:lookupListByLastName', criteria, params ))) return result;
+			if((result = getListByQuery( 'rptofficers:lookupListByFirstName', criteria, params ))) return result;
+		}
+		if( ! result ) {
+			result = userSvc.lookupRPTOfficers(searchText, officerType, params)
+		}
+		return result 
     }
 	
 	@ProxyMethod

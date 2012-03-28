@@ -12,7 +12,7 @@ import com.rameses.rcp.annotations.*;
 
 class LookupRPTOfficersController extends LookupModel 
 {
-    @Service("ETRACSUserService")
+    @Service("RPTOfficersService")
     def svc;
     
     def onselect;
@@ -44,7 +44,7 @@ class LookupRPTOfficersController extends LookupModel
     List fetchList( Map params ) { 
         def s = search
         if( !s ) s = searchText 
-        def list = svc.lookupRPTOfficers(s, officerType, params )
+        def list = svc.lookup( s, officerType, params )
         if( list ) return list;
         throw new Exception("Record not found.");
     }
