@@ -161,7 +161,7 @@
             }
             else if ( payoption == 'remote' ) {
                 sendRemoteBillingRequest()
-                return 'remote'
+                return 'wait'
             }
             return 'init' 
             
@@ -507,6 +507,7 @@
                 }
                 listHandler.load()
                 calculateReceiptAmount()
+                binding.fireNavigation('remote')
                 msg = ''
                 updateRemoteMessage()
                 stopTimer('')
@@ -534,12 +535,17 @@
             displaymsg = true 
             timertask.setCancelled( true )
             timertask.setEnded( true )
-            taskmgr.remoteTask( timertask )
+            taskmgr.removeTask( timertask )
             taskmgr.stop()
             taskmgr = null
             showError( msg )
         }
         
+        def cancelWait(){
+           stopTimer()
+           back()
+           return null
+        }
         
         
         
@@ -578,6 +584,7 @@
         <page name="main" template="etracs2.rpt.collection.RPTReceiptPage" />
         <page name="bytd" template="etracs2.rpt.collection.RPTReceiptByTDPage" />
         <page name="remote" template="etracs2.rpt.collection.RPTReceiptByRemotePage" />
+        <page name="wait" template="etracs2.rpt.collection.WaitPage" />
         <page name="view" template="etracs2.tc.collection.CollectionViewPage"/>
         <page name="html" template="etracs2.tc.HtmlPage"/>
     </pages>
