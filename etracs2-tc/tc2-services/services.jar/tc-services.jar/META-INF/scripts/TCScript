@@ -249,4 +249,20 @@ class TCScript {
 		} 	
 	*/
 	
+	@ProxyMethod
+	public def ConsolidateAFByBRGY(){ 
+		em.sqlContext.createNamedQuery( 'tcscript:getAFCByBRGYUser' ).resultList.each{
+			em.sqlContext.createNamedExecutor( 'tcscript:updateAFC' ).setParameters( it ).execute()
+			
+			def afctrl = em.sqlContext.createNamedQuery( 'tcscript:getAfcontrolByAfcId' ).setParameter( 'objid', it.objid ).singleResult
+			em.sqlContext.createNamedExecutor( 'tcscript:updateAFCtrl' ).setParameters( afctrl ).execute()
+			
+			def craaf = em.sqlContext.createNamedQuery( 'tcscript:getCraafByAFCId' ).setParameter( 'afcid', it.objid ).singleResult
+			em.sqlContext.createNamedExecutor( 'tcscript:updateCraafToConsolidated' ).setParameters( craaf ).execute()
+		}
+		
+		
+		return 'run successfully'
+	}
+	
 }  
