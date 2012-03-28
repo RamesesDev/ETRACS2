@@ -55,15 +55,15 @@ AND   (ac.startseries <= $P{series} AND ac.endseries >= $P{series} )
 
 [getAfcontrolByAfcId]
 SELECT 
- objid, startseries, endseries 
+ objid, startseries, endseries, balance 
 FROM afcontrol 
 WHERE afinventorycreditid = $P{afcid}  
 
 [updateAFCtrl]
 UPDATE afcontrol 
 SET docstate='CLOSED', currentseries=$P{endseries}, 
-beginseries=$P{endseries}, issuedfrom=$P{startseries}, 
-issuedto=$P{endseries}, balance=0 
+beginseries=$P{endseries}, qtyissued=$P{balance}, 
+issuedfrom=$P{startseries}, issuedto=$P{endseries}, balance=0 
 WHERE objid = $P{objid} 
 
 
