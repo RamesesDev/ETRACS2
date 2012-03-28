@@ -129,6 +129,10 @@ public class RPTBillingService
 		def bill = msg.data.bill 
 		try {
 			generateBill( bill )
+			bill.items.each{ it -> 
+				it.collectingagencyid = msg.tolguindex 
+				it.collectingagency = msg.tolguname 
+			}
 			msg.status =[date:new Date(), iserror:false, errormsg:'']
 			msg.data = [sessionid:bill.sessionid, bill:bill] 
 			msgSvc.sendCustomMessage( msg ) 

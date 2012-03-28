@@ -53,7 +53,7 @@ public class RPTLedgerController  {
         ledger = svc.open( ledger.objid )
         ledgerItems = ledger.ledgerItems 
         ledger.remove('ledgerItems')
-        payments = svc.getPayments( ledger.objid )
+        payments = svc.getPaymentsWithLguInfo( ledger.objid )
     }
     
     void approve() {
@@ -206,14 +206,12 @@ public class RPTLedgerController  {
     def paymentListHandler = [
         getRows     : { return 25 },
         getColumns  : { return [
+            new Column(name:'collectingagency', caption:'Collecting LGU'),
             new Column(name:'mode', caption:'Mode'),
             new Column(name:'receiptno', caption:'Receipt No.'),
             new Column(name:'receiptdate', caption:'Receipt Date'),
             new Column(name:'collectorname', caption:'Collector'),
-            new Column(name:'fromyear', caption:'From Year', format:'0000'),
-            new Column(name:'fromqtr', caption:'From Qtr', format:'0'),
-            new Column(name:'toyear', caption:'To Year', format:'0000'),
-            new Column(name:'toqtr', caption:'To Qtr'),
+            new Column(name:'period', caption:'Paid Period'),
             
             new Column(name:'basic', caption:'Basic', type:'decimal'),
             new Column(name:'basicdisc', caption:'Discount', type:'decimal'),

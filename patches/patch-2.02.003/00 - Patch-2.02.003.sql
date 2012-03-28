@@ -401,3 +401,7 @@ alter table deposit change column noncash noncash decimal(18,2);
 
 
 
+alter table rptpayment add column collectingagencyid varchar(50) null;
+alter table rptpayment add column collectingagency varchar(100) null;
+
+
