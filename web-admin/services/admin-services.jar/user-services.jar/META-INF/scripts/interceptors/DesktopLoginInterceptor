@@ -35,17 +35,23 @@ public class DesktopLoginInterceptor
 		env.sessionid = profile.sessionid;
 		
 		def perms = [];
+		def jobtitle;
 		def job = jobpermSvc.getUserJobposition([:]);
 		if( job ) {		
-			if( job.permissions && job.orgunitid == env.CLIENTCODE ) 
+			if( job.permissions && job.orgunitid == env.CLIENTCODE ) {
 				perms.addAll(job.permissions);
+				jobtitle = job.title;
+			}
 			
 			job.others.each {
 				if( it.objid == job.objid ) return;
 				if( it.orgunitid != env.CLIENTCODE ) return;
 				
 				def j = jobpermSvc.getUserJobposition([jobid: it.objid]);
-				if( j.permissions ) perms.addAll(j.permissions);
+				if( j.permissions ) {
+					perms.addAll(j.permissions);
+					if( !jobtitle ) jobtitle = j.title;
+				}
 			};
 		}
 		
@@ -57,9 +63,10 @@ public class DesktopLoginInterceptor
 			CHANGE_PWD_ON_LOGIN : profile.changepwdonlogin,
 			FIRSTNAME           : profile.firstname,
 			LASTNAME            : profile.lastname,
-			USER				: "${profile.lastname}, ${profile.firstname}".toUpperCase(),
+			USER				: profile.uid.toUpperCase(),
 			USERNAME            : profile.lastname + ', ' + profile.firstname + (profile.middlename? ' ' + profile.middlename : ''),
 			USERFORMALNAME      : profile.firstname + (profile.middlename? ' ' + profile.middlename : '') + ' ' + profile.lastname,
+			JOBTITLE			: jobtitle,
 		];
 		
 		//load permissions

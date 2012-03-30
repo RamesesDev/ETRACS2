@@ -261,7 +261,7 @@ class FAASService
 	}
     
     @ProxyMethod
-    public Map update( faas ) {
+    public Map update( faas ) {		
         checkDuplicateTdNo( faas.objid, faas.info.tdno )
         em.validate( faas.schemaname, faas )
         em.validate( LISTSCHEMA_NAME, faas )
@@ -289,6 +289,9 @@ class FAASService
         faas.info.autonumber 	= TO_BOOLEAN( faas.info.autonumber )
         faas.rpu.taxable 		= TO_BOOLEAN( faas.rpu.taxable )
         initOpenRpuInfo( faas.rpu )
+		
+		println faas.lgutype;
+		
         return faas 
     }
     
@@ -842,11 +845,11 @@ class FAASService
         if( rpu.rputype == LAND_TYPE ) {
             rpu.info.landdetails.each{ it.taxable = TO_BOOLEAN( it.taxable )}
 			rpu.info.planttrees.each {
-				it.bearing = it.bearing * 1.0 
-				it.nonbearing = it.nonbearing * 1.0 
+				it.bearing = it.bearing ? it.bearing * 1.0 : 0.00 
+				it.nonbearing = it.nonbearing ? it.nonbearing * 1.0 : 0.00
 			}
-			rpu.info.planttotal.bearing  = rpu.info.planttotal.bearing * 1.0 
-			rpu.info.planttotal.nonbearing  = rpu.info.planttotal.nonbearing * 1.0 
+			rpu.info.planttotal.bearing  = rpu.info.planttotal.bearing ? rpu.info.planttotal.bearing * 1.0 : 0.00
+			rpu.info.planttotal.nonbearing  = rpu.info.planttotal.nonbearing ? rpu.info.planttotal.nonbearing * 1.0 : 0.00
         }
         else if( rpu.rputype == BLDG_TYPE ) {
             rpu.info.swornstatement = TO_BOOLEAN( rpu.info.swornstatement  )
@@ -1028,7 +1031,7 @@ class FAASService
         checkDuplicateTdNo( faasinfo.objid, faasinfo.tdno )
         validateTransactionInfo( faasinfo )
 		
-		if( 'GR/ND'.indexOf(faasinfo.txntype) == -1 ) {
+		if( 'GR/ND'.indexOf(faasinfo.txntype) == -1 && faasinfo.datacapture == false ) {
 			checkLedgerBalanceByDate( faasinfo, faasinfo.issuedate )
 		}
 		

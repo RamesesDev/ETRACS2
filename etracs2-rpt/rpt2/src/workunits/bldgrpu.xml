@@ -289,15 +289,23 @@ public class BldgRPUController
             new Column(name:'material', caption:'Material', editable:true, type:'lookup', handler:lookupMaterial, expression:'#{materialname}' ),
         ]},
         validate : { li -> 
-            li.item.materialid = li.item.material?.materialid
-            li.item.materialcode = li.item.material?.materialcode
-            li.item.materialname = li.item.material?.materialname
-            
-            if( li.item.material.materialcode == '-' ) {
-                li.item.material = null
-                li.item.materialid = null
-                li.item.materialcode = null
-                li.item.materialname = null
+            try {
+                if( !li.item?.material ) return;
+                
+                li.item.materialid = li.item.material?.materialid
+                li.item.materialcode = li.item.material?.materialcode
+                li.item.materialname = li.item.material?.materialname
+
+                if( li.item.material.materialcode == '-' ) {
+                    li.item.material = null
+                    li.item.materialid = null
+                    li.item.materialcode = null
+                    li.item.materialname = null
+                }
+            }
+            catch(e) {
+                e.printStackTrace();
+                throw e;
             }
         },
         fetchList : { return rpu.bldgstructures },

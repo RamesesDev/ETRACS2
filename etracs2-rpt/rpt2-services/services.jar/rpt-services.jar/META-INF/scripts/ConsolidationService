@@ -68,7 +68,7 @@ class ConsolidationService
     public Map initConsolidation() {
         def ry =  getCurrentRy()
         def currdate = dateSvc.serverDate 
-        def rp  = [lgutype: var.lgu_type, attributes:[], autonumber:var.pin_autonumber]
+        def rp  = [lgutype: var.lgu_type?.toLowerCase(), attributes:[], autonumber:var.pin_autonumber]
         def rpu = [rputype:'land', ry:ry, classid:'RES', classcode:'RES', classname:'RES',suffix:0,info:[:]]
         
         return [
@@ -126,7 +126,7 @@ class ConsolidationService
         if( consolidation.docstate == FORPROVAPPROVAL_STATE ) throw new Exception('Consolidation has already been submitted to province.')
         if( consolidation.docstate == APPROVED_STATE ) throw new Exception('Consolidation has already been approved.')
         validateConsolidationInfo( consolidation )
-		if( var.lgu_type == 'city' ) {
+		if( var.lgu_type?.toLowerCase() == 'city' ) {
 			createConsolidatedFaas( consolidation )
 			createAffectedRpuFaas( consolidation ) 
 		}

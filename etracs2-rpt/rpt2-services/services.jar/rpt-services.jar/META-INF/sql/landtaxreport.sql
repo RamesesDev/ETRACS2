@@ -7,7 +7,7 @@ SELECT objid AS classid, exemptdesc AS classname, 0 AS special
 FROM exemptiontype ORDER BY orderno  
 
 [getBarangayList]
-SELECT objid AS barangayid, lguname AS barangay FROM lgu WHERE lgutype = 'BARANGAY' AND parentid = $P{parentid} ORDER BY lguname 
+SELECT objid AS barangayid, lguname AS barangay FROM lgu WHERE lgutype = 'BARANGAY' ORDER BY lguname 
 
 [getBrgyCount]
 SELECT COUNT(*) AS brgycount FROM lgu WHERE lgutype = 'BARANGAY' 

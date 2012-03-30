@@ -1,0 +1,36 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class SysVarInterceptor
+{
+	@PersistenceContext("main")
+	def em;
+	
+	@Service('Var')
+	def VAR;
+	
+	@Service('LguService')
+	def lguSvc;
+	
+	@After(
+		pattern="Var.set.*",
+		eval="evt.args[0]=='lgu_formal_name' || evt.args[0] == 'lgu_name'"
+	)
+	public void updateLgu( evt ) {
+		def value = evt.args[1];
+		def key = evt.args[0];
+		
+		if( key == 'lgu_formal_name' ) {
+			em.sqlContext.createExecutor('update lgu set formalname=$P{fname} where lgutype=$P{lgutype}')
+		.setParameters([fname: value, lgutype: VAR.lgu_type])
+			  .execute();			  
+		}
+		else if( key == 'lgu_name' ) {
+			em.sqlContext.createExecutor('update lgu set lguname=$P{name} where lgutype=$P{lgutype}')
+			  .setParameters([name: value, lgutype: VAR.lgu_type])
+			  .execute();			  
+		}
+	}
+}

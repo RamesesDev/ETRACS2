@@ -139,7 +139,7 @@ class SubdivisionService
         validateInfo( subdivision )
         validateArea( subdivision )
         validateAffectedRpu( subdivision )
-		if( var.lgu_type == 'city' ) {
+		if( var.lgu_type?.toLowerCase() == 'city' ) {
 			createSubdividedLandsFaas( subdivision )
 		}
         subdivision.docstate = FORAPPROVAL_STATE
@@ -242,7 +242,7 @@ class SubdivisionService
         def brgyinfo = em.sqlContext.createNamedQuery('faas:getBarangayInfo').setParameter('objid', subdivision.motherfaasid).singleResult 
         def rp = [
             attributes      : [],
-            lgutype         : var.lgu_type,
+            lgutype         : var.lgu_type?.toLowerCase(),
             autonumber      : var.pin_autonumber,
             pintype         : 'new',
         ]
@@ -405,7 +405,11 @@ class SubdivisionService
             def sland = em.read(SUBDIVISIONLAND_SCHEMANAME, slandid )
             if( !sland ) throw new Exception('Cannot open Subdivision Land with ID no. ' + slandid )
             def newfaas = em.read( FAAS_SCHEMANAME, [objid:sland.newfaasid])
-            boolean autonumber = TO_BOOLEAN( newfaas.rp.autonumber )
+			
+            boolean autonumber = false; 
+			if( newfaas.rp.autonumber ) {
+				autonumber = TO_BOOLEAN( newfaas.rp.autonumber )
+			}
             if(  autonumber == true ) {
                 faasSvc.assignNextPin( newfaas  )
             }
