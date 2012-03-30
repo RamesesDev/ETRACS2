@@ -1,0 +1,90 @@
+<schema>
+	<element name="bldgrysetting" tablename="bldgrysetting">
+		<field name="objid" primary="true"/>
+		<field name="schemaname" required="true"/>
+		<field name="schemaversion" required="true"/>
+		<field name="ry" required="true" type="integer" />
+		<field name="predominant" required="true" type="integer" />
+		<field name="depreciatecoreanditemseparately" required="true" type="integer" />
+		<field name="computedepreciationbasedonschedule" required="true" type="integer" />
+		<field name="straightdepreciation" type="integer" />
+		<field name="calcbldgagebasedondtoccupied"  type="integer" />
+        <field name="previd"  />
+	</element>
+	
+    <!-- AssessLevels -->
+	<element name="assesslevel" tablename="bldgassesslevel">
+		<field name="objid" primary="true"/>
+		<field name="bldgrysettingid" required="true"/>
+		<field name="code" required="true"/>
+		<field name="name" required="true" />
+		<field name="fixrate" required="true" type="integer" />
+		<field name="rate" required="true" type="decimal" />
+        <field name="previd"  />
+		<complex name="ranges" ref="range" type="list" required="false" serializer="default" />
+	</element>
+    
+    <element name="range" >
+		<field name="mvfrom" required="true" type="decimal"/>
+		<field name="mvto" required="true" type="decimal"/>
+		<field name="rate" required="true" type="decimal" />
+	</element>
+    
+	
+    <!-- BldgTypes -->
+	<element name="bldgtype" tablename="bldgtype">
+		<field name="objid" primary="true"/>
+		<field name="bldgrysettingid" required="true"/>
+		<field name="code" required="true"/>
+		<field name="name" required="true" />
+        <field name="residualrate" required="true"/>
+        <field name="basevaluetype" required="true"/>
+        <field name="previd"  />
+        <complex name="multistoreyadjustments" ref="multistoreyadjustment" type="list" serializer="default" />
+        <complex name="depreciations" ref="depreciation" type="list" serializer="default"/>
+	</element>
+    
+    <element name="multistoreyadjustment">
+        <field name="floorno" required="true"  type="integer" />
+		<field name="rate" required="true"  type="decimal" />
+    </element>
+    
+    <element name="depreciation">
+        <field name="agefrom" required="true"  type="integer" />
+        <field name="ageto" required="true"  type="integer" />
+		<field name="rate" required="true"  type="decimal" />
+    </element>
+	
+    <!-- BldgKindBucc  -->
+	<element name="bldgkindbucc" tablename="bldgkindbucc">
+		<field name="objid" primary="true"/>
+        <field name="bldgrysettingid" required="true"/>
+		<field name="bldgtypeid" required="true"  />
+		<field name="bldgkindid" required="true"  />
+		<field name="bldgkindcode" required="true"  />
+		<field name="bldgkindname" required="true"  />
+		<field name="basevaluetype" required="true"/>
+		<field name="basevalue" required="true" type="decimal" />
+		<field name="minbasevalue" required="true" type="decimal" />
+		<field name="maxbasevalue" required="true" type="decimal" />
+		<field name="gapvalue"  required="true" type="integer"/>
+		<field name="minarea" required="true" type="decimal" />
+		<field name="maxarea" required="true" type="decimal" />
+		<field name="bldgclass" />
+		<field name="previd"  />
+        <complex name="extended" merge="true" serializer="default" required="false" />
+	</element>
+	
+	<!-- BldgAdditionalItems -->
+	<element name="bldgadditionalitem" tablename="bldgadditionalitem">
+		<field name="objid" primary="true"  />
+        <field name="bldgrysettingid" required="true"/>
+        <field name="code" required="true"  />
+        <field name="unit" required="true" />
+        <field name="name" required="true"  />
+        <field name="expr" required="true"  />
+        <field name="previd"  />
+	</element>
+	
+	
+</schema>

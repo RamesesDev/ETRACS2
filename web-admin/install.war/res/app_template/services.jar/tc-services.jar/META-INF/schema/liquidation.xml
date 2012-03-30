@@ -1,0 +1,78 @@
+<schema>
+
+	<element name="liquidation" tablename="liquidation">
+		<field name="objid" primary="true" />
+		<field name="schemaname" required="true" />
+		<field name="schemaversion" required="true" />
+		<field name="docstate" required="true" />
+		<field name="dtposted" required="true" />
+		
+		<!-- single, multi -->
+		<field name="opener" required="true"/>
+		
+		<field name="depositid"/>
+		<field name="dtdeposited"/>
+		<complex name="info" ref="info" serializer="default" />
+		<complex name="rcds" ref="rcd" serializer="default" type="list" required="false" />
+	</element>
+	
+	<element name="info">
+		<field name="txnno" required="true" />
+		<field name="txndate" required="true" />
+		<field name="liquidatingofficerid" required="true" />
+		<field name="liquidatingofficername" required="true" />
+		<field name="liquidatingofficertitle"/>
+		
+		<field name="depositedbyid" />
+		<field name="depositedbyname" />
+		<field name="depositedbytitle" />
+		
+		<field name="treasurerid" />
+		<field name="treasurername" />
+		<field name="treasurertitle" />
+		<field name="amount" type="decimal" />
+		<field name="totalcash" type="decimal" />
+		<field name="totalotherpayment" type="decimal" />
+		<!--link ref="tc:denomination" /-->
+		<complex name="denominations" type="list" serializer="default"/>
+	</element>
+	
+	<element name="rcd" >
+		<field name="fundid" required="true" />
+		<field name="fundname" required="true" />
+		<field name="cashierid" required="true" />
+		<field name="cashiername" required="true" />
+		<field name="cashiertitle" required="true" />
+		<field name="cash" required="true" type="decimal"  />
+		<field name="noncash" required="true" type="decimal"  />
+		<field name="amount" required="true" type="decimal"  />
+		<complex name="denominations" type="list" serializer="default"/>
+		<complex name="noncashpayments" type="list" serializer="default"/>
+	</element>
+	
+	<element name="liquidationlist" tablename="liquidationlist">
+		<field name="objid" primary="true" />
+		<field name="docstate" required="true" />
+		<field name="opener" required="true" />
+		<field name="txnno" required="true" mapfield="info.txnno" />
+		<field name="txndate" required="true" mapfield="info.txndate" />
+		<field name="depositid" />
+		<field name="dtdeposited" />
+		<field name="txntimestamp" required="true" />
+		<field name="liquidatingofficerid" required="true" mapfield="info.liquidatingofficerid" />
+		<field name="liquidatingofficername" required="true" mapfield="info.liquidatingofficername" /> 
+		<field name="liquidatingofficertitle" required="true" mapfield="info.liquidatingofficertitle" /> 
+		
+		<field name="depositedbyid" mapfield="info.depositedbyid" />
+		<field name="depositedbyname" mapfield="info.depositedbyname" />
+		<field name="depositedbytitle" mapfield="info.depositedbytitle" />
+		<field name="amount" type="decimal" mapfield="info.amount" />
+		<field name="totalcash" type="decimal" mapfield="info.totalcash" />
+		<field name="totalotherpayment" type="decimal" mapfield="info.totalotherpayment" />
+		<field name="iyear" type="integer" required="true" />
+		<field name="iqtr" type="integer" required="true" />
+		<field name="imonth" type="integer" required="true" />
+		<field name="iday" type="integer" required="true" />
+	</element>
+
+</schema>

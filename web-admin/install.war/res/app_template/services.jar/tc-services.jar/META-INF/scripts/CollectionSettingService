@@ -1,0 +1,56 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class CollectionSettingService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('LogService')
+	def logService
+	
+	def OBJID = 'CS01'
+	def SCHEMA = 'collectionsetting'
+	def VERSION = '1.0'
+	
+	@ProxyMethod
+	public Map open() {
+		def cs = em.read( SCHEMA, [objid:OBJID] )
+		if( cs ) return cs 
+		return [
+			objid         : OBJID,
+			schemaname    : SCHEMA,
+			schemaversion : VERSION,
+			info : [amount:0.0]
+		]
+	}
+	
+	@ProxyMethod
+	public def getCS(){
+		return em.read( SCHEMA, [objid:OBJID] )
+	}
+	
+	@ProxyMethod
+	public Map save( cs ) {
+		def oldcs = em.read( cs.schemaname, cs )
+		if( oldcs )
+			return update( cs )  
+		return create( cs )
+	}
+	
+	def create( cs ) {
+		em.validate( SCHEMA, cs )
+		em.create( SCHEMA, cs )
+		logService.log('CREATE', 'CollectionSetting', cs.objid)
+		return cs 
+	}
+	
+	def update( cs ) {
+		em.validate( cs.schemaname, cs )
+		em.update( cs.schemaname, cs, { diff ->
+				logService.logB('UPDATE', 'CollectionSetting', cs.objid, null, diff)
+			} as UpdateChangeHandler 
+		)
+		return cs
+	}
+}

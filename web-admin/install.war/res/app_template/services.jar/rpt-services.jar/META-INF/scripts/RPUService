@@ -1,0 +1,67 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class RPUService
+{
+    @PersistenceContext('main')
+    def em
+    
+    def LAND_TYPE = 'land' 
+    def BLDG_TYPE = 'bldg'
+    def MACH_TYPE = 'mach'
+    def PLANTTREE_TYPE = 'planttree'
+    def MISC_TYPE = 'misc' 
+    
+    @ProxyMethod
+    public List getFieldList() {
+        return [
+            [objid:'SYS_BASE_MARKET_VALUE', name:'SYS_BASE_MARKET_VALUE', caption:'BASE MARKET VALUE'],
+            [objid:'SYS_MARKET_VALUE', name:'SYS_MARKET_VALUE', caption:'MARKET VALUE'],
+            [objid:'SYS_BASE_VALUE', name:'SYS_BASE_VALUE', caption:'BASE VALUE'],
+            [objid:'SYS_UNIT_VALUE', name:'SYS_UNIT_VALUE', caption:'UNIT VALUE'],
+            [objid:'SYS_AREA', name:'SYS_AREA', caption:'AREA'],
+            [objid:'SYS_ASSESSED_VALUE', name:'SYS_ASSESSED_VALUE', caption:'ASSESSED VALUE'],
+        ]
+    }
+    
+    @ProxyMethod
+    public List getVariableList() {
+        return getFieldList() + em.sqlContext.createNamedQuery('rpu:getParamaterList').resultList 
+    }
+    
+    @ProxyMethod 
+    public List getFunctionList() {
+        return ['IIF', 'FIXED']
+    }
+    
+    @ProxyMethod
+    public List getVariables( expr ) {  
+		def pattern = ~/[A-Z0-9_]+/ 
+        def matcher = pattern.matcher( expr )
+        List tokens = matcher.collect{ it }
+        List vars = tokens - getFieldList().objid 
+		List list = []
+        if( vars ) {
+            vars.each {
+                def var = em.sqlContext.createNamedQuery('rpu:getRPTParameter').setParameter('name', it).singleResult 
+				if( var ) list.add( var ) 
+            }
+        }
+		return list 
+    }
+    
+    @ProxyMethod
+    public void buildCommonRpuInfo( rpu  ) {
+        rpu.info.taxable         = true 
+        rpu.info.totalbmv        = 0.0
+        rpu.info.totalmv         = 0.0
+        rpu.info.totalav         = 0.0
+        rpu.info.totalareasqm    = 0.0
+        rpu.info.totalareaha     = 0.0
+        rpu.info.useswornamount  = false
+    }
+    
+
+    
+}

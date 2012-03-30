@@ -1,0 +1,113 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class BankiService{
+	
+	@PersistenceContext('main')	
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = "banki:bank"
+	def schemaversion = "1.0"
+	
+	@ProxyMethod
+	public def getList( searchText, params ){
+	   if( !searchText ) {
+         return em.sqlContext.createNamedQuery('banki:getBanks').resultList
+		}
+		def data = em.sqlContext.createNamedQuery('banki:getByBankCode').setParameter( 'bankcode', searchText + '%' ).resultList
+      
+      if( data.size != 0 )
+         return data
+         
+      return em.sqlContext.createNamedQuery('banki:getByBankName').setParameter( 'bankname', searchText + '%' ).resultList
+	}
+	
+	@ProxyMethod
+	public def open( objid ){
+		return em.sqlContext.createNamedQuery( 'banki:getById' ).setParameter( 'objid', objid ).singleResult;
+	}
+	
+	@ProxyMethod
+	public def create( bank ){
+      bank.objid = "B" + new UID();
+      bank.schemaname = schemaname;
+		bank.schemaversion = schemaversion;
+		
+		validate( bank );
+		checkDuplicates( bank );
+		em.create( bank.schemaname, bank );
+		
+		return bank;
+	}
+	
+	@ProxyMethod
+	public def update( bank ){
+		validate( bank )
+      def ref = isReferenced( bank );
+		if( ref )
+         throw new Exception( 'Update not allowed. Bank is already referenced by a transaction.' )	;
+		
+		em.update( bank.schemaname, bank, { diff ->
+			logService.logB( 'UPDATE', 'BANK', bank.objid, null, diff )
+		} as UpdateChangeHandler )
+			
+		return bank
+	}
+	
+	@ProxyMethod
+	public boolean validateEdit( bank ) {
+	   def ref = isReferenced( bank );
+		if( ref )
+		   return true;
+		   
+		return false;
+	}
+	
+	@ProxyMethod
+	public void delete( bank ){
+		try{
+		   def ref = isReferenced( bank );
+		   if( !ref )
+   			em.delete( bank.schemaname, bank );
+   		else
+   		   throw new Exception( 'Delete not allowed. Bank is already referenced by a transaction.' )	;
+		}catch( Throwable e ){
+			throw new Exception( 'Delete not allowed. Bank is already referenced by a transaction.' )	;
+		}
+	}
+	
+	private void validate( bank ){
+		def oldbank = em.read(bank.schemaname, bank);
+		//util.validateLastUpdate( bank, oldbank );
+		
+		em.validate(bank.schemaname, bank);
+	}
+	
+	private void checkDuplicates( bank ){
+      StringBuffer sb = new StringBuffer();
+      
+	   def data = em.sqlContext.createNamedQuery( 'banki:getByBankCode').setParameters( ['bankcode':bank.bankcode] ).singleResult;	   
+       if( ! data ) return 
+	   if( data.count != 0 ) sb.append("A Bank with bankcode $bank.bankcode already exists.  ");
+      
+      def datax = em.sqlContext.createNamedQuery( 'banki:checkDuplicateBank' ).setParameters( [ 'bankname':bank.bankname, 'branchname':bank.branchname  ] ).singleResult;
+		if( datax.count != 0 ) sb.append("$bank.bankname at $bank.branchname already exists.");
+		
+		if (datax.count !=0 || data.count != 0) throw new Exception( sb.toString() );
+	}
+	
+	private boolean isReferenced( bank )  {
+      def data = em.sqlContext.createNamedQuery( 'banki:checkIfReferenced' ).setParameters( ['bankid':bank.objid] ).singleResult;
+      if( data.count != 0 ) return true;
+      
+	   return false;
+	}
+	
+}

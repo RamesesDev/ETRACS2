@@ -1,0 +1,103 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class KindofBuildingService{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = 'kindofbuilding:kindofbuilding';
+	def schemaversion = '1.0';
+	
+	@ProxyMethod
+	public def getList( searchText, params ){
+		if( !searchText ) return getListByQuery( 'kindofbuilding:getList', [:], params );
+		
+		def result = [];
+		
+		if((result = getListByQuery( 'kindofbuilding:getListByCode', [bldgcode:searchText+"%"], params ))) return result;
+		if((result = getListByQuery( 'kindofbuilding:getListByKind', [bldgkind:searchText+"%"], params ))) return result;
+		
+		return result;
+	}
+	
+	@ProxyMethod
+	public def open( objid ){
+		return em.sqlContext.createNamedQuery( 'kindofbuilding:getById' ).setParameter( 'objid', objid ).singleResult;
+	}
+	
+	@ProxyMethod
+	public def create( kindbldg ){
+		kindbldg.objid = "KBLDG" + new UID();
+		kindbldg.schemaname = schemaname;
+		kindbldg.schemaversion = schemaversion;
+		
+		validate( kindbldg );
+		em.create( kindbldg.schemaname, kindbldg );
+		
+		return kindbldg;
+	}
+	
+	@ProxyMethod
+	public def update( kindbldg ){
+		validateUpdate( kindbldg );
+		
+		em.update( kindbldg.schemaname, kindbldg, { diff ->
+			logService.logB( 'UPDATE', 'Kind of Bldg', kindbldg.objid, null, diff );
+		} as UpdateChangeHandler )
+		
+		return kindbldg;
+	}
+	
+	@ProxyMethod
+	public void delete( kindbldg ){
+		em.delete( kindbldg.schemaname, kindbldg );
+	}
+    
+    @ProxyMethod
+    public List lookupBldgKind( searchText, params) {
+        def searchValue = (searchText ? searchText+'%' : '%')
+        def criteria = [bldgcode:searchValue]
+        return getListByQuery('kindofbuilding:lookupBldgKindByCode', criteria, params)
+    }
+	
+	
+	private void validate( kindbldg ){
+		def oldkindbldg = em.read(kindbldg.schemaname, kindbldg);
+		util.validateLastUpdate( kindbldg, oldkindbldg );
+		
+		checkDuplicates( kindbldg );
+		em.validate(kindbldg.schemaname, kindbldg);
+	}
+	
+	private void validateUpdate( kindbldg ){
+		def oldkindbldg = em.read(kindbldg.schemaname, kindbldg);
+		util.validateLastUpdate( kindbldg, oldkindbldg );
+		
+		em.validate(kindbldg.schemaname, kindbldg);
+	}
+	
+	private void checkDuplicates( kindbldg ){
+		def data = em.sqlContext.createNamedQuery( 'kindofbuilding:checkDuplicateCode' ).setParameter( 'bldgcode', kindbldg.bldgcode ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Kind of Building $kindbldg.bldgcode already exists." );
+		data = em.sqlContext.createNamedQuery( 'kindofbuilding:checkDuplicateKind' ).setParameter( 'bldgkind', kindbldg.bldgkind ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Kind of Building $kindbldg.bldgkind already exists." );
+	}
+	
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+
+}

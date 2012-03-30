@@ -1,0 +1,84 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class BPHtmlService
+{
+	@Service("BPApplicationService")
+	def svc;
+	
+	@Service('NumberService')
+	def numberSvc
+	
+	@Service('ETRACSTemplateService')
+	def htmlService
+	
+	@ProxyMethod
+	public def getHtml(def applicationid){
+		def app = svc.open( applicationid );
+		
+		def document = [
+			title:'APP No: ' +  app.txnno,
+			state:app.docstate,
+			subheaders:[
+				[caption:'Type', value:app.txntype],
+				[caption:'Mode', value:app.txnmode],
+				[caption:'Date', value:app.txndate],
+				[caption:'Year', value:app.iyear]
+			],
+			
+			items:[
+			   [
+				   title:'General Information',
+				   cols:1,
+				   items:[
+					  [caption:'Trade Name', value:app.tradename],
+					  [caption:'Business Address', value:app.businessaddress],
+					  [caption:'Taxpayer Name', value:app.info.taxpayername],
+					  [caption:'Taxpayer Address', value:app.info.taxpayeraddress],
+					  [caption:'Administrator Name', value:app.info.administratorname],
+					  [caption:'Administrator Address', value:app.info.administratoraddress]
+				   ]
+			   ],
+			   
+			   [
+				   title:'Business Detail',
+				   cols:2,
+				   items:[
+					  [caption:'Organization', value:app.info.organization],
+					  [caption:'Office Type', value:app.info.officetype],
+					  [caption:'Barangay', value:app.info.barangay.barangayid+', '+app.info.barangay.barangayname],
+					  [caption:'BIN', value:app.info.bin],
+					  [caption:'PIN', value:app.info.pin],
+					  [caption:'CTC No.', value:app.info.ctcno],
+					  [caption:'CTC Place Issued', value:app.info.ctcplaceissued],
+					  [caption:'TIN', value:app.info.tin]
+				   ]
+			   ],
+			   
+			   [
+				   title:'Line Of Bussines',
+				   cols:1,
+				   tables:[
+					  [
+						 title:'',
+						 cols: 1,
+						 headers:[
+							[name:'name', caption:'Name'],
+							[name:'assessmenttype', caption:'Assessment Type'],
+							[name:'iyear', caption:'Year']
+						 ],
+						 items: app.lobs
+					  ]
+				   ],
+				   items:[
+					   [caption:'', value:'']
+				   ]
+			   ],
+            ]
+		];
+		
+		return htmlService.buildDocHTML(document);
+	}
+	
+}

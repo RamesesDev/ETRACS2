@@ -1,0 +1,109 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class BankAcctService{
+	
+	@PersistenceContext('main')	
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = "bankaccount:bankaccount"
+	def schemaversion = "1.0"
+	
+	@ProxyMethod
+	public def getFund() {      return em.sqlContext.createNamedQuery('bankacct:getFund').resultList.unique { it.objid }
+	}
+	
+	@ProxyMethod
+	public def getList( searchText, params ){
+	   if( !searchText ) {
+         return em.sqlContext.createNamedQuery('bankacct:getBankAccounts').resultList
+		}
+		def data = em.sqlContext.createNamedQuery('bankacct:getBankAcctByAcctNo').setParameter( 'acctno', searchText + '%' ).resultList
+      if( data.size != 0 )
+         return data
+         
+      data = em.sqlContext.createNamedQuery('bankacct:getByBankCode').setParameter( 'bankcode', searchText + '%' ).resultList
+      if(data.size != 0)
+         return data
+
+      data = em.sqlContext.createNamedQuery('bankacct:getByBankName').setParameter( 'bankname', searchText + '%' ).resultList
+      if(data.size != 0)
+         return data
+	}
+	
+	@ProxyMethod
+	public def open( objid ){
+		return em.sqlContext.createNamedQuery( 'bankacct:getById' ).setParameter( 'objid', objid ).singleResult;
+	}
+	
+	@ProxyMethod
+	public def create( bankacct ){
+      bankacct.objid = "B" + new UID();
+      bankacct.schemaname = schemaname;
+		bankacct.schemaversion = schemaversion;
+		def fundid = em.sqlContext.createNamedQuery( 'bankacct:getFundByFundName' ).setParameter( 'fundname', bankacct.fund ).singleResult;
+		bankacct.fundid = fundid.objid;
+		bankacct.docstate = 'DRAFT';
+		
+		validate( bankacct );
+		checkDuplicates( bankacct );
+		em.create( bankacct.schemaname, bankacct );
+		
+		return bankacct;
+	}
+	
+	@ProxyMethod
+	public def update( bankacct ){
+		validate( bankacct )
+		
+		em.update( bankacct.schemaname, bankacct, { diff ->
+			logService.logB( 'UPDATE', 'BANKACCT', bankacct.objid, null, diff )
+		} as UpdateChangeHandler )
+			
+		return bankacct
+	}
+	
+	@ProxyMethod
+	public void delete( bankacct ){
+		try{
+			em.delete( bankacct.schemaname, bankacct );
+		}catch( Throwable e ){
+			throw new Exception( 'Delete not allowed. Bank Account is already referenced by a transaction.' )	;
+		}
+	}
+	
+	private void validate( bankacct ){
+		def oldbankAcct = em.read(bankacct.schemaname, bankacct);
+		//util.validateLastUpdate( bankacct, oldbankAcct );
+		
+		em.validate(bankacct.schemaname, bankacct);
+	}
+	
+	private void checkDuplicates( bankacct ){
+		def data = em.sqlContext.createNamedQuery( 'bankacct:checkDuplicateBankAccount' )
+						.setParameters( [acctno:bankacct.acctno, fundid:bankacct.fundid] )
+						.singleResult;
+		if( data.count != 0 ) throw new Exception( "Bank Account already exists." )
+	}
+	
+	@ProxyMethod
+	public def approve( bankacct ) {
+      def tobeApproved = em.read( schemaname, [objid:bankacct] );
+
+      if(tobeApproved.docstate == 'APPROVED')
+         throw new Exception("Document is already approved");
+        
+      tobeApproved.docstate = 'APPROVED';
+		em.update( schemaname, tobeApproved );
+      
+      return tobeApproved;
+	}
+	
+}

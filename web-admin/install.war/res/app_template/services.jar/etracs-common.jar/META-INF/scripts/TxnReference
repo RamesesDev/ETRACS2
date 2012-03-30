@@ -1,0 +1,42 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class TxnReference{
+	
+	@Service('DateService')
+	def dateService;
+	
+	@PersistenceContext('main')
+	def em;
+	
+	def SCHEMANAME = 'txnreference:txnreference';
+	
+	@ProxyMethod
+	public def insert( def objid, def refid, def refname, def message ){
+		checkReference( objid );
+		def txn = [objid: objid, refid:refid, refname:refname, message:message, txndate:dateService.serverDate];
+		em.validate( SCHEMANAME, txn );
+		em.create( SCHEMANAME, txn );
+		return txn;
+	}
+	
+	@ProxyMethod
+	public def delete( def objid ){
+		def txn = get( objid );
+		if( txn ) em.delete( SCHEMANAME, txn );
+		return txn;
+	}
+	
+	@ProxyMethod
+	public def get( def objid ){
+		return em.read( SCHEMANAME, [objid: objid] );
+	}
+	
+	@ProxyMethod
+	public void checkReference( def objid ){
+		def txn = get( objid );
+		if( txn ) throw new Exception( txn.message );
+	}
+	
+}

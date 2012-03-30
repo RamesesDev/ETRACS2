@@ -1,0 +1,68 @@
+import com.rameses.annotations.*;
+
+class PersonnelService {
+
+	@PersistenceContext("main")
+	def em;
+	
+	@Service("DateService")
+	def dateSvc;
+	
+	@ProxyMethod
+	public def getPositions(def objid) {
+		return em.sqlContext.createNamedQuery( "personnel:getPersonnelPositions" ).setParameter( "objid", objid ).resultList;
+	}
+	
+	@ProxyMethod
+	public def getList(def params) {
+		def qry = em.sqlContext.createNamedQuery( "personnel:list" );
+		def sb = new StringBuffer();
+		if(params) {
+			if(params._start) qry.setFirstResult( params._start );
+			if(params._limit) qry.setMaxResults( params._limit );
+			if( params.staffno  ) {
+				params.staffno += '%';
+				sb.append( ''' staffno like $P{staffno} ''' ); 	
+			}
+			if( params.lastname  ) {
+				params.lastname += '%';
+				if( sb.length() > 0 ) sb.append( " and " );
+				sb.append( ''' lastname like $P{lastname} ''' ); 	
+			}
+			if( params.firstname ) {
+				params.firstname += '%';
+				if( sb.length() > 0 ) sb.append( " and " );
+				sb.append( ''' firstname like $P{firstname} ''' ); 	
+			}
+			if( sb.length() > 0 ) {
+				qry.setVars( [condition: " where " + sb.toString() ] );
+			}
+			qry.setParameters( params );
+		}
+		return qry.resultList;
+	}
+	
+	
+	@ProxyMethod
+	public def create(o) {
+		return em.create( "personnel", o );
+	}
+	
+	@ProxyMethod
+	public def read(def o) {
+		o =  em.read( "personnel", o );
+		if(o.birthdate) o.birthdate =  dateSvc.format("yyyy-MM-dd", o.birthdate );
+		return o; 
+	}
+
+	@ProxyMethod
+	public def update(o) {
+		return em.update( "personnel", o );
+	}
+	
+	@ProxyMethod
+	public def remove(def o) {
+		em.delete( "personnel", o );
+	}
+
+}

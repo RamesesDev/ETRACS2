@@ -1,0 +1,34 @@
+<schema>
+	<element name="batchcapture" tablename="batchcapture" >
+		<field name="objid" primary="true" />
+		<field name="schemaname" required="true"/>
+		<field name="schemaversion" required="true"/>
+		<field name="docstate" required="true"/>
+		<field name="opener" required="true"/>
+		<field name="afid" required="true"/>
+		<field name="collectorid" required="true"/>
+		<field name="collectorname" required="true"/>
+		<field name="encodedbyid" required="true"/>
+		<field name="encodedby" required="true"/>
+		<field name="startseries" required="true" type="integer" />
+		<field name="series" required="true" type="integer" />
+		<field name="amount" required="true" type="decimal" />
+		<complex name="collector" serializer="default" required="true"/>
+		<complex name="afcontrol" serializer="default" required="true"/>
+		<complex name="collectiontype" serializer="default" required="true"/>
+		<field name="defaulttxndate" required="true"/>
+		<complex name="items" ref="item" type="list" min="1" serializer="default" />
+		<complex name="extended" merge="true" serializer="default" required="false" />
+	</element>
+	
+	<element name="item">
+		<field name="series" required="true" type="integer"/>
+		<field name="serialno" required="true" />
+		<field name="paidby" required="true" />
+		<field name="paidbyaddress" required="true" />
+		<field name="account" />
+		<field name="amount" required="true" type="decimal" />
+		<field name="remarks" />
+		<field name="voided" type="boolean" />
+	</element>
+</schema>

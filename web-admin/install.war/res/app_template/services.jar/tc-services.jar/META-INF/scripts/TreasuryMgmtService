@@ -1,0 +1,105 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*
+
+class TreasuryMgmtService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('AFControlService')
+	def afcontrolSvc 
+	
+	def NGAS = 'NGAS'
+	def SRE = 'SRE' 
+	
+	@ProxyMethod
+	public List getCollectionSummary( int year, int month ) {
+		return em.sqlContext.createNamedQuery('treasurymgmt:getCollectionSummary').setParameters([iyear:year, imonth:month]).resultList 
+	}
+	
+	@ProxyMethod
+	public List getFundSummary( liquidationid  ) {
+		required('LiquidationID', liquidationid)
+		return em.sqlContext.createNamedQuery('treasurymgmt:getFundSummary').setParameter('liquidationid', liquidationid).resultList 
+	}
+	
+	@ProxyMethod
+	public List getFundSummaryReceipts( liquidationid, fundid ) {
+		required('LiquidationID', liquidationid)
+		required('Fund', fundid )
+		return em.sqlContext.createNamedQuery('treasurymgmt:getFundSummaryReceipts').setParameters([liquidationid:liquidationid, fundid:fundid]).resultList 
+	}
+	
+	
+	@ProxyMethod
+	public List getAbstractSummary( charttype, liquidationid ) {
+		required('Chart Type', charttype )
+		required('LiquidationID', liquidationid)
+		if( charttype == NGAS  )
+			return em.sqlContext.createNamedQuery('treasurymgmt:getNgasAbstractSummary').setParameter('liquidationid', liquidationid).resultList 
+		else 
+			return em.sqlContext.createNamedQuery('treasurymgmt:getSreAbstractSummary').setParameter('liquidationid', liquidationid).resultList 
+	}
+	
+	
+	@ProxyMethod
+	public List getAbstractSummaryReceipts( charttype, liquidationid, acctid ) {
+		required('Chart Type', charttype )
+		required('LiquidationID', liquidationid)
+		required('GL AccountID', acctid)
+		def params = [liquidationid:liquidationid, acctid:acctid]
+		if( charttype == NGAS  )
+			return em.sqlContext.createNamedQuery('treasurymgmt:getNgasSummaryReceipts').setParameters(params).resultList 
+		else 
+			return em.sqlContext.createNamedQuery('treasurymgmt:getSreSummaryReceipts').setParameters(params).resultList 
+	}
+	
+	@ProxyMethod
+	public List getOpenAFControls( collectorid ) {
+		required( 'Collector', collectorid )
+		List afcontrolList = em.sqlContext.createNamedQuery('treasurymgmt:getOpenAFControls').setParameter('collectorid', collectorid).resultList 
+		formatSeries( afcontrolList )
+		return afcontrolList 
+	}
+	
+	@ProxyMethod
+	public List getOpenUnremittedCollections( collectorid ) {
+		collectorid = (collectorid ? collectorid : '%' )
+		List unremittedList = em.sqlContext.createNamedQuery('treasurymgmt:getUnremittedCollections').setParameter('collectorid', collectorid).resultList
+		buildLastRemittanceInfo( unremittedList ) 
+		return unremittedList
+	}
+	
+	@ProxyMethod
+	public List getUndepositedLiquidationList() {
+		return em.sqlContext.createNamedQuery('treasurymgmt:getOpenLiquidations').resultList
+	}
+	
+	
+	void buildLastRemittanceInfo( unremittedList ) {
+		unremittedList.each {
+			def rem = em.sqlContext.createNamedQuery('treasurymgmt:getLastRemittance')
+						.setParameter('collectorid', it.collectorid)
+						.setMaxResults(1)
+						.singleResult
+			it.lastremittanceno = rem?.txnno 
+			it.lastremittancedate = rem?.txndate 
+		}
+	}
+	
+	void formatSeries( afcontrolList ) {
+		afcontrolList.each {
+			if( it.aftype == 'serial' ) {
+				it.beginseries = afcontrolSvc.formatSeries( it.beginseries, it.prefix, it.suffix, it.serieslength )
+				it.endseries = afcontrolSvc.formatSeries( it.endseries, it.prefix, it.suffix, it.serieslength )
+				it.currentseries = afcontrolSvc.formatSeries( it.currentseries, it.prefix, it.suffix, it.serieslength )
+				it.issuedfrom = afcontrolSvc.formatSeries( it.issuedfrom, it.prefix, it.suffix, it.serieslength )
+				it.issuedto = afcontrolSvc.formatSeries( it.issuedto, it.prefix, it.suffix, it.serieslength )
+			}
+		}
+	}
+	
+	void required( caption, value ) {
+		if( ! value) throw new Exception(caption + ' is required.')
+	}
+}

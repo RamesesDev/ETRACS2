@@ -1,0 +1,100 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class VariableService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('LogService')
+	def logService
+	
+	def SCHEMA_NAME = 'variable'
+	def SCHEMA_VERSION = '1.0'
+	
+	def DATA_TYPES = ['string', 'decimal', 'integer', 'boolean', 'string_array']
+	
+	@ProxyMethod
+	public def getList( searchText, params ) {
+		if( ! searchText ) return em.sqlContext.createNamedQuery('variable:getList').resultList
+		return em.sqlContext.createNamedQuery('variable:getListByName').setParameter('name', searchText+'%').resultList
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		return em.read( SCHEMA_NAME, [objid:objid] )
+	}
+	
+	@ProxyMethod
+	public def create( var ) {
+		var.objid = 'V' + new UID()
+		var.schemaname = SCHEMA_NAME
+		var.schemaversion = SCHEMA_VERSION
+		validate( var )
+		em.create( var.schemaname, var )
+		logService.log( 'CREATE', 'Variable', var.objid )
+		return var 
+	}
+	
+	@ProxyMethod
+	public def update( var ) {
+		validate( var )
+		em.update( var.schemaname, var, { diff -> 
+			logService.logB('UPDATE', 'Variable', var.objid, null, diff) 
+		} as UpdateChangeHandler)
+		return var
+	}
+	
+	@ProxyMethod
+	public void delete( var ) {
+		try {
+			em.delete(var.schemaname, var)
+		}
+		catch( e ) {
+			throw new Exception('Delete not allowed. Variable has already been referenced.')
+		}
+	}
+	
+	@ProxyMethod
+	public List getDataTypes() {
+		return DATA_TYPES
+	}
+
+
+
+	
+	private void validate( var ) {
+		validateName( var )
+		required('Caption', var.caption )
+		required('Data Type', var.datatype )
+		requireArrayValuesForStringArray( var )
+		em.validate( var.schemaname, var )
+	}
+	
+	void validateName( var ) {
+		required('Name', var.name )
+		//name must start with letter or _
+		if( ! var.name.matches('[a-zA-Z_].*') ) {
+			throw new Exception('Name must start with a letter or underscore.')
+		}
+		
+		//replace non-alphanumeric values with '_'
+		var.name = var.name.trim().replaceAll('\\W', '_')
+		checkDuplicateName( var )
+	}
+	
+	void requireArrayValuesForStringArray( var ) {
+		if( var.datatype == 'STRING_ARRAY' && ! var.arrayvalues ) 
+			throw new Exception('Array Values are required for STRING_ARRAY data type.')
+	}
+	
+	void required( caption, value ) {
+		if( ! value ) throw new Exception(caption + ' is required.')
+	}
+	
+	private void checkDuplicateName( var ) {
+		def data = em.sqlContext.createNamedQuery('variable:checkDuplicateName').setParameters( var ).singleResult
+		if( data) throw new Exception('Duplicate name ' + var.name + ' not allowed.')
+	}
+}

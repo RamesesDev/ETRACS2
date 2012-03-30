@@ -1,0 +1,97 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class TrueCopyService{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = 'truecopy:truecopy';
+	def schemaversion = '1.0';
+	
+	@ProxyMethod
+	public def getList( searchText, params ){
+		if( !searchText ) return getListByQuery( 'truecopy:getList', [:], params );
+		
+		def result = [];
+		
+		if((result = getListByQuery( 'truecopy:getListByTdNo', [tdno:searchText+"%"], params ))) return result;
+		if((result = getListByQuery( 'truecopy:getListByOrNo', [orno:searchText+"%"], params ))) return result;
+		if((result = getListByQuery( 'truecopy:getListByRequestedBy', [requestedby:searchText+"%"], params ))) return result;
+		
+		return result;
+	}
+	
+	@ProxyMethod
+	public def getLastRecord(){
+		return em.sqlContext.createNamedQuery( 'truecopy:getListDesc' ).singleResult;
+	}
+    
+	
+	@ProxyMethod
+	public def open( objid ){
+		def data = em.sqlContext.createNamedQuery( 'truecopy:getById' ).setParameter( 'objid', objid ).singleResult;
+		if( data ) data.faasinfo = em.serializer.read( data.faasinfo );
+		
+		return data;
+	}
+	
+	@ProxyMethod
+	public def create( truecopy ){
+		truecopy.objid = "TC" + new UID();
+		truecopy.schemaname = schemaname;
+		truecopy.schemaversion = schemaversion;
+		
+		validate( truecopy );
+		em.create( truecopy.schemaname, truecopy );
+		
+		return truecopy;
+	}
+	
+	@ProxyMethod
+	public def update( truecopy ){
+		validateUpdate( truecopy );
+		
+		em.update( truecopy.schemaname, truecopy, { diff ->
+			logService.logB( 'UPDATE', 'TRUE COPY', truecopy.objid, null, diff );
+		} as UpdateChangeHandler )
+		
+		return truecopy;
+	}
+	
+	@ProxyMethod
+	public void delete( truecopy ){
+		em.delete( truecopy.schemaname, truecopy );
+	}
+	
+	
+	private void validate( truecopy ){
+		def oldtruecopy = em.read(truecopy.schemaname, truecopy);
+		util.validateLastUpdate( truecopy, oldtruecopy );
+		
+		em.validate(truecopy.schemaname, truecopy);
+	}
+	
+	private void validateUpdate( truecopy ){
+		def oldtruecopy = em.read(truecopy.schemaname, truecopy);
+		util.validateLastUpdate( truecopy, oldtruecopy );
+		
+		em.validate(truecopy.schemaname, truecopy);
+	}
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+
+}

@@ -1,0 +1,107 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import com.rameses.util.*;
+
+class ETRACSUserInterceptor 
+{
+
+    @PersistenceContext("java:main")
+    def em;
+	
+	@Service("ExaminerService")
+	def examinerSvc;
+	
+	@Service('LogService')
+	def logSvc
+	
+	def USER_SCHEMA = 'etracsuser'
+	def COLLECTOR = 'COLLECTOR'
+	def LIQUIDATING_OFFICER = 'LIQUIDATING_OFFICER'
+	
+	
+	
+	
+	@After(pattern="UserService.create") 
+	public void createUserIntercept( def evt )  {
+		def user = evt.result;
+		def newuser = [
+			schemaname : USER_SCHEMA,
+			schemaversion : '1.0',
+			iscollector   : 0,
+			isliquidating : 0,
+		]
+		newuser.putAll( user )
+		buildNames( newuser )
+		em.create( newuser.schemaname, newuser )
+		logSvc.log('CREATE', 'ETRACSUser', newuser.objid )
+	}
+	
+	@After(pattern="UserService.update") 
+	public void updateUserIntercept( def evt )  {
+		def user = evt.result;
+		def olduser = em.read( USER_SCHEMA, [objid:user.objid ])
+		olduser.lastname = user.lastname 
+		olduser.firstname = user.firstname 
+		buildNames( olduser )
+		em.update( olduser.schemaname, olduser, { diff ->
+			logSvc.logB('UPDATE', 'ETRACSUser', olduser.objid, '', diff )
+		} as UpdateChangeHandler )
+	}
+	
+	@After(pattern="UserService.createUserRole") 
+	public void createUserRoleIntercept( def evt )  {
+		def userrole = evt.result;
+		updateEtracsUserStatus( userrole, 1 )
+	}
+	
+	@After(pattern="UserService.removeUserRole") 
+	public void removeUserRoleIntercept( def evt )  {
+		def userrole = evt.args[0]
+		updateEtracsUserStatus( userrole, 0 )
+	}
+	
+	
+	/*
+	@After(pattern="LoginService.login.*", eval="env.CLIENTTYPE=='desktop'") 
+	public void loginIntercept( def evt )  {
+		def env = evt.result.env;
+		def user = em.sqlContext.createNamedQuery("etracsuser:getUserInfo").setParameter("objid", env.USERID ).singleResult;
+		if( user ) {
+			env.USERNAME = user.name;
+			env.USERFORMALNAME = user.formalname
+			env.JOBTITLE = user.jobtitle;
+			loadMunicipalitiesForExaminer( env );
+		}
+	}
+	*/
+	
+	
+	def loadMunicipalitiesForExaminer( env ) {
+		try {
+			def examiner = examinerSvc.open( env.USERID );
+			if( examiner && examiner.municipalities ) {
+				env.ASSIGNED_LGU = examiner.municipalities.name;
+			}
+		}
+		catch( e ) {
+			println e.message;
+		}
+	}
+	
+	void updateEtracsUserStatus( userrole, status ) {
+		def user = em.read( USER_SCHEMA, [objid:userrole.userid] )
+		if( userrole.role == COLLECTOR ) {
+			user.iscollector = status 
+		}
+		if( userrole.role == LIQUIDATING_OFFICER ) {
+			user.isliquidating = status 
+		}
+		em.update( user.schemaname, user )
+	}
+	
+	void buildNames( user ) {
+		user.name = user.lastname + ', ' + user.firstname + ( user.middlename ? ' ' + user.middlename : '')
+		user.formalname = user.firstname + ' ' + ( user.middlename ? user.middlename + ' ' : '') + user.lastname 
+	}
+
+}

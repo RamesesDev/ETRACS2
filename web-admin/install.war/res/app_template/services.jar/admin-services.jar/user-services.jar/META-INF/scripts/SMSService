@@ -1,0 +1,125 @@
+import com.rameses.annotations.*;
+import com.rameses.http.*;
+
+
+class SMSService 
+{
+	
+	//static def SMS_HOST = 'http://mcpro2.sun-solutions.ph/mc';
+	static def SMS_HOST = 'mcpro2.sun-solutions.ph/mc';
+	static def USER = 'ENazareno';
+	static def PASS = 'C0ERHaet';
+	static def SENDER = 'Gazeebu';
+	static def SESSION_CACHE_KEY = 'SUN_SMS_SESSIONID';
+	
+	@Resource('CacheService')
+	def cacheSvc;
+	
+	
+	private def login()
+	{
+		try {
+			def shc = new HttpClient(SMS_HOST);
+			def acct = [user: USER, pass: PASS];
+			def result = shc.post('login.aspx', acct);
+			println "sms login: $result";
+			
+			if( !result || !result.startsWith('20100') ) 
+				throw new Exception("Login failed. Response: $result");
+			
+			return result.split(',')[2];
+		}
+		catch(e) {
+			e.printStackTrace();
+			throw e;
+		}		
+	}
+	
+	@ProxyMethod
+	public void logout( sessionid )
+	{
+		try {
+			def shc = new HttpClient(SMS_HOST);
+			def result = shc.post('logout.aspx', [session: sessionid]);
+			println "sms logout: $result";
+		}
+		catch(e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+	
+	private def getSession() 
+	{
+		def sessionid = cacheSvc.get(SESSION_CACHE_KEY);
+		if( sessionid == null ) {
+			sessionid = login();
+			cacheSvc.put(SESSION_CACHE_KEY, sessionid, 60000);
+		}
+		return sessionid;
+	}
+	
+	/**
+	 * parameter fields:
+	 *   to, message
+	 */
+	@ProxyMethod
+	@Async
+	public def send( msg ) 
+	{
+		try {
+			def shc = new HttpClient(SMS_HOST);
+			def param = [
+				user:    USER,
+				pass:    PASS,
+				session: getSession(),
+				from:    SENDER,
+				to:      msg.to,
+				msg:     msg.msg
+			];
+
+			def result = shc.post('send.aspx', param);
+			
+			if( !result || !result.startsWith('20300') ) 
+				throw new Exception("Unable to send the message. Response: $result");
+				
+			result = result.split(',');
+			return [transid: result[2], timestamp: result[3]];
+		}
+		catch(e) {
+			println "Failed to send sms to $msg.to, message:\n$msg.msg";
+			e.printStackTrace();
+		}
+	}
+	
+	@ProxyMethod
+	public def inquire( param ) 
+	{
+		try {
+			def shc = new HttpClient(SMS_HOST);
+			def p = [
+				user:    USER,
+				pass:    PASS,
+				session: getSession(),
+				dtefrom: param.dtfrom,
+				dteto:   param.dtto
+				
+			];
+			
+			//this parameter is optional
+			if( param.phoneno ) msisdn = param.phoneno
+			
+			def result = shc.post('inboxinquiry.aspx', p);
+			
+			if( !result || !result.startsWith('20340') )
+				throw new Exception("Unable to inquire. Response: $result");
+				
+			return result;
+		}
+		catch(e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+	
+}

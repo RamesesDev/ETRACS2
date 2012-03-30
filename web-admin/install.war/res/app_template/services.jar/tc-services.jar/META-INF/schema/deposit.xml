@@ -1,0 +1,62 @@
+<schema>
+	<element name="deposit" tablename="deposit">
+		<field name="objid" primary="true"/>
+		<field name="schemaname" required="true"/>
+		<field name="schemaversion" required="true"/>
+		<field name="docstate" required="true"/> <!-- POSTED -->
+		<field name="txnno" required="true"/>
+		<field name="txndate" required="true"/>
+		<field name="dtposted" required="true"/>
+		<field name="depositedbyid" required="true"/>
+		<field name="depositedbyname" required="true"/>
+		<field name="depositedbytitle" required="true"/>
+		<field name="cash" required="true" type="decimal" />
+		<field name="noncash" required="true" type="decimal" />
+		<field name="amount" required="true" type="decimal" />
+		<complex name="fundtotals" ref="fundtotal" type="list" min="1" serializer="default"/>
+		<complex name="fundsummaries" ref="fundsummary" type="list" min="1" serializer="default"/>
+		<complex name="liquidations" ref="liquidation" type="list" min="1" serializer="default"/> 
+	</element>
+	
+	<element name="fundtotal">
+		<field name="fundid" />
+		<field name="fund" />
+		<field name="amount" />
+		<field name="amtdeposited" />
+	</element>
+	
+	<element name="fundsummary">
+		<field name="fundid" required="true" />
+		<field name="bankacctid" required="true"/>
+		<field name="cash" required="true" type="decimal" />
+		<field name="noncash" required="true" type="decimal" />
+		<field name="amount" required="true" type="decimal" />
+		<field name="validationno"  />
+		<field name="validationdate"  />
+		<complex name="denominations" type="list" min="1"  serializer="default"/>
+		<complex name="noncashpayments" ref="noncashpayment" type="list" serializer="default" required="false" />
+	</element>
+	
+	<element name="liquidation">
+		<field name="objid" required="true" />
+		<field name="txnno" required="true" />
+		<field name="txndate" required="true" />
+		<field name="liquidatingofficerid" required="true" />
+		<field name="liquidatingofficername" required="true" />
+		<field name="liquidatingofficertitle" required="true" />
+		<field name="amount" required="true" type="decimal" />
+	</element>
+	
+	
+	<element name="noncashpayment">
+		<field name="paymentitemid" />
+		<field name="paytype" required="true" />  <!-- CHECK, MONEYORDER, etc -->
+		<field name="checktype" required="true"/> <!-- LOCAL, REGIONAL, OUT_OF_TOWN, ON_USMC, OTHER_BANK_MC -->
+		<field name="particulars" required="true"/>
+		<field name="amount" type="decimal" />
+		<field name="source" required="true" /> <!-- SYSTEM, MANUAL (manually encoded) -->
+	</element>
+	
+	
+</schema>
+

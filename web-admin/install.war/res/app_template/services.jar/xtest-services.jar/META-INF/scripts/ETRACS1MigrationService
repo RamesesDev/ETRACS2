@@ -1,0 +1,1195 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class ETRACS1MigrationService
+{
+	@PersistenceContext("etracsv1")
+	def em1;
+    
+	@PersistenceContext("main")
+	def em2;
+	
+	@Service('NumberService')
+	def numSvc
+	
+	
+	@ProxyMethod
+	public void test() {
+		println '-'*40
+		println 'test....'
+	}
+	
+	@ProxyMethod 
+	public void updateLandFaasIdInfo() {
+		def rpulist = em2.sqlContext.createQuery("""
+							SELECT objid, pin 
+							FROM tagoloan_etracs.faaslist 
+							WHERE rputype <>'land' AND docstate NOT IN('CURRENT', 'CANCELLED')
+					""").resultList 
+		
+		rpulist.each{ 
+			def faas = em2.read('faas', it)
+			if( ! faas.info.landfaasid ) {
+				def faasland = em2.sqlContext.createQuery('''
+								SELECT objid as landfaasid, taxpayerid as landfaastaxpayerid 
+								FROM faaslist 
+								WHERE pin = $P{fullpin} AND rputype = $P{rputype} 
+							''')
+							.setParameters( [fullpin:it.pin, rputype:'LAND' ] )
+							.singleResult
+			
+				faas.info.landfaasid = faasland.landfaasid
+				faas.info.landfaastaxpayerid = faasland.landfaastaxpayerid
+				em2.update( 'faas', faas )
+			}
+		}
+	}
+	
+	@ProxyMethod
+	public void  updateFAASMachRPUInfo() {
+		def machfaaslist = em2.sqlContext.createQuery("SELECT objid FROM faaslist WHERE rputype='mach'").resultList 
+		machfaaslist.each{ faas ->
+			def rpu = buildRpuInfo( faas )
+			buildMachInfo( faas, rpu )
+			
+			if( rpu ) {
+				em2.sqlContext.createExecutor('UPDATE faas SET rpu=$P{rpu} WHERE objid=$P{objid}')
+						.setParameters([objid:faas.objid, rpu:em2.serializer.write(rpu)])
+						.execute()
+			}
+		}
+	}
+	
+	@ProxyMethod
+	public void updateMachAssessLevelRanges() {
+		def levels = em1.sqlContext.createQuery('SELECT * FROM machassesslevel').resultList
+		levels.each {
+			def ranges = em1.sqlContext.createQuery('''
+				select
+					mvfrom, mvto, assesslevel as rate
+				from etracs_tagoloan.machassesslevelrange
+				where machassesslevelid = $P{machassesslevelid}
+				order by mvfrom 
+			''')
+			.setParameter('machassesslevelid', it.objid )
+			.resultList
+			
+			em2.sqlContext.createExecutor('UPDATE machassesslevel SET ranges = $P{ranges} WHERE objid = $P{objid}')
+				.setParameters([objid:it.objid, ranges:em2.serializer.write(ranges)])
+				.execute()
+		}
+	}
+	
+	
+	void buildMachInfo( faas, rpu ) {
+		def machuselist = em2.sqlContext.createQuery('''
+				select
+					mu.objid,
+					mu.marketvalue as basemarketvalue,
+					mu.adjmarketvalue as marketvalue,
+					mu.assesslevel,
+					mu.assessedvalue,
+					mu.actualuseid,
+					mu.actualusecode,
+					mu.actualusetitle as actualusename,
+					mu.machassesslevelid 
+				from etracs_tagoloan.machineuse mu 
+				where mu.rpuid = $P{rpuid}
+		''')
+		.setParameter('rpuid', rpu.objid )
+		.resultList 
+		
+		machuselist.each{ mu ->
+			mu.actualuse = getMachAssessLevel(  mu.machassesslevelid )
+			mu.machdetails = buildMachDetails( mu.objid  )	
+		}
+		rpu.info = [
+			machuses : machuselist 
+		]
+	}
+	
+	def buildMachDetails( machuseid )	{
+		return em2.sqlContext.createQuery('''
+				select 
+					md.objid,
+					md.replacementcost,
+					md.depreciation,
+					md.depreciationvalue,
+					md.marketvalue as basemarketvalue,
+					md.adjmarketvalue as marketvalue,
+					md.assesslevel,
+					md.assessedvalue,
+					md.originalcost,
+					md.freightcost,
+					md.insurancecost,
+					md.installationcost,
+					md.brokeragecost,
+					md.arrastrecost,
+					md.othercost,
+					md.acquisitioncost,
+					md.ferac,
+					md.forex,
+					md.residualrate,
+					md.localindex as conversionfactor,
+					md.useswornamount,
+					md.swornamount,
+					md.imported,
+					md.newlyinstalled,
+					md.autodepreciate,
+					md.machineid,
+					md.machinecode,
+					md.machinetitle as machinename,
+					md.yearacquired,
+					md.yearinstalled,
+					md.operationyear,
+					md.yearsused,
+					md.estimatedlife,
+					md.remaininglife,
+					null as forexid,
+					null as feracid
+				from etracs_tagoloan.machinelist md
+				where machineuseid = $P{machineuseid}
+		''')
+		.setParameter('machineuseid', machuseid )
+		.resultList 
+	}
+	
+	def getMachAssessLevel(  machassesslevelid ){
+		def info = em2.sqlContext.createQuery('''
+				select
+					mal.code as actualusecode,
+					case when mal.special = 1 then 1 else 0 end as fixrate,
+					mal.description as actualusename,
+					mal.objid as actualuseid,
+					mal.assesslevel as rate	
+				from etracs_tagoloan.machassesslevel mal
+				where objid = $P{objid}
+		''')
+		.setParameter('objid', machassesslevelid)
+		.singleResult 
+		
+		if( info ) {
+			info.fixrate = info.fixrate as boolean 
+			info.ranges = getMachAssessLevelRanges( info.actualuseid ) 
+		}
+		return info 
+	}
+	
+	def getMachAssessLevelRanges( machassesslevelid )  {
+		return em2.sqlContext.createQuery('''
+				select
+					r.mvfrom,
+					r.mvto,
+					r.assesslevel as rate 
+				from etracs_tagoloan.machassesslevelrange r
+				where machassesslevelid = $P{machassesslevelid}
+				order by r.mvfrom 
+		''')
+		.setParameter('machassesslevelid', machassesslevelid)
+		.resultList 
+	}
+	
+	
+	@ProxyMethod
+	public void  updateFAASBldgRPUInfo() {
+		def bldgfaaslist = em2.sqlContext.createQuery("SELECT objid FROM faaslist WHERE rputype='bldg'").resultList 
+		bldgfaaslist.each{ faas ->
+			def rpu = buildRpuInfo( faas )
+			buildBldgInfo( faas, rpu )
+			
+			if( rpu ) {
+				em2.sqlContext.createExecutor('UPDATE faas SET rpu=$P{rpu} WHERE objid=$P{objid}')
+						.setParameters([objid:faas.objid, rpu:em2.serializer.write(rpu)])
+						.execute()
+			}
+		}
+	}
+	
+	void buildBldgInfo( faas, rpu ) {
+		def info = em2.sqlContext.createQuery('''
+					select 
+						br.totalarea,
+						br.depreciation,
+						0.0 as depreciationvalue,
+						br.totaladjustment,
+						case when br.swornstatement = 1 then 1 else 0 end as swornstatement,
+						br.swornamount,
+						br.predominant,
+						br.firstfloorbasevalue,
+						1 as floorcount,
+						br.bldgage,
+						br.condominium,
+						0 as autocomputebldgdepreciation,
+						1 as depreciatecoreanditemseparately,
+						0 as residualrate,
+						br.assesslevel,
+						br.percentcompleted,
+						0 as useswornamount,
+						br.bldgassesslevelid as assesslevelid,
+						bal.code as assesslevelcode,
+						bal.description as assesslevelname,
+						br.dtbldgcompleted as dtcompleted,
+						br.dtbldgoccupied as dtoccupied ,
+						br.bldgclass,
+						br.psic,
+						br.permitno,
+						br.permitdate,
+						br.permitissuedby,
+						br.bldgtypeid, 
+						br.bldgtypeclassificationid ,
+						(select objid from tagoloan_etracs.faaslist where rputype ='land' and pin = rpu.pin ) as landfaasid, 
+						(select taxpayerid from tagoloan_etracs.faaslist where rputype ='land' and pin = rpu.pin ) as landfaastaxpayerid 
+					from etracs_tagoloan.taxdeclaration td 
+						inner join etracs_tagoloan.rpu rpu on td.rpuid = rpu.objid 
+						inner join etracs_tagoloan.RPUOnLand lr on rpu.objid = lr.objid 
+						inner join etracs_tagoloan.BldgRPU br on lr.objid = br.objid 
+						left join etracs_tagoloan.bldgassesslevel bal on br.bldgassesslevelid = bal.objid 
+					where td.objid = $P{objid}
+			''')
+			.setParameter('objid', faas.objid )
+			.singleResult
+		
+		if( !info ) {
+			println 'blank info -> ' + rpu.fullpin 
+			return 
+		}
+		
+		info.swornstatement = info.swornstatement as boolean 
+		info.predominant 	= info.predominant as boolean 
+		info.autocomputebldgdepreciation 		= info.autocomputebldgdepreciation as boolean
+		info.depreciatecoreanditemseparately 	= info.depreciatecoreanditemseparately as boolean
+		info.useswornamount						= info.useswornamount as boolean
+		
+		info.bldgkindbucc	= buildBldgKindBuccInfo( info.bldgtypeclassificationid  )
+		info.bldgtype 		= buildBldgTypeInfo( info.bldgtypeid, info.bldgage )
+		info.bldguses 		= buildBldgUses( rpu.objid )
+		info.bldgstructures = buildBldgStructures( rpu.objid )
+		rpu.bldgstructures = info.bldgstructures 
+		rpu.info = info 
+	}
+	
+	def buildBldgStructures( rpuid ) {
+		return em2.sqlContext.createQuery('''
+					select 
+						bs.objid,
+						bs.structureid,
+						bs.structurecode,
+						bs.structuretitle as structurename,
+						bs.materialid,
+						bs.materialcode,
+						bs.materialtitle as materialname
+					from etracs_tagoloan.bldgrpustructure bs
+					where bldgrpuid = $P{rpuid}
+		''')
+		.setParameter('rpuid', rpuid )
+		.resultList 
+	}
+	
+	def buildBldgUses( rpuid ) {
+		def bldguses = em2.sqlContext.createQuery('''
+				select
+					bu.objid,
+					bu.area,
+					bu.basevalue,
+					bu.marketvalue as basemarketvalue,
+					bu.adjustment,
+					0.0 as depreciationvalue,
+					bu.adjmarketvalue as marketvalue,
+					bu.assesslevel,
+					bu.assessedvalue,
+					bu.actualuseid 
+				from etracs_tagoloan.bldguse bu 
+				where bu.bldgrpuid = $P{rpuid}
+		''')
+		.setParameter('rpuid', rpuid )
+		.resultList 
+		
+		bldguses.each{ bu -> 
+			bu.actualuse = getBldgActualUseInfo( bu.actualuseid )
+			bu.floors 	= getBldgFloors( bu.objid )
+		}
+		return bldguses 
+	}
+	
+	def getBldgFloors( bldguseid ) {
+		def floorlist = em2.sqlContext.createQuery('''
+				select
+					f.objid,
+					f.storeyrate,
+					f.adjustment,
+					f.basevalue,
+					f.unitvalue,
+					f.marketvalue as basemarketvalue,
+					0.0 as depreciationvalue,
+					f.adjmarketvalue as marketvalue,
+					f.assesslevel,
+					f.assessedvalue,
+					f.floorno,
+					f.area
+				from etracs_tagoloan.bldgfloor f
+				where bldguseid = $P{bldguseid}
+		''')
+		.setParameter('bldguseid', bldguseid )
+		.resultList 
+		
+		floorlist.each { floor -> 
+			floor.additionalitems = getFloorAdditionalItems( floor.objid )
+		}
+		
+		return floorlist 
+	}
+				
+	def getFloorAdditionalItems( floorid ) {
+		def itemlist = em2.sqlContext.createQuery('''
+				select
+					ba.objid,
+					ba.amount,
+					ba.bldgadditionalitemid as addlitemid,
+					ba.bldgadditionalitemcode as addlitemcode,
+					ba.bldgadditionalitemtitle as addlitemname,
+					ba.unit as addlitemunit,
+					xba.expr 
+				from etracs_tagoloan.bldgflooradditional ba
+					inner join tagoloan_etracs.bldgadditionalitem xba on ba.bldgadditionalitemid = xba.objid 
+				where ba.bldgfloorid = $P{bldgfloorid}
+		''')
+		.setParameter('bldgfloorid', floorid )
+		.resultList 
+		
+		itemlist.each{ item -> 
+			item.params 	= getAdditionalItemParams( item.objid )
+			item.addlitem	= [
+				expr			: item.expr, 
+				addlitemcode	: item.addlitemcode,
+				addlitemname	: item.addlitemname,
+				addlitemid		: item.addlitemid,
+				addlitemunit	: item.addlitemunit,
+				params			: item.params ,
+			]
+		}
+	}
+	
+	def getAdditionalItemParams( itemid ) {
+		return em2.sqlContext.createQuery('''
+				select
+					p.objid as paramid,
+					p.name as paramname,
+					p.caption as paramcaption,
+					LOWER(p.datatype) as datatype,
+					pv.doublevalue as paramvalue
+				from etracs_tagoloan.bldgflooradditional fa 
+					inner join etracs_tagoloan.bldgflooradditional_rptparametervalue fpv on fa.objid = fpv.bldgflooradditional_objid 
+					inner join etracs_tagoloan.rptparametervalue pv on fpv.parameters_objid = pv.objid 
+					inner join etracs_tagoloan.rptparameter p on pv.parameterid = p.objid 
+				where fa.objid = $P{bldgflooradditionalid}
+		''')
+		.setParameter('bldgflooradditionalid', itemid )
+		.resultList 
+		
+	}
+	
+	def getBldgActualUseInfo( actualuseid ) {
+		def info = em2.sqlContext.createQuery('''
+				select
+					bal.code as actualusecode,
+					case when bal.special = 1 then 1 else 0 end as fixrate,
+					bal.description as actualusename,
+					bal.objid as actualuseid
+				from etracs_tagoloan.bldgassesslevel bal
+				where bal.objid = $P{actualuseid}
+		''')
+		.setParameter('actualuseid', actualuseid )
+		.singleResult
+		
+		if( info ) {
+			info.fixrate = info.fixrate as boolean
+			info.ranges  = getBldgAssessLevelRanges( info.actualuseid )
+		}
+		return info 
+	}
+	
+	def getBldgAssessLevelRanges( actualuseid ) {
+		return em2.sqlContext.createQuery('''
+				select
+					r.mvfrom,
+					r.mvto,
+					r.rate 
+				from etracs_tagoloan.bldgassesslevelrange r
+				where bldgassesslevelid = $P{bldgassesslevelid}
+				order by r.mvfrom 
+		''')
+		.setParameter('bldgassesslevelid', actualuseid )
+		.resultList 
+	}
+	
+	def buildBldgTypeInfo( bldgtypeid, bldgage  ) {
+		def info = em2.sqlContext.createQuery('''
+				select 
+					r.predominant,
+					bt.description as bldgtypename,
+					bt.objid as bldgtypeid,
+					case when r.depreciatecoreanditemsseparately = 1 then 1 else 0 end as depreciatecoreanditemseparately,
+					case when r.autocomputebldgdepreciation = 1 then 1 else 0 end as computedepreciationbasedonschedule,
+					bt.code as bldgtypecode,
+					lower(r.basevaluetype) as basevaluetype ,
+					bt.residualvalue as residualrate 
+				from etracs_tagoloan.bldgtype bt 
+					inner join etracs_tagoloan.rysetting r on bt.bldgrysettingid = r.objid 
+				where bt.objid = $P{objid}
+		''')
+		.setParameter('objid', bldgtypeid )
+		.singleResult
+		
+		info.multistoreyadjustments = []
+		info.depreciations = getBldgDepreciation( bldgtypeid , bldgage )
+		return info 
+	}
+	
+	def getBldgDepreciation( bldgtypeid, bldgage ) {
+		return em2.sqlContext.createQuery('''
+			select
+				d.minyear as agefrom,
+				d.maxyear as ageto,
+				d.rate 
+			from etracs_tagoloan.bldgdepreciationschedule d
+			where d.bldgtypeid = $P{bldgtypeid} 
+			  and $P{bldgage} between d.minyear and d.maxyear 
+		''')
+		.setParameters( [bldgtypeid:bldgtypeid, bldgage:bldgage] )
+		.singleResult
+	}
+	
+	def buildBldgKindBuccInfo( bldgtypeclassificationid  ) {
+		return em2.sqlContext.createQuery('''
+			select 
+				bk.code as bldgkindcode,
+				btc.maxbasevalue,
+				btc.minarea,
+				btc.maxarea,
+				btc.basevalue,
+				bk.description as bldgkindname,
+				btc.gapvalue,
+				lower(btc.basevaluetype) as basevaluetype,
+				bk.objid as bldgkindid,
+				btc.minbasevalue,
+				btc.objid as bldgkindbuccid 
+			from etracs_tagoloan.bldgtypeclassification btc
+				inner join etracs_tagoloan.bldgkind bk on btc.bldgkindid = bk.objid 
+			where btc.objid = $P{objid}
+		''')
+		.setParameter('objid', bldgtypeclassificationid)
+		.singleResult
+	}
+	
+	
+	@ProxyMethod
+	public void  updateFAASLandRPUInfo() {
+		def landfaaslist = em2.sqlContext.createQuery("SELECT objid FROM faaslist WHERE rputype='land'").resultList 
+		landfaaslist.each{ faas ->
+			def rpu = buildRpuInfo( faas )
+			buildLandInfo( faas, rpu )
+			
+			em2.sqlContext.createExecutor('UPDATE faas SET rpu=$P{rpu} WHERE objid=$P{objid}')
+					.setParameters([objid:faas.objid, rpu:em2.serializer.write(rpu)])
+					.execute()
+		}
+	}
+	
+	
+	@ProxyMethod 
+	public void updateFAASInfo() {
+		def faaslist = em2.sqlContext.createQuery('SELECT objid FROM faaslist').resultList
+		faaslist.each{ faas ->
+			def info = em2.sqlContext.createQuery('''
+							select
+								fl.datacapture,
+								td.previousMarketValue as prevmv,
+								td.previousAssessedValue as prevav,
+								fl.effectivityqtr,
+								fl.memoranda,
+								fl.autonumber,
+								fl.backtaxyrs,
+								fl.claimno,
+								fl.annotated,
+								case 
+									when fl.txntype = 'GR' then '[txntype:"GR", caption:"General Revision"]'
+									when fl.txntype = 'TR' then '[txntype:"TR", caption:"Transfer of Ownership"]'	
+									when fl.txntype = 'ND' then '[txntype:"ND", caption:"New Discovery"]'	
+									when fl.txntype = 'SD' then '[txntype:"SD", caption:"Subdivision"]'	
+									when fl.txntype = 'CE' then '[txntype:"CE", caption:"Correction of Entry"]'	
+									when fl.txntype = 'AM' then '[txntype:"CS", caption:"Consolidation"]'	
+									when fl.txntype IN ('RE','CT','PC','CD','CC','PD' ) then '[txntype:"RE", caption:"Reassessment"]'	
+									else '[txntype:"DC", caption:"Data Capture"]'	
+								end as txn,
+								rpu.txntype,
+								fl.tdno,
+								fl.issuedate,
+								fl.effectivityyear,
+								td.previousTdNo as prevtdno,
+								td.previousPin as prevpin,
+								td.previousOwner as prevowner,
+								null as appraisedbyid,
+								td.appraisedby,
+								td.appraisedbyposition as appraisedbytitle,
+								td.issuedate as dtappraised,
+								null as recommendedbyid,
+								fl.recommendedby,
+								td.recommendedbyposition as recommendedbytitle,
+								td.issuedate as dtrecommended,
+								null as approvedbyid,
+								fl.approvedby,
+								td.approvedbyposition as approvedbytitle,
+								td.issuedate as dtapproved,
+								fl.taxpayerid,
+								fl.taxpayerno,
+								fl.taxpayername,
+								fl.taxpayeraddress,
+								fl.ownername,
+								fl.owneraddress
+							from etracs_tagoloan.taxdeclaration td
+								inner join etracs_tagoloan.rpu rpu on td.rpuid = rpu.objid 
+								inner join etracs_tagoloan.realproperty rp on rpu.realpropertyid = rp.objid 
+								inner join tagoloan_etracs.faaslist fl on td.objid = fl.objid 
+							where td.objid = $P{objid} 
+					''')
+					.setParameter('objid', faas.objid)
+					.singleResult
+			if( info ) {
+				info.txn = em2.serializer.read( info.txn ) 
+				em2.sqlContext.createExecutor('UPDATE faas SET info = $P{info} WHERE objid=$P{objid}')
+						.setParameters( [objid:faas.objid, info:em2.serializer.write(info)] )
+						.execute()
+			}
+		}
+	}
+	
+	@ProxyMethod 
+	public void updateFAASRealPropertyInfo() {
+		def faaslist = em2.sqlContext.createQuery('SELECT objid FROM faaslist').resultList
+		faaslist.each{ faas ->
+			def rpinfo = em2.sqlContext.createQuery('''
+							select
+							'municipality' as lgutype,
+							null as attributes,
+							0 as autonumber,
+							'new' as pintype,
+							fl.barangayid,
+							fl.barangay,
+							fl.barangayindex,
+							(select objid from tagoloan_etracs.lgu where lgutype = 'municipality' ) as munidistrictid,
+							fl.section,
+							fl.parcel,
+							fl.provcity,
+							fl.provcityindex,
+							fl.munidistrict,
+							fl.munidistrictindex,
+							fl.surveyno,
+							fl.blockno,
+							fl.pin,
+							fl.cadastrallotno,
+							rp.southboundary as south,
+							rp.northboundary as north,
+							rp.eastboundary as east,
+							rp.westboundary as west
+						from etracs_tagoloan.taxdeclaration td
+							inner join etracs_tagoloan.rpu rpu on td.rpuid = rpu.objid 
+							inner join etracs_tagoloan.realproperty rp on rpu.realpropertyid = rp.objid 
+							inner join tagoloan_etracs.faaslist fl on td.objid = fl.objid 
+						where td.objid = $P{objid} 
+					''')
+					.setParameter('objid', faas.objid)
+					.singleResult
+			if( rpinfo ) {
+				em2.sqlContext.createExecutor('UPDATE faas SET rp = $P{rp} WHERE objid=$P{objid}')
+						.setParameters( [objid:faas.objid, rp:em2.serializer.write(rpinfo)] )
+						.execute()
+			}
+		}
+		
+	}
+	
+	
+	@ProxyMethod
+	public void updateMultipleEntityInfo()  {
+		def entitylist = em2.sqlContext.createQuery('SELECT objid FROM entity WHERE entitytype=$P{entitytype}')
+							.setParameter('entitytype', 'multiple').resultList 
+		entitylist.each {
+			def info = em1.sqlContext.createQuery('''
+							select fullname 
+							from etracs_tagoloan.payer p
+							where objid = $P{objid}
+			''')
+			.setParameter('objid', it.objid )
+			.singleResult
+			
+			if( info ) {
+				em2.sqlContext.createExecutor('UPDATE entity SET info=$P{info} WHERE objid=$P{objid}')
+						.setParameters([objid:it.objid, info:em2.serializer.write(info)])
+						.execute()
+			}
+		}
+	}
+	
+	@ProxyMethod
+	public void updateIndividualEntityInfo()  {
+		def entitylist = em2.sqlContext.createQuery('SELECT objid FROM entity WHERE entitytype=$P{entitytype}')
+							.setParameter('entitytype', 'individual').resultList 
+		entitylist.each {
+			def info = em1.sqlContext.createQuery('''
+							select 
+								p.lastname, 
+								p.firstname,
+								p.middlename,
+								p.birthdate,
+								p.placeofbirth as birthplace,
+								p.citizenshipid as citizenship,
+								case when p.gender = 'M' then 'MALE' else 'FEMALE' end as gender,
+								p.civilstatus,
+								p.professionid as profession,
+								p.tin,
+								null as sss,
+								p.height_value as height,
+								p.weight_value as weight
+							from etracs_tagoloan.payer p
+							where objid = $P{objid}
+			''')
+			.setParameter('objid', it.objid )
+			.singleResult
+			
+			if( info ) {
+				em2.sqlContext.createExecutor('UPDATE entity SET info=$P{info} WHERE objid=$P{objid}')
+						.setParameters([objid:it.objid, info:em2.serializer.write(info)])
+						.execute()
+			}
+		}
+	}
+	
+	@ProxyMethod
+	public void loadPlantTreeRYSettingInfos(){
+		def planttreesettings = em2.sqlContext.createQuery('SELECT objid FROM planttreerysetting').resultList 
+		planttreesettings.each{
+			//load assesslevels 
+			def levellist = em1.sqlContext.createQuery('SELECT objid, code, description as name, assesslevel as rate FROM treeassesslevel WHERE rysettingid=$P{rysettingid}')
+								.setParameter('rysettingid', it.objid ).resultList
+			em2.sqlContext.createExecutor('UPDATE planttreerysetting SET assesslevels = $P{assesslevels} WHERE objid=$P{objid}')
+					.setParameters([objid:it.objid, assesslevels:em2.serializer.write(levellist)])
+					.execute()
+					
+			//load planttreeunits 
+			def planttreelist = em1.sqlContext.createQuery('''
+							SELECT
+								t.objid as planttreeid,
+								t.code as planttreecode,
+								t.description as planttreename,
+								tu.rysettingid as planttreerysettingid
+							FROM treeunit tu
+								inner join tree t on tu.treeid = t.objid 
+							WHERE tu.rysettingid = $P{rysettingid}
+							ORDER BY t.code 
+					''')
+					.setParameter('rysettingid', it.objid ).resultList
+			em2.sqlContext.createExecutor('UPDATE planttreerysetting SET planttreeunits = $P{planttreeunits} WHERE objid=$P{objid}')
+					.setParameters([objid:it.objid, planttreeunits:em2.serializer.write(planttreelist)])
+					.execute()
+		}
+	}
+	
+	
+	@ProxyMethod
+	public void updateBldgAdditionalItemExpr() {
+		def additionalist = em2.sqlContext.createQuery('SELECT objid, expr FROM bldgadditionalitem').resultList
+		additionalist.each{ item ->
+			def expr = item.expr.replace('$P{','').replace('$F{', 'SYS_').replace('}', '')
+			em2.sqlContext.createExecutor('UPDATE bldgadditionalitem SET expr = $P{expr} WHERE objid=$P{objid}')
+					.setParameters([objid:item.objid, expr:expr ])
+					.execute()
+		}
+	}
+	
+	
+	@ProxyMethod
+	public void loadBldgDepreciationSchedules() {
+		def bldgtypelist = em2.sqlContext.createQuery('SELECT * FROM bldgtype').resultList
+		bldgtypelist.each{ bldgtype ->
+			def depreciationlist = em1.sqlContext.createQuery('''
+					SELECT minyear AS agefrom, maxyear AS ageto, rate 
+					FROM bldgdepreciationschedule 
+					WHERE bldgtypeid = $P{bldgtypeid}
+					ORDER BY minyear 
+				''')
+				.setParameter('bldgtypeid', bldgtype.objid)
+				.resultList 
+			
+			em2.sqlContext.createExecutor('UPDATE bldgtype SET depreciations = $P{depreciations} WHERE objid=$P{objid}')
+				.setParameters([objid:bldgtype.objid, depreciations:em2.serializer.write( depreciationlist) ])
+				.execute()
+		}
+	}
+	
+	@ProxyMethod
+	public void updateBldgKindBuccExtended() {
+		def bucclist = em2.sqlContext.createQuery('SELECT objid, bldgkindid, bldgkindcode, bldgkindname  FROM bldgkindbucc').resultList
+		bucclist.each{ bucc ->
+			def bldgkind = [ objid:bucc.objid, bldgcode:bucc.bldgkindcode, bldgkind:bucc.bldgkindname ]
+			em2.sqlContext.createExecutor('UPDATE bldgkindbucc SET extended = $P{extended} WHERE objid = $P{objid}')
+					.setParameters([objid:bucc.objid, extended: em2.serializer.write([bldgkind:bldgkind])])
+					.execute()
+		}
+	}
+	
+	@ProxyMethod
+	public void updateBldgAssessLevelRanges() {
+		def levels = em1.sqlContext.createQuery('SELECT * FROM bldgassesslevel').resultList
+		levels.each {
+			def ranges = em1.sqlContext.createQuery('''
+				select
+					mvfrom, mvto, rate
+				from etracs_tagoloan.bldgassesslevelrange
+				where bldgassesslevelid = $P{bldgassesslevelid}
+				order by mvfrom 
+			''')
+			.setParameter('bldgassesslevelid', it.objid )
+			.resultList
+			
+			em2.sqlContext.createExecutor('UPDATE bldgassesslevel SET ranges = $P{ranges} WHERE objid = $P{objid}')
+				.setParameters([objid:it.objid, ranges:em2.serializer.write(ranges)])
+				.execute()
+		}
+	}
+	
+	
+	@ProxyMethod
+	public void updateLandAdjustmentExpression() {
+		//replace $P{} expressions with normal variable name and convert rate to SYS_BASE_MARKET_VALUE * rate/100 
+		def adjlist = em2.sqlContext.createQuery('SELECT objid, expression FROM landadjustment WHERE expression LIKE $P{expression}')
+							.setParameter('expression', '%if%')
+							.resultList
+		adjlist.each{ adj ->
+			def expr = adj.expression.replace('$P{', '').replace('}','')
+			[5, -2, -4, -6, -8].each {
+				expr = expr.replace(it+';', 'SYS_BASE_MARKET_VALUE * ' + (it / 100) + ';')
+			}
+			em2.sqlContext.createExecutor('UPDATE landadjustment SET expression=$P{expression} WHERE objid=$P{objid}')
+				.setParameters([objid:adj.objid, expression:expr ])
+				.execute()
+		}
+	}
+	
+
+	@ProxyMethod
+	public void updateLandAssessLevelRanges() {
+		def levels = em1.sqlContext.createQuery('SELECT * FROM landassesslevel').resultList
+		levels.each {
+			def ranges = em1.sqlContext.createQuery('''
+				select
+					mvfrom, mvto, assesslevel as rate
+				from etracs_tagoloan.landassesslevelrange
+				where landassesslevelid = $P{landassesslevelid}
+			''')
+			.setParameter('landassesslevelid', it.objid )
+			.resultList
+			
+			em2.sqlContext.createExecutor('UPDATE landassesslevel SET ranges = $P{ranges} WHERE objid = $P{objid}')
+				.setParameters([objid:it.objid, ranges:em2.serializer.write(ranges)])
+				.execute()
+		}
+	}
+	
+	@ProxyMethod
+	public void updateStructureMaterials() {
+		def structurelist = em2.sqlContext.createQuery('SELECT * FROM structures').resultList
+		structurelist.each {
+			def materials = em1.sqlContext.createQuery('''
+				SELECT 
+					m.objid, m.code AS materialcode, m.description AS materialdesc
+				FROM etracs_tagoloan.structure_material st 
+					INNER JOIN etracs_tagoloan.material m ON st.materials_objid = m.objid 
+				WHERE structure_objid = $P{objid}
+				ORDER BY m.description 
+			''')
+			.setParameter('objid', it.objid ).resultList
+			materials.each{ it.material =[ objid:it.objid, materialcode:it.materialdesc, materialcode:it.materialcode ] }
+			em2.sqlContext.createExecutor('UPDATE structures SET materials = $P{materials} WHERE objid = $P{objid}')
+					.setParameters( [objid:it.objid, materials:em2.serializer.write(materials)] ).execute()
+		}
+	}
+	
+	@ProxyMethod
+	public void updateLiquidationInfo() {
+		def lqlist = em1.sqlContext.createQuery('SELECT * FROM liquidation').resultList
+		lqlist.each { lq ->
+			def info = [
+				txndate					: lq.dtposted,
+				liquidatingofficerid	: lq.liquidatingOfficerId,
+				liquidatingofficername	: lq.liquidatingOfficerName,
+				liquidatingofficertitle	: lq.liquidatingOfficerTitle,
+				amount					: lq.amount,
+				totalcash				: lq.amount - lq.totalchecks,
+				totalotherpayment		: lq.totalchecks,
+				d1000qty				: lq.d1000qty,
+				d500qty					: lq.d500qty,
+				d200qty					: lq.d200qty,
+				d100qty					: lq.d100qty,
+				d50qty					: lq.d50qty,
+				d20qty					: lq.d20qty,
+				d10qty					: lq.d10qty,
+				coins					: lq.coins,
+				treasurername			: lq.treasurerName,
+				treasurertitle			: lq.treasurerTitle,
+				txnno					: lq.docno,
+				depositedbyid			: null,
+				depositedbyname			: null, 
+				depositedbytitle		: null,
+				denominations:[
+					[caption:"1000.00"	,denomination:1000.00	,qty:lq.d1000qty	,amount:lq.d1000qty*1000.0],
+					[caption:"500.00"	,denomination:500.00	,qty:lq.d500qty	,amount:lq.d500qty*500.0],
+					[caption:"200.00"	,denomination:200.00	,qty:lq.d200qty	,amount:lq.d200qty*200.0],
+					[caption:"100.00"	,denomination:100.00	,qty:lq.d100qty	,amount:lq.d100qty*100.0],
+					[caption:"50.00"	,denomination:50.00		,qty:lq.d50qty		,amount:lq.d50qty*50.0],
+					[caption:"20.00"	,denomination:20.00		,qty:lq.d20qty		,amount:lq.d20qty*20.0],
+					[caption:"10.00"	,denomination:10.00		,qty:lq.d10qty		,amount:lq.d10qty*10.0],
+					[caption:"Coins"	,denomination:1.00		,qty:lq.coins		,amount:lq.coins]],
+			]
+			em2.sqlContext.createExecutor('UPDATE liquidation SET info = $P{info} WHERE objid = $P{objid}')
+					.setParameters([objid:lq.objid, info:em2.serializer.write( info) ]).execute() 
+		}
+	}
+	
+	@ProxyMethod
+	public void updateRemittanceInfo() {
+		println 'xxxxxx'
+		def remittancelist = em1.sqlContext.createQuery('SELECT * FROM collectionremittance').resultList
+		remittancelist.each { rem ->
+			def info = [
+				txndate 		: rem.dateposted,
+				collectorname	: rem.collectorName,
+				collectortitle	: rem.collectorTitle,
+				amount			: rem.amount,
+				totalcash		: ( rem.amount - rem.totalchecks ),
+				totalotherpayment: rem.totalchecks,
+				txnno			: rem.docno ,
+				liquidatingofficername : rem.liquidatingOfficerName,
+				liquidatingofficertitle: rem.liquidatingOfficerTitle,
+				denominations:[
+					[caption:"1000.00"	,denomination:1000.00	,qty:rem.d1000qty	,amount:rem.d1000qty*1000.0],
+					[caption:"500.00"	,denomination:500.00	,qty:rem.d500qty	,amount:rem.d500qty*500.0],
+					[caption:"200.00"	,denomination:200.00	,qty:rem.d200qty	,amount:rem.d200qty*200.0],
+					[caption:"100.00"	,denomination:100.00	,qty:rem.d100qty	,amount:rem.d100qty*100.0],
+					[caption:"50.00"	,denomination:50.00		,qty:rem.d50qty		,amount:rem.d50qty*50.0],
+					[caption:"20.00"	,denomination:20.00		,qty:rem.d20qty		,amount:rem.d20qty*20.0],
+					[caption:"10.00"	,denomination:10.00		,qty:rem.d10qty		,amount:rem.d10qty*10.0],
+					[caption:"Coins"	,denomination:1.00		,qty:rem.coins		,amount:rem.coins]],
+			]
+			em2.sqlContext.createExecutor('UPDATE remittance SET info = $P{info} WHERE objid = $P{objid}')
+					.setParameters([objid:rem.objid, info:em2.serializer.write( info) ]).execute() 
+		}
+	}
+	
+	@ProxyMethod
+	public void updateAccount( parentacct, level) {
+		def acctlist = []
+		if( ! parentacct )
+			acctlist = em2.sqlContext.createQuery('SELECT objid, accttitle FROM account WHERE parentid IS NULL').resultList
+		else 
+			acctlist = em2.sqlContext.createQuery('SELECT objid, accttitle FROM account WHERE parentid = $P{parentid}').setParameter('parentid', parentacct.objid).resultList
+			
+			
+		acctlist.each { acct -> 
+			updateAccountLevel( parentacct, acct, level )
+		}
+	}
+	
+	void updateAccountLevel( parentacct, acct, level ) {
+		level += 1
+		
+		if( parentacct ) {
+			if( ! parentacct.pathbyids ) acct.pathbyids = ''
+			if( ! parentacct.pathbytitle) acct.pathbytitle = ''
+			if( ! acct.pathbyids ) acct.pathbyids = ''
+			if( ! acct.pathbytitle) acct.pathbytitle = ''
+			acct.pathbyids = parentacct.pathbyids + '/' + acct.objid 
+			acct.pathbytitle = parentacct.pathbytitle + '/' + acct.accttitle 
+		}
+		
+		def params = [
+			objid		: acct.objid, 
+			level 		: level,
+			pathbyids 	: acct.pathbyids,
+			pathbytitle	: acct.pathbytitle,
+		]
+		em2.sqlContext.createExecutor('UPDATE account SET acctlevel = $P{level}, pathbyids=$P{pathbyids}, pathbytitle=$P{pathbytitle} WHERE objid = $P{objid}')
+				.setParameters( params ).execute() 
+		
+		updateAccount( acct, level )
+	}
+	
+	
+	void buildLandInfo( faas, rpu ) {
+		def info = em2.sqlContext.createQuery('''
+					select 
+						case when rpu.taxable = 1 then 1 else 0 end as taxable,
+						rpu.totalmv as totalbmv,
+						rpu.totalamv as totalmv,
+						rpu.totalav,
+						rpu.areainsqm as totalareasqm,
+						rpu.areainhec as totalareaha,
+						0 as useswornamount,
+						lr.idleland,
+						lr.totallandadjustment as landvalueadjustment,
+						concat('[areasqm:', totalareasqm, ',areaha:', totalareahec, ',basemarketvalue:', totallandmv, ',marketvalue:', totallandamv, ',assessedvalue:', totallandav, ',adjustment:',totallandadjustment,']') as landtotal,
+						concat('[bearing:',totalplantbearing, ',nonbearing:', totalplantnonbearing,',basemarketvalue:', totalplantmv, ',marketvalue:', totalplantamv, ',assessedvalue:', totalplantav, ']' ) as planttotal
+					from etracs_tagoloan.taxdeclaration td 
+						inner join etracs_tagoloan.rpu rpu on td.rpuid = rpu.objid 
+						inner join etracs_tagoloan.landrpu lr on rpu.objid = lr.objid 
+					where td.objid = $P{objid}
+
+			''')
+			.setParameter('objid', faas.objid )
+			.singleResult
+			
+		info.taxable = info.taxable as boolean 
+		info.landtotal = em2.serializer.read( info.landtotal )
+		info.planttotal = em2.serializer.read( info.planttotal )
+		info.landdetails =  buildLandDetails( faas, rpu)
+		info.planttrees  = buildPlantTrees( faas, rpu )
+		info.adjustments = buildLandAdjustments( faas, rpu, info.landdetails )
+		rpu.info = info 
+	}
+	
+	def  buildLandAdjustments( faas, rpu, landdetails  ) {
+		def adjlist = em2.sqlContext.createQuery('''
+					select 
+						la.objid,
+						0.0 as adjustment,
+						la.landadjustmenttypeid as adjtypeid,
+						la.landadjustmenttypecode as adjtypecode,
+						la.landadjustmenttypetitle as adjtypename,
+						xla.expression as expr
+					from etracs_tagoloan.landadjustment la 
+						inner join tagoloan_etracs.landadjustment xla on la.landadjustmenttypeid = xla.objid 
+					where rpuid = $P{rpuid}
+
+		''')
+		.setParameter('rpuid', rpu.objid  )
+		.resultList
+		
+		adjlist.each { adjustment ->
+			def landadjustmentlist = []
+			landdetails.each { ld ->
+				landadjustmentlist.addAll(  ld.landadjustments.findAll{it.adjtypeid == adjustment.adjtypeid} )
+			}
+			adjustment.adjustment = landadjustmentlist.adjustment.sum()
+			if( ! adjustment.adjustment ) adjustment.adjustment = 0.0 
+			adjustment.params = buildLandAdjustmentParams( adjustment.objid )
+			adjustment.adj = [
+				expr		: adjustment.expr,
+				adjtypeid	: adjustment.adjtypeid,
+				adjtypename	: adjustment.adjtypename,
+				adjtypecode	: adjustment.adjtypecode,
+			]
+		}
+		return adjlist 
+	}
+	
+	def buildLandAdjustmentParams( landadjustmentid ) {
+		return em2.sqlContext.createQuery('''
+				select 	
+					p.objid as paramid,
+					p.name as paramname,
+					pv.doublevalue as paramvalue 
+				from etracs_tagoloan.landadjustment la
+					inner join etracs_tagoloan.landadjustment_rptparametervalue rpv on la.objid = rpv.landadjustment_objid 
+					inner join etracs_tagoloan.rptparametervalue pv on rpv.parameters_objid = pv.objid 
+					inner join etracs_tagoloan.rptparameter  p on pv.parameterid = p.objid 
+				where la.objid = $P{landadjustmentid}
+		
+		''')
+		.setParameter('landadjustmentid', landadjustmentid  )
+		.resultList
+	}
+	
+	def buildPlantTrees( faas, rpu ) {
+		def list = em2.sqlContext.createQuery('''
+				select
+					lp.objid,
+					lp.bearing,
+					lp.nonbearing,
+					lp.marketvalue as basemarketvalue,
+					lp.adjmarketvalue - lp.marketvalue as adjustment,
+					lp.adjmarketvalue as marketvalue,
+					lp.assesslevel,
+					lp.assessedvalue,
+					lp.treeunitvalueid as unitvalueid,
+					lp.treeunitvaluecode as unitvaluecode,
+					lp.treeunitvaluetitle as unitvaluename,
+					lp.unitvalue,
+					lp.treeid as planttreeid,
+					lp.treecode as planttreecode,
+					lp.treetitle as planttreename,
+					lp.treeassesslevelid as assesslevelid,
+					lp.treeassesslevelcode as assesslevelcode,
+					lp.treeassessleveltitle as assesslevelname,
+					0.0 as adjustmentrate,
+					concat('[assesslevelid:"', lp.treeassesslevelid,'",assesslevelcode:"', lp.treeassesslevelcode, '",assesslevelname:"', lp.treeassessleveltitle, '",assesslevel:', lp.assesslevel,']') as al,
+					concat('[planttreename:"',lp.treetitle,'",unitvaluecode:"',lp.treeunitvaluecode, '",unitvalueid:"', lp.treeunitvalueid, 
+						'",unitvalue:', lp.unitvalue, ',unitvaluename:"', lp.treeunitvaluetitle, '",planttreecode:"', lp.treecode, '",planttreeid:"',lp.treeid,'"]'
+					) as ptuv
+				from etracs_tagoloan.taxdeclaration td 
+					inner join etracs_tagoloan.rpu rpu on td.rpuid = rpu.objid 
+					inner join etracs_tagoloan.landrpu lr on rpu.objid = lr.objid 
+					inner join etracs_tagoloan.landplantdetail lp on lr.objid = lp.rpuid 
+				where td.objid = $P{objid}
+		''')
+		.setParameter('objid', faas.objid ).resultList
+		
+		list.each{
+			it.al = em2.serializer.read( it.al )
+			it.ptuv = em2.serializer.read( it.ptuv )
+		}
+		return list 
+	}
+	
+	def buildLandDetails( faas, rpu ) {
+		def details = em2.sqlContext.createQuery('''
+				select
+					ld.objid,
+					ld.basevalue,
+					ld.unitvalue,
+					ld.taxable,
+					ld.marketvalue as basemarketvalue,
+					ld.adjmarketvalue as marketvalue,
+					ld.totaladjustment as adjustment,
+					0.0 as landvalueadjustment,
+					0.0 as actualuseadjustment,
+					ld.assesslevel,
+					ld.assessedvalue,
+					ld.areasqm,
+					ld.areahec as areaha,
+					'[]' as landadjustments,
+					'[]' as adjustments,
+					ld.lcuvsubclassid as subclassid,
+					ld.subclasscode,
+					ld.subclasstitle as subclassname,
+					ld.specificclassid,
+					ld.specificclasscode,
+					ld.specificclasstitle as specificclassname,
+					case when ld.areatype = 'HEC' then 'HA' else 'SQM' end as areatype, 
+					ld.actualuseid,
+					ld.actualusecode,
+					ld.actualusetitle as actualusename,
+					ld.landassesslevelid as assesslevelid,
+					ld.assesslevelclasscode as assesslevelcode,
+					ld.assesslevelclasstitle as assesslevelname,
+					ld.striplevel,
+					ld.lcuvstrippingid as strippingid,
+					ld.striprate,
+					ld.area,
+					concat('[striplevel:"', ld.striplevel, '",striprate:', ld.striprate, ',strippingid:"', ld.lcuvstrippingid, '"]') as stripping,
+					concat('[assesslevelcode:"', ld.assesslevelclasscode,'",assesslevelid:"',ld.landassesslevelid,'",assesslevelname:"', ld.assesslevelclasstitle,'"]') as al,
+					concat('[specificclasscode:"', ld.specificclasscode,'",subclassid:"',ld.lcuvsubclassid,'",areatype:"',
+						case when ld.areatype = 'HEC' then 'HA' else 'SQM' end,'",specificclassname:"', ld.specificclasstitle,
+						'",subclassname:"',ld.subclasstitle,'",subclasscode:"', ld.subclasscode, '",actualusecode:"', ld.actualusecode, '",actualusename:"',
+						ld.actualusetitle,'",basevalue:', ld.basevalue, ',actualuseid:"', ld.actualuseid, '",specificclassid:"', ld.specificclassid, '"]') as subclass
+				from etracs_tagoloan.taxdeclaration td 
+					inner join etracs_tagoloan.rpu rpu on td.rpuid = rpu.objid 
+					inner join etracs_tagoloan.landrpu lr on rpu.objid = lr.objid 
+					inner join etracs_tagoloan.landdetail ld on lr.objid = ld.rpuid 
+				where td.objid = $P{objid}
+		''')
+		.setParameter('objid', faas.objid ).resultList 
+		
+		details.each { detail ->
+			detail.taxable			= detail.taxable as boolean 
+			detail.landadjustments 	= buildLandDetailAdjustments( faas, rpu , detail)
+			detail.adjustments 		= []
+			detail.stripping 		= (detail.stripping ? em2.serializer.read( detail.stripping ) : [:])
+			detail.al 				= em2.serializer.read( detail.al )
+			detail.subclass 		= em2.serializer.read( detail.subclass )
+		}
+		return details 
+	}
+	
+	def buildLandDetailAdjustments( faas, rpu, detail  ) {
+		def adjlist = em2.sqlContext.createQuery('''
+				select 
+					la.objid,
+					la.rate,
+					la.landadjustmenttypeid as adjtypeid,
+					la.landadjustmenttypecode as adjtypecode,
+					la.landadjustmenttypetitle as adjtypename,
+					la.expression as expr
+				from etracs_tagoloan.taxdeclaration td 
+					inner join etracs_tagoloan.rpu rpu on td.rpuid = rpu.objid 
+					inner join etracs_tagoloan.landrpu lr on rpu.objid = lr.objid 
+					inner join etracs_tagoloan.landadjustment la on rpu.objid = la.rpuid 
+				where td.objid = $P{objid}
+		''')
+		.setParameter('objid', faas.objid )
+		.resultList 
+		
+		adjlist.each{ 
+			it.adjustment = numSvc.round( detail.basemarketvalue * it.rate / 100.0 )
+		}
+		return adjlist 
+	}
+	
+	def buildRpuInfo( faas ){
+		def info = em2.sqlContext.createQuery('''
+					select
+						rpu.objid ,
+						fl.ry,
+						(select objid from tagoloan_etracs.propertyclassification where propertycode = fl.classcode) as classid,
+						fl.classcode,
+						(select propertydesc from tagoloan_etracs.propertyclassification where propertycode = fl.classcode) as classname,
+						rpu.suffix,
+						fl.taxable,
+						fl.totalareasqm,
+						fl.totalareaha,
+						fl.rputype,
+						fl.fullpin,
+						rpu.totalmv as totalbmv,
+						rpu.totalamv as totalmv,
+						fl.totalav
+					from etracs_tagoloan.taxdeclaration td
+						inner join etracs_tagoloan.rpu rpu on td.rpuid = rpu.objid 
+						inner join etracs_tagoloan.realproperty rp on rpu.realpropertyid = rp.objid 
+						inner join tagoloan_etracs.faaslist fl on td.objid = fl.objid 
+					where td.objid = $P{objid}
+		''')
+		.setParameter('objid', faas.objid )
+		.singleResult
+		info.taxable = info.taxable as boolean 
+		return info 
+	}
+	
+	@ProxyMethod
+	public void updateTitleInfo() {
+		def faaslist  = em.sqlContext.createQuery('''
+			SELECT objid, titleno, titledate, titletype 
+			FROM faaslist 
+			WHERE  titleno is not null 
+		''').resultList
+		faaslist.each { faasinfo ->
+			try {
+				def faas = em.sqlContext.createQuery('select objid, info from faas where objid = $P{objid}')
+								.setParameter('objid', faasinfo.objid )
+								.singleResult
+				if( faas ) {
+					faas.info = em.serializer.read( faas.info )
+					faas.info.titleno   = faasinfo.titleno 
+					faas.info.titletype = faasinfo.titletype 
+					faas.info.titledate = faasinfo.titledate 
+					
+					em.sqlContext.createExecutor('update faas set info = $P{info} where objid = $P{objid}')
+							.setParameters([objid:faasinfo.objid, info:em.serializer.write(faas.info)])
+							.execute() 
+					println 'processing -> ' + faasinfo.titleno 
+				}
+			}
+			catch( e ) {
+				println e.message 
+			}
+		}
+	}
+    	
+}

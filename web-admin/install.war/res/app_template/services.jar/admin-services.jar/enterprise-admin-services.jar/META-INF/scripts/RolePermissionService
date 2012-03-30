@@ -1,0 +1,82 @@
+import com.rameses.annotations.*;
+
+class RolePermissionService {
+
+	@PersistenceContext("main")
+	def em;
+	
+	@Service("PermissionService")
+	def permSvc;
+	
+	@Env
+	def env;
+	
+	@ProxyMethod
+	public def getPermissionsForAdmin( param ) {
+		def x = em.sqlContext.createNamedQuery( "role:permissions").setParameter("role", param.role).singleResult;
+		def included = ( x.included ) ? em.serializer.read( x.included ) : [];
+		def modules = [:];
+		
+		permSvc.fetchPermissions( x.roleclass, null, null, { o->
+			boolean item_allowed = included.find{ii->o.id.matches(ii) };
+			
+			def m = modules[(o.modulename)];
+			if( !m ) {
+				m = [id:o.modulename, title:o.moduletitle, all_count: 0, allowed_count: 0, status: 0, objects: [] ];
+				modules.put(o.modulename, m);
+			}	
+			//check number of items vs disallowed.
+			m.all_count+=1;
+			if( item_allowed ) m.allowed_count+=1; 
+			
+			//add the module object from the module.objects list
+			def obj = m.objects.find{ it.id == o.object };
+			if( !obj ) {
+				obj = [id:o.object, title: o.object, all_count:0, allowed_count:0, actions: [] ];
+				m.objects.add( obj );
+			}
+			//check number of items vs disallowed.
+			obj.all_count+=1;	
+			if( item_allowed ) obj.allowed_count+=1; 
+			
+			//add the action
+			obj.actions.add( [id:o.id, title:o.title, allowed: item_allowed, action: o.action  ] );
+		});
+		return [modules: modules*.value];
+	}	
+	
+	@ProxyMethod
+	public def updatePermissions( param ) {
+		def included = [];
+		param.modules.each { _module ->
+			if( _module.allowed_count == _module.all_count ) {
+				included.add( _module.id + ":.*" );
+			}	
+			else if( _module.allowed_count > 0 ){
+				_module.objects.each { _object ->
+					if( _object.allowed_count == _object.all_count ) {
+						included.add( _module.id+":"+_object.id+"\\..*" );
+					}
+					else if(_object.allowed_count>0) {
+						StringBuffer sb = new StringBuffer();
+						sb.append( _module.id+":"+_object.id+"\\.(" );
+						boolean f = true;
+						_object.actions.each { _action->
+							if( _action.allowed ) {
+								if( f ) f = false;
+								else sb.append("|");	
+								sb.append( _action.action );
+							}
+						}
+						sb.append( ")");
+						included.add( sb.toString() );
+					}
+				}
+			}
+		}
+		def o = em.read( "role", [name:param.role] );
+		o.included = included;
+		em.save( "role", o );
+	}
+	
+}

@@ -1,0 +1,539 @@
+import com.rameses.annotations.*
+import java.rmi.server.UID
+
+class LandRPUService
+{
+	@PersistenceContext('main')
+	def em
+    
+    @Service('NumberService')
+	def numberSvc
+    
+    @Service('RPUService')
+	def rpuSvc
+	
+	@Service('PlantTreeRPUService')
+	def planttreeSvc
+
+	@Env
+	def env
+    
+	
+	@ProxyMethod
+	public Map initGeneralRevision( faas, newrysetting ) {
+		reviseLandDetails( faas, newrysetting )
+		revisePlantTrees( faas, newrysetting )
+		reviseAdjustments( faas, newrysetting )
+		recalculate( faas ) 
+		return faas 
+	}
+	
+	
+	void reviseLandDetails( faas, newrysetting ) {
+		reviseSubclass( faas, newrysetting )
+		reviseLandAdjustments( faas, newrysetting )
+		reviseActualUseAdjustments( faas, newrysetting )
+		reviseStripping( faas, newrysetting )
+	}
+	
+	void reviseSubclass( faas, newrysetting ) {
+		def deletedItems = []
+		
+		faas.rpu.info.landdetails.each { landdetail ->
+			def subclass = em.sqlContext.createNamedQuery('landrpu:lookupSubclassByPrevId')
+							.setParameter('previd', landdetail.subclassid )
+							.singleResult 
+			
+			if( subclass ) {
+				landdetail.objid 	= 'LD' + new UID() 
+				landdetail.subclass = subclass 
+				landdetail.putAll( subclass ) 
+				landdetail.unitvalue = subclass.basevalue 
+			}
+			else {
+				deletedItems.add( landdetail )
+			}
+		}
+		
+		faas.rpu.info.landdetails.removeAll( deletedItems ) 
+	}
+	
+	void reviseLandAdjustments( faas, newrysetting ) {
+		faas.rpu.info.landdetails.each { landdetail ->
+			def deletedItems = []
+			landdetail.landadjustments.each { landadj ->
+				def adj = em.sqlContext.createNamedQuery('landrpu:lookupAdjTypeByPrevId')
+							.setParameter('previd', landadj.adjtypeid )
+							.singleResult 
+			
+				if( adj ) {
+					landadj.objid 		= 'A' + new UID()
+					landadj.putAll( adj )
+				}
+				else {
+					deletedItems.add( landadj )
+				}
+			}
+			landdetail.landadjustments.removeAll( deletedItems ) 
+		}
+	}
+	
+	void reviseActualUseAdjustments( faas, newrysetting ) {
+		faas.rpu.info.landdetails.each { landdetail ->
+			def deletedItems = []
+			landdetail.adjustments.each { landadj ->
+				def adj = em.sqlContext.createNamedQuery('landrpu:lookupAdjTypeByPrevId')
+							.setParameter('previd', landadj.adjtypeid )
+							.singleResult 
+			
+				if( adj ) {
+					landadj.objid 		= 'A' + new UID()
+					landadj.adj 		= adj 
+					landadj.putAll( adj )
+				}
+				else {
+					deletedItems.add( landadj )
+				}
+			}
+			landdetail.adjustments.removeAll( deletedItems ) 
+		}
+	}
+	
+	void reviseStripping( faas, newrysetting ) {
+		faas.rpu.info.landdetails.each { landdetail ->
+			if( landdetail.striplevel ) {
+				def stripping = em.sqlContext.createNamedQuery('landrpu:lookupStrippingByPrevId')
+									.setParameter('previd', landdetail.stripping.strippingid )
+									.singleResult 
+				if( stripping)  {
+					landdetail.stripping = stripping 
+					landdetail.putAll( stripping )
+				}
+				else {
+					landdetail.striplevel = null 
+					landdetail.striprate  = 100.0 
+					landdetail.strippingid = null 
+				}
+			}
+		}
+	}
+    
+    void revisePlantTrees( faas, newrysetting ) {
+		def deletedItems = []
+		def rysetting = em.sqlContext.createNamedQuery('planttreerpu:getRYSetting')
+							.setParameter('ry', newrysetting.ry)
+							.singleResult 
+		if( rysetting ) {
+			rysetting.assesslevels = em.serializer.read( rysetting.assesslevels )
+		}
+		
+		faas.rpu.info.planttrees.each { planttree -> 
+			def ptuv = em.sqlContext.createNamedQuery('planttreerpu:lookupUnitValueByPrevId')
+							.setParameter('previd', planttree.unitvalueid )
+							.singleResult 
+			
+			if( ptuv ) {
+				planttree.objid 		= 'PT' + new UID()
+				planttree.ptuv 			= ptuv 
+				planttree.putAll( ptuv )
+				
+				def al = rysetting?.assesslevels?.find{ it.previd = planttree.assesslevelid }
+				if( al ) {
+					planttree.al 				= al 
+					planttree.assesslevelid 	= al.assesslevelid 
+					planttree.assesslevelcode 	= al.assesslevelcode
+					planttree.assesslevelname 	= al.assesslevelname
+					planttree.assesslevel		= al.rate 
+				}
+				
+			}
+			else {
+				deletedItems.add( planttree )
+			}
+		}
+		
+		faas.rpu.info.planttrees.removeAll( deletedItems ) 
+	}
+	
+	void reviseAdjustments( faas, newrysetting ) {
+		def deletedItems = [] 
+		
+		faas.rpu.info.adjustments.each { landadj -> 
+			def adj = em.sqlContext.createNamedQuery('landrpu:lookupAdjTypeByPrevId')
+							.setParameter('previd', landadj.adjtypeid )
+							.singleResult 
+			
+			if( adj ) {
+				landadj.objid 		= 'A' + new UID()
+				landadj.adj 		= adj 
+				landadj.putAll( adj )
+			}
+			else {
+				deletedItems.add( landadj )
+			}
+		}
+		
+		faas.rpu.info.adjustments.removeAll( deletedItems ) 
+	}
+	
+	void recalculate( faas ) {
+		//calculate landdetails 
+		faas.rpu.info.landdetails.each { landdetail -> 
+			calculateLandDetailAssessment( landdetail ) 
+		}
+		
+		// recalc based land value and actual use adjustment 
+		def landdetails = faas.rpu.info.landdetails 
+		faas.rpu.info.adjustments.each { landadj ->
+			calculateLandAdjustment( landdetails, landadj)
+		}
+		
+		landdetails.each { landdetail ->
+			landdetail.adjustments.each { adj ->
+				calculateLandActualUseAdjustment( landdetail, adj)
+			}
+		}
+		
+		
+		// recalculate again to apply all adjustments 
+		recalcLandDetails( landdetails )
+		
+		faas.rpu.info.planttrees.each {
+			planttreeSvc.calculatePlantTreeAssessment( landdetails, it )
+		}
+		
+		
+		calculateTotals( faas )
+		
+	}
+	
+	void calculateTotals( faas ) {
+        def rpu = faas.rpu 
+		
+		clearRpuTotals( rpu )
+        clearLandTotals( rpu  )
+        clearPlantTotals(  rpu  )
+        
+        rpu.info.landdetails.each {
+            rpu.totalbmv     += it.basemarketvalue 
+            rpu.totalmv      += it.marketvalue 
+            rpu.totalav      += it.assessedvalue
+
+            rpu.info.landtotal.basemarketvalue  += it.basemarketvalue
+            rpu.info.landtotal.adjustment       += it.adjustment
+            rpu.info.landtotal.adjustment       += it.adjustment
+            rpu.info.landtotal.marketvalue      += it.marketvalue
+            rpu.info.landtotal.assessedvalue    += it.assessedvalue
+            rpu.info.landtotal.areasqm          += it.areasqm
+            rpu.info.landtotal.areaha           += it.areaha
+
+            rpu.totalareasqm += it.areasqm
+            rpu.totalareaha  += it.areaha 
+        }
+        
+        rpu.info.planttrees?.each {
+            rpu.totalbmv     += it.basemarketvalue 
+            rpu.totalmv      += it.marketvalue 
+            rpu.totalav      += it.assessedvalue
+            
+            rpu.info.planttotal.bearing         += it.bearing 
+            rpu.info.planttotal.nonbearing      += it.nonbearing
+            rpu.info.planttotal.basemarketvalue += it.basemarketvalue
+            rpu.info.planttotal.adjustment      += it.adjustment
+            rpu.info.planttotal.marketvalue     += it.marketvalue 
+            rpu.info.planttotal.assessedvalue   += it.assessedvalue
+        }
+        
+        rpu.info.landvalueadjustment = 0.0
+        if( rpu.info.adjustments ) {
+            rpu.info.landvalueadjustment = rpu.info.adjustments.adjustment.sum()
+        }
+    }
+    
+    void clearRpuTotals( rpu ) {
+        rpu.totalbmv     = 0.0
+        rpu.totalmv      = 0.0
+        rpu.totalav      = 0.0
+        rpu.totalareasqm = 0.0
+        rpu.totalareaha  = 0.0
+    }
+    
+    void clearLandTotals( rpu ) {
+        rpu.info.landvalueadjustment        = 0.0
+        rpu.info.landtotal.basemarketvalue  = 0.0
+        rpu.info.landtotal.adjustment       = 0.0
+        rpu.info.landtotal.marketvalue      = 0.0
+        rpu.info.landtotal.assessedvalue    = 0.0
+        rpu.info.landtotal.areasqm          = 0.0
+        rpu.info.landtotal.areaha           = 0.0
+    }
+    
+    void clearPlantTotals( rpu ) {
+        rpu.info.planttotal.bearing         = 0.0
+        rpu.info.planttotal.nonbearing      = 0.0
+        rpu.info.planttotal.basemarketvalue = 0.0
+        rpu.info.planttotal.adjustment      = 0.0
+        rpu.info.planttotal.marketvalue     = 0.0
+        rpu.info.planttotal.assessedvalue   = 0.0
+    }
+	
+	
+    @ProxyMethod
+    public Map initLandRpu( rpu ) {
+        rpuSvc.buildCommonRpuInfo( rpu )
+        def rpuinfo = rpu.info 
+        //
+        //land specific info
+        rpuinfo.idleland = false 
+        rpuinfo.landvalueadjustment = 0.0
+        rpuinfo.landdetails = []
+        rpuinfo.landtotal = [ 
+            areasqm         : 0.0,
+            areaha          : 0.0,
+            basemarketvalue : 0.0,
+            adjustment      : 0.0,
+            marketvalue     : 0.0,
+            assessedvalue   : 0.0,
+        ]
+        rpuinfo.planttrees = []
+        rpuinfo.planttotal = [
+            bearing         : 0.0,
+            nonbearing      : 0.0,
+            basemarketvalue : 0.0,
+            adjustment      : 0.0,
+            marketvalue     : 0.0,
+            assessedvalue   : 0.0,
+        ]
+        rpuinfo.adjustments = []
+        return rpu
+    }
+    
+    
+    @ProxyMethod
+    public Map calculateLandDetailAssessment( landdetail ) {
+		def rptsetting = getRPTSetting()
+		
+		//calculate areas 
+        if( landdetail.areatype == 'SQM' ) {
+            landdetail.areasqm = landdetail.area 
+            landdetail.areaha  = landdetail.area / 10000.0
+        }
+        else {
+            landdetail.areasqm = landdetail.area * 10000.0
+            landdetail.areaha  = landdetail.area 
+        }
+		
+        //adjust unitvalue if stripping is set 
+        if( landdetail.stripping && landdetail.stripping.striprate > 0) {
+            landdetail.strippingid = landdetail.stripping.objid 
+            landdetail.striprate   = landdetail.stripping.striprate 
+            landdetail.unitvalue = numberSvc.round( landdetail.basevalue * landdetail.striprate / 100.0 )
+        }
+        
+        //reset values to 0.0
+        landdetail.basemarketvalue  = 0.0
+        landdetail.marketvalue      = 0.0
+        landdetail.assesslevel      = 0.0
+        landdetail.assessedvalue    = 0.0
+        
+        //calculate assessment 
+        if( landdetail.taxable ) {
+            landdetail.basemarketvalue = numberSvc.round( landdetail.area * landdetail.unitvalue )
+            landdetail.landvalueadjustment = calculateLandValueAdjustment( landdetail )
+            landdetail.actualuseadjustment = calculateActualUseAdjustment( landdetail )
+            landdetail.adjustment = numberSvc.round( landdetail.landvalueadjustment + landdetail.actualuseadjustment )
+            landdetail.marketvalue = numberSvc.round( landdetail.basemarketvalue + landdetail.adjustment )
+			if( rptsetting && IS_TRUE( rptsetting.roundadjmarketvalue ) ) {
+				//landdetail.marketvalue = numberSvc.roundA( landdetail.marketvalue, 0 ) 
+				landdetail.marketvalue = numberSvc.roundToTen(landdetail.marketvalue)
+			}
+            landdetail.assesslevel = determineAssessLevel( landdetail )
+            landdetail.assessedvalue = numberSvc.roundToTen(landdetail.marketvalue * landdetail.assesslevel / 100.0 )
+        }
+        return landdetail 
+    }
+    
+    @ProxyMethod
+    public List recalcLandDetails( landdetails ) {
+        landdetails.each { calculateLandDetailAssessment( it ) }
+        return landdetails 
+    }
+    
+    
+    @ProxyMethod
+    public def calculateLandAdjustment( landdetails, adjustment ) {
+		adjustment.adjustment = 0.0
+        def result = [landvalueadjustment:0.0]
+        landdetails.each {
+            // evaluate the expr
+            def binding = buildFieldBindings( it ) 
+            binding += buildParamBindings( adjustment )
+            def adjamount = numberSvc.round( evaluateExpr( adjustment.expr, binding ) )
+            result.landvalueadjustment += adjamount
+			adjustment.adjustment += adjamount 
+            //remove existing adjustment
+            def oldadj = it.landadjustments.find{ it.adjtypeid == adjustment.adjtypeid }
+            if( oldadj ) it.landadjustments.remove( oldadj )
+            //add the adjustment 
+            it.landadjustments.add( createAdjustment( adjustment, adjamount ) )
+            calculateLandDetailAssessment( it )
+        }
+        result.landdetails = landdetails 
+        return result 
+    }
+    
+    @ProxyMethod
+    public def calculateLandActualUseAdjustment( landdetail, adjtype) {
+        def binding = buildFieldBindings( landdetail )
+        binding += buildParamBindings( adjtype )
+        adjtype.adjustment = numberSvc.round( evaluateExpr( adjtype.expr, binding ) )
+        return adjtype 
+    }
+    
+    
+    @ProxyMethod
+    public def applyLandAdjustments( landdetail, adjustments ) {
+        adjustments.each { adj ->
+			def data = calculateLandAdjustment( [landdetail], adj )
+            adj.adjustment = data.landvalueadjustment
+        }
+        return [landdetail:landdetail, adjustments:adjustments]
+    }
+    
+    def createAdjustment( adjtype , adjustment  ){
+        return [
+            objid       : 'LA' + new UID(),
+            adjustment  : adjustment,
+            adjtypeid   : adjtype.adjtypeid,
+            adjtypecode : adjtype.adjtypecode,
+            adjtypename : adjtype.adjtypename,
+            expr        : adjtype.expr,
+        ]
+    }
+    
+    @ProxyMethod
+    public def removeLandAdjustment( landdetails, item ) {
+        landdetails.each {
+			def adjs = it.landadjustments.findAll{ it.adjtypeid == item.adjtypeid }
+			if( adjs ) it.landadjustments.removeAll( adjs )
+            calculateLandDetailAssessment( it )
+        }
+        return landdetails 
+    }
+    
+    @ProxyMethod
+    public def removeActualUseAdjustment( landDetail, item ) {
+        def adjs = landDetail.adjustments.findAll{ it.adjtypeid == item.adjtypeid }
+        if( adjs ) landDetail.adjustments.removeAll( adjs )
+        calculateLandDetailAssessment( landDetail )
+        return landDetail 
+    }
+    
+    /*----------------------------------------------------------------------------------
+    * Lookup Support
+    ----------------------------------------------------------------------------------*/
+    @ProxyMethod
+    public List lookupSubclass( ry, searchText, params) {
+        def searchValue = (searchText ? searchText+'%' : '%')
+        def criteria = [ry:ry, subclasscode:searchValue]
+        return getListByName('landrpu:lookupSubclass', criteria, params)
+    }
+    
+    @ProxyMethod
+    public List lookupAssessLevel( ry, searchText, params) {
+        def searchValue = (searchText ? searchText+'%' : '%')
+        def criteria = [ry:ry, classcode:searchValue]
+        return getListByName('landrpu:lookupAssessLevel', criteria, params)
+    }
+    
+    @ProxyMethod
+    public List lookupStripping( ry, actualuseid, searchText, params) {
+        def searchValue = (searchText ? searchText : '-1')
+        def criteria = [ry:ry, actualuseid:actualuseid, striplevel:searchValue ]
+        return getListByName('landrpu:lookupStripping', criteria, params)
+    }
+    
+    @ProxyMethod
+    public List lookupLandAdjustments( ry, classid, searchText, params) {
+        def searchValue = (searchText ? searchText+'%' : '%')
+        def criteria = [ry:ry, classid:'%'+classid+'%', code:searchValue ]
+        return getListByName('landrpu:lookupAdjType', criteria, params)
+    }
+    
+    
+    /*----------------------------------------------------------------------------------
+    * calculateTotals Support 
+    ----------------------------------------------------------------------------------*/
+    def determineAssessLevel( landdetail ) {
+        def al = em.sqlContext.createNamedQuery('landrpu:getAssessLevelById').setParameter('objid', landdetail.assesslevelid).singleResult
+        if( ! al ) throw new Exception('Assess Level for ' + landdetail.assesslevelname + ' does not exists or has been deleted.')
+        if( (al.fixrate as boolean ) ==  true ) {
+            return al.rate 
+        }
+        List ranges = em.serializer.read( al.ranges )
+        def range = ranges.find{ landdetail.marketvalue > it.from && (landdetail.marketvalue <= it.to || it.to == 0.0) }
+        if( ! range ) throw new Exception('Market Value of P' + numberSvc.format('#,##0.00', landdetail.marketvalue) + ' has no assess level range definition.' )
+        return range.rate 
+    }
+    
+    def calculateLandValueAdjustment( ld ) {
+        if( ld.landadjustments ) {
+            return ld.landadjustments.adjustment.sum() 
+        }
+        return 0.0 
+    }
+    
+    def calculateActualUseAdjustment( ld ) {
+        if( ld.adjustments ) {
+            return ld.adjustments.adjustment.sum() 
+        }
+        return 0.0 
+    }
+    
+    /*----------------------------------------------------------------------------------
+    * Miscellaneous Methods
+    ----------------------------------------------------------------------------------*/
+    def buildFieldBindings( landdetail ) {
+        return [
+            SYS_BASE_MARKET_VALUE       : landdetail.basemarketvalue,
+            SYS_MARKET_VALUE            : landdetail.marketvalue,
+            SYS_BASE_VALUE              : landdetail.basevalue,
+            SYS_UNIT_VALUE              : landdetail.unitvalue,
+            SYS_AREA                    : landdetail.area ,
+            SYS_ASSESSED_VALUE          : landdetail.assessedvalue,
+        ]
+    }
+    
+    def buildParamBindings( adjustment ) {
+        def binding = [:]
+        adjustment.params.each {
+            binding[it.paramname] = it.paramvalue 
+        }
+        return binding 
+    }
+    
+    def getListByName(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+    
+    def evaluateExpr( expr, params ) {
+		return (new GroovyShell( new Binding( params) )).evaluate( expr )
+	}
+	
+	def getRPTSetting() {
+		return em.sqlContext.createNamedQuery('landrpu:getRPTSetting').singleResult 
+	}
+	
+	boolean IS_TRUE( value ) {
+		return TO_BOOLEAN( value ) == true 
+	}
+	
+	boolean TO_BOOLEAN( value ) {
+		if( value instanceof Boolean ) return value 
+		return '1/y/yes/true/t'.indexOf( value.toString().toLowerCase() ) >= 0
+	}
+}

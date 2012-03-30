@@ -1,0 +1,114 @@
+<schema>
+	<element name="rpu">
+		<field name="rputype" required="true" /> <!-- land, bldg, mach, misc, planttree -->
+        <link ref="rpu:rpuinfo"/>
+		<!-- links to outside rpu schema for land, bldg, mach, tree and misc -->
+		<complex name="info" ref="${rputype}" serializer="default"/>
+	</element>
+    
+	<element name="rpuinfo">
+		<field name="ry" required="true" type="integer" />
+		<field name="fullpin"  />
+		<field name="suffix" required="true" type="integer" />
+		<field name="subsuffix"  />
+		<field name="taxable" required="true" type="boolean" />
+		<field name="totalbmv" required="true" type="decimal" />
+		<field name="totalmv" required="true" type="decimal" />
+		<field name="totalav" required="true" type="decimal" />
+		<field name="totalareasqm"  type="decimal" />
+		<field name="totalareaha"  type="decimal" />
+        <!-- classification -->
+        <field name="classid" required="true"/>
+		<field name="classcode"    required="true"/>
+		<field name="classname"    required="true"/>
+        <!-- exemption -->
+        <field name="exemptid"  />
+		<field name="exemptcode"  />
+		<field name="exemptname"  />
+        <!-- cancelinfo  -->
+        <field name="cancelreason"  />
+		<field name="canceldate" />
+		<field name="cancelledbytdnos"  />
+	</element>
+    
+    <!-- landrpu -->
+    <element name="land">
+		<field name="idleland" required="true" />
+        <field name="swornstatement" type="boolean"  />
+        <field name="swornamount"  />
+		<field name="useswornamount"  />
+        <field name="landvalueadjustment" required="true" type="decimal" />
+		<complex name="landdetails" ref="rpuland:landdetail" type="list" required="true" serializer="default" />
+        <complex name="landtotal" ref="rpuland:landtotal" required="true" serializer="default" />
+        <complex name="planttrees" ref="rpuplanttree:planttree" type="list" required="false" serializer="default" />
+		<complex name="planttotal" ref="rpuland:planttotal" required="false" serializer="default" />
+		<complex name="adjustments" ref="rpuland:adjustment" type="list" required="false" serializer="default" />
+	</element>
+    
+    <!-- bldgrpu -->
+    <element name="bldg">
+		<field name="psic"  />
+        <field name="permitno"  />
+        <field name="permitdate"  />
+        <field name="permitissuedby"  />
+        <field name="dtcompleted"  />
+        <field name="dtoccupied"  />
+		<field name="totalarea" required="true" type="decimal" />
+		<field name="floorcount"  type="integer" />
+        
+        <field name="depreciation" required="true" type="decimal" />
+        <field name="depreciationvalue" required="true" type="decimal" />
+        <field name="totaladjustment" required="true" type="decimal" />
+        <field name="additionalinfo"  />
+        <field name="firstfloorbasevalue" required="true" type="decimal" />
+        <field name="bldgage" required="true" type="integer" />
+        <field name="swornstatement" type="boolean"  />
+        <field name="swornamount" required="true" />
+		<field name="useswornamount"  type="boolean"  required="true" />
+		<field name="percentcompleted"  type="decimal"  />
+		
+
+        <field name="bldgtype" required="true"  />
+        <!-- bldgtype content
+            bldgtypeid, bldgtypecode, bldgtypename,
+            depreciations, multistoreyadjustments, basevaluetype, residualrate
+            predominant, depreciatecoreanditemseparately, computedepreciationbasedonschedule 
+        -->
+        <field name="bldgkindbucc" required="true"  />
+        <!-- bldgkindbucc content 
+            bldgkindbuccid, bldgkindid, bldgkindcode, bldgkindname,
+            basevaluetype, basevalue, minbasevalue, maxbasevalue,
+            gapvalue, minarea, maxarea 
+        -->
+        <field name="assesslevelid" />
+        <field name="assesslevelcode" />
+        <field name="assesslevelname" />
+        <field name="assesslevel" required="true" type="decimal" />
+        <field name="condominium"  />
+        <field name="bldgclass"  />
+		<complex name="bldguses" ref="rpubldg:bldguse" type="list" serializer="default" />
+        <complex name="bldgstructures" ref="rpubldg:bldgstructure" type="list" serializer="default" />
+	</element>
+    
+    <!-- planttreerpu -->
+    <element name="planttree">
+		<field name="totalbearing" required="true" type="decimal" />
+		<field name="totalnonbearing" type="decimal" />
+		<complex name="planttreedetails" ref="rpuplanttree:planttree" type="list" min="1" serializer="default" />
+	</element>
+	
+    <!-- machrpu -->
+    <element name="mach">
+        <complex name="machuses" ref="rpumach:machuse" type="list" required="true" serializer="default" />
+    </element>
+    
+    
+	<!-- miscrpu -->
+	<element name="misc">
+        <field name="actualuseid" required="true"  />
+		<field name="actualusecode" required="true"  />
+		<field name="actualusename" required="true"  />
+		<complex name="miscrpuitems" ref="rpumisc:miscrpuitem" type="list" min="1" serializer="default" />
+	</element>	
+	
+</schema>

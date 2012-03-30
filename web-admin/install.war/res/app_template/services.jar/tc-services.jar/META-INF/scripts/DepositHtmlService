@@ -1,0 +1,317 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class DepositHtmlService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('NumberService')
+	def numSvc 
+	
+	def SCHEMA = 'deposit'
+	def SCHEMAVERSION = '1.0' 
+	
+	@ProxyMethod 
+	public def getHtml( objid)  {
+		def deposit = em.read(SCHEMA, [objid:objid] )
+		if( ! deposit ) return "<html></html>"
+		
+		def styles = getStyle()
+		def header = buildHeader( deposit )
+		def fundsummaries = buildFundSummaries( deposit )
+		def liquidationlist = buildLiquidationList( deposit )
+		return """
+			<html>
+				<head>
+					$style 
+				</head>
+				<body>
+					<table width="100%">
+						<tr>
+							<td>$header</td>
+						</tr>
+						<tr>
+							<td>$liquidationlist</td>
+						</tr>
+						<tr></tr>
+						<tr>
+							<td>$fundsummaries</td>
+						</tr>
+					<table>
+				</body>
+			</html>
+		"""
+	}
+	
+	def buildLiquidationList( deposit ) {
+		def liquidations = ''
+		
+		deposit.liquidations.each {
+			def amount = numSvc.format('#,##0.00', it.amount )
+			liquidations += """
+				<tr>
+					<td>$it.liquidatingofficername</td>
+					<td>$it.liquidatingofficertitle</td>
+					<td>$it.txnno</td>
+					<td>$it.txndate</td>
+					<td class="numeric">$amount</td>
+				</tr>
+			"""
+		}
+		
+		def html = """
+				<div style="background:silver" width="100%">
+					<table cellspacing="1" width="100%">
+						<tr>
+							<td colspan="5" class="header">Liquidations</td>
+						</tr>
+						<tr>
+							<th>Liquidating Officer</th>
+							<th>Job Title</th>
+							<th>Liquidation No.</th>
+							<th>Liquidation Date</th>
+							<th>Amount</th>
+						</tr>
+						$liquidations
+					</table>
+				</div>
+		"""
+		return html
+	}
+	
+	
+	def getStyle() {
+		return """
+			<style type="text/css">
+				body, td, th { 
+					font-family: tahoma;
+					font-size  : 14pt;
+				}	
+				td {
+					background-color:white;
+				}
+				th {
+					background-color : #CCCCCC;
+				}
+				.title {
+					background-color:#CCCCFF;
+					font-weight:bold;
+				}
+				.caption {
+				}
+				.numeric {
+					text-align:right;
+				}
+				.header {
+					font-family : tahoma;
+					font-size   : 18pt;
+					width       : 120
+				}
+				.data {
+					font-weight:bold;
+				}
+			</style>
+		"""
+	}
+	
+	def buildHeader( deposit ) {
+		def cash = numSvc.format( '#,##0.00', deposit.cash )
+		def noncash = numSvc.format( '#,##0.00', deposit.noncash )
+		def amount = numSvc.format( '#,##0.00', deposit.amount)
+		return """
+			<table>
+				<tr>
+					<td class="caption">State</td>
+					<td><h2>$deposit.docstate</h2></td>
+				</tr>
+				<tr>
+					<td class="caption">Deposit No.</td>
+					<td class="data">$deposit.txnno</td>
+				</tr>
+				<tr>
+					<td class="caption">Deposit Date</td>
+					<td class="data">$deposit.txndate</td>
+				</tr>
+				<tr>
+					<td class="caption">Deposited By</td>
+					<td class="data">$deposit.depositedbyname</td>
+				</tr>
+				<tr>
+					<td class="caption">Job Title/Position</td>
+					<td class="data">$deposit.depositedbytitle</td>
+				</tr>
+				<tr>
+					<td class="caption">Total Cash Deposit</td>
+					<td class="numeric"><b>$cash</b></td>
+				</tr>
+				<tr>
+					<td class="caption">Total Non-Cash Deposit</td>
+					<td class="numeric"><b>$noncash</b></td>
+				</tr>
+				<tr>
+					<td class="caption">Total Deposit</td>
+					<td class="numeric"><b>$amount</b></td>
+				</tr>
+			</table>
+		"""
+	}
+		
+	def buildFundSummaries( deposit ) {
+		def summaries = ""
+		deposit.fundsummaries.each {
+			def summary = buildSummary( it )
+			def depositsummary = buildDepositSummary( it )
+			def actions = buildActions( deposit, it )
+			
+			summaries += """
+				<div style="background:silver" width="100%">
+					<table cellspacing="1" width="100%">
+						<tr>
+							<td colspan="8" class="header">Fund: $it.fundname </td>
+						</tr>
+						<tr>
+							<th>Bank</th>
+							<th>Branch</th>
+							<th>Account No.</th>
+							<th>Cash Deposit</th>
+							<th>Non-Cash Deposit</th>
+							<th>Total Deposit</th>
+							<th>Validation No.</th>
+							<th>Validation Date</th>
+						</tr>
+						$summary
+						$depositsummary
+						$actions
+					</table>
+				</div>
+				<br>
+			"""
+		}
+		return summaries
+	}
+	
+	def buildActions( deposit, summ ) {
+		def cash    = '<td></td>'
+		def cashbreakdon = '<td></td>'
+        def noncash = '<td></td>'
+		
+        if( deposit.cash ) {
+			cash = """<td><a href="printCashDepositSlip?$summ.bankacctid">Print Cash Deposit Slip</a></td>"""
+			cashbreakdon = """<td><a href="printCashBreakdown?$summ.bankacctid">Print Cash Breakdown</a></td>"""
+		}
+        if( deposit.noncash && deposit.noncash > 0  ) noncash = """<td><a href="printCheckDepositSlip?$summ.bankacctid">Print Check Deposit Slip</a></td>"""
+        def rcd  = """<td><a href="printFundRCD?$summ.bankacctid">Print Fund RCD</a></td>"""
+		return """
+			<tr>
+				<td colspan="8">
+					<table>
+						<tr>
+							$cash
+							$cashbreakdon
+							$noncash
+							$rcd
+						<tr>
+					</table>
+				</td>
+			</tr>
+		"""
+	}
+	
+	def buildSummary( summ) {
+		def cash = numSvc.format( '#,##0.00', summ.cash )
+		def noncash = numSvc.format( '#,##0.00', summ.noncash )
+		def amount = numSvc.format( '#,##0.00', summ.amount )
+		return """
+			<tr>
+				<td>$summ.bankname</td>
+				<td>$summ.branchname</td>
+				<td>$summ.bankacctno</td>
+				<td class="numeric">$cash</td>
+				<td class="numeric">$noncash</td>
+				<td class="numeric">$amount</td>
+				<td>${summ.validationno ? summ.validationno : ''}</td>
+				<td>${summ.validationdate ? summ.validationdate: ''}</td>
+			</tr>
+		"""
+	}
+	
+	def buildDepositSummary( summ ) {
+		def denominations = buildDenominations( summ ) 
+		def noncashdeposits = buildNonCashDeposits( summ )
+		return """
+			<tr>
+				<td colspan="8">
+					<table width="100%">
+						<tr>
+							<td valign="top">$denominations</td>
+							<td valign="top">$noncashdeposits</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		"""
+	}
+	
+	def buildNonCashDeposits( summ ) {
+		def noncashes = ""
+		summ.noncashpayments.each {
+			def amount = numSvc.format( '#,##0.00', it.amount )
+			noncashes += """
+				<tr>
+					<td>$it.paytype</td>
+					<td>$it.particulars</td>
+					<td class="numeric">$amount</td>
+				</tr>
+			"""
+		}
+		return """
+			<div style="background:silver" width="100%">
+			<table width="100%">
+				<tr>
+					<td colspan="3"><b>Non-Cash Deposit Breakdown</b></td>
+				</tr>
+				<tr>
+					<th>Type</th>
+					<th>Particulars</th>
+					<th>Amount</th>
+				</tr>
+				$noncashes
+			</table>
+			</div>
+		"""
+	}
+	
+	def buildDenominations( summ ) {
+		def denoms = ""
+		summ.denominations.each {
+			def amount = numSvc.format( '#,##0.00', it.amount )
+			if( it.amount > 0 )  {
+				denoms += """
+					<tr>
+						<td>$it.caption</td>
+						<td class="numeric">$it.qty</td>
+						<td class="numeric">$amount</td>
+					</tr>
+				"""
+			}
+		}
+		return """
+			<div style="background:silver" width="100%">
+			<table width="100%">
+				<tr>
+					<td colspan="3"><b>Cash Deposit Breakdown</b></td>
+				</tr>
+				<tr>
+					<th>Denomination</th>
+					<th>Qty.</th>
+					<th>Amount</th>
+				</tr>
+				$denoms
+			</table>
+			</div>
+		"""
+	}
+	
+}

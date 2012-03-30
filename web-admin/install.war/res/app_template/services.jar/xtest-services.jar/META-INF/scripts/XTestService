@@ -1,0 +1,19 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class XTestService
+{
+	@PersistenceContext("main")
+	def em;
+    
+	@ProxyMethod
+	public def getFAASData()  {
+		return em.sqlContext.createQuery("""select * from tagoloan_etracs.faaslist where objid ='TD-45c2c8d4:1324751064e:3535'""").singleResult 
+	}
+	
+	@ProxyMethod
+	public void printSystemProperties() {
+		println '-'*50
+		System.getProperties().each{ println it }
+	}
+}

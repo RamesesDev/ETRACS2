@@ -1,0 +1,534 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class ConsolidatedReportService {
+	@PersistenceContext('main')	
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService') 
+	def logService
+	
+	@Service('DateService')
+	def dtSvc
+	
+	def schemaname = "craaf:craaf"
+	def schemaversion = "1.0"
+	
+	def cal = Calendar.getInstance()
+	  
+	@ProxyMethod        
+	public def getAFIStateOpen(){
+	
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryStateOpen' ).resultList
+	}
+	
+	@ProxyMethod
+	public def getAFIStateClosed(){
+	
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryStateClosed' ).resultList
+	}
+	
+	public def getAFICStateOpen( afi ){
+		
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAfICreditByParentIdOpen' )
+						.setParameter( 'afinventoryid', afi.afinventoryid ).resultList
+	}
+					
+	private def getCraafByAFICId( param ){
+		// checks if afinventorycreditid is already forwared in a particular craaf month and year from previous
+		return em.sqlContext.createNamedQuery('consolidatedreport:getCraafByAFICId').setParameters( param ).singleResult
+	}
+	
+	private void doBuildCraafByAFIC( afi, param ){
+		
+		getAFICStateOpen( afi ).each{ afic -> 			
+			param.afinventorycreditid = afic.objid
+			// checks afinventorycreditid if not exist then forward
+			if( !getCraafByAFICId( param ) )
+				buildCraaf( null, afic )   
+		}
+		
+	}
+	
+	private void doBuildCraafByAFI( def afi ){
+		if( 'OPEN'.equals( afi.docstate ) ) 
+			buildCraaf( afi, null )
+	}
+	
+	
+	private void buildCraaf( afi, afic ){ 
+		def craaf = [:] 
+		craaf.objid = ( afi ? 'C' : 'CC' ) + new UID()
+			
+		craaf.schemaname = schemaname
+		craaf.schemaversion = schemaversion
+		
+		craaf.afinventoryid = afi?.objid
+		craaf.afinventorycreditid = afic?.objid
+		
+		craaf.craafyear = cal.get( Calendar.YEAR )
+		craaf.craafmonth = cal.get( Calendar.MONTH ) + 1
+		craaf.collectorid = afic?.collectorid
+		craaf.collectorname = afic?.collectorname
+		craaf.collectortitle = afic?.collectortitle
+		
+		if( afi ){ 
+			craaf.prefix = ( !afi.prefix ) ? '' : "$afi.prefix-"
+			craaf.suffix = ( !afi.suffix ) ? '' : "-$afi.suffix"
+			afi.issuedto = ( afi.qtyissued == 0 ) ? afi.startseries : ( afi.issuedto + 1 )
+		}
+		else{
+			craaf.prefix = ( !afic.prefix ) ? '' : "$afic.prefix-"
+			craaf.suffix = ( !afic.suffix ) ? '' : "-$afic.suffix" 
+		} 	
+		
+		craaf.afid = ( afi ) ? afi.afid : afic.afid
+		def aftype = ( afi ) ? afi.aftype : afic.aftype
+		if( aftype.equals('serial') ){
+			craaf.beginqty = ( afi ) ? ( afi.qtyonhand * 50 ) : afic.beginqty
+			craaf.beginfrom = ( afi ) ? ( craaf.prefix + ( afi.issuedto ) + craaf.suffix ): ( craaf.prefix + afic.beginseries + craaf.suffix )
+			craaf.beginto = ( afi ) ? ( craaf.prefix + afi.endseries + craaf.suffix ) : ( craaf.prefix + afic.endseries + craaf.suffix )
+		}
+		else{
+			craaf.beginqty = ( afi ) ? ( afi.qtyonhand * 2000 ) : afic.beginqty
+			craaf.beginfrom = '-' 
+			craaf.beginto = '-'
+		}
+		
+		craaf.receivedqty = 0
+		craaf.receivedfrom = null
+		craaf.receivedto = null
+		craaf.issuedqty = 0
+		craaf.issuedfrom = null
+		craaf.issuedto = null
+		craaf.cancelqty = 0
+		
+		craaf.endingqty = craaf.beginqty 
+		craaf.endingfrom = craaf.beginfrom 
+		craaf.endingto = craaf.beginto 
+		craaf.stubno = afic?.stubno
+		 
+		em.create( schemaname, craaf )
+	}
+	
+	@ProxyMethod
+	public void postToCraaf(){	
+		    
+		def param = [:]   
+		param.year = cal.get( Calendar.YEAR )
+		param.month = cal.get( Calendar.MONTH ) + 1
+
+		def craaf = em.sqlContext.createNamedQuery('consolidatedreport:getCraaf').setParameters( param ).singleResult		
+		if( craaf ) return 
+		
+		def process = { afinventory ->
+			afinventory.each{ afi ->
+				afi.afinventoryid = afi.objid
+					//build craaf by afinventory
+				doBuildCraafByAFI( afi ) 
+					//build craaf by afinventorycredit/collector
+				doBuildCraafByAFIC( afi, param )
+			}
+		}
+		   
+		process( getAFIStateOpen() )
+		process( getAFIStateClosed() )
+	
+	}
+		
+	@ProxyMethod
+	public def buildReport( entity ){
+	 
+		postToCraaf()
+		def year = Integer.parseInt( entity.year );
+		def craaf = em.sqlContext.createNamedQuery('consolidatedreport:getReportDataGeneral').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
+		craaf += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCollector')
+					.setParameters( [craafyear:year, craafmonth:entity.month] ).resultList
+		craaf += em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCanceledSeries').setParameters( [craafyear:year, craafmonth:entity.month] ).resultList;
+		craaf.each{
+			if( it.beginqty == 0 ) it.beginqty = null;
+			if( it.receivedqty == 0 ) it.receivedqty = null;
+			if( it.issuedqty == 0 ) it.issuedqty = null;
+			if( it.endingqty == 0 ) it.endingqty = null;
+			
+			def makeBlankBalance = { crf ->
+				crf.endingqty = null
+				crf.endingfrom = null
+				crf.endingto = null			
+			}
+			
+			if( it.beginqty == it.issuedqty && ( it.receivedqty == null || it.receivedqty == 0 ) )
+				makeBlankBalance( it )
+			else if( it.receivedqty == it.issuedqty && ( it.beginqty == null || it.beginqty == 0) )
+				makeBlankBalance( it )  	
+						
+		}
+		
+		return craaf
+	}
+	
+	@ProxyMethod
+	public void createCRAAF( iraf ){
+		
+		def year = cal.get(Calendar.YEAR);
+		def month = cal.get(Calendar.MONTH) + 1;
+		
+		if( iraf.info.rivtype == 'LGU' ){
+			iraf.rcvitems.each{ ri ->
+				def craaf = getList( ri.afid );
+				if( !craaf )
+					init( iraf.objid, ri );
+				else
+					createCRAAFByIRAF( iraf.objid, ri );
+			}
+		}
+		else updateCRAAFbyIRAF( iraf );
+	}
+	
+	private void init( irafid, ri ){
+		def af = getAF( ri.afid );
+		def afinventoryid = ri.afinventoryid // getAFInventoryId( irafid, ri.afid, ri.startseries, ri.stubfrom );
+		
+		if( ri.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
+		if( ri.aftype == 'nonserial' ) ri.qtyreceived = ri.qtyreceived * af.pcsperunit;
+		
+		if( ri.prefix.length() != 0 ) ri.prefix = ri.prefix + "-";
+		else ri.prefix = "";
+		
+		if( ri.suffix.length() != 0 ) ri.suffix = "-" + ri.suffix;
+		else ri.suffix = "";
+		
+		def craaf = [
+			objid 			: 'CRAAF' + new UID(),
+			schemaname		: schemaname,
+			schemaversion	: schemaversion,
+			afinventoryid	: afinventoryid,
+			craafyear		: cal.get(Calendar.YEAR),
+			craafmonth		: cal.get(Calendar.MONTH) + 1,
+			afid			: ri.afid,
+			beginqty		: 0, 
+			beginfrom		: null,
+			beginto			: null,
+			receivedqty		: ri.qtyreceived,
+			receivedfrom	: ri.prefix + ri.startseries + ri.suffix,
+			receivedto		: ri.prefix + ri.endseries + ri.suffix,
+			issuedqty		: 0,
+			issuedfrom		: null,
+			issuedto		: null,
+			canceledqty		: 0,
+			endingqty		: ri.qtyreceived,
+			endingfrom		: ri.prefix + ri.startseries + ri.suffix,
+			endingto		: ri.prefix + ri.endseries + ri.suffix
+		];
+		
+		if( ri.cancelledseries ){
+			ri.cancelledseries.each{
+				craaf += [
+					canceledqty 	: it.toseries - it.fromseries,
+					canceledfrom 	: it.fromseries,
+					canceledto 		: it.toseries,
+					cancelreason	: it.remarks
+				];	
+			}
+		}
+		
+		em.validate( craaf.schemaname, craaf );
+		em.save( craaf.schemaname, craaf );
+	}
+	
+	private def getList( afid ){
+		return em.sqlContext.createNamedQuery('consolidatedreport:getList').setParameter("afid", afid ).singleResult;
+	}
+	
+	private def getAFInventoryId( irafid, afid, startseries, stubfrom ){
+		if( startseries && startseries > 0 )
+			return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryIdSeries' )
+				.setParameters([irafid:irafid, afid:afid, startseries:startseries])
+				.singleResult.objid;
+		else 
+			return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryIdStubfrom' )
+				.setParameters([irafid:irafid, afid:afid, startseries:startseries])
+				.singleResult.objid;
+	}
+	
+	private def getAF( afid ){
+		return em.sqlContext.createNamedQuery('consolidatedreport:getAF').setParameter("afid", afid ).singleResult;
+	}
+	
+	private void createCRAAFByIRAF( irafid, ri ){
+		
+		def af = getAF( ri.afid );
+		def afinventoryid = ri.afinventoryid //getAFInventoryId( irafid, ri.afid, ri.startseries, ri.stubfrom );
+		
+		if( ri.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
+		if( ri.aftype == 'nonserial' ) ri.qtyreceived = ri.qtyreceived * af.pcsperunit;
+		
+		if( ri.prefix.length() != 0 ) ri.prefix = ri.prefix + "-";
+		else ri.prefix = "";
+		
+		if( ri.suffix.length() != 0 ) ri.suffix = "-" + ri.suffix;
+		else ri.suffix = "";
+		
+		def craaf = [
+			objid 			: 'CRAAF' + new UID(),
+			schemaname		: schemaname,
+			schemaversion	: schemaversion,
+			afinventoryid	: afinventoryid,
+			craafyear		: cal.get(Calendar.YEAR),
+			craafmonth		: cal.get(Calendar.MONTH) + 1,
+			afid			: ri.afid,
+			beginqty		: 0,
+			receivedqty		: ri.qtyreceived,
+			receivedfrom	: ri.prefix + ri.startseries + ri.suffix,
+			receivedto		: ri.prefix + ri.endseries + ri.suffix,
+			issuedqty		: 0,
+			canceledqty		: 0,
+			endingqty		: ri.qtyreceived,
+			endingfrom		: ri.prefix + ri.startseries + ri.suffix,
+			endingto		: ri.prefix + ri.endseries + ri.suffix
+		];
+		
+		if( ri.cancelledseries ){
+			ri.cancelledseries.each{
+				craaf += [
+					canceledqty 	: it.toseries - it.fromseries,
+					canceledfrom 	: it.fromseries,
+					canceledto 		: it.toseries,
+					cancelreason	: it.remarks
+				];	
+			}
+		}
+		
+		em.validate( craaf.schemaname, craaf );
+		em.save( craaf.schemaname, craaf );
+	
+	}
+	
+	private void updateCRAAFbyIRAF( iraf ){
+		iraf.rcvitems.each{ ri ->
+			def afi = em.sqlContext.createNamedQuery('consolidatedreport:getAFInventoryQtyHandById')
+				.setParameter( 'objid', ri.afinventoryid ).singleResult
+			def afic = getAFInventoryCredit( iraf.objid, ri.afid, ri.stubno);			
+			def af = getAF( ri.afid ); 
+			def craafitem = getCRAAFItem( ri.afinventoryid, ri.afid, "" );			
+			if( ! craafitem ) throw new Exception('No available stock for AF ' + ri.afid + ' in the inventory.' )
+			
+			if( afic.aftype == 'serial' ) ri.qtyreceived = ri.qtyreceived * 50;
+			if( afic.aftype == 'nonserial' ) ri.qtyreceived = ri.qtyreceived * af.pcsperunit;
+			
+			if( afic.prefix.length() != 0 ) afic.prefix = afic.prefix + "-";
+			else afic.prefix = "";
+			
+			if( afic.suffix.length() != 0 ) afic.suffix = "-" + afic.suffix;
+			else afic.suffix = "";
+			
+			def issuedfrom = craafitem.issuedfrom 
+			if( ! craafitem.issuedqty || craafitem.issuedqty == 0 ) {
+				issuedfrom = afic.prefix + afic.startseries + afic.suffix
+			}
+			def issuedto = afic.prefix + afic.endseries  + afic.suffix 
+   
+			def endingqty
+			def endingfrom
+			def endingto
+			if( craafitem.beginqty ){
+				endingqty = afi.qtyonhand * 50
+				endingfrom = afic.prefix + (afic.endseries + 1) + afic.suffix 
+				endingto = craafitem.beginto
+			}
+			else{ 
+				endingqty = craafitem.endingqty - ri.qtyreceived
+				endingfrom = ( endingqty == 0 ? null : afic.prefix + (afic.endseries + 1) + afic.suffix )
+				endingto = ( endingqty == 0 ? null : craafitem.receivedto )
+			} 
+					
+			def creditinfo = [
+				afinventoryid	: afic.afinventoryid,
+				afid			: afic.afid,
+				qtyreceived		: ri.qtyreceived,
+				issuedfrom		: issuedfrom,
+				issuedto		: issuedto, 
+				endingqty		: endingqty,
+				endingfrom		: endingfrom,
+				endingto		: endingto,
+				year			: cal.get(Calendar.YEAR),
+				month			: cal.get(Calendar.MONTH) + 1
+			]
+			
+			em.sqlContext.createNamedExecutor( 'consolidatedreport:updateCRAAFbyIRAFCol' ).setParameters( creditinfo ).execute();
+			createCRAAFCredit( iraf.objid, craafitem.objid, 'IRAF', iraf.txndate, ri.qtyreceived );
+		
+			def craafcredit = [
+				objid 				: 'CC' + new UID(),
+				schemaname			: 'craaf',
+				schemaversion		: '1.0',
+				afinventoryid		: null,
+				afinventorycreditid : afic.objid, 
+				craafyear			: cal.get(Calendar.YEAR),
+				craafmonth			: cal.get(Calendar.MONTH) + 1,
+				collectorid			: iraf.info.rivrequestedbyid,
+				collectorname		: iraf.info.rivrequestedby,
+				collectortitle		: iraf.info.rivrequestedbytitle,
+				afid				: creditinfo.afid, 
+				beginqty			: null,
+				beginfrom			: null,
+				beginto				: null,
+				receivedqty			: ri.qtyreceived,
+				receivedfrom		: ri.prefix + ri.startseries + ri.suffix,
+				receivedto			: ri.prefix + ri.endseries + ri.suffix,
+				endingqty			: ri.qtyreceived,
+				endingfrom			: ri.prefix + ri.startseries + ri.suffix,
+				endingto			: ri.prefix + ri.endseries + ri.suffix,
+				stubno				: afic.stubno, 
+			]
+			
+			em.create( 'craaf', craafcredit )
+		}
+	}
+	
+	private def getAFInventoryCredit( irafid, afid, stubno  ){
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFInventoryCredit' ).setParameters([irafid:irafid, afid:afid, stubno:stubno]).singleResult;
+	}
+	
+	private def getSeries( irafid, afid ){
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getStartEndSeries' ).setParameters([irafid:irafid, afid:afid]).singleResult;
+	}
+	
+	private def getCRAAFItem( afinventoryid, afid, afinventorycreditid ){
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getCRAAFItem' ).setParameters([afinventoryid:afinventoryid, afinventorycreditid:afinventorycreditid, afid:afid]).singleResult;
+	}
+	
+	@ProxyMethod
+	public void updateCRAAFbyRemittance( rem ){
+		def year = cal.get(Calendar.YEAR);
+		def month = cal.get(Calendar.MONTH) + 1;
+		
+		rem.remittedforms.each{ rf -> 
+			def afcontrol = getAFControl( rf.afcontrolid );
+			def craafitem = getCRAAFItem( "", rf.afid, afcontrol.afinventorycreditid );
+			
+			if( rf.issuedqty == null ) rf.issuedqty = 0;
+			
+			if( !craafitem )
+				createCRAAFbyRem( rem, rf, afcontrol );
+    
+			//def craaf = getCRAAFItem( "", rf.afid, afcontrol.afinventorycreditid );   			
+			def craaf = em.sqlContext.createNamedQuery( 'consolidatedreport:getCraafItemByMonthYear' )
+			   .setParameters([afid: rf.afid, afinventorycreditid: afcontrol.afinventorycreditid ]).singleResult
+			
+			if( craaf.craafyear == year && craaf.craafmonth == month && rf.issuedqty != 0 )
+				updateCRAAFbyRem( rem.objid, craaf, rf, afcontrol, rem.info.txndate );
+			if( craaf.craafyear != year || craaf.craafmonth != month )
+				createCRAAFbyRemNextMonth( rem, rf, afcontrol );
+			
+		}
+	}
+	
+	private void createCRAAFbyRem( rem, rf, afcontrol ){
+		
+		if( afcontrol.prefix && afcontrol.prefix.length() != 0 ) afcontrol.prefix = afcontrol.prefix + "-";
+		else afcontrol.prefix = "";
+		
+		if( afcontrol.suffix && afcontrol.suffix.length() != 0 ) afcontrol.suffix = "-" + afcontrol.suffix;
+		else afcontrol.suffix = "";
+		
+		def craaf = [
+			objid 			: 'CRAAF' + new UID(),
+			schemaname		: schemaname,
+			schemaversion	: schemaversion,
+			afinventorycreditid	: afcontrol.afinventorycreditid,
+			craafyear		: cal.get(Calendar.YEAR),
+			craafmonth		: cal.get(Calendar.MONTH) + 1,
+			collectorid		: rem.collectorid,
+			collectorname	: rem.info.collectorname,
+			collectortitle	: rem.info.collectortitle,
+			afid			: rf.afid,
+			beginqty		: 0,
+			receivedqty		: afcontrol.qtyreceived,
+			receivedfrom	: afcontrol.prefix + afcontrol.startseries + afcontrol.suffix,
+			receivedto		: afcontrol.prefix + afcontrol.endseries + afcontrol.suffix,
+			issuedqty		: 0,
+			canceledqty		: 0,
+			endingqty		: afcontrol.qtyreceived,
+			endingfrom		: afcontrol.prefix + afcontrol.startseries + afcontrol.suffix,
+			endingto		: afcontrol.prefix + afcontrol.endseries + afcontrol.suffix
+		];
+		
+		em.validate( craaf.schemaname, craaf );
+		em.save( craaf.schemaname, craaf );
+	}
+	
+	private void createCRAAFbyRemNextMonth( rem, rf, afcontrol ){
+		
+		def craaf = [
+			objid 			: 'CRAAF' + new UID(),
+			schemaname		: schemaname,
+			schemaversion	: schemaversion,
+			afinventorycreditid	: afcontrol.afinventorycreditid,
+			craafyear		: cal.get(Calendar.YEAR),
+			craafmonth		: cal.get(Calendar.MONTH) + 1,
+			collectorid		: rem.info.collectorid,
+			collectorname	: rem.info.collectorname,
+			collectortitle	: rem.info.collectortitle,
+			afid			: rf.afid,
+			beginqty		: rf.beginqty,
+			beginfrom		: rf.beginfrom,
+			beginto			: rf.beginto,
+			receivedqty		: 0,
+			issuedqty		: (rf.issuedqty ? rf.issuedqty : 0),
+			issuedfrom		: rf.issuedfrom,
+			issuedto		: rf.issuedto,
+			canceledqty		: 0,
+			endingqty		: rf.endingqty,
+			endingfrom		: rf.endingfrom,
+			endingto		: rf.endingto
+		];
+		
+		em.validate( craaf.schemaname, craaf );
+		em.save( craaf.schemaname, craaf );
+		
+	}
+	
+	private void updateCRAAFbyRem( remid, craaf, rf, afcontrol, txndate ){
+		
+		em.sqlContext.createNamedExecutor('consolidatedreport:updateCRAAFbyRemittance')
+				.setParameters(
+					[
+						objid		: craaf.objid,
+						issuedqty	: (craaf.issuedqty ? craaf.issuedqty : 0) + (rf.issuedqty ? rf.issuedqty : 0 ), 
+						issuedfrom	: rf.issuedfrom,
+						issuedto	: rf.issuedto,
+						endingqty	: rf.endingqty,
+						endingfrom	: rf.endingfrom,
+						endingto	: rf.endingto
+					]
+				).execute();	
+		
+		createCRAAFCredit( remid, craaf.objid, 'REMITTANCE', txndate, rf.issuedqty );
+	}
+	
+	private def getAFControl( afcontrolid ){
+		return em.sqlContext.createNamedQuery( 'consolidatedreport:getAFControl' ).setParameter("afcontrolid", afcontrolid).singleResult;
+	}
+	
+	private void createCRAAFCredit( objid, craafid, type, txndate, qty ){
+		def craafCredit = [
+			objid			: 'CRAAFCR' + new UID(),
+			schemaname		: 'craafcredit:craafcredit',
+			schemaversion	: '1.0',
+			craafid			: craafid,
+			reftype			: type,
+			refno			: objid,
+			refdate			: txndate,
+			qty				: qty
+		]	
+		
+		em.validate( craafCredit.schemaname, craafCredit );
+		em.save( craafCredit.schemaname, craafCredit );
+	}
+
+}

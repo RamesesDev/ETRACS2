@@ -1,0 +1,45 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class HostUserRoleInterceptor {
+
+	@PersistenceContext("java:main")
+    def em; 
+
+	private void cleanUp( String userId, String role ) {
+		em.sqlContext.createNamedExecutor( 'user:remove-role-group').setParameter("userid", userId ).setParameter("role", role).execute();
+	}
+	
+	@After(pattern="UserService.removeUserRole", eval="args[0].roleclass == 'hostuser'")	
+    public def roleRemoved( def evt ) {
+		def ur = evt.args[0];
+		cleanUp( ur.userid , ur.role);
+    }
+
+    @After(pattern="UserService.saveUserRole", eval="args[0].roleclass == 'hostuser'")	
+    public def roleUpdated( def evt ) {
+		def ur = evt.args[0];
+		def u = em.read( "user", [objid:ur.userid] );
+		
+		//remove first existing groups by user
+		cleanUp( ur.userid, ur.role );
+		
+		def o = [:];
+		o.userid = u.objid;
+		o.role = ur.role;
+		
+		o.groupid = u.parentid;
+		o.groupcode = u.parentcode;
+		o.grouptype = u.parenttype;
+		
+		o.username = u.lastname + ", " + u.firstname;
+		if ( ur.info.allowedterminals ) o.allowedterminals = ur.info.allowedterminals.join(",");
+		if ( ur.info.disallowedterminals ) o.disallowedterminals = ur.info.disallowedterminals.join(",");
+		if ( ur.info.schedule ) o.schedule = ur.info.schedule.join(";");	
+		if ( ur.info.excludepermissions ) o.excludepermissions = ur.info.excludepermissions;
+		em.create( "user:rolegroup", o );
+    }
+
+	
+
+}

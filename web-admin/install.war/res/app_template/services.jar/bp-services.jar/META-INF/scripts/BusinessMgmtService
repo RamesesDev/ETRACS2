@@ -1,0 +1,220 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class BusinessMgmtService{
+	
+	@Service("BPBillingService")
+	def billingSvc;
+	
+	@Service('SequenceService')
+	def sequenceSvc;
+	
+	@Service('DateService')
+	def dateService;
+	
+	@Service('NumberService')
+	def numSvc
+	
+	@PersistenceContext('main')
+	def em;
+
+	def PERMIT_SCHEMA = 'bppermit:bppermit';
+	
+	def SCHEMANAME = 'bpapplication:bpapplication';
+	
+	private def format( def date, def format ){
+		def sdf = new java.text.SimpleDateFormat( format );
+		if( date instanceof Date ) return sdf.format( date );
+		return sdf.parse( date );
+	}
+
+	def getResultList( def list, def qryname, def docstate, def searchText, def param ){
+		list.clear();
+		def qry = em.sqlContext.createNamedQuery( qryname );
+		
+		if( searchText ) qry.setParameter('search', searchText);
+		if( docstate ) qry.setParameter('docstate', docstate);
+		
+		qry.setFirstResult( param._start );
+		qry.setMaxResults( param._limit );
+		list.addAll( qry.resultList );
+		return list;
+	}
+	
+	@ProxyMethod
+	public def getList( def searchText, def docstate, def param ){
+		def list = [];
+		
+		if( !docstate ){
+			if( !searchText )  return getResultList(list, 'bpmgmt:getRetiredList', 'RETIRED', searchText, param);
+			if( getResultList( list, 'bpmgmt:getRetiredListByPermitNo', 'RETIRED', searchText, param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getRetiredListByBusinessName', 'RETIRED', searchText+'%', param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getRetiredListByTaxpayerName', 'RETIRED', searchText+'%', param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getRetiredListByBusinessAddress', 'RETIRED', searchText+'%', param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getRetiredListByTaxpayerAddress', 'RETIRED', searchText+'%', param ) ) return list;
+		}else if( docstate == 'EXPIRED' ){
+			if( !searchText )  return getResultList(list, 'bpmgmt:getForRenewalList', null, searchText, param);
+			if( getResultList( list, 'bpmgmt:getForRenewalListByPermitNo', null, searchText, param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getForRenewalListByTradeName', null, searchText+'%', param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getForRenewalListByTaxpayerName', null, searchText+'%', param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getForRenewalListByBusinessAddress', null, searchText+'%', param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getForRenewalListByTaxpayerAddress', null, searchText+'%', param ) ) return list;
+		}
+		else{
+			if( !searchText )  return getResultList(list, 'bpmgmt:getList', docstate, searchText, param);
+			if( getResultList( list, 'bpmgmt:getListByPermitNo', docstate, searchText, param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getListByBusinessName', docstate, searchText+'%', param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getListByTaxpayerName', docstate, searchText+'%', param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getListByBusinessAddress', docstate, searchText+'%', param ) ) return list;
+			if( getResultList( list, 'bpmgmt:getListByTaxpayerAddress', docstate, searchText+'%', param ) ) return list;
+		}
+		
+		return list;
+	}
+	
+	private def createBusinessPermit( def application ){
+		def permit = [
+			schemaname: PERMIT_SCHEMA,
+			schemaversion: 1.0,
+			docstate:'DRAFT',
+			taxpayerid: application.taxpayerid,
+			taxpayername: application.info.taxpayername,
+			taxpayeraddress: application.info.taxpayeraddress,
+			tradename: application.tradename,
+			businessaddress: application.businessaddress,
+			businessid: application.businessid,
+			applicationid: application.objid,
+			lobs: application.lobs,
+			iyear	: application.iyear 
+		];
+		return permit;
+	}
+	
+	@ProxyMethod
+	public def releasePermit( def permit ){
+		def app = em.read('bpapplication:bpapplication', [objid: permit.applicationid]);
+		if( app.docstate != 'PERMIT_PENDING' ) throw new Exception("Only permit pending transaction can be released.");
+		def bp = createBusinessPermit( app );
+		
+		bp.objid = "PERM" + new UID();
+		bp.plateno = permit.plateno;
+		bp.txnno = getNextPermitSeries();
+		bp.info = ( permit.info ) ? permit.info : [:]
+		
+		bp.txndate = ( permit.txndate ) ? new java.text.SimpleDateFormat( 'yyyy-MM-dd' ).format( java.sql.Date.valueOf(permit.txndate) ) : dateService.serverDate 
+		bp.docstate = 'ACTIVE';
+		
+		app.docstate = 'ACTIVE';
+		em.update('bpapplication:bpapplication', app); 
+		
+		em.validate( PERMIT_SCHEMA, bp );
+		em.create( PERMIT_SCHEMA, bp );
+		
+		def bplisting = em.read('bplisting:bpapplicationlisting', [objid: app.objid]);
+		bplisting.docstate = 'ACTIVE';
+		
+		em.update( 'bplisting:bpapplicationlisting', bplisting );
+		
+		return bp;
+	}
+	
+	@ProxyMethod
+	public def openPermit( def applicationid ){
+		def app = em.read('bpapplication:bpapplication', [objid:applicationid]);
+		if( !app ) throw new Exception('Application does not exist.');
+		def permit = em.sqlContext.createNamedQuery('bpmgmt:findPermitByApplicationId')
+		               .setParameter('applicationid', applicationid)
+					   .singleResult;
+		if( permit ) {
+			permit.lobs = em.serializer.read( permit.lobs );
+			return permit;
+		}
+		
+		return createBusinessPermit( app );
+	}
+	
+	private def getBilling( def applicationid ){
+		def app = em.read('bpapplication:bpapplication', [objid: applicationid]);
+		if( !app ) throw new Exception("Application with objid $applicationid is no longer exist.");
+		def bp = em.read('business:business', [objid: app.businessid]);
+		if( !bp ) throw new Exception("Business with objid $app.businessid is no longer exist.");
+		
+		def bill = [
+			ledgerid      : bp.objid,
+			yearstarted   : bp.yearstarted,
+			lastyearpaid  : bp.lastyearpaid,
+			lastqtrpaid   : bp.lastqtrpaid,
+			taxfees       : []
+		];
+		
+		def getUnpaidReceivables = { 
+			def list = app.receivables.findAll{ numSvc.round(it.amount) > numSvc.round(it.amtpaid) };
+			if( app.txntype.matches('NEW|ADDLOB') ) return list;
+			//return list.findAll{ it.qtr <= entity.qtr || ( it.assessmentype.matches('NEW|ADDLOB')) }
+			return list.findAll{ it.qtr <= dateService.getServerQtr() }
+		}
+		
+		def receivables = getUnpaidReceivables();
+		
+		receivables.each{  
+			it.year = it.iyear;
+			it.qtr = it.iqtr;
+			bill.taxfees << it;
+		}
+		return billingSvc.buildBill( bill );
+	}
+	
+	@ProxyMethod
+	public def retireApplication( def applicationid ){
+		def app = open( applicationid );
+		if( !app.txntype.matches('RETIRE|RETIRELOB') ) throw new Exception('Unable to retire '+app.txntype+' transaction.');
+		
+		def billing = getBilling( app.objid );
+		if( billing.taxfees ) throw new Exception("Unable to retire.\nApplication not yet fully paid.");
+				  
+		def bp = em.read('business:business', [objid: app.businessid]);
+		def parentapp = open( app.parentid );
+		
+		if( app.txntype == 'RETIRE' ){
+			bp.applicationid = app.objid;
+			bp.docstate = 'RETIRED';
+			app.docstate = 'RETIRED'
+			em.update( 'business:business', bp );
+			
+			em.sqlContext.createNamedExecutor('bpapplication:updateApplicationListingDocstate')
+			  .setParameter( 'objid', app.objid ) 
+			  .setParameter( 'docstate', 'RETIRED' )
+			  .execute();
+		}
+		else{  
+			em.sqlContext.createNamedExecutor('bpapplication:updateApplicationListingDocstate')
+			  .setParameter( 'objid', a.objid ) 
+			  .setParameter( 'docstate', 'ACTIVE' )
+			  .execute();
+		} 
+		
+		em.update( SCHEMANAME, app );
+		
+		return app;
+	}
+	
+	private def getNextPermitSeries(){
+		def year = new java.text.SimpleDateFormat('yyyy').format( new Date() );
+		return year + sequenceSvc.getNextFormattedSeriesA( 'PERMIT'+year, 5 );
+	}
+	
+	@ProxyMethod
+	public def openRetireApplication( def applicationid ){
+		def app = open( applicationid );
+		def permit = openPermit( app.parentid );
+		app.permitno = permit.txnno;
+		return app;
+	}
+	
+	def open( def objid ){
+		def application = em.read( SCHEMANAME, [objid: objid] );
+		if( !application ) throw new Exception("Application document no longer exist.");
+		return application;
+	}
+}

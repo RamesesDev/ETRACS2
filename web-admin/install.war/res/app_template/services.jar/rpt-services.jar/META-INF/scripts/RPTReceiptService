@@ -1,0 +1,450 @@
+import com.rameses.annotations.*
+import java.rmi.server.UID
+
+class RPTReceiptService
+{
+	@PersistenceContext('main')
+	def em
+    
+    @Service('ReceiptService')
+	def receiptSvc
+    
+    @Service('DateService')
+	def dateSvc
+	
+	@Service('Var')
+	def var 
+
+	@Env
+	def env
+	
+	
+    @ProxyMethod
+    public def create( receipt, items ) {
+		if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
+        
+        buildReceiptItems( receipt, items )
+        updateReceiptInfos( receipt, items )
+        receiptSvc.create( receipt )
+        
+		def parsedate = dateSvc.parseDate( receipt.info.txndate, null )
+		
+		//post rptpayment 
+        items.each { item ->
+            def rptpayment = createRPTPayment( receipt, item )
+            em.validate(rptpayment.schemaname, rptpayment )
+            em.create(rptpayment.schemaname, rptpayment )
+            //post paymentdetail
+            item.details.each { detail ->
+                def pmtdetail = createRPTPaymentDetail( receipt, rptpayment, detail, parsedate )
+                em.validate( pmtdetail.schemaname, pmtdetail )
+                em.create( pmtdetail.schemaname, pmtdetail )
+            }
+			if( item.partialbasic == 0 )
+				updateLedgerLastYearQtrPaid([ objid:item.objid, lastyearpaid:item.toyear, lastqtrpaid:item.toqtr, partialbasic:0.0, partialbasicint:0.0, partialsef:0.0, partialsefint:0.0 ] )
+			else 
+				updateLedgerLastYearQtrPaid([ objid:item.objid, lastyearpaid:item.lastyearpaid, lastqtrpaid:item.lastqtrpaid, partialbasic:item.partialbasic, partialbasicint:item.partialbasicint, partialsef:item.partialsef, partialsefint:item.partialsefint  ] )
+        }
+
+        receipt._items = items.each(){
+			it.taxpayername = ( it.taxpayername != receipt.info.paidby ) ? it.taxpayername : '';
+			it.basicgross = it.basic 
+			it.basicdp    = it.basicint - it.basicdisc 
+			it.sefgross = it.sef
+			it.sefdp    = it.sefint - it.sefdisc 
+		}
+		
+        return receipt 
+    }
+	
+	@ProxyMethod
+    public def createManualCollection( receipt, items ) {
+		if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
+        
+		// each item contain the following payment details :
+		//    basic, basicdisc, basicint, basicprev, basicprevint, basicprior, basicpriorint 
+		//    sef, sefdisc, sefint, sefprev, sefprevint, sefprior, sefpriorint 
+		// summarize the items by account for current, previous and prior
+		// and create receiptitem for each account summary 
+		
+		def rctitems = em.sqlContext.createNamedQuery('rptreceipt:getRPTIncomeAccounts').resultList 
+		items.each { itm ->
+			summarizeBasicAccounts( rctitems, itm )
+			summarizeSEFAccounts( rctitems, itm )
+		}
+		
+		def zeroitems = rctitems.findAll{ it.amount <= 0.0 }
+		rctitems.removeAll( zeroitems )
+		receipt.items = rctitems 
+		calculateManualReceiptTotals( receipt, items )
+		receiptSvc.create( receipt )
+		
+		//save items to rptpaymentmanual 
+		items.each { item ->
+			item.objid 			= 'RM' + new UID()
+			item.schemaname 	= 'rptreceipt:rptpaymentmanual'
+			item.schemaversion 	= '1.0'
+			item.receiptid 		= receipt.objid 
+			em.create( 'rptreceipt:rptpaymentmanual', item )
+		}
+		
+		receipt._items = items 
+        return receipt 
+    }
+	
+	@ProxyMethod
+    public def updateManualCollection( receipt, items ) {
+		if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
+        
+		//delete rptpaymentmanual items
+		em.sqlContext.createNamedExecutor('rptreceipt:deleteRPTPaymentManual')
+				.setParameter( 'receiptid', receipt.objid ).execute() 
+				
+		receipt.items.clear()
+		
+		// each item contain the following payment details :
+		//    basic, basicdisc, basicint, basicprev, basicprevint, basicprior, basicpriorint 
+		//    sef, sefdisc, sefint, sefprev, sefprevint, sefprior, sefpriorint 
+		// summarize the items by account for current, previous and prior
+		// and create receiptitem for each account summary 
+		
+		def rctitems = em.sqlContext.createNamedQuery('rptreceipt:getRPTIncomeAccounts').resultList 
+		items.each { itm ->
+			summarizeBasicAccounts( rctitems, itm )
+			summarizeSEFAccounts( rctitems, itm )
+		}
+		
+		def zeroitems = rctitems.findAll{ it.amount <= 0.0 }
+		rctitems.removeAll( zeroitems )
+		receipt.items = rctitems 
+		calculateManualReceiptTotals( receipt, items )
+		receiptSvc.update( receipt )
+		
+		//save items to rptpaymentmanual 
+		items.each { item ->
+			item.objid 			= 'RM' + new UID()
+			item.schemaname 	= 'rptreceipt:rptpaymentmanual'
+			item.schemaversion 	= '1.0'
+			item.receiptid 		= receipt.objid 
+			em.create( 'rptreceipt:rptpaymentmanual', item )
+		}
+		
+		receipt._items = items 
+        return receipt 
+    }
+	
+	void calculateManualReceiptTotals( receipt, items ) {
+        receipt.checknos   =  ''
+        receipt.checkbank  = ''
+        
+        def noncashpmts = receipt.payments.findAll{ it.paytype == 'CHECK' } 
+        if( noncashpmts ){
+            receipt.checknos    = noncashpmts.checkno.join(',')
+            receipt.checkbanks  = noncashpmts.bank.join(',')
+            receipt.checkamount = noncashpmts.amount.sum()
+        }
+        
+        receipt.basic       = 0.0          
+        receipt.basicint    = 0.0
+        receipt.basicdisc   = 0.0
+        receipt.basicdp     = 0.0
+        receipt.basicnet    = 0.0
+        receipt.sef         = 0.0
+        receipt.sefint      = 0.0
+        receipt.sefdisc     = 0.0
+        receipt.sefdp       = 0.0
+        receipt.sefnet      = 0.0
+        
+        items.each { 
+            receipt.basic       += it.basic + it.basicprev + it.basicprior     
+            receipt.basicint    += it.basicint+ it.basicprevint + it.basicpriorint 
+            receipt.basicdisc   += it.basicdisc
+            receipt.basicdp     += (it.basicint - it.basicdisc )
+            receipt.basicnet    += (it.basic + it.basicint - it.basicdisc )
+            receipt.sef         += it.sef + it.sefprev + it.sefprior 
+            receipt.sefint      += it.sefint + it.sefprevint + it.sefpriorint 
+            receipt.sefdisc     += it.sefdisc 
+            receipt.sefdp       += (it.sefint - it.sefdisc)
+            receipt.sefnet      += (it.sef + it.sefint - it.sefdisc )
+        }
+    }
+    
+    
+	void summarizeBasicAccounts( rctitems, itm ) {
+		def basicitem  			= rctitems.find{ it.systype == 'RPT_BASIC'}
+		def basicintitem  		= rctitems.find{ it.systype == 'RPT_BASICINT'}
+		def basicprevitem  		= rctitems.find{ it.systype == 'RPT_BASICPREV'}
+		def basicprevintitem  	= rctitems.find{ it.systype == 'RPT_BASICPREVINT'}
+		def basicprioritem  	= rctitems.find{ it.systype == 'RPT_BASICPRIOR'}
+		def basicpriorintitem  	= rctitems.find{ it.systype == 'RPT_BASICPRIORINT'}
+		
+		if( itm.basicdisc )
+			basicitem.amount += (itm.basic - itm.basicdisc )
+		else 
+			basicitem.amount += itm.basic
+			
+		basicintitem.amount += itm.basicint
+		basicprevitem.amount += itm.basicprev 
+		basicprevintitem.amount += itm.basicprevint
+		
+		if( basicprioritem ) 
+			basicprioritem.amount += itm.basicprior
+		else
+			basicprevitem.amount += itm.basicprior 
+			
+		if( basicpriorintitem ) 
+			basicpriorintitem.amount += itm.basicpriorint
+		else
+			basicprevintitem.amount += itm.basicpriorint 
+	}
+	
+	void summarizeSEFAccounts( rctitems, itm ) {
+		def sefitem  			= rctitems.find{ it.systype == 'RPT_SEF'}
+		def sefintitem  		= rctitems.find{ it.systype == 'RPT_SEFINT'}
+		def sefprevitem  		= rctitems.find{ it.systype == 'RPT_SEFPREV'}
+		def sefprevintitem  	= rctitems.find{ it.systype == 'RPT_SEFPREVINT'}
+		def sefprioritem  		= rctitems.find{ it.systype == 'RPT_SEFPRIOR'}
+		def sefpriorintitem  	= rctitems.find{ it.systype == 'RPT_SEFPRIORINT'}
+		
+		if( itm.sefdisc )
+			sefitem.amount += (itm.sef - itm.sefdisc )
+		else
+			sefitem.amount += itm.sef 
+			
+		sefintitem.amount += itm.sefint
+		sefprevitem.amount += itm.sefprev 
+		sefprevintitem.amount += itm.sefprevint
+		
+		if( sefprioritem ) 
+			sefprioritem.amount += itm.sefprior
+		else
+			sefprevitem.amount += itm.sefprior 
+			
+		if( sefpriorintitem ) 
+			sefpriorintitem.amount += itm.sefpriorint
+		else
+			sefprevintitem.amount += itm.sefpriorint 
+	}
+	
+    @ProxyMethod
+    public Map open( receiptid ) {
+        def receipt = em.read('receipt', [objid:receiptid])
+		if( ! receipt ) throw new Exception('Cannot open Receipt with ID No. ' + receiptid + '.')
+        receipt._items = loadRPTPayments( receiptid, receipt.opener  ).each(){
+			it.taxpayername = ( it.taxpayername != receipt.info.payorname ) ? it.taxpayername : '';
+			if( receipt.opener == 'tc:real_property' ) {
+				it.basicgross = it.basic 
+				it.basicdp    = it.basicint - it.basicdisc 
+				it.sefgross = it.sef
+				it.sefdp    = it.sefint - it.sefdisc 
+			}
+		}
+        return receipt 
+    }
+    
+    @ProxyMethod
+    public void voidReceipt( receiptid, reason ) {
+        //TODO: check if this is the latest receipt for the ledgers
+        receiptSvc.voidReceipt( receiptid, reason )
+        voidRPTPayments( receiptid )
+    }
+	
+	@ProxyMethod
+	public def getLguType() {
+		return var.lgu_type 
+	}
+	
+	@ProxyMethod
+	public List getMunicipalityCityList() {
+		return em.sqlContext.createNamedQuery('rptreceipt:getMunicipalityCityList').resultList 
+	}
+	
+	@ProxyMethod
+	public List getBarangayList( municity ) {
+		if( ! municity ) throw new Exception('City or Municipality is required.')
+		
+		if( municity.lgutype == 'CITY' ) {
+			return em.sqlContext.createNamedQuery('rptreceipt:getCityBarangayList').resultList 
+		}
+		
+		return em.sqlContext.createNamedQuery('rptreceipt:getMunicipalityBarangayList')
+					.setParameter('parentid', municity.objid )
+					.resultList 
+	}
+	
+	@ProxyMethod
+	public List getClassifications() {
+		return em.sqlContext.createNamedQuery('rptreceipt:getClassifications').resultList
+	}
+	
+    /*===========================================================================================
+    *
+    * SUPPORT METHODS
+    *
+    *===========================================================================================*/
+    List loadRPTPayments( receiptid, opener ) {
+		if( opener == 'tc:real_property'  )
+			return em.sqlContext.createNamedQuery('rptreceipt:getRPTPayments').setParameter('receiptid', receiptid ).resultList 
+		else if( opener == 'tc:real_property_manual' ) { 
+			
+			def list = em.sqlContext.createNamedQuery('rptreceipt:getRPTManualPayments').setParameter('receiptid', receiptid ).resultList 
+			list.each {
+				if( ! it.period || it.period.length() == 0  ) {
+					buildPeriod( it )
+				}
+				it.municity = em.serializer.read( it.municity ) 
+			}
+			return list 
+		}
+		throw new Exception('Invalid opener type when loading RPT Payments.')
+    }
+    
+	void buildPeriod( item ) {
+		if( item.fromyear == item.toyear && item.fromqtr == 1 && item.toqtr == 4 ) 
+            item.period = 'Full ' + item.fromyear 
+        else if( item.fromyear == item.toyear && item.fromqtr == item.toqtr  ) 
+            item.period = item.fromqtr + 'Q, ' + item.fromyear 
+        else if( item.fromyear == item.toyear ) 
+            item.period = item.fromqtr + '-' + item.toqtr + 'Q, ' + item.fromyear 
+        else if(  item.fromqtr == 1 && item.toqtr == 4 ) 
+            item.period = 'Full ' + item.fromyear + '-' + item.toyear 
+        else 
+			item.period = item.fromqtr + 'Q,' + item.fromyear + '-' + item.toqtr + 'Q,' + item.toyear 
+    }
+    
+    void voidRPTPayments( receiptid ) {
+        def paymentinfos = em.sqlContext.createNamedQuery('rptreceipt:getRPTPaymentInfo').setParameter('receiptid', receiptid).resultList
+        paymentinfos.each { pmt  ->
+            updateLedgerLastYearQtrPaid([ 
+                objid           : pmt.rptledgerid, 
+                lastyearpaid    : ( pmt.fromqtr == 1 ? pmt.fromyear - 1 : pmt.fromyear ),
+                lastqtrpaid     : ( pmt.fromqtr == 1 ? 4 : pmt.fromqtr - 1 ),
+            ])
+            //void rptpayment
+            em.sqlContext.createNamedExecutor('rptreceipt:voidRPTPayment').setParameter('objid', pmt.objid).execute()
+        }
+    }
+    
+    void updateReceiptInfos( receipt, items ) {
+        receipt.checknos   =  ''
+        receipt.checkbank  = ''
+        
+        def noncashpmts = receipt.payments.findAll{ it.paytype == 'CHECK' } 
+        if( noncashpmts ){
+            receipt.checknos    = noncashpmts.checkno.join(',')
+            receipt.checkbanks  = noncashpmts.bank.join(',')
+            receipt.checkamount = noncashpmts.amount.sum()
+        }
+        
+        receipt.basic       = 0.0          
+        receipt.basicint    = 0.0
+        receipt.basicdisc   = 0.0
+        receipt.basicdp     = 0.0
+        receipt.basicnet    = 0.0
+        receipt.sef         = 0.0
+        receipt.sefint      = 0.0
+        receipt.sefdisc     = 0.0
+        receipt.sefdp       = 0.0
+        receipt.sefnet      = 0.0
+        
+        items.each { 
+            receipt.basic       += it.basic     
+            receipt.basicint    += it.basicint
+            receipt.basicdisc   += it.basicdisc
+            receipt.basicdp     += (it.basicint - it.basicdisc )
+            receipt.basicnet    += (it.basic + it.basicint - it.basicdisc )
+            receipt.sef         += it.sef 
+            receipt.sefint      += it.sefint 
+            receipt.sefdisc     += it.sefdisc 
+            receipt.sefdp       += (it.sefint - it.sefdisc)
+            receipt.sefnet      += (it.sef + it.sefint - it.sefdisc )
+        }
+    }
+    
+    
+    void updateLedgerLastYearQtrPaid( params ) {
+        em.sqlContext.createNamedExecutor('rptreceipt:updateLedgerLastYearQtrPaid').setParameters( params ).execute()
+    }
+    
+    Map createRPTPayment( receipt, item ) {
+        def pmt = [:]
+        pmt.putAll( item )
+        pmt.objid       = 'RP' + new UID()
+        pmt.schemaname      = 'rptpayment'
+        pmt.schemaversion   = '1.0'
+        pmt.rptledgerid     = item.objid
+        pmt.opener          = 'rptonline'
+        pmt.mode            = 'ONLINE'
+        pmt.dtposted        = dateSvc.serverDate
+        pmt.receiptid       = receipt.objid
+        pmt.receiptdate     = receipt.info.txndate
+        pmt.receiptno       = receipt.info.serialno
+        pmt.collectorid     = receipt.info.collectorid
+        pmt.collectorname   = receipt.info.collectorname
+        pmt.collectortitle  = receipt.info.collectortitle
+        pmt.voided          = false
+        pmt.fromyear        = (int)pmt.fromyear
+        pmt.fromqtr         = (int)pmt.fromqtr
+        pmt.basicpartial    = 0.0
+        pmt.sefpartial      = 0.0
+        pmt.period          = item.period 
+        return pmt 
+    }
+    
+    Map createRPTPaymentDetail( receipt, rptpayment, detail, parsedate ) {
+        def pmtdetail = [:]
+        pmtdetail.putAll( detail )
+        pmtdetail.objid         = 'RPD' + new UID()
+        pmtdetail.schemaname    = 'rptpayment:rptpaymentdetail'
+        pmtdetail.schemaversion = '1.0'
+        pmtdetail.receiptid     = receipt.objid
+		pmtdetail.rptledgeritemid = pmtdetail.rptledgerid 
+		pmtdetail.rptledgerid = rptpayment.rptledgerid 
+        pmtdetail.basicpartial  = 0.0
+        pmtdetail.sefpartial    = 0.0
+		pmtdetail.revtype = ( pmtdetail.year > parsedate.year  ? 'advance' : pmtdetail.revtype )
+        return pmtdetail 
+    }
+    
+    
+    
+    void buildReceiptItems( receipt, items ) {
+        items.each { item -> 
+            //group details according to acctid for basic, basicint, sef and sefint 
+            //then add receiptitem entry per group with the total amount 
+            buildItemsFromMap( receipt, item, 'basic', item.details.groupBy{ it.basicacctid } )
+            buildItemsFromMap( receipt, item, 'basicint', item.details.groupBy{ it.basicintacctid } )
+            buildItemsFromMap( receipt, item, 'sef', item.details.groupBy{ it.sefacctid } )
+            buildItemsFromMap( receipt, item, 'sefint', item.details.groupBy{ it.sefintacctid } )
+        }
+    }
+    
+    void buildItemsFromMap( receipt, item, field, mapgroup) {
+        mapgroup.keySet().each { mkey ->
+            if( mkey ) {
+                def acctinfo = em.sqlContext.createNamedQuery('rptreceipt:getIncomeAccountInfo').setParameter('objid', mkey).singleResult
+                if( !acctinfo ) throw new Exception("Account with ID No. $mkey does not exists.")
+                
+				def items = mapgroup[mkey]
+				
+				def disc = 0.0
+				if( field == 'basic' )  
+					disc = items.basicdisc.sum()
+				else if (field == 'sef' )
+					disc = items.sefdisc.sum()
+				
+				def amount = items."$field".sum()
+				
+                def rctitem = [
+                    objid       : 'RI' + new UID(),
+                    amount      : amount - disc, 
+                    refid       : item.objid,
+                ] + acctinfo  
+                if( rctitem.amount > 0 ) {
+					receipt.items.add( rctitem )
+				}
+            } 
+        }
+    }
+    
+}

@@ -1,0 +1,193 @@
+import com.rameses.common.*
+import com.rameses.annotations.*
+import java.rmi.server.UID
+
+class CancelAnnotationService 
+{
+	@PersistenceContext('main')
+	def em 
+	
+	@Service('LogService')
+	def logSvc
+	
+	@Service('SequenceService')
+	def seqSvc
+	
+	@Service('TxnReference')
+	def txnrefSvc
+	
+	@Service('DateService')
+	def dateSvc
+	
+	@Env
+	def env
+	
+	def SCHEMA_NAME = 'cancelannotation'
+	def SCHEMA_VERSION = '1.0'
+	
+	def DRAFT_STATE 		= 'DRAFT' 
+	def FORAPPROVAL_STATE 	= 'FORAPPROVAL' 
+	def APPROVED_STATE 		= 'APPROVED' 
+	
+	@ProxyMethod
+	public def getList( search, params ) {
+		def result = null
+        def criteria = [
+            tdno 		: search,
+			fileno		: search,
+			docno        : search,
+            annotationno : search,
+        ]
+		if( ! search ) return getListByQuery('cancelannotation:getList', [:], params)
+		if( (result = getListByQuery('cancelannotation:getListByTdno', criteria, params)) ) return result
+		if( (result = getListByQuery('cancelannotation:getListByFileno', criteria, params)) ) return result
+		if( (result = getListByQuery('cancelannotation:getListByDocno', criteria, params)) ) return result
+		if( (result = getListByQuery('cancelannotation:getListByAnnotationno', criteria, params)) ) return result
+		return result
+	}
+	
+	
+	@ProxyMethod 
+	public Map initCancel( annotationid  ) {
+		def annotation = openAnnotation( annotationid )
+		validateAnnotation( annotation )
+		txnrefSvc.checkReference( annotation.objid)
+		return [
+			schemaname		: SCHEMA_NAME,
+			schemaversion 	: SCHEMA_VERSION,
+			docstate 		: DRAFT_STATE,
+			faasid			: annotation.faasid ,
+			annotationid	: annotation.objid,
+			annotationno 	: annotation.docno,
+			tdno			: annotation.tdno,
+		]
+	}
+	
+	@ProxyMethod
+	public Map create( cancelannotation ) {
+		def annotation = openAnnotation( cancelannotation.annotationid )
+		validateAnnotation( annotation )
+		validateInfo( cancelannotation )
+		cancelannotation.objid = 'CA'+ new UID()
+		cancelannotation.docno = seqSvc.getNextFormattedSeries('CancelAnnotation')
+		em.validate( cancelannotation.schemaname, cancelannotation )
+		em.create( cancelannotation.schemaname, cancelannotation )
+		logSvc.log('CREATE', 'CancelAnnotation', cancelannotation.objid )
+		txnrefSvc.insert(annotation.objid,  cancelannotation.objid, 'CancelAnnotation', 'Annotation is referenced by Cancel Annotation No. ' + cancelannotation.docno + '.' )
+		return cancelannotation 
+	}
+	
+	@ProxyMethod
+	public Map update( cancelannotation ) {
+		validateInfo( cancelannotation )
+		em.validate( cancelannotation.schemaname, cancelannotation )
+		em.update( cancelannotation.schemaname, cancelannotation, { diff ->
+			logSvc.logB('UPDATE', 'CancelAnnotation', cancelannotation.objid, '', diff )
+		} as UpdateChangeHandler)
+		return cancelannotation 
+	}
+	
+	@ProxyMethod
+	public def open( cancelannotationid ) {
+		def cancelannotation= em.read( SCHEMA_NAME, [objid:cancelannotationid] )
+		if( !cancelannotation ) throw new Exception('Cannot open Cancel Annotation with ID ' + cancelannotationid + '.')
+		return cancelannotation 
+	}
+	
+	@ProxyMethod
+	public Map submit( cancelannotation ) {
+		def annotation = openAnnotation( cancelannotation.annotationid )
+		validateAnnotation( annotation )
+		
+		def old = em.read( cancelannotation.schemaname, cancelannotation)
+		if( old.docstate == APPROVED_STATE ) throw new Exception('Cancel Annotation has already been approved.')
+		if( old.docstate == FORAPPROVAL_STATE ) throw new Exception('Cancel Annotation has already been submitted for approval.')
+		
+		cancelannotation.docstate 		= FORAPPROVAL_STATE
+		cancelannotation.submittedby  	= env.USERNAME
+		cancelannotation.submittedbytitle = env.USERJOBTITLE 
+		cancelannotation.dtsubmitted		= new Date()
+		em.update( cancelannotation.schemaname, cancelannotation )
+		logSvc.log('SUBMIT', 'CancelAnnotation', cancelannotation.objid )
+		return cancelannotation
+	}
+	
+	@ProxyMethod
+	public Map approve( cancelannotation ) {
+		def annotation = openAnnotation( cancelannotation.annotationid )
+		validateAnnotation( annotation )
+		
+		def old = em.read( cancelannotation.schemaname, cancelannotation)
+		if( old.docstate == DRAFT_STATE ) throw new Exception('Cancel Annotation has not yet been submitted for approval.')
+		if( old.docstate == APPROVED_STATE ) throw new Exception('Cancel Annotation has already been approved.')
+		
+		cancelannotation.docstate 			= APPROVED_STATE
+		cancelannotation.approvedby  		= env.USERNAME
+		cancelannotation.approvedbytitle 	= env.USERJOBTITLE 
+		cancelannotation.dtapproved			= new Date()
+		em.update( cancelannotation.schemaname, cancelannotation )
+		
+		annotation.docstate = 'CANCELLED'
+		em.update( annotation.schemaname, annotation)
+		
+		cancelFAASAnnotation( cancelannotation )
+		
+		txnrefSvc.delete( cancelannotation.annotationid )
+		txnrefSvc.delete( cancelannotation.faasid )
+		
+		logSvc.log('APPROVE', 'CancelAnnotation', cancelannotation.objid )
+		return cancelannotation
+	}
+	
+	@ProxyMethod
+	public void remove( cancelannotation ) {
+		def old = em.read( cancelannotation.schemaname, cancelannotation)
+		if( old.docstate == APPROVED_STATE ) throw new Exception('Cancel Annotation has already been approved.')
+		txnrefSvc.delete( cancelannotation.annotationid )
+		em.delete( cancelannotation.schemaname, cancelannotation)
+		logSvc.log('DELETE', 'CancelAnnotation', cancelannotation.objid )
+	}
+	
+	void validateInfo( cancelannotation ) {
+		def currdate 		= dateSvc.serverDate 
+		def dtsigned		= dateSvc.parse('yyyy-MM-dd', cancelannotation.dtsigned )
+		def ordate			= dateSvc.parse('yyyy-MM-dd', cancelannotation.ordate )
+		
+		if( dtsigned > currdate ) throw new Exception('Date Signed must not exceed current date.')
+		if( ordate > currdate ) throw new Exception('O.R. Date must not exceed current date.')
+		if( dtsigned > ordate ) throw new Exception('O.R. Date must be later or equal to Date Signed.')
+	}
+	
+	def openAnnotation( annotationid) {
+		def annotation = em.read('annotation', [objid:annotationid] )
+		if( ! annotation) throw new Exception('Cannot open annotation record.\nPlease verify that the record was not deleted.')
+		return annotation 
+	}
+	
+	void validateAnnotation( annotation ) {
+		if( annotation.docstate == 'CANCELLED' ) throw new Exception('Annotaton No. ' + annotation.docno + ' has already been cancelled.')
+		if( annotation.docstate != 'APPROVED' ) throw new Exception('Annotaton No. ' + annotation.docno + ' is not yet current.\nOnly current annotation can be cancelled.')
+	}
+	
+	void cancelFAASAnnotation( cancelannotation ) {
+		//set info.annotated field  to true 
+		def faas = em.read( 'faas', [objid:cancelannotation.faasid] )
+		if( ! faas ) throw new Exception('Cannot open FAAS for annotation cancellation.\nPlease verify that it was not deleted.')
+		def annotationlist = em.sqlContext.createNamedQuery('faas:getActiveAnnotations').setParameter('faasid', faas.objid).resultList 
+		if( annotationlist.size() == 0 ) {
+			faas.info.annotated = false 
+			em.update( 'faas:faas', faas )
+			em.update( 'faas:faaslist', faas )
+		}
+	}
+	
+	
+	def getListByQuery( namedQuery, criteria, params ) {
+        if( ! params ) params = [ _start:0, _limit:25]
+		return em.sqlContext.createNamedQuery( namedQuery )
+						.setParameters( criteria )
+						.setFirstResult( params._start )
+						.setMaxResults( params._limit )
+						.resultList
+	}
+}

@@ -1,0 +1,334 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : june 20, 2011
+*/
+
+import com.rameses.annotations.*;
+import com.rameses.common.*
+import java.rmi.server.UID
+
+public class BPBillingRuleService
+{
+	@PersistenceContext('main')
+	def em 
+	
+	@Resource("RuleService/local")
+	def ruleService;
+	
+	@Service('LogService')
+	def logService
+	
+	@Resource('RuleMgmt')
+	def ruleMgmt 
+	
+	@Env
+	def env
+	
+	
+	def SCHEMA_NAME = 'rule'
+	def SCHEMA_VERSION = '1.0'
+	def DRAFT_STATE = 'DRAFT'
+	def DEPLOYED_STATE = 'DEPLOYED'
+	def APPROVED_STATE = 'APPROVED' 
+	def RULESET = 'bpbilling' 
+	
+	@ProxyMethod
+	public def create( rule ) {
+		rule.objid = 'R' + new UID()
+		rule.schemaname = SCHEMA_NAME
+		rule.schemaversion = SCHEMA_VERSION
+		rule.rulename = fixRuleName( rule )
+		rule.docstate = DRAFT_STATE
+		rule.packagename = 'bp.billing.rules.' + rule.rulename 
+		rule.author = (env.USERNAME ? env.USERNAME : 'system')
+		rule.ruleset = 'bpbilling' 
+		buildRuleText( rule )
+		validate( rule )
+		em.create( rule.schemaname, rule )
+		logService.log( 'CREATE', 'BPBillingRule', rule.objid )
+		return rule 
+	}
+	
+	@ProxyMethod
+	public def update( rule ) {
+		buildRuleText( rule )
+		validate( rule )
+		em.update( rule.schemaname, rule, { diff -> 
+			logService.logB('UPDATE', 'BPBillingRule', rule.objid, null, diff) 
+		} as UpdateChangeHandler)
+		return rule
+	}
+	
+	@ProxyMethod
+	public def deploy( objid ) {
+		def rule = em.read(SCHEMA_NAME, [objid:objid])
+		rule.docstate = DEPLOYED_STATE
+		em.update( rule.schemaname, rule )
+		deployRulePackage( rule )
+		logService.log('DEPLOY', 'BPBillingRule', rule.objid)
+		return rule 
+	}
+	
+	@ProxyMethod
+	public def undeploy( objid ) {
+		def rule = em.read(SCHEMA_NAME, [objid:objid])
+		rule.docstate = DRAFT_STATE
+		em.update( rule.schemaname, rule )
+		undeployRulePackage( rule )
+		logService.log('UNDEPLOY', 'BPBillingRule', rule.objid)
+		return rule 
+	}
+	
+	@ProxyMethod
+	public Map createRule() {
+		return [
+			objid         : null,
+			opener        : 'bpbillingrule',
+            rulename      : null,
+			docstate      : 'DRAFT',
+            description   : null,
+			packagename   : 'bp.billing.rules',
+			agendagroupid : null,
+			agendagroup   : null, 
+			effectivefrom : null,
+			effectiveto   : null,
+			ruletext      : null,
+			ruleset       : 'bpbilling', 
+            salience      : 50000,
+            conditions    : [],
+            actions       : [],
+			varlist : [],
+        ]
+	}
+	
+	@ProxyMethod
+	public List getFacts() {
+		return [
+			[name:'BPLedgerFact', caption:'BPLedgerFact', ruleset:'bpbilling', packagename:'bp.billing.facts'],
+			[name:'TaxFeeFact', caption:'TaxFeeFact', ruleset:'bpbilling', packagename:'bp.billing.facts'],
+			[name:'CurrentYearFact', caption:'CurrentYearFact', ruleset:'bpbilling', packagename:'bp.billing.facts'],
+		]
+	}
+	
+	@ProxyMethod
+	public List getFields( factname) {
+		if( factname == 'BPLedgerFact' ) return getBPLedgerFactFields()
+		if( factname == 'TaxFeeFact' ) return getTaxFeeFactFields()
+		if( factname == 'CurrentYearFact' ) return getCurrentYearFactFields()
+		return []
+	}
+	
+	@ProxyMethod
+	public Map createCondition() {
+		return [
+			fact    : null,
+			varname : null, 
+			opener : null,
+			constraints : [],  //[fieldname:type:fieldvar:operator:usevar:value]
+		]
+	}
+	
+	@ProxyMethod
+	public List getAgendaGroups() {
+		return [
+			[ objid : 'SURCHARGE', name: 'SURCHARGE' ],
+			[ objid : 'INTEREST', name: 'INTEREST' ],
+			[ objid : 'DISCOUNT', name: 'DISCOUNT' ],
+			[ objid : 'SUMMARY', name: 'SUMMARY' ],
+		]
+	}
+	
+	@ProxyMethod
+	public List getOperators( datatype ) {
+		println datatype 
+		if( datatype == 'integer' || datatype == 'decimal' ) return getNumberOperators()
+		if( datatype == 'boolean'  ) return getBooleanOperators()
+		if( datatype == 'string' ) return getStringOperators()
+		return []
+	}
+	
+	List getBPLedgerFactFields() {
+		return [
+			[name:'yearstarted', caption:'Year Started', type:'integer' ],
+			[name:'lastyearpaid', caption:'Last Year Paid', type:'integer' ],
+			[name:'lastqtrpaid', caption:'Last Qtr Paid', type:'integer' ],
+		]
+	}
+	
+	List getTaxFeeFactFields() {
+		return [
+			[name:'lobid', caption:'Line of Business', type:'string', lookuphandler:'bpbilling_lookup.lob' ],
+			[name:'year', caption:'Year', type:'integer' ],
+			[name:'qtr', caption:'Qtr', type:'integer' ],
+			[name:'monthsfromjan', caption:'Months from Jan', type:'integer' ],
+			[name:'monthsfromqtr', caption:'Months From Qtr', type:'integer' ],
+			[name:'daysfromjan', caption:'Days from Jan', type:'integer'],
+			[name:'daysfromqtr', caption:'Days from Qtr', type:'integer'],
+			[name:'acctid', caption:'Account', type:'string', lookuphandler:'bpbilling_lookup.taxfee' ],
+			[name:'amount', caption:'Amount Due', type:'decimal' ],
+			[name:'surcharge', caption:'Surcharge', type:'decimal' ],
+			[name:'interest', caption:'Interest', type:'decimal' ],
+			[name:'applysurcharge', caption:'Apply Surcharge', type:'boolean' ],
+			[name:'applydiscount', caption:'Apply Discount', type:'boolean' ]
+		]
+	}
+	
+	List getCurrentYearFactFields() {
+		return [
+			[name:'year', caption:'Year', type:'integer' ],
+			[name:'qtr', caption:'Quarter', type:'integer' ],
+			[name:'month', caption:'Month', type:'integer' ],
+			[name:'day', caption:'Day', type:'integer' ],
+		]
+	}
+	
+	List getNumberOperators() {
+		return [
+			[name:'==', caption:'equal'],
+			[name:'>', caption:'greater than'],
+			[name:'>=', caption:'greater than or equal'],
+			[name:'<', caption:'less than'],
+			[name:'<=', caption:'less than or equal'],
+		]
+	
+	}
+	
+	List getBooleanOperators() {
+		return [
+			[name:'==', caption:'equal'],
+			[name:'!=', caption:'not equal'],
+		]
+	}
+	
+	List getStringOperators() {
+		return [
+			[name:'==', caption:'equal'],
+			[name:'matches', caption:'matches'],
+		]
+	}
+	
+	def fixRuleName( rule ) {
+		return rule.rulename.replaceAll('\\W', '_')
+	}
+	
+	void validate( rule ) {
+		em.validate(rule.schemaname, rule )
+		checkDuplicateRuleName( rule )
+	}
+	
+	void checkDuplicateRuleName( rule ) {
+		def data = em.sqlContext.createNamedQuery('rule:checkDuplicateRuleName').setParameters( rule ).singleResult 
+		if( data ) throw new Exception('Rule ' + rule.rulename + ' already exists.' )
+	}
+	
+	void deployRulePackage( rule ) {
+		ruleMgmt.removeRulePackage( RULESET, '', rule.packagename, false )
+		ruleMgmt.addRulePackage( RULESET, '', rule.packagename, rule.ruletext, true )
+	}
+	
+	void undeployRulePackage( rule ) {
+		ruleMgmt.removeRulePackage( RULESET, '', rule.packagename, false )
+	}
+	
+	
+	/*-------------------------------------------------------------
+	* BuildRuleText Support
+	-------------------------------------------------------------*/
+    @ProxyMethod
+    public String buildRuleText( rule ) {
+		def ruleHeader = buildRuleHeader( rule )
+		def conditions = buildRuleConditions( rule )
+		def actions = buildRuleActions( rule )
+		return ruleHeader + conditions + actions + 'end'
+	} 
+	
+	String buildRuleActions( rule ) {
+		String s = 'then\n'
+		rule.actions.each { action ->
+			if( action.actiontype == 'calcSurcharge' ) s += calculateSurcharge( action )
+			if( action.actiontype == 'calcInterest' ) s += calculateInterest( action )
+			if( action.actiontype == 'calcDiscount' ) s += calculateDiscount( action )
+		}
+		return s
+	}
+	
+	String calculateSurcharge( action ) {
+		String s = ''
+		s += '$TAXFEE.setSurchargeacctid("' + action.acctid + '");\n'
+		s += '$TAXFEE.setSurchargeaccttitle("' + action.accttitle + '");\n'
+		s += '$TAXFEE.setSurcharge(' + action.expr + ');\n\n'
+		s += 'actionList.setContext( drools );\n'
+		s += 'actionList.execute("calcSurcharge", $TAXFEE );\n'
+		return s 
+	}
+	
+	String calculateInterest( action ) {
+		String s = ''
+		s += '$TAXFEE.setInterestacctid("' + action.acctid + '");\n'
+		s += '$TAXFEE.setInterestaccttitle("' + action.accttitle + '");\n'
+		s += '$TAXFEE.setInterest(' + action.expr + ');\n\n'
+		s += 'actionList.setContext( drools );\n'
+		s += 'actionList.execute("calcInterest", $TAXFEE );\n'
+		return s 
+	}
+	
+	String calculateDiscount( action ) {
+		String s = ''
+		s += '$TAXFEE.setDiscount(' + action.expr + ');\n'
+		s += 'actionList.setContext( drools );\n'
+		s += 'actionList.execute("calcDiscount", $TAXFEE );\n'
+		return s 
+	}
+	
+	String buildRuleConditions( rule ) {
+		String s = ''
+		rule.conditions.each { cond ->
+			if( cond.fact.name == 'BPLedgerFact' ) s += buildFactCondition( cond, 'ledgerid == $ledgerid' )
+			if( cond.fact.name == 'TaxFeeFact' ) s += buildFactCondition( cond, 'taxfeeid == $taxfeeid, ledgerid == $ledgerid' )
+			if( cond.fact.name == 'CurrentYearFact' ) s += buildFactCondition( cond, null )
+		}
+		return s 
+	}
+	
+	String buildFactCondition( cond, additionalConstraint ) {
+		String s = ''
+		if( cond.factvar ) s += cond.factvar + ':'
+		s += cond.fact.name + '('
+		s += buildConstraints( cond ) 
+		if( additionalConstraint ) s += ', ' + additionalConstraint
+		s += ')\n'
+		return s 
+	}
+	
+	String buildConstraints( cond ) {
+		String s = ''
+		cond.constraints.each { constraint ->
+			if( s.length() > 0 ) s += ', '
+			if( constraint.fieldvar ) s += constraint.fieldvar + ':' 
+			s += constraint.field.name
+			if( constraint.operator ) s += ' ' + constraint.operator.name 
+			if( constraint.operator?.name != 'matches' && constraint.value ) s += ' ' + constraint.value 
+			else if( constraint.operator?.name == 'matches' && constraint.arrayvalue ) s += ' "' + constraint.arrayvalue.objid.join('|') + '"'
+		}
+        return s 
+	}
+	
+	
+	String buildRuleHeader( rule ) {
+		String s = ''
+		s += 'package ' + rule.packagename + ';\n\n'
+		s += 'import bp.billing.facts.*\n';
+		s += 'import java.util.*\n\n';
+		s += 'global com.rameses.rules.common.RuleAction actionList\n\n'
+		s += 'rule "' + rule.rulename + '"\n'
+		s += 'agenda-group "' + rule.agendagroup + '"\n'
+		s += 'no-loop\n'
+		s += 'salience ' + rule.salience + '\n\n'
+		s += 'when\n'
+		s += '$LEDGER : BPLedgerFact( $ledgerid:ledgerid )\n'
+		s += '$TAXFEE : TaxFeeFact( $taxfeeid:taxfeeid, ledgerid == $ledgerid )\n'
+		return s
+	}	
+	
+}

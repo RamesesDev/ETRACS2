@@ -1,0 +1,105 @@
+import com.rameses.annotations.*;
+import com.rameses.rules.common.*;
+
+public class BPApplicatioService
+{
+	@PersistenceContext('main')
+	def em 
+	
+	@Service('Var')
+	def var;
+	
+	@Service('BPSettingService')
+	def bpsettingSvc
+	
+	def SCHEMANAME = 'bpapplication:bpapplication';
+	
+	@ProxyMethod
+	public def getApplicationReportInfo( def applicationid ){
+		def bpa = em.read( SCHEMANAME, [objid:applicationid] );
+		return [ 
+			reportName: 'bp/application',
+			info: buildInfo( bpa )
+		];
+	}
+	
+	def buildInfo( def bpa ){
+		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+		def info = [
+			barcode: bpa.barcode,
+			barcodeurl: var.get('barcode_url').replace('$P{data}', bpa.barcode),
+			txnno: bpa.txnno,
+			txntype: bpa.txntype,
+			txndate: sdf.format( bpa.txndate ),
+			tradename: bpa.info.tradename,
+			businessaddress: bpa.info.businessaddress,
+			taxpayername: bpa.info.taxpayername,
+			taxpayeraddress: bpa.info.taxpayeraddress,
+			organization: bpa.info.organization,
+			officetype: bpa.officetype,
+			tin: bpa.info.tin,
+			sss: bpa.info.sss,
+			ctcno: bpa.info.ctcno,
+			ctcplaceissued: bpa.info.ctcplaceissued,
+			ctcdateissued: bpa.info.ctcdateissued,
+			infos: buildAppInfo( bpa.appinfos ),
+			requirements: bpsettingSvc.setting.requirements,
+			signatories: bpsettingSvc.setting.applicationsignatories
+		];
+		
+		info.signatories = ( !info.signatories ) ? [[name:'', department:'', title:'']] : info.signatories ;
+		info.requirements = ( !info.requirements )  ? [[requirement:'', complied:'', remarks:'']] : info.requirements;
+		info.requirements.each{ it.complied = ((it.complied == true ) ? "YES" : "");  }
+		
+		return info;
+	}
+
+	def getDisplayText( lob ){
+		def sb = new StringBuffer();
+		if( lob.vartype == 'string_array' ){
+			lob.arrayvalues.each{
+				if( it == lob.value ) sb << "[x] " + it+" ";
+				else sb << "[ ] " + it + " ";
+			}
+		}
+		
+		if( lob.vartype == 'boolean' ){
+			def x = " ";
+			if( lob.value != null ) x = (lob.value)? 'x': ' ';
+			sb << "[${x}] TRUE [${x}] FALSE";
+		}
+		
+		def format = { pattern, val ->
+			if( !val ) return "";
+			def f = new java.text.DecimalFormat( pattern );
+			return f.format( val );
+		}
+		
+		if( lob.vartype == 'integer' ) sb << format('#,##0', lob.value );
+		if( lob.vartype == 'decimal' ) sb << format('#,##0.00', lob.value );
+		if( lob.vartype == 'string'  ) sb << ((lob.value == null) ? "" : lob.value);
+		
+		return sb.toString().trim();
+	}
+	
+	def buildAppInfo( def infos ){
+		def appinfos = [];
+		if( infos ){
+			infos.each{
+				appinfos << [
+					name: it.varcaption,
+					category: it.lobname,
+					value: getDisplayText( it ),
+				];
+			}
+			
+			appinfos.sort{ a, b ->
+				def sA = ( a.category ) ? a.category : "";
+				def bA = ( b.category ) ? b.category : "";
+				return sA <=> bA;
+			}
+		}
+		return appinfos;
+	}
+
+}

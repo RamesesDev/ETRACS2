@@ -1,0 +1,247 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class TCScript {
+	
+	@PersistenceContext('main')
+	def em
+	
+	@Service( 'ConsolidatedReportService' )   
+	def craafSvc  
+	
+	def cal = Calendar.getInstance()
+		
+	@ProxyMethod
+	public def doRemoveDuplicateCraaf(){ 
+		
+		removeMultipleNoBFromBTo()   
+		removeMultipleNoBeginTo()
+		copyRcvfrmToIssuedfrm()
+		removeCraafEndingNoBeginIssuedReceived()
+		postUnconsolidateEndingBalance()
+		updateStubno()
+		resolveBFromBtoBlank()
+		//forwardCraaf( craafSvc.getAFIStateOpen() )           
+			
+		return 'run successfully'
+	}
+	
+	// remove multiple no. of beginfrom and beginto without parameter
+	private void removeMultipleNoBFromBTo(){
+		em.sqlContext.createNamedQuery( 'tcscript:getCraafDuplicateByBFromBto' ).resultList.each{ crf -> 
+			def listduplicate = em.sqlContext.createNamedQuery( 'tcscript:getCraafByMonthYearBFromBto' ).setParameters( crf ).resultList
+			def hasIssuedRcpt = listduplicate.find{ it.issuedfrom != null && it.issuedto != null }
+			if( hasIssuedRcpt )
+				removeNoIssuedCraaf( listduplicate )
+			else
+				removeMultipleNoBFromBTo( listduplicate )
+							
+		}  
+	}
+	
+	// if listduplicate craaf has an issued 
+	// remove all no issued craaf 
+	private void removeNoIssuedCraaf( def listduplicate ){
+		listduplicate.each{ 
+			if( !it.issuedfrom  && !it.issuedto )
+				deleteCraafById( it.objid )
+		}
+	}
+	
+	// delete multiple no. of beginfrom and beginto
+	private void removeMultipleNoBFromBTo( def listduplicate ){
+		def list = listduplicate.clone()
+		listduplicate.each{
+			if( list.size() > 1 ){
+				deleteCraafById( it.objid )
+				list.remove( it )
+			}
+		}
+	}
+	
+	// delete multiple no. of beginto order by beginqty
+	// the smallest no. of beginqty will be left.
+	private void removeMultipleNoBeginTo(){ 
+		em.sqlContext.createNamedQuery( 'tcscript:getCraafDuplicateByBto' ).resultList.each{ crf ->
+			def listduplicate = em.sqlContext.createNamedQuery( 'tcscript:getCraafByMonthYearBto' ).setParameters( crf ).resultList
+			def list = listduplicate.clone()
+	
+			listduplicate.each{				
+				if( list.size() > 1 ){
+					def sqty = list.min{ it.beginqty }
+					deleteCraafById( sqty.objid )
+					list.remove( sqty )
+				}				
+			}
+		}
+	}
+		
+	//copy receivedfrom to issuedfrom
+	//wrong update of issuedfrom 
+	//due to wrong forwarding of craaf at the end of month.
+	private void copyRcvfrmToIssuedfrm(){
+		em.sqlContext.createNamedQuery( 'tcscript:getConsolatedWrongEntry' ).resultList.each{
+			def map = [ 
+				objid: it.objid, issuedfrom: it.receivedfrom
+			]
+			
+			em.sqlContext.createNamedExecutor( 'tcscript:updateConsolatedWrongEntry' ).setParameters( map ).execute()
+		}
+	}
+	
+	
+	//get craaf with ending qty, ending from ending to
+	//without begin qty, begin from, begin series,
+	//issued qty, issued from, issued to,
+	//received qty, received from, received to and remove to craaf 
+	//due error wrong forwarding of craaf at the end of month.
+	public void removeCraafEndingNoBeginIssuedReceived(){
+		em.sqlContext.createNamedQuery( 'tcscript:getCraafEndingNoBIR' ).resultList.each{ 
+			deleteCraafById( it.objid ) 
+		}
+		
+	}
+	
+	private void deleteCraafById( def craafid ){
+		em.sqlContext.createNamedExecutor( 'tcscript:deleteDuplicateCraaf' ).setParameter( 'objid', craafid ).execute()
+	}
+	
+	private void postUnconsolidateEndingBalance(){
+		 //get No Ending Balance By Begin Quantity
+		em.sqlContext.createNamedQuery( 'tcscript:getNoEndingBalByBgnQty' ).resultList.each{
+			
+			em.sqlContext.createNamedExecutor( 'tcscript:updateEndingBal' ).setParameters(
+				[ objid: it.objid, endingqty: it.beginqty, endingfrom: it.beginfrom, endingto: it.beginto ]
+			).execute()
+		}
+		//get No Ending Balance By Received Quantity
+		em.sqlContext.createNamedQuery( 'tcscript:getNoEndingBalByRrcvQty' ).resultList.each{
+			
+			em.sqlContext.createNamedExecutor( 'tcscript:updateEndingBal' ).setParameters(
+				[ objid: it.objid, endingqty: it.receivedqty, endingfrom: it.receivedfrom, endingto: it.receivedto ]
+			).execute()
+		}		
+	} 
+	
+	//forward afinventory open those not forwarded in particular month
+	private def forwardCraaf( def afiventory ){		
+		//def craafRec = em.sqlContext.createNamedQuery( 'tcscript:getFirstCraafRec' ).singleResult
+		afiventory.each{ afi ->
+			def craafRec = em.sqlContext.createNamedQuery( 'tcscript:getFirstCraafRecByAfinventoryid' ).setParameter( 'afinventoryid', afi.objid ).singleResult
+			craafRec.craafmonth += 1
+			def craaf = [ craafmonth: craafRec.craafmonth, craafyear: craafRec.craafyear ]			
+			
+			while( craaf.craafmonth <= 12 ){ 
+				if( craaf.craafyear == cal.get( Calendar.YEAR ) && craaf.craafmonth == cal.get( Calendar.MONTH ) + 1 )
+					break
+				
+				craaf.afinventoryid = afi.objid  
+				afi.craafmonth = craaf.craafmonth    
+				afi.craafyear = craaf.craafyear 
+				//println " $craaf.craafmonth  $craaf.craafyear $craaf.afinventoryid  "
+				def afirec = em.sqlContext.createNamedQuery( 'tcscript:getCraafByAfinventoryid' ).setParameters( craaf ).singleResult
+				if( !afirec ) 
+					buildCraafByAFI( afi )
+					
+				craaf.craafmonth += 1
+				if( craaf.craafmonth > 12 ){
+					craaf.craafmonth = 1
+					craaf.craafyear += 1
+					
+				}
+			}
+		}
+	}
+	
+	private void buildCraafByAFI( def afi ){
+		afi.afinventoryid = afi.objid
+		buildCraaf( afi, null )
+	}
+	
+	private void buildCraaf( afi, afic ){ 
+		def craaf = [:] 
+		craaf.objid = ( afi ? 'C' : 'CC' ) + new UID()
+			
+		craaf.schemaname = 'craaf:craaf'
+		craaf.schemaversion = '1.0'
+		
+		craaf.afinventoryid = afi?.objid
+		craaf.afinventorycreditid = afic?.objid
+		
+		craaf.craafyear = ( afi ) ? afi.craafyear : afic.craafyear 
+		craaf.craafmonth = ( afi ) ? afi.craafmonth : afic.craafmonth
+		craaf.collectorid = afic?.collectorid
+		craaf.collectorname = afic?.collectorname
+		craaf.collectortitle = afic?.collectortitle
+		
+		if( afi ){ 
+			craaf.prefix = ( !afi.prefix ) ? '' : "$afi.prefix-"
+			craaf.suffix = ( !afi.suffix ) ? '' : "-$afi.suffix"
+			afi.issuedto = ( afi.qtyissued == 0 ) ? afi.startseries : ( afi.issuedto + 1 )
+		}
+		else{
+			craaf.prefix = ( !afic.prefix ) ? '' : "$afic.prefix-"
+			craaf.suffix = ( !afic.suffix ) ? '' : "-$afic.suffix" 
+		} 	
+		
+		craaf.afid = ( afi ) ? afi.afid : afic.afid
+		def aftype = ( afi ) ? afi.aftype : afic.aftype
+		if( aftype.equals('serial') ){
+			craaf.beginqty = ( afi ) ? ( afi.qtyonhand * 50 ) : afic.beginqty
+			craaf.beginfrom = ( afi ) ? ( craaf.prefix + ( afi.issuedto ) + craaf.suffix ): ( craaf.prefix + afic.currentseries + craaf.suffix )
+			craaf.beginto = ( afi ) ? ( craaf.prefix + afi.endseries + craaf.suffix ) : ( craaf.prefix + afic.endseries + craaf.suffix )
+		}
+		else{
+			craaf.beginqty = ( afi ) ? ( afi.qtyonhand * 2000 ) : afic.beginqty
+			craaf.beginfrom = '-' 
+			craaf.beginto = '-'
+		}
+		
+		craaf.receivedqty = 0
+		craaf.receivedfrom = null
+		craaf.receivedto = null
+		craaf.issuedqty = 0
+		craaf.issuedfrom = null
+		craaf.issuedto = null
+		craaf.cancelqty = 0
+		
+		craaf.endingqty = craaf.beginqty 
+		craaf.endingfrom = craaf.beginfrom 
+		craaf.endingto = craaf.beginto 
+		craaf.stubno = afic?.stubno
+		 
+		em.create( craaf.schemaname, craaf )  
+	}
+	
+	// update null stubno from craaf 
+	private void updateStubno(){
+		em.sqlContext.createNamedExecutor( 'tcscript:updateStubno' ).execute() 
+	}
+	
+	// get craaf where Begin qty is 0 and begin from and begin to is null
+	// 
+	private def getBFromBToBlank(){
+		return em.sqlContext.createNamedQuery( 'tcscript:getBFromBToBlank' ).resultList
+	}
+	
+	private void resolveBFromBtoBlank(){  
+		getBFromBToBlank().each{
+			em.sqlContext.createNamedExecutor( 'tcscript:resolveBFromBToBlank' ).setParameters(
+			 [ objid: it.objid, beginqty: it.issuedqty, beginfrom: it.issuedfrom, beginto: it.issuedto ]
+			).execute()
+		}
+	}
+	
+	/*
+	// remove existing collectorname in craaf
+		em.sqlContext.createNamedQuery('consolidatedreport:getReportDataCollector')
+			.setParameters( [craafyear:year, craafmonth:entity.month] )
+			.resultList.each{ clctr ->
+				def found = craaf.find{ it.collectorid.equals( clctr.collectorid ) || it.collectorname.equals( clctr.collectorname ) }
+				clctr.collectorname = ( !found ) ? clctr.collectorname : null
+				craaf += clctr  
+		} 	
+	*/
+	
+}  

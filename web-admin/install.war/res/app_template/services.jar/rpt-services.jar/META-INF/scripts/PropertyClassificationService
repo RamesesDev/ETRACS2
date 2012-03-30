@@ -1,0 +1,124 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class PropertyClassificationService{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = 'propertyclassification:propertyclassification';
+	def schemaversion = '1.0';
+	
+	@ProxyMethod
+	public def getList( searchText, params ){
+		if( !searchText ) return getListByQuery( 'propertyclassification:getList', [:], params );
+		
+		def result = [];
+		
+		if((result = getListByQuery( 'propertyclassification:getListByCode', [propertycode:searchText+"%"], params ))) return result;
+		if((result = getListByQuery( 'propertyclassification:getListByDescription', [propertydesc:searchText+"%"], params ))) return result;
+		
+		return result;
+	}
+    
+    @ProxyMethod
+    public List lookup( searchText, params ) {
+        if( !searchText ) return getListByQuery( 'propertyclassification:lookupList', [:], params );
+		
+        def result = [];
+		def criteria = [propertycode: searchText+'%',propertydesc:searchText+'%']
+		if((result = getListByQuery( 'propertyclassification:lookupByCode', criteria, params ))) return result;
+		if((result = getListByQuery( 'propertyclassification:lookupByDescription', criteria, params ))) return result;
+		return result;
+    }
+	
+	@ProxyMethod
+	public def open( objid ){
+		return em.sqlContext.createNamedQuery( 'propertyclassification:getById' ).setParameter( 'objid', objid ).singleResult;
+	}
+	
+	@ProxyMethod
+	public def create( propertyclass ){
+		propertyclass.objid = "PC" + new UID();
+		propertyclass.schemaname = schemaname;
+		propertyclass.schemaversion = schemaversion;
+		
+		validate( propertyclass );
+		em.create( propertyclass.schemaname, propertyclass );
+		
+		return propertyclass;
+	}
+	
+	@ProxyMethod
+	public def update( propertyclass ){
+		validateUpdate( propertyclass );
+		
+		em.update( propertyclass.schemaname, propertyclass, { diff ->
+			logService.logB( 'UPDATE', 'PROPERTY CLASSIFICATION', propertyclass.objid, null, diff );
+		} as UpdateChangeHandler )
+		
+		return propertyclass;
+	}
+	
+	@ProxyMethod
+	public void delete( propertyclass ){
+		println "check"
+		checkReferencedId( propertyclass );
+		println "done"
+		em.delete( propertyclass.schemaname, propertyclass );
+	}
+
+	
+	private void validate( propertyclass ){
+		def oldpropertyclass = em.read(propertyclass.schemaname, propertyclass);
+		util.validateLastUpdate( propertyclass, oldpropertyclass );
+		
+		checkDuplicates( propertyclass );
+		em.validate(propertyclass.schemaname, propertyclass);
+	}
+	
+	private void validateUpdate( propertyclass ){
+		def oldpropertyclass = em.read(propertyclass.schemaname, propertyclass);
+		util.validateLastUpdate( propertyclass, oldpropertyclass );
+		
+		em.validate(propertyclass.schemaname, propertyclass);
+	}
+	
+	private void checkDuplicates( propertyclass ){
+		def data = em.sqlContext.createNamedQuery( 'propertyclassification:checkDuplicateCode' ).setParameter( 'propertycode', propertyclass.propertycode ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Property Classification $propertyclass.propertycode already exists." );
+		data = em.sqlContext.createNamedQuery( 'propertyclassification:checkDuplicateDescription' ).setParameter( 'propertydesc', propertyclass.propertydesc ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Property Classification $propertyclass.propertydesc already exists." );
+	}
+	
+	private void checkReferencedId( propertyclass ){
+		def data = em.sqlContext.createNamedQuery('propertyclassification:checkReferencedLCUVId').setParameter("objid", propertyclass.objid).singleResult
+		if( data.count > 0 ) util.checkDuplicateError( data.count, "Delete not allowed. Property Classification has already been referenced." )
+		
+		data = em.sqlContext.createNamedQuery('propertyclassification:checkReferencedAgriId').setParameter("objid", propertyclass.objid).singleResult
+		if( data.count > 0 ) util.checkDuplicateError( data.count, "Delete not allowed. $propertyclass.propertydesc has already been referenced." )
+		
+		def rptsetting = em.sqlContext.createNamedQuery('propertyclassification:checkReferencedSettingId').singleResult;
+		def propertyclassifications = em.serializer.read( rptsetting.propertyclassifications );
+		propertyclassifications.each{
+			if( it.objid == propertyclass.objid )	
+				throw new Exception( "Delete not allowed. $propertyclass.propertydesc has already been referenced." )
+		}
+	}
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+
+}

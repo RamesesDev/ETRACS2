@@ -1,0 +1,663 @@
+import com.rameses.annotations.*
+import java.rmi.server.UID
+
+class BldgRPUService
+{
+	@PersistenceContext('main')
+	def em
+    
+    @Service('NumberService')
+	def numberSvc
+    
+    @Service('DateService')
+    def dateSvc
+    
+    @Service('RPUService')
+	def rpuSvc
+    
+    @Service('RPTSettingService')
+    def settingSvc
+    
+    @Service('StructureTemplateService')
+    def templateSvc
+
+	@Env
+	def env
+    
+	
+	@ProxyMethod
+	public Map initGeneralRevision( faas, newrysetting ) {
+		checkLandFaasIsRevised( faas, newrysetting )
+		reviseBldgType( faas, newrysetting )
+		reviseBldgKindBucc( faas, newrysetting )
+		reviseBldgUses( faas, newrysetting )
+		recalculate( faas )
+		return faas 
+	}
+	
+	void recalculate( faas ) {
+		calculateAssessment( faas.rpu )
+		recalculateAdditionalItems( faas )
+		calculateAssessment( faas.rpu )
+	}
+	
+	void recalculateAdditionalItems( faas ) {
+		faas.rpu.info.bldguses.each { bu ->
+			bu.floors.each { floor ->
+				floor.additionalitems.each { item  ->
+					item.amount = recalcAdditionalItemAmount( floor, item)
+				}
+			}
+		}
+	}
+	
+	void reviseBldgType( faas, newrysetting ) {
+		def rpuinfo = faas.rpu.info 
+		
+		def bldgtype = em.sqlContext.createNamedQuery('bldgrpu:getBldgTypeByPrevID')
+							.setParameter('previd', rpuinfo.bldgtype.bldgtypeid )
+							.singleResult 
+							
+		if( bldgtype ) {
+			bldgtype.depreciations	= em.serializer.read( bldgtype.depreciations )
+			bldgtype.multistoreyadjustments	= em.serializer.read( bldgtype.multistoreyadjustments )
+			rpuinfo.bldgtype 		= bldgtype 
+			rpuinfo.predominant 	= bldgtype.predominant
+			rpuinfo.depreciatecoreanditemseparately 	= bldgtype.depreciatecoreanditemseparately
+			rpuinfo.computedepreciationbasedonschedule 	= bldgtype.computedepreciationbasedonschedule
+		}
+		else {
+			rpuinfo.bldgtype = null 
+		}
+	}
+	
+	void reviseBldgKindBucc( faas, newrysetting ) {
+		def rpuinfo = faas.rpu.info 
+		
+		def bucc = em.sqlContext.createNamedQuery('bldgrpu:getBldgKindBuccByPrevId')
+							.setParameter('previd', rpuinfo.bldgkindbucc.bldgkindbuccid )
+							.singleResult 
+							
+		if( bucc ) {
+			rpuinfo.bldgkindbucc = bucc 
+			if( bucc.basevaluetype == 'range' ) {
+				rpuinfo.firstfloorbasevalue = bucc.maxbasevalue
+			}
+		}
+		else {
+			rpuinfo.bldgkindbucc = null 
+		}
+	}
+	
+	void reviseBldgUses( faas, newrysetting ) {
+		reviseActualUse( faas, newrysetting  )
+		reviseFloors( faas, newrysetting )
+	}
+	
+	void reviseActualUse( faas, newrysetting  ) {
+		def deletedUses = []
+		def bldguses = faas.rpu.info.bldguses 
+		
+		bldguses.each{ bu ->
+			def actualuse = em.sqlContext.createNamedQuery('bldgrpu:getActualUseByPrevID')
+							.setParameter('previd', bu.actualuse.actualuseid )
+							.singleResult 
+							
+			if( actualuse  ) {
+				actualuse.ranges = em.serializer.read( actualuse.ranges ) 
+				bu.objid 		= 'BU' + new UID() 
+				bu.actualuse 	= actualuse 
+			}
+			else {
+				deletedUses.add( bu )
+			}
+		}
+		
+		bldguses.removeAll( deletedUses )
+	}
+	
+	void reviseFloors( faas, newrysetting ) {
+		faas.rpu.info.bldguses.each{ bu ->
+			bu.floors.each{ floor -> 
+				floor.objid = 'BF' + new UID()
+				
+				def deletedItems = []
+				
+				floor.additionalitems.each{  item ->
+					def addlitem = em.sqlContext.createNamedQuery('bldgrpu:getAdditionalItemByPrevId')
+										.setParameter('previd', item.addlitemid )
+										.singleResult 
+					if( addlitem ) {
+						item.objid 		= 'BA' + new UID()
+						item.addlitem 	= addlitem
+						item.putAll( addlitem )
+					}
+					else {
+						deletedItems.add( item )
+					}
+				}
+				
+				floor.additionalitems.removeAll( deletedItems )
+			}
+		}
+	}
+		
+	
+	
+	void checkLandFaasIsRevised( faas, newrysetting) {
+		def pin = faas.rp.pin
+		def landfaas = em.sqlContext.createNamedQuery('bldgrpu:getLatestRevisedLandFaas')
+							.setParameters([ pin:pin, ry:newrysetting.ry  ])
+							.singleResult 
+							
+		if( ! landfaas ) {
+			throw new Exception("Land FAAS $pin is not yet revised.\nFirst revise the Land RPU before revising any improvements.")
+		}	
+		
+		faas.info.landfaasid 			= landfaas.objid 
+		faas.info.landfaastaxpayerid 	= landfaas.taxpayerid 
+	}
+	
+    
+    @ProxyMethod
+    public Map initBldgRpu( faas ) {
+        rpuSvc.buildCommonRpuInfo( faas )
+        
+        def rysetting = getCurrentRYSetting()
+        faas.rpu.bldgstructures = populateBldgStructures()
+        
+        def rpuinfo = faas.rpu.info 
+        rpuinfo.totalarea           = 0.0 
+        rpuinfo.depreciation        = 0.0
+        rpuinfo.depreciationvalue   = 0.0
+        rpuinfo.totaladjustment     = 0.0
+        rpuinfo.swornstatement      = false
+        rpuinfo.swornamount         = 0.0
+        rpuinfo.predominant         = rysetting.predominant as boolean
+        rpuinfo.firstfloorbasevalue = 0.0
+		rpuinfo.floorcount			= 1
+        rpuinfo.bldgage             = 0
+        rpuinfo.condominium         = false
+        rpuinfo.autocomputebldgdepreciation      = rysetting.autocomputebldgdepreciation as boolean 
+        rpuinfo.depreciatecoreanditemseparately  = rysetting.depreciatecoreanditemseparately as boolean 
+        rpuinfo.bldguses            = []
+        rpuinfo.bldgstructures      = []
+        rpuinfo.residualrate        = 0.0
+        rpuinfo.assesslevel         = 0.0
+		rpuinfo.percentcompleted    = 0.0
+        return faas 
+    }
+    
+    @ProxyMethod
+	public def calculateBldgDepreciation( bldgtype, issuedate, dtcompleted, dtoccupied) {
+		if( ! bldgtype ) return 0.0 
+        if( ! issuedate) return 0.0 
+        if( ! dtcompleted ) return 0.0 
+        if( ! dtoccupied ) return 0.0 
+        
+        issuedate = dateSvc.parse( 'yyyy-MM-dd', issuedate )
+        dtcompleted = dateSvc.parse( 'yyyy-MM-dd', dtcompleted)
+        dtoccupied = dateSvc.parse( 'yyyy-MM-dd', dtoccupied)
+		
+        if( ! bldgtype.depreciations ) throw new Exception('Depreciation schedule for Type ' + bldgtype.bldgtypecode + ' is not defined.')
+		def depreciationrate = 0
+        
+		int bldgage = calculateBldgAge( bldgtype, issuedate, dtcompleted, dtoccupied )
+        if( bldgage > 0 )  {
+            for ( sked in bldgtype.depreciations ) {
+                if( sked.ageto != 0 && sked.ageto <= bldgage ) {
+					depreciationrate += (sked.ageto - sked.agefrom + 1) * sked.rate
+				}
+				else {
+					depreciationrate += (bldgage - sked.agefrom + 1) * sked.rate
+					break
+				}
+			}
+		}
+		
+		def maxdepreciation = 100.0 - bldgtype.residualrate 
+		if( maxdepreciation < depreciationrate) 
+			return maxdepreciation
+		return new BigDecimal(depreciationrate +'')
+	}
+	
+	@ProxyMethod
+	public def calculateBldgAge( bldgtype, issuedate, dtcompleted, dtoccupied ) {
+		if( ! (issuedate && dtcompleted && dtoccupied ) ) {
+            return 0
+        } 
+		
+		
+        issuedate = dateSvc.parse( 'yyyy-MM-dd', issuedate )
+        dtcompleted = dateSvc.parse( 'yyyy-MM-dd', dtcompleted)
+        dtoccupied = dateSvc.parse( 'yyyy-MM-dd', dtoccupied)
+        
+		def refdate = dtcompleted
+		
+		//check calcbldgagebasedondtoccupied option
+		if( bldgtype.calcbldgagebasedondtoccupied 
+			&& TO_BOOLEAN( bldgtype.calcbldgagebasedondtoccupied ) == true ) {
+				refdate = dtoccupied 
+		}
+		else if( dtoccupied < dtcompleted) {
+			refdate = dtoccupied
+		}
+		int refyear = dateSvc.getYear( refdate )
+		int curryear = dateSvc.getYear( issuedate )
+		def age = curryear - refyear 
+        return ( age < 0 ? 0 : age )
+	}
+    
+    @ProxyMethod
+    public Map calculateAssessment( rpu ) {
+		if( ! rpu.info.bldgtype  ) return rpu 
+		
+        required( 'Building Type', rpu.info.bldgtype )
+        required( 'Building Kind', rpu.info.bldgkindbucc )
+        required( 'Classification', rpu.classid )
+        
+        calculateTotalArea( rpu )
+        calculateFirstFloorBaseValue( rpu )  
+        
+		//calculate depreciation 
+        if( IS_TRUE( rpu.info.bldgtype.computedepreciationbasedonschedule ))  {
+            rpu.info.depreciation = calculateBldgDepreciation( rpu.info.bldgtype, rpu.issuedate, rpu.info.dtcompleted, rpu.info.dtoccupied )
+        }
+        //calculate market value
+        rpu.info.bldguses.each { bldguse ->
+            calculateBldgUseMarketValue( rpu, rpu.info.bldgtype, rpu.info.bldgkind, rpu.info.firstfloorbasevalue, rpu.info.depreciation, bldguse )
+        }        
+        
+        //calculate rpu market value
+        rpu.totalareasqm    = calculateSum('area', rpu.info.bldguses )
+			
+		if( rpu.info.useswornamount == true  ) {
+			rpu.totalbmv        = rpu.info.swornamount 
+			rpu.info.depreciationvalue = numberSvc.round( rpu.totalbmv * rpu.info.depreciation / 100 )
+			rpu.totalmv         = rpu.totalbmv - rpu.info.depreciationvalue
+			calculatePredominantAssessment( rpu )
+		}
+		else {
+			rpu.totalbmv        = calculateSum('basemarketvalue', rpu.info.bldguses )
+			rpu.totalmv         = calculateSum('marketvalue', rpu.info.bldguses )
+			rpu.info.depreciationvalue = calculateSum('depreciationvalue', rpu.info.bldguses )
+			
+			if( rpu.info.predominant || rpu.info.predoument == 1 ) {
+				calculatePredominantAssessment( rpu )
+			}
+			else {
+				calculateSplitAssessment( rpu )
+			}
+		}
+        
+        return rpu 
+    }
+    
+    @ProxyMethod
+    public Map calculateSplitAssessment( rpu ) {
+        required('Classification', rpu.classid)
+        rpu.info.bldguses.each { bu ->
+            bu.assesslevel      = determineAssessmentLevel( bu.marketvalue, bu.actualuse  )
+            bu.assessedvalue    = numberSvc.roundToTen( bu.marketvalue * bu.assesslevel / 100 )
+        }
+        rpu.totalav = calculateSum('assessedvalue', rpu.info.bldguses )
+        return rpu 
+    }
+    
+    @ProxyMethod
+    public Map calculatePredominantAssessment( rpu ) {
+        required('Classification', rpu.classid)
+        def mv = rpu.totalmv 
+        def assesslevel = getBldgAssessmentLevel( rpu.ry, rpu.classcode )
+        rpu.info.assesslevelid     = assesslevel.actualuseid 
+        rpu.info.assesslevelcode   = assesslevel.actualusecode
+        rpu.info.assesslevelname   = assesslevel.actualusename
+        rpu.info.assesslevel       = determineAssessmentLevel( mv, assesslevel )
+        rpu.totalav                = numberSvc.roundToTen( mv * rpu.info.assesslevel / 100 )
+        return rpu 
+    }
+    
+    @ProxyMethod
+    public Map calculateBldgUseMarketValue( rpu, bldgtype, bldgkindbucc, firstfloorbasevalue, depreciation, bldguse ) {
+        bldguse.floors.each { floor ->
+            calculateFloorMarketValue( rpu, bldgtype, bldgkindbucc, firstfloorbasevalue, depreciation, floor  )
+        }
+        bldguse.area            = calculateSum( 'area', bldguse.floors )
+        bldguse.basemarketvalue = calculateSum( 'basemarketvalue', bldguse.floors )
+        bldguse.adjustment      = calculateSum( 'adjustment', bldguse.floors )
+        bldguse.depreciationvalue = calculateSum( 'depreciationvalue', bldguse.floors )
+        bldguse.marketvalue     = calculateSum( 'marketvalue', bldguse.floors )
+		
+		def rptsetting = getRPTSetting()
+		if( rptsetting && IS_TRUE( rptsetting.roundadjmarketvalue ) ) {
+			//bldguse.marketvalue = numberSvc.roundA( bldguse.marketvalue, 0 )
+			bldguse.marketvalue = numberSvc.roundToTen( bldguse.marketvalue )
+		}
+        return bldguse 
+    }
+    
+    @ProxyMethod
+    public Map calculateFloorMarketValue( rpu, bldgtype, bldgkindbucc, firstfloorbasevalue, depreciation, floor ) {
+        def storeyrate          = determineMultiStoreyRate( bldgtype, floor )
+        floor.storeyrate        = storeyrate
+        floor.basevalue         = firstfloorbasevalue
+        floor.unitvalue         = numberSvc.round( firstfloorbasevalue * ( storeyrate / 100 ) )
+		
+		def percentcompleted    = ( rpu.info.percentcompleted ? rpu.info.percentcompleted  : 100.0 ) / 100 
+		
+        floor.basemarketvalue   = numberSvc.round( floor.area * floor.unitvalue * percentcompleted )
+        floor.adjustment        = calculateTotalFloorAdditionals( floor )
+        floor.depreciationvalue = 0.0
+		
+		if( !bldgtype.straightdepreciation ||  IS_TRUE(bldgtype.straightdepreciation )) {
+			calculateStraightDepreciation( rpu, bldgtype, floor, depreciation )
+		}
+		else {
+			calculateStaggeredDepreciation( rpu, bldgtype, floor )
+		}
+        floor.marketvalue       = floor.basemarketvalue + floor.adjustment - floor.depreciationvalue 
+        floor.assesslevel       = 0.00
+        floor.assessedvalue     = 0.00
+        return floor 
+    }
+	
+	void calculateStraightDepreciation( rpu, bldgtype, floor, depreciation ) {
+		def valuefordepreciation = floor.basemarketvalue
+		if( ! bldgtype.depreciatecoreanditemseparately ) {
+			valuefordepreciation = floor.basemarketvalue + floor.adjustment
+		}
+		floor.depreciationvalue = numberSvc.round( valuefordepreciation * depreciation / 100  )
+	}
+	
+	void calculateStaggeredDepreciation( rpu, bldgtype, floor ) {
+		def valuefordepreciation = floor.basemarketvalue
+		if( ! bldgtype.depreciatecoreanditemseparately ) {
+			valuefordepreciation = floor.basemarketvalue + floor.adjustment
+		}
+		
+		if( ! rpu.issuedate ) return 
+		if( ! rpu.info.dtcompleted ) return 
+		if( ! rpu.info.dtoccupied ) return 
+		
+		def issuedate = dateSvc.parse( 'yyyy-MM-dd', rpu.issuedate )
+        def dtcompleted = dateSvc.parse( 'yyyy-MM-dd', rpu.info.dtcompleted)
+        def dtoccupied = dateSvc.parse( 'yyyy-MM-dd', rpu.info.dtoccupied)
+		
+        if( ! bldgtype.depreciations ) throw new Exception('Depreciation schedule for Type ' + bldgtype.bldgtypecode + ' is not defined.')
+		def depreciationrate = 0
+        
+		def totaldepreciationrate 	= 0.0
+		floor.depreciationvalue 	= 0.0 
+		def depreciationvalue 		= 0.0 
+		int bldgage 				= calculateBldgAge( bldgtype, issuedate, dtcompleted, dtoccupied )
+		def maxdepreciation			= 100 - bldgtype.residualrate 
+		
+        if( bldgage > 0 )  {
+            for ( sked in bldgtype.depreciations ) {
+                if( sked.ageto != 0 && sked.ageto <= bldgage ) {
+					depreciationrate  		 = (sked.ageto - sked.agefrom + 1) * sked.rate
+					
+					//adjust for residual rate
+					if( totaldepreciationrate + depreciationrate > maxdepreciation ) {
+						depreciationrate = maxdepreciation - totaldepreciationrate 
+					}
+					
+					totaldepreciationrate 	+= depreciationrate 
+					depreciationvalue 		 = numberSvc.round( valuefordepreciation * depreciationrate / 100  )
+					floor.depreciationvalue += depreciationvalue 
+					valuefordepreciation 	-= depreciationvalue 
+				}
+				else {
+					depreciationrate = (bldgage - sked.agefrom + 1) * sked.rate
+					
+					//adjust for residual rate
+					if( totaldepreciationrate + depreciationrate > maxdepreciation ) {
+						depreciationrate = maxdepreciation - totaldepreciationrate 
+					}
+					depreciationvalue 		 = numberSvc.round( valuefordepreciation * depreciationrate / 100  )
+					floor.depreciationvalue += depreciationvalue 
+					break
+				}
+			}
+		}
+		
+	}
+    
+    @ProxyMethod
+    public def recalcAdditionalItemAmount( floor, addlitem ) {
+        def binding = buildFieldBindings( floor ) 
+        binding += buildParamBindings( addlitem )
+        def amt = numberSvc.round( evaluateExpr( addlitem.expr, binding ) )
+        return amt 
+    }
+    
+    
+    /*----------------------------------------------------------------------------------
+    * Lookup Support 
+    ----------------------------------------------------------------------------------*/
+    @ProxyMethod
+    public List lookupBldgType( ry, searchText, params) {
+        def searchValue = (searchText ? searchText+'%' : '%')
+        def criteria = [ry:ry, code:searchValue]
+        def list = getListByName('bldgrpu:lookupBldgTypeByCode', criteria, params)
+        return list.each {
+            it.depreciations = em.serializer.read( it.depreciations )
+            it.multistoreyadjustments = em.serializer.read( it.multistoreyadjustments )
+            it.predominant = it.predominant as boolean
+            it.depreciatecoreanditemseparately = it.depreciatecoreanditemseparately as boolean
+            it.computedepreciationbasedonschedule = it.computedepreciationbasedonschedule as boolean
+        }
+    }
+    
+    @ProxyMethod
+    public List lookupBldgKind( bldgtypeid , searchText, params) {
+        def searchValue = (searchText ? searchText+'%' : '%')
+        def criteria = [bldgtypeid:bldgtypeid, code:searchValue]
+        return getListByName('bldgrpu:lookupBldgKindByCode', criteria, params)
+    }
+    
+    @ProxyMethod
+    public List lookupActualUse( ry , searchText, params) {
+        def searchValue = (searchText ? searchText+'%' : '%')
+        def criteria = [ry:ry, code:searchValue]
+        def list = getListByName('bldgrpu:lookupActualUseByCode', criteria, params)
+        return list.each {
+            it.fixrate = it.fixrate as boolean
+            it.ranges = em.serializer.read( it.ranges )
+        }
+    }
+    
+    @ProxyMethod
+    public List lookupAdditionalItems( ry, searchText, params) {
+        def searchValue = (searchText ? searchText+'%' : '%')
+        def criteria = [ry:ry, code:searchValue]
+        return getListByName('bldgrpu:lookupAdditionalItem', criteria, params)
+    }
+    
+    @ProxyMethod
+    public List getClassList(){
+        return ['CLASS A', 'CLASS B', 'CLASS C', 'CLASS D', 'CLASS E']
+    }
+	
+    
+    
+    
+    /*----------------------------------------------------------------------------------
+    * Miscellaneous Support 
+    ----------------------------------------------------------------------------------*/
+    def buildFieldBindings( floor ) {
+        return [
+            SYS_BASE_MARKET_VALUE       : floor.basemarketvalue,
+            SYS_MARKET_VALUE            : floor.marketvalue,
+            SYS_BASE_VALUE              : floor.basevalue,
+            SYS_UNIT_VALUE              : floor.unitvalue,
+            SYS_AREA                    : floor.area ,
+       ]
+    }
+    
+    def buildParamBindings( adjustment ) {
+        def binding = [:]
+        adjustment.params.each {
+            binding[it.paramname] = it.paramvalue 
+        }
+        return binding 
+    }
+    
+    
+    def calculateTotalFloorAdditionals( floor ) {
+        def amount = 0.0 
+        if( floor.additionalitems ) {
+            amount = floor.additionalitems.amount?.sum()
+        }
+        return ( amount ? amount : 0.0 )
+    }
+    
+    
+    void calculateFirstFloorBaseValue( rpu ) {
+        def bldgtype = rpu.info.bldgtype
+        def bldgkindbucc = rpu.info.bldgkindbucc
+        
+        def firstfloorbasevalue = 0.0
+        if( bldgtype.basevaluetype == 'fix' ) {
+            firstfloorbasevalue = bldgkindbucc.basevalue 
+        }
+        else if( bldgtype.basevaluetype == 'range' ) {
+            if( rpu.info.firstfloorbasevalue < bldgkindbucc.minbasevalue || rpu.info.firstfloorbasevalue > bldgkindbucc.maxbasevalue ) {
+                throw new Exception('Base Value must be between '  + numberSvc.format('#,##0.00', bldgkindbucc.minbasevalue) + ' and ' + numberSvc.format('#,##0.00', bldgkindbucc.maxbasevalue) + '.')
+            }
+            firstfloorbasevalue =  numberSvc.round( rpu.info.firstfloorbasevalue  )
+        }
+        else if( bldgtype.basevaluetype == 'gap' ) {
+            def given       = rpu.info.totalarea 
+            def minarea     = bldgkindbucc.minarea 
+            def maxarea     = bldgkindbucc.maxarea 
+            def gap         = bldgkindbucc.gapvalue
+            def minvalue    = bldgkindbucc.minbasevalue
+            def maxvalue    = bldgkindbucc.maxbasevalue 
+            firstfloorbasevalue = calculateEquivalentBaseValue( given, minarea, maxarea, gap, minvalue, maxvalue)
+        }
+        else {
+            throw new Exception('Base Value Type ' + bldgkindbucc.basevaluetype + ' is not supported.')
+        }
+        
+        //set firstfloorbasevalue
+        rpu.info.firstfloorbasevalue = firstfloorbasevalue
+    }
+    
+    def determineMultiStoreyRate( bldgtype, floor ) {
+        def storey = bldgtype.multistoreyadjustments.find{ it.floorno == floor.floorno }
+        if( storey ) {
+            return storey.rate 
+        }
+        return 100.0
+    } 
+    
+    
+    /** ---------------------------------------------------------------------------
+    * Defined by : jzamora
+    *
+    *    GAP FORMULA: using ratio and proportion
+    *
+    *                    ( A - minRA ) ( maxRV - minRV )
+    *    BV = minRV  +  ---------------------------------  
+    *	                    (maxRA - minRA )
+    --------------------------------------------------------------------------- */
+    private BigDecimal calculateEquivalentBaseValue( givenbarea, minbarea, maxbarea, gapb, minbvalue, maxbvalue){
+        
+        if( givenbarea <= minbarea ) return maxbvalue;
+        if( givenbarea >= maxbarea ) return minbvalue;
+
+        double givenarea    = givenbarea
+        double minarea      = minbarea
+        double maxarea      = maxbarea
+        double gap          = gapb
+        double minvalue     = minbvalue
+        double maxvalue     = maxbvalue
+        
+        double mina = ((double) ((int)givenarea / (int)gap)) * gap;
+        double maxa = mina + gap;
+        double minv = maxvalue - ((mina - minarea)/gap) * gap;
+        double maxv = minv - gap;
+        double bv = minv + ( ( givenarea - mina ) * ( maxv - minv ) / ( maxa - mina ) );
+        return numberSvc.round( bv )
+    }
+    
+    void calculateTotalArea( rpu ) {
+        def area = 0.0
+        rpu.info.bldguses.each { bu ->
+            if( bu.floors ) area += bu.floors.area.sum()
+        }
+        if( area == null ) area = 0.0
+        rpu.info.totalarea = numberSvc.round( area ) 
+    }
+    
+    
+    void required( caption, value ) {
+        if( ! value  ) throw new Exception(caption + ' is required.')
+    }
+    
+    def calculateSum( fieldname, list ) {
+        def amount = list."$fieldname".sum()
+        if( ! amount ) {
+            amount = 0.0 
+        }
+        return amount 
+    }
+    
+    def populateBldgStructures() {
+        def structures = em.sqlContext.createNamedQuery('bldgrpu:getStructures').resultList
+		structures.each {
+			it.objid = 'BS' + new UID()
+		}
+		return structures 
+    }
+    
+    def getCurrentRYSetting() {
+        def setting = settingSvc.open()
+        def rysetting = em.sqlContext.createNamedQuery('bldgrpu:getCurrentRYSettingInfo').setParameter('ry',setting.ry ).singleResult
+        if( ! rysetting ) throw new Exception('No Building Revision Setting defined for year ' + setting.ry + '.')
+        return rysetting 
+    }
+    
+    def getListByName(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+    
+    def getBldgAssessmentLevel( ry, code ) {
+        def list = lookupActualUse( ry, code, null )
+        if( ! list ) throw new Exception('Cannot load assessment level for ' + code + '.')
+        return list[0] 
+    }
+    
+    def determineAssessmentLevel( mv, assesslevel ) {
+        if( assesslevel.fixrate ) {
+            return assesslevel.rate 
+        }
+        def range = assesslevel.ranges.find{ mv >= it.mvfrom && ( mv <= it.mvto || it.mvto == 0) }
+        if( range ) {
+            return  range.rate 
+        }
+        return 0.0
+    }
+    
+    def evaluateExpr( expr, params ) {
+		return (new GroovyShell( new Binding( params) )).evaluate( expr )
+	}
+	
+	def getRPTSetting() {
+		return em.sqlContext.createNamedQuery('bldgrpu:getRPTSetting').singleResult 
+	}
+	
+	boolean IS_TRUE( value ) {
+		return TO_BOOLEAN( value ) == true 
+	}
+	
+	boolean TO_BOOLEAN( value ) {
+		if( value instanceof Boolean ) return value 
+		return '1/y/yes/true/t'.indexOf( value.toString().toLowerCase() ) >= 0
+	}
+}

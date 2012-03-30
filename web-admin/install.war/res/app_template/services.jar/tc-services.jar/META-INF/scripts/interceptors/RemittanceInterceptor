@@ -1,0 +1,31 @@
+import com.rameses.annotations.*;
+
+class RemittanceInterceptor
+{
+	@PersistenceContext('main')
+	def em 
+	
+	@Service("LogService")
+	def logService;
+	
+	@Service('DateService')
+	def dateSvc
+	
+	@Env
+	def env;
+	
+	@After(pattern="RemittanceService.save") 
+	public void interceptCreate( evt ) {
+		postToRevenue( evt.result )
+	}
+	
+	void postToRevenue( rem ) {
+		def params = [
+			remittanceid : rem.objid, 
+			timestamp    : dateSvc.buildCustomTimeStamp( rem.dtposted ) 
+		]
+		em.sqlContext.createNamedExecutor('revenue:postRemittance').setParameters( params ).execute()
+	}
+	
+		
+}

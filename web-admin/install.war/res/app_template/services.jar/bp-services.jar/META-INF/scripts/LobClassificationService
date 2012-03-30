@@ -1,0 +1,71 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class LobClassificationService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('LogService')
+	def logService
+	
+	def SCHEMA_NAME = 'lobclassification'
+	def SCHEMA_VERSION = '1.0'
+	
+	@ProxyMethod
+	public def getList( searchText, params ) {
+		if( ! searchText ) return em.sqlContext.createNamedQuery('lobclassification:getList').resultList
+		return em.sqlContext.createNamedQuery('lobclassification:getListByName').setParameter('name', searchText+'%').resultList
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		return em.read( SCHEMA_NAME, [objid:objid] )
+	}
+	
+	@ProxyMethod
+	public def create( lobclass ) {
+		lobclass.objid = 'LC' + new UID()
+		lobclass.schemaname = SCHEMA_NAME
+		lobclass.schemaversion = SCHEMA_VERSION
+		validate( lobclass )
+		em.create( lobclass.schemaname, lobclass )
+		logService.log( 'CREATE', 'LobClassification', lobclass.objid )
+		return lobclass 
+	}
+	
+	@ProxyMethod
+	public def update( lobclass ) {
+		validate( lobclass )
+		em.update( lobclass.schemaname, lobclass, { diff -> 
+			logService.logB('UPDATE', 'LobClassification', lobclass.objid, null, diff) 
+		} as UpdateChangeHandler)
+		return lobclass
+	}
+	
+	@ProxyMethod
+	public void delete( lobclass ) {
+		try {
+			em.delete(lobclass.schemaname, lobclass)
+		}
+		catch( e ) {
+			throw new Exception('Delete not allowed. Classification has already been referenced.')
+		}
+	}
+	
+	@ProxyMethod
+	public List getClassifications() {
+		return em.sqlContext.createNamedQuery('lobclassification:getClassifications').resultList
+	}	
+	
+	private void validate( lobclass ) {
+		checkDuplicateName( lobclass )
+		em.validate( lobclass.schemaname, lobclass )
+	}
+	
+	private void checkDuplicateName( lobclass ) {
+		def data = em.sqlContext.createNamedQuery('lobclassification:checkDuplicateName').setParameters( lobclass ).singleResult
+		if( data) throw new Exception('Duplicate name ' + lobclass.name + ' not allowed.')
+	}
+}

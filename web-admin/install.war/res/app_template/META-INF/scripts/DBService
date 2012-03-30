@@ -1,0 +1,39 @@
+import com.rameses.annotations.*;
+import java.util.*;
+
+
+class DBService {
+	
+	@PersistenceContext("main")
+	def em;
+	
+	private void setParams( def qry, def params ) {
+		if(!params) return;
+		if( params instanceof List) {
+			for(int i=0;i<params.size();i++) {
+				qry.setParameter(i+1, params[i] );
+			}
+		}
+		else if( params instanceof Map ) {
+			qry.setParameters(params);
+		}
+	}
+	
+	@ProxyMethod
+	public Map getResultSet(String statement, def params) {
+		Map m = [:];
+		try {
+			def qry = em.sqlContext.createQuery(statement);
+			setParams( qry, params );
+			m.results = qry.resultList;
+			setParams( qry, params );
+			m.metaData = qry.metaData;
+			return m;
+		}
+		catch(e) {
+			print e.message + ":" + statement;
+		}
+	}
+	
+	
+}

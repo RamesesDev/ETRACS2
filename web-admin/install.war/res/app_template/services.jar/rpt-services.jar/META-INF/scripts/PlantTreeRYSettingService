@@ -1,0 +1,180 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import com.rameses.eserver.*;
+import java.rmi.server.UID;
+
+public class PlantTreeRYSettingService
+{
+	@PersistenceContext('main')
+	def em
+    
+	@Service('LogService')
+    def logSvc
+	
+	def SCHEMA_NAME = 'planttreerysetting'
+    
+    
+    @ProxyMethod
+    public boolean settingExists() {
+        def setting = em.sqlContext.createNamedQuery('planttreerysetting:getList').setMaxResults(1).singleResult 
+        return setting != null
+    }
+    
+    @ProxyMethod 
+    public List getList( searchText ) {
+        def list = []
+        if( ! searchText ) 
+            list =  em.sqlContext.createNamedQuery('planttreerysetting:getList').resultList
+        else 
+            list = em.sqlContext.createNamedQuery('planttreerysetting:getListByRy').setParameter('ry', searchText).resultList
+        list.each { it.applyagriadjustment = it.applyagriadjustment as boolean }
+        return list 
+    }
+    
+    @ProxyMethod
+    public def create( entity ) {
+        entity.schemaname = 'planttreerysetting'
+        entity.schemaversion = '1.0'
+        entity.planttreeunits = getPlantTreeUnits( entity.objid )
+        validate( entity )
+        em.create( entity.schemaname, entity )
+        logSvc.log('CREATE', 'PlantTreeRYSetting', entity.objid )
+        return entity 
+    }
+    
+    @ProxyMethod
+    public Map copySetting( newry, copyYear ) {
+        required('Copy Year', copyYear )
+        if( newry <= copyYear ) throw new Exception('New Revision Year must be greater than copy year.')
+        def setting = em.sqlContext.createNamedQuery('planttreerysetting:getIdByRy').setParameter('ry', copyYear).singleResult
+        if( !setting ) throw new Exception('Revision Year ' + copyYear  + ' setting is not defined.')
+        
+        //create setting 
+        def settingoldid = setting.objid 
+        setting 		= em.read( SCHEMA_NAME, [objid:settingoldid] )
+        setting.previd 	= settingoldid
+        setting.objid 	= 'PS' + new UID()
+        setting.ry 		= newry  
+        checkDuplicateSetting( setting )
+		
+		setting.assesslevels.each{ al ->
+			al.previd = al.objid 
+			al.objid  = 'TAL' + new UID()
+		}
+        em.create( setting.schemaname, setting )
+        
+        
+        def planttreeunitvaluelist = getPlantTreeUnitValueList( settingoldid )
+		planttreeunitvaluelist.each{ ptuv ->
+			ptuv.previd = ptuv.objid 
+			ptuv.objid = 'TUV' + new UID()
+			ptuv.planttreerysettingid = setting.objid 
+			saveUnitValue( ptuv )
+		}
+        
+        return open( setting.objid )
+    }
+    
+	List getPlantTreeUnitValueList( settingoldid ) {
+		return em.sqlContext.createNamedQuery('planttreerysetting:getTreeUnitValues')
+					.setParameter('rysettingid', settingoldid )
+					.resultList 
+	}
+	
+    @ProxyMethod
+    public List getPlantTreeUnits( planttreerysettingid ) {
+        return em.sqlContext.createNamedQuery('planttreerysetting:getPlantTree').resultList.each {
+            it.planttreerysettingid = planttreerysettingid
+        }
+        
+    }
+    
+    @ProxyMethod
+    public def update( entity ) {
+        validate( entity )
+        em.update( entity.schemaname, entity, { diff ->
+            logSvc.logB( 'UPDATE', 'PlantTreeRYSetting', entity.objid, '', diff )
+        } as UpdateChangeHandler )
+        return entity 
+    }
+    
+    @ProxyMethod 
+    public Map open( objid ) {
+        def entity = em.read('planttreerysetting', [objid:objid])
+        if( !entity ) throw new Exception('Unable to load Revision Setting.\nVerify that the record still exists.' )
+        return entity 
+    }
+    
+    @ProxyMethod
+    public void remove( objid ) {
+        checkRemoveAllowed( objid ) 
+        removeUnitValues( objid )
+        em.delete('planttreerysetting', [objid:objid])
+    }
+    
+    /*----------------------------------------------------------
+    * PlantTreeUnitValue Methods
+    ----------------------------------------------------------*/
+    @ProxyMethod
+    public void saveUnitValue( planttreeuv ) {
+        def schemaname = 'planttreerysetting:planttreeunitvalue'
+        em.validate(schemaname, planttreeuv )
+        
+        def old = em.read(schemaname, planttreeuv )
+        if( old ) {
+            em.update(schemaname, planttreeuv )
+        }
+        else {
+            em.create(schemaname, planttreeuv )
+        }
+    }
+    
+    @ProxyMethod
+    public void removeUnitValue( planttreeuv ) {
+        def schemaname = 'planttreerysetting:planttreeunitvalue'
+        em.delete(schemaname, planttreeuv )
+    }
+    
+    @ProxyMethod
+    public List getUnitValues( planttreeid )  {
+        return em.sqlContext.createNamedQuery('planttreerysetting:geUnitValue').setParameter('planttreeid', planttreeid).resultList
+    }
+	
+	@ProxyMethod
+    public List getUnitValueByRYSettingId( rysettingid, planttreeid )  {
+        return em.sqlContext.createNamedQuery('planttreerysetting:geUnitValueByRysetting')
+				.setParameters([rysettingid:rysettingid, planttreeid:planttreeid])
+				.resultList
+    }
+    
+    /*----------------------------------------------------------
+    * Support Methods
+    ----------------------------------------------------------*/
+    void checkRemoveAllowed( planttreerysettingid ) {
+        //TODO: allow remove if not referenced by bldgrpu
+    }
+    
+    void removeUnitValues( planttreerysettingid ) {
+        em.sqlContext.createNamedExecutor('planttreerysetting:deleteUnitValues').setParameter('planttreerysettingid', planttreerysettingid ).execute()
+    }    
+    
+    void validate( entity ) {
+        if( entity.ry <= 0 ) throw new Exception('Revision Year must be greater than zero.')
+        checkDuplicateSetting( entity )
+        em.validate(entity.schemaname, entity )
+    }
+    
+    void checkDuplicateSetting( entity ) {
+        def data = em.sqlContext.createNamedQuery('planttreerysetting:checkDuplicate').setParameters( entity ).singleResult
+        if( data ) throw new Exception('Setting for year ' + entity.ry + ' already exists.')
+    }
+	
+	void required( caption, value ) {
+		def msg = caption + ' is required.' 
+		if( ! value ) 
+			throw new Exception( msg )
+		if( value instanceof String && value.trim().length() == 0 ) 
+			throw new Exception( msg )
+	}
+  
+}

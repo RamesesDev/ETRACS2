@@ -1,0 +1,253 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*
+import java.rmi.server.UID;
+import java.util.Calendar;
+
+class BatchCaptureService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('DateService')
+	def dateSvc 
+	
+	@Service('LogService')
+	def logSvc 
+	
+	@Service('ReceiptService')
+	def receiptSvc 
+	
+	def SCHEMA_NAME 	= 'batchcapture'
+	def SCHEMA_VERSION 	= '1.0' 
+	
+	def DRAFT_STATE = 'DRAFT' 
+	def POSTED_STATE = 'POSTED' 
+	
+	@ProxyMethod
+	public List getList( searchtext, params ) {
+		if( ! searchtext ) return getListByQuery( 'batchcapture:getList', [:], params )
+		def criteria = [
+			docstate 		: (searchtext ? searchtext : '%' ),
+			collectorname 	: (searchtext ? searchtext+'%' : '%' ),
+			encodedby 		: (searchtext ? searchtext+'%' : '%' ),
+		]
+		def list = [] 
+		if( (list = getListByQuery('batchcapture:getListByState', criteria, params) ) ) return list 
+		if( (list = getListByQuery('batchcapture:getListByCollector', criteria, params) ) ) return list 
+		if( (list = getListByQuery('batchcapture:getListByEncoder', criteria, params) ) ) return list 
+		return list 
+	}
+	
+	
+	@ProxyMethod
+	public def validateTxnDate( txndate ) {
+		txndate =  dateSvc.parse('yyyy-MM-dd', txndate )
+		if( txndate > dateSvc.serverDate ) 
+			throw new Exception('Txn Date must not exceed current date.')
+		return txndate 
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		def batch = em.read( SCHEMA_NAME, [objid:objid] )
+		batch.defaulttxndate = dateSvc.parse( 'yyyy-MM-dd', batch.defaulttxndate)
+		batch.items.each {
+			it.txndate = dateSvc.parse( 'yyyy-MM-dd', it.txndate)
+		}
+		return batch 
+	}
+	
+	@ProxyMethod
+	public void delete( objid ) {
+		em.delete( SCHEMA_NAME, [objid:objid] )
+	}
+	
+	@ProxyMethod
+	public def save( batch ) {
+		if( ! batch.objid ) {
+			batch.objid = 'B' + new UID()
+			batch.schemaname    = SCHEMA_NAME
+			batch.schemaversion = SCHEMA_VERSION
+			em.validate( SCHEMA_NAME, batch )
+			em.create( SCHEMA_NAME, batch )
+			logSvc.log('CREATE', 'BatchCapture', batch.objid )
+		}
+		else {
+			em.validate( SCHEMA_NAME, batch )
+			em.update( SCHEMA_NAME, batch )
+			logSvc.log('UPDATE', 'BatchCapture', batch.objid )
+		}
+		return batch 
+	}
+	
+	@ProxyMethod 
+	public def post( batch ) {
+		validatePost( batch )
+		batch.items.each{ item -> 
+			def receipt = createReceipt( batch, item )
+			receiptSvc.create( receipt )
+		}
+		batch.docstate = POSTED_STATE 
+		em.update( batch.schemaname, batch )
+		return batch 
+	}
+	
+	def createReceipt( batch, item ) {
+		return [
+			objid  			: 'BR' + new UID(),
+			schemaname		: 'receipt',
+			schemaversion	: '1.0',
+			docstate		: 'CAPTURED',
+			doctype			: getDocType( batch.collectiontype ),
+			opener			: 'tc:' + batch.collectiontype.appcode,
+			collectorid		: batch.collector.objid,
+			capturedbyid	: batch.encodedbyid,
+			remittanceid	: null,
+			remittanceno	: null,
+			remittancedate	: null,
+			voided			: TO_INT( item.voided ),
+			voidreason		: (item.voided ? 'CANCELLED' :  null ),
+			info			: buildReceiptInfo( batch, item ), 
+			items			: buildItems( batch, item ),
+			payments		: buildPayments( batch, item ),
+		]
+	}
+	
+	
+	int TO_INT( val ) {
+		if ( val instanceof Integer ) 
+			return val 
+		if( val instanceof Boolean && val == true ) 
+			return 1
+		if( val instanceof Boolean && val == false ) 
+			return 0
+		return (int ) val 
+	}
+	
+	def buildPayments( batch, item ) {
+		return [[
+			paytype		: 'CASH',
+			amount		: item.amount, 
+			particulars : 'CASH PAYMENT', 
+		]]
+	}
+	
+	def buildItems( batch, receipt ) {
+		def list = []
+		if( receipt.items && receipt.items.size() > 0 ) {
+			receipt.items.each { item ->
+				list.add( createReceiptItem( item ) )
+			}
+		}
+		else {
+			list.add( createReceiptItem( receipt ) )
+		}
+		return list 
+	}
+	
+	def createReceiptItem( item ) {
+		return [
+				objid 		: 'BCI' + new UID(),
+				acctid		: item.account.objid, 
+				accttitle	: item.account.accttitle, 
+				fundid		: item.account.fundid, 
+				fundname	: item.account.fundname, 
+				amount		: item.amount,
+				remarks		: item.remarks,
+				refid		: null, 
+			]
+	}
+	
+	def buildReceiptInfo( batch, item ) {
+		return [
+			mode			: 'CAPTURE',
+			txndate			: item.txndate,
+			dtposted		: dateSvc.serverDate,
+			afid			: batch.afcontrol.afid,
+			afcontrolid		: batch.afcontrol.objid,
+			series			: item.series,
+			serialno		: item.serialno,
+			stubno			: batch.afcontrol.stubno ,
+			collectiontypeid : batch.collectiontype.objid,
+			collectiontype 	 : batch.collectiontype.name, 
+			payorrequired	: false,
+			payorid			: null,
+			payorname		: item.paidby,
+			payoraddress	: item.paidbyaddress,
+			paidby			: item.paidby,
+			paidbyaddress 	: item.paidbyaddress,
+			collectorid		: batch.collector.objid, 
+			collectorname	: batch.collector.name, 
+			collectortitle	: batch.collector.jobtitle, 
+			capturedbyid	: batch.encodedbyid,
+			capturedbyname	: batch.encodedby,
+			capturedbytitle	: batch.encodedbytitle,
+			totalpayment	: item.amount,
+			cash			: item.amount,
+			otherpayment	: 0.0,
+			amount			: item.amount,
+			change			: 0.0,
+			remarks			: item.remarks, 
+		]
+	}
+	
+	def getDocType( colltype) {
+		if( colltype.afid == '51' &&  colltype.appcode == 'business_tax' ) return 'BUSINESS_TAX'
+		if( colltype.afid == '51' ) return 'MISC'
+		if( colltype.afid == '52' ) return 'CATTLE_TRANSFER'
+		if( colltype.afid == '53' ) return 'CATTLE_OWNERSHIP'
+		if( colltype.afid == '54' ) return 'MARRIAGE'
+		if( colltype.afid == '56' ) return 'RPT'
+		if( colltype.afid == '57' ) return 'SLAUGHTER_PERMIT'
+		if( colltype.afid == '58' ) return 'BURIAL'
+		return 'MISC' 
+	}
+	
+	void validatePost( batch ) {
+		def oldbatch = em.sqlContext.createNamedQuery('batchcapture:getState').setParameter('objid', batch.objid).singleResult
+		if( oldbatch && oldbatch.docstate == POSTED_STATE ) {
+			throw new Exception('This Batch Capture collection has already been posted.')
+		}
+		
+		//check if afcontrol startseries is still the same otherwise a transaction has been made 
+		def afcontrol = em.read('afcontrol:afcontrol', batch.afcontrol)
+		if( afcontrol.currentseries != batch.afcontrol.currentseries )
+			throw new Exception('A transaction has been made for the selected AF Control.\nThe batch start series is ' + batch.afcontrol.currentseries + ' but the current AF Control series is now ' + afcontrol.currentseries + '.\nPlease delete the batch process and redo the transaction to avoid invalid series sequence.')
+		
+		if( batch.items.size() == 0 ) 
+			throw new Exception('At least one collection is required.')
+			
+		if( batch.items.last().series > batch.afcontrol.endseries ) 
+			throw new Exception('Last series must not exceed AF Control end series no. ' + batch.afcontrol.endseries + '.')
+		
+		//validate item entries 
+		int index = 1
+		batch.items.each{ item -> 
+			required("Item $index: Serial No", item.serialno )
+			required("Item $index: Txn Date", item.txndate )
+			required("Item $index: Paid By", item.paidby )
+			required("Item $index: Address", item.paidbyaddress )
+			if( ! item.items ) {
+				required("Item $index: Account", item.account )
+				required("Item $index: Amount", item.amount )
+			}
+			if( item.amount == 0 ) throw new Exception("Item $index: Amount must be greater than zero.")
+			index += 1 
+		}
+	}
+	
+	
+	void required( caption, value ) {
+		if( ! value ) throw new Exception(caption + ' is required.' ) 
+	}
+	
+	List getListByQuery( namedQuery, criteria, params ) {
+		if( ! params  ) params = [ _start:0, _limit:25 ]
+		return em.sqlContext.createNamedQuery( namedQuery )
+					.setParameters(criteria)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+	
+}

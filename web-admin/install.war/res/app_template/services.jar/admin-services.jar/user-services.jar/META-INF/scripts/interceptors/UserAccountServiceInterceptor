@@ -1,0 +1,16 @@
+import com.rameses.annotations.*;
+
+
+public class UserAccountServiceInterceptor {
+	
+	@Service("UserAccountService")
+	def userSvc;
+
+	@After(pattern="PersonnelService.update.*") 
+	public void updatePersonnel(evt) {
+		def u = evt.result;
+		userSvc.update( [objid:u.objid, lastname: u.lastname, firstname: u.firstname, middlename: u.middlename] );	
+	}	
+		
+	
+}

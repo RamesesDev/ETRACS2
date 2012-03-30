@@ -1,0 +1,63 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class AFInventoryService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	@ProxyMethod
+	public def getList( searchText, docstate ) {
+		if( !searchText ) return getListByQuery( 'afinventory:getList', [:] );
+		def result = [];
+		if( docstate == 'ALL' ){
+			if((result = getListByQuery( 'afinventory:getListByAfId', [afid:searchText] ))) return result;
+			if((result = getListByQuery( 'afinventory:getListByAfType', [aftype:searchText] ))) return result;
+			if((result = getListByQuery( 'afinventory:getListByAfUnit', [afunit:searchText] ))) return result;
+			if((result = getListByQuery( 'afinventory:getListByStartSeries', [startseries:searchText + "%"]))) return result;
+		}else{
+			if((result = getListByQuery( 'afinventory:getListByAfIdState', [docstate:docstate, afid:searchText] ))) return result;
+			if((result = getListByQuery( 'afinventory:getListByAfTypeState', [docstate:docstate, aftype:searchText] ))) return result;
+			if((result = getListByQuery( 'afinventory:getListByAfUnitState', [docstate:docstate, afunit:searchText] ))) return result;
+			if((result = getListByQuery( 'afinventory:getListByStartSeriesState', [docstate:docstate, startseries:searchText + "%"]))) return result;
+
+		}
+		return result;
+	}
+	
+	@ProxyMethod
+	public def open( objid ){
+		return em.sqlContext.createNamedQuery( 'afinventory:getById' ).setParameter("objid", objid).singleResult;
+	}
+	
+	@ProxyMethod
+	public def getListByDocState( docstate ){
+		if( docstate == 'ALL' ) return getListByQuery( 'afinventory:getList', [:] );
+		else return em.sqlContext.createNamedQuery( 'afinventory:getListByState' ).setParameter( "docstate", docstate ).resultList;
+	}
+	
+	@ProxyMethod
+	public def loadInventory( afid ){
+		return getListByQuery( 'afinventory:getListByAfId', [afid:afid] );
+	}
+	
+	@ProxyMethod
+	public def loadCredit( item ){
+		return em.sqlContext.createNamedQuery( 'afinventory:getInventoryCreditByAFInventoryId2' ).setParameter( 'afinventoryid', item.objid ).resultList;
+	}
+	
+	@ProxyMethod
+	public def getSummaryList(){
+		return em.sqlContext.createNamedQuery( 'afinventory:getSummaryList' ).resultList;
+	}
+	
+	private def getListByQuery(namedQuery, values) {
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values).resultList
+	}
+}

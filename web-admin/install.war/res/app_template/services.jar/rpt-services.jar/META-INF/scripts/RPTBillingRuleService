@@ -1,0 +1,247 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : july 5, 2011
+*/
+
+import com.rameses.annotations.*;
+import com.rameses.common.*
+import java.rmi.server.UID
+
+public class RPTBillingRuleService
+{
+	@PersistenceContext('main')
+	def em 
+    
+    @Service('AbstractRuleService')
+    def ruleSvc 
+    
+    def RULESET = 'rptbilling'
+    def FACTS_PACKAGE = 'etracs2.rpt.billing.facts'
+	
+	@ProxyMethod
+    public String getRuleSet() {
+       return RULESET
+    }
+    
+    @ProxyMethod
+    public List lookupIncomeAccount( systype, searchText, params) {
+        if( !searchText ) return getListByQuery("rptbill:lookupAccount", [systype:systype], params );
+        def criteria = [ systype:systype, acctno:searchText, accttitle:searchText+'%' ]
+		def result = []; 
+		if((result = getListByQuery("rptbill:lookupAccountByNo", criteria, params ))) return result;
+		if((result = getListByQuery("rptbill:lookupAccountByTitle", criteria, params ))) return result;
+		return result;
+    }
+    
+    @ProxyMethod
+	public List getAgendaGroups() {
+		return [
+			[ objid : 'TAX', name: 'TAX' ],
+			[ objid : 'PENALTY', name: 'PENALTY' ],
+			[ objid : 'DISCOUNT', name: 'DISCOUNT' ],
+			[ objid : 'SUMMARY', name: 'SUMMARY' ],
+		]
+	}
+    
+    @ProxyMethod
+	public List getFacts() {
+		return [
+            [name:'RPTLedgerFact', caption:'RPT Ledger', ruleset:RULESET, packagename:FACTS_PACKAGE],
+            [name:'CurrentYearFact', caption:'Current Year',  ruleset:RULESET, packagename:FACTS_PACKAGE],
+		]
+	}
+    
+    @ProxyMethod
+	public List getFields( factname) {
+        if( factname == 'CurrentYearFact' ) return getCurrentYearFactFields()
+		else if( factname == 'RPTLedgerFact' ) return getRPTLedgerFactFields()
+		return []
+	}
+    
+    @ProxyMethod
+    public String buildRuleText( rule ) {
+		def ruleHeader = buildRuleHeader( rule )
+		def conditions = buildRuleConditions( rule )
+		def actions = buildRuleActions( rule )
+		return ruleHeader + conditions + actions + 'end'
+	}
+	
+    
+    
+    /*-----------------------------------------------------------------------------------
+    * FactFiels support
+    -----------------------------------------------------------------------------------*/
+	List getRPTLedgerFactFields() {
+		return [
+            [name:'ledgerid', caption:'Ledger ID', type:'string'],
+			[name:'year', caption:'Year', type:'integer' ],
+			[name:'qtr', caption:'Qtr', type:'integer' ],
+            [name:'assessedvalue', caption:'Assessed Value', type:'decimal' ],
+            [name:'numberofmonthsfromjan', caption:'Number of Months From Jan', type:'integer' ],
+            [name:'numberofmonthsfromqtr', caption:'Number of Months From Qtr', type:'integer' ],
+            [name:'classid', caption:'Classification', type:'string', lookuphandler:'rptbilling_lookup.class' ],
+            [name:'actualuseid', caption:'Actual Use', type:'string', lookuphandler:'rptbilling_lookup.actualuse' ],
+            [name:'rputype', caption:'Property Type', type:'string', lookuphandler:'rptbilling_lookup.rputype' ],
+            [name:'txntype', caption:'Transaction Type', type:'string', lookuphandler:'rptbilling_lookup.txntype' ],
+            [name:'basic', caption:'Basic', type:'decimal' ],
+            [name:'basicint', caption:'Basic Interest', type:'decimal' ],
+            [name:'basicdisc', caption:'Basic Discount', type:'decimal' ],
+            [name:'sef', caption:'SEF', type:'decimal' ],
+            [name:'sefint', caption:'SEF Interest', type:'decimal' ],
+            [name:'sefdisc', caption:'SEF Discount', type:'decimal' ],
+            [name:'firstitem', caption:'First Item', type:'boolean' ],
+            [name:'firstqtrpaidontime', caption:'First Qtr Paid-OnTime', type:'boolean' ],
+            [name:'qtrlypaymentavailed', caption:'Qtrly Payment Availed', type:'boolean' ],
+            [name:'backtax', caption:'Back Tax', type:'boolean' ],
+            [name:'fullpayment', caption:'Full Payment', type:'boolean' ],
+            [name:'advancepayment', caption:'Advance Payment', type:'boolean' ],
+            [name:'lastyearpaid', caption:'Last Year Paid', type:'integer' ],
+            [name:'lastqtrpaid', caption:'Last Qtr Paid', type:'integer' ],
+		]
+	}
+	
+	List getCurrentYearFactFields() {
+		return [
+			[name:'year', caption:'Year', type:'integer' ],
+			[name:'qtr', caption:'Quarter', type:'integer' ],
+			[name:'month', caption:'Month', type:'integer' ],
+			[name:'day', caption:'Day', type:'integer' ],
+		]
+	}
+    
+    
+	/*-------------------------------------------------------------
+	* BuildRuleText Support
+	-------------------------------------------------------------*/
+	String buildRuleActions( rule ) {
+		String s = 'then\n'
+		rule.actions.each { action ->
+			if( action.actiontype == 'calcBasic' ) s += calcBasic( rule, action, 'calcBasic', 'current' )
+            else if( action.actiontype == 'calcBasicPrev' ) s += calcBasic( rule, action, 'calcBasic', 'previous' )
+            else if( action.actiontype == 'calcBasicPrior' ) s += calcBasic( rule, action, 'calcBasic', 'prior' )
+			else if( action.actiontype == 'calcBasicInt' ) s += calcBasicInterest( rule, action, 'calcBasicInt', 'current' )
+            else if( action.actiontype == 'calcBasicPrevInt' ) s += calcBasicInterest( rule, action, 'calcBasicInt', 'previous' )
+            else if( action.actiontype == 'calcBasicPriorInt' ) s += calcBasicInterest( rule, action, 'calcBasicInt', 'prior' )
+			else if( action.actiontype == 'calcBasicDisc' ) s += calcBasicDiscount( rule, action )
+            else if( action.actiontype == 'calcSef' ) s += calcSef( rule, action, 'calcSef', 'current' )
+            else if( action.actiontype == 'calcSefPrev' ) s += calcSef( rule, action, 'calcSef', 'previous' )
+            else if( action.actiontype == 'calcSefPrior' ) s += calcSef( rule, action, 'calcSef', 'prior' )
+			else if( action.actiontype == 'calcSefInt' ) s += calcSefInterest( rule, action, 'calcSefInt', 'current' )
+            else if( action.actiontype == 'calcSefPrevInt' ) s += calcSefInterest( rule, action, 'calcSefInt', 'previous' )
+            else if( action.actiontype == 'calcSefPriorInt' ) s += calcSefInterest( rule, action, 'calcSefInt', 'prior' )
+			else if( action.actiontype == 'calcSefDisc' ) s += calcSefDiscount( rule, action )
+            else throw new Exception('Action ' + action + ' is not yet supported.')
+		}
+		return s
+	}
+    
+    String buildVarListParams( rule ) {
+        String s = ''
+        rule.varlist.each {
+            s += '$LEDGER.getVarlist().put("' + it + '", ' + it + ');\n'
+        }
+        return s 
+    }
+	
+	String calcBasic( rule, action, actioncmd, revtype ) {
+        String s = ''
+        s += '$LEDGER.setBasicacctid("' + action.acctid + '");\n'
+        s += '$LEDGER.setExpr("' + action.expr + '");\n'
+        s += '$LEDGER.setRevtype("' + revtype + '");\n'
+        s += '$LEDGER.setVarlist( new HashMap() );\n'
+        s += buildVarListParams( rule )
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("' + actioncmd +'", $LEDGER);\n'
+		return s 
+	}
+    
+    String calcSef( rule, action, actioncmd, revtype   ) {
+        String s = ''
+        s += '$LEDGER.setSefacctid("' + action.acctid + '");\n'
+        s += '$LEDGER.setExpr("' + action.expr + '");\n'
+        s += '$LEDGER.setRevtype("' + revtype + '");\n'
+        s += '$LEDGER.setVarlist( new HashMap() );\n'
+        s += buildVarListParams( rule )
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("' + actioncmd + '", $LEDGER);\n'
+		return s 
+	}
+    
+    String calcBasicInterest( rule, action, actioncmd, revtype   ) {
+        String s = ''
+        s += '$LEDGER.setBasicintacctid("' + action.acctid + '");\n'
+        s += '$LEDGER.setExpr("' + action.expr + '");\n'
+        s += '$LEDGER.setRevtype("' + revtype + '");\n'
+        s += '$LEDGER.setVarlist( new HashMap() );\n'
+        s += buildVarListParams( rule )
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("' + actioncmd + '", $LEDGER);\n'
+		return s 
+	}
+    
+    String calcSefInterest( rule, action, actioncmd, revtype  ) {
+        String s = ''
+        s += '$LEDGER.setSefintacctid("' + action.acctid + '");\n'
+        s += '$LEDGER.setExpr("' + action.expr + '");\n'
+        s += '$LEDGER.setRevtype("' + revtype + '");\n'
+        s += '$LEDGER.setVarlist( new HashMap() );\n'
+        s += buildVarListParams( rule )
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("' + actioncmd + '", $LEDGER);\n'
+		return s 
+	}    
+    
+    String calcBasicDiscount( rule, action ) {
+        String s = ''
+        s += '$LEDGER.setExpr("' + action.expr + '");\n'
+        s += '$LEDGER.setVarlist( new HashMap() );\n'
+        s += buildVarListParams( rule )
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("calcBasicDisc", $LEDGER);\n'
+		return s 
+	}
+    
+    String calcSefDiscount( rule, action ) {
+        String s = ''
+        s += '$LEDGER.setExpr("' + action.expr + '");\n'
+        s += '$LEDGER.setVarlist( new HashMap() );\n'
+        s += buildVarListParams( rule )
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("calcSefDisc", $LEDGER);\n'
+		return s 
+	}
+  
+  
+	String buildRuleConditions( rule ) {
+		String s = ''
+		rule.conditions.each { cond ->
+			if( cond.fact.name == 'RPTLedgerFact' ) s += ruleSvc.buildFactCondition( cond, 'ledgerid == $ledgerid' )
+			else if( cond.fact.name == 'CurrentYearFact' ) s += ruleSvc.buildFactCondition( cond, null )
+		}
+		return s 
+	}
+	
+	
+	String buildRuleHeader( rule ) {
+		String s = ''
+		s += 'package ' + rule.packagename + ';\n\n'
+		s += 'import ' + FACTS_PACKAGE +'.*\n';
+		s += 'import java.util.*\n\n';
+		s += 'global com.rameses.rules.common.RuleAction actionList\n\n'
+		s += 'rule "' + rule.rulename + '"\n'
+		s += 'agenda-group "' + rule.agendagroup + '"\n'
+		s += 'no-loop\n'
+		s += 'salience ' + rule.salience + '\n\n'
+		s += 'when\n'
+		s += '$LEDGER : RPTLedgerFact( $ledgerid:ledgerid )\n'
+		return s
+	}	
+    
+    def getListByQuery(namedQuery, values, params ) {
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList;
+	}
+}

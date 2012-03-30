@@ -1,0 +1,571 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+import java.text.DecimalFormat;
+
+class LiquidationService {
+
+	@PersistenceContext("main")
+	def em;
+	
+	@Service("RemittanceService")
+	def remsvc;
+	
+	@Service("ETRACSUserService")
+	def usrsvc;
+	
+	@Service("SequenceService")
+	def seqsvc;
+	
+	@Service("DateService")
+	def dtsvc;
+	
+	@Service("HTMLService")
+	def htmlsvc;
+	
+	@Service("Var")
+	def var;
+	
+	def CASHIER_ROLE = 'CASHIER'
+	
+	def SCHEMANAME = "liquidation:liquidation";
+	def SCHEMAVERSION = "1.0";
+	def LISTSCHEMANAME = "liquidation:liquidationlist";
+	
+	@ProxyMethod
+	public def getList( searchText, params ) {
+		if ( !searchText )
+			return em.sqlContext.createNamedQuery( "liquidation:getList" ).resultList;
+		return [];
+	}
+	
+	@ProxyMethod
+	public def createMultiCashier( liq ) {
+		try {
+			validateMulti( liq );
+			updateLiquidationInfo( liq, 'multi' )
+			// from now on, check for open liquidationrcds 
+			liq.docstate = 'CLOSED' 
+			updateCashierInfo( liq )
+			closeMultiCashierRemittance( liq );
+			em.validate( SCHEMANAME, liq );
+			em.create( SCHEMANAME, liq );
+			createListingItem( liq );
+			postLiquidationRcd( liq )
+			return liq;
+		} 
+		catch (ex) { 
+			ex.printStackTrace()
+			throw ex; 
+		}
+	}
+	
+	@ProxyMethod
+	public def create( liq ) {
+		
+		try {
+			validate( liq );
+			updateLiquidationInfo( liq, 'single' )
+			updateCashierInfo( liq )
+			updateRCDCashierInfo( liq )
+			updateRCDDenomination( liq )
+			closeRemittance( liq );
+			liq.fundsummaries = getFundSummaries( liq.objid );
+			em.validate( SCHEMANAME, liq );
+			em.create( SCHEMANAME, liq );
+			createListingItem( liq );
+			postLiquidationRcd( liq )
+			return liq;
+		} 
+		catch (ex) { 
+			throw ex; 
+		}
+	}
+	
+	void updateLiquidationInfo( liq, opener  ) {
+		liq.objid = "LIQ" + new UID();
+		liq.schemaname = SCHEMANAME;
+		liq.schemaversion = SCHEMAVERSION;
+		liq.docstate = 'OPEN';
+		liq.opener = opener 
+		liq.dtposted = dtsvc.getServerDate()
+		liq.info.txnno = generateLiqNo();
+		if( ! liq.info.txndate ) {
+			liq.info.txndate = dtsvc.format( "yyyy-MM-dd", liq.dtposted);
+		}
+	}
+	
+	
+	private void validateMulti( liq ) {
+		liq.rcds.each { rcd ->
+			//check that noncashpayments total does not exceed rcd amount 
+			if( rcd.noncashpayments && rcd.noncashpayments.size() > 0 && rcd.noncashpayments.amount.sum() > rcd.amount ) {
+				throw new Exception('Total Non-Cash Payment for ' + rcd.fundname + ' collection must not exceed RCD amount.')
+			}
+			
+			//check denominations 
+			def totalcash = rcd.denominations?.amount?.sum() 
+			totalcash = ( totalcash ? totalcash : 0.00 )
+			if ( totalcash != rcd.cash ) {
+				throw new Exception( 'Cash Denomination for ' + rcd.fundname + ' collection is incorrect.'  );
+			}
+		}
+		
+		//check if there are no new remittances not included in the liquidation 
+		def openremittances = getOpenRemittances( liq.info.liquidatingofficerid )
+		if (liq.remittances.size() != openremittances.size() ) {
+			throw new Exception( "There are new remittances not included in this liquidation.\nPlease close and process the liquidation again." );
+		}
+	}
+	
+	void postLiquidationRcd( liq ) {
+		liq.rcds.each{ rcd ->
+			rcd.objid 			= 'LR' + new UID()
+			rcd.schemaname 		= 'liquidationrcd'
+			rcd.schemaversion 	= '1.0'
+			rcd.docstate		= 'OPEN' 
+			rcd.liquidationid   = liq.objid 
+			rcd.liquidationno   = liq.info.txnno 
+			rcd.liquidationdate = liq.info.txndate 
+			rcd.lqofficerid     = liq.info.liquidatingofficerid
+			rcd.lqofficername   = liq.info.liquidatingofficername
+			rcd.lqofficertitle  = liq.info.liquidatingofficertitle 
+			
+			em.validate( rcd.schemaname, rcd )
+			em.create( rcd.schemaname, rcd ) 
+			
+			updateReceiptItemRcdId( rcd )
+			updateNonCashPaymentLiquidationIdReference( rcd )
+		}
+	}
+	
+	void updateReceiptItemRcdId( rcd ) {
+		def params = [
+			liquidationrcdid : rcd.objid, 
+			liquidationid  	 : rcd.liquidationid,
+			fundid 			 : rcd.fundid, 
+		]
+		em.sqlContext.createNamedExecutor('liquidation:updateReceiptItemRcdId')
+					.setParameters( params ).execute()
+	}
+	
+	void updateNonCashPaymentLiquidationIdReference( rcd ) {		
+		rcd.noncashpayments.each{ pmt ->
+			def params = [
+				objid			: pmt.objid, 
+				liquidationid 	: rcd.liquidationid, 
+				liquidationrcdid: rcd.objid, 
+			]
+			em.sqlContext.createNamedExecutor('liquidation:updateNonCashPaymentLiquidationId')
+					.setParameters( params ).execute()
+		}
+	}
+	
+	
+	void updateCashierInfo( liq ) {
+		def cashiers = usrsvc.getUsersByRole( CASHIER_ROLE )
+		if( ! cashiers ) throw new Exception('Cashier is not defined.')
+		def cashier = cashiers[0]
+		liq.info.depositedbyid 		= cashier.objid 
+		liq.info.depositedbyname 	= cashier.formalname 
+		liq.info.depositedbytitle 	= cashier.jobtitle 
+	}
+	
+	@ProxyMethod  
+	public def getCashierlist(){
+		return em.sqlContext.createNamedQuery( 'liquidation:getCashierlist' ).resultList
+	}
+	
+	void updateRCDCashierInfo( liq ){
+		liq.rcds.each { rcd ->
+			rcd.cashierid 		= liq.cashierinfo.cashierid 
+			rcd.cashiername 	= liq.cashierinfo.cashiername 
+			rcd.cashiertitle 	= liq.cashierinfo.cashiertitle
+		}
+	}
+	
+	void updateRCDCashierInfo2( liq ) {
+		def cashiers = usrsvc.getUsersByRole( CASHIER_ROLE )
+		if( ! cashiers ) throw new Exception('Cashier is not defined.')
+		def cashier = cashiers[0]
+		liq.rcds.each { rcd ->
+			rcd.cashierid 		= cashier.objid 
+			rcd.cashiername 	= cashier.formalname 
+			rcd.cashiertitle 	= cashier.jobtitle 
+		}
+	}
+	
+	void updateRCDDenomination( liq ) {
+		liq.rcds.each { rcd ->
+			rcd.denominations = liq.info.denominations 
+		}
+	}
+	
+	private void validate( liq ) {
+		def totalcash = 0.00;
+		for (denom in liq.info.denominations) {
+			totalcash += denom.amount;
+		}
+		if ( totalcash != liq.info.totalcash )
+			 throw new Exception( "Cash Received must be equal to Cash Expected." );
+		def liqTemp = createLiquidation( liq );
+		if (liq.remittances.size() != liqTemp.remittances.size() )
+			throw new Exception( "There are new transactions not included in this Liquidation." );
+	}
+	
+	private def generateLiqNo() {
+		def dt = dtsvc.getServerDate();
+		def cal = Calendar.instance;
+		cal.time = dt;
+		def yr = cal.get(Calendar.YEAR);
+		def series = seqsvc.getNextFormattedSeries( 'LIQ-' + yr );
+		
+		return 'LIQ-' + yr + '-' + series;
+	}
+	
+	private void closeRemittance( liq ) {
+		def params = [
+			liquidationid : liq.objid,
+			liquidationno : liq.info.txnno,
+			liquidationdate : liq.info.txndate,
+			liquidatingofficerid : liq.info.liquidatingofficerid
+		];
+		em.sqlContext.createNamedExecutor( "liquidation:closeRemittanceByLiquidatingOfficer" ).setParameters( params ).execute();
+		em.sqlContext.createNamedExecutor( "liquidation:closeRemittanceListByLiquidatingOfficer" ).setParameters( params ).execute();
+		/*
+		for ( collector in getSubordinates( liq.info.liquidatingofficerid ) ) {
+			def params = [
+				liquidationid : liq.objid,
+				liquidationno : liq.info.txnno,
+				liquidationdate : liq.info.txndate,
+				liquidatingofficerid : liq.info.liquidatingofficerid,
+				collectorid : collector.objid
+			];
+			em.sqlContext.createNamedExecutor( "liquidation:closeRemittances" ).setParameters( params ).execute();
+			em.sqlContext.createNamedExecutor( "liquidation:closeRemittanceLists" ).setParameters( params ).execute();
+		}
+		*/
+	}
+	
+	private void closeMultiCashierRemittance( liq ) { 	
+		def params = [
+			liquidationid : liq.objid,
+			liquidationno : liq.info.txnno,
+			liquidationdate : liq.info.txndate,
+			liquidatingofficerid : liq.info.liquidatingofficerid
+		];
+		em.sqlContext.createNamedExecutor( "liquidation:closeRemittanceByLiquidatingOfficer" ).setParameters( params ).execute();
+		em.sqlContext.createNamedExecutor( "liquidation:closeRemittanceListByLiquidatingOfficer" ).setParameters( params ).execute();
+	}
+	
+	private void createListingItem( liq ) {
+		def cal = Calendar.instance;
+		def pd = dtsvc.parseDate( liq.info.txndate, null )
+		liq.txntimestamp = dtsvc.buildCustomTimeStamp( liq.info.txndate )
+		liq.iyear  = pd.year 
+		liq.iqtr   = pd.qtr 
+		liq.imonth = pd.month 
+		liq.iday   = pd.day 
+		em.create( LISTSCHEMANAME, liq )
+	}
+	
+	@ProxyMethod
+	public def createLiquidationMultiCashier( liq ) {
+		liq.info.amount = 0.0;
+		liq.info.totalcash = 0.0;
+		liq.info.totalotherpayment = 0.0;
+		liq.info.treasurername = var.get('treasurer_name');
+		liq.info.treasurertitle = var.get('treasurer_title');
+		liq.info.denominations = [] 
+		
+		liq.remittances   	= getOpenRemittances( liq.info.liquidatingofficerid )
+		liq.otherpayments	= getOpenNonCashPayments( liq.info.liquidatingofficerid ) 
+		liq.rcds			= getOpenRcdsByFund( liq.info.liquidatingofficerid )		
+		updateLiquidationAmountInfo( liq )
+		
+		//check liquidation amount = total rcds amount 
+		if( liq.info.amount != liq.rcds.amount.sum() ) {
+			throw new Exception('Liquidation amount is not equal to RCD total amount.\nFix the discrepancy before proceeding.')
+		}
+		return liq;
+	}
+	
+	@ProxyMethod
+	public def createLiquidation( liq ) {
+		liq.info.amount = 0.0;
+		liq.info.totalcash = 0.0;
+		liq.info.totalotherpayment = 0.0;
+		liq.info.treasurername = var.get('treasurer_name');
+		liq.info.treasurertitle = var.get('treasurer_title');
+		
+		liq.remittances   	= getOpenRemittances( liq.info.liquidatingofficerid )
+		liq.otherpayments	= getOpenNonCashPayments( liq.info.liquidatingofficerid ) 
+		liq.rcds			= getOpenRcdsByFund( liq.info.liquidatingofficerid )		
+		updateLiquidationAmountInfo( liq )
+		return liq;
+	}
+	
+	List getOpenRemittances( lqofficerid ) {
+		def remits = em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceByLiquidatingOfficer" )
+							.setParameter( "liquidatingofficerid", lqofficerid )
+							.resultList;
+							
+		if ( ! remits  ) {
+			throw new IllegalStateException( "There are no open remittances." );
+		}
+		return remits
+	}
+	
+	List getOpenNonCashPayments( lqofficerid ) {
+		return em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceOtherPaymentsByLiquidatingOfficer" )
+								.setParameter( "liquidatingofficerid", lqofficerid )
+								.resultList;
+	}
+	
+	List getOpenRcdsByFund( lqofficerid ) {
+		def rcdlist = em.sqlContext.createNamedQuery( "liquidation:getOpenFundSummaries" )
+								.setParameter( "lqofficerid", lqofficerid )
+								.resultList;
+		
+		//init denominations 
+		rcdlist.each { rcd ->
+			rcd.cashier = null 
+			rcd.noncashpayments = []
+		}
+		
+		return rcdlist 
+	}
+	
+	void updateLiquidationAmountInfo( liq ) {
+		def reminfo = em.sqlContext.createNamedQuery( "liquidation:getUnliquidatedRemittanceInfoByLiquidatingOfficer" )
+								.setParameter( "liquidatingofficerid", liq.info.liquidatingofficerid ) 
+								.singleResult;
+								
+		liq.info.amount 			= reminfo.totalamount;
+		liq.info.totalcash 			= reminfo.totalcash;
+		liq.info.totalotherpayment 	= reminfo.totalotherpayment;
+	}
+	
+	
+	
+	private def getSubordinates( userid ) {
+		return usrsvc.getCollectorsByLqOfficerId( userid );
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		if (!objid)
+			return null;
+		def liq = em.read( SCHEMANAME, [objid:objid] );
+		liq.remittances = em.sqlContext.createNamedQuery( "liquidation:getRemittancesByLiquidation" ).setParameter( "liquidationid", objid ).resultList;
+		liq.otherpayments = em.sqlContext.createNamedQuery( "liquidation:getOtherPaymentsByLiquidation" ).setParameter( "liquidationid", objid ).resultList;
+
+		return liq;
+	}
+	
+	private def getFundSummaries(def liquidationid){
+		return em.sqlContext.createNamedQuery("liquidation:getFundSummaries")
+                 .setParameter("liquidationid", liquidationid )
+				 .resultList;
+	}
+	
+	@ProxyMethod
+	public def fetchOtherPayments( param ){
+		def sql_stmt = "getOtherPaymentsByLiquidation"
+		param.liquidationid = param.objid
+		if( !param.objid )
+			sql_stmt = "getOtherPaymentNoLiq"
+		return em.sqlContext.createNamedQuery( "liquidation:" + sql_stmt ).setParameters( param ).resultList	
+	}
+	
+	@ProxyMethod
+	public def getHtml( liq ) {
+		def html = '';
+		if ( !liq )
+			return "<html><head><h1> Select an item. </h1></head></html>";
+		
+		def data = [
+            header  : buildHeader( liq ),
+			otherpayments : buildOtherPayments( liq ),
+			breakdown   : buildBreakdown( liq )
+			
+        ]
+		
+        return doBuildHtml( data )
+	}
+		
+	private def buildBreakdown( liq ){
+		def decformat = new DecimalFormat("#,##0.00");
+		def html = """
+		<table width="100%">
+		<tr>
+		<td>
+		<div style="background-color:silver" width="100%">
+		<table width="100%" cellspacing="1">
+		"""
+
+		html += """
+			<tr> <th align="left" colspan="3"> Liquidation Breakdown </th> </tr>
+			<tr>
+				<th> Denomination </th>
+				<th> Quantity </th>
+				<th> Amount </th>
+			</tr>			
+		"""
+		
+		liq.info.denominations.each {
+			def amount = decformat.format( it.amount );
+			def qty = decformat.format( it.qty );
+			html += """
+			<tr>
+				<td align="right">$it.caption</td>
+				<td align="right">$qty</td>
+				<td align="right">$amount</td>                 
+			</tr>
+			"""
+		}
+		def totalcash = decformat.format( liq.info.totalcash );
+		html += """
+			<tr>
+				<td colspan="2">Total Cash</td>
+				<td align="right">${totalcash}</td>
+			</tr>
+			
+		</td>
+		</tr>
+        </table>
+		"""
+			
+		return html
+	}
+	
+	private def buildOtherPayments( liq ){
+		if( !liq.otherpayments ) return '';
+		def decformat = new DecimalFormat("#,##0.00");
+		def html = """
+		<table width="100%">
+		<tr>
+		<td>
+		<div style="background-color:silver" width="100%">
+		<table width="100%" cellspacing="1">
+		"""
+					
+		html += """
+			<tr> <th align="left" colspan="3"> Non-Cash Payments </th> </tr>
+			<tr>
+				<th> Type </th>
+				<th> Particulars </th>
+				<th> Amount </th>
+			</tr>			
+		"""
+	
+		liq.otherpayments.each(){
+			def payamount = decformat.format( it.amount );
+			html += """
+			<tr>
+				<td> $it.paytype </td>
+				<td> $it.particulars </td>
+				<td align="right"> $payamount </td>
+			</tr>
+			""";
+		}
+		def totalotherpayment = decformat.format( liq.info.totalotherpayment );
+		html += """
+			<tr>
+				<td colspan='2'>Total Other Payment</td>
+				<td align="right">${totalotherpayment}</td>
+			</tr>
+			
+			</td>
+			</tr>
+		</table>
+		"""
+			
+		return html
+	}
+	
+	private def buildHeader( liq ) {
+		def decformat = new DecimalFormat("#,##0.00");
+		def grandtotal = decformat.format( liq.info.amount );
+		def totalotherpayment = decformat.format( liq.info.totalotherpayment );
+		def totalcash = decformat.format( liq.info.totalcash );
+		return """
+			<table>
+				<tr>
+					<th class="title"><b>GENERAL INFORMATION</th>
+				<tr>
+				<tr>
+					<td class="header">Liquidation No. :</td>
+					<td class="header" colspan="3"><b>$liq.info.txnno</b></td>
+				</tr>
+				<tr>
+					<td class="header">Date :</td>
+					<td class="header"><b>$liq.info.txndate</b></td>
+				</tr>
+				<tr>
+					<td class="header">Non-Cash Total :</td>
+					<td class="header"><b>$totalotherpayment</b></td>
+				</tr>
+				<tr>
+					<td class="header">Cash Total :</td>
+					<td class="header"><b>$totalcash</b></td>
+				</tr>
+				<tr>
+					<td class="header">Grand Total :</td>
+					<td class="header"><b>$grandtotal</b></td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def doBuildHtml( data ) {
+		return """
+			<html>
+				<head>
+					<style type="text/css">
+						body, td, th { 
+							font-family: tahoma
+							font-size  : 10pt
+						}	
+						td {
+							background-color:white
+						}
+						th {
+							background-color : #CCCCCC
+						}
+						.title {
+							background-color:#CCCCFF
+							font-weight:bold
+						}
+						.caption {
+							width : 120
+						}
+						.numeric {
+							text-align:right
+						}
+						.header {
+							font-family : tahoma
+							font-size   : 18pt
+							width       : 120
+						}
+						.data {
+							font-weight:bold
+						}
+					</style>
+				</head>
+				<body>
+					<table width="100%">
+						<tr colspan="2">
+							<td>$data.header</td>
+						</tr>
+						<tr>
+							<td width="30%">$data.breakdown</td>
+							<td valign="top" width="70%" >$data.otherpayments</td>
+						</tr>
+					</table>
+				</body>
+			</html>
+		"""
+	}
+	
+}

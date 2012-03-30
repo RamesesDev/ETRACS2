@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="init-db" name="Load MySQL">
+ 
+  <target name="init-db">
+	<!-- restore etracs2.sql -->
+	<antcall target="do-restore">
+		<param name="dbname" value="${main_dbname}"/>
+		<param name="sqlfile" value="dump_etracs2.sql"/>
+	</antcall>
+	
+	<!-- restore system.sql -->
+	<antcall target="do-restore">
+		<param name="dbname" value="${system_dbname}"/>
+		<param name="sqlfile" value="dump_system.sql"/>
+	</antcall>
+  </target>
+  
+  
+  <target name="do-restore">
+    <echo>Loading ${sqlfile} ${basedir}</echo>
+	<copy file="${sqlfile}" tofile="tmp.sql"/>
+	<replace file="tmp.sql" token="@dbname" value="${dbname}"/>
+		
+	<!-- we must force create the db so it can be restored properly -->
+	<exec executable="mysqladmin">
+      <arg value="--user=${dbuser}"/>
+      <arg value="--password=${dbpwd}"/>
+      <arg value="--force"/>
+      <arg value="create"/>
+      <arg value="${dbname}"/>
+    </exec>
+	
+	<!-- the target db must already exist -->
+	<exec executable="cmd">
+	  <arg value="/c"/>
+	  <arg value="restore-mysql.bat"/>
+	  <arg value="${dbuser}"/>
+	  <arg value="${dbpwd}"/>
+	  <arg value="${dbname}"/>
+	  <arg value="tmp.sql" />
+	</exec>
+
+	<delete file="tmp.sql"/>
+  </target>
+ 
+</project>

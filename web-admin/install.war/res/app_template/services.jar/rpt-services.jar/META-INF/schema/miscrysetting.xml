@@ -1,0 +1,40 @@
+<schema>
+	<element name="miscrysetting" tablename="miscrysetting">
+		<field name="objid" primary="true"/>
+		<field name="schemaname" required="true"/>
+		<field name="schemaversion" required="true"/>
+		<field name="ry" required="true" type="integer" />
+        <field name="previd"  />
+	</element>
+	
+    <!-- AssessLevels -->
+	<element name="assesslevel" tablename="miscassesslevel">
+		<field name="objid" primary="true"/>
+		<field name="miscrysettingid" required="true"/>
+		<field name="code" required="true"/>
+		<field name="name" required="true" />
+		<field name="fixrate" required="true" type="boolean" />
+		<field name="rate" required="true" type="decimal" />
+        <field name="previd"  />
+		<complex name="ranges" ref="range" type="list" required="false" serializer="default" />
+	</element>
+    
+    <element name="range" >
+		<field name="mvfrom" required="true" type="decimal"/>
+		<field name="mvto" required="true" type="decimal"/>
+		<field name="rate" required="true" type="decimal" />
+	</element>
+    
+	
+    <!-- MiscItemValue -->
+	<element name="miscitemvalue" tablename="miscitemvalue">
+		<field name="objid" primary="true"/>
+		<field name="miscrysettingid" required="true"/>
+		<field name="miscitemid" required="true" />
+        <field name="miscitemcode" required="true" />
+        <field name="miscitemname" required="true" />
+        <field name="expr" required="true" />
+		<field name="previd"  />
+	</element>
+    	
+</schema>

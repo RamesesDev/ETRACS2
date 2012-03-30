@@ -1,0 +1,135 @@
+<schema>
+	<element name="bptransaction">
+		<field name="objid" primary="true"/>
+		<field name="schemaname" required="true" />
+		<field name="schemaversion" required="true" />
+		<field name="docstate" required="true" />
+		<field name="txntype" required="true" />
+		<field name="businessid" required="true" />
+		<complex name="business" ref="businessinfo" serializer="default" />
+	</element>
+	
+	<element name="businessinfo">
+		<field name="tradename" required="true" />
+		<field name="businessaddress" required="true" />
+		<field name="taxpayerid" required="true" />
+		<field name="taxpayername" required="true" />
+		<field name="taxpayeraddress" required="true" />
+		<field name="adminid" />
+		<field name="adminname" />
+		<field name="adminaddress" />
+	</element>
+
+	<element name="changetradename" tablename="bptxn">
+		<link ref="bptransaction" />
+		<complex name="info" ref="changetradenameinfo" serializer="default"/>
+	</element>
+	
+	<element name="changetradenameinfo">
+		<field name="txnno" required="true" />
+		<field name="dtposted" required="true" />
+		<field name="newtradename" required="true" />
+		<field name="remarks" />
+	</element>
+	
+	<element name="changeadmin" tablename="bptxn">
+		<link ref="bptransaction" />
+		<complex name="info" ref="changeadmininfo" serializer="default"/>
+	</element>
+	
+	<element name="changeadmininfo">
+		<field name="txnno" required="true" />
+		<field name="dtposted" required="true" />
+		<field name="newadminid" />
+		<field name="newadminname" />
+		<field name="newadminaddress" />
+		<field name="remarks" />
+	</element>
+	
+	<element name="changeaddress" tablename="bptxn">
+		<link ref="bptransaction" />
+		<complex name="info" ref="changeaddressinfo" serializer="default"/>
+	</element>
+	
+	<element name="changeaddressinfo">
+		<field name="txnno" required="true" />
+		<field name="dtposted" required="true" />
+		<field name="newbusinessaddress" required="true" />
+		<field name="remarks" />
+	</element>
+	
+	<element name="changepermittee" tablename="bptxn">
+		<link ref="bptransaction" />
+		<complex name="info" ref="changepermitteeinfo" serializer="default"/>
+	</element>
+	
+	<element name="changepermitteeinfo">
+		<field name="txnno" required="true" />
+		<field name="dtposted" required="true" />
+		<field name="newtaxpayerid" required="true" />
+		<field name="newtaxpayername" required="true" />
+		<field name="newtaxpayeraddress" required="true" />
+		<field name="remarks" />
+	</element>
+	
+	<element name="changetradenamelist" tablename="changetradenamelist">
+		<field name="objid" primary="true" />
+		<field name="docstate" required="true" />
+		<field name="txnno" required="true" />
+		<field name="txntype" required="true" />
+		<field name="businessid" required="true" />
+		<field name="prevtradename" required="true" />
+		<field name="newtradename" required="true" />
+		<field name="businessaddress" required="true" />
+		<field name="taxpayername" required="true" />
+		<field name="taxpayeraddress" required="true" />
+	</element>
+	
+	<element name="changeadminlist" tablename="changeadminlist">
+		<field name="objid" primary="true" />
+		<field name="docstate" required="true" />
+		<field name="txnno" required="true" />
+		<field name="txntype" required="true" />
+		<field name="businessid" required="true" />
+		<field name="tradename" required="true" />
+		<field name="businessaddress" required="true" />
+		<field name="taxpayername" required="true" />
+		<field name="taxpayeraddress" required="true" />
+		<field name="prevadminid" />
+		<field name="prevadminname" />
+		<field name="prevadminaddress" />
+		<field name="newadminid" />
+		<field name="newadminname" />
+		<field name="newadminaddress" />
+	</element>
+	
+	<element name="changeaddresslist" tablename="changeaddresslist">
+		<field name="objid" primary="true" />
+		<field name="docstate" required="true" />
+		<field name="txnno" required="true" />
+		<field name="txntype" required="true" />
+		<field name="businessid" required="true" />
+		<field name="tradename" required="true" />
+		<field name="prevbusinessaddress" required="true" />
+		<field name="newbusinessaddress" required="true" />
+		<field name="taxpayername" required="true" />
+		<field name="taxpayeraddress" required="true" />
+	</element>
+	
+	<element name="changepermitteelist" tablename="changepermitteelist">
+		<field name="objid" primary="true" />
+		<field name="docstate" required="true" />
+		<field name="txnno" required="true" />
+		<field name="txntype" required="true" />
+		<field name="businessid" required="true" />
+		<field name="tradename" required="true" />
+		<field name="businessaddress" required="true" />
+		<field name="prevtaxpayerid" required="true" />
+		<field name="prevtaxpayername" required="true" />
+		<field name="prevtaxpayeraddress" required="true" />
+		<field name="newtaxpayerid" required="true" />
+		<field name="newtaxpayername" required="true" />
+		<field name="newtaxpayeraddress" required="true" />
+	</element>
+</schema>
+

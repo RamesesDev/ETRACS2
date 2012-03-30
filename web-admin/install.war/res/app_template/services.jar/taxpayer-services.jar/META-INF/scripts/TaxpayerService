@@ -1,0 +1,94 @@
+import com.rameses.annotations.*;
+import java.rmi.server.UID;
+
+
+class TaxpayerService 
+{
+	@PersistenceContext("etracs")
+	def em;
+	
+	@Service("SequenceService")
+	def seqService;
+
+	@ProxyMethod
+	public def getList( search, params ) {	
+		def type = search.lguType;
+		def lgu = search.lgu;
+		def textSearch = search.textSearch;
+		
+		if( ! textSearch ) return getListByName( "taxpayer:find$type-list", [lgu:lgu], params );
+		def result = null;
+		if( (result = getListByName("taxpayer:find$type-byNo", [taxpayerNo:textSearch], params))) return result;
+		if( (result = getListByName("taxpayer:find$type-byName", [name:textSearch], params))) return result;
+		if( (result = getListByName("taxpayer:find$type-byLgu", [lgu:textSearch], params))) return result;
+		return result;
+	}
+	
+	@ProxyMethod
+	public def open( objid  ) {
+		def taxpayer =  null;
+		if( (taxpayer = em.read("taxpayer:provinceTaxpayer",[objid:objid])) ) return taxpayer;
+		if( (taxpayer = em.read("taxpayer:municipalTaxpayer",[objid:objid])) ) return taxpayer;
+		throw new Exception("Invalid taxpayer type.");
+	}
+	
+	@ProxyMethod
+	public def createProvinceTaxpayer( taxpayer  ) {
+		taxpayer.objid = getUID();
+		taxpayer.taxpayerNo = seqService.getNextFormattedSeries("PROVINCE_TAXPAYER");
+		em.validate("taxpayer:provinceTaxpayer", taxpayer);
+		em.create("taxpayer:provinceTaxpayer", taxpayer);
+		updateMunicipalMappingStatus( taxpayer );
+		return taxpayer;
+	}
+	
+	@ProxyMethod
+	public def updateProvinceTaxpayer( taxpayer, saveOptions ) {
+		em.validate("taxpayer:provinceTaxpayer", taxpayer);
+		return em.update("taxpayer:provinceTaxpayer", taxpayer);
+	}
+	
+	@ProxyMethod
+	public void postMunicipalTaxpayer( taxpayer ) {
+		if( ! existsMunicipalTaxpayer( taxpayer.objid ) ) {
+			em.create("taxpayer:municipalTaxpayer", taxpayer);
+		}
+	}
+    
+    @ProxyMethod
+    public def generateProvinceTaxpayerReport() {
+        return em.sqlContext.createNamedQuery("taxpayer:reportProvinceTaxpayerList").resultList;
+    }
+	
+	private def existsMunicipalTaxpayer( taxpayerId ) {
+		def data = em.sqlContext.createNamedQuery("taxpayer:getMunicipalTaxpayerById").setParameters([objid:taxpayerId]).singleResult;
+		return data != null;
+	}
+	
+	private def getListByName( finder, search, params ) {
+		return em.sqlContext.createNamedQuery(finder)
+							.setParameters(search)
+							.setFirstResult( params._start )
+							.setMaxResults( params._limit )
+							.resultList;
+	}
+	
+	private def getUID() {
+		return "PT" + new UID();
+	}
+	
+	private void updateMunicipalMappingStatus( taxpayer ) {
+        em.sqlContext.createNamedExecutor("taxpayer:resetProvinceMapping").setParameters([provTaxpayerId:taxpayer.objid]).execute();
+		taxpayer.mappings.each { tp ->
+			em.sqlContext.createNamedExecutor("taxpayer:updateMunicipalMappingStatus")
+						 .setParameters([
+                            objid                : tp.objid, 
+                            provTaxpayerId       : taxpayer.objid,
+                            provTaxpayerNo       : taxpayer.taxpayerNo,
+                            provTaxpayerName     : taxpayer.name,
+                            provTaxpayerAddress  : taxpayer.address,
+                         ])
+						 .execute();
+		}
+	}
+}

@@ -1,0 +1,94 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class PropertyPayerService{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('LogService')
+	def logService
+	
+	def SCHEMA_NAME = 'propertypayer:propertypayer';
+	def ITEM_SCHEMA = 'propertypayer:propertypayeritem'
+	
+	@ProxyMethod
+	public def getList( searchText, params ){
+		if( !searchText ) return getListByQuery( 'propertypayer:getList', [:], params );
+		def result = [];
+		if((result = getListByQuery( 'propertypayer:getListByName', [taxpayername:searchText+"%"], params ))) return result;
+		return result;
+	}
+	
+	@ProxyMethod 
+	public def create( entity ) {
+		checkDuplicateTaxpayer( entity )
+		em.validate( SCHEMA_NAME, entity )
+		em.create( SCHEMA_NAME, entity )
+		entity._items.each {
+			saveItem( it )
+		}
+		return entity 
+	}
+	
+	@ProxyMethod
+	public def update( entity ) {
+		checkDuplicateTaxpayer( entity )
+		em.validate( SCHEMA_NAME, entity )
+		em.update( SCHEMA_NAME, entity )
+		return entity 
+	}	
+	
+	@ProxyMethod
+	public def open( objid ) {
+		def payer = em.read( SCHEMA_NAME, [objid:objid] )
+		payer._items = getPropertyPayerItems( objid ) 
+		payer._items.each {
+			it.ledger = [ tdno: it.tdno ]
+		}
+		return payer 
+	}
+	
+	@ProxyMethod
+	public void delete( entity ) { 
+		em.delete( SCHEMA_NAME, entity )
+		em.sqlContext.createNamedExecutor('propertypayer:deleteItem').setParameter('propertypayerid', entity.objid).execute()
+	}
+	
+	@ProxyMethod
+	public def saveItem( item ) {
+		em.validate( ITEM_SCHEMA, item )
+		def old = em.read( ITEM_SCHEMA, item )
+		if( old ) 
+			em.update( ITEM_SCHEMA, item )
+		else
+			em.create( ITEM_SCHEMA, item )
+		return item 
+	}
+	
+	@ProxyMethod
+	public void removeItem( item ) {
+		em.delete( ITEM_SCHEMA, item )
+	}
+	
+	@ProxyMethod
+	public List getPropertyPayerItems( propertypayerid ) {
+		return em.sqlContext.createNamedQuery('propertypayer:getItems').setParameter('propertypayerid', propertypayerid).resultList
+	}
+	
+	void checkDuplicateTaxpayer( entity ) {
+		def data = em.sqlContext.createNamedQuery('propertypayer:checkDuplicate').setParameters( entity ).singleResult
+		if( data ) throw new Exception('A property payer for ' + entity.taxpayername + ' already exists.\nDuplicate entry is not allowed.' )
+	}
+	
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+
+}

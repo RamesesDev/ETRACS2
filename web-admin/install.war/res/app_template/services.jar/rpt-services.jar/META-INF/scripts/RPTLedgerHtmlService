@@ -1,0 +1,261 @@
+import com.rameses.annotations.*
+import groovy.text.SimpleTemplateEngine
+
+class RPTLedgerHtmlService
+{
+
+	@PersistenceContext('main')
+	def em
+    
+    @Service("NumberService")
+	def numberService
+    
+    @Service("RPTLedgerService")
+	def ledgerSvc
+    
+    
+    def LEDGER_SCHEMA = 'rptledger' 
+    def LEDGERITEM_SCHEMA = 'rptledger:rptledgeritem' 
+    def SCHEMA_VERSION = '1.0'
+    
+	
+	@ProxyMethod
+	public def getHtml( ledgerid ) {
+        if( ! ledgerid ) { 
+            return ''
+        }
+		def ledger = ledgerSvc.open( ledgerid )
+        if( !ledger ) throw new Exception('Ledger does not exists.')
+        def data = [
+            header  : buildHeader( ledger ),
+            items   : buildItems( ledger ),
+            credits : buildCredits( ledger ),
+        ]
+        return doBuildHtml( data )
+	}
+    
+    private def buildHeader( ledger ) {
+		return """
+			<table>
+				<tr>
+					<td class="header">State :</td>
+					<td class="header" colspan="3"><b>$ledger.docstate</b></td>
+				</tr>
+				<tr>
+					<td class="header">TD NO. :</td>
+					<td class="header"><b>$ledger.tdno</b></td>
+				</tr>
+				<tr>
+					<td class="header">Previous TD No. :</td>
+					<td class="header"><b>${ledger.prevtdno ? ledger.prevtdno : ''}</b></td>
+				</tr>
+				<tr>
+					<td class="header">Barangay :</td>
+					<td class="header"><b>$ledger.barangay</b></td>
+				</tr>
+				<tr>
+					<td class="header">Classification:</td>
+					<td class="header"><b>$ledger.classcode</b></td>
+				</tr>
+				<tr>
+					<td class="header">Transaction Type:</td>
+					<td class="header"><b>$ledger.txntype</b></td>
+				</tr>
+                <tr>
+					<td class="header">PIN :</td>
+					<td class="header"><b>$ledger.fullpin</b></td>
+				</tr>
+				<tr>
+					<td class="header">Cadastral Lot No. :</td>
+					<td class="header"><b>$ledger.cadastrallotno</b></td>
+				</tr>
+				<tr>
+                    <td class="header">Taxpayer</td>
+                    <td class="header"><b>$ledger.taxpayername</b></td>
+                </td>
+                <tr>
+                    <td class="header">Last Year Paid</td>
+                    <td class="header"><b>$ledger.lastyearpaid</b></td>
+                </td>
+                <tr>
+                    <td class="header">Last Qtr Paid</td>
+                    <td colspan="3" class="header"><b>$ledger.lastqtrpaid</b></td>
+                </td>
+			</table>
+		"""
+	}
+	
+    private def buildItems( ledger ) {
+		def html = """
+        <b><u>Ledger Items</u></b>
+		<table>
+		"""
+		
+		html += """
+			<tr>
+			<td width="100%">
+				<div style="background-color:silver" width="100%">
+				<table width="100%" cellspacing="1">
+					<tr>
+						<th>TD No.</th>
+						<th>Txn Type</th>
+						<th>Class</th>
+						<th>Taxable</th>
+						<th>Back Tax</th>
+						<th>From Year</th>
+						<th>To Year</th>
+						<th>Assessed Value</th>
+					</tr>			
+		"""
+		
+		ledger.ledgerItems.each {
+			def assessedValue = numberService.format("#,##0.00", it.assessedvalue)
+			
+			html += """
+				<tr>
+					<td>$it.tdno</td>
+					<td>$it.txntype</td>
+					<td>$it.classcode</td>
+					<td>${it.taxable ? 'Y' : '' }</td>
+                    <td>${it.backtax ? 'Y' : '' }</td>
+                    <td>$it.fromyear</td>
+                    <td>$it.toyear</td>
+					<td class="numeric">$assessedValue</td>
+				</tr>
+			"""
+		}
+		html += """
+			</td>
+			</tr>
+            </table>
+		"""
+		return html
+	}
+    
+    private def buildCredits( ledger ) {
+        def payments = ledgerSvc.getPayments( ledger.objid )
+        if( !payments ) {
+            return ''
+        }
+        
+		def html = """
+        <b><u>Credits</u></b>
+		<table>
+		"""
+		
+		html += """
+			<tr>
+			<td width="100%">
+				<div style="background-color:silver" width="100%">
+				<table width="100%" cellspacing="1">
+					<tr>
+						<th>Mode</th>
+						<th>Receipt No.</th>
+						<th>Receipt Date</th>
+						<th>Collector</th>
+						<th>Period</th>
+						<th>Basic</th>
+						<th>Discount</th>
+						<th>Penalty</th>
+                        <th>Basic Net</th>
+                        <th>SEF</th>
+						<th>Discount</th>
+						<th>Penalty</th>
+                        <th>SEF Net</th>
+                        <th>Total</th>
+					</tr>			
+		"""
+		
+		payments.each {
+			def basic = numberService.format("#,##0.00", it.basic)
+            def basicdisc = numberService.format("#,##0.00", it.basicdisc)
+            def basicint = numberService.format("#,##0.00", it.basicint)
+            def basicnet = numberService.format("#,##0.00", it.basicnet)
+            def sef = numberService.format("#,##0.00", it.sef)
+            def sefdisc = numberService.format("#,##0.00", it.sefdisc)
+            def sefint = numberService.format("#,##0.00", it.sefint)
+            def sefnet = numberService.format("#,##0.00", it.sefnet)
+            def total = numberService.format("#,##0.00", it.total)
+            
+			html += """
+				<tr>
+					<td>$it.mode</td>
+					<td>$it.receiptno</td>
+					<td>$it.receiptdate</td>
+					<td>$it.collectorname</td>
+                    <td>${it.period ? it.period : '-' }</td>
+					<td class="numeric">$basic</td>
+                    <td class="numeric">$basicdisc</td>
+                    <td class="numeric">$basicint</td>
+                    <td class="numeric">$basicnet</td>
+                    <td class="numeric">$sef</td>
+                    <td class="numeric">$sefdisc</td>
+                    <td class="numeric">$sefint</td>
+                    <td class="numeric">$sefnet</td>
+                    <td class="numeric">$total</td>
+                    
+				</tr>
+			"""
+		}
+		html += """
+			</td>
+			</tr>
+            </table>
+		"""
+		return html
+	}
+	
+        
+    private def doBuildHtml( data ) {
+		return """
+			<html>
+				<head>
+					<style type="text/css">
+						body, td, th { 
+							font-family: tahoma
+							font-size  : 10pt
+						}	
+						td {
+							background-color:white
+						}
+						th {
+							background-color : #CCCCCC
+						}
+						.title {
+							background-color:#CCCCFF
+							font-weight:bold
+						}
+						.caption {
+							width : 120
+						}
+						.numeric {
+							text-align:right
+						}
+						.header {
+							font-family : tahoma
+							font-size   : 18pt
+							width       : 120
+						}
+						.data {
+							font-weight:bold
+						}
+					</style>
+				</head>
+				<body>
+					<table width="100%">
+						<tr>
+							<td>$data.header</td>
+						</tr>
+						<tr>
+							<td>$data.items</td>
+						</tr>
+						<tr>
+							<td>$data.credits</td>
+						</tr>
+					</table>
+				</body>
+			</html>
+		"""
+	}
+	        
+}

@@ -1,0 +1,41 @@
+<project default="build-app" basedir=".">
+	<import file="mysql.xml"/>
+	<target name="build-app">
+		<echo>Start Initializing App</echo>
+
+		<echo message="${dbuser}"/>
+		<antcall target="init-db"/>
+		
+		<echo message="Start building app ${appname}" />
+		<copy todir="${appname}.ear">
+			<fileset dir="app_template"/>
+		</copy>
+		<replace file="${appname}.ear/admin.war/WEB-INF/web.xml" token="@appname" value="${appname}"/>
+		<replace file="${appname}.ear/admin.war/WEB-INF/web.xml" token="@apphost" value="${apphost}"/>
+		<replace file="${appname}.ear/admin.war/WEB-INF/web.xml" token="@sessionhost" value="${sessionhost}"/>
+		
+		<replace file="${appname}.ear/META-INF/application.xml" token="@appname" value="${appname}"/>
+		<replace file="${appname}.ear/META-INF/application.xml" token="@webroot" value="${webroot}"/>
+		<replace file="${appname}.ear/META-INF/jboss-app.xml" token="@appname" value="${appname}"/>
+		<replace file="${appname}.ear/META-INF/app-service.xml" token="@appname" value="${appname}"/>
+		
+		<replace file="${appname}.ear/downloads.war/downloads/etracs2/bin/client.conf" token="@lguname" value="${lguname}"/>
+		<replace file="${appname}.ear/downloads.war/downloads/etracs2/bin/client.conf" token="@server_address" value="${server_address}"/>
+		<zip destfile="${appname}.ear/downloads.war/downloads/etracs2.zip">
+            <zipfileset dir="${appname}.ear/downloads.war/downloads/etracs2" prefix="etracs2"/>
+        </zip>
+		
+		<replace file="${appname}.ear/downloads.war/modules/updates.xml" token="@appname" value="${appname}"/>		
+		<replace file="${appname}.ear/downloads.war/modules/updates.xml" token="@server_address" value="${server_address}"/>		
+		
+		<copy file="app.conf" tofile="app.temp.conf"/>
+		<replace file="app.temp.conf" token="@appname" value="${appname}"/>
+		<replace file="app.temp.conf" token="@main_dbname" value="${main_dbname}"/>
+		<replace file="app.temp.conf" token="@system_dbname" value="${system_dbname}"/>
+		<replace file="app.temp.conf" token="@dbuser" value="${dbuser}"/>
+		<replace file="app.temp.conf" token="@dbpwd" value="${dbpwd}"/>
+		<move file="app.temp.conf" tofile="${appname}.ear/META-INF/app.conf"/>
+		
+		<move file="${appname}.ear" todir="${rootpath}/" />
+	</target>
+</project>

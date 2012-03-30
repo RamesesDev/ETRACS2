@@ -1,0 +1,88 @@
+import com.rameses.annotations.*;
+import com.rameses.rules.common.*;
+
+public class BPApplicationService
+{
+	@PersistenceContext('main')
+	def em 
+	
+	@Service('Var')
+	def var;
+	
+	@Service('BPSettingService')
+	def bpsettingSvc
+		
+	@Service('DateService')
+	def dateService
+	
+	@Service('NumberService')
+	def numSvc;
+	
+	def SCHEMANAME = 'bpapplication:bpapplication';
+	
+	@ProxyMethod
+	public def getAssessmentReportInfo( def applicationid ){ 
+		def bpa = em.read( SCHEMANAME, [objid:applicationid] );
+				
+		return [ 
+			reportName: 'bp/assessment',
+			info: buildInfo( bpa )
+		];
+	}
+	
+	def buildInfo( def bpa ){
+		
+		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+		
+		def info = [
+			barcode: bpa.barcode,
+			barcodeurl: var.get('barcode_url').replace('$P{data}', bpa.barcode),
+			txnno: bpa.txnno,
+			txntype: bpa.txntype,
+			txndate: sdf.format( bpa.txndate ),
+			tradename: bpa.tradename,
+			businessaddress: bpa.businessaddress, 
+			taxpayername: bpa.info.taxpayername,
+			taxpayeraddress: bpa.info.taxpayeraddress,
+			signatories: bpa.info.assessmentsignatories,
+			totalcharge: 0.0,
+			totaltax: 0.0,
+			totalregfee: 0.0,
+			totalamount: 0.0, 
+			regfees: [],
+			charges: [],
+			taxes: []
+			
+		]; 
+		     
+		bpa.taxfees.each{
+			def acct = em.read('incomeacct:incomeacct', [objid: it.acctid]);
+			it.amountdue = new BigDecimal( it.amountdue );
+			if( !acct  ) throw new Exception('Income Account with an id ' + acct.objid +' is no longer exist.');
+			else if( acct.systype == 'BUSINESS_TAX' ) addToTax( info, it );
+			else if( acct.systype == 'REG_FEE' ) addToRegFee( info, it );
+			else addToCharge( info, it );
+			info.totalamount += it.amountdue;
+		}
+		
+		info.signatories = bpsettingSvc.setting.assessmentsignatories?.sort{ it.index }
+				
+		return info;
+	}
+	
+	void addToTax( info, fee ){
+		info.taxes.add( fee );
+		info.totaltax += fee.amountdue;
+	}
+	
+	void addToRegFee( info, fee ){
+		info.regfees.add( fee );
+		info.totalregfee += fee.amountdue;
+	}
+	
+	void addToCharge( info, fee ){
+		info.charges.add( fee );
+		info.totalcharge += fee.amountdue;
+	}  
+	
+}

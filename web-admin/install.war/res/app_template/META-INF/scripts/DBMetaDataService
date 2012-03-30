@@ -1,0 +1,146 @@
+import com.rameses.annotations.*;
+import java.util.*;
+import com.rameses.sql.*;
+
+
+class DBMetaDataService {
+	
+	@SqlContext("main")
+	def ds;
+	
+	private Map buildFromResultSet( handler ) {
+		def conn = null;
+		try {
+			conn = ds.getConnection();
+			def md = conn.getMetaData();
+			def rs = handler(md);
+			def map = [:];
+			map.metaData = SqlUtil.resultSetToMetaData( rs );
+			map.results = SqlUtil.resultSetToMapList( rs );
+			return map;
+		}
+		catch(e) {
+			throw e;
+		}	
+		finally {
+			try {conn.close();} catch(ign){;}
+		}
+	}
+	
+	@ProxyMethod
+	public Map getTableTypes() {
+		return buildFromResultSet( {o->return o.getTableTypes() } );
+	}	
+	
+	@ProxyMethod
+	public Map getTables( String catalog, String schemaPattern, String tableNamePattern, String[] types ) {
+		return buildFromResultSet( {o->return o.getTables(catalog, schemaPattern, tableNamePattern, types) } );
+	}
+	
+	@ProxyMethod
+	public Map getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) {
+		return buildFromResultSet( {o->return o.getColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern) } );
+	}
+	
+	
+	
+    @ProxyMethod
+    public Map getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws Exception {
+		return buildFromResultSet( {o->return o.getColumnPrivileges(catalog, schema, table, columnNamePattern) } );
+	}
+	
+	@ProxyMethod
+    public Map getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws Exception{
+		return buildFromResultSet( {o->return o.getTablePrivileges(catalog,schemaPattern, tableNamePattern)  } );
+	}
+    
+    @ProxyMethod
+    public Map getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws Exception{
+		return buildFromResultSet( {o->return o.getBestRowIdentifier(catalog, schema, table, scope, nullable)  } );
+	}
+    
+	@ProxyMethod
+    public Map getVersionColumns(String catalog, String schema, String table) throws Exception{
+		return buildFromResultSet( {o->return o.getVersionColumns(catalog, schema, table)  } );
+	}
+	
+    @ProxyMethod
+    public Map getPrimaryKeys(String catalog, String schema, String table) throws Exception{
+		return buildFromResultSet( {o->return o.getPrimaryKeys(catalog, schema, table)  } );
+	}
+	
+    @ProxyMethod
+    public Map getImportedKeys(String catalog, String schema, String table) throws Exception{
+		return buildFromResultSet( {o->return o.getImportedKeys(catalog, schema, table)   } );
+	}
+	
+    @ProxyMethod
+    public Map getExportedKeys(String catalog, String schema, String table) throws Exception{
+		return buildFromResultSet( {o->return o.getExportedKeys(catalog, schema, table)   } );
+	}
+	
+    @ProxyMethod
+    public Map getCrossReference(String primaryCatalog, String primarySchema, String primaryTable, String foreignCatalog, String foreignSchema, String foreignTable) throws Exception{
+		return buildFromResultSet( {o->return o.getCrossReference(primaryCatalog, primarySchema, primaryTable,foreignCatalog, foreignSchema, foreignTable)  } );
+	}
+	
+    @ProxyMethod
+    public Map getTypeInfo() throws Exception {
+		return buildFromResultSet( {o->return o.getTypeInfo()  } );
+	}
+	
+    @ProxyMethod
+    public Map getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws Exception{
+		return buildFromResultSet( {o->return o.getIndexInfo(catalog, schema, table, unique, approximate)  } );
+	}
+        
+    
+    @ProxyMethod
+    public Map getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws Exception{
+		return buildFromResultSet( {o->return o.getSuperTypes(catalog, schemaPattern, typeNamePattern)  } );
+	}
+	
+    @ProxyMethod
+    public Map getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws Exception{
+		return buildFromResultSet( {o->return o.getSuperTables(catalog, schemaPattern, tableNamePattern)  } );
+	}
+	
+    @ProxyMethod
+    public Map getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) throws Exception{
+		return buildFromResultSet( {o->return o.getAttributes(catalog, schemaPattern, typeNamePattern, attributeNamePattern)  } );
+	}
+	
+	
+	@ProxyMethod
+    public  Map getSchemas() throws Exception {
+		return buildFromResultSet( {o->return o.getSchemas()  } );
+	}
+	
+    @ProxyMethod
+    public Map getCatalogs() throws Exception {
+		return buildFromResultSet( {o->return o.getCatalogs() } );
+	}
+	
+	@ProxyMethod
+	public Map getMetaData() {
+		def conn = null;
+		try {
+			conn = ds.getConnection();
+			def md = conn.getMetaData();
+			def map = [:];
+			map.identifierQuoteString = md.identifierQuoteString;
+			map.maxColumnNameLength = md.maxColumnNameLength;
+			map.schemaTerm = md.schemaTerm;
+			map.storesLowerCaseIdentifiers = md.storesLowerCaseIdentifiers();
+			map.storesUpperCaseIdentifiers = md.storesUpperCaseIdentifiers();
+			return map;
+		}
+		catch(e) {
+			throw e;
+		}	
+		finally {
+			try {conn.close();} catch(ign){;}
+		}
+	}
+	
+}

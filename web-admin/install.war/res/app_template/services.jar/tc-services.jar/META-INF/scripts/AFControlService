@@ -1,0 +1,461 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class AFControlService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	@Service('DateService')
+	def dateSvc
+	
+	def SCHEMANAME = 'afcontrol:afcontrol'
+	def SCHEMAVERSION = '1.0'
+	
+	def PENDING_STATE = 'PENDING'
+	def APPROVED_STATE = 'APPROVED'
+	def CLOSED_STATE = 'CLOSED'
+	def SERIAL_TYPE = 'serial'
+	def NONSERIAL_TYPE = 'nonserial'
+	
+	@ProxyMethod
+	public def createAFControl( afcontrol ) {
+		afcontrol.schemaname 	= SCHEMANAME
+		afcontrol.schemaversion	= SCHEMAVERSION
+		afcontrol.docstate		= PENDING_STATE
+		afcontrol.active		= 0
+		afcontrol.afinventorycreditid = '-'
+		if( afcontrol.aftype == 'serial' ) {
+			afcontrol.beginseries	= afcontrol.currentseries
+			afcontrol.beginqty		= afcontrol.endseries - afcontrol.currentseries + 1
+			afcontrol.balance		= afcontrol.beginqty  
+			afcontrol.qtyissued		= 0
+			afcontrol.issuedfrom	= 0
+			afcontrol.issued		= 0
+		}
+		else {
+			afcontrol.startseries = 0
+			afcontrol.endseries   = 0
+			afcontrol.currentseries = 0
+			afcontrol.beginseries	= 0
+			afcontrol.issuedfrom	= 0
+			afcontrol.issuedto		= 0
+		}
+		afcontrol.txndate		= new Date()
+		validateAFControl( afcontrol )
+		em.create( afcontrol.schemaname, afcontrol )
+		return afcontrol 
+	}
+	
+	@ProxyMethod 
+	public def approveAFControl( afcontrol ) {
+		def old = em.read( afcontrol.schemaname, afcontrol)
+		if( !old ) throw new Exception('AF Control doest not exists.')
+		if( old.docstate != PENDING_STATE ) throw new Exception('AF Control is already ' + old.docstate +'.')
+		afcontrol.docstate = 'APPROVED' 
+		em.update( afcontrol.schemaname, afcontrol )
+		postToAFInventory( afcontrol )
+		return afcontrol 
+	}	
+	
+	@ProxyMethod
+	public void deleteAFControl( afcontrol ) {
+		em.delete( SCHEMANAME, afcontrol ) 
+	}
+	
+	@ProxyMethod
+	public def transfer( afcontrol, transferto ) {
+		def oldafcontrol = em.read( afcontrol.schemaname, afcontrol )
+		if( !oldafcontrol ) throw new Exception('AF Control No. ' + afcontrol.stubno + ' no longer exists.' )
+		if( oldafcontrol.collectorid != afcontrol.collectorid ) throw new Exception('AF Control has already been transferred to ' + oldafcontrol.collectorname + '.' )
+		createNewTransferAFControl( afcontrol, oldafcontrol, transferto )
+		createTransferRecord( afcontrol, oldafcontrol, transferto )
+		transferOldAFControl( oldafcontrol )
+		updateTransferCraafCreditInfo( afcontrol, oldafcontrol ) 
+		logService.logA( 'TRANSFER', 'AFControl', afcontrol.objid, 'TRANSFER AFCONTROL FROM ' + afcontrol.collectorname + ' TO ' + transferto.name )
+		return oldafcontrol
+	}
+	
+	@ProxyMethod
+	public def adjustQuantity( afcontrol, newqty, qtyadjustment ) {
+		afcontrol = em.read( afcontrol.schemaname, afcontrol )
+		if( ! afcontrol ) 
+			throw new Exception('Cannot open AF Control with Stub No. ' + afcontrol.stubno + '.' )
+		if( afcontrol.docstate == CLOSED_STATE ) 
+			throw new Exception('AF Control Stub No. ' + afcontrol.stubno + ' has already been closed.' )
+		if( afcontrol.qtyreceived == newqty )
+			throw new Exception('New quantity must not be equal to quantity received.')
+		
+		afcontrol.qtyreceived = newqty 
+		afcontrol.beginqty  += qtyadjustment 
+		afcontrol.balance += qtyadjustment
+		em.update( afcontrol.schemaname, afcontrol )
+		
+		//update inventorycredit balance 
+		em.sqlContext.createNamedExecutor('afcontrol:adjustInventoryCreditBalance')
+				.setParameters([objid:afcontrol.afinventorycreditid, qtyadjustment:qtyadjustment])
+				.execute()
+				
+		//update craaf inventorycredit qty 
+		em.sqlContext.createNamedExecutor('afcontrol:adjustCraafInventoryCreditQty')
+				.setParameters([afinventorycreditid:afcontrol.afinventorycreditid, qtyadjustment:qtyadjustment])
+				.execute()
+		
+		//update craaf inventory qty 
+		em.sqlContext.createNamedExecutor('afcontrol:adjustCraafInventoryQty')
+				.setParameters([afinventorycreditid:afcontrol.afinventorycreditid, qtyadjustment:qtyadjustment])
+				.execute()
+		
+		logService.logA( 'ADJUSTQTY', 'AFControl', afcontrol.objid, 'Adjust AF Control Qty. by ' + qtyadjustment + '.')
+		
+		return afcontrol 
+	}
+	
+	
+	void updateTransferCraafCreditInfo( afcontrol, oldafcontrol ) {
+		def craafcredit = em.sqlContext.createNamedQuery('afcontrol:getCraafByCreditId').setParameter('afinventorycreditid', oldafcontrol.afinventorycreditid).singleResult
+		if( craafcredit ) {
+			craafcredit.docstate = 'TRANSFERRED'
+			em.update(craafcredit.schemaname, craafcredit )
+		}
+		
+		em.sqlContext.createNamedExecutor('afcontrol:updateTransferredCreditState')
+				.setParameter('objid', oldafcontrol.afinventorycreditid )
+				.execute()
+				
+		//insert new credit 
+		def credit = em.read('afinventorycredit', [objid:afcontrol.afinventorycreditid ])
+		
+		if( ! credit ) throw new Exception('Cannot open Inventory Credit for Stub No. ' + afcontrol.stubno + '.')
+		def newcredit = [:]
+		newcredit.putAll( credit )
+		
+		newcredit.objid 		= 'NC' + new UID()
+		newcredit.docstate 		= 'OPEN'
+		newcredit.startseries 	= afcontrol.startseries 
+		newcredit.endseries		= afcontrol.endseries 
+		newcredit.balance		= afcontrol.balance
+		
+		em.create( newcredit.schemaname, newcredit )
+		
+		//update afcontrol.afinventorycreditid reference
+		afcontrol.afinventorycreditid = newcredit.objid 
+		em.update(afcontrol.schemaname, afcontrol )
+	}
+	
+	
+	void createTransferRecord( afcontrol, oldafcontrol, transferto) {
+		em.create( 'afcontrol:transfer', [
+			objid 			: 'AT' + new UID(),
+			docstate		:  APPROVED_STATE,
+			txndate			: dateSvc.serverDate,
+			afcontrolid		: oldafcontrol.objid,
+			transferafcontrolid	: afcontrol.objid,
+			collectorid			: oldafcontrol.collectorid,
+			transfercollectorid	: transferto.objid, 
+		])
+	}
+	
+	void createNewTransferAFControl( afcontrol, oldafcontrol, transferto ) {
+		//create a new afcontrol forwarding only the balance  		
+		afcontrol.objid				= 'AT' + new UID()
+		afcontrol.dtissued			= dateSvc.serverDate
+		afcontrol.collectorid 		= transferto.objid 
+		afcontrol.collectorname 	= transferto.name 
+		afcontrol.collectortitle 	= transferto.jobtitle 
+		afcontrol.startseries       = afcontrol.currentseries
+		afcontrol.qtyreceived 		= afcontrol.balance 
+		afcontrol.beginqty			= afcontrol.balance 
+		afcontrol.qtyissued			= 0
+		afcontrol.issuedfrom		= 0
+		afcontrol.issuedto			= 0
+		em.create( afcontrol.schemaname, afcontrol )
+	}
+	
+	void transferOldAFControl( oldafcontrol ) {
+		oldafcontrol.docstate		= 'TRANSFERRED'
+		oldafcontrol.endseries		= oldafcontrol.currentseries - 1
+		oldafcontrol.qtyreceived	= oldafcontrol.endseries - oldafcontrol.startseries + 1
+		oldafcontrol.currentseries	+= 1
+		oldafcontrol.balance		= 0
+		em.update( oldafcontrol.schemaname, oldafcontrol ) 
+	}
+	
+	void postToAFInventory( afcontrol ) {
+		//since this is a manually issued receipt
+		//post a corresponding entry into the inventory and credit 
+		def inventory =  [
+			objid  			: 'AI' + new UID(),
+			schemaname 		: 'afinventory',
+			schemaversion 	: '1.0',
+			docstate		: 'CLOSED',
+			irafid			: '-',
+			iraftype		: 'LGU',
+			irafno			: afcontrol.afid + '-' + afcontrol.stubno,
+			afid 			: afcontrol.afid ,
+			aftype			: afcontrol.aftype,
+			afunit			: 'stub',
+			aflength		: afcontrol.serieslength,
+			stubfrom		: (afcontrol.stubno instanceof String ? 1 : afcontrol.stubno),
+			stubto			: (afcontrol.stubno instanceof String ? 1 : afcontrol.stubno),
+			currentstub		: (afcontrol.stubno instanceof String ? 1 : afcontrol.stubno),
+			stubprefix		: afcontrol.prefix,
+			qtyonhand		: 1,
+			qtyissued		: 1,
+			prefix			: afcontrol.prefix ,
+			suffix			: afcontrol.suffix,
+			startserialno	: afcontrol.startseries ,
+			startseries		: afcontrol.startseries,
+			endseries		: afcontrol.endseries, 
+			issuedfrom		: afcontrol.startseries,
+			issuedto		: afcontrol.endseries,
+			dtposted		: afcontrol.txndate,
+		]
+		em.create( 'afinventory', inventory )
+		
+		def qtyissued = afcontrol.qtyissued 
+		if( afcontrol.aftype == 'serial' ) {
+			qtyissued = afcontrol.qtyreceived - afcontrol.balance 
+		}
+		
+		def credit = [
+			objid			: 'AC' + new UID(),
+			schemaname		: 'afinventorycredit',
+			schemaversion	: '1.0',
+			docstate		: 'OPEN',
+			afinventoryid 	: inventory.objid,
+			irafid			: inventory.irafid,
+			irafno			: inventory.irafno,
+			iraftype		: 'COLLECTOR',
+			afid			: afcontrol.afid ,
+			aftype			: afcontrol.aftype,
+			afunit			: inventory.afunit,
+			aflength		: inventory.aflength,
+			prefix			: inventory.prefix,
+			suffix			: inventory.suffix,
+			startseries		: inventory.startseries,
+			endseries		: inventory.endseries,
+			stubno			: afcontrol.stubno ,
+			qtyissued		: qtyissued,
+			balance			: afcontrol.balance ,
+			stubno			: afcontrol.stubno, 
+		]
+		em.create('afinventorycredit', credit )
+		
+		postToCraaf( afcontrol, inventory, credit )
+		
+		afcontrol.afinventorycreditid = credit.objid
+		em.update( afcontrol.schemaname, afcontrol )
+		
+	}
+	
+	void postToCraaf( afcontrol, inventory, credit  ) {
+		def parsedate = dateSvc.parseDate( inventory.dtposted, null )
+		def craaf = [
+			objid 				: 'C' + new UID(),
+			schemaname			: 'craaf',
+			schemaversion		: '1.0',
+			afinventoryid		: inventory.objid, 
+			afinventorycreditid : null,
+			craafyear			: parsedate.year,
+			craafmonth			: parsedate.month,
+			collectorid			: null,
+			collectorname		: null,
+			collectortitle		: null,
+			afid				: afcontrol.afid,
+			beginqty			: null,
+			beginfrom			: null,
+			beginto				: null,
+			receivedqty			: afcontrol.qtyreceived,
+			receivedfrom		: formatSeries( afcontrol.startseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
+			receivedto			: formatSeries( afcontrol.endseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
+			issuedqty			: afcontrol.qtyreceived,
+			issuedfrom			: formatSeries( afcontrol.startseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
+			issuedto			: formatSeries( afcontrol.endseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
+			canceledqty			: null,
+			canceledfrom		: null,
+			canceledto			: null,
+			cancelreason		: null,
+			endingqty			: 0,
+			endingfrom			: 0,
+			endingto			: 0,
+		]
+		em.create( craaf.schemaname, craaf )
+		
+		def issuedqty  = afcontrol.qtyissued 
+		def issuedfrom = null
+		def issuedto   = null 
+		if( afcontrol.aftype == 'serial' ) {
+			issuedqty 	= ( afcontrol.currentseries > afcontrol.startseries ? afcontrol.currentseries - afcontrol.startseries : null )
+			issuedfrom 	= ( afcontrol.currentseries > afcontrol.startseries ? afcontrol.startseries: null )
+			issuedto	= ( afcontrol.currentseries > afcontrol.startseries ? afcontrol.currentseries - 1 : null )
+			issuedfrom  = formatSeries( issuedfrom, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength )
+			issuedto    = formatSeries( issuedto, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength )
+		}
+		
+		def craafcredit = [
+			objid 				: 'CC' + new UID(),
+			schemaname			: 'craaf',
+			schemaversion		: '1.0',
+			afinventoryid		: null,
+			afinventorycreditid : credit.objid, 
+			craafyear			: parsedate.year,
+			craafmonth			: parsedate.month,
+			collectorid			: afcontrol.collectorid,
+			collectorname		: afcontrol.collectorname,
+			collectortitle		: afcontrol.collectortitle,
+			afid				: afcontrol.afid,
+			beginqty			: null,
+			beginfrom			: null,
+			beginto				: null,
+			receivedqty			: afcontrol.qtyreceived,
+			receivedfrom		: formatSeries( afcontrol.startseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
+			receivedto			: formatSeries( afcontrol.endseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
+			issuedqty			: issuedqty,
+			issuedfrom			: issuedfrom,
+			issuedto			: issuedto,
+			canceledqty			: null,
+			canceledfrom		: null,
+			canceledto			: null,
+			cancelreason		: null,
+			endingqty			: afcontrol.balance ,
+			endingfrom			: formatSeries( afcontrol.currentseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
+			endingto			: formatSeries( afcontrol.endseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength ),
+		]
+		em.create( craaf.schemaname, craafcredit )
+		
+		//post craaf credit  automatically 
+		em.create( 'craafcredit', [
+			objid			: 'CC' + new UID(),
+			schemaname		: 'craafcredit',
+			schemaversion 	: '1.0',
+			craafid			: craaf.objid,
+			reftype			: 'AFCONTROL',
+			refno			: afcontrol.stubno ,
+			refdate			: afcontrol.dtissued,
+			qty				: (afcontrol.aftype == 'serial'  ? 1 : afcontrol.qtyissued ),
+		])
+	}
+	
+	
+	void validateAFControl( afcontrol ) {
+		//validate
+		def dtissued = dateSvc.parse('yyyy-MM-dd', afcontrol.dtissued )
+		if( dtissued > dateSvc.serverDate ) 
+			throw new Exception('Date Issued must be less than or equal current date.')
+			
+		if( afcontrol.aftype == 'serial' ) {
+			def sstartseries = afcontrol.startseries +''
+			if( ! sstartseries.endsWith('1') )
+				throw new Exception('Start Series must end with 1.')
+			if( afcontrol.startseries >= 10 && afcontrol.startseries % 50 > 1 ) 
+				throw new Exception('Start Series must be divisible by 50.')
+			if( afcontrol.currentseries < afcontrol.startseries || afcontrol.currentseries > afcontrol.endseries )
+				throw new Exception('Current Series must be between ' + afcontrol.startseries +  ' and ' + afcontrol.endseries + '.' )
+				
+			//check overlapping series 
+			def overlap = em.sqlContext.createNamedQuery('afcontrol:checkOverlapSeries').setParameters( afcontrol ).singleResult 
+			if( overlap ) throw new Exception('Series overlaps with Stub No. ' + overlap.stubno + '.') 
+		}
+		else {
+			if( afcontrol.qtyissued > afcontrol.qtyreceived )
+				throw new Exception('Qty. Issued must not exceed qty. received.')
+		}
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		return em.read( SCHEMANAME, [objid:objid] )
+	}
+	
+	@ProxyMethod
+	public Map getActiveAFControl( collectorid, afid, mode ) {
+		def params = [collectorid:collectorid, afid:afid, mode:mode]
+		Map afcontrol = em.sqlContext.createNamedQuery('afcontrol:getActiveByCollectorId').setParameters(params).singleResult
+		if( afcontrol ) buildSerialNo( afcontrol )
+		return afcontrol 
+	}
+	
+	@ProxyMethod
+	public List getInactiveList( collectorid, afid, mode ) {
+		def params = [collectorid:collectorid, afid:afid, mode:mode]
+		return em.sqlContext.createNamedQuery('afcontrol:getInactiveList').setParameters(params).resultList
+	}
+	
+	@ProxyMethod
+	public List getInactiveSerialCaptureList( collectorid  ) {
+		def params = [collectorid:collectorid]
+		return em.sqlContext.createNamedQuery('afcontrol:getInactiveSerialCaptureList').setParameters(params).resultList
+	}
+	
+	@ProxyMethod
+	public List getAllInactiveList( collectorid ) {
+		return em.sqlContext.createNamedQuery('afcontrol:getAllInactiveList').setParameter('collectorid', collectorid).resultList
+	}
+	
+	@ProxyMethod
+	public def activateAFControl( objid, mode )  {
+		def afcontrol = em.read( SCHEMANAME, [objid:objid] )
+		if( afcontrol.docstate != APPROVED_STATE ) throw new Exception('AF Control is already ' + afcontrol.state + '.')
+		if( afcontrol.mode != mode ) throw new Exception('AF Control is already in  ' + afcontrol.mode + ' mode.' )
+		if( afcontrol.active == false ) throw new Exception('AF Control is already ACTIVE.')
+		deactivateCurrentControl( afcontrol )
+		em.sqlContext.createNamedExecutor('afcontrol:activateControl').setParameter('objid', objid).execute()
+		buildSerialNo( afcontrol)
+		return afcontrol 
+	}
+	
+	@ProxyMethod
+	public void buildSerialNo( afcontrol ) {
+		afcontrol.serialno = null
+		if( afcontrol.aftype == SERIAL_TYPE ) {
+			afcontrol.serialno = formatSeries( afcontrol.currentseries, afcontrol.prefix, afcontrol.suffix, afcontrol.serieslength)
+		}
+	}
+	
+	@ProxyMethod
+	public def formatSeries( series, prefix, suffix, serieslength ) {
+		if( ! series || ! serieslength ) return '-' 
+		def p = (prefix ? prefix + '-' : '')
+		def s  = (suffix ? '-' + suffix : '')
+		return p + (series+'').padLeft(serieslength, '0') + s  
+	}
+	
+	@ProxyMethod
+	public List getOpenAFControlList( collectorid, afid ) {
+		def params = [
+			collectorid : collectorid, 
+			afid		: ( afid ? afid : '%' )
+		]
+		return em.sqlContext.createNamedQuery('afcontrol:getOpenAFControlList').setParameters( params ).resultList 
+	}
+	
+	@ProxyMethod
+	public List getAFList() {
+		return em.sqlContext.createNamedQuery('afcontrol:getAFList').resultList 
+	}
+	
+	@ProxyMethod
+	public void changeMode( afcontrolid, newmode ) { 
+		//set to new mode and reset active to 0
+		def params = [ objid:afcontrolid, newmode:newmode ]
+		em.sqlContext.createNamedExecutor('afcontrol:changeMode').setParameters( params ).execute()
+	}
+	
+	void deactivateCurrentControl( afcontrol ) {
+		def activeafcontrol = getActiveAFControl( afcontrol.collectorid, afcontrol.afid, afcontrol.mode )
+		if( activeafcontrol )  {
+			activeafcontrol = em.read( activeafcontrol.schemaname, activeafcontrol )
+			activeafcontrol.active = false
+			em.update( activeafcontrol.schemaname, activeafcontrol )
+		}
+	}
+	
+}

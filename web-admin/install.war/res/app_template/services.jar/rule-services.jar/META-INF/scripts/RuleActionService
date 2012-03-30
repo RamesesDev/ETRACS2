@@ -1,0 +1,218 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : june 6, 2011
+*/
+
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class RuleActionService
+{
+	@ProxyMethod
+	public List buildActionRuleText( rule, action ) {
+		if( ! action.opener ) throw new Exception('Action Opener must be specified.')
+		
+		if( action.opener == 'ruleaction.requireinfo' ) return buildRequireInfoAction( rule, action  )
+		if( action.opener == 'ruleaction.updatetaxfee' ) return buildUpdateTaxFeeAction( rule, action ) 
+		if( action.opener == 'ruleaction.taxfeecharge' ) return buildAddTaxFeeAction( rule, action )
+		
+		throw new Exception('RuleText definition for opener ' + action.opener + ' is not defined in RuleTextService.' )
+	}
+	
+
+	/*--------------------------------------------------------
+	* buildRequireInfoAction Support 
+	-------------------------------------------------------- */
+	List buildRequireInfoAction( rule, action ) {
+		def s = ''
+		s += 'Map m = new HashMap();\n'
+		
+		if( action.applyperlob == true ) {
+			s += 'm.put("lobid", $lobid );\n'
+			s += 'm.put("lobname", $lobname );\n'
+		}
+		else {
+			s += 'm.put("lobid", null);\n'
+			s += 'm.put("lobname", null);\n'
+		}
+        s += 'm.put("rulename", "' + rule.rulename + '");\n'
+        s += 'm.put("varid", "' + action.variable.objid + '" );\n'
+        s += 'm.put("requiredperlob", ' + action.applyperlob + ' );\n'
+        s += 'm.put("required", ' + action.required + ' );\n'
+        s += 'm.put("requiredbeforeprint", ' + action.requiredbeforeprint + ' );\n'
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("addInfo", m );\n'
+        return [[ruletext:s, conditions:[]]]
+	}
+	
+	/*--------------------------------------------------------
+	* buildAddTaxFeeAction Support 
+	-------------------------------------------------------- */
+	List buildAddTaxFeeAction( rule, action ) {
+		if( action.computationmode == 'FORMULA' ) 
+            return buildFormulaRuleText( rule, action )
+        return buildRangeRuleText(rule, action )
+	}
+	
+    List buildFormulaRuleText(rule, action ) {
+		def ruletext = buildAddTaxFeeCommonText( rule, action, action.expr )
+        return [[ruletext:ruletext, conditions:[]]]
+    }
+    
+    List buildRangeRuleText(rule, action) {
+		List actions = []
+		action.ranges.each { range -> 
+			def ruletext = buildAddTaxFeeCommonText( rule, action, range.expr  )
+			def cond = buildRangeAdditionalCondition( rule, action, range )
+			actions.add(
+				ruletext   : ruletext ,
+				conditions : [ cond ],
+			)
+		}
+        return actions 
+    }
+	
+	def buildRangeAdditionalCondition( rule, action, range ) {
+		//
+		//get condition.variable to determine perline or per establishment option 
+		def varconditions = rule.conditions.findAll{ it.opener == 'rulecondition.variable' }
+		def varcond = varconditions.find{ it.variable.objid == action.variable.objid }
+		def lobid = '$lobid'
+		if( varcond && varcond.perline == false ) {
+			lobid = 'null' 
+		}
+		if( range.rangeto > 0 )
+			return 'InputVariableFact( varid=="' + action.variable.objid + '", value >= ' + range.rangefrom + ', value < ' + range.rangeto + ', appid == $appid, lobid == ' +  lobid +' )\n'
+		else 	
+			return 'InputVariableFact( varid=="' + action.variable.objid + '", value >= ' + range.rangefrom + ', appid == $appid, lobid == ' + lobid +' )\n'
+	}
+	
+	def buildAddTaxFeeCommonText( rule, action, expr ) {
+		def s = ''
+        s += 'Map m = new HashMap();\n'
+        s += 'm.put("rulename", "' + rule.rulename + '");\n'
+        s += 'm.put("appid", $appid);\n'
+        
+		if( action.applytype.name == 'PERLINE' ) {
+            s += 'm.put("lobid", $lobid);\n'
+            s += 'm.put("lobname", $lobname);\n'
+        }
+        else {
+            s += 'm.put("lobid", null);\n'
+            s += 'm.put("lobname", null);\n'
+        }
+        s += 'm.put("expr", "' + expr + '");\n'
+        s += 'm.put("acctid", "' + action.acctid + '");\n'
+        s += 'm.put("accttitle", "' + action.accttitle + '");\n'
+        s += 'm.put("applytype", "' + action.applytype.name + '" );\n' 
+		
+		def taxfeeAccounts = getTaxFeeAccountConditions( rule )
+		
+		if( taxfeeAccounts ) {
+			s += 'm.put("taxfeefact", TAXFEEFACT );\n'
+			s += 'm.put("varname", "AMOUNTDUE");\n'
+			s += 'm.put("varvalue", AMOUNTDUE);\n' 
+		}
+
+        def inputVars = buildVariables( rule, action )
+        if( inputVars ) {
+            s += 'List varlist = new ArrayList();\n'
+            
+            inputVars.each { var ->
+                s += 'varlist.add( ' + var.name + ');\n'
+            }
+            
+            s += 'm.put("inputvars", varlist );\n'
+        }
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("addTaxFee", m );\n'
+		return s 
+	}
+	
+	def getTaxFeeAccountConditions( rule ) {
+		return rule.conditions.findAll{ it.opener == 'rulecondition.taxfee' }
+	}
+	
+	def buildVariables( rule, action ) {
+        def vars = []
+        def inputVars = rule.conditions.findAll{ it.opener == 'rulecondition.variable' }
+        inputVars.each {
+            vars += [
+                objid   : it.variable.objid,
+                name    : it.variable.name,
+                caption : it.variable.caption,
+                description : it.variable.description,
+            ]
+        }
+		inputVars = rule.conditions.findAll{ it.opener == 'rulecondition.summary' }
+        inputVars.each { opener ->
+            opener.summaries.each {
+                vars += [
+                    objid   : it.objid,
+                    name    : it.name,
+                    caption : it.name,
+                    description : it.name,
+                ]
+            }
+        }
+        return vars
+    }
+
+	
+	
+	/*--------------------------------------------------------
+	* buildUpdateTaxFeeAction Support 
+	-------------------------------------------------------- */
+	List buildUpdateTaxFeeAction( rule, action ) {
+		def updateType = determineUpdateType( rule )
+        def s = ''
+        s += 'Map m = new HashMap();\n'
+        s += 'm.put("rulename", "' + rule.rulename + '");\n'
+        s += 'm.put("taxfeefact", TAXFEEFACT );\n'
+        s += 'm.put("expr", "' + action.expr + '");\n'
+        s += 'm.put("varname", "AMOUNTDUE");\n'
+        s += 'm.put("varvalue", AMOUNTDUE);\n'
+		
+		
+		def inputVars = buildVariables( rule, action )
+        if( inputVars ) {
+            s += 'List varlist = new ArrayList();\n'
+            
+            inputVars.each { var ->
+                s += 'varlist.add( ' + var.name + ');\n'
+            }
+            
+            s += 'm.put("inputvars", varlist );\n'
+        }
+		
+		
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("' + updateType + '", m );\n'
+		def conds = getUpdateTypeCondition( updateType )
+        return [[ruletext:s, conditions:conds]]
+	}
+	
+    
+    def determineUpdateType( rule ){
+        def taxfeeCond = rule.conditions.find{ it.opener == 'rulecondition.taxfee' }
+        if(taxfeeCond ) {
+            if( taxfeeCond.option.name == 'NOT_HIGHEST' ) return 'updateNotHighestTaxFee'
+            if( taxfeeCond.option.name == 'NOT_LOWEST' ) return 'updateNotLowestTaxFee'
+            if( taxfeeCond.option.name == 'HIGHEST' ) return 'updateHighestTaxFee'
+            if( taxfeeCond.option.name == 'LOWEST' ) return 'updateLowestTaxFee'
+        }
+        return 'updateAnyTaxFee' 
+    }
+	
+	def getUpdateTypeCondition( updateType ) {
+		def conds = []
+		if( updateType == 'updateNotHighestTaxFee' ) conds.add('not NotHighestComputed( acctid == $acctid, appid == $appid )\n' )
+		else if( updateType == 'updateNotLowestTaxFee' ) conds.add('not NotLowestComputed( acctid == $acctid, appid == $appid )\n' )
+		else if( updateType == 'updateHighestTaxFee' ) conds.add('not HighestComputed( acctid == $acctid, appid == $appid )\n' )
+		else if( updateType == 'updateLowestTaxFee' ) conds.add('not LowestComputed( acctid == $acctid, appid == $appid )\n' )
+		return conds 
+	}
+
+}

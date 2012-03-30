@@ -1,0 +1,144 @@
+<web-app version="2.4" 
+         xmlns="http://java.sun.com/xml/ns/j2ee" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+    
+    <context-param>
+        <param-name>app.version</param-name>
+        <param-value>1.006</param-value>
+    </context-param>
+    <context-param>
+        <param-name>app.title</param-name>
+        <param-value>ETRACS2 Admin Console</param-value>
+    </context-param>
+    <context-param>
+        <param-name>app.description</param-name>
+        <param-value></param-value>
+    </context-param>
+    
+    <context-param>
+        <param-name>app.host</param-name>
+        <param-value>localhost:8080</param-value>
+    </context-param>
+    <context-param>
+        <param-name>app.context</param-name>
+        <param-value>@appname</param-value>
+    </context-param>
+    <context-param>
+        <param-name>session.host</param-name>
+        <param-value>localhost:8080</param-value>
+    </context-param>
+    <context-param>
+        <param-name>session.context</param-name>
+        <param-value>@appname</param-value>
+    </context-param>
+    <context-param>
+        <param-name>res-url</param-name>
+        <param-value>${etracs2.uploads.url}</param-value>
+    </context-param>
+    
+    <context-param>
+        <param-name>debug</param-name>
+        <param-value>false</param-value>
+    </context-param>
+    
+    <servlet>
+        <servlet-name>JSInvoker</servlet-name>
+        <servlet-class>com.rameses.web.support.JsonInvoker</servlet-class>
+    </servlet>
+    
+    <servlet>
+        <servlet-name>remoteJS</servlet-name>
+        <servlet-class>com.rameses.web.support.RemoteJSProxyService</servlet-class>
+    </servlet>
+    
+    <servlet>
+        <servlet-name>poller</servlet-name>
+        <servlet-class>com.rameses.web.support.PollerServlet</servlet-class>
+    </servlet>
+    
+    <servlet>
+        <servlet-name>resource</servlet-name>
+        <servlet-class>com.rameses.web.support.ResourceServlet</servlet-class>
+    </servlet>
+    
+    <servlet>
+        <servlet-name>cluster-resource</servlet-name>
+        <servlet-class>com.rameses.web.support.ClusterResourceServlet</servlet-class>
+    </servlet>
+    
+    <servlet>
+        <servlet-name>xxx</servlet-name>
+        <jsp-file>/customizer.jsp</jsp-file>
+    </servlet>
+    
+    <servlet>
+        <servlet-name>photo-jsp</servlet-name>
+        <jsp-file>/photo.jsp</jsp-file>
+    </servlet>
+    
+    
+    <servlet-mapping>
+        <servlet-name>JSInvoker</servlet-name>
+        <url-pattern>/jsinvoker/*</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+        <servlet-name>remoteJS</servlet-name>
+        <url-pattern>/remote-proxy/*</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+        <servlet-name>poller</servlet-name>
+        <url-pattern>/poll</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+        <servlet-name>resource</servlet-name>
+        <url-pattern>/res/*</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+        <servlet-name>cluster-resource</servlet-name>
+        <url-pattern>/cres/*</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+        <servlet-name>xxx</servlet-name>
+        <url-pattern>*.cus</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+        <servlet-name>photo-jsp</servlet-name>
+        <url-pattern>/photo/*</url-pattern>
+    </servlet-mapping>
+    
+    
+    <!-- WebFilter Configuration  -->
+    <filter>
+        <filter-name>WebFilter</filter-name>
+        <filter-class>com.rameses.web.support.Filter</filter-class>
+    </filter>
+    
+    <!-- SessionFilter Configuration  -->
+    <filter>
+        <filter-name>SessionFilter</filter-name>
+        <filter-class>com.rameses.web.support.SessionFilter</filter-class>
+    </filter>
+    
+    
+    <filter-mapping>
+        <filter-name>WebFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher> 
+        <dispatcher>FORWARD</dispatcher>
+    </filter-mapping>  
+    
+    <filter-mapping>
+        <filter-name>SessionFilter</filter-name>
+        <url-pattern>*.jsp</url-pattern>
+        <dispatcher>REQUEST</dispatcher> 
+        <dispatcher>FORWARD</dispatcher>
+    </filter-mapping> 
+    
+</web-app>

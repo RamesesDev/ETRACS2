@@ -1,0 +1,186 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*
+import java.rmi.server.UID;
+
+
+class EntityService 
+{
+	@PersistenceContext("main")
+	def em;
+	
+	@Service("SequenceService")
+	def seqService;
+	
+	@Service('LogService')
+	def logService
+	
+	def SCHEMANAME = 'entity:entity'
+	def SCHEMAVERSION = '1.0'
+	def MEMBER_SCHEMA = 'entity:member'
+	
+	def INDIVIDUAL_TYPE = 'individual'
+	def JURIDICAL_TYPE = 'juridical'
+	def MULTIPLE_TYPE = 'multiple'
+
+	@ProxyMethod
+	public def getList( textSearch, params ) {	
+		if( ! textSearch ) {
+			return getListByQueryName( "entity:getList", [:], params );
+		}
+		def result = [];
+		if( (result = getListByQueryName("entity:getListByNo", [entityno:textSearch.padLeft(5,'0')], params))) return result;
+		if( (result = getListByQueryName("entity:getListByName", [entityname:textSearch+'%'], params))) return result;
+		return result;
+	}
+	
+	@ProxyMethod
+	public def open( objid, entitytype  ) {
+		return em.read( SCHEMANAME, [objid:objid, entitytype:entitytype] )
+	}
+	
+	@ProxyMethod
+	public def create( entity  ) {
+		entity.objid = buildId()
+		entity.schemaname = SCHEMANAME
+		entity.schemaversion = SCHEMAVERSION
+		entity.entityno = seqService.getNextFormattedSeries( "ENTITY" )
+		entity.entityname = buildName( entity )
+				
+		em.validate( entity.schemaname, entity )
+		checkDuplicateEntityName( entity )
+		//checkDuplicateEntityNo( entity )
+		
+		em.create( entity.schemaname, entity )
+		if( entity._members ) {
+			//this is multiple, insert members 
+			entity._members.each{ member -> 
+				member.entityid = entity.objid 
+				em.validate('entity:member', member)
+				em.create('entity:member', member)
+			}
+		}
+		logService.log( 'CREATE', 'Entity', entity.objid ) 
+		return entity
+	}
+	
+	@ProxyMethod
+	public def update( entity ) {
+		em.validate( entity.schemaname, entity )
+		
+		entity.entityname = buildName( entity )
+		em.update( entity.schemaname, entity, { diff -> 
+				logService.logB('UPDATE', 'Entity', entity.objid, null, diff) 
+			} as UpdateChangeHandler
+		)
+		return entity
+	}
+	
+	@ProxyMethod
+	public void delete( entity ) {
+		try {
+			em.delete( entity.schemaname, entity )
+			logService.log( 'DELETE', 'Entity', entity.entityname )
+		}
+		catch ( e ) {
+			throw new Exception('Record cannot be deleted. It has been referenced by other record.', e )
+		}
+	}
+	
+	@ProxyMethod
+	public def getPossibleDuplicateName( entity ) {
+		if( ! entity.objid ) {
+			entity.objid = buildId()
+		}
+		entity.entityname = buildName( entity )
+		entity = em.sqlContext.createNamedQuery('entity:checkDuplicateName').setParameters(entity).setMaxResults(1).singleResult
+		if( entity ) {
+			def info = em.serializer.read( entity.info )
+			entity.address = info.address 
+		}
+		return entity
+	}
+	 
+	@ProxyMethod
+	public List getMemberList( entityid ) {
+		return em.sqlContext.createNamedQuery('entity:getMemberList').setParameter('entityid', entityid).resultList 
+	}
+	
+	@ProxyMethod 
+	public void saveMember( member ) {
+		em.validate( MEMBER_SCHEMA, member )
+		
+		def oldmember = em.read( MEMBER_SCHEMA, member )
+		if( oldmember )  {
+			em.update( MEMBER_SCHEMA, member )
+		}
+		else {
+			em.create( MEMBER_SCHEMA, member )
+		}
+	}
+	
+	@ProxyMethod
+	public void deleteMember( member ) {
+		em.delete( MEMBER_SCHEMA, member ) 
+	}
+	
+	@ProxyMethod
+	public List getCitizenshipList() {
+		return [ 'FILIPINO', 'AMERICAN', 'CHINESE', 'JAPANESE','KOREAN']
+	}
+	
+	@ProxyMethod
+	public List getCivilStatusList() {
+		return ['SINGLE', 'MARRIED', 'WIDOW', 'WIDOWER']
+	}
+	
+	@ProxyMethod
+	public List getProfessionList() {
+		return ['DOCTOR', 'ENGINEER', 'NURSE', 'STUDENT',]
+	}
+	
+	@ProxyMethod
+	public List getOrganizationTypes() {
+		return ['SINGLE_PROPRIETORSHIP', 'PARTNERSHIP', 'CORPORATION', 'COOPERATIVE', 'ASSOCIATION', 'INCORPORATED']
+	}
+	
+	
+	
+	void checkDuplicateEntityNo( entity ) {
+		def result = em.sqlContext.createNamedQuery('entity:checkDuplicateNo').setParameters([objid:entity.objid, entityno:entity.entityno]).singleResult
+		if( result.icount >= 1 ) {
+			throw new Exception('Duplicate entity no. found. Please save the record again.');
+		}
+	}
+	
+	void checkDuplicateEntityName( entity ) {
+		def params = [ objid:entity.objid, entityname:entity.entityname, entityaddress:entity.entityaddress ]
+		def data = em.sqlContext.createNamedQuery('entity:checkDuplicateName').setParameters( params ).singleResult 
+		if( data ) throw new Exception( entity.entityname + ' already exists with Entity No. ' + data.entityno +'.\nDuplicate name and address combination is not allowed.')
+	}
+	
+	def buildName( entity ) {
+		if( entity.entitytype == INDIVIDUAL_TYPE ) {
+			def name = entity.info.lastname + ', ' + entity.info.firstname 
+			if( entity.info.middlename ) {
+				name += ' ' + entity.info.middlename
+			}
+			return name
+		}
+		return entity.entityname
+	}
+	
+	def getListByQueryName( query, criteria, params ) {
+		if( ! params ) {
+			params = [_start:0, _limit:50]
+		}
+		return em.sqlContext.createNamedQuery( query )
+					.setParameters( criteria )
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+	
+	def buildId() {
+		return 'E' + new UID()
+	}
+}

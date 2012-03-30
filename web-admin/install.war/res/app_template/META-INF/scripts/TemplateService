@@ -1,0 +1,19 @@
+import com.rameses.annotations.*;
+
+class TemplateService {
+
+	@Resource("TemplateService")
+	def template;
+	
+	@ProxyMethod 
+	public def get( String name, def params ) {
+		try {
+			return template.getResult("META-INF/templates/${name}.groovy", params );	
+		}
+		catch(e) {
+			return null;
+		}
+	}
+	
+	
+}

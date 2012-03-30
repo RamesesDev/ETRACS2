@@ -1,0 +1,49 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class IncomeAcctGroupService
+{
+	@PersistenceContext("main")
+	def em
+	
+	@Service('LogService')
+	def logService
+	
+	def SCHEMA_NAME = "incomeacctgroup"
+	def SCHEMA_VERSION = "1.0"
+	
+	@ProxyMethod
+	public def getList( searchText, params ) {
+		if( params )
+			return em.sqlContext.createNamedQuery('incomeacctgroup:getList')
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList 
+		return em.sqlContext.createNamedQuery('incomeacctgroup:getList').resultList 
+	}
+	
+	@ProxyMethod
+	public def create( group ) {
+		em.create( SCHEMA_NAME, group )
+		return group 
+	}
+	
+	@ProxyMethod
+	public void delete( group ) {
+		checkReference( group ) 
+		em.delete(SCHEMA_NAME, group)
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		return em.read( SCHEMA_NAME, [objid:objid])
+	}
+	
+	void checkReference( group ) {
+		def ref = em.sqlContext.createNamedQuery('incomeacctgroup:getReference')
+						.setParameter('groupid', group.objid ).singleResult 
+		if( ref ) throw new Exception(group.objid + ' is currently referenced by Income Account No. ' + ref.accttitle + '.')
+	}
+	
+	
+}	

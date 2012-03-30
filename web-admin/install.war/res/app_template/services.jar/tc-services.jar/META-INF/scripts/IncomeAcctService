@@ -1,0 +1,155 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class IncomeAcctService
+{
+	@PersistenceContext("main")
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = "incomeacct:incomeacct"
+	def schemaversion = "1.0"
+	
+	@ProxyMethod
+	public def getList( searchText, params ) {
+		if( !searchText ) return getListByQuery("incomeacct:getList", [:], params );
+		def result = []; 
+		if((result = getListByQuery("incomeacct:getListByAcctNo", [acctno:searchText+"%"], params ))) return result;
+		if((result = getListByQuery("incomeacct:getListByTitle", [accttitle:searchText+"%"], params ))) return result;
+		return result;
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		return em.sqlContext.createNamedQuery("incomeacct:getById").setParameter("objid", objid).singleResult;
+	}
+	
+	@ProxyMethod
+	public def create( incomeacct ) {
+		incomeacct.objid = "IA" + new UID();
+		incomeacct.schemaname = schemaname;
+		incomeacct.schemaversion = schemaversion;
+		if( incomeacct.fundname ) 
+			incomeacct.fundid = getFundId( incomeacct.fundname );
+		validate( incomeacct ) ;
+		resetNgasAccount( incomeacct );
+		resetSreAccount( incomeacct );
+		em.create( incomeacct.schemaname, incomeacct);
+		return incomeacct;
+	}
+	
+	@ProxyMethod
+	public def update( incomeacct ) {
+		incomeacct.fundid = getFundId( incomeacct.fundname );
+		validate( incomeacct )
+		resetNgasAccount( incomeacct )
+		resetSreAccount( incomeacct )
+		em.update(incomeacct.schemaname, incomeacct, { diff ->
+			logService.logB("UPDATE", "IncomeAccount", incomeacct.objid, null, diff )
+		} as UpdateChangeHandler )
+		return incomeacct
+	}
+	
+	@ProxyMethod
+	public void delete( incomeacct ) {
+		checkReferencedId( incomeacct );
+		
+		
+		em.delete(incomeacct.schemaname, incomeacct);
+	}
+	
+	@ProxyMethod
+	public def approve( objid ) {
+		def incomeacct = em.read("incomeacct:incomeacct", [objid:objid]);
+		incomeacct.docstate = 'APPROVED';
+		em.update("incomeacct:incomeacct", incomeacct);
+		return incomeacct;
+	}
+	
+	private def getFundId( fundname ){
+		return em.sqlContext.createNamedQuery("incomeacct:getFundId").setParameter("fundname", fundname).singleResult.objid;	
+	}
+	
+	@ProxyMethod
+	public def getFundList() {
+		return em.sqlContext.createNamedQuery("incomeacct:getFund").resultList;
+	}
+	
+	@ProxyMethod
+	public def getSystemTypeList() {
+		return [
+			'ADVANCE_PAYMENT', 'BUSINESS_TAX',  'FEE',
+			'INTEREST', 'OTHER_FEE', 
+			'REG_FEE', 'SURCHARGE', 'TAX', 'TAX_CREDIT', 
+            'RPT_BASIC','RPT_BASICPREV','RPT_BASICPRIOR', 
+            'RPT_BASICINT', 'RPT_BASICPREVINT', 'RPT_BASICPRIORINT', 
+            'RPT_SEF', 'RPT_SEFPREV', 'RPT_SEFPRIOR', 
+            'RPT_SEFINT', 'RPT_SEFPREVINT', 'RPT_SEFPRIORINT',
+		];
+	}
+	
+	@ProxyMethod
+	public def getIncomeAccountList( searchText, params ){
+		if( !searchText ) return getListByQuery("incomeacct:getIncomeAccountList", [:], params );
+		def result = []; 
+		if((result = getListByQuery("incomeacct:getIncomeAccountListByNo", [acctno:searchText], params ))) return result;
+		if((result = getListByQuery("incomeacct:getIncomeAccountListByTitle", [accttitle:searchText+"%"], params ))) return result;
+		return result;
+	}
+	
+	
+	private void validate( incomeacct ) {
+		def oldacct = em.read(incomeacct.schemaname, incomeacct);
+		util.validateLastUpdate( incomeacct, oldacct );
+		
+		checkDuplicates( incomeacct );
+		if( ! incomeacct.amounttype ) incomeacct.defaultvalue = 0.0;
+		if( incomeacct.amounttype && incomeacct.defaultvalue <= 0.0)  throw new Exception("Default Value must be greater than zero." );
+		em.validate(incomeacct.schemaname, incomeacct);
+	}
+	
+	
+	private void checkDuplicates( incomeacct ) {
+		def data = em.sqlContext.createNamedQuery("incomeacct:checkDuplicateAcctNo").setParameters( incomeacct ).singleResult;
+		throwDuplicateError(data.count, "Account No. $incomeacct.acctno already exists.");
+		data = em.sqlContext.createNamedQuery("incomeacct:checkDuplicateTitle").setParameters( incomeacct ).singleResult;
+		throwDuplicateError(data.count, "Account No. $incomeacct.accttitle already exists.");
+	}
+	
+	private void checkReferencedId( incomeacct ){
+		def data = em.sqlContext.createNamedQuery('incomeacct:checkReferencedId').setParameter("acctid", incomeacct.objid).singleResult
+		if( data.count > 0 ) util.checkDuplicateError( data.count, "Delete not allowed. Income Account has already been referenced." )
+		
+		def acct = em.sqlContext.createNamedQuery( 'incomeacct:getAccttitleAtRule' ).setParameter( 'acctid', '%' + incomeacct.acctid + '%' ).singleResult
+		if( acct ) throw new Exception('Delete not allowed. Income Account has already been referenced at Business Rule.')
+	}
+	
+	private void throwDuplicateError( count, message ) {
+		if( count > 0 ) throw new Exception( message );
+	}
+	
+	private void resetNgasAccount( incomeacct ) {
+		if( ! incomeacct.ngastitle ) {
+			incomeacct.ngasacctid = null;
+		}
+	}
+	
+	private void resetSreAccount( incomeacct ) {
+		if( ! incomeacct.sretitle ) {
+			incomeacct.sreacctid = null;
+		}
+	}
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList;
+	}
+}

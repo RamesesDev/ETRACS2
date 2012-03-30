@@ -1,0 +1,96 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class MiscItemsService{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def schemaname = 'miscitems:miscitems';
+	def schemaversion = '1.0';
+	
+	@ProxyMethod
+	public def getList( searchText, params ){
+		if( !searchText ) return getListByQuery( 'miscitems:getList', [:], params );
+		
+		def result = [];
+		
+		if((result = getListByQuery( 'miscitems:getListByCode', [misccode:searchText+"%"], params ))) return result;
+		if((result = getListByQuery( 'miscitems:getListByDescription', [miscdesc:searchText+"%"], params ))) return result;
+		
+		return result;
+	}
+	
+	@ProxyMethod
+	public def open( objid ){
+		return em.sqlContext.createNamedQuery( 'miscitems:getById' ).setParameter( 'objid', objid ).singleResult;
+	}
+	
+	@ProxyMethod
+	public def create( miscitem ){
+		miscitem.objid = "MISC" + new UID();
+		miscitem.schemaname = schemaname;
+		miscitem.schemaversion = schemaversion;
+		
+		validate( miscitem );
+		em.create( miscitem.schemaname, miscitem );
+		
+		return miscitem;
+	}
+	
+	@ProxyMethod
+	public def update( miscitem ){
+		validateUpdate( miscitem );
+		
+		em.update( miscitem.schemaname, miscitem, { diff ->
+			logService.logB( 'UPDATE', 'MISC ITEMS', miscitem.objid, null, diff );
+		} as UpdateChangeHandler )
+		
+		return miscitem;
+	}
+	
+	@ProxyMethod
+	public void delete( miscitem ){
+		em.delete( miscitem.schemaname, miscitem );
+	}
+	
+	
+	private void validate( miscitem ){
+		def oldmiscitem = em.read(miscitem.schemaname, miscitem);
+		util.validateLastUpdate( miscitem, oldmiscitem );
+		
+		checkDuplicates( miscitem );
+		em.validate(miscitem.schemaname, miscitem);
+	}
+	
+	private void validateUpdate( miscitem ){
+		def oldmiscitem = em.read(miscitem.schemaname, miscitem);
+		util.validateLastUpdate( miscitem, oldmiscitem );
+		
+		em.validate(miscitem.schemaname, miscitem);
+	}
+	
+	private void checkDuplicates( miscitem ){
+		def data = em.sqlContext.createNamedQuery( 'miscitems:checkDuplicateCode' ).setParameter( 'misccode', miscitem.misccode ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Misc Item $miscitem.misccode already exists." );
+		data = em.sqlContext.createNamedQuery( 'miscitems:checkDuplicateDescription' ).setParameter( 'miscdesc', miscitem.miscdesc ).singleResult;
+		if( data.count > 0 ) throw new Exception( "Misc Item $miscitem.miscdesc already exists." );
+	}
+	
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+
+}

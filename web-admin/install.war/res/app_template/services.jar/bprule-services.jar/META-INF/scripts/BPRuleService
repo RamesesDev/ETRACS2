@@ -1,0 +1,539 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : june 6, 2011
+*/
+
+import com.rameses.annotations.*;
+import com.rameses.rules.common.*;
+
+public class BPRuleService
+{
+	@PersistenceContext('main')
+	def em 
+	
+	@Resource("RuleService/local")
+	def ruleService;
+	
+	@Service('VariableService')
+	def varSvc
+	
+	@Service('BPApplicationService') 
+	def appSvc
+	
+	@Service('DateService')
+	def dateSvc
+	
+	def BPASSESSMENT_RULESET = 'bpassessment'
+	def FACTS_PACKAGE = 'bp.assessment.facts.'
+	
+	@ProxyMethod
+	public def test() {
+		ruleService.execute("test", [], [:])
+	}
+	
+	@ProxyMethod
+	public def buildInfos( app ) {
+		def facts = createInfoFacts( app )
+		def actionList = ruleService.createRuleAction()
+		buildActionCommands( app, facts, actionList )
+		ruleService.execute( BPASSESSMENT_RULESET, facts, [actionList:actionList], 'APPINFO' )
+		sortInfos( app )
+		return app
+	}	
+	
+	@ProxyMethod
+	public def buildTaxFees( app ) {
+		def facts = createTaxFeeFacts( app )
+		def actionList = ruleService.createRuleAction()
+		buildActionCommands( app, facts, actionList )
+		getTaxFeeAgendaGroups().each { group ->
+			ruleService.execute( BPASSESSMENT_RULESET, facts, [actionList:actionList], group.objid )
+		}
+		sortTaxFees( app )
+		return app
+	}
+	
+	def getTaxFeeAgendaGroups() {
+		return em.sqlContext.createNamedQuery('rule:getTaxFeeRuleGroups').resultList 
+	}
+	
+	void buildActionCommands( app, facts, actionList ) {
+		actionList.addCommand( 'addInfo', new AppInfoHandler( em:em, app:app ) )
+		actionList.addCommand( 'addTaxFee', new AddTaxFeeHandler( em:em, app:app, facts:facts, ruleService:ruleService ) )
+		actionList.addCommand( 'updateAnyTaxFee', new UpdateAnyTaxFeeHandler( app:app, facts:facts, ruleService:ruleService  ) )
+		actionList.addCommand( 'updateHighestTaxFee', new UpdateHighestTaxFeeHandler( app:app, facts:facts, ruleService:ruleService ) )
+		actionList.addCommand( 'updateLowestTaxFee', new UpdateLowestTaxFeeHandler( app:app, facts:facts, ruleService:ruleService ) )
+		actionList.addCommand( 'updateNotHighestTaxFee', new UpdateNotHighestTaxFeeHandler( app:app, facts:facts, ruleService:ruleService ) )
+		actionList.addCommand( 'updateNotLowestTaxFee', new UpdateNotLowestTaxFeeHandler( app:app, facts:facts, ruleService:ruleService ) )
+	}
+	
+	
+	def createTaxFeeFacts( app ) {
+		def facts = []
+		facts += createApplicationFact( app )
+		facts += createLobFacts( app )
+		facts += createInputVariableFacts( app )
+		facts += createTaxFeeSummaryFacts( app )
+		return facts
+	}
+	
+	
+	def createInfoFacts( app ) {
+		def facts = []
+		facts += createApplicationFact( app )
+		facts += createLobFacts( app )
+		facts += createInputVariableFacts( app )
+		return facts 
+	}
+	
+	def createApplicationFact( app ) {
+		def appfact  = ruleService.createFact(BPASSESSMENT_RULESET, FACTS_PACKAGE + 'ApplicationFact')	
+		appfact.appid = app.objid
+		appfact.applicationtype = app.applicationtype
+		appfact.organization = app.organization
+		appfact.officetype = app.officetype
+		appfact.barangayid = app.barangayid		
+		return appfact 
+	}
+	
+	def createLobFacts( app ) {
+		def facts = []
+		app.lobs.each { lobitem ->
+			def lobfact = ruleService.createFact(BPASSESSMENT_RULESET, FACTS_PACKAGE + 'LOBFact')
+			lobfact.appid = app.objid 
+			lobfact.lobid = lobitem.lob.objid 
+			lobfact.name = lobitem.lob.name 
+			lobfact.assessmenttype = lobitem.assessmenttype
+			lobfact.classificationid = lobitem.lob.classificationid 
+			lobfact.attributes = loadLobAttributes( lobitem.lob.objid  )
+			facts += lobfact 
+		}
+		return facts 
+	}
+	
+	def createTaxFeeSummaryFacts( app ) {
+		def facts = []
+		appSvc.getAccountSummaryTypes().each {
+			def fact = ruleService.createFact(BPASSESSMENT_RULESET, FACTS_PACKAGE + 'InputVariableFact' )
+			fact.appid = app.objid 
+			fact.lobid = null
+			fact.varid = it.objid 
+			fact.varname = it.name
+			fact.vartype = 'decimal'
+			fact.value   = 0.0
+			fact.systype = 'SUMMARY'
+			facts += fact 
+		}
+		return facts 
+	}
+	
+	def loadLobAttributes( lobid  ) {
+		def lob = em.read('lob', [objid:lobid] )
+		return lob.attributes?.name  
+	}
+	
+	def createInputVariableFacts( app ) {
+		def parsedate = dateSvc.parseCurrentDate()
+		def facts = []
+		app.infos.each {
+			def fact = ruleService.createFact(BPASSESSMENT_RULESET, FACTS_PACKAGE + 'InputVariableFact' )
+			fact.appid = app.objid 
+			fact.lobid = it.lobid 
+			fact.varid = it.varid 
+			fact.varname = it.varname 
+			fact.vartype = it.vartype 
+			fact.value   = it.value 
+			facts += fact 
+		}
+		
+		getSystemVarList().each{
+			def fact = ruleService.createFact(BPASSESSMENT_RULESET, FACTS_PACKAGE + 'InputVariableFact' )
+			fact.appid = app.objid 
+			fact.lobid = null 
+			fact.varid = it.objid 
+			fact.varname = it.varname 
+			fact.vartype = it.vartype 
+			if( it.varname == 'CURRENT_YEAR' ) 
+				fact.value   = parsedate.year 
+			else if( it.varname == 'CURRENT_QTR')
+				fact.value =  parsedate.qtr 
+			else if( it.varname == 'NO_LOBS')
+				fact.value = app.lobs.size() 
+			facts += fact 
+		}
+		return facts 
+	}
+	
+	List getSystemVarList() {
+		return em.sqlContext.createNamedQuery('bprule:getSystemVarList').resultList 
+	}
+	
+	void sortInfos( app ) {
+		app.infos.sort{ a, b -> 
+			def atext = (a.lobname ? a.lobname : '-') + a.name 
+			def btext = (b.lobname ? b.lobname : '-') + b.name 
+			return atext <=> btext 
+		}		
+	}
+	
+	void sortTaxFees( app ) {
+		app.taxfees.sort{ a, b -> 
+			def atext = (a.lobname ? a.lobname : '-') + a.accttitle  
+			def btext = (b.lobname ? b.lobname : '-') + b.accttitle 
+			return atext <=> btext 
+		}		
+	}
+	
+	
+}
+
+class AppInfoHandler implements RuleActionHandler
+{ 
+	def app
+	def facts
+	def em 
+	
+	public void execute( drools, var ) {
+		if( ! isAdded(var)  ) {
+			var.putAll( getVariableInfo( var ) )
+			app.infos.add( var )
+		}
+	}
+		
+	boolean isAdded( var ) {
+		def varInfo = app.infos.find{ it.lobid == var.lobid && it.varid == var.varid }  
+		return varInfo != null 
+	}
+	
+	Map getVariableInfo( var ) {
+		def varInfo = em.sqlContext.createNamedQuery('bprule:getVarInfo').setParameter('objid', var.varid).singleResult 
+		if( ! varInfo ) throw new Exception('Variable ' + var.varname + ' does not exists.\nCheck if variable was not deleted.')
+		if( varInfo.arrayvalues )
+			varInfo.arrayvalues = em.serializer.read( varInfo.arrayvalues )
+		else 
+			varInfo.arrayvalues = []
+		return varInfo 
+	}
+}
+
+
+class AddTaxFeeHandler implements RuleActionHandler
+{ 
+	def facts
+	def app
+	def ruleService
+	def em 
+	def BPASSESSMENT_RULESET = 'bpassessment'
+	def FACTS_PACKAGE = 'bp.assessment.facts.'
+	
+	public void execute( drools, tfvalue ) {
+		def util = new Util(em: em);
+		def av =  calculateAssessedValue( tfvalue )
+		def acct = util.getIncomeAccountById( tfvalue.acctid );
+		def taxfee = [
+			appid     : tfvalue.appid,
+			lobid     : tfvalue.lobid,
+			lobname   : tfvalue.lobname,
+			acctid    : tfvalue.acctid,
+			accttitle : tfvalue.accttitle,
+			systype   : getIncomeAccountSystemType( tfvalue.acctid, tfvalue.accttitle, tfvalue.rulename ),
+			rulename  : tfvalue.rulename,
+			assessedvalue : av, 
+			amountdue     : av,
+		]
+		if( tfvalue.applytype == 'MAX' ) processApplyMaxValue( drools, taxfee )
+		else if( tfvalue.applytype == 'MIN' ) processApplyMinValue( drools, taxfee )
+		else  processApplyPerLine( drools, taxfee )
+		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
+	}
+	
+	void insertTaxFeeFact( drools, taxfee ) {
+		def fact = ruleService.createFact(BPASSESSMENT_RULESET, FACTS_PACKAGE + 'TaxFeeFact')
+		fact.appid = taxfee.appid 
+		fact.lobid = taxfee.lobid 
+		fact.acctid = taxfee.acctid 
+		fact.assessedvalue = taxfee.assessedvalue
+		fact.amountdue = taxfee.amountdue
+		drools.insert( fact )
+		facts.add( fact )
+	}
+	
+	void processApplyMaxValue( drools, taxfee ) {
+		def prevtaxfee = app.taxfees.find{ it.lobid == taxfee.lobid && it.acctid == taxfee.acctid }
+		if( ! prevtaxfee ) {
+			app.taxfees.add( taxfee )
+		}
+		else if( taxfee.assessedvalue > prevtaxfee.assessedvalue ) {
+			prevtaxfee.assessedvalue = taxfee.assessedvalue
+			prevtaxfee.amountdue = taxfee.assessedvalue
+			prevtaxfee.rulename = taxfee.rulename 
+		}
+	}
+	
+	void processApplyMinValue( drools, taxfee ) {
+		def prevtaxfee = app.taxfees.find{ it.lobid == taxfee.lobid && it.acctid == taxfee.acctid }
+		if( ! prevtaxfee ) {
+			app.taxfees.add( taxfee )
+		}
+		else if( taxfee.assessedvalue < prevtaxfee.assessedvalue ) {
+			prevtaxfee.assessedvalue = taxfee.assessedvalue
+			prevtaxfee.rulename = taxfee.rulename 
+		}
+	}
+	
+	void processApplyPerLine( drools, taxfee ) {
+		//check if the added taxfee for the LOB has already been added.
+		//if added replace it with this value otherwise add the new taxfee 
+		def tf = app.taxfees.find{ it.lobid == taxfee.lobid && it.acctid == taxfee.acctid }
+		if( tf ) {
+			tf.assessedvalue = taxfee.assessedvalue
+			tf.amountdue = taxfee.amountdue
+		}
+		else {
+			app.taxfees.add( taxfee )
+			insertTaxFeeFact( drools, taxfee ) 
+		}
+	}
+	
+	def calculateAssessedValue( tfvalue ) {
+		def params = [:]
+		tfvalue.inputvars.each { inputvar -> 
+			params[inputvar.varname] =  inputvar.value 
+		}
+		
+		params.AMOUNTDUE = tfvalue.varvalue 
+		
+		def resolvedExpr = """
+			def IIF( expr, truevalue, falsevalue ) {
+				return (expr ? truevalue : falsevalue )
+			}
+			
+			def FIXED( value ) {
+				return (int) value 
+			}
+			
+		"""
+		resolvedExpr += tfvalue.expr 
+		return (new Util( ruleService:ruleService )).evaluate( resolvedExpr, params )
+	}
+	
+	/*
+	def resolveFunctions( expr ) {
+		def util = new Util( ruleService:ruleService )
+		def resolvedExpr =  util.resolveIIF( expr )
+		resolvedExpr = util.resolveFixed( expr )
+		return resolvedExpr
+	}
+	*/
+	
+	def getIncomeAccountSystemType( acctid, accttitle, rulename  ) {
+		def acct = em.sqlContext.createNamedQuery('bprule:getIncomeAccountById').setParameter('objid', acctid ).singleResult
+		if( !acct ) throw new Exception('Cannot open ' + accttitle + ' record. \nPlease check that it has not been deleted. If deleted, modify rule ' + rulename + '.')
+		return acct.systype 
+	}
+	
+}
+
+class UpdateAnyTaxFeeHandler implements RuleActionHandler
+{
+	def app 
+	def facts
+	def ruleService 
+	
+	public void execute( drools, tfvalue  ) {
+		def tffact = tfvalue.taxfeefact
+		def taxfee = app.taxfees.find{ it.appid == tffact.appid && it.lobid == tffact.lobid && it.acctid == tffact.acctid }
+		def params = [:]
+		params[tfvalue.varname] = tfvalue.varvalue 
+		tfvalue.inputvars?.each { inputvar -> 
+			params[inputvar.varname] =  inputvar.value 
+		}
+		def resolvedExpr = """
+			def IIF( expr, truevalue, falsevalue ) {
+				return (expr ? truevalue : falsevalue )
+			}
+			
+		"""
+		resolvedExpr += tfvalue.expr 
+		taxfee.amountdue = (new Util(ruleService:ruleService)).evaluate( resolvedExpr, params )
+		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
+	}
+}
+	
+	
+class UpdateHighestTaxFeeHandler implements RuleActionHandler
+{
+	def app 
+	def facts
+	def ruleService
+	def FACTS_PACKAGE = 'bp.assessment.facts.'
+	
+	public void execute( drools, tfvalue  ) {
+		def util = new Util(ruleService:ruleService)
+		def tffact = tfvalue.taxfeefact
+		def taxfees = util.getAffectedTaxesFees( app, tfvalue )
+		def maxav = taxfees.assessedvalue.max()
+		def highestTaxFees = taxfees.findAll{ it.assessedvalue == maxav }
+		util.updateAmountDue( tfvalue, highestTaxFees )
+		util.insertFact( drools, app.objid, tffact.acctid, facts, FACTS_PACKAGE + 'HighestComputed')
+		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
+	}	
+}
+
+class UpdateNotHighestTaxFeeHandler implements RuleActionHandler
+{
+	def app 
+	def facts
+	def ruleService
+	def FACTS_PACKAGE = 'bp.assessment.facts.'
+	
+	public void execute( drools, tfvalue  ) {
+		def util = new Util(ruleService:ruleService)
+		def tffact = tfvalue.taxfeefact
+		def taxfees = util.getAffectedTaxesFees( app, tfvalue )
+		def maxav = taxfees.assessedvalue.max()
+		
+		//update not highest taxfees 
+		def nothighestTaxFees = taxfees.findAll{ it.assessedvalue < maxav }
+		util.updateAmountDue( tfvalue, nothighestTaxFees )
+		
+		//if there are more than 1 equal highest values, adjust taxfees ( count - 1 )
+		def equalHighestTaxFees = taxfees.findAll{ it.assessedvalue == maxav }
+		if( equalHighestTaxFees.size() > 1 ) {
+			equalHighestTaxFees.remove(0)
+			util.updateAmountDue( tfvalue, equalHighestTaxFees)
+		}
+		util.insertFact( drools, facts, app.objid, tffact.acctid, FACTS_PACKAGE + 'NotHighestComputed' )
+		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
+	}
+}
+
+class UpdateLowestTaxFeeHandler implements RuleActionHandler
+{
+	def app 
+	def facts
+	def ruleService
+	def FACTS_PACKAGE = 'bp.assessment.facts.'
+	
+	public void execute( drools, tfvalue  ) {
+		def util = new Util(ruleService:ruleService)
+		def tffact = tfvalue.taxfeefact
+		def taxfees = util.getAffectedTaxesFees( app, tfvalue )
+		def minav = taxfees.assessedvalue.min()
+		def lowestTaxFees = taxfees.findAll{ it.assessedvalue == minav }
+		util.updateAmountDue( tfvalue, lowestTaxFees )
+		util.insertFact( drools, facts, app.objid, tffact.acctid, FACTS_PACKAGE + 'LowestComputed' )
+		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
+	}
+}
+
+class UpdateNotLowestTaxFeeHandler implements RuleActionHandler
+{
+	def app 
+	def facts
+	def ruleService
+	def FACTS_PACKAGE = 'bp.assessment.facts.'
+	
+	public void execute( drools, tfvalue  ) {
+		def util = new Util(ruleService:ruleService)
+		def tffact = tfvalue.taxfeefact
+		def taxfees = util.getAffectedTaxesFees( app, tfvalue )
+		
+		//update lowest taxfees 
+		def minav = taxfees.assessedvalue.min()
+		def notlowestTaxFees = taxfees.findAll{ it.assessedvalue > minav }
+		util.updateAmountDue( tfvalue, notlowestTaxFees )
+		
+		//if there are more than 1 equal lowest values, adjust taxfees (count - 1)
+		def equalLowestTaxFees = taxfees.findAll{ it.assessedvalue == minav }
+		if( equalLowestTaxFees.size() > 1 ) {
+			equalLowestTaxFees.remove(0)
+			util.updateAmountDue( tfvalue, equalLowestTaxFees )
+		}
+		util.insertFact( drools, facts, app.objid, tffact.acctid, FACTS_PACKAGE + 'NotLowestComputed' )
+		(new Util(ruleService:ruleService)).insertTaxFeeSummaryFact(drools, app)
+	}
+}
+
+
+class Util
+{
+	def em;
+	def ruleService 
+	def BPASSESSMENT_RULESET = 'bpassessment'
+	def FACTS_PACKAGE = 'bp.assessment.facts.'
+	
+	public def getIncomeAccountById(def objid){
+		return em.sqlContext.createNamedQuery('bprule:getIncomeAccountById')
+		  .setParameters([objid: objid])
+		  .singleResult;
+	}
+	
+	public def evaluate( expr, params ) {
+		return (new GroovyShell( new Binding( params) )).evaluate( expr )
+	}
+	
+	/*
+	public def resolveIIF( expr ) { 
+		def pattern = ~/@IIF\(.+\)/
+		def matcher = pattern.matcher( expr )
+		while( matcher ) {
+			def match = matcher[0]
+			def iif = match.replaceFirst('@IIF','').replaceFirst(',', ' ? ').reverse().replaceFirst(',', ':').reverse()
+			expr = expr.replaceFirst(pattern.pattern(), iif)
+			matcher = pattern.matcher( expr )
+		} 
+		return expr
+	}
+	*/
+	
+	public def resolveFixed( expr ) {
+		def pattern = ~/@FIXED\(.+\)/
+		def matcher = pattern.matcher( expr )
+		while( matcher ) {
+			def match = matcher[0]
+			def fixed = match.replaceFirst('@FIXED','(int)')
+			expr = expr.replaceFirst(pattern.pattern(), fixed)
+			matcher = pattern.matcher( expr )
+		} 
+		return expr
+		
+	}
+	
+	public def getAffectedTaxesFees( app, tfvalue ) {
+		def tf = tfvalue.taxfeefact 
+		return app.taxfees.findAll{ it.appid == tf.appid && it.acctid == tf.acctid }
+	}
+	
+	public void updateAmountDue( tfvalue, taxfeelist ) {
+		taxfeelist.each { taxfee ->
+			def params = [:]
+			params[tfvalue.varname] = taxfee.assessedvalue
+			taxfee.amountdue = evaluate( tfvalue.expr, params )
+		}
+	}
+	
+	public void insertFact( drools, facts, appid, acctid, factname ) {
+		def fact = ruleService.createFact(BPASSESSMENT_RULESET, factname)
+		fact.appid = appid
+		fact.acctid = acctid 
+		drools.insert( fact )
+		facts.add( fact )
+	}
+	
+	void insertTaxFeeSummaryFact( drools, app ) {
+		def systypes = app.taxfees.collect{ it.systype }.unique()
+		def summaryGroups = app.taxfees.groupBy{ it.systype }
+
+		systypes.each { systype ->
+			def total = summaryGroups[systype].amountdue.sum()
+			def summfact = ruleService.createFact(BPASSESSMENT_RULESET, FACTS_PACKAGE + 'TaxFeeSummaryFact')	
+			summfact.appid = app.objid 
+			summfact.name = systype 
+			summfact.value = total
+			drools.insert( summfact )
+		}
+	}
+}
+

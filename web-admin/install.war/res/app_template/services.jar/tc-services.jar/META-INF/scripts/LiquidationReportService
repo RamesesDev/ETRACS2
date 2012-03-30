@@ -1,0 +1,286 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.text.DecimalFormat;
+
+public class LiquidationReportServices{
+	
+	@PersistenceContext("main")
+	def em;
+	
+	@Service("Var")
+	def vars;
+	
+	@Service("NumberService")
+	def numsvc;
+	
+	@Service('DateService')
+	def dtSvc
+	
+	def decformat = new DecimalFormat("#,##0.00");
+
+	@ProxyMethod
+	public def buildRCDReportData( def liquidationid ){
+		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
+		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
+		def reportData = liquidation.info;
+		reportData.amountinwords = numsvc.convertString( reportData.amount + "" );
+		reportData.amountformatted = decformat.format( reportData.amount );
+		
+		reportData.txndate = liquidation.dtposted;
+		liquidation.liquidationid = liquidation.objid
+
+		reportData.otherpayments = em.sqlContext.createNamedQuery("liquidationreport:getOtherPaymentsByLiquidation")
+									 .setParameters( liquidation )
+									 .resultList;
+
+		reportData.remittances = em.sqlContext.createNamedQuery("liquidationreport:getRemittancesByLiquidation")
+								   .setParameters( [liquidationid: liquidationid] )
+								   .resultList;
+		reportData.collectionsummaries = em.sqlContext.createNamedQuery('liquidationreport:getCollectionSummaryByAF')
+									.setParameters( [liquidationid: liquidationid] )
+								    .resultList;
+		reportData.remittedforms = em.sqlContext.createNamedQuery('liquidationreport:getRemittedForms')
+									.setParameters( [liquidationid: liquidationid] )
+								    .resultList;
+		reportData.nonserialremittances = em.sqlContext.createNamedQuery('liquidationreport:getNonSerialRemittedForms')
+									.setParameters( [liquidationid: liquidationid] )
+								    .resultList;
+		reportData.nonserialsummary = em.sqlContext.createNamedQuery('liquidationreport:getNonSerialRemittedFormsSummary')
+									.setParameters( [liquidationid: liquidationid] )
+								    .resultList;
+
+		return reportData;
+	}
+	
+	@ProxyMethod
+	public def buildRCDByFundReportData( liquidationid, fundid, fundname  ){
+		if( ! fundid  ) throw new Exception('Fund is required.')
+		
+		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
+		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
+		if( liquidation.opener == 'single' ) throw new Exception('This report is applicable to Multi-Cashier transaction only.')
+		
+		//get the rcd for the specified fundTotal
+		def rcd = liquidation.rcds.find{ it.fundid == fundid }
+		if (!rcd ) throw new Exception('No records found for Fund ' + fundname + '.' )
+		
+		def reportData = liquidation.info;
+		
+		reportData.fundname 			= fundname 
+		reportData.totalcash 			= rcd.cash 
+		reportData.totalotherpayment	= rcd.noncash 
+		reportData.amount				= rcd.amount 
+		reportData.amountinwords 		= numsvc.convertString( rcd.amount + "" );
+		reportData.amountformatted 		= decformat.format( rcd.amount );
+		reportData.cashiername			= rcd.cashiername 
+		reportData.cashiertitle			= rcd.cashiertitle 
+		reportData.txndate 				= liquidation.dtposted;
+		
+		liquidation.liquidationid = liquidation.objid
+
+		reportData.otherpayments = rcd.noncashpayments
+
+		reportData.remittances = em.sqlContext.createNamedQuery("liquidation:getRemittancesByLiquidationByFund")
+								   .setParameters( [liquidationid: liquidationid, fundid: fundid ] )
+								   .resultList;
+								   
+		reportData.collectionsummaries = em.sqlContext.createNamedQuery('liquidation:getCollectionSummaryByAFByFund')
+									.setParameters( [liquidationid: liquidationid, fundid: fundid ] )
+								    .resultList;
+									
+		reportData.remittedforms = []
+		
+		reportData.nonserialremittances = []
+		
+		reportData.nonserialsummary = []
+
+		return reportData;
+	}
+	
+	@ProxyMethod
+	public def buildReportBData( def liquidationid, def fundid ){
+		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
+		
+		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
+		def reportData = buildLiquidationData( liquidation )
+		
+		reportData.list = em.sqlContext.createNamedQuery("liquidationreport:getRemittanceFundTotalByLiquidationAndFund")
+		                    .setParameters([liquidationid: liquidationid, fundid: fundid])
+							.resultList;
+							
+		def fundTotal = reportData.list.amount.sum()
+		if( ! fundTotal ) fundTotal = 0.0 
+		
+		reportData.amountinwords 	= numsvc.convertString( fundTotal + '' ).toUpperCase() + ' PESOS' 
+		reportData.amountformatted	= decformat.format( fundTotal )
+		
+		return reportData;
+	}
+	
+	@ProxyMethod
+	public def buildReportCData( def liquidationid, def chart, def fundid ){
+		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
+		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
+		
+		def reportData = buildLiquidationData( liquidation )
+		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByGLAccount$chart")
+		             .setParameters([liquidationid: liquidationid, fundid: fundid])
+					 .resultList;
+
+		
+		def display = { idx, val, last ->
+			if( !last )
+				return [title: (' '*(idx*10))+val, header:true];
+			else
+				return [title: (' '*(idx*10))+val.acctcode+"-"+val.accttitle, header:false, amount: val.amount];
+		};
+		
+		reportData.data = buildTree( list, display );
+		return reportData;
+	}
+	
+	@ProxyMethod
+	public def buildReportDData( def liquidationid, def chart, def fundid ){
+		def liquidation = em.read( "liquidation:liquidation", [objid: liquidationid] );
+		
+		if( !liquidation ) throw new Exception("Liquidation with objid $liquidationid not found.");
+		def reportData = buildLiquidationData( liquidation )
+		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByIncomeAccount$chart")
+		                    .setParameters([liquidationid: liquidationid, fundid: fundid])
+							.resultList.each{
+								it.pathtitle += "/$it.parentcode-$it.parenttitle";
+							};
+		
+		def display = { idx, val, last ->
+			if( !last )
+				return [title: (' '*(idx*10))+val, header:true];
+			else
+				return [title: (' '*(idx*10))+val.acctcode+"-"+val.accttitle, header:false, amount: val.amount];
+		};
+
+		reportData.data = buildTree( list, display );
+		
+		return reportData;
+	}
+	
+	@ProxyMethod
+	public def exportNGASToCsv( def liquidationid ){
+		StringBuffer sb = new StringBuffer();
+		def formatDate = { date, format -> 
+			return new java.text.SimpleDateFormat(format).format(date); 
+		}
+        def lq = em.read("liquidation:liquidationlist", [objid: liquidationid]);
+        sb.append("Republic of the Philippines\n");
+        sb.append(vars.get('lgu_formal_name') + "\n");
+        sb.append("Office of the Provincial Accountant\n");
+        sb.append("Date : " + formatDate( lq.txndate, 'MMM dd yyyy' ) );
+        sb.append("\n\n");
+		sb.append("Collector,O.R. Date,O.R. No.,Name of Payor,Particulars,Amount,Code \n");
+		
+		def list = em.sqlContext.createNamedQuery("liquidationreport:getRevenueByLiquidationId")
+		             .setParameter("liquidationid", liquidationid )
+					 .resultList;
+					 
+		def vr = [:];
+		def prevremittanceid = null 
+		
+		def append = { val, showinfo  ->
+			def collectorname = ( showinfo ? val.collectorname.replaceAll(",", " ") : '')
+			def receiptdate   = ( showinfo ? formatDate( val.receiptdate, 'MM/dd/yyyy' ) : '')
+			def serialno      = ( showinfo ? ((val.serialno) ? val.serialno : val.afid) : '')
+			def payorname     = ( showinfo ? val.payorname.replaceAll(","," ") : '')
+			
+			sb.append( collectorname + ',' );
+			sb.append( receiptdate + ',' );
+			sb.append( serialno + ',' );
+			sb.append( payorname + ',' );
+			if( val.voided == 0 ){
+				sb.append( val.accttitle + ',' );
+				sb.append( val.amount + ',' );
+				sb.append( val.acctno );
+			}else{
+				sb.append( '*** VOID ***,' );
+				sb.append( '0.0,' );
+				sb.append( '***' );
+			}
+			sb.append( '\n' );
+		}
+		
+		def getSerialNo = { receipt -> 
+			return receipt.serialno ? receipt.serialno : receipt.afid 
+		}
+		
+		def prevserialno = null 
+		prevremittanceid = list[0].remittanceid 
+		def remittanceamount = 0.0 
+		def liquidationamount = 0.0 
+		list.each{
+			//insert remittance total 
+			if( prevremittanceid != it.remittanceid ) {
+				sb.append("\n------------------------- TOTAL REMITTANCE: $remittanceamount\n\n" )
+				prevremittanceid = it.remittanceid
+			}
+			if( prevserialno != getSerialNo(it) ) {
+				append( it, true );
+				prevserialno = getSerialNo( it ) 
+			}
+			else {
+				append( it, false );
+			}
+			remittanceamount = it.remittanceamount 
+			liquidationamount = it.liquidationamount 
+		}
+		sb.append("------------------------- TOTAL REMITTANCE: $remittanceamount\n\n" )
+		sb.append("------------------------- TOTAL LIQUIDATION: $liquidationamount\n\n" )
+		sb.append("Generated by: ETRACS 2.0\n")
+		sb.append("Run Date: " + dtSvc.format( 'MM-dd-yyyy hh:mm:ss a', new Date()) )
+		return sb.toString();
+	}
+	
+	@ProxyMethod
+	public def getFundList(){
+		return em.sqlContext.createNamedQuery("liquidationreport:getFundList").resultList;
+	}
+
+	private def buildTree( def list, def display ){
+
+		def handler = [];
+		def results = [];
+	
+		def analyzeTree = { idx, name ->
+			def n = handler.find{ it.name == name };
+			if( !n ) {
+				handler.add( [name:name, idx:idx]);
+				results.add( display( idx, name, false ) );
+			}
+			return idx + 1;
+		}
+		
+		list.each{ val ->
+			def idx = 0;
+			if( val.pathtitle ) {
+				val.pathtitle.split('/').each{ 
+					idx = analyzeTree( idx, it );
+				};
+			}
+			results.add( display( idx+1, val, true )  );
+		}
+
+		return results;
+	}
+	
+	def buildLiquidationData( liquidation ) {
+		return [
+			txndate: liquidation.dtposted,
+			txnno: liquidation.info.txnno,
+			liquidatingofficername: liquidation.info.liquidatingofficername,
+			liquidatingofficertitle: liquidation.info.liquidatingofficertitle,
+			treasurername: liquidation.info.treasurername,
+			treasurertitle: liquidation.info.treasurertitle,
+			depositedbyname: liquidation.info.depositedbyname,
+			depositedbytitle: liquidation.info.depositedbytitle,
+			amountinwords: numsvc.convertString( liquidation.info.amount + "" ),
+			amountformatted: decformat.format( liquidation.info.amount )
+		];
+	}
+}

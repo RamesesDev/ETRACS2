@@ -1,0 +1,56 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class TreasuryReportService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@ProxyMethod
+	public def generateStatementOfRevenue( chart, def year, def qtr, def month, def fundid ){
+		def dtime = parsetime( year, qtr, month );
+		def list = em.sqlContext.createNamedQuery('treasuryreport:getRevenueByGLAccount'+chart)
+					   .setParameters( [fundid:fundid, liqtimestamp:dtime] )
+					   .resultList
+
+		if (!list)
+			throw new IllegalStateException( "No records found." );
+		return list;
+	}
+	
+	@ProxyMethod
+	public def generateStatementOfRevenueExpanded( chart, def year, def qtr, def month, def fundid ){
+		def dtime = parsetime( year, qtr, month );
+		def list = em.sqlContext.createNamedQuery('treasuryreport:getRevenueByIncomeAccount'+chart)
+  						   .setParameters( [fundid:fundid, liqtimestamp:dtime] )
+						   .resultList
+		if (!list)
+			throw new IllegalStateException( "No records found." );
+		return list;
+	}
+	
+	@ProxyMethod
+	public def getFundList(){
+		return em.sqlContext.createNamedQuery("treasuryreport:getFundList").resultList;
+	}
+	
+	def parsetime = { year, qtr, month ->
+		def sb = new StringBuffer();
+		sb.append( year );
+		
+		if( qtr ) sb.append( qtr )
+		else sb.append( '%' )
+		
+		if( month ){
+			if ( month > 9 )
+				sb.append( "" + month +'%');
+			else
+				sb.append( "0" + month + '%');
+		} 
+		else if( qtr ) {
+			sb.append('%')
+		}
+		return sb.toString(); 
+	}
+	
+}

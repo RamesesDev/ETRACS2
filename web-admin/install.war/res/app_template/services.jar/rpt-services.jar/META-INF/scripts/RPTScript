@@ -1,0 +1,39 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class RPTScript {
+	
+	@PersistenceContext('main')
+	def em
+		
+	// resolve bearing and non bearing integer type to decimal
+	@ProxyMethod
+	public def resolveBearingType(){ 
+		def sql = """
+			SELECT objid, rpu FROM faas 
+		"""
+		
+		
+		//def faas = em.sqlContext.createNamedQuery( 'rptscript:getFaas' ).resultList
+		def faas = em.sqlContext.createQuery( sql ).resultList
+		
+		faas.each{ 
+			it.rpu = em.serializer.read( it.rpu )
+			it.rpu.info.planttrees = it.rpu.info.planttrees.each{ plnt ->
+				if( !(plnt.bearing instanceof java.math.BigDecimal) ){
+					plnt.bearing = plnt.bearing as double
+				}
+				if( !(plnt.nonbearing instanceof java.math.BigDecimal) ){
+					plnt.nonbearing = plnt.nonbearing as double
+				}
+			}
+			
+			def param = [ rpu: em.serializer.write(it.rpu), objid: it.objid]
+			em.sqlContext.createNamedExecutor( 'rptscript:updateBearings' ).setParameters( param ).execute()
+		}		
+				
+		return 'run successfully'
+	}
+	
+}  

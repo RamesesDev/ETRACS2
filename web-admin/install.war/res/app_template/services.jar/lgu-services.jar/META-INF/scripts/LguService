@@ -1,0 +1,222 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+
+class LguService
+{
+	@PersistenceContext("main")
+	def em;
+	
+	@Service('LogService')
+    def logSvc
+	
+	@Service('Var')
+	def VAR;
+	
+	def SCHEMA_NAME = "lgu"
+	def SCHEMA_VERSION = "1.0"
+	
+    @ProxyMethod
+    public List lookupMunicipality( searchText ) {
+        searchText = ( searchText ? searchText+'%' : '%' )
+        def criteria = [lguname:searchText]
+        return getListByQuery('lgu:lookupMunicipality', criteria, null )
+    }
+	
+	
+	@ProxyMethod
+	public def getHostLgu() {
+		def lgutype = VAR.lgu_type;
+		def lgu = em.sqlContext.createNamedQuery('lgu:get-host').setParameter('lgutype', lgutype).singleResult;
+		if( !lgu ) return null;
+		
+		if( lgu.lgutype == 'MUNICIPALITY' ) {
+			lgu.province = em.sqlContext.createNamedQuery('lgu:getParent').singleResult;
+			lgu.barangays = getLgusByParent( lgu.objid );
+		}
+		else {
+			lgu.munidistricts = getMunicipalityDistricts( lgu );
+		}
+		
+		return lgu;
+	}
+	
+	@ProxyMethod
+	public def createHostLgu( param ) 
+	{
+		def entity = param.lgu;
+		def sys = param.sys;
+		
+		if( entity.lgutype == 'PROVINCE' )
+		{
+			entity.objid = entity.indexno;
+			entity.pin = entity.indexno;
+			entity.formalname = 'PROVINCE OF ' + entity.lguname;
+			entity.lgutype = 'PROVINCE';
+			entity.selectedlgutype = entity.lgutype;
+			createParentLgu( entity );
+		}
+		else if( entity.lgutype == 'MUNICIPALITY' ) 
+		{
+			if(entity.indexno.length() != 2) throw new Exception( 'Invalid index no. for municipality.' );
+			
+			def province = param.province;
+			province.objid = province.indexno;
+			province.pin = province.indexno;
+			province.formalname = 'PROVINCE OF ' + province.lguname;
+			province.lgutype = 'PROVINCE';
+			province.selectedlgutype = province.lgutype;
+			createParentLgu( province );
+			
+			sys.parent_lgu_name = province.lguname;
+			sys.parent_lgu_formal_name = province.formalname;
+			
+			entity.pin = province.indexno + "-" + entity.indexno;
+			entity.objid = entity.pin;
+			entity.lgutype = 'MUNICIPALITY';
+			entity.formalname = 'MUNICIPALITY OF ' + entity.lguname;
+			entity.parentid = province.objid;
+			create( entity );
+			
+			entity.province = province;
+		}
+		else
+		{
+			entity.objid = entity.indexno;
+			entity.pin = entity.indexno;
+			entity.formalname = 'CITY OF ' + entity.lguname;
+			entity.lgutype = 'CITY';
+			entity.selectedlgutype = entity.lgutype;
+			createParentLgu( entity );
+		}
+		
+		sys.lgu_type = entity.lgutype;
+		sys.lgu_name = entity.lguname;
+		sys.lgu_index = entity.indexno;
+		sys.lgu_formal_name = entity.formalname;
+		
+		sys.each { k,v ->
+			VAR.set(k, v);
+		}
+		
+		return entity;
+	}
+    
+	/*
+	@ProxyMethod
+	public def getParent(){
+		def parent =  em.sqlContext.createNamedQuery( 'lgu:getParent' ).singleResult
+		if( ! parent ) { 
+			parent = [:]
+		}
+		parent.munidistricts = getMunicipalityDistricts( parent )
+		return parent 
+	}
+	*/
+	
+	@ProxyMethod
+	public List getMunicipalityDistricts( parentlgu ) {
+		return em.sqlContext.createNamedQuery('lgu:getLgusByParent').setParameter('parentid', parentlgu.objid).resultList
+	}
+	
+	@ProxyMethod 
+	public List getLgusByType( lgutype) {
+		return em.sqlContext.createNamedQuery('lgu:getLgusByType').setParameter('lgutype', lgutype).resultList
+	}
+	
+	@ProxyMethod 
+	public List getLgusByParent( parentid ) {
+		return em.sqlContext.createNamedQuery('lgu:getLgusByParent').setParameter('parentid', parentid).resultList
+	}
+	
+	@ProxyMethod
+	public def createParentLgu( parentlgu ){
+		parentlgu.schemaname = SCHEMA_NAME;
+		parentlgu.schemaversion = SCHEMA_VERSION;
+		parentlgu.docstate = 'DRAFT';
+		
+		em.validate( SCHEMA_NAME, parentlgu );
+		em.create( SCHEMA_NAME, parentlgu );
+		logSvc.log("CREATE", "LGU", parentlgu.objid);	
+		return parentlgu;
+	}
+	
+	@ProxyMethod
+	public def save( lgu ){
+		def old = em.read(SCHEMA_NAME, lgu )
+        if( old ) em.update(SCHEMA_NAME, lgu );
+        else{ 
+        	lgu.schemaname = SCHEMA_NAME;
+			lgu.schemaversion = SCHEMA_VERSION;
+			lgu.docstate = 'DRAFT';
+			
+        	em.create( SCHEMA_NAME, lgu );
+        }
+		
+		return lgu;
+	}
+	
+	@ProxyMethod
+	public def create( lgu ) {
+		lgu.schemaname = SCHEMA_NAME;
+		lgu.schemaversion = SCHEMA_VERSION;
+		lgu.docstate = 'DRAFT';
+		
+		return em.create( SCHEMA_NAME, lgu );
+	}
+	
+	@ProxyMethod
+	public def approve( lgu ){
+		lgu.each{
+			def item = em.read( SCHEMA_NAME, [objid:it.objid] );
+			item.docstate = 'APPROVED';
+			em.update( SCHEMA_NAME, item );
+		}
+		
+		def parent = getParent();
+		parent.docstate = 'APPROVED';
+		em.update( SCHEMA_NAME, parent );
+		
+		return lgu;
+	}
+	
+	@ProxyMethod
+    public def update( lgu ) {
+        em.update( SCHEMA_NAME, lgu, { diff ->
+            logSvc.logB( 'UPDATE', 'LGU', lgu.objid, '', diff )
+        } as UpdateChangeHandler )
+        return lgu;
+    }
+	
+	private def getListByQuery(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+	
+	@ProxyMethod
+	public void removeBarangay( brgy ) {
+		em.delete( SCHEMA_NAME, brgy )
+	}
+	
+	@ProxyMethod
+	public void removeMuniDistrict( munidistrict ) {
+		em.sqlContext.createNamedExecutor('lgu:deleteBarangayByParentId').setParameter('parentid', munidistrict.objid).execute()
+		em.delete(SCHEMA_NAME, munidistrict )
+	}
+    
+    @ProxyMethod
+	public def openProvince() {
+		def province = em.sqlContext.createNamedQuery("lgu:getProvinceId").singleResult;
+		if ( !province ) return null;
+		return em.read("lgu:province", [objid:province.objid]);
+	}
+    
+    @ProxyMethod
+	public def getBarangays() {
+        return em.sqlContext.createNamedQuery('lgu:getBarangays').resultList 
+	}
+}

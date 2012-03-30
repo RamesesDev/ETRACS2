@@ -1,0 +1,791 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+import java.text.SimpleDateFormat;
+
+class BPApplicationService{
+	
+	@Service('BusinessMgmtService')
+	def bpService;
+	
+	@Service('BPBillingService')
+	def billingSvc;
+	
+	@Service('BPAssessmentReportService')
+	def assessmentSvc
+	
+	@Service( 'BPSettingService' )
+	def settingSvc;
+	
+	@Service("TxnReference")
+	def txnSvc;
+	
+	@Service('DateService')
+	def dateService;
+	
+	@Service('BPRuleService')
+	def ruleSvc;
+	
+	@Service('NumberService')
+	def numSvc
+	
+	def PERMIT_SCHEMA = 'bppermit:bppermit';
+	def BP_RECIVABLE_SCHAMENAME = 'bpledger:bpreceivable';
+	def BUSINESS_SCHEMA = 'business:business';
+	
+	def SCHEMANAME = 'bpapplication:bpapplication';
+	def SCHEMAVERSION = '1.0';
+	
+	def cal = Calendar.getInstance()
+	
+	@Service('SequenceService')
+	def sequenceSvc;
+	
+	@PersistenceContext('main')
+	def em;
+	
+	@Service('Var')
+	def var;
+
+	private def format( def date, def format ){
+		def sdf = new java.text.SimpleDateFormat( format );
+		if( date instanceof Date ) return sdf.format( date );
+		return sdf.parse( date );
+	}
+	
+	@ProxyMethod
+	public def save( def application ){
+		if( application.txndate && application.txnmode == 'CAPTURE' ){
+			application.iyear = dateService.getYear( application.txndate )
+			application.txndate = format( application.txndate, 'yyyy-MM-dd');
+		}
+		
+		if( application.txnmode == 'ONLINE' ){
+			application.txndate = dateService.serverDate;
+			application.putAll( checkExpiredApp( application, application.txndate ) )
+			application.iyear = Integer.parseInt( format( application.txndate, 'yyyy' ) );
+		}
+		
+		if( !application.lobs ) throw new Exception("There must be at least 1 line of business.");
+		
+		def checkLobs = { l ->
+			if( l.matches('RENEW|ADDLOB') ){
+				if( !application.lobs.findAll{ it.assessmenttype == l } ){
+					throw new Exception("There must be at least 1 line of business that is $l.")
+				}
+			}
+			
+			if( l.matches('RETIRE|RETIRELOB') ){
+				if( !application.lobs.findAll{ it.retire == true } ){
+					throw new Exception("There must be at least 1 line of business to retire.")
+				}
+			}
+		}
+		
+		if( application.txnmode == 'ONLINE' ){
+			checkLobs( application.txntype );
+		}
+
+		for( it in application.lobs ){
+			if( it.assessmenttype.matches('NEW|ADDLOB') ) it.iyear = Integer.parseInt( format( dateService.serverDate, "yyyy") );
+			if( it.assessmenttype.matches('RENEW|LATE_RENEWAL') ) it.iyear = dateService.getYear( application.txndate )
+			if( it.assessmenttype.matches('RETIRE|RETIRELOB') ) it.iyear == Integer.parseInt( format( application.txndate, "yyyy") );
+		}
+		
+		validateApplicationLobs( application );
+		
+		if( !application.objid ) application = createBPApp( application );
+		else application = update( application );
+		
+		if( application.txntype == 'LATE_RENEWAL' ) insertForlateRenewal( app );
+		
+		return application;
+	}
+	
+	void validateApplicationLobs( def application ){
+		if( application.parentid ){
+			def parent =  open( application.parentid );
+			application.lobs.each{
+				if( it.assessmenttype == 'ADDLOB' )
+					checkIfLobAlreadyExist( parent, it );
+				
+				if( it.assessmenttype == 'RETIRELOB' )
+					checkIfLobAlreadyRetired( parent, it );
+			}
+		}
+	}
+	
+	void checkIfLobAlreadyExist( def application, def lob ){
+		if( application.lobs.find{ it.lobid == lob.lobid } ) throw new Exception( "Line of business $lob.name has already been added." );
+		if( application.addedlobs?.find{ it.lobid == lob.lobid } ) throw new Exception( "Line of business $lob.name has already been added." );
+	}
+	
+	void checkIfLobAlreadyRetired( def application, def lob ){
+		if( application.retiredlobs?.find{ it.objid == lob.objid } ) 
+			throw new Exception( "Line of business has already been retired." );
+	}
+	
+	def createBPApp( def application ){
+		application.objid = 'BP'+new UID();
+		application.txnno = getNextSeries();
+		application.schemaname = SCHEMANAME;
+		application.barcode = '01151'+application.txnno;
+		application.schemaversion = SCHEMAVERSION;
+		application.tradename = application.info.tradename;
+		application.businessaddress = application.info.businessaddress;
+		application.receivables = [];
+		application.credits = [];
+		
+		def msg = 'Unable to process transaction. \nBusiness application is currently reference by a ' + application.txntype + ' transaction';
+		if( application.businessid ) txnSvc.insert( application.businessid, application.objid, 'BPApplication', msg );
+		
+		em.validate( SCHEMANAME, application );
+		em.create( SCHEMANAME, application );
+		return application;
+	}
+	
+	private void insertForlateRenewal( def application ){
+		if( application.businessid ){
+			def currentyear = Integer.parse( format( dateService.serverDate, 'yyyy' ) );
+			def prevyear = currentyear - 1;
+
+			def business = em.read('business:business', [objid:application.businessid]);
+			def oldapp = open( business.applicationid );
+			for( int i=oldapp.iyear; i <= prevyear; i++){
+				def app = cloneApp( oldapp );
+				app.txxno = application.txnno + '-' + i;
+				app.iyear = i;
+				app.taxfees = [];
+				app.appinfos =  [];
+				app.receivables = [];
+				app.credits = [];
+				em.create( SCHEMANAME, app );
+			}
+		}
+	}
+	
+	private def cloneApp( def obj ){
+		if( obj instanceof Map ){
+			def copy = [:];
+			obj.each{ k, v -> copy.put( k, cloneApp( v ) ); }
+			return copy;
+		}
+		
+		if( obj instanceof List ){
+			def copy = [];
+			obj.each{ copy.add( cloneApp( it ) ); }
+			return copy;
+		}
+		return obj;
+	}
+	
+	@ProxyMethod
+	public def update( def application ){
+		em.validate( SCHEMANAME, application );
+		em.update( SCHEMANAME, application );
+		return application;
+	}
+	
+	private def getNextSeries(){
+		def year = new java.text.SimpleDateFormat('yyyy').format( new Date() );
+		return year + sequenceSvc.getNextFormattedSeriesA( 'BP'+year, 7 );
+	}
+	
+	@ProxyMethod
+	public def open( def objid ){
+		def application = em.read( SCHEMANAME, [objid: objid] );
+		if( !application ) throw new Exception("Application document no longer exists.");
+		return application;
+	}
+	
+	@ProxyMethod 
+	public def getList(def searchText, def params){
+		if( ! searchText ) 
+			return getListByQuery('bpapplication:getList', [:], params)
+		
+		def criteria = [ tradename:searchText +'%', txnno:searchText+'%']
+		def result = []
+		if( (result = getListByQuery('bpapplication:getListByTradename', criteria, params)) ) return result
+		if( (result = getListByQuery('bpapplication:getListByTxnno', criteria, params)) ) return result
+		return result 
+	}
+	
+	def getListByQuery( namedQuery, criteria, params ) {
+        if( ! params ) params = [ _start:0, _limit:25]
+		return em.sqlContext.createNamedQuery( namedQuery )
+						.setParameters( criteria )
+						.setFirstResult( params._start )
+						.setMaxResults( params._limit )
+						.resultList
+	}
+	
+	private def buildTxndateYear( txndate ){
+		def application = [:]
+		application.txndate = format( txndate, 'yyyy-MM-dd' );
+		application.iyear = format( txndate, 'yyyy' );
+		
+		return application
+	}
+	
+	private def checkExpiredApp( def application, def txndate ){
+		def bplist = em.read('bplisting:bpapplicationlisting', [objid: application.parentid])
+		def curryr = Integer.parseInt(format( txndate, 'yyyy' ).toString())
+		if( bplist && "EXPIRED".equals( bplist.docstate ) ){
+			if( (bplist.iyear + 1) < curryr ){
+				application.iyear = bplist.iyear + 1
+				application.txndate = java.sql.Date.valueOf("$application.iyear-01-01")
+			}
+		}
+		return application
+	}
+	
+	@ProxyMethod
+	public def evaluateTxnType(def application){
+		if( application.businessid ) txnSvc.checkReference( application.businessid );
+		
+		def txndate = dateService.serverDate;
+		application.putAll( buildTxndateYear( txndate ) )
+		application.putAll( checkExpiredApp( application, txndate ) )
+					
+		if( application.txntype == 'NEW' || application.txnmode == 'CAPTURE' ) return application;
+		if( application.txntype == 'ADDLOB' ) return evaluateAddLob( application );
+		if( application.txntype == 'RENEW' ) return evaluateRenew( application );
+		if( application.txntype == 'LATE_RENEWAL' ) return evaluateRenew( application );
+		if( application.txntype == 'RETIRE' ) return evaluateRetire( application );
+		if( application.txntype == 'RETIRELOB') return evaluateRetire( application );
+		
+		throw new Exception( 'Transaction for '+ application.txnno +' not supported.');
+	}
+	
+	@ProxyMethod
+	public def submitForAssessment( def applicationid ) {
+		def app = open( applicationid );
+		if( app.docstate != 'DRAFT' ) throw new Exception("Only DRAFT application can be submitted for assessment.");
+		app.appinfos = ruleSvc.buildInfos( createAppEntity( app ) ).infos;
+		em.sqlContext.createNamedQuery('bpapplication:getApplicationByParentId')
+		.setParameters([parentid: applicationid])
+		.resultList.each{
+			it.info = em.serializer.read( it.info );
+			it.appinfos = ruleSvc.buildInfos( createAppEntity( it ) ).infos;
+			em.update( SCHEMANAME, it );
+		}
+		if( !app.txntype.matches( 'RETIRE|RETIRELOB' ) ){
+			loadSignatoriesAndRequirements( app );
+		}
+		app.docstate = 'FOR_ASSESSMENT';
+		em.update( SCHEMANAME, app );
+		
+		return app;
+	}
+	
+	@ProxyMethod
+	public def evaluateApplicationInfo( def application ){
+		def app = createAppEntity( open( application.objid ) );
+		app.infos = application.infos;
+		application.infos = ruleSvc.buildInfos( app ).infos;
+		return application;
+	}
+	
+	private def createAppEntity( def application ){
+		def app = [
+			objid: application.objid,
+			organization: application.info.organization,
+			applicationtype: application.txntype,
+			officetype: application.info.officetype,
+			barangayid: application.info.barangay.barangayid,
+			lobs : [],
+			taxfees: [],
+			infos:[]
+		];
+		
+		application.lobs.each{
+			if( application.txntype.matches( 'RETIRE|RETIRELOB' ) ){
+				if( it.retire ){
+					app.lobs << [lob: [classificationid: it.classificationid, objid: it.lobid, name: it.name],
+								 assessmenttype: it.assessmenttype];
+				}
+			}else{
+				app.lobs << [lob: [classificationid: it.classificationid, objid: it.lobid, name: it.name],
+							 assessmenttype: it.assessmenttype];
+			}
+		}
+		return app;
+	}
+	
+	@ProxyMethod
+	public List getApplicationTypes() {
+		return ['NEW', 'RENEW', 'RETIRE', 'ADDLOB', 'RETIRELOB', 'UPDATENEW']
+	}
+	
+	@ProxyMethod
+	public List getOrganizationTypes() {
+		return ['SINGLEPROPRIETORSHIP','PARTNERSHIP','CORPORATION','COOPERATIVE','ASSOCIATION','ESTATE','INCORPORATED']
+	}
+	
+	@ProxyMethod
+	public List getOfficeTypes() {
+		return ['MAIN','BRANCH']
+	}
+	
+	@ProxyMethod
+	public def getApplicationList( def applicationid ){
+		def app = open( applicationid );
+		def applist = [];
+		applist.add( evaluateApplication( app ) );
+		
+		em.sqlContext.createNamedQuery( 'bpapplication:getApplicationByParentId' )
+		  .setParameters( [parentid: app.objid] )
+		  .resultList.each{ 
+			it.info = em.serializer.read( it.info );
+			it.taxfees = em.serializer.read( it.taxfees )
+			applist.add( evaluateApplication( it ) ) ;
+			
+		};
+		
+		return applist;
+	}
+	
+	private def evaluateApplication( def application ){
+		def app = [:];
+		app.objid = application.objid;
+		app.txnno = application.txnno;
+		app.iyear = application.iyear;
+		app.txntype = application.txntype;
+		app.infos = application.appinfos;
+		app.taxfees = application.taxfees;
+		app.assessedvalue = 0.0;
+		app.amountdue = 0.0;
+		
+		app.taxfees.each{
+			app.assessedvalue += numSvc.round( it.assessedvalue );
+			app.amountdue += numSvc.round( it.amountdue );
+		}
+		
+		return app;
+	}
+	
+	@ProxyMethod
+	public def evaluateTaxesAndFees( def parentid, def list, def requirements ){
+		list.each{ it ->
+			def application = open( it.objid );
+			def app = createAppEntity( application );
+			app.infos = it.infos;
+			
+			
+			def res = ruleSvc.buildTaxFees( app );
+			application.taxfees = res.taxfees;
+			application.appinfos = it.infos;
+			
+			
+			if( parentid == it.objid ){
+				if( application.docstate == 'FOR_ASSESSMENT' ) {
+					application.docstate = 'FOR_REVIEW'; 
+					application.info.requirements = requirements;
+				}
+			}
+			
+			update( application );
+		}
+		
+		return open( parentid );
+	}
+	
+	@ProxyMethod
+	public List getAccountSummaryTypes() {
+		return [
+			[ objid:'BUSINESS_TAX', name:'TOTAL_BUSINESS_TAX' ],
+			[ objid:'REG_FEE', name:'TOTAL_REGULATORY_FEE' ],
+			[ objid:'OTHER_FEE', name:'TOTAL_OTHER_FEE' ],
+		]
+	}
+	
+	@ProxyMethod
+	public def disapproveApplication( def applicationid ){
+		def app = open( applicationid );
+		app.docstate = 'FOR_REVIEW';
+		em.update( SCHEMANAME, app ) ;
+		return app;
+	}
+	
+	@ProxyMethod
+	public def submitForReview( def appid, def applist, def requirements ){
+		applist.each{
+			def app = open( it.objid );
+			app.taxfees = it.taxfees;
+			if( app.objid == appid ) {
+				app.docstate = 'FOR_APPROVAL';
+				app.info.requirements = requirements;
+			}
+			em.update(  SCHEMANAME, app );
+		}
+		return open( appid );
+	}
+	
+	@ProxyMethod
+	public def cancelApplicationForAssessement( def appid ){
+		def app = open( appid );
+		em.sqlContext.createNamedExecutor('bpapplication:deleteReferenceApplication')
+		  .setParameters([parentid: appid])
+		  .execute();
+		
+		app.docstate = 'DRAFT';
+		app.appinfos = [];
+		app.taxfees = [];
+		
+		em.update( SCHEMANAME, app );
+		return app;
+	}
+		
+	@ProxyMethod
+	public def approveApplication( def appid, def applist, def requirements ){
+		def app = open( appid );
+		if( app.docstate == 'APPROVED' ) throw new Exception('Application has already been aproved.');
+		submitForReview( appid, applist, requirements );
+		app.docstate = 'APPROVED';
+		app.info.requirements = requirements;
+		
+		def business = getBusiness( app );
+		business.applicationid = app.objid;
+		  
+		if( app.txnmode == 'ONLINE' && app.txntype.matches( 'RENEW|LATE_RENEWAL' ) ){
+			updatePreviousApplication( app.parentid );
+		}
+		
+		app.businessid = business.objid; 
+		    
+		if( app.txnmode == 'CAPTURE' || app.txntype == 'RENEW' ){
+			business.lastqtrpaid = 4;
+			business.lastyearpaid = app.iyear - 1;
+		}
+		
+		if( app.txnmode == 'CAPTURE' && app.iyear < dateService.serverYear ) {
+			app.docstate = 'EXPIRED';
+		}
+			
+		updateParentApplication( app );
+		app.receivables = buildReceivables( business , applist )		
+		em.update( BUSINESS_SCHEMA, business );
+		em.update( SCHEMANAME, app );
+		     
+		txnSvc.delete( business.objid );
+
+		if( app.txntype.matches('RETIRE|RETIRELOB') ){
+			app.lobs = app.lobs.findAll{ it.retire = true };
+			if( !getBilling( app.objid ).taxfees ) {
+				app = bpService.retireApplication( app.objid );
+			}
+		}
+		
+		return app;
+	}
+	
+	void updateParentApplication( app ){
+		if( app.parentid ){
+			def parent = open( app.parentid );
+			if( !parent.addedlobs ) parent.addedlobs = [];
+			if( !parent.retiredlobs ) parent.retiredlobs = [];
+			
+			app.lobs.each{
+				if( it.assessmenttype == 'ADDLOB' ) parent.addedlobs << it;
+				if( it.assessmenttype == 'RETIRELOB' ) parent.addedlobs << it;
+			}
+			em.update( SCHEMANAME, parent );
+		}
+	}
+	
+	def getAmount( def a, def b, def amount ){
+		if( a == 0 ) return amount;
+		def val = new BigDecimal(amount).divide( new BigDecimal(b), 2, BigDecimal.ROUND_HALF_UP)
+		if( a == b ) return new BigDecimal(amount) - (val * ( new BigDecimal(b) - 1)) ;
+		return val;
+	}
+	
+	/* 
+		brc = [
+			surcharge: 0.0,
+			interest: 0.0,
+			discount: 0.0
+		]
+	*/
+	def createReceivable( def qtr, def qtrCount, def businessid, def app, def it ){
+		def brc = [
+			objid: 'BPRC' + new UID(),
+			businessid: businessid,
+			applicationid: app.objid,
+			applicationtype: it.assessmenttype,
+			appno: app.txnno,
+			iyear: app.iyear,
+			iqtr: qtr,
+			lobid: it.lobid,
+			lobname: it.lobname,
+			acctid: it.acctid,
+			acctno: it.acctno,
+			accttitle: it.accttitle,
+			surcharge:0.0,
+			interest:0.0,
+			discount:0.0,
+			amount: numSvc.round( getAmount( ( qtr > qtrCount ? 1 : qtr ), qtrCount , it.amountdue ) ),
+			amtpaid: 0.0
+		]
+		
+		return brc;
+	}
+	
+	private def buildReceivables( def business, def applist ){
+		def receivables = [] 
+		applist.each{ a ->
+			def app = open( a.objid );
+			def cQtr = dateService.getQtr( app.txndate );
+			app.receivables = [];
+			app.taxfees.each{ 
+				def acct = em.read("incomeacct:incomeacct", [objid: it.acctid]); 
+				
+				def assessmenttype = getAssessmentType( app, it )
+				if( assessmenttype == 'RENEW' && acct.systype == 'BUSINESS_TAX' ){
+					for( int i=1; i <= 4; i++ ){
+						if( it.amountdue > 0 ){							
+							app.receivables <<  createReceivable( i , 4, business.objid, app, it );
+						}
+					}
+				}else if( assessmenttype == 'RENEW' || app.txntype == 'RENEW'){
+					app.receivables << createReceivable( 1, 1, business.objid, app, it );
+				}else{
+					app.receivables << createReceivable( cQtr, 1, business.objid, app, it );
+				}
+			}
+			receivables += app.receivables
+		}
+		
+		return receivables
+	}
+	
+	def getAssessmentType( app, taxfee ) {
+		def lob = app.lobs.find{ it.lobid == taxfee.lobid }
+		if( lob ) 
+			return lob.assessmenttype 
+		return app.txntype 
+		
+	}
+	
+	def getBusiness( def app){
+		if( app.businessid ) return em.read( BUSINESS_SCHEMA, [objid:app.businessid] );
+		def business = [
+			objid: 'BUS'+ new UID(),
+			schemaname: BUSINESS_SCHEMA,
+			schemaversion: '1.0',
+			docstate: 'ACTIVE',
+			taxpayerid: app.info.taxpayerid,
+			taxpayername: app.info.taxpayername,
+			taxpayeraddress: app.info.taxpayeraddress,
+			yearstarted: app.iyear,
+			dtregistered: app.txndate,
+			sec: app.info.sec,
+			dti: app.info.dti,
+			sss: app.info.sss,
+			tin: app.info.tin,
+			pin: app.info.pin,
+			applicationid: app.objid,
+			tradename: app.info.tradename,
+			businessaddress: app.info.businessaddress,
+			adminname: app.info.administratorname,
+			adminaddress: app.info.administratoraddress,
+			organization: app.info.organization,
+			lastqtrpaid: 0,
+			lastyearpaid: 0,
+			officetype: app.info.officetype
+		];
+		em.create( BUSINESS_SCHEMA,  business );
+		return business;
+	}
+	
+	void updatePreviousApplication( def applicationid ){
+		def app = open( applicationid );
+		app.docstate = 'RENEWED';
+		em.update( SCHEMANAME, app );
+		
+		// bpapplicationlisting docstate to RENEWED
+		em.sqlContext.createNamedExecutor("business:updateAppListStatToRenewed").setParameter('businessid', app.businessid).execute()		
+	}
+	
+	def evaluateAddLob( def application ){
+		def prevapp = open( application.parentid );
+		def bp = em.read('business:business', [objid: prevapp.businessid]);
+		if( !bp ) throw new Exception("Business with objid $prevapp.businessid no longer exists." );
+		if( bp.docstate != 'ACTIVE' ) throw new Exception('Only active business can add new lines.');
+		
+		application.taxpayerid = prevapp.taxpayerid;
+		application.taxpayername = prevapp.taxpayername;
+		application.tradename = prevapp.tradename;
+		application.businessaddress = prevapp.businessaddress;
+		application.parentid = prevapp.objid;
+		
+		application.info = prevapp.info;
+		application.taxfees = [];
+		application.appinfos = [];
+		application.lobs = [];
+		
+		return application;
+	}
+	
+	def evaluateRenew( def application ){
+		def prevapp = open( application.parentid );
+		
+		if( prevapp.docstate != 'EXPIRED' ) throw new Exception('Only expired business can be renewed.');
+		if( getBilling( prevapp.objid ).taxfees )
+			throw new Exception('Application not yet fully paid.');
+		
+		application.taxpayerid = prevapp.taxpayerid;
+		application.taxpayername = prevapp.taxpayername;
+		application.tradename = prevapp.tradename;
+		application.businessaddress = prevapp.businessaddress;
+		application.parentid = prevapp.objid;
+		
+		application.info = prevapp.info;
+		application.taxfees = [];
+		application.appinfos = [];
+		application.lobs = [];
+		
+		prevapp.lobs.each{ 
+			it.assessmenttype = 'RENEW';
+			application.lobs << it;
+		}
+		
+		prevapp.retiredlobs?.each{ l ->
+			application.lobs.remove( application.find{ it.objid == l.objid } );
+		}
+		
+		prevapp.addeddlobs?.each{
+			it.assessmenttype = 'RENEW';
+			application.lobs << it;
+		}
+		
+		return application;
+	}
+	
+	def evaluateRetire( def application ){
+		def prevapp = open( application.parentid );
+		if( !prevapp ) throw new Exception("Reference application no longer exists.");
+		
+		if( prevapp.docstate == 'RETIRED' ) 
+			throw new Exception("Reference application has already been retired.");
+		
+		def billing = getBilling( prevapp.objid );
+		if( billing.taxfees ) throw new Exception('Unable to retire.\nBusiness is not yet fully paid.');
+		
+		application.taxpayerid = prevapp.taxpayerid;
+		application.taxpayername = prevapp.taxpayername;
+		application.tradename = prevapp.tradename;
+		application.businessaddress = prevapp.businessaddress;
+		application.parentid = prevapp.objid;
+		
+		application.info = prevapp.info;
+		application.taxfees = [];
+		application.appinfos = [];
+		application.lobs = prevapp.lobs;
+		
+		application.lobs.each{ 
+			it.assessmenttype = 'RETIRELOB'; 
+			it.retire = ( application.txntype == 'RETIRE' );
+		}
+		
+		return application;
+	}
+	
+	@ProxyMethod
+	public def lookupApplicationByTxnType( def searchText, def txntype ){
+	
+		def fetch = { list, qry, param ->
+			list.clear();
+			def q = em.sqlContext.createNamedQuery(qry);
+			if( param ) q.setParameter('searchText', param );
+
+			list.addAll( q.setMaxResults(10).resultList );
+			return list;
+		}
+		
+		def list = [];
+		if( !searchText ) return fetch(list, 'lookupbp:lookupApplicationByTxntype', '' );
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByBIN', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByAppNo', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByPermitNo', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByTradeName' , searchText + '%') ) return list;
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByTaxpayerName',searchText + '%') ) return list;
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByAdminstratorName', searchText  + '%') ) return list;
+		if( fetch( list, 'lookupbp:lookupApplicationByTxntypeAndByBusinessAddress', searchText +'%' ) ) return list;
+		return list;
+	}
+	
+	@ProxyMethod
+	public def lookupApproveApplication( def searchText ){
+		println 'searchText -> ' + searchText
+		def fetch = { list, qry, param ->
+			list.clear();
+			def q = em.sqlContext.createNamedQuery(qry);
+			if( param ) q.setParameter('searchText', param );
+			
+			list.addAll( q.setMaxResults(25).resultList );
+			return list;
+		}
+		
+		def list = [];
+		if( !searchText ) return fetch(list, 'lookupbp:lookupApproveApplication', '' );
+		if( fetch( list, 'lookupbp:lookupApproveApplicationByBarcode', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupApproveApplicationByAppNo', searchText ) ) return list;
+		if( fetch( list, 'lookupbp:lookupApproveApplicationByTradeName' , searchText + '%') ) return list;
+		if( fetch( list, 'lookupbp:lookupApproveApplicationByTaxpayerName',searchText + '%') ) return list;
+		if( fetch( list, 'lookupbp:lookupApproveApplicationByBIN', searchText ) ) return list;
+		return list;
+	}
+	
+	@ProxyMethod
+	public void delete( def applicationid ){
+		def app = open( applicationid );
+		if( app.businessid ) txnSvc.delete( app.businessid );
+		em.delete( SCHEMANAME, app );
+	}
+	
+	private void loadSignatoriesAndRequirements( application ){
+		def setting = settingSvc.setting;
+		application.info.applicationsignatories = setting.applicationsignatories;
+		application.info.assessmentsignatories = setting.assessmentsignatories;
+		application.info.requirements = [];
+		setting.requirements.each{
+			application.info.requirements << [requirement: it.requirement,
+											   complied: false,
+											   remarks: ''];
+		};
+	}
+	
+	private def getBilling( def applicationid ){
+		def app = em.read('bpapplication:bpapplication', [objid: applicationid]);
+		if( !app ) throw new Exception("Application with objid $applicationid does not exist.");
+		
+		def bp = em.read('business:business', [objid: app.businessid]);
+		if( !bp ) throw new Exception("Business with objid $app.businessid does not exist.");
+
+		def bill = [
+			ledgerid      : bp.objid,
+			yearstarted   : bp.yearstarted,
+			lastyearpaid  : bp.lastyearpaid,
+			lastqtrpaid   : bp.lastqtrpaid,
+			taxfees       : []
+		];
+		
+		def getUnpaidReceivables = { 
+			def list = app.receivables.findAll{ numSvc.round(it.amount) > numSvc.round(it.amtpaid) };
+			// unknown . . .
+			if( app.txntype.matches('NEW|ADDLOB') ) return list;
+			return list;
+		}
+		
+		def receivables = getUnpaidReceivables();
+		
+		receivables.each{  
+			it.year = it.iyear;
+			it.qtr = it.iqtr;
+			bill.taxfees << it;
+		}
+		return billingSvc.buildBill( bill );
+	}
+			
+}

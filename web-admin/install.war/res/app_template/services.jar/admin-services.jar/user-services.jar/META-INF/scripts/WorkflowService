@@ -1,0 +1,98 @@
+import com.rameses.annotations.*;
+import java.io.*;
+import com.rameses.io.FileTransfer;
+import java.util.concurrent.*;
+import java.util.*;
+
+class WorkflowService {
+
+	@PersistenceContext("main")
+	def em;
+
+	@Env
+	def env;
+	
+	@Service("DateService")
+	def dateSvc;
+
+	@Service
+	def customSvc;
+	
+	@Service("TemplateService")
+	def templateSvc;
+	
+	
+	def df = new java.text.SimpleDateFormat("EEE MMMM dd yyyy KK:mm a");
+	
+	@ProxyMethod
+	public void fetchCustomTasks( def list ) {
+		//do nothing...
+	}	
+	
+	/****
+	* This list must return the following fields
+	* [objid, info, dtposted, requesterid, msgtype, handler, permission ]
+	**/
+	
+	@ProxyMethod
+	public def getUserTasks() {
+		try {
+			def _tasklist = [];
+			customSvc.fetchCustomTasks( _tasklist );
+			
+			def param = [actorid: env.userid];
+			def list = em.sqlContext.createNamedQuery("workflow:list").setParameters( param ).resultList;
+			list.each{
+				if( it.handler && it.info ) {
+					it.info = em.serializer.read( it.info );
+					_tasklist.add(it);
+				}
+			}
+
+			def tasklist = [];
+			_tasklist.each {
+				if( it.handler && it.info ) {
+					def parm = [:];
+					parm.env = env;
+					parm.info = it.info;
+					def msg = templateSvc.get( "workflow/"+it.handler, parm );
+					if( msg ) {
+						def d = dateSvc.serverDate;
+						if(it.dtposted) d = df.format( it.dtposted );
+						tasklist.add( [objid:it.objid, message: msg, requesterid: it.requesterid, dtposted:d, msgtype: it.msgtype, permission: it.permission] );
+					}	
+				}	
+			}
+			return tasklist;
+		}
+		catch(e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
+	@ProxyMethod
+	public def addTask( task ) {
+		if(!task.recipients) 
+			throw new Exception( "Task must have at least one recipient");
+		
+		if(!task.objid)    task.objid = "TASK" + new java.rmi.server.UID();
+		if(!task.dtposted) task.dtposted = dateSvc.serverDate;
+		em.create( "workflow:task", task );
+		
+		task.recipients.each {
+			def m = [ objid: "TSKACTR:"+new java.rmi.server.UID() ];
+			m.actorid = it.actorid;
+			m.taskid = task.objid;
+			em.save( "workflow:actor", m );
+		}
+	}
+	
+	@ProxyMethod
+	public def removeTask( task ) {
+		task.taskid = task.objid;
+		em.sqlContext.createNamedExecutor("workflow:remove-actors").setParameters(task).execute();
+		em.delete( "workflow:task", task );
+	}	
+	
+}

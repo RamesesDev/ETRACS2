@@ -1,0 +1,72 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class XTestService2
+{
+	@PersistenceContext("main")
+	def em;
+	
+	@ProxyMethod
+	public def updateValue2( val2 ) {
+        em.sqlContext.createExecutor('UPDATE test SET val2 = $P{val2}').setParameter('val2', val2 ).execute()
+	}
+	
+	@ProxyMethod
+	public void updateTitleInfo() {
+		def faaslist  = em.sqlContext.createQuery('''
+			SELECT objid, titleno, titledate, titletype 
+			FROM faaslist 
+			WHERE  titleno is not null 
+		''').resultList
+		faaslist.each { faasinfo ->
+			try {
+				def faas = em.sqlContext.createQuery('select objid, info from faas where objid = $P{objid}')
+								.setParameter('objid', faasinfo.objid )
+								.singleResult
+				if( faas ) {
+					faas.info = em.serializer.read( faas.info )
+					faas.info.titleno   = faasinfo.titleno 
+					faas.info.titletype = faasinfo.titletype 
+					faas.info.titledate = faasinfo.titledate 
+					
+					em.sqlContext.createExecutor('update faas set info = $P{info} where objid = $P{objid}')
+							.setParameters([objid:faasinfo.objid, info:em.serializer.write(faas.info)])
+							.execute() 
+					println 'processing -> ' + faasinfo.titleno 
+				}
+			}
+			catch( e ) {
+				println e.message 
+			}
+		}
+	}
+	
+	@ProxyMethod
+	public void updateAdministratorInfo() {
+		def faaslist  = em.sqlContext.createQuery('''
+			SELECT objid, administratorname, administratoraddress 
+			FROM faaslist 
+			WHERE  administratorname is not null or length(administratorname)> 0
+		''').resultList
+		faaslist.each { faasinfo ->
+			try {
+				def faas = em.sqlContext.createQuery('select objid, info from faas where objid = $P{objid}')
+								.setParameter('objid', faasinfo.objid )
+								.singleResult
+				if( faas ) {
+					faas.info = em.serializer.read( faas.info )
+					faas.info.administratorname   = faasinfo.administratorname 
+					faas.info.administratoraddress = faasinfo.administratoraddress
+					
+					em.sqlContext.createExecutor('update faas set info = $P{info} where objid = $P{objid}')
+							.setParameters([objid:faasinfo.objid, info:em.serializer.write(faas.info)])
+							.execute() 
+					println 'processing -> ' + faasinfo.administratorname
+				}
+			}
+			catch( e ) {
+				println e.message 
+			}
+		}
+	}
+}

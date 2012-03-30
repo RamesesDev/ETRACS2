@@ -1,0 +1,86 @@
+import com.rameses.annotations.*;
+
+
+class SessionService {
+
+	@Resource("SessionService")
+	def sessionService;
+	
+	@PersistenceContext("java:system")
+	def em;
+	
+	@Resource("ScriptService/local")
+	def svc;
+	
+	@Env
+	def env;
+	
+	
+	@ProxyMethod 
+	public String register(def o ) {
+		return sessionService.register( o.username, o.info );
+	}
+
+	@ProxyMethod 
+	public def unregister(def sessionid ) {
+		def m = sessionService.destroy( sessionid );
+		m.remove( "info" );
+		return m;
+	}
+
+	@ProxyMethod 
+	public def getInfo(def sessionid ) {
+		def sessinfo = sessionService.getInfo( sessionid );
+		if( !sessinfo ) return null;
+		
+		def h = sessinfo.handler;
+		if( h ) {
+			def user = svc.invoke( h.servicename, h.method, h.params, env );
+			sessinfo.putAll( user );
+		}
+		return sessinfo;
+	}
+	
+	@ProxyMethod 
+	public void notifyUser(username, msg ) {
+		def list = em.sqlContext.createQuery('select sessionid from sys_session where username=?').setParameter(1, username ).resultList*.sessionid;
+		list.each { o->
+			sessionService.push( o, null, msg );
+		}
+	}
+
+	@ProxyMethod 
+	public void send(def sessionid, def msg ) {
+		def list = em.sqlContext.createQuery('select username from sys_session where sessionid=?').setParameter(1, sessionid ).resultList;
+		list.each {
+			def subList = em.sqlContext.createQuery('select sessionid from sys_session where username=?').setParameter(1,it.username).resultList*.sessionid;
+			subList.each { o->
+				sessionService.push( o, null, msg );
+			}	
+		}
+	}
+	
+	@ProxyMethod 
+	public void notifyAll( msg ) {
+		def list = em.sqlContext.createQuery('select sessionid from sys_session').resultList*.sessionid;
+		list.each { o->
+			sessionService.push( o, null, msg );
+		}
+	}
+	
+	@ProxyMethod 
+	public void notifyAllExceptSender( msg, senderid ) {
+		def list = em.sqlContext.createQuery('select sessionid from sys_session where not(username=?)').setParameter(1,senderid).resultList*.sessionid;
+		list.each { o->
+			sessionService.push( o, null, msg );
+		}
+	}
+	
+	/*
+	@ProxyMethod 
+	public def getUserId(String sessionid) {
+		return em.sqlContext.createQuery('select username from sys_session where sessionid=?').setParameter(1, sessionid).singleResult.username;
+	}
+	*/
+	
+}

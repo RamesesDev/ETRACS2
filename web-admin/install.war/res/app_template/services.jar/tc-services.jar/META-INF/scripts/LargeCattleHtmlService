@@ -1,0 +1,163 @@
+import com.rameses.common.*
+import com.rameses.annotations.*
+
+class LargeCattleHtmlService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ReceiptHtmlService')
+	def htmlSvc
+	
+	def SCHEMANAME = 'receipt:receipt'
+	
+	@ProxyMethod
+	public def open( receiptid ) {
+		return em.read(SCHEMANAME, [objid:receiptid])
+	}
+	
+	@ProxyMethod
+	public def getOwnershipHtml( receiptid ) {
+		def rct = open( receiptid )
+		if( ! rct ) return ''
+		def info = htmlSvc.buildInfo( rct )
+		def ownershipInfo = buildOwnershipInfo( rct )
+		def items = htmlSvc.buildItems( rct )
+		return """
+			<html>
+				<head>
+				</head>
+				<body>
+					$info
+					$ownershipInfo
+					$items
+				<body>
+			</html>
+		"""
+	}
+	
+	@ProxyMethod
+	public def getTransferHtml( receiptid ) {
+		def rct = open( receiptid )
+		def info = htmlSvc.buildInfo( rct )
+		def transferInfo = buildTransferInfo( rct )
+		def items = htmlSvc.buildItems( rct )
+		return """
+			<html>
+				<head>
+				</head>
+				<body>
+					$info
+					$transferInfo
+					$items
+				<body>
+			</html>
+		"""
+	}
+	
+	def buildTransferInfo( rct ){
+		return """
+			<table>
+				<tr>
+					<td colspan="2"><b>Purchase Information</b></td>
+				</tr>
+				<tr>
+					<td>Purchased By</td>
+					</td>$rct.purchasedby</td>
+				</tr>
+				<tr>
+					<td>City/Municipality</td>
+					</td>$rct.citymuni</td>
+				</tr>
+				<tr>
+					<td>Province</td>
+					</td>$rct.province</td>
+				</tr>
+				<tr>
+					<td>Purchase Price</td>
+					</td>$rct.price</td>
+				</tr>
+				
+				<tr>
+					<td colspan="2"><b>Cattle Information</b></td>
+				</tr>
+				<tr>
+					<td>Sex of Cattle</td>
+					</td>$rct.sex</td>
+				</tr>
+				<tr>
+					<td>Age of Cattle (Yrs)</td>
+					</td>$rct.age</td>
+				</tr>
+				<tr>
+					<td>Brand of Municipality</td>
+					</td>${rct.municipalitybrand ? rct.municipalitybrand : ''}</td>
+				</tr>
+				<tr>
+					<td>Brand of Owner</td>
+					</td>${rct.ownerbrand ? rct.ownerbrand : ''}</td>
+				</tr>
+				
+				<tr>
+					<td colspan="2"><b>Original Certificate of Ownership Information</b></td>
+				</tr>
+				<tr>
+					<td>Certificate No.</td>
+					</td>$rct.certificateno</td>
+				</tr>
+				<tr>
+					<td>Issue Date</td>
+					</td>$rct.issuedate</td>
+				</tr>
+				<tr>
+					<td>Issued at City/Municipality:</td>
+					</td>$rct.issuedcitymuni</td>
+				</tr>
+				<tr>
+					<td>Issued at Province:</td>
+					</td>$rct.issuedprovince</td>
+				</tr>
+				<tr>
+					<td>Attested By</td>
+					</td>$rct.attestedby</td>
+				</tr>
+				<tr>
+					<td>Treasurer</td>
+					</td>$rct.treasurer</td>
+				</tr>
+			</table>
+		"""
+	}
+
+	def buildOwnershipInfo( rct ){
+		return """
+			<table>
+				<tr>
+					<td>Registered Owner of </td>
+					</td>$rct.ownerof</td>
+				</tr>
+				<tr>
+					<td>Sex of Cattle</td>
+					</td>$rct.sex</td>
+				</tr>
+				<tr>
+					<td>Age of Cattle (Yrs)</td>
+					</td>$rct.age</td>
+				</tr>
+				<tr>
+					<td>Brand of Municipality</td>
+					</td>${rct.municipalitybrand ? rct.municipalitybrand : ''}</td>
+				</tr>
+				<tr>
+					<td>Brand of Owner</td>
+					</td>${rct.ownerbrand ? rct.ownerbrand : ''}</td>
+				</tr>
+				<tr>
+					<td>Remarks</td>
+					</td>${rct.remarks ? rct.remarks : ''}</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+}

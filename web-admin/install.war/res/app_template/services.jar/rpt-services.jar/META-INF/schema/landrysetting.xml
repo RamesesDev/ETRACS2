@@ -1,0 +1,95 @@
+<schema>
+	<element name="landrysetting" tablename="landrysetting">
+		<field name="objid" primary="true"/>
+		<field name="schemaname" required="true"/>
+		<field name="schemaversion" required="true"/>
+		<field name="ry" required="true" type="integer" />
+		<field name="previd" />
+	</element>
+	
+	<!-- AssessLevels -->
+	
+	<element name="assesslevel" tablename="landassesslevel">
+		<field name="objid" primary="true"/>
+		<field name="classcode" required="true"/>
+		<field name="classname" required="true"/>
+		<field name="fixrate" required="true" type="boolean" />
+		<field name="rate" required="true" type="decimal" />
+		<field name="previd" />
+		<field name="landrysettingid" required="true" />
+		<complex name="ranges" ref="range" type="list" required="false" serializer="default" />
+	</element>	
+	
+	<element name="range">
+		<field name="mvfrom" required="true" type="decimal"/>
+		<field name="mvto" required="true" type="decimal"/>
+		<field name="rate" required="true" type="decimal" />
+	</element>
+	
+	<!-- LCUV -->
+	<element name="lcuv" tablename="lcuv">
+		<field name="objid" primary="true"/>
+		<field name="classcode" required="true"/>
+		<field name="classname" required="true"/>
+		<field name="landrysettingid" required="true"/>
+		<field name="previd" />
+	</element>
+	
+	<element name="specificclass" tablename="lcuvspecificclass">
+		<field name="objid" primary="true"/>
+		<field name="classcode" required="true" />
+		<field name="classname" required="true" />
+		<field name="areatype" required="true" />
+		<field name="lcuvid" required="true" />
+		<field name="landrysettingid" required="true"/>
+	</element>
+	
+	<element name="subclass" tablename="lcuvsubclass">
+		<field name="objid" primary="true"/>
+		<field name="subclasscode" required="true" />
+		<field name="subclassname" required="true" />
+		<field name="unitvalue" type="decimal" required="true" />
+		<field name="specificclassid" required="true" />
+		<field name="landrysettingid" required="true"/>
+		<field name="previd" />
+	</element>
+	
+	<element name="stripping" tablename="lcuvstripping">
+		<field name="objid" primary="true"/>
+		<field name="striplevel"  required="true" />
+		<field name="rate"  type="decimal" required="true" />
+		<field name="lcuvid" required="true" />
+		<field name="landrysettingid" required="true"/>
+		<field name="previd" />
+	</element>
+
+	<!-- Land Adjustment -->
+	
+	<element name="landadjustment" tablename="landadjustment">
+		<field name="objid" primary="true"/>
+		<field name="adjustmentcode"  required="true" />
+		<field name="adjustmentname" required="true" />
+		<field name="appliedto" required="true" />
+		<complex name="classifications" type="list" serializer="default" />
+		<field name="classids" />
+		<field name="expression" required="true" />
+		<field name="landrysettingid" required="true" />
+		<field name="previd" />
+	</element>
+
+	<!-- Land Actual Use Adjustment -->
+	
+	<element name="landactualuseadjustment" tablename="landactualuseadjustment">
+		<field name="objid" primary="true"/>
+		<field name="adjustmentcode"  required="true" />
+		<field name="adjustmentname" required="true" />
+		<field name="appliedto" required="true" />
+		<field name="unit" />
+		<complex name="classifications" type="list" serializer="default" />
+		<field name="classids" />
+		<field name="expression" required="true" />
+		<field name="landrysettingid" required="true" />
+		<field name="previd" />
+	</element>
+	
+</schema>

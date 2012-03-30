@@ -1,0 +1,86 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class CollectionTypeService
+{
+	@PersistenceContext("main")
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	def SCHEMANAME = "collectiontype:collectiontype"
+	def SCHEMAVERSION = "1.0"
+	
+	@ProxyMethod
+	public def getList( searchText, params ) {
+		def result = []
+		if ( ! searchText )
+			result = em.sqlContext.createNamedQuery("collectiontype:getList").resultList
+		else 
+			result = em.sqlContext.createNamedQuery("collectiontype:getListByName").setParameter("name", searchText+"%").resultList
+		
+		return result.each {
+			it.payerrequired = it.payerrequired as boolean
+		}
+	}
+	
+	@ProxyMethod
+	public List getListByAfId( afid ) {
+		if( ! afid ) {
+			return []
+		}
+		return em.sqlContext.createNamedQuery('collectiontype:getListByAfId').setParameter('afid', afid ).resultList
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		def data = em.read("collectiontype:collectiontype", [objid:objid]);
+		if (data ) data.payerrequired = data.payerrequired as boolean;
+		return data;
+	}
+	
+	@ProxyMethod
+	public def create( colltype ) {
+		colltype.objid = "C" + new UID();
+		colltype.schemaname = SCHEMANAME;
+		colltype.schemaversion = SCHEMAVERSION;
+		validate( colltype );
+		em.create( colltype.schemaname, colltype );
+		logService.log("CREATE", "CollectionType", colltype.objid);
+		return colltype;
+	}
+	
+	@ProxyMethod
+	public def update( colltype ) {
+		validate( colltype )
+		em.update( colltype.schemaname, colltype, { diff ->
+			logService.logB( 'UPDATE', 'CollectionType', colltype.objid, null, diff )
+		} as UpdateChangeHandler )
+		return colltype
+	}
+	
+	@ProxyMethod
+	public void delete( colltype ) {
+		em.delete(colltype.schemaname, colltype);
+		logService.log("DELETE", "CollectionType", colltype.objid);
+	}
+	
+	private void validate( colltype ) {
+		def oldcolltype = em.read(colltype.schemaname, colltype);
+		util.validateLastUpdate( colltype, oldcolltype );
+		checkDuplicate( colltype );
+		em.validate( colltype.schemaname, colltype );
+	}
+	
+	private void checkDuplicate( colltype ) {
+		def data = em.sqlContext.createNamedQuery("collectiontype:checkDuplicateName").setParameters( colltype ).setMaxResults(1).singleResult;
+		if( data ) {
+			throw new Exception("Collection Type $colltype.name already exists.");
+		}
+	}
+}

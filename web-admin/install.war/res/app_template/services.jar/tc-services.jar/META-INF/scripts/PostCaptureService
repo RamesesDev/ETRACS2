@@ -1,0 +1,113 @@
+import com.rameses.common.*
+import com.rameses.annotations.*
+import java.rmi.server.UID
+
+class PostCaptureService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('LogService')
+	def logService
+	
+	@Service('DateService')
+	def dateService
+	
+	@Service('ETRACSUserService')
+	def userSvc
+	
+	def SCHEMA = 'postcapture:postcapture'
+	def SCHEMAVERSION = '1.0'
+	
+	def DRAFT_STATE = 'DRAFT'   
+	def POSTED_STATE = 'POSTED'
+	
+	@ProxyMethod
+	public List getList( searchText, param ) {
+		searchText = ( searchText ? searchText+'%' : '%' )
+		return em.sqlContext.createNamedQuery('postcapture:getList')
+				.setParameter( 'collectorname',searchText)
+				.setFirstResult( param._start )
+				.setMaxResults( param._limit )
+				.resultList
+	}
+	
+	@ProxyMethod
+	public def create( collector, capturedbyid  ) {
+		
+		def etracscollector = userSvc.getCollector( collector.objid )
+		def entity = [
+            docstate       : DRAFT_STATE,
+			collectorid    : etracscollector.objid,
+			collectorname  : etracscollector.name,
+			collectortitle : etracscollector.jobtitle,
+            summaries      : loadCapturedReceiptSummaries( collector.objid, capturedbyid )
+        ]
+		//add validation checks
+		entity.totalcount = entity.summaries.sum( {it.icount} )
+		entity.amount = entity.summaries.sum( {it.amount} )
+		return entity 
+	}
+	
+	@ProxyMethod
+	public List loadCapturedReceiptSummaries( collectorid, capturedbyid ) {
+		List summaries = [] 
+		if( capturedbyid && collectorid == capturedbyid ) {
+			summaries = em.sqlContext.createNamedQuery('postcapture:getCapturedReceiptsSummaries').setParameter('collectorid', collectorid).resultList
+		}
+		else {
+			summaries = em.sqlContext.createNamedQuery('postcapture:getCapturedReceiptsSummariesBySubcollector')
+							.setParameters( [collectorid:collectorid, capturedbyid:capturedbyid] )
+							.resultList
+		}
+		if( ! summaries ) throw new Exception('There are no capture receipts.')
+		return summaries
+	}
+	
+	@ProxyMethod
+	public List getCapturedReceipts( collectorid, capturedbyid, afid ) {
+		if( ! afid ) return []
+		if( capturedbyid && collectorid == capturedbyid ) {
+			return em.sqlContext.createNamedQuery('postcapture:getCapturedReceipts')
+						.setParameters([collectorid:collectorid, afid:afid])
+						.resultList
+		}
+		else {
+			return em.sqlContext.createNamedQuery('postcapture:getCapturedReceiptsBySubcollector')
+						.setParameters([collectorid:collectorid, capturedbyid:capturedbyid, afid:afid]).resultList
+		}
+	}
+	
+	@ProxyMethod
+	public def post( entity, capturedbyid  ) {
+		entity.objid = 'PC' + new UID()
+		entity.schemaname = SCHEMA
+		entity.schemaversion = SCHEMAVERSION
+		entity.docstate = POSTED_STATE
+		entity.dtposted = new Date()
+		validate( entity, capturedbyid  )		
+		if( capturedbyid && capturedbyid == entity.collectorid ) {
+			em.sqlContext.createNamedExecutor('postcapture:postCapturedReceipts').setParameter('collectorid', entity.collectorid).execute()
+			em.sqlContext.createNamedExecutor('postcapture:postCapturedReceiptList').setParameter('collectorid', entity.collectorid).execute()
+		}
+		else {
+			em.sqlContext.createNamedExecutor('postcapture:postCapturedReceiptsBySubcollector')
+						.setParameters([collectorid:entity.collectorid, capturedbyid:capturedbyid]).execute()
+			em.sqlContext.createNamedExecutor('postcapture:postCapturedReceiptListBySubcollector')
+						.setParameters([collectorid:entity.collectorid, capturedbyid:capturedbyid]).execute()
+		}
+		em.create( entity.schemaname, entity )
+		return entity 
+	}
+	
+	void validate( entity, capturedbyid ) {
+		em.validate( entity.schemaname, entity )
+		def summaries = loadCapturedReceiptSummaries( entity.collectorid, capturedbyid )
+		def totalcount = summaries.sum( {it.icount} )
+		def totalamount = summaries.sum( {it.amount} )
+		if( entity.totalcount != totalcount ) throw new Exception('A new captured receipt was added.\nPlease redo the transaction.')
+		if( entity.amount != totalamount ) throw new Exception('Some amounts were modified.\nPlease redo the transaction.')
+	}
+	
+	
+}

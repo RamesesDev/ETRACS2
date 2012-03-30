@@ -1,0 +1,409 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+import java.text.DecimalFormat;
+import java.util.Calendar;
+
+class TDReportService {
+
+	@PersistenceContext("main")
+	def em;
+	
+	@Service("DateService")
+	def dtsvc;
+	
+	
+	
+	/*------------------------------------------------------------------------
+	*
+	* LISTING REPORTS
+	*
+	*------------------------------------------------------------------------*/
+	@ProxyMethod
+	public List getFundList() {
+		return em.sqlContext.createNamedQuery('tcreport:getFundList').resultList
+	}
+	
+	@ProxyMethod
+	public List getNumDays( year, month ) {
+		if ( !month && month < 0 ) return []
+		
+		Calendar cal = Calendar.getInstance()
+        cal.set( year, month, 1)
+        int maxday = cal.getActualMaximum(cal.DAY_OF_MONTH)
+		def numdays = []
+		1.upto( maxday ) { numdays.add( it ) }
+		return numdays 
+	}
+	
+	@ProxyMethod
+	public List getMonthList( qtr ) {
+		def months = [
+			[name:'JANUARY', 	month:1, qtr:1 ],
+			[name:'FEBRUARY', 	month:2, qtr:1 ],
+			[name:'MARCH', 		month:3, qtr:1 ],
+			
+			[name:'APRIL', 	month:4, qtr:2 ],
+			[name:'MAY', 	month:5, qtr:2 ],
+			[name:'JUNE', 	month:6, qtr:2 ],
+			
+			[name:'JULY', 		month:7, qtr:3 ],
+			[name:'AUG', 		month:8, qtr:3 ],
+			[name:'SEPTEMBER', 	month:9, qtr:3 ],
+			
+			[name:'OCTOBER', 	month:10, qtr:4 ],
+			[name:'NOVEMBER', 	month:11, qtr:4 ],
+			[name:'DECEMBER', 	month:12, qtr:4 ],
+		]
+		
+		if( ! qtr ) return months 
+		return months.findAll{ it.qtr == qtr }
+	}
+	
+	@ProxyMethod
+	public def getMonth( imonth ) {
+		def monthlist = getMonthList( null )
+		return monthlist.find{ it.month == imonth }
+	}
+	
+	@ProxyMethod
+	public List generateIncomeAccountListing( charttype ) {
+		//get chart 
+		def chart = em.sqlContext.createQuery('''
+			SELECT objid FROM account WHERE charttype = $P{charttype} AND parentid IS NULL 
+		''')
+		.setParameter('charttype', charttype).singleResult 
+		if( !chart ) throw new Exception('Chart Type ' + charttype + ' is invalid.')
+		def list = []
+		buildAccounts( charttype, list, chart.objid , 1 )
+		return list 
+	}	
+	
+	@ProxyMethod
+	public Map generateReportOfCollectionListing( year, qtr, month, day, fund ) {
+		def params = [
+			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
+			fundid		 : ( fund ?  fund.fundid : '%' ),
+		]
+		def list = em.sqlContext.createNamedQuery( 'tcreport:getAbstractOfCollection' ).setParameters( params ).resultList 
+		if( !list ) throw new Exception('No records found.')
+		
+		def acctsummaries = em.sqlContext.createNamedQuery( 'tcreport:getAbstractAccountSummaries' ).setParameters( params ).resultList 
+		
+		return [
+			title 	: buildTitle( 'REPORT OF COLLECTION', year, qtr, month, day ),
+			period 	: buildPeriod( year, qtr, month, day ),
+			items 	: list,
+			acctsummaries : acctsummaries,
+		]
+	}
+	
+	@ProxyMethod
+	public Map generateAbstractOfCollection( year, qtr, month, day, fund ) {
+		def params = [
+			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
+			fundid		 : ( fund ?  fund.fundid : '%' ),
+		]
+		def list = em.sqlContext.createNamedQuery( 'tcreport:getAbstractOfCollection' ).setParameters( params ).resultList 
+		if( !list ) throw new Exception('No records found.')
+		
+		def acctsummaries = em.sqlContext.createNamedQuery( 'tcreport:getAbstractAccountSummaries' ).setParameters( params ).resultList 
+		
+		return [
+			title 	: buildTitle( 'ABSTRACT OF COLLECTION', year, qtr, month, day ),
+			period 	: buildPeriod( year, qtr, month, day ),
+			items 	: list,
+			acctsummaries : acctsummaries,
+		]
+	}
+	
+	@ProxyMethod
+	public Map generateAbstractOfCollectionByGL( chart, year, qtr, month, day, fund  ) {
+		def params = [
+			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
+			fundid		 : ( fund ?  fund.fundid : '%' ),
+		]
+		
+		def list = em.sqlContext.createNamedQuery("tcreport:getRevenueByGLAccount$chart")
+		             .setParameters( params )
+					 .resultList
+		if( !list ) throw new Exception('No records found.')
+		
+		def display = { idx, val, last ->
+			if( !last ) {
+				return [title: (' '*(idx*10))+val, header:true];
+			}
+			else {
+				if( ! val.acctcode ) val.acctcode = '<unmapped>'
+				if( ! val.accttitle ) val.accttitle = '<unmapped>'
+				return [title: (' '*(idx*10))+val.acctcode+"-"+val.accttitle, header:false, amount: val.amount];
+			}
+		};
+		
+		return [
+			title 	: buildTitle2( chart, year, qtr, month, day, fund  ),
+			period 	: buildPeriod( year, qtr, month, day ),
+			items  	: buildTree( list, display )
+		]
+	}
+	
+	
+	@ProxyMethod
+	public Map generateStatementOfRevenue( chart, year, qtr, month, day, fund  ) {
+		def params = [
+			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
+			fundid		 : ( fund ?  fund.fundid : '%' ),
+		]
+		
+		def list = em.sqlContext.createNamedQuery("tcreport:getStatementOfRevenue$chart")
+		             .setParameters( params )
+					 .resultList
+		if( !list ) throw new Exception('No records found.')
+		
+		def display = { idx, val, last ->
+			if( !last ) {
+				return [idx:idx +'-true', title: (' '*(idx*10))+val, header:true];
+			}
+			else {
+				if( ! val.acctcode ) val.acctcode = '<unmapped>'
+				if( ! val.accttitle ) val.accttitle = '<unmapped>'
+				return [idx:idx +'-false', title: (' '*(idx*10))+val.acctcode+"  -  "+val.accttitle, header:false, amount: val.amount];
+			}
+		};
+		 
+		return [
+			title 	: buildStatementRevenueTitle( chart, year, qtr, month, day, fund  ),
+			period 	: buildPeriod( year, qtr, month, day ),
+			items  	: buildTree( list, display )
+		]
+	}
+
+	@ProxyMethod
+	public Map generateStatementOfRevenueDetailed( chart, year, qtr, month, day, fund  ) { 
+
+		def params = [
+			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
+			fundid		 : ( fund ?  fund.fundid : '%' ),
+		]
+		
+		def list = em.sqlContext.createNamedQuery("tcreport:getStatementOfRevenueDetailed$chart")
+		             .setParameters( params )
+					 .resultList
+
+		if( !list ) throw new Exception('No records found.')
+		
+		def display = { idx, val, last ->
+			if( !last ) {
+				return [idx:idx +'-true', title: (' '*(idx*8))+val, header:true];
+			}
+			else {
+				if( ! val.acctcode ) val.acctcode = '<unmapped>'
+				if( ! val.accttitle ) val.accttitle = '<unmapped>'
+				return [idx:idx +'-false', title: (' '*(idx*8))+val.acctcode+"  -  "+val.accttitle, header:false, amount: val.amount];
+			}
+		};
+		
+		return [
+			title 	: buildStatementRevenueTitle( chart, year, qtr, month, day, fund  ),
+			period 	: buildPeriod( year, qtr, month, day ),
+			items  	: buildTree( list, display )
+		]
+	}
+	
+	@ProxyMethod
+	public Map generateStatementOfRevenueExpanded( chart, year, qtr, month, day, fund  ) {
+		def params = [
+			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
+			fundid		 : ( fund ?  fund.fundid : '%' ),
+		]
+		
+		def list = em.sqlContext.createNamedQuery("tcreport:getStatementOfRevenueExpanded$chart")
+		             .setParameters( params )
+					 .resultList
+					 
+		if( !list ) throw new Exception('No records found.')
+		
+		def display = { idx, val, last ->
+			if( !last ) {
+				return [idx:idx +'-true', title: (' '*(idx*10))+val, header:true];
+			}
+			else {
+				if( ! val.acctcode ) val.acctcode = '<unmapped>'
+				if( ! val.accttitle ) val.accttitle = '<unmapped>'
+				return [idx:idx +'-false', title: (' '*(idx*10))+val.acctcode+"  -  "+val.accttitle, header:false, amount: val.amount];
+			}
+		};
+		
+		return [
+			title 	: buildStatementRevenueTitle( chart, year, qtr, month, day, fund  ) + ' ( Expanded )',
+			period 	: buildPeriod( year, qtr, month, day ),
+			items  	: buildTree( list, display )
+		]
+	}
+	
+	@ProxyMethod
+	public Map generateReportOfCollection2( chart, year, qtr, month, day, fund ) {
+		def params = [
+			txntimestamp : resolveTimeStamp( year, qtr, month, day ),
+			fundid		 : ( fund ?  fund.fundid : '%' ),
+			chart 		 : chart, 
+		]
+		
+		def list = em.sqlContext.createNamedQuery('tcreport:getReportOfCollection2' + chart).setParameters( params ).resultList 
+		
+		return [
+			title 	: buildTitle( 'REPORT OF COLLECTION', year, qtr, month, day ),
+			period 	: buildPeriod( year, qtr, month, day ),
+			items 	: list,
+		]
+	}
+	
+	
+	
+	 
+	/*------------------------------------------------------------------
+	*
+	* Support Methods 
+	*
+	*--------------------------------------------------------------------*/
+	
+	def getMonthName( month ) {
+		def months = getMonthList( null )
+		def mon = months.find{ it.month == month }
+		if( mon ) return mon.name 
+		throw new Exception("Month $month is not defined." )
+	}
+	
+	
+	def getQuarterName( qtr ) {
+		if( qtr == 1 ) return '1ST QUARTER'
+		else if( qtr == 2 ) return '2ND QUARTER'
+		else if( qtr == 3 ) return '3RD QUARTER'
+		return '4TH QUARTER'
+	}
+	
+	def buildTitle( title, year, qtr, month, day ) {
+		if( day ) return 'DAILY ' + title
+		if( month ) return 'MONTHLY ' + title 
+		if( qtr ) return 'QUARTERLY ' + title 
+		return 'ANNUAL ' + title
+	}
+	
+	def buildTitle2( chart, year, qtr, month, day, fund  ){
+		if( day ) return 'Daily Abstract of Collection By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
+		if( month ) return 'Monthly Abstract of Collection By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
+		if( qtr ) return 'Quarterly Abstract of Collection By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
+		return 'Annual Abstract of Collection By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
+	}
+	
+	def buildStatementRevenueTitle( chart, year, qtr, month, day, fund  ){
+		if( day ) return 'Daily Statement of Revenue By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
+		if( month ) return 'Monthly Statement of Revenue By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
+		if( qtr ) return 'Quarterly Statement of Revenue By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
+		return 'Annual Statement of Revenue By ' + chart + ( fund ? '( ' + fund.fundname + ' Fund )' : '')
+	}
+	
+	def buildPeriod( year, qtr, month, day ) {
+		if( day ) return 'For the day of ' + getMonthName( month ) + ' ' + day + ', ' + year 
+		if( month ) return 'For the month of ' + getMonthName( month ) + ', ' + year 
+		if( qtr ) return 'For the ' + getQuarterName( qtr ) + ' of ' + year 
+		return 'For the Year ' + year 
+	}
+	
+	def resolveTimeStamp( year, qtr, month, day ) {
+		//build timestamp progressively based on the passed values, e.g.,
+		//if month is null then timestamp is resolve upto the qtr info, such as "20111%" for 1st qtr
+		//if month is notnull thne it is resolve upto the month, such as "2011102%" for 2nd qtr 
+		def timestamp = year + '' + qtr 
+		if( month != null ) timestamp += padLeft( month, 2 )
+		if( day != null ) timestamp += padLeft( day, 2 )
+		if( month == null  || day == null ) timestamp += '%'
+		return timestamp
+		
+	}
+	
+	
+	void buildAccounts( charttype, list, parentid , level ){
+		def accounts = em.sqlContext.createQuery('''
+			SELECT objid, acctcode, accttitle, acctlevel 
+			FROM account 
+			WHERE parentid = $P{parentid}
+			ORDER BY acctcode 
+		''')
+		.setParameter('parentid', parentid )
+		.resultList 
+		
+		accounts.each { acct ->
+			if( level == 1) list.add([charttype:charttype, account:''])
+			def acctcode = ( acct.acctcode ? acct.acctcode : '***' ).padRight( 10, ' ' )
+			list.add([
+				charttype : charttype, 
+				account   : ( ' '*(level-1)*12 ) + acctcode + '  ' + acct.accttitle ,
+			])
+			buildAccounts( charttype, list, acct.objid, level+1 )
+		}
+		
+		// parentid is the glaccount, populate the incomeaccount
+		def subacctlist = null 
+		if( !accounts ) {
+			def incomeaccts = []
+			if( charttype == 'NGAS' ) {
+				incomeaccts = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE ngasid = $P{ngasid} ORDER BY acctno')
+								.setParameter( 'ngasid', parentid ).resultList 
+				subacctlist = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE ngassubacctid = $P{ngasid} ORDER BY acctno')
+								.setParameter( 'ngasid', parentid ).resultList 
+				incomeaccts.addAll( subacctlist )
+			}
+			else {
+				incomeaccts = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE sreid = $P{sreid} ORDER BY acctno')
+								.setParameter( 'sreid', parentid ).resultList 
+				subacctlist = em.sqlContext.createQuery('SELECT acctno, accttitle FROM incomeaccount WHERE sresubacctid = $P{sreid} ORDER BY acctno')
+								.setParameter( 'sreid', parentid ).resultList 
+				incomeaccts.addAll( subacctlist )
+			}
+			
+			incomeaccts.each { acct ->
+				def acctno = ( acct.acctno ? acct.acctno : '***' ).padRight( 10, ' ' )
+				list.add([
+					charttype : charttype,
+					account   : ( ' '*level* 12 ) + '*' + acctno + ' - ' + acct.accttitle ,
+				])
+			}
+		}
+		
+	}
+	
+		
+	String padLeft( val, len ) {
+		return "$val".padLeft( len, '0' )
+	}
+	
+	def buildTree( list, display ){
+
+		def handler = [];
+		def results = [];
+	
+		def analyzeTree = { idx, name ->
+			def n = handler.find{ it.name == name };
+			if( !n ) {
+				handler.add( [name:name, idx:idx]);
+				results.add( display( idx, name, false ) );
+			}
+			return idx + 1;
+		}
+		
+		list.each{ val ->
+			def idx = 0;
+			if( ! val.pathtitle ) val.pathtitle = '<unmapped>'
+			val.pathtitle.split('/').each{ 
+				idx = analyzeTree( idx, it );
+			};
+			results.add( display( idx+1, val, true )  );
+		}
+		results.remove(0)
+		return results;
+	}
+	
+	
+	
+}

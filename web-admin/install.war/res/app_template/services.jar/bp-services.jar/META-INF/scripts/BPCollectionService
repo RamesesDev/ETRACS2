@@ -1,0 +1,138 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class BPCollectionService{
+	
+	@Service("BPApplicationReportService")
+	def appSvc;
+	
+	@Service("BPBillingService")
+	def billingSvc;
+	
+	@PersistenceContext('main')
+	def em;
+	
+	@Service('DateService')
+	def dateService;
+	
+	@Service('NumberService')
+	def numSvc;
+	
+	@ProxyMethod
+	public def getBill( def entity, year, qtr ){
+		
+		entity.year = (year == 0) ? Integer.parseInt(new java.text.SimpleDateFormat("yyyy").format( dateService.serverDate )) : year;
+		entity.qtr = (qtr == 0) ? 4 : qtr;
+		
+		def app = em.read('bpapplication:bpapplication', [objid:entity.applicationid])
+		if( !app ) throw new Exception("Application with objid $entity.applicationid no longer exists.");
+		def bp = em.read('business:business', [objid: app.businessid]);
+		if( !bp ) throw new Exception("Business with objid $app.businessid no longer exists.");
+		
+		def bill = [
+			ledgerid      : bp.objid,
+			yearstarted   : bp.yearstarted,
+			lastyearpaid  : bp.lastyearpaid,
+			lastqtrpaid   : bp.lastqtrpaid,
+			taxfees       : [],
+			lobs		  : app.lobs,
+			txntype		  : app.txntype, 
+		];
+		
+		def getUnpaidReceivables = { 
+			def list = app.receivables.findAll{ numSvc.round( it.amount ) > numSvc.round( it.amtpaid ) };
+			list = list.each(){ it.amount -= it.amtpaid }
+			if( app.txntype.matches('NEW|ADDLOB') ) return list;
+			return list.findAll{ it.iqtr <= entity.qtr }
+		}
+		
+		def receivables = getUnpaidReceivables();
+		
+		receivables.each{  
+			it.year = it.iyear;
+			it.qtr = it.iqtr;
+			bill.taxfees << it;
+		}
+		
+		bill = billingSvc.buildBill( bill ); 
+		if( !bill.taxfees && entity.qtr == 4 ) throw new Exception( "Business is fully paid." );
+		if( !bill.taxfees ) throw new Exception("Business is already paid for quarter " + entity.qtr + '.');
+		
+		entity.businessid = bp.objid;
+		entity.tradename = bp.tradename;
+		entity.businessaddress = bp.businessaddress;
+		
+		entity.info.payorname = bp.taxpayername;
+		entity.info.payoraddress = bp.taxpayeraddress;
+		
+		entity.info.paidby = bp.taxpayername;
+		entity.info.paidbyaddress = bp.taxpayeraddress;
+		entity.info.txndate = dateService.serverDate;
+		entity.info.amount = 0.0;
+		entity.items = [];
+
+		bill.taxfees.each{
+			def acct = em.read("incomeacct:incomeacct", [objid: it.acctid]);
+			it.surcharge = numSvc.round( it.surcharge )
+			it.discount = numSvc.round( it.discount )
+			it.interest = numSvc.round( it.interest )
+			it.amount = numSvc.round( it.amount )
+			def item = [
+							taxfeeid: it.objid,
+							iyear: it.year, 
+							iqtr: it.qtr, 
+							lobid: it.lobid,
+							lobname: it.lobname,
+							acctid: acct.objid, 
+							acctno: acct.acctno,
+							accttitle: acct.accttitle,
+							systype : acct.systype,
+							fundid: acct.fundid,
+							fundname: acct.fundname,
+							surcharge: new BigDecimal( (it.surcharge) ? it.surcharge : 0.0 ),
+							discount: new BigDecimal( (it.discount) ?  it.discount : 0.0 ),
+							interest: new BigDecimal( (it.interest)  ?  it.interest : 0.0 ),
+							taxamount: new BigDecimal( it.amount )
+					    ]
+						
+			def amount = item.taxamount + item.surcharge + item.interest - item.discount
+			item.amount = numSvc.round( amount )			
+			entity.items << item;
+		}
+		//entity.info.amount = entity.items.amount.sum()
+		entity.info.amount = numSvc.round( entity.items.amount.sum() ) 
+
+		entity.items.sort { a, b ->
+			def sA = a.iyear+''+a.iqtr;
+			def sB = b.iyear+''+b.iqtr;
+			return sA<=>sB;
+		}
+		
+		entity.applicationlastmodified = app.lastmodified;
+		
+    	return entity;
+	}
+	
+	@ProxyMethod 
+	public def doComputePartial( entity , partial ){
+		def partialpmt = partial
+		entity.items.each(){
+			if( partialpmt == 0 )
+				it.amount = partialpmt
+			if( partialpmt >= it.amount )
+				partialpmt -= it.amount
+			else{
+				it.taxamount = partialpmt * ( it.taxamount / it.amount )
+				it.surcharge = partialpmt * ( it.surcharge / it.amount )
+				it.interest = partialpmt - it.taxamount - it.surcharge 
+				it.amount = it.taxamount + it?.surcharge + it?.interest
+				
+				partialpmt = 0.0
+			}
+
+		}
+	
+		return entity.items.findAll{ it.amount != 0.0 }
+	}
+}

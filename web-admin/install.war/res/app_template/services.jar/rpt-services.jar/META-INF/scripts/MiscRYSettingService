@@ -1,0 +1,234 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import com.rameses.eserver.*;
+import java.rmi.server.UID;
+
+public class MiscRYSettingService
+{
+	@PersistenceContext('main')
+	def em
+    
+	@Service('LogService')
+    def logSvc
+	
+	def SCHEMA_NAME = 'miscrysetting'
+    
+    
+    @ProxyMethod
+    public boolean settingExists() {
+        def setting = em.sqlContext.createNamedQuery('miscrysetting:getList').setMaxResults(1).singleResult 
+        return setting != null
+    }
+    
+    @ProxyMethod 
+    public List getList( searchText ) {
+        if( ! searchText ) 
+            return em.sqlContext.createNamedQuery('miscrysetting:getList').resultList
+        return em.sqlContext.createNamedQuery('miscrysetting:getListByRy').setParameter('ry', searchText).resultList
+    }
+    
+    @ProxyMethod
+    public def create( entity ) {
+        entity.schemaname = 'miscrysetting'
+        entity.schemaversion = '1.0'
+        validate( entity )
+        em.create( entity.schemaname, entity )
+        createAssessLevels( entity )
+        logSvc.log('CREATE', 'MiscRYSetting', entity.objid )
+        return entity 
+    }
+    
+    @ProxyMethod
+    public Map copySetting( newry, copyYear ) {
+        required('Copy Year', copyYear )
+        if( newry <= copyYear ) throw new Exception('New Revision Year must be greater than copy year.')
+        def setting = em.sqlContext.createNamedQuery('miscrysetting:getIdByRy').setParameter('ry', copyYear).singleResult
+        if( !setting ) throw new Exception('Revision Year ' + copyYear  + ' setting is not defined.')
+        
+        //create setting 
+        def oldsettingid = setting.objid 
+        setting = em.read( SCHEMA_NAME, [objid:oldsettingid] )
+        setting.previd = oldsettingid
+        setting.objid = 'MS' + new UID()
+        setting.ry = newry  
+        checkDuplicateSetting( setting )
+        em.create( setting.schemaname, setting )
+        
+        def assesslevels = getAssessLevels( oldsettingid )
+        assesslevels.each {
+            it.previd = it.objid 
+            it.objid = 'AL' + new UID()
+            it.miscrysettingid = setting.objid 
+            saveAssessLevel( it )
+        }
+        
+        def miscitemvalues = getMiscItemValues( oldsettingid );
+        miscitemvalues.each {
+        	it.previd = it.objid;
+        	it.objid = 'MI' + new UID();
+        	it.miscrysettingid = setting.objid;
+        	
+        	saveMiscItemValue( it );
+        }
+        
+        return open( setting.objid )
+    }
+    
+    @ProxyMethod
+    public def update( entity ) {
+        validate( entity )
+        em.update( entity.schemaname, entity, { diff ->
+            logSvc.logB( 'UPDATE', 'MiscRYSetting', entity.objid, '', diff )
+        } as UpdateChangeHandler )
+        return entity 
+    }
+    
+    @ProxyMethod 
+    public Map open( objid ) {
+        def entity = em.read('miscrysetting', [objid:objid])
+        if( !entity ) throw new Exception('Unable to load Revision Setting.\nVerify that the record still exists.' )
+        entity.assesslevels = getAssessLevels( entity.objid )
+        entity.miscitemvalues = getMiscItemValues( entity.objid )
+        return entity 
+    }
+    
+    @ProxyMethod
+    public void remove( objid ) {
+        checkRemoveAllowed( objid ) 
+        removeAssessLevels( objid )
+        removeMiscItemValues( objid )
+        em.delete('miscrysetting', [objid:objid])
+    }
+    
+    /*----------------------------------------------------------
+    * AssessLevel Methods
+    ----------------------------------------------------------*/
+    @ProxyMethod
+    public void saveAssessLevel( assessLevel ) {
+        def schemaname = 'miscrysetting:assesslevel'
+        em.validate(schemaname, assessLevel )
+        
+        def old = em.read(schemaname, assessLevel )
+        if( old ) {
+            if( assessLevel.fixrate ) {
+                assessLevel.ranges.clear()
+            }
+            em.update(schemaname, assessLevel )
+        }
+        else {
+            em.create(schemaname, assessLevel )
+        }
+    }
+    
+    @ProxyMethod
+    public void removeAssessLevel( assessLevel ) {
+        def schemaname = 'miscrysetting:assesslevel'
+        em.delete(schemaname, assessLevel )
+    }
+    
+    @ProxyMethod
+    public List getAssessLevels( miscrysettingid )  {
+        def list = em.sqlContext.createNamedQuery('miscrysetting:getAssessLevel').setParameter('miscrysettingid', miscrysettingid).resultList
+        list.each {
+            it.ranges = em.serializer.read( it.ranges )
+            it.fixrate = it.fixrate as boolean 
+        }
+        return list 
+    }
+    
+    void createAssessLevels( entity ){
+        entity.assesslevels = []
+		em.sqlContext.createNamedQuery( 'miscrysetting:getPropertyClassification' ).resultList.each{
+			def al = [
+                objid       : 'AL' + new UID(),
+                code        : it.classcode, 
+                name        : it.classname,
+                fixrate     : true,
+                rate        : 0.0,
+                previd      : null,
+                miscrysettingid : entity.objid ,
+                ranges      : [],
+            ]
+            saveAssessLevel( al )
+            entity.assesslevels.add( al ) 
+		}
+    }
+    
+    /*----------------------------------------------------------
+    * MiscItemValue Methods
+    ----------------------------------------------------------*/
+    @ProxyMethod
+    public void saveMiscItemValue( miv ) {
+        def schemaname = 'miscrysetting:miscitemvalue'
+        em.validate(schemaname, miv )
+        
+        def old = em.read(schemaname, miv )
+        if( old )
+            em.update(schemaname, miv )
+        else 
+            em.create(schemaname, miv )
+    }
+    
+    @ProxyMethod
+    public void saveMiscItemValues( diffList ) {
+        diffList.each { saveMiscItemValue( it ) }
+    }
+    
+    @ProxyMethod
+    public void removeMiscItemValue( miv ) {
+        def schemaname = 'miscrysetting:miscitemvalue'
+        em.delete(schemaname, miv )
+    }
+    
+    @ProxyMethod
+    public List getMiscItemValues( miscrysettingid )  {
+        return  em.sqlContext.createNamedQuery('miscrysetting:getMiscItemValue').setParameter('miscrysettingid', miscrysettingid).resultList
+    }
+    
+    @ProxyMethod
+    public List getMiscItems( miscrysettingid ) {
+        return em.sqlContext.createNamedQuery('miscrysetting:getMiscItem').resultList.each {
+            it.objid = 'MI' + new UID()
+            it.miscrysettingid = miscrysettingid
+            it.expr = '0.00'
+            it.previd = null
+        }
+    }
+    
+    
+    /*----------------------------------------------------------
+    * Support Methods
+    ----------------------------------------------------------*/
+    void checkRemoveAllowed( miscrysettingid ) {
+        //TODO: allow remove if not referenced by bldgrpu
+    }
+    
+    void removeAssessLevels( miscrysettingid ) {
+        em.sqlContext.createNamedExecutor('miscrysetting:deleteAssessLevel').setParameter('miscrysettingid', miscrysettingid ).execute()
+    }
+    
+    void removeMiscItemValues( miscrysettingid ) {
+        em.sqlContext.createNamedExecutor('miscrysetting:deleteAllMiscItemValue').setParameter('miscrysettingid', miscrysettingid ).execute()
+    }
+    
+    
+    void validate( entity ) {
+        if( entity.ry <= 0 ) throw new Exception('Revision Year must be greater than zero.')
+        checkDuplicateSetting( entity )
+        em.validate(entity.schemaname, entity )
+    }
+    
+    void checkDuplicateSetting( entity ) {
+        def data = em.sqlContext.createNamedQuery('miscrysetting:checkDuplicate').setParameters( entity ).singleResult
+        if( data ) throw new Exception('Setting for year ' + entity.ry + ' already exists.')
+    }
+    
+	void required( caption, value ) {
+		def msg = caption + ' is required.' 
+		if( ! value ) 
+			throw new Exception( msg )
+		if( value instanceof String && value.trim().length() == 0 ) 
+			throw new Exception( msg )
+	}
+    	
+}

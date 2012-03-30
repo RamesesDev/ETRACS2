@@ -1,0 +1,468 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : june 6, 2011
+*/
+
+import com.rameses.annotations.*;
+import com.rameses.rules.common.*;
+
+public class BPBillingService
+{
+	@PersistenceContext('main')
+	def em 
+	
+	@Resource("RuleService/local")
+	def ruleService;
+	
+	@Service("DateService")
+	def dtService;
+	
+	@Service('NumberService')
+	def numSvc;
+		
+	@Service('Var')
+	def var;
+	
+	@Service("BPSettingService")
+	def bpSettingService;
+	
+	def setting;
+	
+	@ProxyMethod
+	public def getBilling( billing ) {
+		def businesslist = getBusinessByTaxpayer( billing.info.taxpayerid, billing.info.barangayid );
+		if( !businesslist ) throw new Exception("There are no businesses registered for this taxpayer.");
+		billing.items = [];
+		billing.grandtotal = 0.0;
+		def bpsetting = bpSettingService.getSetting();
+		
+		for ( business in businesslist ) {
+			def applist = getApplicationsByBusinessId( business.objid );
+			for( application in applist ){
+
+				def item = [
+					appno       : application.txnno,
+					barcode     : application.barcode,
+					barcodeurl  : var.get('barcode_url').replace('$P{data}', application.barcode),
+					txntype     : application.txntype,
+					docstate	: application.docstate, 
+					txndate     : new java.text.SimpleDateFormat( "yyyy-MM-dd" ).format( application.txndate ),
+					tradename 	: business.tradename,
+					address		: business.businessaddress,
+					ledgerid	: business.objid,
+					yearstarted	: business.yearstarted,
+					lastyearpaid: business.lastyrpaid,
+					lastqtrpaid	: business.lastqtrpaid,
+					taxfees		: getUnpaidTaxFeesByApplication( application ) 
+				];
+				
+				if( item.taxfees ){
+					def bill = buildBill( item );
+					bill.totaldiscount = new BigDecimal('0.0');
+					bill.totalsurcharge = new BigDecimal('0.0');
+					bill.totalamount = new BigDecimal('0.0');
+					bill.totalinterest = new BigDecimal('0.0');
+					bill.grandtotal = new BigDecimal('0.0');
+					
+					bill.first_qtr_total = new BigDecimal('0.0');
+					bill.second_qtr_total = new BigDecimal('0.0');
+					bill.third_qtr_total = new BigDecimal('0.0');
+					bill.fourth_qtr_total = new BigDecimal('0.0');
+					
+					bill.taxfees.each{
+						def duedate = getDueDate( bpsetting, it.qtr );
+						it.discount = ( it.discount ) ? new BigDecimal( it.discount.toString() ) : new BigDecimal('0.0');
+						it.surcharge = ( it.surcharge ) ? new BigDecimal( it.surcharge.toString() ) : new BigDecimal('0.0');
+						it.interest = ( it.interest ) ? new BigDecimal( it.interest.toString() ) : new BigDecimal('0.0');
+						it.amount = ( it.amount ) ? new BigDecimal( it.amount.toString() ) : new BigDecimal('0.0');
+						
+						it.discount = numSvc.round( it.discount )
+						it.surcharge = numSvc.round( it.surcharge )
+						it.interest = numSvc.round( it.interest )
+						it.amount = numSvc.round( it.amount )
+						
+						it.total = it.amount + it.surcharge + it.interest - it.discount;
+						it.duedate = it.year+"-"+duedate.month+"-"+duedate.day;
+						
+						bill.totalamount += it.amount;
+						bill.totalsurcharge += it.surcharge;
+						bill.totalinterest += it.interest;
+						bill.totaldiscount += it.discount;
+						bill.grandtotal += it.total;
+						
+						if( it.qtr == 1 ) bill.first_qtr_total += it.total;
+						if( it.qtr == 2 ) bill.second_qtr_total += it.total;
+						if( it.qtr == 3 ) bill.third_qtr_total += it.total;
+						if( it.qtr == 4 ) bill.fourth_qtr_total += it.total;
+					}
+					
+					bill.taxfees.sort{ a, b ->
+						def sa = a.year+'-'+a.qtr;
+						def sb = b.year+'-'+b.qtr;
+						return sa <=> sb;
+					}
+					
+					billing.grandtotal += bill.grandtotal;
+					billing.items << bill;
+				}
+		
+			}
+		}
+		
+		if( !billing.items ) throw new Exception("Registered businesses are fully paid.");
+		 
+		billing.items.sort{ it.appno };	
+		billing.expirydate = calculateExpirydate( bpsetting )    
+		
+		billing.info.billdate = dtService.serverDate
+		return billing;
+	}
+	
+	private def calculateExpirydate( def bpsetting ){
+		def currentdate = dtService.parseCurrentDate()
+		def duedate = getDueDate( bpsetting, currentdate.qtr  )
+		duedate = dtService.parse( 'yyyy-MM-dd', currentdate.year+"-"+duedate.month+"-"+duedate.day );
+		def nextday = duedate + 1 
+		return ( currentdate.date.time <= nextday.time  ) ? duedate : dtService.getMonthEndDate( currentdate.date )
+	} 
+	
+	def getDueDate( def bpsetting, def qtr ){
+		def collection = bpsetting.collection;
+		if( qtr == 1 ) return collection.qtr1surcharge;
+		else if( qtr == 2 ) return collection.qtr2surcharge;
+		else if( qtr == 3 ) return collection.qtr3surcharge;
+		else return collection.qtr4surcharge;
+	}
+	
+	def getQtr( def date ){
+		def sdf = new java.text.SimpleDateFormat("MM");
+		int month = Integer.parseInt( sdf.format( date ) );
+		return (Integer)(month / 3);
+	}
+	
+	private def getBusinessByTaxpayer( taxpayerid, barangayid  ) {
+		def params = [
+			taxpayerid : taxpayerid, 
+			barangayid : ( barangayid ? barangayid : '%' ),
+		]
+		return em.sqlContext.createNamedQuery( 'business:getListByTaxpayerid' )
+					.setParameters( params ).resultList;
+	}
+	
+	private def getTaxFeesByBusinessId( buisnessid ) {
+		return em.sqlContext.createNamedQuery( 'bpledger:getBPReceivablesByBusinessId' ).setParameters( [businessid:businessid] ).resultList;
+	}
+	
+	private def getUnpaidTaxFeesByBusinessId( businessid ) {
+		def taxfees = [];
+		def apps = getApplicationsByBusinessId( businessid );
+		for ( app in apps ) {
+			taxfees += getUnpaidTaxFeesByApplication( app );
+		}
+		return taxfees;
+	}
+	
+	private def getApplicationsByBusinessId( businessid ) {
+		return em.sqlContext.createNamedQuery( 'business:getApplicationsByBusinessId' ).setParameters( [businessid:businessid] ).resultList;
+	}
+	
+	private def getUnpaidTaxFeesByApplication( app ) {
+		def taxfees = [];
+		def receivables = em.serializer.read( app.receivables );
+		for ( rc in receivables ) {
+			if ( rc.amtpaid < rc.amount ){
+				rc.year = rc.iyear;
+				rc.qtr = rc.iqtr;
+				taxfees << rc;
+			}
+		}
+		return taxfees;
+	}
+	
+	@ProxyMethod
+	public def buildBill( bill ) {
+		setting = bpSettingService.getSetting();
+		def facts = createFacts( bill  )
+		def actionList = ruleService.createRuleAction()
+		if( !actionList ) throw new Exception("Error in creating Rule Action");
+		buildActionCommands( bill, facts, actionList )
+		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'SURCHARGE' )
+		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'INTEREST' )
+		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'DISCOUNT' )
+		ruleService.execute( 'bpbilling', facts, [actionList:actionList], 'SUMMARY' )
+		
+		bill.taxfees.each {
+			it.discount = ( it.discount ) ? new BigDecimal( it.discount.toString() ) : new BigDecimal('0.0');
+			it.surcharge = ( it.surcharge ) ? new BigDecimal( it.surcharge.toString() ) : new BigDecimal('0.0');
+			it.interest = ( it.interest ) ? new BigDecimal( it.interest.toString() ) : new BigDecimal('0.0');
+			it.amount = ( it.amount ) ? new BigDecimal( it.amount.toString() ) : new BigDecimal('0.0');
+			
+			it.discount = numSvc.round( it.discount )
+			it.surcharge = numSvc.round( it.surcharge )
+			it.interest = numSvc.round( it.interest )
+			it.amount = numSvc.round( it.amount )
+		}
+		return bill
+	}	
+	
+	def createFacts( bill ) {
+		def facts = []
+		def cyfact = createCYFact()
+		facts += cyfact
+		facts += createLedgerFacts( bill, cyfact )
+		return facts 
+	}
+	
+	def createCYFact( ) {
+		def cyfact = ruleService.createFact('bpbilling','bp.billing.facts.CurrentYearFact')
+		if( !cyfact ) throw new Exception("Error in creating Current Year Fact.");
+		cyfact.year  = dtService.getServerYear();
+		cyfact.qtr   = dtService.getServerQtr();
+		cyfact.month = dtService.getServerMonth();
+		cyfact.day   = dtService.getServerDay();
+		return cyfact
+	}
+	
+	def createLedgerFacts( bill, cyfact ) {
+		def facts = []
+		def ledgerFact = ruleService.createFact('bpbilling','bp.billing.facts.BPLedgerFact')
+		if( !ledgerFact ) throw new Exception("Error in creating Ledger Fact.");
+		ledgerFact.ledgerid = bill.ledgerid 
+		ledgerFact.yearstarted = bill.yearstarted
+		ledgerFact.lastyearpaid = bill.lastyearpaid
+		ledgerFact.lastqtrpaid  = bill.lastqtrpaid
+		facts += ledgerFact 
+		bill.taxfees.each { tf -> 
+			def tffact = ruleService.createFact('bpbilling','bp.billing.facts.TaxFeeFact')
+			if( !tffact ) throw new Exception("Error in creating Tax Fee Fact");
+			tffact.taxfeeid = tf.objid 
+			tffact.ledgerid = bill.ledgerid 
+			tffact.lobid = tf.lobid 
+			tffact.lobname = tf.lobname 
+			tffact.year = tf.year
+			tffact.qtr = tf.qtr
+			tffact.acctid = tf.acctid
+			tffact.accttitle = tf.accttitle
+			tffact.amount    = tf.amount 
+			tffact.surcharge = 0.0
+			tffact.interest = 0.0
+			tffact.discount = 0.0
+			tffact.monthsfromjan = calculateNoOfMonthsFromJan( cyfact, tf.year, tf.qtr )
+			tffact.monthsfromqtr = calculateNoOfMonthsFromQtr( cyfact, tf.year, tf.qtr )
+			tffact.daysfromjan = calculateNoOfDaysFromJan( cyfact, tf.year, tf.qtr )
+			tffact.daysfromqtr = calculateNoOfDaysFromQtr( cyfact, tf.year, tf.qtr )
+			tffact.applysurcharge = false 
+			
+			def lob = bill.lobs.find{ it.lobid == tf.lobid }
+			
+			if( lob && lob.assessmenttype != 'NEW' ) {
+				tffact.applysurcharge = isApplySurcharge( cyfact, tf.year, tf.qtr )
+			}
+			else if( bill.txntype != 'NEW' ) {
+				tffact.applysurcharge = isApplySurcharge( cyfact, tf.year, tf.qtr )
+			}
+			
+			tffact.applydiscount = isApplyDiscount( cyfact, tf.year, tf.qtr )
+			facts += tffact
+		}
+		return facts 
+	}
+	
+	void buildActionCommands( bill, facts, actionList ) {
+		actionList.addCommand( 'calcSurcharge', new CalcSurchargeHandler( em:em, bill:bill ) )		
+		actionList.addCommand( 'calcInterest', new CalcInterestHandler( em:em, bill:bill ) )	
+		actionList.addCommand( 'calcDiscount', new CalcDiscountHandler( em:em, bill:bill ) )	
+	}
+	
+	int calculateNoOfMonthsFromQtr(currentFact, year, qtr) {
+		int currYear = currentFact.year
+		int currMonth = currentFact.month
+		if(year < currYear) {
+			return ((currYear - year) * 12 - (3 * (qtr-1))) + currMonth 
+		}
+		else {
+			int nm = currMonth - (3 * (qtr-1))
+			return nm < 0 ? 0 : nm
+		}
+	}
+
+	int calculateNoOfMonthsFromJan(currentFact, year, qtr) {
+		int currYear = currentFact.year
+		int currMonth = currentFact.month
+		if(year < currYear) {
+			return ( currYear - year ) * 12 + currMonth
+		}
+		else {
+			return currMonth
+		}
+	}
+	
+	int calculateNoOfDaysFromJan( currentFact, year, qtr ) {
+		if ( qtr > currentFact.qtr && year == currentFact.year )
+			return 0;
+		def cal = Calendar.instance;
+		cal.set( Calendar.MONTH, currentFact.month - 1 );
+		cal.set( Calendar.DATE, currentFact.day );
+		cal.set( Calendar.YEAR, currentFact.year );
+		
+		def dayCount = cal.get( Calendar.DAY_OF_YEAR );
+		
+		return dayCount;
+	}
+	
+	int calculateNoOfDaysFromQtr( currentFact, year, qtr ) {
+		def cal = Calendar.instance;
+		cal.set( Calendar.MONTH, (qtr - 1) * 3 );
+		cal.set( Calendar.YEAR, currentFact.year );
+		cal.set( Calendar.DATE, 1 );
+		def dayCount = cal.get( Calendar.DAY_OF_YEAR );
+		
+		if ( qtr > currentFact.qtr && year == currentFact.year )
+			return 0;
+		
+		cal.set( Calendar.MONTH, currentFact.month - 1 );
+		cal.set( Calendar.DATE, currentFact.day );
+		dayCount = cal.get( Calendar.DAY_OF_YEAR ) - dayCount + 1;
+		
+		def tempYear = year;
+		while ( tempYear < currentFact.year ) {
+			cal.set( Calendar.MONTH, 11 );
+			cal.set( Calendar.YEAR, tempYear );
+			cal.set( Calendar.DATE, 31 );
+			dayCount += cal.get( Calendar.DAY_OF_YEAR );
+			tempYear++;
+		}
+		return dayCount;
+	}
+	
+	boolean isApplySurcharge( currentFact, year, qtr ) {
+		if ( year < currentFact.year )
+			return true;
+		if ( qtr < currentFact.qtr )
+			return true;
+		def surchargedue = setting.collection.qtr1surcharge;
+		if ( qtr == 1 && surchargedue.month < currentFact.month)
+			return true;
+		if ( qtr == 1 && currentFact.month == surchargedue.month && currentFact.day > surchargedue.day )
+			return true;
+		surchargedue = setting.collection.qtr2surcharge;
+		if ( qtr == 2 && surchargedue.month < currentFact.month )
+			return true;
+		if ( qtr == 2 && currentFact.month == surchargedue.month && currentFact.day > surchargedue.day )
+			return true;
+		surchargedue = setting.collection.qtr3surcharge;
+		if ( qtr == 3 &&  surchargedue.month < currentFact.month )
+			return true;
+		if ( qtr == 3 && currentFact.month == surchargedue.month && currentFact.day > surchargedue.day )
+			return true;
+		surchargedue = setting.collection.qtr4surcharge;
+		if ( qtr == 4 && surchargedue.month < currentFact.month )
+			return true;
+		if ( qtr == 4 && currentFact.month == surchargedue.month && currentFact.day > surchargedue.day )
+			return true;
+		return false;
+	}
+	
+	boolean isApplyDiscount( currentFact, year, qtr ) {
+		def discountdue = setting.collection.discount;
+		if ( currentFact.year == year && currentFact.month <= discountdue.month && currentFact.day <= currentFact.day )
+			return true;
+		return false;
+	}
+	
+}	
+
+class CalcSurchargeHandler implements RuleActionHandler 
+{
+	def em
+	def bill 
+	def ruleService
+	
+	public void execute( drools, taxfee) {	
+		updateSurcharge( taxfee )
+	}
+	
+	void updateSurcharge( taxfee) {
+		def tf = bill.taxfees.find{ it.objid == taxfee.taxfeeid }
+		tf.surcharge = 0.0
+		if( taxfee ) {
+			tf.surcharge = taxfee.surcharge 
+		}
+	}
+}
+
+class CalcInterestHandler implements RuleActionHandler 
+{
+	def em
+	def bill 
+	def ruleService
+	
+	public void execute( drools, taxfee) {	
+		updateInterest( taxfee )
+		//drools.update( taxfee )
+	}
+	
+	void updateInterest( taxfee ) {
+		def tf = bill.taxfees.find{ it.objid == taxfee.taxfeeid }
+		tf.interest = 0.0
+		if( taxfee ) {
+			tf.interest = taxfee.interest
+		}
+	}
+}
+
+class CalcDiscountHandler implements RuleActionHandler 
+{
+	def em
+	def bill 
+	def ruleService
+	
+	public void execute( drools, taxfee) {	
+		updateDiscount( taxfee )
+	}
+	
+	void updateDiscount( taxfee) {
+		def tf = bill.taxfees.find{ it.objid == taxfee.taxfeeid }
+		tf.discount = 0.0
+		if( taxfee ) {
+			tf.discount = taxfee.discount
+		}
+	}
+}
+
+class Util
+{
+
+	def ruleService 
+	
+	public def evaluate( expr, params ) {
+		return (new GroovyShell( new Binding( params) )).evaluate( expr )
+	}
+	
+	public def resolveIIF( expr ) {
+		def pattern = ~/@IIF\(.+\)/
+		def matcher = pattern.matcher( expr )
+		while( matcher ) {
+			def match = matcher[0]
+			def iif = match.replaceFirst('@IIF','').replaceFirst(',', ' ? ').reverse().replaceFirst(',', ':').reverse()
+			expr = expr.replaceFirst(pattern.pattern(), iif)
+			matcher = pattern.matcher( expr )
+		} 
+		return expr
+	}
+	
+	public def resolveFixed( expr ) {
+		def pattern = ~/@FIXED\(.+\)/
+		def matcher = pattern.matcher( expr )
+		while( matcher ) {
+			def match = matcher[0]
+			def fixed = match.replaceFirst('@FIXED','(int)')
+			expr = expr.replaceFirst(pattern.pattern(), fixed)
+			matcher = pattern.matcher( expr )
+		} 
+		return expr
+		
+	}
+
+}

@@ -1,0 +1,107 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class LobService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('LogService')
+	def logService
+	
+	def SCHEMA_NAME = 'lob'
+	def SCHEMA_VERSION = '1.0'
+	def DRAFT_STATE = 'DRAFT'
+	def APPROVED_STATE = 'APPROVED' 
+	
+	@ProxyMethod
+	public def getList( searchText, params ) {
+		if( ! searchText ) {
+			return em.sqlContext.createNamedQuery('lob:getList').resultList
+		}
+		return em.sqlContext.createNamedQuery('lob:getListByName').setParameter('name', searchText+'%').resultList
+	}
+	
+	@ProxyMethod
+	public def getApprovedList( searchText, params ) {
+		if( ! searchText ) {
+			return em.sqlContext.createNamedQuery('lob:getApprovedList').resultList
+		}
+		return em.sqlContext.createNamedQuery('lob:getApprovedListByName').setParameter('name', searchText+'%').resultList
+	}
+	
+	@ProxyMethod
+	public List lookup( searchText ) {
+		if( ! searchText ) {
+			return em.sqlContext.createNamedQuery('lob:lookup').resultList
+		}
+		return em.sqlContext.createNamedQuery('lob:lookupByName').setParameter('name', searchText+'%').resultList
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		return em.read( SCHEMA_NAME, [objid:objid] )
+	}
+	
+	@ProxyMethod
+	public def create( lob ) {
+		lob.objid = 'L' + new UID()
+		lob.schemaname = SCHEMA_NAME
+		lob.schemaversion = SCHEMA_VERSION
+		lob.docstate = DRAFT_STATE
+		validate( lob )
+		em.create( lob.schemaname, lob )
+		logService.log( 'CREATE', 'Lob', lob.objid )
+		return lob 
+	}
+	
+	@ProxyMethod
+	public def update( lob ) {
+		validate( lob )
+		em.update( lob.schemaname, lob, { diff -> 
+			logService.logB('UPDATE', 'Lob', lob.objid, null, diff) 
+		} as UpdateChangeHandler)
+		return lob
+	}
+	
+	@ProxyMethod
+	public void delete( lob ) {
+		def lineob = em.sqlContext.createNamedQuery('lob:getLobInUsed')
+						.setParameter('objid', lob.objid).singleResult
+		if( lineob )   
+			throw new Exception('Delete not allowed. Line of Business has already been referenced.')
+		
+		em.delete(lob.schemaname, lob)   
+	}
+	
+	@ProxyMethod
+	public def approve( objid ) {
+		def lob = em.read(SCHEMA_NAME, [objid:objid])
+		if( !lob) throw new Exception('Line of Business not found.\nThe record might have been deleted. Please do a requery. ')
+		if( lob.docstate == APPROVED_STATE ) throw new Exception('Record has already been approved.')
+		lob.docstate = APPROVED_STATE
+		em.update( lob.schemaname, lob )
+		return lob 
+	}
+	
+	@ProxyMethod
+	public List getAttributes(searchText, params) {
+		searchText = ( searchText ? searchText+'%' : '%' )
+		return em.sqlContext.createNamedQuery('lob:getAttributes')
+					.setParameter('name', searchText)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+	
+	private void validate( lob ) {
+		checkDuplicateName( lob )
+		em.validate( lob.schemaname, lob )
+	}
+	
+	private void checkDuplicateName( lob ) {
+		def data = em.sqlContext.createNamedQuery('lob:checkDuplicateName').setParameters( lob ).singleResult
+		if( data) throw new Exception('Duplicate name ' + lob.name + ' not allowed.')
+	}
+}

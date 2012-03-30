@@ -1,0 +1,49 @@
+import com.rameses.annotations.*;
+
+class LiquidationInterceptor
+{
+	@PersistenceContext('main')
+	def em 
+	
+	@Service("LogService")
+	def logService;
+	
+	@Service('DateService')
+	def dateSvc
+	
+	@Env
+	def env;
+	
+	@After(pattern="LiquidationService.createMultiCashier") 
+	public void interceptCreateMultiCashier( evt ) {
+		postToRevenue( evt.result )
+	}
+	
+	@After(pattern="LiquidationService.create") 
+	public void interceptCreate( evt ) {
+		postToRevenue( evt.result )
+	}
+	
+	void postToRevenue( liquidation ) {
+		def params = [:]
+		if( liquidation.opener && liquidation.opener == 'multi' ) {
+			liquidation.rcds.each { rcd -> 
+				params = [
+					liquidationrcdid : rcd.objid ,
+					liquidationid 	 : liquidation.objid, 
+					timestamp     	 : dateSvc.buildCustomTimeStamp( liquidation.dtposted ) 
+				]
+				em.sqlContext.createNamedExecutor('revenue:postLiquidationByRcd').setParameters( params ).execute()
+			}	
+		}
+		else {
+			params = [
+				liquidationid : liquidation.objid, 
+				timestamp     : dateSvc.buildCustomTimeStamp( liquidation.dtposted ) 
+			]
+			em.sqlContext.createNamedExecutor('revenue:postLiquidation').setParameters( params ).execute()
+		}
+	}
+	
+		
+}

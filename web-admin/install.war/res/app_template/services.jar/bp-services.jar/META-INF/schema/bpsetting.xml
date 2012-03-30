@@ -1,0 +1,35 @@
+<schema>
+	<element name="bpsetting" tablename="bpsetting">
+		<field name="objid" primary="true"/>
+		<complex name="assessmentsignatories"  ref="signatory"   type="list" required="false" serializer="default"/>
+		<complex name="applicationsignatories" ref="signatory"   type="list" required="false" serializer="default"/>
+		<complex name="requirements"           ref="requirement" type="list" required="false" serializer="default"/>
+		<complex name="collection" ref="collection" serializer="default" />
+	</element>
+	
+	<element name="signatory">
+		<field name="index" required="true"/>
+		<field name="name" required="true"/>
+		<field name="department" required="true"/>
+		<field name="title" required="true"/>
+	</element>
+	
+	<element name="requirement">
+		<field name="requirement"/>
+		<field name="complied" type="boolean"/>
+		<field name="remarks"/>
+	</element>
+	
+	<element name="collection">
+		<complex name="qtr1surcharge" ref="duedate" serializer="default" />
+		<complex name="qtr2surcharge" ref="duedate" serializer="default" />
+		<complex name="qtr3surcharge" ref="duedate" serializer="default" />
+		<complex name="qtr4surcharge" ref="duedate" serializer="default" />
+		<complex name="discount" ref="duedate" serializer="default" />
+	</element>
+	
+	<element name="duedate">
+		<field name="month" type="integer" required="true" />
+		<field name="day" type="integer" required="true" />
+	</element>
+</schema>

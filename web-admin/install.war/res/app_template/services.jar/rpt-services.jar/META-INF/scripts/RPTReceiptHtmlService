@@ -1,0 +1,39 @@
+import com.rameses.common.*
+import com.rameses.annotations.*
+
+class RPTReceiptHtmlService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ReceiptHtmlService')
+	def htmlSvc
+	
+	def SCHEMANAME = 'receipt:receipt'
+	
+	@ProxyMethod
+	public def open( receiptid ) {
+		return em.read(SCHEMANAME, [objid:receiptid])
+	}
+	
+	@ProxyMethod
+	public def getHtml( receiptid ) {
+        def rct = open( receiptid )
+		if( ! rct ) return ''
+		def info = htmlSvc.buildInfo( rct )
+		//def ownershipInfo = buildOwnershipInfo( rct )
+		def items = htmlSvc.buildItems( rct )
+		return """
+			<html>
+				<head>
+				</head>
+				<body>
+					$info
+					$items
+				<body>
+			</html>
+		"""
+	}
+	
+	
+}

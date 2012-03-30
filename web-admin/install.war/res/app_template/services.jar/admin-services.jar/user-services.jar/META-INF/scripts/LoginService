@@ -1,0 +1,40 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class LoginService 
+{	
+    @PersistenceContext("main")
+    def em;
+    
+	@Service("SessionService")
+	def sessionService;
+	
+	@Env
+	def env;
+	
+	
+    @ProxyMethod
+    public def login( credential ) 
+	{
+		def login = em.sqlContext.createQuery('select * from useraccount where uid=$P{username}').setParameters(credential).singleResult;
+		if(!login) {
+			throw new Exception("Invalid username or password");
+		}
+		
+		credential.password = Encoder.MD5.encode(credential.password, credential.username);
+		if(login.pwd != credential.password) {
+			throw new Exception("Invalid username or password");
+		}
+
+		def p = [:];
+		p.username = login.uid;	
+		p.userid = login.objid;
+		p.putAll(login);
+		
+		def sessionid =  sessionService.register([username:p.userid, info:p]);
+		p.sessionid = sessionid;
+		
+		return p;
+    }
+	
+}

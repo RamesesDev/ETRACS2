@@ -1,0 +1,105 @@
+import com.rameses.common.*
+import com.rameses.annotations.*
+
+class ReceiptHtmlService
+{
+	@PersistenceContext('main')
+	def em
+    
+	@Service('NumberService')
+	def numSvc
+	
+	@Service('ReceiptService')
+	def svc 
+	
+	def SCHEMANAME = 'receipt:receipt'
+	
+	
+	@ProxyMethod
+	public def open( receiptid ) {
+		return em.read(SCHEMANAME, [objid:receiptid])
+	}
+	
+	@ProxyMethod
+	public def getHtml( receiptid ) {
+		def rct = svc.open( receiptid )
+		if( ! rct ) return ''
+    	def info = buildInfo( rct )
+		def items = buildItems( rct )
+		return """
+			<html>
+				<head>
+				</head>
+				<body>
+					$info
+					$items
+				<body>
+			</html>
+		"""
+	}
+	
+	@ProxyMethod 
+	public def buildInfo( rct ) {
+		def amount = numSvc.format('#,##0.00', rct.info.amount)
+		return """
+			<table border="0">
+				<tr>
+					<td>AF No.</td>
+					<td>$rct.info.afid</td>
+				</tr>
+				<tr>
+					<td>Serial No.</td>
+					<td>$rct.info.serialno</td>
+				</tr>
+				<tr>
+					<td>Txn Date</td>
+					<td>$rct.info.txndate</td>
+				</tr>
+				<tr>
+					<td>Payor</td>
+					<td>$rct.info.payorname</td>
+				</tr>
+				<tr>
+					<td>Address</td>
+					<td>$rct.info.payoraddress</td>
+				</tr>
+				<tr>
+					<td>Paid By</td>
+					<td>$rct.info.paidby</td>
+				</tr>
+				<tr>
+					<td>Receipt Amount</td>
+					<td>$amount</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	@ProxyMethod
+	public def buildItems( rct ) {
+		def items = ""
+		rct.items.each {
+			def amt = numSvc.format( '#,##0.00', it.amount )
+			items += """
+				<tr>
+					<td>$it.accttitle</td>
+					<td>$it.fundname</td>
+					<td align="right">$amt</td>
+					<td>${it.remarks ? it.remarks : ''}</td>
+				</tr>
+			"""
+		}
+		return """
+			<table border="1" width="60%">
+				<tr>
+					<th>Account Title</th>
+					<th>Fund</th>
+					<th>Amount</th>
+					<th>Remarks</th>
+				</tr>
+				$items
+			</table>
+		"""
+	}
+	
+}

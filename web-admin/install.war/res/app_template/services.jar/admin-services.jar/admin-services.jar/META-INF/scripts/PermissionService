@@ -1,0 +1,96 @@
+import com.rameses.annotations.*;
+import java.util.*;
+
+class PermissionService {
+
+	@PersistenceContext("system")
+	def em;
+	
+	
+	/***
+	* fetchPermissions - is a general method for retrieving permissions from role class. 
+	* Parameters: 
+	*	 roleclass -(required) must be specified. retrieves all permissions from modules registered in this role class 
+    *    included - (optional) list if specified, includes only the items that matches expressions in this list
+    *    excluded - (optional) list if specifed, does not include items that matches expressions in this list
+    *    handler - closure that handles results that matches. The closure accepts one parameter which is a map having  
+    *    the ff. attributes :  
+	*     	id = the complete id of the permission following convention: <module-name>:<object>.<action>
+	*       modulename = parsed module name part from id
+	*       object = parsed object part from id
+	*       action = action 
+	*       title - title of this permission entry  
+	*       moduletitle = title of the module considered.
+	**/
+	@ProxyMethod	
+	public void fetchPermissions( def roleclass, List included, List excluded, def handler ) {
+		if(!handler) {
+			println "please provide a closure handler when calling fetchPermissions";
+		}
+		def list = em.sqlContext.createNamedQuery("permission:module-permissions").setParameters( [roleclass: roleclass] ).resultList;
+		list.each {
+			def modname = it.modulename;
+			def modtitle = it.moduletitle;
+			if( it.permissions ) {
+				em.serializer.read( it.permissions ).each { z->
+					def x = [:];
+					x.id = modname +":"+z.action;
+					x.title = (z.title) ? z.title: z.action;
+					x.moduletitle = modtitle;
+					x.modulename = modname;
+					def arr = z.action.split("\\.");
+					x.object = arr[0];
+					x.action = arr[1]; 
+					boolean addit = false;
+					//check first if included or excluded
+					if( !included || included.find{ii-> x.id.matches(ii) } ) {
+						addit = true;
+					}	
+					if( addit ) {
+						if( excluded && excluded.find{ii->x.id.matches(ii) } ) addit = false; 
+					}
+					if(addit && handler ) handler(x);
+				}
+			}
+		}
+	}
+	
+	/*
+	@ProxyMethod	
+	public def getPermissions( def roleclass,def included, def excluded ) {
+		def perms = [];
+		def list = em.sqlContext.createNamedQuery("permission:module-permissions").setParameters( [roleclass: roleclass] ).resultList;
+		list.each {
+			def modname = it.modulename;
+			def modtitle = it.moduletitle;
+			if( it.permissions ) {
+				em.serializer.read( it.permissions ).each { z->
+					def x = [:];
+					x.id = modname +":"+z.action;
+					x.action = z.action; 
+					x.title = (z.title) ? z.title: z.action;
+					x.moduletitle = modtitle;
+					x.modulename = modname;
+					x.object = (z.action.indexOf(".")>0)? z.action.substring( 0, z.action.indexOf(".")) : "";
+					boolean addit = false;
+					//check first if included or excluded
+					if( !included || included.find{ii-> x.id.matches(ii) } ) {
+						addit = true;
+					}	
+					if( addit ) {
+						if( excluded && excluded.find{ii->x.id.matches(ii) } ) addit = false; 
+						if(addit) perms.add( x );
+					}
+				}
+			}
+		}
+		return perms;
+	}
+	
+	@ProxyMethod( local=true )	
+	public def getAllPermissions( def roleclass,def included, def excluded ) {
+		def list = getPermissions( roleclass, included, excluded );
+		return list*.id;
+	}
+	*/
+}

@@ -1,0 +1,78 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : june 20, 2011
+*/
+
+import com.rameses.annotations.*;
+import com.rameses.common.*
+import java.rmi.server.UID
+
+public class BPBillingRuleHtmlService
+{
+	@PersistenceContext('main')
+	def em 
+    
+    @Service('AbstractRuleService')
+    def svc 
+
+    @ProxyMethod
+    public String getHtml( ruleid ) {
+		def rule = em.read( 'rule', [objid:ruleid] )
+        if( ! rule ) return ''
+        def ruleinfo    = buildRuleInfo( rule )
+        def conditions  = buildRuleConditionsInfo( rule ) 
+        def actions     = buildRuleActionsInfo( rule )
+        String html = ''
+        html += '<html>'
+        html += '<head></head>'
+        html += '<body>'
+        html += "$ruleinfo"
+        html += "$conditions"
+        html += "$actions"
+        html += '</body>'
+        html += '</html>'
+        return html 
+	}
+    
+    String buildRuleConditionsInfo( rule )  {
+        String html = ''
+        html += "<table>"
+        html += "<tr>"
+        html += "  <td><b>Conditions</b></td>"
+        html += "</tr>"
+        
+        rule.conditions.each { cond ->
+            html += "<tr>"
+            html += '<td>' + cond.displaytext + '</td>'
+            html += "</tr>"
+        }
+        html += "</table>"
+        return html 
+    }
+    
+    String buildRuleActionsInfo( rule )  {
+        String html = ''
+        html += "<table>"
+        html += "<tr>"
+        html += "  <td><b>Actions</b></td>"
+        html += "</tr>"
+        
+        rule.actions.each { action ->
+            html += "<tr>"
+            html += '<td>' + action.displaytext + '</td>'
+            html += "</tr>"
+        }
+        html += "</table>"
+        return html 
+    }
+    
+    String buildRuleInfo( rule ) {
+        String html = ''
+        html += "<h2>State : $rule.docstate</h2>"
+        html += "<h2>Rule Name : $rule.rulename</h2>"
+        html += "<h2>$rule.description</h2>"
+        return html 
+    }
+    
+}

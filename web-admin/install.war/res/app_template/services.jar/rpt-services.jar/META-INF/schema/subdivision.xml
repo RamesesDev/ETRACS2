@@ -1,0 +1,83 @@
+<schema>
+	<element name="subdivision" tablename="subdivision">
+		<field name="objid" primary="true"/>
+        <field name="schemaname" required="true"/>
+        <field name="schemaversion" required="true"/>
+        <field name="docstate" required="true"/>
+        <field name="ry" type="integer" required="true"/>
+        <field name="txntype" required="true" />
+        <field name="docno" required="true"/>
+        <!-- autonumber values: 0 or 1 -->
+        <field name="autonumber" required="true"  /> 
+        <field name="issuedate" required="true" />
+        <field name="effectivityyear" required="true" type="integer" />
+        <field name="effectivityqtr" required="true" type="integer" />
+        <field name="memoranda" />
+        <!-- mother faas info -->
+        <field name="motherfaasid" required="true" />
+        <field name="mothertdno"  required="true" />
+        <field name="motherpin"  required="true" />
+        <field name="motherclasscode"  required="true" />
+        <field name="mothertaxpayername"  required="true" />
+        <field name="mothercadastrallotno"  required="true" />
+        <field name="mothersurveyno"  />
+        <field name="mothermv"  type="decimal" required="true" />
+        <field name="motherav"  type="decimal" required="true" />
+        <field name="motherareasqm" required="true" type="decimal" />
+        <field name="motherareaha" required="true" type="decimal" />
+        <field name="subdivisioncount" required="true" type="integer" />
+        <field name="affectedrpucount" required="true" type="integer" />
+        <!-- signatories -->
+        <field name="appraisedby" />
+        <field name="appraisedbytitle" />
+        <field name="dtappraised" />
+        <field name="recommendedby"  />
+        <field name="recommendedbytitle"  />
+        <field name="dtrecommended"  />
+        <field name="approvedby"  />
+        <field name="approvedbytitle"  />
+        <field name="dtapproved" />
+        <complex name="extended" merge="true" serializer="default" required="false"/>
+	</element>
+    
+    <!-- subdivided lands -->
+    <element name="subdivisionland" tablename="subdivisionland" >
+        <field name="objid" primary="true" />
+        <field name="subdivisionid" required="true" />
+        <field name="newtdno"  />
+        <field name="newpin"  />
+        <field name="newtitletype"  />
+        <field name="newtitleno"  />
+        <field name="newtitledate" />
+        <field name="areasqm" type="decimal" required="true"/>
+        <field name="areaha" type="decimal" required="true"/>
+        <field name="memoranda"  required="true" />
+        <field name="taxpayerid"  />
+        <field name="taxpayerno"  />
+        <field name="taxpayername"  />
+        <field name="taxpayeraddress"  />
+        <complex name="rp"  ref="faas:realproperty" serializer="default" />
+        <complex name="rpu" ref="rpu:rpu" serializer="default" />
+        <field name="newfaasid"  />
+        <field name="itemno"  />
+        <complex name="extended" merge="true" serializer="default" required="false"/>
+    </element>
+    
+    <!-- subdivisionaffectedrpu -->
+    <element name="subdivisionaffectedrpu" tablename="subdivisionaffectedrpu" >
+        <field name="objid" primary="true"  />
+        <field name="subdivisionid" required="true" />
+        <field name="rputype" required="true"/>
+        <field name="prevfaasid"  />
+        <field name="prevtdno"  />
+        <field name="prevfullpin"  />
+        <field name="newtdno"  />
+        <field name="newpin"  />
+        <field name="subdivisionlandid" />
+        <field name="newsuffix" type="integer" />
+        <field name="memoranda"  />
+        <field name="newfaasid"  />
+        <field name="itemno"  />
+    </element>
+</schema>
+

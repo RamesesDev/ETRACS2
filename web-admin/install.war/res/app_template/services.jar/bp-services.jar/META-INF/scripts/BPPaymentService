@@ -1,0 +1,98 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class BPPaymentService{
+	
+	@PersistenceContext('main')
+	def em
+	
+	@ProxyMethod
+	public def getBPPReportLists( def year, def qtr, def month, def day ){
+
+		def param = [
+			iyear : year,
+			iqtr : qtr,
+			imonth : ( month?.month ? month.month : '%' ),
+			iday : month?.month ? ( day ? day : '%' ) : '%'
+		]
+		
+		def result = getBPPReportLists( param )
+		if( !result ) 
+			throw new Exception('Records found.')
+		
+		return result
+	}
+	
+	@ProxyMethod
+	public List getNumDays( year, month ) {
+		if ( !month && month < 0 ) return []
+		
+		Calendar cal = Calendar.getInstance()
+        cal.set( year, month, 1)
+        int maxday = cal.getActualMaximum(cal.DAY_OF_MONTH)
+		def numdays = []
+		1.upto( maxday ) { numdays.add( it ) }
+		return numdays 
+	}
+	
+	@ProxyMethod
+	public List getMonthList( qtr ) {
+		def months = [
+			[name:'JANUARY', 	month:1, qtr:1 ],
+			[name:'FEBRUARY', 	month:2, qtr:1 ],
+			[name:'MARCH', 		month:3, qtr:1 ],
+			
+			[name:'APRIL', 	month:4, qtr:2 ],
+			[name:'MAY', 	month:5, qtr:2 ],
+			[name:'JUNE', 	month:6, qtr:2 ],
+			
+			[name:'JULY', 		month:7, qtr:3 ],
+			[name:'AUG', 		month:8, qtr:3 ],
+			[name:'SEPTEMBER', 	month:9, qtr:3 ],
+			
+			[name:'OCTOBER', 	month:10, qtr:4 ],
+			[name:'NOVEMBER', 	month:11, qtr:4 ],
+			[name:'DECEMBER', 	month:12, qtr:4 ],
+		]
+		
+		if( ! qtr ) return months 
+		return months.findAll{ it.qtr == qtr }
+	}
+	   
+	@ProxyMethod
+	public def getMonth( imonth ) {
+		def monthlist = getMonthList( null )
+		return monthlist.find{ it.month == imonth }
+	} 
+	
+	private def getMonthName( month ) {
+		def months = getMonthList( null )
+		def mon = months.find{ it.month == month?.month }
+		if( mon ) return mon.name 
+		throw new Exception("Month $month is not defined." )
+	}
+	
+	
+	private def getQuarterName( qtr ) {
+		if( qtr == 1 ) return '1ST QUARTER'
+		else if( qtr == 2 ) return '2ND QUARTER'
+		else if( qtr == 3 ) return '3RD QUARTER'
+		return '4TH QUARTER'
+	}
+	
+	@ProxyMethod
+	public def buildPeriod( year, qtr, month, day ) {
+		if( month && day ) return 'For the day of ' + getMonthName( month ) + ' ' + day + ', ' + year 
+		if( month ) return 'For the month of ' + getMonthName( month ) + ', ' + year 
+		if( qtr ) return 'For the ' + getQuarterName( qtr ) + ' of ' + year 
+		return 'For the Year ' + year 
+	}
+	 
+	private def getBPPReportLists( def param ){
+	
+		return em.sqlContext.createNamedQuery( "bppayment:getBPPReportLists" ).setParameters( param ).resultList					
+	}
+	
+
+}

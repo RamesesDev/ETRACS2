@@ -1,0 +1,62 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class XReportService
+{
+	@PersistenceContext("main")
+	def em;
+    
+	@ProxyMethod
+	public def generateSummaryOfCollection( remittanceid ) {
+		def acctlist = em.sqlContext.createQuery('''
+			SELECT DISTINCT 
+				a.objid,  
+				a.acctcode, 
+				a.accttitle  
+			FROM receiptlist rl  
+				INNER JOIN receiptitem ri ON rl.objid = ri.receiptid 
+				INNER JOIN incomeaccount ia ON ri.acctid = ia.objid  
+				LEFT JOIN account a ON ia.sreid = a.objid 
+			WHERE rl.remittanceid = $P{remittanceid} 
+			ORDER BY a.acctcode 
+		''')
+		.setParameter('remittanceid', remittanceid )
+		.resultList 
+		
+		def columnsql = ''
+		def colindex = 0
+		acctlist.each { acct ->
+			columnsql += " SUM( CASE WHEN a.objid = '$acct.objid' THEN ri.amount ELSE 0.0 END ) AS col${colindex}, \n"
+			colindex++
+		}
+		
+		def sql = """
+			SELECT 
+				rl.afid, 
+				rl.serialno, 
+				rl.paidby, 
+				rl.txndate, 
+				${columnsql} 
+				rl.voided 
+			FROM receiptlist rl  
+				INNER JOIN receiptitem ri ON rl.objid = ri.receiptid 
+				INNER JOIN incomeaccount ia ON ri.acctid = ia.objid  
+				left join account a ON ia.sreid = a.objid 
+		"""
+		sql += '''
+			WHERE rl.remittanceid = $P{remittanceid} 
+			GROUP BY rl.afid, rl.serialno, rl.paidby, rl.txndate, rl.voided 
+			ORDER BY rl.afid, rl.serialno 
+		'''
+		
+		def items = em.sqlContext.createQuery( sql ).setParameter( 'remittanceid', remittanceid ).resultList
+		colindex = 0
+		def header = [:]
+		acctlist.collect{ acct ->
+			header[ 'COL' + colindex ] = acct.accttitle 
+			colindex++
+		}
+		
+		return [ header:header, items:items]
+	}
+}

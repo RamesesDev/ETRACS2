@@ -1,0 +1,21 @@
+import com.rameses.annotations.*;
+
+class AccountInterceptor
+{
+	@Service("LogService")
+	def logService;
+	
+	@Env
+	def env;
+	
+	@After(pattern="AccountService.createAccount") 
+	public void interceptCreateAccount( evt ) {
+		logService.log("CREATE", "Account", evt.result.objid);
+	}
+	
+	@After(pattern="AccountService.deleteAccount") 
+	public void interceptDeleteAccount( evt ) {
+		logService.log("DELETE", "Account", evt.args[0].objid);
+	}
+		
+}

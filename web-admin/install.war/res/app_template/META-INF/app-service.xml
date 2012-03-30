@@ -1,0 +1,72 @@
+<server>
+  <mbean code="org.jboss.varia.property.SystemPropertiesService" name="rameses:@appname=Service,name=SystemProperties">
+    <attribute name="URLList">
+      ./apps/@appname.ear/META-INF/app.conf
+    </attribute>
+  </mbean>
+  
+  <mbean code="com.rameses.server.cluster.ClusterService" name="rameses:@appname=ClusterService">
+	<depends proxy-type="attribute">jboss.jdbc:datasource=@appname_system,service=metadata</depends>
+	<attribute name="HostName">${hostname}</attribute>
+  </mbean>
+
+  <mbean code="com.rameses.eserver.ServerMgmt" name="rameses:@appname=ServerMgmt">
+	<depends>jboss.jdbc:datasource=@appname_system,service=metadata</depends>
+  </mbean>
+
+  <mbean code="com.rameses.server.session.SessionService" name="rameses:@appname=SessionService">
+	<depends>jboss.jdbc:datasource=@appname_system,service=metadata</depends>
+	<depends  optional-attribute-name="Cluster" proxy-type="com.rameses.server.cluster.ClusterServiceMBean">rameses:@appname=ClusterService</depends>
+	<attribute name="Timeout">180000</attribute>
+  </mbean>
+
+  <mbean code="com.rameses.cache.CacheService" name="rameses:@appname=CacheService">
+	<depends  optional-attribute-name="Cluster" proxy-type="com.rameses.server.cluster.ClusterServiceMBean">rameses:@appname=ClusterService</depends>
+	<attribute name="ScriptHandler">CacheServiceHandler</attribute>
+  </mbean>
+
+  <mbean code="com.rameses.eserver.TemplateService" name="rameses:@appname=TemplateService">
+	<depends>jboss.jdbc:datasource=@appname_system,service=metadata</depends>
+  </mbean>
+
+  <mbean code="com.rameses.scheduler2.SchedulerService" name="rameses:@appname=SchedulerService">
+	<depends>jboss.jdbc:datasource=@appname_system,service=metadata</depends>
+	<depends>jboss.j2ee:ear=@appname.ear,jar=rameses-server.jar,name=ScriptService,service=EJB3</depends>
+	<depends optional-attribute-name="Session" proxy-type="com.rameses.server.session.SessionServiceMBean">rameses:@appname=SessionService</depends>
+	<depends optional-attribute-name="Cluster" proxy-type="com.rameses.server.cluster.ClusterServiceMBean">rameses:@appname=ClusterService</depends>
+  </mbean>
+  
+  <mbean code="com.rameses.ruleserver.RuleMgmt" name="rameses:@appname=RuleMgmt">
+	<depends>jboss.jdbc:datasource=@appname_system,service=metadata</depends>
+  </mbean>
+  
+  <mbean code="com.rameses.reports.jasper.JasperReportCache" name="rameses:@appname=JasperReportMgmt"/>
+  
+  
+  <!--
+  <mbean code="com.rameses.eserver.ScriptDeployer" name="rameses:@appname=ScriptDeployer">
+	<depends>jboss.j2ee:ear=@appname.ear,jar=rameses-server.jar,name=ScriptService,service=EJB3</depends>
+	<depends>rameses:@appname=CacheService</depends>
+	<depends>jboss.jdbc:datasource=@appname_system,service=metadata</depends>
+  </mbean>
+  -->
+  
+  <mbean code="org.jboss.mail.MailService" name="jboss:@appname=Mail">
+    <attribute name="JNDIName">@appname/Mail</attribute>
+    <attribute name="User">${mailuser}</attribute>
+    <attribute name="Password">${mailpwd}</attribute>
+    <attribute name="Configuration">
+      <configuration>
+		<property name="mail.smtp.starttls.enable" value="true"/>  
+        <property name="mail.transport.protocol" value="smtp"/>
+        <property name="mail.smtp.host" value="smtp.gmail.com"/>
+        <property name="mail.smtp.port" value="587"/>
+        <property name="mail.from" value="${mailfrom}"/>
+        <property name="mail.smtp.auth" value="true"/>  
+        <property name="mail.debug" value="false"/>
+      </configuration>
+    </attribute>
+    <depends>jboss:service=Naming</depends>
+  </mbean>
+  
+</server>

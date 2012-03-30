@@ -1,0 +1,64 @@
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+
+class UserAccountService 
+{
+	
+    @PersistenceContext("main")
+    def em;
+    
+	@Service("SessionService")
+	def sessionService;
+	
+	
+	@ProxyMethod
+	public def createLoginAccount( o ) 
+	{
+		if(!o.pwd) o.pwd = "1234";
+		o.pwd = Encoder.MD5.encode(o.pwd, o.uid);
+		return em.create( "useraccount", o );
+	}
+
+	@ProxyMethod
+	public def getAccount( o ) 
+	{
+		return em.read( "useraccount", o );
+	}
+	
+	@ProxyMethod
+	public def update( o ) 
+	{
+		return em.update( "useraccount", o );
+	}
+	
+	@ProxyMethod
+	public void remove( o )
+	{
+		em.delete( "useraccount", o );
+	}
+	
+	
+	@ProxyMethod
+	public void changePassword( credential ) 
+	{		
+		def acct = em.sqlContext.createQuery('select * from useraccount where uid=$P{username}').setParameters(credential).singleResult;
+		
+		if(!acct) {
+			throw new Exception("Login account not found.");
+		}
+		
+		credential.oldpassword = Encoder.MD5.encode(credential.oldpassword, credential.username);		
+		if(acct.pwd != credential.oldpassword) {
+			throw new Exception("Invalid current password provided.");
+		}
+		
+		credential.newpassword = Encoder.MD5.encode(credential.newpassword, credential.username);
+		if(acct.pwd == credential.newpassword) {
+			throw new Exception("New password must not be the same as old password");
+		}
+		
+		em.sqlContext.createExecutor('update useraccount set pwd = $P{newpassword} where uid=$P{username}')
+		  .setParameters(credential)
+		  .execute();
+	}	
+}

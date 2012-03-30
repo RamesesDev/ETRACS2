@@ -1,0 +1,83 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : june 6, 2011
+*/
+
+import com.rameses.annotations.*;
+import com.rameses.rules.common.*;
+
+public class BPRuleHtmlService
+{
+	@PersistenceContext('main')
+	def em 
+    
+    @ProxyMethod
+    public String getHtmlByRuleName( rulename ) {
+        def rule = em.sqlContext.createNamedQuery('rule:getListByName').setParameters([ruleset:'bpassessment', name:rulename]).singleResult
+        if( !rule ) return '<html>Rule ' + rulename + ' cannot be loaded.</html>'
+        return getHtml( rule.objid )
+    }
+	
+	@ProxyMethod
+    public String getHtml( ruleid ) {
+        def rule = em.read( 'rule', [objid:ruleid] )
+        if( ! rule ) return ''
+        def ruleinfo    = buildRuleInfo( rule )
+        def conditions  = buildRuleConditionsInfo( rule ) 
+        def actions     = buildRuleActionsInfo( rule )
+        String html = ''
+        html += '<html>'
+        html += '<head></head>'
+        html += '<body>'
+        html += "$ruleinfo"
+        html += "$conditions"
+        html += "$actions"
+        html += '</body>'
+        html += '</html>'
+        return html 
+    }
+    
+    String buildRuleConditionsInfo( rule )  {
+        String html = ''
+        html += "<table>"
+        html += "<tr>"
+        html += "  <td><b>Conditions</b></td>"
+        html += "</tr>"
+        
+        rule.conditions.each { 
+            html += "<tr>"
+            html += '<td>' + it.displaytext + '</td>'
+            html += "</tr>"
+        }
+        
+        html += "</table>"
+        return html 
+    }
+    
+    String buildRuleActionsInfo( rule )  {
+        String html = ''
+        html += "<table>"
+        html += "<tr>"
+        html += "  <td><b>Actions</b></td>"
+        
+        rule.actions.each { 
+            html += "<tr>"
+            html += '<td>' + it.displaytext + '</td>'
+            html += "</tr>"
+        }
+        
+        html += "</tr>"
+        html += "</table>"
+        return html 
+    }
+    
+    String buildRuleInfo( rule ) {
+        String html = ''
+        html += "<h2>State : $rule.docstate</h2>"
+        html += "<h2>Rule Name : $rule.rulename</h2>"
+        html += "<h2>$rule.description</h2>"
+        return html 
+    }
+}
+

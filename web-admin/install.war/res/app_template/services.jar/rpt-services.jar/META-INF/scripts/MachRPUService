@@ -1,0 +1,314 @@
+import com.rameses.annotations.*
+import java.rmi.server.UID
+
+class MachRPUService
+{
+	@PersistenceContext('main')
+	def em
+    
+    @Service('NumberService')
+	def numberSvc
+    
+    @Service('DateService')
+    def dateSvc
+    
+    @Service('RPUService')
+	def rpuSvc
+    
+    @Service('RPTSettingService')
+    def settingSvc
+    
+    @Env
+	def env
+    
+    
+	@ProxyMethod
+	public Map initGeneralRevision( faas, newrysetting ) {
+		checkLandFaasIsRevised( faas, newrysetting )
+		reviseMachUses( faas, newrysetting )
+		recalculate( faas ) 
+		return faas 
+	}
+	
+	void checkLandFaasIsRevised( faas, newrysetting) {
+		def pin = faas.rp.pin
+		def landfaas = em.sqlContext.createNamedQuery('machrpu:getLatestRevisedLandFaas')
+							.setParameters([ pin:pin, ry:newrysetting.ry  ])
+							.singleResult 
+							
+		if( ! landfaas ) {
+			throw new Exception("Land FAAS $pin is not yet revised.\nFirst revise the Land RPU before revising any improvements.")
+		}	
+		
+		faas.info.landfaasid 			= landfaas.objid 
+		faas.info.landfaastaxpayerid 	= landfaas.taxpayerid 
+		
+	}
+	
+	void reviseMachUses( faas, newrysetting ) {
+		def deletedItems = []
+		
+		faas.rpu.info.machuses.each { machuse ->
+			def actualuse = em.sqlContext.createNamedQuery('machrpu:getActualUseByPrevId')
+								.setParameter('previd', machuse.actualuseid )
+								.singleResult 
+			
+			if( actualuse ) {
+				actualuse.ranges = em.serializer.read( actualuse.ranges )
+				machuse.objid 		= 'MU' + new UID()
+				machuse.actualuse 	= actualuse 
+				machuse.assesslevel = actualuse.rate 
+				machuse.machassesslevelid = actualuse.actualuseid 
+				machuse.putAll( actualuse ) 
+				
+				reviseMachDetails( machuse, newrysetting )
+			}
+			else {
+				deletedItems.add( machuse )
+			}
+		}
+		
+		faas.rpu.info.machuses.removeAll( deletedItems )
+	}
+	
+	void reviseMachDetails( machuse, newrysetting ) {
+		machuse.machdetails.each { machdetail -> 
+			if( machdetail.forexid ) {
+				def forex = em.sqlContext.createNamedQuery('machrpu:getForex')
+								.setParameters([ry:newrysetting.ry, iyear:dateSvc.serverYear ])
+								.singleResult 
+				if( forex ) {
+					machdetail.forexid = forex.objid
+					machdetail.forex   = forex.forex 
+				}
+			}
+		}
+	}
+	
+	void recalculate( faas )  {
+		def rpu 		= faas.rpu 
+		rpu.issuedate 	= dateSvc.serverDate
+		
+		faas.rpu.info.machuses.each{ machuse -> 
+			machuse.machdetails.each { machdetail ->
+				assessMachDetail( machuse, machdetail, rpu.ry, rpu.issuedate )
+			}
+		}
+	}
+	
+	
+    @ProxyMethod
+    public Map initMachRpu( faas ) {
+        rpuSvc.buildCommonRpuInfo( faas )
+        def rpuinfo = faas.rpu.info
+        rpuinfo.machuses = []
+        return faas 
+    }
+    
+    @ProxyMethod
+    public Map calculateTotals( rpu ) {
+		def rptsetting = getRPTSetting()
+		
+        rpu.info.machuses.each { mu ->
+			if( mu.machdetails ) {
+				mu.basemarketvalue = mu.machdetails.basemarketvalue.sum()
+				mu.marketvalue = mu.machdetails.marketvalue.sum()
+				
+				if( rptsetting && IS_TRUE( rptsetting.roundadjmarketvalue ) ) {
+					//mu.marketvalue = numberSvc.roundA( mu.marketvalue, 0 )
+					mu.marketvalue = numberSvc.roundToTen( mu.marketvalue )
+				}
+				
+				mu.assesslevel = mu.machdetails.assesslevel.max()
+				mu.assessedvalue = mu.machdetails.assessedvalue.sum()
+			}
+			else {
+				mu.basemarketvalue = 0.0
+				mu.marketvalue = 0.0
+				mu.assesslevel = 0.0
+				mu.assessedvalue = 0.0
+			}
+        }
+        rpu.totalbmv = rpu.info.machuses.basemarketvalue.sum() 
+        rpu.totalmv = rpu.info.machuses.marketvalue.sum()
+        rpu.totalav = rpu.info.machuses.assessedvalue.sum()
+        return rpu 
+    }
+    
+    
+    @ProxyMethod
+    public Map assessMachDetail( machuse, machdetail, ry, issuedate ) {
+        calcYearsUsed( machdetail, issuedate )
+        calcEstimatedLife( machdetail)
+        updateForexInfo( machdetail, ry) 
+        calculateRCNLD( machdetail )
+        calculateDepreciation( machdetail )
+        calculateDetailAssessment( machuse, machdetail )
+        return machdetail 
+    }
+    
+    void calculateDetailAssessment( machuse, machdetail ) {
+		def rptsetting = getRPTSetting()
+        machdetail.basemarketvalue  = machdetail.replacementcost
+        machdetail.marketvalue      = machdetail.basemarketvalue - machdetail.depreciationvalue
+		if( rptsetting && IS_TRUE( rptsetting.roundadjmarketvalue ) ) {
+			machdetail.marketvalue = numberSvc.roundToTen( machdetail.marketvalue )
+		}
+        machdetail.assesslevel      = getAssessLevel( machuse, machdetail.marketvalue )
+        machdetail.assessedvalue   = numberSvc.roundToTen( machdetail.marketvalue * machdetail.assesslevel / 100.0)
+    }
+    
+    def getAssessLevel( machuse, mv ) {
+		if( IS_TRUE( machuse.actualuse.fixrate )  ) {
+            return machuse.actualuse.rate 
+        }
+        else {
+            def range = machuse.actualuse.ranges.find{ mv >= it.mvfrom && ( mv <= it.mvto || it.mvto == 0 )}
+            if( range ) {
+                return range.rate 
+            }
+            throw new Exception('Range not defined for Market Value ' + mv + '.')
+        }
+    }
+    
+    void calculateRCNLD( machdetail ) {
+        def cost = machdetail.originalcost 
+       
+        if( machdetail.newlyinstalled == 1 ) {
+            machdetail.acquisitioncost = machdetail.originalcost + machdetail.freightcost + 
+                                         machdetail.insurancecost + machdetail.installationcost + 
+                                         machdetail.brokeragecost + machdetail.arrastrecost + 
+                                         machdetail.othercost 
+            cost = machdetail.acquisitioncost
+        }
+        else {
+            machdetail.acquisitioncost  = 0.0
+            machdetail.freightcost      = 0.0
+            machdetail.insurancecost    = 0.0
+            machdetail.installationcost = 0.0
+            machdetail.brokeragecost    = 0.0
+            machdetail.arrastrecost     = 0.0
+            machdetail.othercost        = 0.0
+        }
+        
+        if( machdetail.imported == 1 && machdetail.ferac > 0) {
+            cost = numberSvc.round( cost * machdetail.forex / machdetail.ferac ) 
+            machdetail.conversionfactor = 1.0
+        }
+        else if( machdetail.conversionfactor > 0) {
+            cost = numberSvc.round( cost * machdetail.conversionfactor )
+        }
+              
+        machdetail.replacementcost = cost
+        
+        if( machdetail.remaininglife == 0 && machdetail.newlyinstalled == 0 && machdetail.autodepreciate == 1 && machdetail.residualrate > 0) {
+            machdetail.replacementcost = numberSvc.round( machdetail.originalcost * machdetail.residualrate / 100.0 )
+        }
+    }
+    
+    
+    void calculateDepreciation( machdetail ) {
+        if( machdetail.autodepreciate == 1 && machdetail.estimatedlife > 0) {
+            double dep = (double)machdetail.remaininglife / (double)machdetail.estimatedlife
+            dep = (1 - dep) * 100;
+            machdetail.depreciation = numberSvc.roundA( dep, 0 )
+            machdetail.depreciationvalue =  numberSvc.round( machdetail.replacementcost *  machdetail.depreciation / 100.0 )
+        }
+		else {
+			machdetail.depreciationvalue =  numberSvc.round( machdetail.replacementcost *  machdetail.depreciation / 100.0 )
+		}
+    }
+    
+    void updateForexInfo( machdetail, ry) {
+        machdetail.forexid  = null
+        machdetail.forex    = 0.0
+        machdetail.feracid  = null
+        machdetail.ferac    = 0.0
+        
+        if( machdetail.imported == 1 ) {
+            def currdate  = dateSvc.parseCurrentDate()
+            //forex 
+            def params = [ ry:ry, iyear:currdate.year]
+            def forex = em.sqlContext.createNamedQuery('machrpu:getForex').setParameters( params ).singleResult
+            if(forex ) {
+                machdetail.forexid  = forex.objid 
+                machdetail.forex    = forex.forex 
+            }
+            
+            //ferac info 
+            params = [ ry:ry, iyear:machdetail.yearacquired]
+            forex = em.sqlContext.createNamedQuery('machrpu:getForex').setParameters( params ).singleResult
+            if(forex ) {
+                machdetail.feracid  = forex.objid 
+                machdetail.ferac    = forex.forex 
+            }
+        }
+	}
+    
+    void calcEstimatedLife( machdetail ) {
+        if( machdetail.estimatedlife  == null ) {
+            machdetail.estimatedlife = 0
+        }
+        if( machdetail.yearsused == null ) {
+            machdetail.yearsused = 0
+        }
+        int remaininglife =  machdetail.estimatedlife - machdetail.yearsused
+        machdetail.remaininglife =  (remaininglife > 0 ? remaininglife : 0)
+    }
+    
+    void calcYearsUsed( machdetail, issuedate  ) {
+        if( machdetail.yearacquired == null ) {
+            return 
+        }
+        int fromyear = machdetail.yearacquired
+        if( machdetail.yearinstalled && machdetail.yearinstalled > fromyear ) {
+            fromyear = machdetail.yearinstalled
+        }
+        if( machdetail.operationyear && machdetail.operationyear > fromyear ) {
+            fromyear  = machdetail.operationyear
+        }
+        def pdate = dateSvc.parseDate( issuedate, null )
+        machdetail.yearsused =  pdate.year - fromyear + 1
+    }
+    
+
+    
+    /*----------------------------------------------------------------------------------
+    * Lookup Support 
+    ----------------------------------------------------------------------------------*/
+    @ProxyMethod
+    public List lookupActualUse( ry , searchText, params) {
+        def searchValue = (searchText ? searchText+'%' : '%')
+        def criteria = [ry:ry, code:searchValue]
+        def list = getListByName('machrpu:lookupActualUseByCode', criteria, params)
+        return list.each {
+            it.fixrate = it.fixrate as boolean
+            it.ranges = em.serializer.read( it.ranges )
+        }
+    }
+    
+    
+    /*----------------------------------------------------------------------------------
+    * Support Methods 
+    ----------------------------------------------------------------------------------*/
+    def getListByName(namedQuery, values, params ) {
+		if( ! params ) params = [ _start:0, _limit:50 ]
+		return em.sqlContext.createNamedQuery( namedQuery ).setParameters(values)
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList
+	}
+	
+	def getRPTSetting() {
+		return em.sqlContext.createNamedQuery('bldgrpu:getRPTSetting').singleResult 
+	}
+	
+	boolean IS_TRUE( value ) {
+		return TO_BOOLEAN( value ) == true 
+	}
+	
+	boolean TO_BOOLEAN( value ) {
+		if( value instanceof Boolean ) return value 
+		return '1/y/yes/true/t'.indexOf( value.toString().trim().toLowerCase() ) >= 0
+	}
+}

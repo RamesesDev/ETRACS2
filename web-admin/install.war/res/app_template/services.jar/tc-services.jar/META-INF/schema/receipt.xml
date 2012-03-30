@@ -1,0 +1,134 @@
+<schema>
+	<element name="receipt" tablename="receipt">
+		<field name="objid" primary="true"/>
+		<field name="schemaname" required="true"/>
+		<field name="schemaversion" required="true"/>
+		<field name="docstate" required="true"/> <!-- OPEN, CLOSED, VOIDED -->
+		<field name="doctype" required="true"/>
+		<field name="opener" required="true"/>
+		<field name="collectorid" required="true"/>
+		<field name="capturedbyid" />
+		<field name="remittanceid" />
+		<field name="remittanceno" />
+		<field name="remittancedate" />
+		<field name="voided" type="integer" required="true" />
+		<field name="voidreason" />
+		<complex name="extended" merge="true" serializer="default" required="false" />
+		<complex name="info" ref="info" serializer="default" />
+		<complex name="items" ref="item" type="list" serializer="default" min="1" />
+		<complex name="payments" ref="payment" type="list" serializer="default" min="1" />
+	</element>
+	
+	<element name="info">
+		<field name="mode" required="true"/>
+		<field name="txndate" required="true"/>
+		<field name="dtposted" required="true"/>
+		<field name="afid" required="true"/>
+		<field name="afcontrolid" required="true"/>
+		<field name="series" type="integer" />
+		<field name="serialno" />
+		<field name="stubno" required="true"/>
+		<field name="collectiontypeid" required="true"/>
+		<field name="collectiontype" required="true"/>
+		<field name="payorrequired" required="true"/>
+		<field name="payorid" />
+		<field name="payorname" required="true"/>
+		<field name="payoraddress" required="true"/>
+		<field name="paidby" required="true"/>
+		<field name="paidbyaddress" required="true"/>
+		<field name="collectorid" required="true"/>
+		<field name="collectorname" required="true"/>
+		<field name="collectortitle" required="true"/>
+		<field name="capturedbyid" />
+		<field name="capturebyname" />
+		<field name="capturedbytitle" />
+		<field name="totalpayment" type="decimal" required="true" />
+		<field name="cash" type="decimal" required="true" />
+		<field name="otherpayment" type="decimal" required="true" />
+		<field name="amount" type="decimal" required="true" />
+		<field name="remarks" />
+	</element>
+	
+	<element name="item">
+        <field name="objid" />
+		<field name="acctid" required="true"/>
+		<field name="acctno" />
+		<field name="accttitle" required="true"/>
+		<field name="fundid" required="true"/>
+		<field name="fundname" required="true" />
+		<field name="amount" type="decimal" required="true"/>
+		<field name="remarks" />
+        <field name="refid" />
+        <complex name="extended" merge="true" serializer="default" required="false" />
+	</element>
+	
+	<element name="payment">
+		<field name="paytype" required="true"/> <!-- CASH, CHECK, MO -->
+		<field name="amount" type="decimal" required="true"/>
+		<field name="particulars" required="true"/>
+	</element>
+	
+	
+	<element name="receiptlist" tablename="receiptlist">
+		<field name="objid" primary="true" />
+		<field name="docstate" required="true"/>
+		<field name="doctype" required="true"/>
+		<field name="opener" required="true"/>
+		<field name="remittanceid" />
+		<field name="remittanceno" />
+		<field name="remittancedate" />
+		
+		<field name="txndate" required="true" mapfield="info.txndate"/>
+		<field name="dtposted" required="true" mapfield="info.dtposted"/>
+		<field name="iyear" required="true" type="integer"/>
+		<field name="iqtr" required="true" type="integer"/>
+		<field name="imonth" required="true" type="integer"/>
+		<field name="iday" required="true" type="integer"/>
+		<field name="mode" required="true"  mapfield="info.mode"/>
+		<field name="afid" required="true"  mapfield="info.afid"/>
+		<field name="afcontrolid" required="true"  mapfield="info.afcontrolid"/>
+		<field name="serialno" required="true"  mapfield="info.serialno"/>
+		<field name="stubno" required="true" mapfield="info.stubno"/>
+		<field name="collectiontypeid" required="true"  mapfield="info.collectiontypeid"/>
+		<field name="collectiontype" required="true"  mapfield="info.collectiontype"/>
+		<field name="collectorid" required="true"  mapfield="info.collectorid"/>
+		<field name="collectorname" required="true"  mapfield="info.collectorname"/>
+		<field name="collectortitle" required="true"  mapfield="info.collectortitle"/>
+		<field name="capturedbyid" mapfield="info.capturedbyid"/>
+		<field name="capturedbyname" mapfield="info.capturedbyname" />
+		<field name="capturedbytitle" mapfield="info.capturedbytitle" />
+		<field name="payorid" required="true"  mapfield="info.payorid" />
+		<field name="payorname" required="true"  mapfield="info.payorname" />
+		<field name="payoraddress" required="true"  mapfield="info.payoraddress"/>
+		<field name="paidby" required="true"  mapfield="info.paidby"/>
+		<field name="paidbyaddress" required="true"  mapfield="info.paidbyaddress"/>
+		<field name="cash" type="decimal" required="true" mapfield="info.cash"/>
+		<field name="otherpayment" type="decimal" required="true" mapfield="info.otherpayment" />
+		<field name="amount" required="true"  mapfield="info.amount"/>
+		<field name="voided" type="integer" required="true" />
+		<field name="voidreason" />
+		<field name="postcaptureid"/>
+
+	</element>
+	
+	<element name="paymentitem" tablename="paymentitem">
+		<field name="objid" primary="true"/>
+		<field name="receiptid" required="true"/>
+		<field name="paytype" required="true"/>
+		<field name="particulars" required="true"/>
+		<field name="amount" type="decimal" required="true"/>
+		<complex name="extended" merge="true" serializer="default" required="false" />
+	</element>
+	
+	<element name="receiptitem" tablename="receiptitem">
+		<field name="objid" primary="true"/>
+		<field name="receiptid" required="true"/>
+		<field name="acctid" required="true"/>
+		<field name="acctno" />
+		<field name="accttitle" required="true"/>
+		<field name="fundid" required="true"/>
+		<field name="fundname" required="true" />
+		<field name="amount" type="decimal" required="true"/>
+		<field name="remarks" />
+	</element>
+</schema>

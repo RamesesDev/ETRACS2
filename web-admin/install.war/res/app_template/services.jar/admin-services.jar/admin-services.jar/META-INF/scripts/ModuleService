@@ -1,0 +1,42 @@
+import com.rameses.annotations.*;
+
+class ModuleService {
+
+	@PersistenceContext("system")
+	def em;
+
+	@ProxyMethod
+	public def getList(def params) {
+		def qry = em.sqlContext.createNamedQuery( "module:list" );
+		if(params) {
+			if(params._start) qry.setFirstResult( params._start );
+			if(params._limit) qry.setMaxResults( params._limit );
+			qry.setParameters( params );
+		}
+		return qry.resultList;
+	}
+	
+	@ProxyMethod
+	public def save(def o) {
+		return em.save( "module", o );
+	}
+	
+	@ProxyMethod
+	public def read(def o) {
+		return em.read( "module", o );
+	}
+
+	@ProxyMethod
+	public def remove(def o) {
+		em.delete( "module", o );
+	}
+	
+	@ProxyMethod
+	public def getPermissionsByRoleclass( classname ) {
+		return em.sqlContext.createNamedQuery('module:get-module-permissions-by-roleclass')
+			              .setParameters([roleclass: classname])
+						  .resultList;
+	}
+	
+	
+}

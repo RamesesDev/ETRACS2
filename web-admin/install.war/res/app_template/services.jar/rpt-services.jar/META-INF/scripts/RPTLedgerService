@@ -1,0 +1,331 @@
+import com.rameses.annotations.*
+import java.rmi.server.UID
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class RPTLedgerService
+{
+	@PersistenceContext('main')
+	def em
+    
+	@Service('DateService')
+	def dateSvc
+
+    @Service('Var')
+	def var
+
+	@Service('LogService')
+    def logSvc
+    
+    @Env
+    def env 
+    
+    def PENDING_STATE = 'PENDING'
+    def APPROVED_STATE = 'APPROVED'
+    def CANCELLED_STATE = 'CANCELLED'
+    
+    def LAND_TYPE = 'land' 
+    def BLDG_TYPE = 'bldg'
+    def MACH_TYPE = 'mach'
+    def PLANTTREE_TYPE = 'planttree'
+    def MISC_TYPE = 'misc' 
+    
+    def FAASLISTSCHEMA_NAME = 'faas:faaslist'
+    def LEDGER_SCHEMA = 'rptledger' 
+    def LEDGERITEM_SCHEMA = 'rptledger:rptledgeritem' 
+    def SCHEMA_VERSION = '1.0'
+    
+    
+    
+    @ProxyMethod
+    public List getList( docstate, searchText, params ) {
+        docstate   = (docstate ? docstate : '%')
+        if( ! searchText ) return getListByQuery('rptledger:getList', [docstate:docstate], params)
+        
+        def result = null
+        searchText = (searchText ? searchText : '')
+        
+        def criteria = [
+            docstate        : docstate,
+            tdno            : searchText + '%',
+            fullpin         : searchText,
+            taxpayername    : searchText + '%',
+            cadastrallotno  : searchText,
+            blockno         : searchText,
+			barangay		: searchText + '%'
+        ]
+		
+		if( (result = getListByQuery('rptledger:getListByTdno', criteria, params)) ) return result
+		if( (result = getListByQuery('rptledger:getListByPin', criteria, params)) ) return result
+		if( (result = getListByQuery('rptledger:getListByTaxpayer', criteria, params)) ) return result
+		if( (result = getListByQuery('rptledger:getListByCadastral', criteria, params)) ) return result
+		if( (result = getListByQuery('rptledger:getListByBlock', criteria, params)) ) return result
+		if( (result = getListByQuery('rptledger:getBarangay', criteria, params)) ) return result
+		return result
+    }
+    
+    @ProxyMethod
+    public Map open( objid ) {
+        def ledger = em.read(LEDGER_SCHEMA, [objid:objid])
+        ledger.ledgerItems = getLedgerItemList( ledger.objid )
+        return ledger 
+    }
+    
+    @ProxyMethod
+    public Map approve( objid ) {
+        def ledger = em.read(LEDGER_SCHEMA, [objid:objid])
+        if( ledger.docstate == APPROVED_STATE ) throw new Exception('Ledger has already been approved.')
+        if( ledger.docstate == CANCELLED_STATE ) throw new Exception('Ledger has already been cancelled.')
+        
+        int minyear = getSmallestLedgerItemFromYear( objid )
+        
+        ledger.docstate     = APPROVED_STATE
+        ledger.lastyearpaid = minyear - 1
+        ledger.lastqtrpaid  = 4
+        em.update( ledger.schemaname, ledger )
+        
+        logSvc.log('APPROVE', 'RPTLedger', ledger.objid)
+        return ledger 
+    }
+    
+    @ProxyMethod
+    public void insertLedgerItem( ledgeritem ) { 
+        ledgeritem.schemaname = LEDGERITEM_SCHEMA
+        ledgeritem.schemaversion = SCHEMA_VERSION
+        em.validate( ledgeritem.schemaname, ledgeritem ) 
+        em.create( ledgeritem.schemaname, ledgeritem )
+        logSvc.log('CREATE_ITEM', 'RPTLedger', ledgeritem.parentid)
+    }
+    
+    @ProxyMethod
+    public void updateLedgerItem( ledgeritem ) {
+		if( ! ledgeritem.schemaname ) {
+			ledgeritem.schemaname = LEDGERITEM_SCHEMA
+			ledgeritem.schemaversion = SCHEMA_VERSION
+		}
+        em.validate( ledgeritem.schemaname, ledgeritem ) 
+        em.update( ledgeritem.schemaname, ledgeritem )
+        logSvc.log('UPDATE_ITEM', 'RPTLedger', ledgeritem.parentid)
+    }
+	
+	@ProxyMethod
+	public void removeLedgerItem( ledgeritem ) {
+		if( ! ledgeritem.schemaname ) {
+			ledgeritem.schemaname = LEDGERITEM_SCHEMA
+			ledgeritem.schemaversion = SCHEMA_VERSION
+		}
+		em.delete( ledgeritem.schemaname, ledgeritem )
+        logSvc.log('DELETE_ITEM', 'RPTLedger', ledgeritem.parentid)
+	}
+    
+    @ProxyMethod
+    public List getStates() {
+        return [PENDING_STATE, APPROVED_STATE, CANCELLED_STATE]
+    }
+    
+    
+    /*-------------------------------------------------------------------
+    * Posting Methods 
+    -------------------------------------------------------------------*/
+	@ProxyMethod
+    public void post( faasid ) {
+        def faas = openFaas( faasid )
+        if( faas.datacapture == true ) postNewLedger( faas, PENDING_STATE )
+        else if( 'TR/TRE/RE/CE/CC/CT'.indexOf( faas.txntype ) >= 0 ) postLedgerItem( faas ) 
+        else if( 'ND/MC'.indexOf( faas.txntype ) >= 0 ) postNewLedger( faas, APPROVED_STATE )
+        else throw new Exception('RPTLedgerService.post: Posting of TxnType ' + faas.txntype + ' is not yet supported.')        
+    }
+    
+    @ProxyMethod
+    public void postSubdivisionFaas( faasid ) {
+        def faas = openFaas( faasid )   
+        if( faas.rputype == LAND_TYPE ) {
+            postNewLedger( faas, APPROVED_STATE )
+        }
+        else {
+            postLedgerItem( faas ) 
+        }
+    }
+    
+    @ProxyMethod
+    public void postConsolidatedFaas( faasid ) {
+        def faas = openFaas( faasid )   
+        if( faas.rputype == LAND_TYPE ) {
+            postNewLedger( faas, APPROVED_STATE )
+        }
+        else {
+            postLedgerItem( faas ) 
+        }
+    }
+    
+    
+    /*-------------------------------------------------------------------
+    *  Payment Support  
+    -------------------------------------------------------------------*/
+    @ProxyMethod
+    public List getPayments(ledgerid ) {
+        return em.sqlContext.createNamedQuery('rptledger:getPayments').setParameter('ledgerid', ledgerid ).resultList
+    }
+    
+    @ProxyMethod
+    public Map createCapturePayment( ledgerid, pmt ) {
+        pmt.schemaname      = 'rptpayment'
+        pmt.schemaversion   = '1.0'
+        pmt.ledgerid        = ledgerid 
+        pmt.mode            = 'CAPTURE'
+        pmt.dtposted        = dateSvc.serverDate
+        pmt.capturedby      = ( env.USERNAME ? env.USERNAME : 'SYSTEM' )
+        pmt.basicnet        = pmt.basic + pmt.basicint - pmt.basicdisc 
+        pmt.sefnet          = pmt.sef + pmt.sefint - pmt.sefdisc 
+        pmt.total           = pmt.basicnet + pmt.sefnet 
+        em.validate( pmt.schemaname, pmt )
+        em.create( pmt.schemaname, pmt ) 
+        
+        //update ledger lastyearpaid and lastqtrpaid 
+        def params = [ objid:ledgerid, lastyearpaid:pmt.toyear, lastqtrpaid:pmt.toqtr ]
+        em.sqlContext.createNamedExecutor('rptledger:updateLastYearQtrPaid').setParameters(params).execute()
+        return pmt 
+    }
+     
+    
+    
+    /*-------------------------------------------------------------------
+    * Support Methods 
+    -------------------------------------------------------------------*/
+    void postNewLedger( faas, state ) { 
+        def ledger = createLedger( faas, state)
+        def ledgeritem = createLedgerItem( ledger )
+        em.validate( ledger.schemaname, ledger ) 
+        em.validate( ledgeritem.schemaname, ledgeritem ) 
+        em.create( ledger.schemaname, ledger )
+        em.create( ledgeritem.schemaname, ledgeritem )
+        faas.ledgerid = ledger.objid 
+        def params = [ ledgerid:ledger.objid, objid:faas.objid ]
+        em.sqlContext.createNamedExecutor('rptledger:updateFaasLedgerId').setParameters(params).execute()
+        em.sqlContext.createNamedExecutor('rptledger:updateFaasListLedgerId').setParameters(params).execute()
+        logSvc.log('CREATE', 'RPTLedger', ledger.objid)
+    }
+    
+    void postLedgerItem( faas ) {
+        def ledger = updateLedger( faas  )
+        def ledgeritem = createLedgerItem( ledger ) 
+        closePreviousLedgerItemToYear( ledger, faas )
+        em.update( ledger.schemaname, ledger )
+        em.create( ledgeritem.schemaname, ledgeritem )
+        logSvc.log('CREATE_ITEM', 'RPTLedger', ledger.objid)
+    }
+    
+    /* ------------------------------------------------------------------------
+    * Support Methods 
+    ------------------------------------------------------------------------ */
+    Map createLedger( faas, state ) {
+        def ledger = [:]
+        ledger.putAll( faas )
+        ledger.objid            = 'L' + new UID()
+        ledger.claimno          = faas.claimno 
+        ledger.schemaname       = LEDGER_SCHEMA
+        ledger.schemaversion    = SCHEMA_VERSION
+        ledger.faasid           = faas.objid 
+        ledger.docstate         = state
+        ledger.assessedvalue    = faas.totalav 
+        ledger.lastyearpaid     = ( faas.effectivityqtr == 1 ? faas.effectivityyear - 1 : faas.effectivityyear)
+        ledger.lastqtrpaid      = ( faas.effectivityqtr == 1 ? 4 : faas.effectivityqtr - 1 )
+        ledger.partialbasic     = 0.0
+        ledger.partialsef       = 0.0
+		ledger.partialbasicint  = 0.0
+		ledger.partialsefint	= 0.0 
+        ledger.firstqtrpaidontime = false 
+        updateActualUseInfo( ledger )
+        return ledger
+    }
+    
+    Map updateLedger( faas ) {
+        def oldledger = openLedger( faas )
+        def ledgerid = oldledger.objid 
+        def oldstate = oldledger.docstate 
+        oldledger.putAll( faas )
+        oldledger.objid            = ledgerid
+		oldledger.faasid		   = faas.objid 
+        oldledger.docstate         = oldstate 
+        oldledger.schemaname       = LEDGER_SCHEMA
+        oldledger.schemaversion    = SCHEMA_VERSION
+        oldledger.assessedvalue    = faas.totalav 
+        updateActualUseInfo( faas )
+        return oldledger
+    }
+    
+    Map createLedgerItem( ledger  ) {
+        def ledgeritem = [:]
+        ledgeritem.putAll( ledger )
+        ledgeritem.objid            = 'LI' + new UID()
+        ledgeritem.schemaname       = LEDGERITEM_SCHEMA
+        ledgeritem.schemaversion    = SCHEMA_VERSION
+        ledgeritem.docstate         = APPROVED_STATE
+        ledgeritem.parentid         = ledger.objid 
+        ledgeritem.faasid           = ledger.faasid 
+        ledgeritem.fromyear         = ledger.effectivityyear
+        ledgeritem.toyear           = 0
+        ledgeritem.assessedvalue    = ledger.assessedvalue 
+        ledgeritem.backtax          = (ledger.backtaxyrs > 0)
+        ledgeritem.systemcreated    = true 
+        return ledgeritem 
+    }
+    
+    void updateActualUseInfo( ledger  ) {
+        //TODO: how to identify actualuse for split assessments? 
+        //by default set it to the largest area
+        ledger.actualuseid = ledger.classid 
+        ledger.actualusecode = ledger.classcode 
+    }
+    
+    Map openFaas( faasid )  {
+        def faas = em.read( FAASLISTSCHEMA_NAME, [objid:faasid] )
+        faas.datacapture    = faas.datacapture as boolean 
+        faas.taxable        = faas.taxable as boolean 
+        return faas 
+    }
+    
+    Map openLedger( faas ) {
+        def ledger = em.read(LEDGER_SCHEMA, [ objid:faas.ledgerid] )
+        if( ! ledger ) throw new Exception('Ledger for FAAS ' + faas.tdno  + ' does not exists.\nKindly ask assistance from Land Tax.')
+        return ledger 
+    }
+    
+    void closePreviousLedgerItemToYear( ledger, faas ) {
+        //previous item is the lastest entry in the ledger
+        //and is denoted by the toyear = 0
+        def item = em.sqlContext.createNamedQuery('rptledger:getLatestItem').setParameter('parentid', ledger.objid ).singleResult
+        if( ! item ) throw new Exception('Cannot locate the last ledger entry.\nPlease verify that it has not been deleted.')
+        item.toyear  = faas.effectivityyear - 1
+        if( item.fromyear == faas.effectivityyear ) {
+            item.toyear   = faas.effectivityyear
+            item.docstate = CANCELLED_STATE 
+        }
+        em.update( item.schemaname, item )
+    }
+    
+    List getLedgerItemList( ledgerid ) {
+        def list = em.sqlContext.createNamedQuery('rptledger:getLedgerItemList').setParameter('parentid', ledgerid).resultList
+        list.each {
+            it.taxable       = it.taxable as boolean 
+            it.systemcreated = it.systemcreated as boolean 
+        }
+        return list 
+    }
+    
+    int getSmallestLedgerItemFromYear( ledgerid ) {
+        def item = em.sqlContext.createNamedQuery('rptledger:getSmallestFromYear').setParameter('parentid', ledgerid ).singleResult
+        if( !item) throw new Exception('Smallest From Year cannot be determined.\nVerify that ledger items are already added.')
+        return item.minfromyear 
+    }
+    
+    def getListByQuery( namedQuery, criteria, params ) {
+        if( ! params ) params = [ _start:0, _limit:25]
+		return em.sqlContext.createNamedQuery( namedQuery )
+						.setParameters( criteria )
+						.setFirstResult( params._start )
+						.setMaxResults( params._limit )
+						.resultList
+	}
+}
+

@@ -1,0 +1,321 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID;
+import java.text.DecimalFormat;
+
+class RemittanceReportService {
+
+	@PersistenceContext("main")
+	def em;
+	
+	@Service("DateService")
+	def dtsvc;
+	
+	@Service("NumberService")
+	def numbSvc;
+	
+	@ProxyMethod
+	public def generateRCD( rem ) {
+		def data = [
+			collectorName 		: rem.info.collectorname,
+			collectorTitle		: rem.info.collectortitle,
+			docno 				: rem.info.txnno,
+			dateposted			: dtsvc.parse( "yyyy-MM-dd", rem.info.txndate ),
+			totalDenomination	: rem.info.totalcash,
+			totalchecks			: rem.info.totalotherpayment,
+			amount				: rem.info.amount,
+			amountInWords 		: numbSvc.convertDouble( rem.info.amount ), 
+			liquidatingOfficerName	: rem.info.liquidatingofficername,
+			liquidatingOfficerTitle	: rem.info.liquidatingofficertitle,
+			collectiontype			: getCollectionType( rem.objid ), 
+			remittedforms			: getSerialRemittedFormsByRemittance( rem.objid ),
+			nonserialremittances 	: getNonSerialRemittedFormsByRemittance( rem.objid ),
+			nonserialsummary	 	: getNonSerialRemittedFormsSummary( rem.objid ),
+			otherpayments		: getOtherPayments( rem ),
+			denominations		: rem.info.denominations,
+			collectionsummaries : getCollectionSummary( rem.objid ),
+		]
+		
+		return data;
+		
+	}
+	
+	def getCollectionSummary( remid ) {
+		return em.sqlContext.createNamedQuery('remittance:getCollectionSummaryByAF')
+									.setParameters( [remittanceid: remid ] )
+								    .resultList;
+	}
+	
+	private def getOtherPayments( rem ){
+		return em.sqlContext.createNamedQuery( "remittance:fetchOtherPayments" ).setParameter( 'objid', rem.objid ).resultList;
+	}
+	
+	private def getCollectionType( remid ){
+		return em.sqlContext.createNamedQuery("remittance:getCollectionType").setParameters( [remittanceid:remid] ).resultList;
+	}
+	
+	private def getSerialRemittedFormsByRemittance( remid ) {
+		return em.sqlContext.createNamedQuery( "remittance:getSerialRemittedFormsByRemittance" ).setParameters( [remittanceid:remid] ).resultList;
+	}
+	
+	private def getNonSerialRemittedFormsByRemittance( remid ) {
+		return em.sqlContext.createNamedQuery( "remittance:getNonSerialRemittedFormsByRemittance" ).setParameters( [remittanceid:remid] ).resultList;
+	}
+	
+	private def getNonSerialRemittedFormsSummary( remid ) {
+		return em.sqlContext.createNamedQuery( "remittance:getNonSerialRemittedFormsSummary" )
+						.setParameters( [remittanceid:remid] ).resultList
+	}
+	
+	
+	@ProxyMethod
+	public def generateReportByCollectionType( rem, collectiontype ) {
+		rem.info.txndate = dtsvc.parse( "yyyy-MM-dd", rem.info.txndate );
+		rem.receipts = getReceiptsByRemittanceCollectionType( rem, collectiontype );
+		return rem;
+	}
+	
+	private def getReceiptsByRemittanceCollectionType( rem, collectiontype ) {
+		def query = {
+			if( collectiontype?.objid ) return em.sqlContext.createNamedQuery( "remittance:getReceiptsByRemittanceCollectionType" ).setParameter( "collectiontypeid", collectiontype.objid );
+			else return em.sqlContext.createNamedQuery( "remittance:getReceiptsByRemittanceAllCollectionType" )
+		}
+		return query().setParameter( "remittanceid", rem.objid ).resultList;
+	}
+	
+	@ProxyMethod
+	public def generateReportByFund( rem, fund ) {
+		rem.info.txndate = dtsvc.parse( "yyyy-MM-dd", rem.info.txndate );
+		rem.receipts = getReceiptDetailsByFund( rem, fund );
+		rem.acctsummaries = getIncomeAccuntSummaryByFund( rem, fund );
+		return rem;
+	}
+	
+	@ProxyMethod
+	public def generateReportByCashTicket( rem ) {
+		def summaries = em.sqlContext.createNamedQuery('remittance:getCashTicketSummary')
+											.setParameter('remittanceid', rem.objid)
+											.resultList
+		def ctamount	= summaries.amount.sum()
+		def data = [
+			collectorName 		: rem.info.collectorname,
+			collectorTitle		: rem.info.collectortitle,
+			docno 				: rem.info.txnno,
+			dateposted			: dtsvc.parse( "yyyy-MM-dd", rem.info.txndate ),
+			totalDenomination	: rem.info.totalcash,
+			totalchecks			: rem.info.totalotherpayment,
+			amount				: ctamount,
+			amountInWords 		: numbSvc.convertDouble( ctamount ), 
+			liquidatingOfficerName	: rem.info.liquidatingofficername,
+			liquidatingOfficerTitle	: rem.info.liquidatingofficertitle,
+			collectiontype			: getCollectionType( rem.objid ), 
+			cashticketsummaries 	: summaries,
+			ctamount 				: ctamount, 
+		]
+		return data 
+	}
+	
+	@ProxyMethod
+	public def generateSummaryByIncomeAcctReport( rem, fund ) {
+		rem.info.txndate = dtsvc.parse( "yyyy-MM-dd", rem.info.txndate );
+		rem.acctsummaries = getIncomeAccuntSummaryByFund( rem, fund );
+		return rem
+	}
+	
+	private def getReceiptDetailsByFund( rem, fund ) {
+		def query = {
+			if( fund?.objid ) return em.sqlContext.createNamedQuery("remittance:getReceiptDetailsByFund").setParameter("fundid", fund.objid);
+			else return em.sqlContext.createNamedQuery( "remittance:getReceiptDetailsByAllFund" ); 
+		}
+		return query().setParameter( "remittanceid", rem.objid ).resultList;
+	}
+	
+	private def getIncomeAccuntSummaryByFund( rem, fund ) {
+		def query = {
+			if( fund?.objid ) return em.sqlContext.createNamedQuery( "remittance:getIncomeAccuntSummaryByFund" ).setParameter("fundid", fund.objid);
+			else return em.sqlContext.createNamedQuery( "remittance:getIncomeAccuntSummaryByAllFund" );
+		}
+		return query().setParameter( "remittanceid", rem.objid ).resultList;
+	}
+	
+	
+	
+	@ProxyMethod
+	public def generateReportByFundDetailed( rem, fund ) {
+		rem.info.txndate = dtsvc.parse( "yyyy-MM-dd", rem.info.txndate );
+		rem.serials = getSerialReceiptDetailsByFund( rem, fund );
+		rem.nonserial = getNonSerialReceiptDetailsByFund( rem, fund );
+		return rem;
+	}
+	
+	@ProxyMethod
+	public def generateReportByFundDetailedCrosstab( entity) {
+		def remittanceid = entity.objid 
+		def fundlist = em.sqlContext.createNamedQuery('remittance:getDistinctFundAccount')
+							.setParameter('remittanceid', remittanceid )
+							.resultList 
+		
+		def colindex = 0
+		def columnsql = ''
+		fundlist.each { fund  ->
+			columnsql += " SUM( CASE WHEN ia.fundid = '$fund.fundid' AND rl.voided = 0 THEN ri.amount ELSE NULL END )  AS col${colindex}, \n"
+			colindex++
+		}
+		columnsql += " SUM( CASE WHEN rl.voided = 0 THEN ri.amount ELSE NULL END ) AS col${colindex}, \n"
+			
+		def qry = em.sqlContext.createNamedQuery('remittance:getReportByFundDetailCrosstab')
+		def items = qry.setVars([columnsql:columnsql])
+						.setParameter( 'remittanceid', remittanceid )
+						.resultList
+		
+		def header = [:]
+		colindex = 0
+		fundlist.collect{ fund ->
+			header[ 'COL' + colindex ] = fund.fundname 
+			colindex++
+		}
+		
+		header[ 'COL' + colindex ] = 'TOTAL'
+		//
+		//additional params
+		header.REPORTTITLE = 'SUMMARY OF COLLECTIONS BY FUND'
+		header.REMITTANCENO = entity.info.txnno
+		header.REMITTANCEDATE = entity.info.txndate
+		header.REMITTANCEAMOUNT = entity.info.amount
+		header.COLLECTORNAME = entity.info.collectorname
+		header.COLLECTORTITLE = entity.info.collectortitle
+		header.LIQUIDATINGOFFICER = entity.info.liquidatingofficername
+		header.LIQUIDATINGOFFICERTITLE = entity.info.liquidatingofficertitle
+		header.DATEPOSTED = dtsvc.parse('yyyy-MM-dd', entity.info.txndate )
+		header.AMTINWORDS = numbSvc.convertDouble( entity.info.amount )
+		
+		return [ header:header, items:items]
+	}
+	
+	
+	
+	@ProxyMethod
+	public def generateSummaryOfCollection( entity, chart ) {
+		def remittanceid = entity.objid 
+		def acctlist = em.sqlContext.createNamedQuery('remittance:getDistinctAccount' + chart)
+							.setParameter('remittanceid', remittanceid )
+							.resultList 
+		
+		def colindex = 0
+		def columnsql = ''
+		def hasUnmapped = acctlist.find{ it.objid == null }
+		if(  hasUnmapped ) {
+			columnsql = " SUM( CASE WHEN a.objid IS NULL AND rl.voided = 0 THEN ri.amount ELSE NULL END ) AS col${colindex}, \n"
+			colindex++
+		}
+		acctlist.each { acct ->
+			if( acct.objid ) {
+				columnsql += " SUM( CASE WHEN a.objid = '$acct.objid' AND rl.voided = 0 THEN ri.amount ELSE NULL END ) AS col${colindex}, \n"
+				colindex++
+			}
+		}
+		columnsql += " SUM( CASE WHEN rl.voided = 0 THEN ri.amount ELSE NULL END ) AS col${colindex}, \n"
+			
+		def qry = em.sqlContext.createNamedQuery('remittance:getSummaryOfCollection' + chart )
+		
+		def items = qry.setVars([columnsql:columnsql])
+						.setParameter( 'remittanceid', remittanceid )
+						.resultList
+		
+		def header = [:]
+		colindex = 0
+		if( hasUnmapped ) {
+			header[ 'COL' + colindex ] = 'UNMAPPED'
+			colindex++
+		}
+		acctlist.collect{ acct ->
+			if( acct.objid ) {
+				header[ 'COL' + colindex ] = acct.accttitle 
+				colindex++
+			}
+		}
+		
+		header[ 'COL' + colindex ] = 'TOTAL'
+		//
+		//additional params
+		header.REPORTTITLE = 'SUMMARY OF CASH COLLECTIONS AND DEPOSITS BY ' + chart 
+		header.REMITTANCENO = entity.info.txnno
+		header.REMITTANCEDATE = entity.info.txndate
+		header.REMITTANCEAMOUNT = entity.info.amount
+		header.COLLECTORNAME = entity.info.collectorname
+		header.COLLECTORTITLE = entity.info.collectortitle
+		header.LIQUIDATINGOFFICER = entity.info.liquidatingofficername
+		header.LIQUIDATINGOFFICERTITLE = entity.info.liquidatingofficertitle
+		header.DATEPOSTED = dtsvc.parse('yyyy-MM-dd', entity.info.txndate )
+		header.AMTINWORDS = numbSvc.convertDouble( entity.info.amount )
+		
+		return [ header:header, items:items]
+	}
+	
+	
+	@ProxyMethod
+	public def generateAbstractOfRPTCollection( rem ) {
+		def items = []
+		
+		items.addAll(
+			em.sqlContext.createNamedQuery('remittance:getAbstractCollectionBASIC')
+					.setParameter( 'objid', rem.objid ).resultList 
+		)
+		items.addAll(
+			em.sqlContext.createNamedQuery('remittance:getAbstractCollectionManualBASIC')
+					.setParameter( 'objid', rem.objid ).resultList 
+		)
+
+		items.addAll(
+			em.sqlContext.createNamedQuery('remittance:getAbstractCollectionSEF')
+					.setParameter( 'objid', rem.objid ).resultList 
+		)
+		items.addAll(
+			em.sqlContext.createNamedQuery('remittance:getAbstractCollectionManualSEF')
+					.setParameter( 'objid', rem.objid ).resultList 
+		)
+
+		if( ! items ) throw new Exception('No records found.')
+		
+		def amount  = items.currentyear.sum() + items.previousyear.sum() + 
+					  items.penaltycurrent.sum() + items.penaltyprevious.sum() - items.discount.sum() 
+		
+		//
+		//additional params
+		def header = [:]
+		header.TITLE = 'ABSTRACT OF REAL PROPERTY TAX COLLECTION'
+		header.PERIOD = ''
+		header.REMITTANCENO = rem.info.txnno
+		header.REMITTANCEDATE = rem.info.txndate
+		header.REMITTANCEAMOUNT = amount
+		header.COLLECTORNAME = rem.info.collectorname
+		header.COLLECTORTITLE = rem.info.collectortitle
+		header.LIQUIDATINGOFFICER = rem.info.liquidatingofficername
+		header.LIQUIDATINGOFFICERTITLE = rem.info.liquidatingofficertitle
+		header.DATEPOSTED = dtsvc.parse('yyyy-MM-dd', rem.info.txndate )
+		header.AMTINWORDS = numbSvc.convertDouble( amount )
+		
+		return [
+			header  : header,
+			items  	: items 
+		]
+	}
+	
+	
+	private def getSerialReceiptDetailsByFund( rem, fund ) {
+		def query = {
+			if( fund?.objid ) return em.sqlContext.createNamedQuery( "remittance:getSerialReceiptDetailsByFund" ).setParameter( "fundid", fund.objid );
+			else return em.sqlContext.createNamedQuery( "remittance:getSerialReceiptDetailsByAllFund" );
+		}		
+		return query().setParameter( "remittanceid", rem.objid ).resultList;
+	}
+	
+	private def getNonSerialReceiptDetailsByFund( rem, fund ) {
+		def query = {
+			if( fund?.objid ) return em.sqlContext.createNamedQuery( "remittance:getNonSerialReceiptDetailsByFund" ).setParameter( "fundid", fund.objid );
+			else return em.sqlContext.createNamedQuery( "remittance:getNonSerialReceiptDetailsByFund" );
+		}
+		return query().setParameter( "remittanceid", rem.objid ).resultList;
+	}
+	
+}

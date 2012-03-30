@@ -1,0 +1,134 @@
+import com.rameses.annotations.*;
+
+
+class TaxpayerHtmlService 
+{
+	@Service("TaxpayerService")
+	def taxpayerService;
+	
+	@ProxyMethod
+	public def getHtml( objid ) {
+		def taxpayer = taxpayerService.open( objid );
+        def provTaxpayerInfo = buildProvTaxpayerInfo(taxpayer);
+        def mappings = buildMappings( taxpayer.mappings );
+		return """
+			<html>
+				<head>
+					<style type="text/css">
+						body, td, th { 
+							font-family: tahoma;
+							font-size  : 12pt;
+						}	
+						td {
+							background-color:white;
+						}
+						th {
+							background-color : #CCCCCC;
+						}
+						.data {
+							font-weight:bold;
+						}
+						.caption {
+							font-weight:bold;
+							font-size: 14pt;
+						}
+					</style>
+				</head>
+				<body>
+					<div class="caption" height="30">
+						<u>Taxpayer Information</u>
+					</div>
+					<table>	
+						<tr>
+							<td>LGU</td>
+							<td>:</td>
+							<td class="data">$taxpayer.lgu</td>
+						</tr>
+						<tr>
+							<td>Taxpayer No.</td>
+							<td>:</td>
+							<td class="data">${taxpayer.taxpayerNo ? taxpayer.taxpayerNo : ''}</td>
+						</tr>
+						<tr>
+							<td>Name</td>
+							<td>:</td>
+							<td class="data">$taxpayer.name</td>
+						</tr>
+						<tr>
+							<td>Address</td>
+							<td>:</td>
+							<td class="data">$taxpayer.address</td>
+						</tr>
+                        <tr>
+							<td>Mailing Address</td>
+							<td>:</td>
+							<td class="data">${taxpayer.mailAddress ? taxpayer.mailAddress : ''}</td>
+						</tr>
+					</table>
+                    $provTaxpayerInfo
+                    $mappings
+				</body>
+			</html>
+		""";
+	}
+    
+    private def buildMappings( mappings ) {
+        if ( ! mappings ) return "";
+        
+        def trs = "";
+        mappings.each {
+            trs += """
+                <tr>
+                    <td>$it.lgu</td>
+                    <td>${it.taxpayerNo ? it.taxpayerNo : ''}</td>
+                    <td>$it.name</td>
+                    <td>$it.address</td>
+                </tr>
+            """;
+        }
+        return """
+            <br>
+            <div style="background-color:silver">
+                <table cellspacing="1" width="100%">
+                    <tr>
+                        <td colspan="4" class="data">Municipal Taxpayer Mappings</td>
+                    </tr>
+                    <tr>
+                        <th width="150">LGU</th>
+                        <th width="120">Taxpayer No.</th>
+                        <th>Name</th>
+                        <th>Address</th>
+                    </tr>
+                    $trs
+                </table>
+            </div>
+        """;
+    }
+    
+    private def buildProvTaxpayerInfo( taxpayer ) {
+        if( ! taxpayer.provTaxpayerId ) return "";
+        return """
+            <br>
+            <div style="background-color:silver" width="80%">
+                <table width="100%" cellspacing="1">	
+                    <tr>
+                        <td colspan="2" style="background-color:silver"><b>Province Taxpayer Reference</b></td>
+                    </tr>
+                    <tr>
+                        <td width="120">Taxpayer No.</td>
+                        <td class="data">${taxpayer.provTaxpayerNo ? taxpayer.provTaxpayerNo : ''}</td>
+                    </tr>
+                    <tr>
+                        <td width="120">Name</td>
+                        <td class="data">$taxpayer.provTaxpayerName</td>
+                    </tr>
+                    <tr>
+                        <td width="1w0">Address</td>
+                        <td class="data">$taxpayer.provTaxpayerAddress</td>
+                    </tr>
+                </table>
+            </div>
+        """;
+    }
+
+}

@@ -1,0 +1,44 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import com.rameses.io.*;
+
+
+public class XFileTransferService
+{
+
+    @ProxyMethod
+    public void upload( param ) {
+        def file = new File( 'D:/temp/' + param.filename );
+        if( param._batch == 0 && file.exists() )  file.delete();
+        
+        println "saving part $param._batch";
+        def fos = new FileTransfer.FileOutputHandler(file, true);
+        fos.write( param._data );
+        fos.close();
+    }
+    
+    @ProxyMethod
+    public def download( param ) {
+        def file = new File( 'D:/temp/' + param.filename );
+        if( ! file.exists() )  throw new Exception("File $param.filename no longer exists.")
+        
+        println "reading $param._batch";
+        def fis = new FileTransfer.FileInputSource(file, 1024);
+        fis.setPosition( 1024 * param._batch)
+        def data = fis.read()
+        fis.close();
+        return data 
+    }
+
+    @ProxyMethod
+    public void uploadAttachment( param ) {
+        def file = new File( 'D:/temp/' + param.attachment.filename );
+        if( param._batch == 0 && file.exists() )  file.delete();
+        
+        println "saving part $param._batch";
+        def fos = new FileTransfer.FileOutputHandler(file, true);
+        fos.write( param._data );
+        fos.close();
+    }
+
+}

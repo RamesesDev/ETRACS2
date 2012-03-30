@@ -1,0 +1,615 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class BusinessTxnService {
+
+	@PersistenceContext('main')
+	def em;
+	
+	@Service("SequenceService")
+	def seqsvc;
+	
+	@Service("DateService")
+	def dtsvc;
+	
+	@Service("HTMLService")
+	def htmlsvc;
+	
+	def CH_TRADENAME_SCHEMA = 'bptxn:changetradename';
+	def CH_TRADENAME_SCHEMAVERSION = '1.0';
+	def CH_TRADENAME_LISTSCHEMA = 'bptxn:changetradenamelist';
+	def CH_TRADENAME_TXN = 'CHANGE_TRADENAME';
+	
+	
+	def CH_ADMIN_SCHEMA = 'bptxn:changeadmin';
+	def CH_ADMIN_SCHEMAVERSION = '1.0';
+	def CH_ADMIN_LISTSCHEMA = 'bptxn:changeadminlist';
+	def CH_ADMIN_TXN = 'CHANGE_ADMIN';
+	
+	def CH_ADDRESS_SCHEMA = 'bptxn:changeaddress';
+	def CH_ADDRESS_SCHEMAVERSION = '1.0';
+	def CH_ADDRESS_LISTSCHEMA = 'bptxn:changeaddresslist';
+	def CH_ADDRESS_TXN = 'CHANGE_ADDRESS';
+	
+	def CH_PERMITTEE_SCHEMA = 'bptxn:changepermittee';
+	def CH_PERMITTEE_SCHEMAVERSION = '1.0';
+	def CH_PERMITTEE_LISTSCHEMA = 'bptxn:changepermitteelist';
+	def CH_PERMITTEE_TXN = 'CHANGE_PERMITTEE';
+	
+	@ProxyMethod
+	public def getChangeTradenameList( searchText, params ) {
+		return em.sqlContext.createNamedQuery( 'bptxn:getChangeTradenameList' ).resultList;
+	}
+	
+	@ProxyMethod
+	public def getChangeAdminList( searchText, params ) {
+		return em.sqlContext.createNamedQuery( 'bptxn:getChangeAdminList' ).resultList;
+	}
+	
+	@ProxyMethod
+	public def getChangeAddressList( searchText, params ) {
+		return em.sqlContext.createNamedQuery( 'bptxn:getChangeAddressList' ).resultList;
+	}
+	
+	@ProxyMethod
+	public def getChangePermitteeList( searchText, params ) {
+		return em.sqlContext.createNamedQuery( 'bptxn:getChangePermitteeList' ).resultList;
+	}
+
+	
+	@ProxyMethod
+	public def createChangeTradename( bptxn ) {
+		validate( bptxn );
+		validateChangeTradename( bptxn );
+		bptxn.objid = 'BPTXNTRD' + new UID();
+		bptxn.schemaname = CH_TRADENAME_SCHEMA;
+		bptxn.schemaversion = CH_TRADENAME_SCHEMAVERSION;
+		bptxn.docstate = 'DRAFT';
+		bptxn.txntype = CH_TRADENAME_TXN;
+		bptxn.info.txnno = generateTxnNo();
+		bptxn.info.dtposted = new Date();
+		em.validate( bptxn.schemaname, bptxn );
+		em.create( bptxn.schemaname, bptxn );
+		createChangeTradenameListing( bptxn );
+		return bptxn;
+	}
+	
+	private void createChangeTradenameListing( bptxn ) {
+		em.create( CH_TRADENAME_LISTSCHEMA, [
+			objid 			: bptxn.objid,
+			docstate 		: bptxn.docstate,
+			txntype			: CH_TRADENAME_TXN,
+			txnno			: bptxn.info.txnno,
+			businessid		: bptxn.businessid,
+			prevtradename	: bptxn.business.tradename,
+			newtradename	: bptxn.info.newtradename,
+			businessaddress	: bptxn.business.businessaddress,
+			taxpayername	: bptxn.business.taxpayername,
+			taxpayeraddress	: bptxn.business.taxpayeraddress
+		] );
+	}
+	
+	private void validateChangeTradename( bptxn ) {
+		if ( bptxn.info.newtradename == bptxn.business.tradename )
+			throw new IllegalStateException( "New Tradename must not be the same as with Previous Tradename." );
+	}
+	
+	@ProxyMethod
+	public def createChangeAdmin( bptxn ) {
+		validateChangeAdmin( bptxn );
+		validate( bptxn );
+		bptxn.objid = 'BPTXNADM' + new UID();
+		bptxn.schemaname = CH_ADMIN_SCHEMA;
+		bptxn.schemaversion = CH_ADMIN_SCHEMAVERSION;
+		bptxn.docstate = 'DRAFT';
+		bptxn.txntype = CH_ADMIN_TXN;
+		bptxn.info.txnno = generateTxnNo();
+		bptxn.info.dtposted = new Date();
+		em.validate( bptxn.schemaname, bptxn );
+		em.create( bptxn.schemaname, bptxn );
+		createChangeAdminListing( bptxn );
+		return bptxn;
+	}
+	
+	private void createChangeAdminListing( bptxn ) {
+		em.create( CH_ADMIN_LISTSCHEMA, [
+			objid 			: bptxn.objid,
+			docstate 		: bptxn.docstate,
+			txntype			: CH_ADMIN_TXN,
+			txnno			: bptxn.info.txnno,
+			businessid		: bptxn.businessid,
+			tradename		: bptxn.business.tradename,
+			businessaddress	: bptxn.business.businessaddress,
+			taxpayername	: bptxn.business.taxpayername,
+			taxpayeraddress	: bptxn.business.taxpayeraddress,
+			prevadminid		: bptxn.business.adminid,
+			prevadminname	: bptxn.business.adminname,
+			prevadminaddress: bptxn.business.adminaddress,
+			newadminid		: bptxn.info.newadminid,
+			newadminname	: bptxn.info.newadminname,
+			newadminaddress	: bptxn.info.newadminaddress
+		] );
+	}
+	
+	private void validateChangeAdmin( bptxn ) {
+		if ( bptxn.info.newadminid && bptxn.info.newadminid == bptxn.business.adminid )
+			throw new IllegalStateException( "You have referenced the same Administrator." );
+	}
+
+	@ProxyMethod
+	public def createChangeAddress( bptxn ) {
+		validate( bptxn );
+		validateChangeAddress( bptxn );
+		bptxn.objid = 'BPTXNADR' + new UID();
+		bptxn.schemaname = CH_ADDRESS_SCHEMA;
+		bptxn.schemaversion = CH_ADDRESS_SCHEMAVERSION;
+		bptxn.docstate = 'DRAFT';
+		bptxn.txntype = CH_ADDRESS_TXN;
+		bptxn.info.txnno = generateTxnNo();
+		bptxn.info.dtposted = new Date();
+		em.validate( bptxn.schemaname, bptxn );
+		em.create( bptxn.schemaname, bptxn );
+		createChangeAddressListing( bptxn );
+		return bptxn;
+	}
+	
+	private void createChangeAddressListing( bptxn ) {
+		em.create( CH_ADDRESS_LISTSCHEMA, [
+			objid 			: bptxn.objid,
+			docstate 		: bptxn.docstate,
+			txntype			: CH_ADDRESS_TXN,
+			txnno			: bptxn.info.txnno,
+			businessid		: bptxn.businessid,
+			tradename		: bptxn.business.tradename,
+			prevbusinessaddress	: bptxn.business.businessaddress,
+			newbusinessaddress	: bptxn.info.newbusinessaddress, 
+			taxpayername	: bptxn.business.taxpayername,
+			taxpayeraddress	: bptxn.business.taxpayeraddress
+		] );
+	}
+	
+	private void validateChangeAddress( bptxn ) {
+		if ( bptxn.info.newbusinessaddress == bptxn.business.businessaddress )
+			throw new IllegalStateException( "New Address must not be the same as with Previous Address." );
+	}
+	
+	@ProxyMethod
+	public def createChangePermittee( bptxn ) {
+		validate( bptxn );
+		validateChangePermittee( bptxn );
+		bptxn.objid = 'BPTXNPMT' + new UID();
+		bptxn.schemaname = CH_PERMITTEE_SCHEMA;
+		bptxn.schemaversion = CH_PERMITTEE_SCHEMAVERSION;
+		bptxn.docstate = 'DRAFT';
+		bptxn.txntype = CH_PERMITTEE_TXN;
+		bptxn.info.txnno = generateTxnNo();
+		bptxn.info.dtposted = new Date();
+		em.validate( bptxn.schemaname, bptxn );
+		em.create( bptxn.schemaname, bptxn );
+		createChangePermitteeListing( bptxn );
+		return bptxn;
+	}
+	
+	private void createChangePermitteeListing( bptxn ) {
+		em.create( CH_PERMITTEE_LISTSCHEMA, [
+			objid 			: bptxn.objid,
+			docstate 		: bptxn.docstate,
+			txntype			: CH_PERMITTEE_TXN,
+			txnno			: bptxn.info.txnno,
+			businessid		: bptxn.businessid,
+			tradename		: bptxn.business.tradename,
+			businessaddress	: bptxn.business.businessaddress,
+			prevtaxpayerid	: bptxn.business.taxpayerid, 
+			prevtaxpayername: bptxn.business.taxpayername,
+			prevtaxpayeraddress	: bptxn.business.taxpayeraddress,
+			newtaxpayerid	: bptxn.info.newtaxpayerid,
+			newtaxpayername	: bptxn.info.newtaxpayername,
+			newtaxpayeraddress	: bptxn.info.newtaxpayeraddress
+		] );
+	}
+	
+	private void validateChangePermittee( bptxn ) {
+		if ( bptxn.info.newtaxpayerid == bptxn.business.taxpayerid )
+			throw new IllegalStateException( "You have referenced the same Permittee." );
+	}
+	
+	
+	
+	@ProxyMethod
+	public def update( bptxn ) {
+		em.update( bptxn.schemaname, bptxn );
+	}
+	
+	@ProxyMethod
+	public def open( bptxnid, txntype ) {
+		def schemaname = "";
+		if ( CH_TRADENAME_TXN == txntype )
+			schemaname = CH_TRADENAME_SCHEMA;
+		else if ( CH_ADMIN_TXN == txntype )
+			schemaname = CH_ADMIN_SCHEMA;
+		else if ( CH_ADDRESS_TXN == txntype )
+			schemaname = CH_ADDRESS_SCHEMA;
+		else if ( CH_PERMITTEE_TXN == txntype )
+			schemaname = CH_PERMITTEE_SCHEMA;
+		return em.read( schemaname, [objid:bptxnid] );;
+	}
+	
+	@ProxyMethod
+	public def submitTransaction( bptxn ) {
+		em.sqlContext.createNamedExecutor( 'bptxn:submitTransaction' ).setParameters( [objid:bptxn.objid] ).execute();
+		submitList( bptxn );
+		return open( bptxn.objid, bptxn.txntype );
+	}
+	
+	private void submitList( bptxn ) {
+		if ( CH_TRADENAME_TXN == bptxn.txntype )
+			em.sqlContext.createNamedExecutor( 'bptxn:submitChangeTradenameList' ).setParameters( [objid:bptxn.objid] ).execute();
+		else if ( CH_ADMIN_TXN == bptxn.txntype )
+			em.sqlContext.createNamedExecutor( 'bptxn:submitChangeAdminList' ).setParameters( [objid:bptxn.objid] ).execute();
+		else if ( CH_ADDRESS_TXN == bptxn.txntype )
+			em.sqlContext.createNamedExecutor( 'bptxn:submitChangeAddressList' ).setParameters( [objid:bptxn.objid] ).execute();
+		else if ( CH_PERMITTEE_TXN == bptxn.txntype )
+			em.sqlContext.createNamedExecutor( 'bptxn:submitChangePermitteeList' ).setParameters( [objid:bptxn.objid] ).execute();
+	}
+	
+	@ProxyMethod
+	public def approveTransaction( bptxn ) {
+		em.sqlContext.createNamedExecutor( 'bptxn:approveTransaction' ).setParameters( [objid:bptxn.objid] ).execute();
+		approveList( bptxn );
+		return open( bptxn.objid, bptxn.txntype );
+	}
+	
+	private void approveList( bptxn ) {
+		if ( CH_TRADENAME_TXN == bptxn.txntype )
+			approveChangeTradenameList( bptxn );
+		else if ( CH_ADMIN_TXN == bptxn.txntype )
+			approveChangeAdminList( bptxn );
+		else if ( CH_ADDRESS_TXN == bptxn.txntype )
+			approveChangeAddressList( bptxn );
+		else if ( CH_PERMITTEE_TXN == bptxn.txntype )
+			approveChangePermitteeList( bptxn );
+	}
+	
+	private void approveChangeTradenameList( bptxn ) {
+		def business = em.read('business', [objid:bptxn.businessid] )
+		if( !business ) throw new Exception('Cannot open the selected business.')
+		
+		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationTradename' )
+			.setParameters( [objid:business.applicationid, tradename:bptxn.info.newtradename] )
+			.execute()
+			
+		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationListingTradename' )
+			.setParameters( [objid:business.applicationid, tradename:bptxn.info.newtradename] )
+			.execute()
+			
+		em.sqlContext.createNamedExecutor( 'bptxn:approvedChangeTradenameList' )
+			.setParameters( [objid:bptxn.objid] )
+			.execute();
+			
+		em.sqlContext.createNamedExecutor( 'bptxn:updatePermitTradename' )
+			.setParameters( [applicationid:business.applicationid, tradename:bptxn.info.newtradename] )
+			.execute();
+			
+		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessTradename' )
+			.setParameters( [businessid:bptxn.businessid, newtradename:bptxn.info.newtradename] )
+			.execute();
+	}
+	
+	private void approveChangeAdminList( bptxn ) {
+		def business = em.read('business', [objid:bptxn.businessid] )
+		if( !business ) throw new Exception('Cannot open the selected business.')
+		
+		def bpapp = em.read('bpapplication', [objid:business.applicationid] )
+		if( ! bpapp ) throw new Exception('Cannot open the associated application.')
+		
+		bpapp.info.administratorname 	= bptxn.info.newadminname
+		bpapp.info.administratoraddress = bptxn.info.newadminaddress
+		em.update( bpapp.schemaname, bpapp )
+		
+		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationListingAdmin' )
+			.setParameters([
+				objid					: business.applicationid, 
+				administratorname		: bptxn.info.newadminname, 
+				administratoraddress	: bptxn.info.newadminaddress, 
+			])
+			.execute()
+		
+		
+		em.sqlContext.createNamedExecutor( 'bptxn:approvedChangeAdminList' ).setParameters( [objid:bptxn.objid] ).execute();
+		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessAdmin' ).setParameters( [businessid:bptxn.businessid, newadminid:bptxn.info.newadminid, newadminname:bptxn.info.newadminname, newadminaddress:bptxn.info.newadminaddress] ).execute();
+	}
+	
+	private void approveChangeAddressList( bptxn ) { 
+		
+		def business = em.read('business', [objid:bptxn.businessid] )
+		if( !business ) throw new Exception('Cannot open the selected business.')
+		
+		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationBusinessAddress' )
+			.setParameters( [businessid:bptxn.businessid, newbusinessaddress:bptxn.info.newbusinessaddress] )
+			.execute()
+			  
+		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationListingBusinessAddress' )
+			.setParameters( [businessid:bptxn.businessid, newbusinessaddress:bptxn.info.newbusinessaddress] )
+			.execute()
+			
+		em.sqlContext.createNamedExecutor( 'bptxn:approvedChangeAddressList' )
+				.setParameters( [objid:business.applcationid] )
+				.execute();
+				
+		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessAddress' )
+				.setParameters( [objid:business.objid, newbusinessaddress:bptxn.info.newbusinessaddress] )
+				.execute();
+	}
+	
+	private void approveChangePermitteeList( bptxn ) {
+		def business = em.read('business', [objid:bptxn.businessid] )
+		if( !business ) throw new Exception('Cannot open the selected business.')
+		
+		def bpapp = em.read('bpapplication', [objid:business.applicationid] )
+		if( ! bpapp ) throw new Exception('Cannot open the associated application.')
+		
+		bpapp.info.taxpayerid 		= bptxn.info.newtaxpayerid
+		bpapp.info.taxpayername 	= bptxn.info.newtaxpayername
+		bpapp.info.taxpayeraddress 	= bptxn.info.newtaxpayeraddress
+		em.update( bpapp.schemaname, bpapp )
+		
+		em.sqlContext.createNamedExecutor( 'bptxn:updateApplicationListingPermittee' )
+			.setParameters([
+				objid			: business.applicationid, 
+				taxpayerid		: bptxn.info.newtaxpayerid, 
+				taxpayername	: bptxn.info.newtaxpayername, 
+				taxpayeraddress	: bptxn.info.newtaxpayeraddress
+			])
+			.execute()
+			
+		em.sqlContext.createNamedExecutor( 'bptxn:approvedChangePermitteeList' )
+				.setParameters( [objid:bptxn.objid] )
+				.execute();
+				
+		em.sqlContext.createNamedExecutor( 'bptxn:updateBusinessPermittee' )
+				.setParameters( [businessid:bptxn.businessid, newtaxpayerid:bptxn.info.newtaxpayerid, newtaxpayername:bptxn.info.newtaxpayername, newtaxpayeraddress:bptxn.info.newtaxpayeraddress] )
+				.execute();
+	}
+	
+	@ProxyMethod
+	public def rejectTransaction( bptxn ) {
+		em.sqlContext.createNamedExecutor( 'bptxn:rejectTransaction' ).setParameters( [objid:bptxn.objid] ).execute();
+		if ( CH_TRADENAME_TXN == bptxn.txntype )
+			em.sqlContext.createNamedExecutor( 'bptxn:rejectChangeTradenameList' ).setParameters( [objid:bptxn.objid] ).execute();
+		else if ( CH_ADMIN_TXN == bptxn.txntype )
+			em.sqlContext.createNamedExecutor( 'bptxn:rejectChangeAdminList' ).setParameters( [objid:bptxn.objid] ).execute();
+		return open( bptxn.objid, bptxn.txntype );
+	}
+	
+	private def generateTxnNo() {
+		def dt = dtsvc.getServerDate();
+		def cal = Calendar.instance;
+		cal.time = dt;
+		def yr = cal.get(Calendar.YEAR);
+		def series = seqsvc.getNextFormattedSeries( 'BPTXN-' + yr );
+		
+		return 'BPTXN-' + yr + '-' + series;
+	}
+	
+	private void validate( bptxn ) {
+		def txn = getPendingBPTxnByBusinessId( bptxn.businessid );
+		if ( txn )
+			throw new IllegalStateException( 'There is a PENDING ' + txn.txntype + ' Transaction referenced by this Business.' );
+	}
+	
+	private def getPendingBPTxnByBusinessId( businessid ) {
+		return em.sqlContext.createNamedQuery( 'bptxn:getPendingBPTxnByBusinessId' ).setParameters( [businessid:businessid] ).singleResult;
+	}
+	
+	@ProxyMethod
+	public def getHtml( bptxn ) {
+		def html = "";
+		if ( !bptxn )
+			return html;
+		
+		def style = htmlsvc.getStyle();
+		/* HTML Header */
+		html = """
+			<html>
+			<head>
+				<style>
+					${style}
+				</style>
+			</head>
+			<body>
+		""";
+		
+		html += """
+			<div class='data-group'>
+				<div class='data-header'>Info</div>
+				<table class='data-field'>
+					<tr>
+						<td class='caption'>Txn No. :</td>
+						<td class='blue-header'>${bptxn.info.txnno}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Status :</td>
+						<td class='status'>${bptxn.docstate}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Date :</td>
+						<td class='value'>${bptxn.info.dtposted}</td>
+					</tr>
+				</table>
+			</div>
+		""";
+		
+		if ( CH_TRADENAME_TXN == bptxn.txntype )
+			html += getChangeTradenameHTML( bptxn );
+		else if ( CH_ADMIN_TXN == bptxn.txntype )
+			html += getChangeAdminHTML( bptxn );
+		else if ( CH_ADDRESS_TXN == bptxn.txntype )
+			html += getChangeAddressHTML( bptxn );
+		else if ( CH_PERMITTEE_TXN == bptxn.txntype )
+			html += getChangePermitteeHTML( bptxn );
+		
+		return html;
+	}
+	
+	private def getChangeTradenameHTML( bptxn ) {
+		return """
+			<div class='data-group'>
+				<div class='data-header'>Business Info</div>
+				<table class='data-field'>
+					<tr>
+						<td class='caption'>Previous Trade Name :</td>
+						<td class='blue-header'>${bptxn.business.tradename}</td>
+					</tr>
+					<tr>
+						<td class='caption'>New Trade Name :</td>
+						<td class='status'>${bptxn.info.newtradename}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Address :</td>
+						<td class='blue-header'>${bptxn.business.businessaddress}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Owner :</td>
+						<td class='value'>${bptxn.business.taxpayername}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Owner Address :</td>
+						<td class='value'>${bptxn.business.taxpayeraddress}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Admin Name :</td>
+						<td class='value'>${bptxn.business.adminname}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Admin Address :</td>
+						<td class='value'>${bptxn.business.adminaddress}</td>
+					</tr>
+				</table>
+			</div>
+		""";
+	}
+	
+	private def getChangeAdminHTML( bptxn ) {
+		return """
+			<div class='data-group'>
+				<div class='data-header'>Business Info</div>
+				<table class='data-field'>
+					<tr>
+						<td class='caption'>Trade Name :</td>
+						<td class='blue-header'>${bptxn.business.tradename}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Address :</td>
+						<td class='blue-header'>${bptxn.business.businessaddress}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Owner :</td>
+						<td class='value'>${bptxn.business.taxpayername}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Owner Address :</td>
+						<td class='value'>${bptxn.business.taxpayeraddress}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Previous Admin Name :</td>
+						<td class='value'>${bptxn.business.adminname}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Previous Admin Address :</td>
+						<td class='value'>${bptxn.business.adminaddress}</td>
+					</tr>
+					<tr>
+						<td class='caption'>New Admin Name :</td>
+						<td class='status'>${bptxn.info.newadminname}</td>
+					</tr>
+					<tr>
+						<td class='caption'>New Admin Address :</td>
+						<td class='status'>${bptxn.info.newadminaddress}</td>
+					</tr>
+				</table>
+			</div>
+		""";
+	}
+	
+	private def getChangeAddressHTML( bptxn ) {
+		return """
+			<div class='data-group'>
+				<div class='data-header'>Business Info</div>
+				<table class='data-field'>
+					<tr>
+						<td class='caption'>Trade Name :</td>
+						<td class='blue-header'>${bptxn.business.tradename}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Previous Address :</td>
+						<td class='blue-header'>${bptxn.business.businessaddress}</td>
+					</tr>
+					<tr>
+						<td class='caption'>New Address :</td>
+						<td class='status'>${bptxn.info.newbusinessaddress}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Owner :</td>
+						<td class='value'>${bptxn.business.taxpayername}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Owner Address :</td>
+						<td class='value'>${bptxn.business.taxpayeraddress}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Admin Name :</td>
+						<td class='value'>${bptxn.business.adminname}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Admin Address :</td>
+						<td class='value'>${bptxn.business.adminaddress}</td>
+					</tr>
+				</table>
+			</div>
+		""";
+	}
+	
+	private def getChangePermitteeHTML( bptxn ) {
+		return """
+			<div class='data-group'>
+				<div class='data-header'>Business Info</div>
+				<table class='data-field'>
+					<tr>
+						<td class='caption'>Trade Name :</td>
+						<td class='blue-header'>${bptxn.business.tradename}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Address :</td>
+						<td class='blue-header'>${bptxn.business.businessaddress}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Previous Owner :</td>
+						<td class='value'>${bptxn.business.taxpayername}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Previous Owner Address :</td>
+						<td class='value'>${bptxn.business.taxpayeraddress}</td>
+					</tr>
+					<tr>
+						<td class='caption'>New Owner :</td>
+						<td class='status'>${bptxn.info.newtaxpayername}</td>
+					</tr>
+					<tr>
+						<td class='caption'>New Owner Address :</td>
+						<td class='status'>${bptxn.info.newtaxpayeraddress}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Admin Name :</td>
+						<td class='value'>${bptxn.business.adminname}</td>
+					</tr>
+					<tr>
+						<td class='caption'>Admin Address :</td>
+						<td class='value'>${bptxn.business.adminaddress}</td>
+					</tr>
+				</table>
+			</div>
+		""";
+	}
+	
+}

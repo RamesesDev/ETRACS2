@@ -1,0 +1,19 @@
+import com.rameses.annotations.*;
+
+class EventService {
+	
+    @PersistenceContext("main")
+    def em;
+    
+    @ProxyMethod
+    public def getEvents() {
+		def list = em.sqlContext.createQuery('select * from event').resultList;
+		def m = [:]
+		list.each {
+			m[(it.date)] = it.event;
+		}
+		return m;
+    }     
+
+	
+}

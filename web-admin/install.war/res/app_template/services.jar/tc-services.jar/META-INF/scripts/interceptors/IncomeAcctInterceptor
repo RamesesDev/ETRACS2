@@ -1,0 +1,26 @@
+import com.rameses.annotations.*;
+
+class IncomeAcctInterceptor
+{
+	@Service("LogService")
+	def logService;
+	
+	@Env
+	def env;
+	
+	@After(pattern="IncomeAcctService.create") 
+	public void interceptCreate( evt ) {
+		logService.log("CREATE", "IncomeAcct", evt.result.objid);
+	}
+	
+	@After(pattern="IncomeAcctService.delete") 
+	public void interceptDelete( evt ) {
+		logService.log("DELETE", "IncomeAcct", evt.args[0].objid);
+	}
+	
+	@After(pattern="IncomeAcctService.approve") 
+	public void interceptApprove( evt ) {
+		logService.log("APPROVE", "IncomeAcct", evt.args[0]);
+	}
+		
+}

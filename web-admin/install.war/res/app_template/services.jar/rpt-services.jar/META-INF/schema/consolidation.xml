@@ -1,0 +1,78 @@
+<schema>
+	<element name="consolidation" tablename="consolidation">
+		<field name="objid" primary="true"/>
+        <field name="schemaname" required="true"/>
+        <field name="schemaversion" required="true"/>
+        <field name="docstate" required="true"/>
+        <field name="ry" type="integer" required="true"/>
+        <field name="txntype" required="true" />
+        <!-- autonumber values: 0 or 1 -->
+        <field name="autonumber" required="true"  /> 
+        <field name="issuedate" required="true" />
+        <field name="effectivityyear" required="true" type="integer" />
+        <field name="effectivityqtr" required="true" type="integer" />
+        <field name="memoranda" />
+        <field name="consolidatedlandcount" type="integer" required="true"  />
+        <field name="affectedrpucount" type="integer" required="true"  />
+        <!-- signatories -->
+        <field name="appraisedby" />
+        <field name="appraisedbytitle" />
+        <field name="dtappraised" />
+        <field name="recommendedby"  />
+        <field name="recommendedbytitle"  />
+        <field name="dtrecommended"  />
+        <field name="approvedby"  />
+        <field name="approvedbytitle"  />
+        <field name="dtapproved" />
+        <!-- consolidation data -->
+        <field name="newtdno"  />
+        <field name="newpin" />
+        <field name="newtitletype"  />
+        <field name="newtitleno"  />
+        <field name="newtitledate" type="date" />
+        <field name="areasqm" type="decimal" />
+        <field name="areaha" type="decimal" />
+        <field name="newtaxpayerid"  />
+        <field name="newtaxpayerno"  />
+        <field name="newtaxpayername"  />
+        <field name="newtaxpayeraddress"  />
+        <field name="newfaasid"  />
+        <complex name="rp"  ref="faas:realproperty" serializer="default" />
+        <complex name="rpu" ref="rpu:rpu" serializer="default" />
+        <complex name="extended" merge="true" serializer="default" required="false"/>
+	</element>
+    
+    <!-- consolidatedland -->
+    <element name="consolidatedland" tablename="consolidationland" >
+        <field name="objid" primary="true" />
+        <field name="consolidationid" required="true"/>
+        <field name="tdno" required="true"  />
+        <field name="pin" required="true"  />
+        <field name="mv" type="decimal" required="true"  />
+        <field name="av" type="decimal" required="true"  />
+        <field name="taxpayerid" required="true"  />
+        <field name="taxpayername" required="true"  />
+        <field name="areasqm" type="decimal" required="true" />
+        <field name="areaha" type="decimal" required="true" />
+        <field name="landfaasid"  required="true" />
+        <complex name="extended" merge="true" serializer="default" required="false" />
+    </element>
+    
+    <!-- consolidationaffectedrpu -->
+    <element name="consolidationaffectedrpu" tablename="consolidationaffectedrpu" >
+        <field name="objid" primary="true"  />
+        <field name="consolidationid" required="true" />
+        <field name="rputype" required="true"/>
+        <field name="landfaasid"  required="true" />
+        <field name="prevfaasid"  />
+        <field name="prevtdno"  />
+        <field name="prevfullpin"  />
+        <field name="newtdno"  />
+        <field name="newpin"  />
+        <field name="newsuffix" type="integer" />
+        <field name="memoranda"  />
+        <field name="newfaasid"  />
+        <complex name="extended" merge="true" serializer="default" required="false" />
+    </element>
+</schema>
+

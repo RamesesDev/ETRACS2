@@ -1,0 +1,330 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID;
+import java.text.DecimalFormat;
+
+class BPLedgerService {
+
+	@Service("DateService")
+	def dateService;
+	
+	@Service('NumberService')
+	def numberSvc 
+	
+	@PersistenceContext('main')
+	def em;
+	
+	@Service("BPBillingService")
+	def bpbillingsvc;
+	
+	def dcf = new DecimalFormat("#,##0.00");
+	
+	@ProxyMethod
+	public def openLedger( ledger ) {
+		ledger.items = getBusinessLedgers( ledger.businessid );
+		ledger.balance = 0.0;
+		ledger.lastyrpaid = 0;
+		ledger.lastqtrpaid = 0;
+		for ( item in ledger.items ) {
+			ledger.balance += item.amount - item.amtpaid;
+		}
+		def lastpaymentinfo = em.sqlContext.createNamedQuery( "bpledger:getBPLastPaymentInfo" ).setParameters( [businessid:ledger.businessid] ).singleResult;
+		ledger.lastyrpaid = lastpaymentinfo.lastyrpaid;
+		ledger.lastqtrpaid = lastpaymentinfo.lastqtrpaid;
+		ledger.formattedbalance = dcf.format( ledger.balance );
+		
+		return ledger;
+	}
+	
+	private def getPrevQtr( currQtr ) {
+		if ( currQtr == 1 )
+			return 4;
+		return currQtr - 1;
+	}
+	
+	private def getBusinessLedgers( businessid ) {
+		return em.sqlContext.createNamedQuery( "bpledger:getBusinessLedgers" ).setParameters( [businessid:businessid] ).resultList;
+	}
+	
+	private def getBPReceivablesByAppId( appid ) {
+		return em.sqlContext.createNamedQuery( "bpledger:getBPReceivablesByAppId" ).setParameters( [appid:appid] ).resultList;
+	}
+	
+	@ProxyMethod
+	public def buildCapturePayment( payment ) {
+		payment.formattedamtpaid = dcf.format( payment.amtpaid );
+		payment.total = 0.0;
+		payment.txndate
+		payment.reftype = 'OFFLINE';
+		payment.formattedtotal = dcf.format( payment.total );
+		payment.items = [];
+		def app = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
+		if( !app.payments ) app.payments = [];
+		if( app.payments.find{ it.refno == payment.refno } )
+			throw new Exception("Payment reference number already exist.");
+			
+		def getUnpaidReceivables = { 
+			def list = app.receivables.findAll{ it.amount > it.amtpaid };
+			return list.findAll{ it.iqtr <= payment.qtr || it.applicationtype?.matches('ADDLOB|NEW|RETIRE|RETIRELOB')}
+		}
+		
+		def receivables = getUnpaidReceivables();
+		if( !receivables ) throw new Exception("There are no receivable(s) for the Qtr $payment.qtr");
+		receivables.each{
+			def acct = em.read("incomeacct:incomeacct", [objid: it.acctid]);
+			payment.items << [
+				bpreceivableid: it.objid,
+				amount: it.amount,
+				amtpaid: it.amount, 
+				surcharge: new BigDecimal('0.0'),
+				interest: new BigDecimal('0.0'),
+				discount: new BigDecimal('0.0'),
+				iyear: it.iyear, 
+				iqtr: it.iqtr, 
+				lobname: it.lobname,
+				acctid: acct.objid, 
+				acctno: acct.acctno,
+				accttitle: acct.accttitle,
+				fundid: acct.fundid,
+				fundname: acct.fundname,
+			];
+		}
+		
+		return payment;
+	}
+	
+	@ProxyMethod
+	public def postCapturePayment( payment ) {
+		validateCapturePayment( payment );
+		def items = [];
+
+		for ( item in payment.items ) {
+			item.amtpaid = numberSvc.round( item.amtpaid )
+			item.surcharge = numberSvc.round( item.surcharge )
+			item.interest = numberSvc.round( item.interest )
+			item.discount = numberSvc.round( item.discount )
+			def amtpaid = ( item.amtpaid + item.surcharge + item.interest ) - item.discount
+			
+			if (item.amtpaid > 0) {
+					items << [  bpreceivableid	: item.bpreceivableid, 
+								taxamount		: item.amount,
+								surcharge		: item.surcharge,
+								interest		: item.interest,
+								discount		: item.discount,
+								totalamount		: amtpaid
+							  ]
+			}
+		}
+	
+		def p = [:];
+		p.reftype = 'CAPTURE';
+		p.putAll( payment );
+		p.items = items;
+		postPayment( p );
+		
+		return payment;
+	}
+	
+	private void validateCapturePayment( payment ) {
+		if ( numberSvc.round( payment.amtpaid ) != numberSvc.round( payment.total)  )
+			throw new IllegalStateException( "Total must be equal to Amount Paid." );
+	}
+	
+	@ProxyMethod
+	public void postPayment( def payment ){
+		def application = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
+		def bplisting = em.read('bplisting:bpapplicationlisting', [objid: application.objid]);
+		if( !application.payments ) application.payments = [];
+		if( application.payments.find{ it.refno == payment.refno } )
+			throw new Exception("Payment reference number already exist.");
+		
+		if( !application ) throw new Exception("Application is no longer exist.");
+		def paymentamount = 0.0;
+		
+		//change amount -> totalamount   
+		//added taxamount as amount  
+		for( c in payment.items ){
+			application.credits << [ objid			: 'BPRCR' + new UID(),
+									 bpreceivableid	: c.bpreceivableid, 
+									 refid			: payment.refid,
+									 reftype		: payment.reftype,
+									 refno			: payment.refno,
+									 refdate		: payment.refdate,
+									 amount			: numberSvc.round( c.taxamount ),
+									 surcharge		: numberSvc.round( c.surcharge ),
+									 interest		: numberSvc.round( c.interest ),
+									 discount		: numberSvc.round( c.discount ),
+									 totalamount	: numberSvc.round( c.totalamount )
+								   ]	
+								   
+			def brc = application.receivables.find{ it.objid == c.bpreceivableid };
+			
+			if( !brc.amtpaid ) brc.amtpaid = 0.0;
+			if( !brc.surcharge ) brc.surcharge = 0.0
+			if( !brc.interest ) brc.interest = 0.0
+			if( !brc.discount ) brc.discount = 0.0
+			
+			brc.amtpaid += numberSvc.round( c.taxamount )
+			brc.surcharge += numberSvc.round( c.surcharge )
+			brc.interest += numberSvc.round( c.interest )
+			brc.discount += numberSvc.round( c.discount )
+			paymentamount += numberSvc.round( c.totalamount )
+		}
+		
+		def business = em.read('business:business', [objid: application.businessid]);
+		def prep = application.payments.find{ it.tail == null };
+		if( prep ) prep.tail = payment.refno;
+		
+		application.payments << [ refno: payment.refno, 
+								  refid: payment.refid, 
+								  reftype: payment.reftype,
+								  refdate: payment.refdate, 
+								  qtr: payment.qtr, 
+								  year:payment.year,
+								  lastyearpaid: business.lastyearpaid,
+								  lastqtrpaid: business.lastqtrpaid,
+								  amount: paymentamount,
+								  head: prep?.refno];
+
+		business.lastqtrpaid = payment.qtr;
+		business.lastyearpaid = payment.year;
+		
+		application.lastmodified = dateService.serverDate.time;
+		
+		if( isApplicationStatusForPermit( application ) ){
+			if( !application.docstate.equals('EXPIRED') ){
+				if( !application.docstate.equals('ACTIVE') )
+					application.docstate = 'PERMIT_PENDING'
+				if( !bplisting.docstate.equals('ACTIVE') )
+					bplisting.docstate = 'PERMIT_PENDING'
+			
+				def getUnpaidReceivables = application.receivables.findAll{ it.amount > it.amtpaid }
+				if( !getUnpaidReceivables ) bplisting.fullypaid = 1
+			}
+		}else{
+			application.docstate = 'APPROVED';
+			bplisting.docstate = 'APPROVED';
+		}
+		
+		em.update( 'business:business', business );
+		em.update( 'bpapplication:bpapplication', application );
+		em.update( 'bplisting:bpapplicationlisting',  bplisting );
+	}
+	
+	@ProxyMethod
+	public void updatePayment( def payment ){
+		deletePayment( payment );
+		postPayment( payment );
+	}
+	
+	@ProxyMethod
+	public void deleteCapturePayment( def payment ){
+		/*if( payment.reftype != 'CAPTURE' ){
+			throw new Exception('Only CAPTURE type payment can be remove.');
+		*/
+		deletePayment( payment );
+	}
+	
+	private void validateRefNo( def payment, def application ){
+		if( !application.credits.last().refno.equals( payment.refno ) )     
+			throw new Exception("Unable to process this transaction.\nThis is referred by another payment transaction.");
+	}
+	
+	private def getPayments( def application , def payment ){
+		if( !application.payments ) application.payments = [];
+		def payments = application.payments.find{ it.refno == payment.refno };
+		if( !payments ) throw new Exception("Unable to find payment with reference number $payment.refno.");
+		
+		return payments
+	}
+	
+	private def removePayments( def application, def pmt ){
+		def credits = application.credits.findAll{ it.refno == pmt.refno };
+		//@Jzamora: if credit info not available, just proceed, probably deleted backdoor 
+		// if( !credits ) throw new Exception("There are no credits bind in this payment.");
+		for( c in credits ){
+			application.credits.remove( c );
+			def brc = application.receivables.find{ c.bpreceivableid == it.objid };
+			if( !brc ) throw new Exception("Missing receivable in credit $c.objid of this payment.");
+			brc.amtpaid -= c.amount;
+		}
+		application.payments.remove( pmt );   
+		
+		return application
+	}
+	
+	private void updateAppListing( def application, def bplisting ){
+		if( bplisting && ( !bplisting.fullypaid || bplisting.fullypaid == 1 ) )
+			bplisting.fullypaid = 0
+		def unpaidReceivables = application.receivables.findAll{ it.amtpaid == it.amount }
+		if( !unpaidReceivables ){
+			if( application.docstate.equals('PERMIT_PENDING') ) application.docstate = 'APPROVED';
+			if( bplisting.docstate.equals('PERMIT_PENDING') ) bplisting.docstate = 'APPROVED'
+		} 
+		
+		em.update( 'bpapplication:bpapplication', application );
+		em.update( 'bplisting:bplisting', bplisting );
+	}
+	
+	private void validateDeleteReceipt( def application, payment ){
+		def appRefno = application.payments[0].refno
+		if( !application ) throw new Exception('Application reference is no longer exist.');
+		if( appRefno.equals( payment.refno ) && application.docstate.matches('ACTIVE') )
+			throw new Exception("Unable to process transaction.\nApplication Permit/Reference status is already $application.docstate.");
+		
+	}
+	
+	@ProxyMethod
+	public void deletePayment( def payment ){
+		def application = em.read('bpapplication:bpapplication', [objid: payment.applicationid]);
+		def bplisting = em.read('bplisting:bpapplicationlisting', [objid: application.objid]);
+		validateDeleteReceipt( application, payment )
+		def pmt = getPayments( application, payment )
+		validateRefNo( payment, application )
+		//if( p.tail != null ) throw new Exception("Unable to process this transaction.\nThis is referred by another payment transaction.");
+				
+		def business = em.read('business:business', [objid: application.businessid]);
+		business.lastqtrpaid = pmt.qtr;
+		business.lastyearpaid = pmt.year;
+		
+		application = removePayments( application, pmt )
+		updateAppListing( application, bplisting )
+	}
+	
+	def isApplicationStatusForPermit( application ){
+		def qtr = dateService.serverQtr;
+		def getUnpaidReceivables = { 
+			def list = application.receivables.findAll{ it.amount > it.amtpaid };
+			if( application.txntype.matches('NEW|ADDLOB') ) return list;
+			return list.findAll{ it.iqtr <= qtr || ( it.applicationtype?.matches('NEW|ADDLOB')) }
+		}
+		
+		def taxfees = getUnpaidReceivables();
+		if( taxfees.findAll{ it.applicationtype?.matches('NEW|ADDLOB') } ) return false;
+		
+		return true;
+	}
+	
+	@ProxyMethod
+	public def getApplicationByBusiness( def businessid ){
+		return em.sqlContext.createNamedQuery('business:getApplicationListByBusinessId')
+			 .setParameters([businessid: businessid])
+			 .resultList.each{ app ->
+				app.amount = 0.0;
+				app.amtpaid = 0.0;
+				
+				app.taxfees = em.serializer.read( app.taxfees );
+				app.lobs = em.serializer.read( app.lobs );
+				app.receivables = em.serializer.read( app.receivables ).each{ app.amount += it.amount; app.amtpaid += it.amtpaid; };
+				app.credits = em.serializer.read( app.credits );
+				
+				app.surcharge_paid = app.credits.surcharge.sum()
+				app.interest_paid = app.credits.interest.sum()
+				
+				app.putAll( em.serializer.read( app.extended ) );
+				
+				
+			 };
+	}
+		
+}

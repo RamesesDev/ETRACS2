@@ -1,0 +1,40 @@
+
+
+import com.rameses.annotations.*;
+import com.rameses.util.*;
+import javax.mail.*;
+import javax.mail.internet.*;
+import java.util.*;
+
+public class EmailService {
+
+   @Resource("Mail")
+   def mailSvc;
+
+	@ProxyMethod(local=true)
+	@Async
+	public void send(def o) {
+		try {
+			Message msg = new MimeMessage(mailSvc);
+			if(o.from) {
+				InternetAddress addressFrom = new InternetAddress(o.from);
+				msg.setFrom(addressFrom);
+			}
+			InternetAddress[] addressTo = new InternetAddress[o.recipients.size()]; 
+			for (int i = 0; i < o.recipients.size(); i++) {
+				addressTo[i] = new InternetAddress(o.recipients[i]);
+			}
+			msg.setRecipients(Message.RecipientType.TO, addressTo);
+			msg.setSubject(o.subject);
+			msg.setContent(""+o.message, "text/html");
+			print "about to send";
+			Transport.send(msg);
+		}
+		catch(e) {
+			e.printStackTrace();
+		}
+	}
+
+}
+
+

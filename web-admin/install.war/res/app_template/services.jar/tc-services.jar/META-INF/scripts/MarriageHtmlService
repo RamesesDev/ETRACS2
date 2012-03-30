@@ -1,0 +1,105 @@
+import com.rameses.common.*
+import com.rameses.annotations.*
+
+class MarriageHtmlService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ReceiptHtmlService')
+	def htmlSvc
+	
+	def SCHEMANAME = 'receipt:receipt'
+	
+	@ProxyMethod
+	public def open( receiptid ) {
+		return em.read(SCHEMANAME, [objid:receiptid])
+	}
+	
+	@ProxyMethod
+	public def getHtml( receiptid ) {
+        def rct = open( receiptid )
+		if( ! rct ) return ''
+		def info = htmlSvc.buildInfo( rct )
+		def marriageInfo = buildMarriageInfo( rct )
+		def items = htmlSvc.buildItems( rct )
+		return """
+			<html>
+				<head>
+				</head>
+				<body>
+					$info
+					$marriageInfo
+					$items
+				<body>
+			</html>
+		"""
+	}
+	
+	def buildMarriageInfo( rct ){
+		return """
+			<table>
+				<tr>
+					<td colspan="2"><b>GROOM INFORMATION</b></td>
+				</tr>
+				<tr>
+					<td>Groom Name</td>
+					</td>$rct.groomname</td>
+				</tr>
+				<tr>
+					<td>Address</td>
+					</td>$rct.groomaddress</td>
+				</tr>
+				<tr>
+					<td>Age (Year)</td>
+					</td>$rct.groomageyear</td>
+				</tr>
+				<tr>
+					<td>Age (Month)</td>
+					</td>$rct.groomagemonth</td>
+				</tr>
+				
+				<tr>
+					<td colspan="2"><b>BRIDE INFORMATION</b></td>
+				</tr>
+				<tr>
+					<td>Bride Name</td>
+					</td>$rct.bridename</td>
+				</tr>
+				<tr>
+					<td>Address</td>
+					</td>$rct.brideaddress</td>
+				</tr>
+				<tr>
+					<td>Age (Year)</td>
+					</td>$rct.brideageyear</td>
+				</tr>
+				<tr>
+					<td>Age (Month)</td>
+					</td>$rct.brideagemonth</td>
+				</tr>
+				
+				<tr>
+					<td colspan="2"><b>OTHER INFORMATION</b></td>
+				</tr>
+				<tr>
+					<td>Register No.</td>
+					</td>$rct.registerno</td>
+				</tr>
+				<tr>
+					<td>Attachments</td>
+					</td>$rct.attachments</td>
+				</tr>
+				<tr>
+					<td>Signed By</td>
+					</td>$rct.lcrofficer</td>
+				</tr>
+				<tr>
+					<td>Job Title</td>
+					</td>$rct.lcrofficertitle</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+}

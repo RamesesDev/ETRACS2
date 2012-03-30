@@ -1,0 +1,49 @@
+import com.rameses.annotations.*
+
+public class BPEnum{
+	
+	@PersistenceContext("main")
+	def em;
+	
+	@Service('Var')
+	def var 
+	
+	@ProxyMethod
+	public def getOrganizations(){
+		return ['SINGLE PROPRIETORSHIP', 'PARTNERSHIP',
+		        'CORPORATION', 'INCORPORATED', 'COOPERATIVE', 'ASSOCIATION',
+		        'GOVERNMENT', 'ESTATE', 'TRUST', 
+		        'FOUNDATION', 'NON-STOCK/NON-PROFIT'];
+	}
+	
+	@ProxyMethod
+	public def getOfficeTypes(){
+		return ['MAIN','BRANCH'];
+	}
+	
+	@ProxyMethod
+	public def getApplicationTypes(){
+		return ['NEW', 'RENEW', 'RETIRE', 'ADDLOB', 'RETIRELOB', 'UPDATENEW']
+	}
+	
+	@ProxyMethod
+	public def getApplicationModes(){
+		return ['CAPTURE','ONLINE'];
+	}
+	
+	@ProxyMethod
+	public def getTypes(def arrNames){
+		def map = [:];
+		for( m in arrNames ){
+			def mname = 'get'+m.charAt(0).toString().toUpperCase()+m.substring(1,m.length());
+			map.put( m, this.invokeMethod( mname, null ) );
+		}
+		return map;
+	}
+	
+	@ProxyMethod
+    public List getBarangays() {
+        def brgys =  em.sqlContext.createNamedQuery('faas:getBarangays').resultList 
+		return brgys.collect{ [barangayid:it.objid, barangayname:it.lguname] }
+    }
+}

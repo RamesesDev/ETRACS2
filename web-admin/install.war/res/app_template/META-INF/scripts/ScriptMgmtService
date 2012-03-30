@@ -1,0 +1,53 @@
+import com.rameses.annotations.*;
+
+class ScriptMgmtService {
+	
+    @PersistenceContext("system")
+    def em;
+    
+	@Resource("ServerMgmt")
+	def serverMgmt;
+	
+	
+    @ProxyMethod
+    public def getList( def o ) {
+		if(!o) o = [condition:""];
+		return em.sqlContext.createNamedQuery("scripting:list").setVars(o).resultList;	
+    }
+	
+	@ProxyMethod
+    public def create( def o ) {
+		def name = o.name;
+		if(name.contains("/")) name = name.substring( name.lastIndexOf("/") + 1);
+o.content = """import com.rameses.annotations.*;
+class ${name} {
+
+	@Env
+	def env
+	
+}
+""".toString(); 
+		em.create("scripting", o );
+    }
+	
+	@ProxyMethod
+    public def read( def o ) {
+		return em.read("scripting", o );
+    }
+	
+	@ProxyMethod
+    public def update( def o ) {
+		em.update("scripting", o );
+    }
+	
+	@ProxyMethod
+    public def remove( def o ) {
+		em.delete("scripting", o );
+    }
+
+	@ProxyMethod
+    public def redeployAll() {
+		serverMgmt.reloadScripts();
+    }
+	
+}

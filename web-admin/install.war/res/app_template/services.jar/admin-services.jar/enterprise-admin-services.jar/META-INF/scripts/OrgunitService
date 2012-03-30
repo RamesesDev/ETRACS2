@@ -1,0 +1,53 @@
+import com.rameses.annotations.*;
+
+class OrgunitService {
+
+	@PersistenceContext("main")
+	def em;
+
+	@ProxyMethod
+	public def getList(def params) {
+		def qry = em.sqlContext.createNamedQuery( "orgunit:list" );
+		if(params) {
+			if(params._start) qry.setFirstResult( params._start );
+			if(params._limit) qry.setMaxResults( params._limit );
+			qry.setParameters( params );
+		}
+		return qry.resultList;
+	}
+	
+	@ProxyMethod
+	public def create(def o) {
+		o.objid = "OU" + new java.rmi.server.UID();
+		return em.create( "orgunit", o );
+	}
+	
+	@ProxyMethod
+	public def read(def o) {
+		return em.read( "orgunit", o );
+	}
+
+	@ProxyMethod
+	public def update(def o) {
+		return em.update( "orgunit", o );
+	}
+	
+	@ProxyMethod
+	public def remove(def o) {
+		em.delete( "orgunit", o );
+	}
+	
+	@ProxyMethod
+	public def getOrgtypes() {
+		return em.sqlContext.createNamedQuery("orgunit:orgtype-list").resultList;
+	}
+	
+	
+	@ProxyMethod
+	public def getUserOrgunits(def o) {
+		def str = "orgunit:list-by-user";
+		if( o.orgtype ) str += "-orgtype";
+		return em.sqlContext.createNamedQuery(str).setParameters(o).resultList;
+	}
+	
+}

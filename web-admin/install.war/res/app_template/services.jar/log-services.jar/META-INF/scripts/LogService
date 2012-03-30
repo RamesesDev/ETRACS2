@@ -1,0 +1,38 @@
+import com.rameses.annotations.*;
+import java.rmi.server.UID;
+
+class LogService
+{
+	@PersistenceContext("main")
+	def em;
+	
+	@Env
+	def env;
+	
+	@ProxyMethod
+	public def log( action, ref, refid ) {
+		logB( action, ref, refid, null, null);
+	}
+	
+	@ProxyMethod
+	public def logA( action, ref, refid, remarks ) {
+		logB( action, ref, refid, remarks, null);
+	}
+	
+	@ProxyMethod
+	public def logB( action, ref, refid, remarks, diff ) {
+		def log = [ 
+			objid      : "L" + new UID(),
+			schemaname : "log:log",
+			versionno  : "1.0",
+			ref        : ref,
+			refid      : refid,
+			txndate    : new Date(),
+			action     : action,
+			userid     : (env.USERID ? env.USERID : "SYSTASK"),
+			remarks    : remarks,
+			diff       : diff,
+		];
+		em.create("log:log", log);
+	}
+}

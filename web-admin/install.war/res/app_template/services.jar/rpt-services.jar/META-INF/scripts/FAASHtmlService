@@ -1,0 +1,476 @@
+import com.rameses.annotations.*
+import groovy.text.SimpleTemplateEngine
+
+class FAASHtmlService
+{
+	@PersistenceContext("main")
+	def em
+	
+	@Service("NumberService")
+	def numberService
+    
+    @Service('LandHtmlService')
+    def landSvc
+	
+	@Service('BldgHtmlService')
+	def bldgSvc
+	
+	@Service('MachHtmlService')
+	def machSvc
+    
+    @Service('PlantTreeHtmlService')
+	def planttreeSvc
+	
+	@ProxyMethod
+	public def getHtml( faasid ) {
+        def faas = em.read('faas', [objid:faasid])
+        if( !faas ) return ''
+        def data = [
+			titleInfo     : buildTitleInfo( faas ),
+			generalInfo   : buildGeneralInfo( faas ),
+			ownershipInfo : buildOwnershipInfo( faas ),
+			pinInfo       : buildPinInfo( faas ),
+			rpuInfo       : buildRpuInfo( faas ),
+			signatories   : buildSignatories( faas ),
+			attachments   : '',  //buildAttachments( faas ),
+			annotations	  : buildAnnotations( faas ),
+			memoranda	  : faas.info.memoranda,
+		]
+		return doBuildHtml( data )
+	}
+	
+	private def buildRpuInfo( faas ) {
+		if( faas.rpu.rputype == 'land' )
+			return landSvc.buildLandHtml( faas )
+		else if( faas.rpu.rputype == 'bldg' )
+			return bldgSvc.buildBldgHtml( faas )
+		else if( faas.rpu.rputype == 'mach' )
+			return machSvc.buildMachHtml( faas )
+        else if( faas.rpu.rputype == 'planttree' )
+			return planttreeSvc.buildHtml( faas )
+		return ""
+	}
+	
+	private def buildSimpleRpuInfo( faas ) {
+		def rpu = faas.rpu.info
+		def totalmv = numberService.format('#,##0.00', rpu.totalmv)
+		def totalav = numberService.format('#,##0.00', rpu.totalav)
+		return """
+			<table width="100%">
+				<tr>
+					<td colspan="2" class="title"><b>RPU INFORMATION</td>
+				<tr>
+				<tr>
+					<td class="caption">Classification</td>
+					<td class="data">$rpu.classname</td>
+				</tr>
+				<tr>
+					<td class="caption">Taxable</td>
+					<td class="data">${rpu.taxable ? 'TRUE' : 'FALSE'}</td>
+				</tr>
+				<tr>
+					<td class="caption">Exempt Code</td>
+					<td class="data">${rpu.exemptcode ? rpu.exemptcode : ''}</td>
+				</tr>
+				<tr>
+					<td class="caption">Market Value</td>
+					<td class="data">$totalmv</td>
+				</tr>
+				<tr>
+					<td class="caption">Assessed Value</td>
+					<td class="data">$totalav</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildParams( params ) {
+		def paramList = ""
+		params.each {
+			paramList += """
+				<tr>
+					<td>$it.paramCode</td>
+					<td>:</td>
+					<td>$it.paramValue</td>
+				</tr>
+			"""
+		}
+		return """
+			<table>
+				$paramList
+			</table>
+		"""
+	}
+		
+	private def buildTitleInfo( faas ) {
+		def remHtml = ""
+		if( faas.message) {
+			remHtml += """
+				<div style="background-color:silver">
+					<table width="100%" cellspacing="1">
+						<tr>
+							<td colspan="4" style="color:red;font-weight:bold">Returned: $faas.message</td>
+						</tr>
+					</table>				
+				</div>
+			"""
+		}
+		else if( faas.info.annotated == true || faas.info.annotated ==  1) {
+			remHtml += """
+				<div style="background-color:silver">
+					<table width="100%" cellspacing="1">
+						<tr>
+							<td colspan="4" style="color:red;font-weight:bold">This document is currently annotated</td>
+						</tr>
+					</table>				
+				</div>
+			"""
+		}
+		return """
+			$remHtml
+			<table>
+				<tr>
+					<td class="header">State :</td>
+					<td class="header" colspan="3"><b>$faas.docstate</b></td>
+				</tr>
+				<tr>
+					<td class="header">TD NO. :</td>
+					<td class="header" width="300"><b>${faas.info.tdno ? faas.info.tdno : '-'}</b></td>
+					<td class="header">PIN :</td>
+					<td class="header" width="300"><b>$faas.rpu.fullpin</b></td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildGeneralInfo( faas ) {
+		return """
+		<table width="100%">
+			<tr>
+				<td colspan="2" class="title"><b>GENERAL INFORMATION</td>
+			<tr>
+			<tr>
+				<td width="50%">
+					<table width="100%">
+						<tr>
+							<td  class="caption">TD No.</td>
+							<td class="data">${faas.info.tdno ? faas.info.tdno : '-'}</td>
+						</tr>
+						<tr>
+							<td  class="caption">Txn Type</td>
+							<td class="data">$faas.info.txntype</td>
+						</tr>
+						<tr>
+							<td  class="caption">Issue Date</td>
+							<td class="data">$faas.info.issuedate</td>
+						</tr>
+						<tr>
+							<td  class="caption">Effectivity</td>
+							<td ><b>${faas.info.effectivityqtr}Q - $faas.info.effectivityyear</td>
+						</tr>
+					</table>
+				</td>
+				<td valign="top" width="50%">
+					<table width="100%">
+						<tr>
+							<td  class="caption">Title No.</td>
+							<td class="data">${faas.info.titleno == null ? "" : faas.info.titleno}</td>
+						</tr>
+						<tr>
+							<td  class="caption">Title Date</td>
+							<td class="data">${faas.info.titledate == null ? "" : faas.info.titledate}</td>													
+						</tr>
+						<tr>
+							<td  class="caption">Title Type</td>
+							<td class="data">${faas.info.titletype == null ? "" : faas.info.titletype}</td>						
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+		"""
+	}
+	
+	private def buildOwnershipInfo( faas ) {
+		return """
+			<table width="100%">
+				<tr>
+					<td colspan="4" class="title"><b>OWNERSHIP INFORMATION</b></td>
+				</tr>
+				<tr>
+					<td  class="caption">Taxpayer</td>
+					<td><b>$faas.info.taxpayername</b></td>
+					<td  class="caption">Address</td>
+					<td>$faas.info.taxpayeraddress</td>
+				</tr>
+                <tr>
+					<td  class="caption">Owner</td>
+					<td><b>$faas.info.ownername</b></td>
+					<td  class="caption">Address</td>
+					<td>$faas.info.owneraddress</td>
+				</tr>
+				<tr>
+					<td  class="caption">Adminisrator</td>
+					<td><b>${faas.info.administratorname ? faas.info.administratorname : ''}</b></td>
+					<td  class="caption">Address</td>
+					<td>${faas.info.administratoraddress ?faas.info.administratoraddress : ''}</td>
+				</tr>
+			</table>
+		"""
+	}	
+	
+	private def buildPinInfo( faas ) {
+		def rp = faas.rp
+		return """
+			<table width="100%">
+				<tr>
+					<td class="title" colspan="2"><b>PIN INFORMATION</td>
+				</tr>
+				<tr>
+					<td width="50%">
+						<table>
+							<tr>
+								<td class="caption">PIN</td>
+								<td class="data">$rp.pin</td>
+							</tr>
+							<tr>
+								<td class="caption">Barangay</td>
+								<td class="data">$rp.barangay</td>
+							</tr>
+							<tr>
+								<td class="caption">House No.</td>
+								<td class="data">${rp.house == null ? '' : rp.house}</td>
+							</tr>
+							<tr>
+								<td class="caption">Street</td>
+								<td class="data">${rp.street == null ? '' : rp.street}</td>
+							</tr>
+							<tr>
+								<td class="caption">Purok</td>
+								<td class="data">${rp.purok == null ? '' : rp.purok}</td>      
+							</tr>
+						</table>
+					</td>
+					<td valign="top" width="50%">
+						<table>
+							<tr>
+								<td class="caption">Cadastral Lot No.</td>
+								<td class="data">$rp.cadastrallotno</td>
+							</tr>
+							<tr>
+								<td class="caption">Block No.</td>
+								<td class="data">${rp.blockno == null ? '' : rp.blockno}</td>
+							</tr>
+							<tr>
+								<td class="caption">Survey No.</td>
+								<td class="data">${rp.surveyno == null ? '' : rp.surveyno}</td>
+							</tr>
+							<tr>
+								<td class="caption">Claim No.</td>
+								<td class="data">${faas.info.claimno}</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td valign="top" colspan="2">
+						<table width="100%">
+							<tr>
+								<td colspan="4"><b><u>BOUNDARIES</u></td>
+							</tr>
+							<tr>
+								<td class="caption">North</td>
+								<td class="data">$rp.north</td>
+								<td class="caption">East</td>
+								<td class="data">$rp.east</td>
+							</tr>
+							<tr>
+								<td class="caption">South</td>
+								<td class="data">$rp.south</td>
+								<td class="caption">West</td>
+								<td class="data">$rp.west</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		"""
+	}
+	
+	private def buildSignatories( faas ) {
+		return """
+			<table width="100%">
+				<tr>
+					<td valign="top">
+						Appraised By:<br>
+						<br>
+						<b>$faas.info.appraisedby</b><br>
+						$faas.info.appraisedbytitle<br>
+						$faas.info.dtappraised
+					</td>
+					<td valign="top">
+						Recommended By:<br>
+						<br>
+						<b>$faas.info.recommendedby</b><br>
+						$faas.info.recommendedbytitle<br>
+						$faas.info.dtrecommended
+					</td>
+					<td valign="top">
+						Approved By:<br>
+						<br>
+						<b>$faas.info.approvedby</b><br>
+						$faas.info.approvedbytitle<br>
+						$faas.info.dtapproved
+					</td>
+				</tr>
+			</table>	
+		"""
+	}
+	
+	private def buildAttachments( faas ) {
+		def attachments = attachmentService.getAttachments( faas.objid )
+		if( !attachments ) {
+			attachments = em.sqlContext.createNamedQuery("transmittal:getAttachmentsByRefId")
+			                           .setParameter("refId", faas.objid )
+									   .resultList
+		}
+		def trs = ""
+		attachments.each {
+            trs += """
+                <tr>
+                    <td>
+                        <a href="showAttachment?$it.objid~~$it.documentType~~$it.tmpFileName" >$it.documentType</a>
+                    </td>
+                    <td>${it.remarks ? it.remarks : ''}</td>
+                </tr>
+            """
+		}
+		return """
+			<table width="100%">
+				<tr>
+					<td colspan="2" class="title">ATTACHMENTS</td>
+				</tr>
+				$trs
+			</table>
+		"""		
+	}
+	
+	def buildAnnotations( faas ) {
+		if( ! faas.info.annotated  ) return ''
+		def annotations = em.sqlContext.createNamedQuery('annotation:getActiveAnnotations').setParameter('faasid', faas.objid ).resultList 
+		if( ! annotations  ) return ''
+		def trs = """
+			<tr>
+				<th>Annotation No.</th>
+				<th>Type </th>
+				<th>File No.</th>
+				<th>Signed By</th>
+				<th>Position</th>
+				<th>Date Signed</th>
+				<th>Details</th>
+				<th>O.R. No.</th>
+				<th>O.R. Date</th>
+				<th>O.R. Amount</th>
+			</tr>
+		"""
+		annotations.each {
+			trs += """
+				<tr>
+					<td>$it.docno</td>
+					<td>$it.doctype</td>
+					<td>$it.fileno</td>
+					<td>${it.signedby ? it.signedby : ''}</td>
+					<td>${it.signedbytitle ? it.signedbytitle : ''}</td>
+					<td>${it.dtsigned ? it.dtsigned : ''}</td>
+					<td>$it.memoranda</td>
+					<td>$it.orno</td>
+					<td>$it.ordate</td>
+					<td>$it.oramount</td>
+				</tr>
+			"""
+		}
+		
+		return """
+			<h3>List of Annotations</h3>
+			<div style="background-color:silver">
+			<table width="100%" cellspacing="1">
+				$trs
+			</table>
+			</div>
+		"""		
+	}
+	
+	private def doBuildHtml( data ) {
+		return """
+			<html>
+				<head>
+					<style type="text/css">
+						body, td, th { 
+							font-family: tahoma
+							font-size  : 10pt
+						}	
+						td {
+							background-color:white
+						}
+						th {
+							background-color : #CCCCCC
+						}
+						.title {
+							background-color:#CCCCFF
+							font-weight:bold
+						}
+						.caption {
+							width : 120
+						}
+						.numeric {
+							text-align:right
+						}
+						.header {
+							font-family : tahoma
+							font-size   : 18pt
+							width       : 120
+						}
+						.data {
+							font-weight:bold
+						}
+					</style>
+				</head>
+				<body>
+					<table width="100%">
+						<tr>
+							<td>$data.titleInfo</td>
+						</tr>
+						<tr>
+							<td>$data.generalInfo</td>
+						</tr>
+						<tr>
+							<td>$data.ownershipInfo</td>
+						</tr>
+						<tr>
+							<td>$data.pinInfo</td>
+						</tr>
+						<tr>
+							<td>$data.rpuInfo</td>
+						</tr>
+						<tr>
+							<td>
+							<b>MEMORANDA:</b>&nbsp;&nbsp;$data.memoranda
+							<p>
+							</td>
+						</tr>
+						<tr>
+							<td>$data.signatories</td>
+						</tr>
+						<tr>
+							<td>$data.annotations</td>
+						</tr>
+						<tr>
+							<td>$data.attachments</td>
+						</tr>
+					</table>
+				</body>
+			</html>
+		"""
+	}
+	
+}

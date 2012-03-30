@@ -1,0 +1,99 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class AFService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('ETRACSUtilService')
+	def util
+	
+	@Service('LogService')
+	def logService
+	
+	@ProxyMethod
+	public def getList( searchText, params ) {
+		if( ! searchText ) {
+			return em.sqlContext.createNamedQuery('af:getList').resultList
+		}
+		return em.sqlContext.createNamedQuery('af:getById').setParameter('objid', searchText).resultList
+	}
+	
+	@ProxyMethod
+	public def getAFList( searchText, params ) {
+		if( ! searchText ) {
+			return em.sqlContext.createNamedQuery('af:getApprovedAFList').resultList
+		}
+		return em.sqlContext.createNamedQuery('af:getApprovedAFListById').setParameter('objid', searchText).resultList
+	}
+	
+	@ProxyMethod
+	public def getAF5253( ) {
+		return em.sqlContext.createNamedQuery('af:getAF5253').resultList 
+	}
+	
+	@ProxyMethod
+	public def open( objid ) {
+		return em.sqlContext.createNamedQuery('af:getById').setParameter('objid', objid).singleResult
+	}
+	
+	@ProxyMethod
+	public def create( af ) {
+		def schemaname = 'af:' + af.aftype
+		af.schemaname  = schemaname
+		af.schemaversion = '1.0'
+		checkDuplicate( af )
+		validate( af )
+		em.create( af.schemaname, af )
+		return af
+	}
+	
+	@ProxyMethod
+	public def update( af ) {
+		validate( af )
+		em.update( af.schemaname, af, { diff -> 
+			logService.logB('UPDATE', 'AF', af.objid, null, diff) 
+		} as UpdateChangeHandler)
+		return af
+	}
+	
+	@ProxyMethod
+	public void delete( af ) {
+		try {
+			em.delete(af.schemaname, af)
+		}
+		catch( e ) {
+			throw new Exception('Delete not allowed. AF has already been referenced.')
+		}
+	}
+	
+	@ProxyMethod
+	public def approve( objid ){
+		def af = em.read( 'af:af', [objid:objid] );
+		
+		af.docstate = 'APPROVED';
+		em.update( 'af:af', af );
+		
+		return af;
+	}
+	
+	private void validate( af ) {
+		def oldaf = em.read(af.schemaname, af)
+		util.validateLastUpdate( af, oldaf )
+		
+		em.validate( af.schemaname, af )
+		if( af.pcsperunit <= 0 ) {
+			throw new Exception('Pcs/Unit must be greater than zero.')
+		}
+		if( af.aftype == 'nonserial' && af.denomination <= 0 ) {
+			throw new Exception('Denomination must be greater than zero.')
+		}
+	}
+	
+	private void checkDuplicate( af  ) {
+		if( em.read(af.schemaname, af) ) {
+			throw new Exception( "AF No. $af.objid already exists." )
+		}
+	}
+}

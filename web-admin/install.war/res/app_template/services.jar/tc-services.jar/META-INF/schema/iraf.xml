@@ -1,0 +1,60 @@
+<schema>
+	<element name="iraf" tablename="iraf" >
+		<field name="objid" primary="true"/>
+		<field name="schemaname" required="true"/>
+		<field name="schemaversion" required="true"/>
+		<field name="txnno" required="true"/>
+		<field name="txndate" required="true"/>
+		<field name="preparedby" required="true"/>
+		<field name="preparedbytitle" required="true"/>
+		<field name="rivrequestedby" required="true"/>
+		<field name="rivrequestedbytitle" required="true"/>
+		<field name="rivid" required="true"/>
+		<field name="rivno" required="true"/>
+		<field name="docstate" required="true"/>
+		<complex name="info" ref="info" serializer="default"/>
+		<complex name="requesteditems" ref="requesteditem" type="list" min="1" serializer="default"/>
+		<complex name="rcvitems" ref="rcvitem" type="list" serializer="default" required="false"/>
+	</element>
+	
+	<element name="requesteditem">
+		<field name="afid" required="true"/>
+		<field name="aftype" required="true"/>
+		<field name="afunit" required="true"/>
+		<field name="afpcsperunit" required="true" type="integer"/>
+		<field name="qtyrequested" type="integer"  required="true"/>
+		<field name="qtyreceived" type="integer" required="true"/>
+		<field name="stubno"/>
+	</element>
+	
+	<element name="rcvitem">
+		<field name="afid" required="true"/>
+		<field name="prefix"/>
+		<field name="startseries" type="integer"/>
+		<field name="endseries" type="integer"/>
+		<field name="suffix" />
+		<field name="qtyreceived" type="integer" required="true"/>
+		<field name="qtycancelled" type="integer"/>
+		<complex name="cancelledseries" ref="cancelledseries" type="list" serializer="default" required="false"/>
+	</element>
+	
+	<element name="cancelledseries">
+		<field name="fromseries" type="integer" required="true"/>
+		<field name="toseries" type="integer" required="true"/>
+		<field name="remarks" required="true"/>
+	</element>
+	
+	<element name="info">
+		<field name="txnno" />
+		<field name="txndate" />
+		<field name="preparedby" required="true"/>
+		<field name="preparedbytitle" required="true"/>
+		<field name="rivid" required="true"/>
+		<field name="rivno" required="true"/>
+		<field name="rivdate" required="true"/>
+		<field name="rivtype" required="true"/>
+		<field name="rivrequestedbyid" required="true"/>
+		<field name="rivrequestedby" required="true"/>
+		<field name="rivrequestedbytitle" required="true"/>
+	</element>
+</schema>

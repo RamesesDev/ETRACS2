@@ -1,0 +1,158 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+
+class ETRACS1To2TCMigrationService
+{
+    @PersistenceContext("etracsv1")
+    def em1;
+    
+    @PersistenceContext("main")
+    def em2;
+    
+    @Service('NumberService')
+    def numSvc
+    
+    @ProxyMethod
+    public void updateLiquidationInfo() {
+        def lqlist = em1.sqlContext.createQuery('''
+			select 
+				l.*,
+				case when lq.middlename is null 
+					then concat(lq.firstname, ' ', lq.lastname)
+					else concat(lq.firstname, ' ', lq.middlename, ' ', lq.lastname)
+				end as liquidatingOfficerName,
+					case when t.middlename is null 
+					then concat(t.firstname, ' ', t.lastname)
+					else concat(t.firstname, ' ', t.middlename, ' ', t.lastname)
+				end as treasurerName
+			from liquidation l
+				inner join sys_user lq on l.userid = lq.objid 
+				inner join sys_user t on l.treasurer = t.objid 
+		''').resultList
+        lqlist.each { lq ->
+            def info = [
+                txndate                    : lq.dtposted,
+                liquidatingofficerid    : lq.userid,
+                liquidatingofficername    : lq.liquidatingOfficerName,
+                liquidatingofficertitle    : lq.lqofficertitle,
+                amount                    : lq.amount,
+                totalcash                : lq.amount - lq.totalchecks,
+                totalotherpayment        : lq.totalchecks,
+                d1000qty                : lq.d1000qty,
+                d500qty                    : lq.d500qty,
+                d200qty                    : lq.d200qty,
+                d100qty                    : lq.d100qty,
+                d50qty                    : lq.d50qty,
+                d20qty                    : lq.d20qty,
+                d10qty                    : lq.d10qty,
+                coins                    : lq.coins,
+                treasurername            : lq.treasurerName,
+                treasurertitle            : lq.treasurertitle ,
+                txnno                    : lq.docno,
+                depositedbyid            : null,
+                depositedbyname            : null, 
+                depositedbytitle        : null,
+                denominations:[
+                    [caption:"1000.00"    ,denomination:1000.00    ,qty:lq.d1000qty    ,amount:lq.d1000qty*1000.0],
+                    [caption:"500.00"    ,denomination:500.00    ,qty:lq.d500qty    ,amount:lq.d500qty*500.0],
+                    [caption:"200.00"    ,denomination:200.00    ,qty:lq.d200qty    ,amount:lq.d200qty*200.0],
+                    [caption:"100.00"    ,denomination:100.00    ,qty:lq.d100qty    ,amount:lq.d100qty*100.0],
+                    [caption:"50.00"    ,denomination:50.00        ,qty:lq.d50qty        ,amount:lq.d50qty*50.0],
+                    [caption:"20.00"    ,denomination:20.00        ,qty:lq.d20qty        ,amount:lq.d20qty*20.0],
+                    [caption:"10.00"    ,denomination:10.00        ,qty:lq.d10qty        ,amount:lq.d10qty*10.0],
+                    [caption:"Coins"    ,denomination:1.00        ,qty:lq.coins        ,amount:lq.coins]],
+            ]
+            em2.sqlContext.createExecutor('UPDATE liquidation SET info = $P{info} WHERE objid = $P{objid}')
+                    .setParameters([objid:lq.objid, info:em2.serializer.write( info) ]).execute() 
+        }
+    }
+	
+    @ProxyMethod
+	public void updateRemittanceInfo() {
+		def remittancelist = em1.sqlContext.createQuery('''
+			select 
+				r.*,
+				case when lq.middlename is null 
+					then concat(lq.firstname, ' ', lq.lastname)
+					else concat(lq.firstname, ' ', lq.middlename, ' ', lq.lastname)
+				end as liquidatingOfficerName,
+				case when c.middlename is null 
+					then concat(c.firstname, ' ', c.lastname)
+					else concat(c.firstname, ' ', c.middlename, ' ', c.lastname)
+				end as collectorName
+			from collectionremittance r
+				inner join sys_user lq on r.lqofficerid = lq.objid 
+				inner join sys_user c on r.collector = c.objid 
+		''').resultList
+		remittancelist.each { rem ->
+			def info = [
+				txndate 		: rem.dateposted,
+				collectorname	: rem.collectorName,
+				collectortitle	: rem.collectortitle,
+				amount			: rem.amount,
+				totalcash		: ( rem.amount - rem.totalchecks ),
+				totalotherpayment: rem.totalchecks,
+				txnno			: rem.docno ,
+				liquidatingofficername : rem.liquidatingOfficerName,
+				liquidatingofficertitle: rem.lqofficertitle,
+				denominations:[
+					[caption:"1000.00"	,denomination:1000.00	,qty:rem.d1000qty	,amount:rem.d1000qty*1000.0],
+					[caption:"500.00"	,denomination:500.00	,qty:rem.d500qty	,amount:rem.d500qty*500.0],
+					[caption:"200.00"	,denomination:200.00	,qty:rem.d200qty	,amount:rem.d200qty*200.0],
+					[caption:"100.00"	,denomination:100.00	,qty:rem.d100qty	,amount:rem.d100qty*100.0],
+					[caption:"50.00"	,denomination:50.00		,qty:rem.d50qty		,amount:rem.d50qty*50.0],
+					[caption:"20.00"	,denomination:20.00		,qty:rem.d20qty		,amount:rem.d20qty*20.0],
+					[caption:"10.00"	,denomination:10.00		,qty:rem.d10qty		,amount:rem.d10qty*10.0],
+					[caption:"Coins"	,denomination:1.00		,qty:rem.coins		,amount:rem.coins]],
+			]
+			em2.sqlContext.createExecutor('UPDATE remittance SET info = $P{info} WHERE objid = $P{objid}')
+					.setParameters([objid:rem.objid, info:em2.serializer.write( info) ]).execute() 
+		}
+	}
+    
+    
+    @ProxyMethod
+	public void updateAccount( parentacct, level) {
+		def acctlist = []
+		if( ! parentacct )
+			acctlist = em2.sqlContext.createQuery('SELECT objid, acctcode, accttitle, accttype FROM account WHERE parentid IS NULL').resultList
+		else 
+			acctlist = em2.sqlContext.createQuery('SELECT objid, acctcode, accttitle, accttype FROM account WHERE parentid = $P{parentid}').setParameter('parentid', parentacct.objid).resultList
+			
+			
+		acctlist.each { acct -> 
+			updateAccountLevel( parentacct, acct, level )
+		}
+	}
+	
+	void updateAccountLevel( parentacct, acct, level ) {
+		level += 1
+		
+		if( parentacct ) {
+			if( ! parentacct.pathbyids ) acct.pathbyids = ''
+			if( ! parentacct.pathbytitle) acct.pathbytitle = ''
+			if( ! acct.pathbyids ) acct.pathbyids = ''
+			if( ! acct.pathbytitle) acct.pathbytitle = ''
+			if( acct.accttype != 'GLACCOUNT' && acct.accttype != 'SUBACCOUNT' ) {
+				acct.pathbyids = (parentacct.pathbyids ? parentacct.pathbyids : parentacct.objid )+ '/' + acct.objid 
+				acct.pathbytitle = (parentacct.pathbytitle ? parentacct.pathbytitle : parentacct.objid ) + '/' + acct.acctcode + ' - ' + acct.accttitle 
+			}
+			else {
+				acct.pathbyids = (parentacct.pathbyids ? parentacct.pathbyids : parentacct.objid )
+				acct.pathbytitle = (parentacct.pathbytitle ? parentacct.pathbytitle : parentacct.objid ) 
+			}
+		}
+		
+		def params = [
+			objid		: acct.objid, 
+			level 		: level,
+			pathbyids 	: acct.pathbyids,
+			pathbytitle	: acct.pathbytitle,
+		]
+		em2.sqlContext.createExecutor('UPDATE account SET acctlevel = $P{level}, pathbyids=$P{pathbyids}, pathbytitle=$P{pathbytitle} WHERE objid = $P{objid}')
+				.setParameters( params ).execute() 
+	
+		updateAccount( acct, level )
+				
+	}
+}	
