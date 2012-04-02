@@ -7,12 +7,14 @@
 <%@ attribute name="immediate" %>
 <%@ attribute name="visibleWhen" %>
 <%@ attribute name="context" %>
+<%@ attribute name="depends" %>
 
 
 <button class="form-action" type="button" r:context="${context}" r:name="${action}"
 <c:if test="${! empty depends}"> r:depends="${depends}" </c:if>
 <c:if test="${! empty immediate}"> r:immediate="${immediate}" </c:if>
 <c:if test="${! empty visibleWhen}"> r:visibleWhen="${visibleWhen}" </c:if>
+<c:if test="${! empty depends}"> r:depends="${depends}" </c:if>
 <c:forEach items="${params}" var="p"> ${p.key}="${p.value}" </c:forEach>>
 	${caption}
 	<jsp:doBody/>

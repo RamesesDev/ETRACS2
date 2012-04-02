@@ -4,6 +4,9 @@
 
 <t:content title="Personnel Information">
 	<jsp:attribute name="head">
+		<link href="${pageContext.request.contextPath}/js/ext/menu/menu.css" rel="stylesheet"/>
+		<script src="${pageContext.request.contextPath}/js/ext/menu/menu.js"></script>
+		
 		<style>
 			.headmenu {
 				padding:4px;
@@ -24,7 +27,8 @@
 
 		<script>
 			$put( "personnelinfo", 
-				new function() {
+				new function() 
+				{
 					var svc = ProxyService.lookup( "PersonnelService" );
 					var self = this;
 					this.info =  <s:invoke service="PersonnelService" method="read" params="${pageContext.request}" json="true" />;
@@ -60,12 +64,18 @@
 						return p;
 					}
 					
-					
-					this.createAccount = function() {
-						
+					this.useraccount;
+					this.removeLogin = function() {
+						if( confirm("Are you sure you want to remove this login account?") )
+						{
+							var usvc = ProxyService.lookup("UserAccountService");
+							usvc.remove( this.useraccount );
+							this.useraccount = null;
+							self.menus.setSelectedIndex(0);
+							return 'default';
+						}
 					}
 					
-					this.useraccount;
 					this.viewUserAccount = function() {
 						if(!this.useraccount) {
 							var usvc = ProxyService.lookup( "UserAccountService" );		
@@ -93,6 +103,39 @@
 						return "useraccount";
 					}
 					
+					this.edit = function() {
+						var h = function() {
+							self._controller.refresh();
+						}
+						return new PopupOpener( "personnel:edit", {saveHandler:h, info: this.info} );
+					}
+					
+					this.menus = {
+						fetchMenus: function() {
+							return [
+								{id:"info", caption:"Information"},
+								{id:"position", caption:"Position"},
+								{id:"acct", caption:"User Account"}
+							];
+						},
+						fetchChildren: function(o) {
+							if( o.id == 'info' )
+								return [{id:"edit", caption:"Edit", icon:"${pageContext.servletContext.contextPath}/img/edit.gif"}];
+						},
+						onclick: function( o ) {
+							if( o.id == "info" )
+								return "_default";
+							if( o.id == "position" )
+								return "_positions";
+							if( o.id == "acct" )
+								return self.viewUserAccount();
+							if( o.id == "edit" )
+								return self.edit();
+							
+							return null;
+						}
+					};
+					
 				},
 				{
 					"default": "modules/personnel/info_data.jsp",
@@ -105,22 +148,7 @@
 	</jsp:attribute>
 
 	<jsp:body>
-		<table width="100%" cellpadding="4">
-			<tr>
-				<td width="50">
-					<a r:name="_default" r:context="personnelinfo">Information</a>
-				</td>
-				<td width="50">
-					<a r:name="_positions" r:context="personnelinfo">Positions</a>
-				</td>
-				<td width="120">
-					<a r:name="viewUserAccount" r:context="personnelinfo">User Account</a>
-				</td>
-				<td>&nbsp;</td>
-			</tr>
-		</table>
-
-		<div r:controller="personnelinfo"> </div>
-		
+		<div r:type="menu" r:context="personnelinfo" r:model="menus" r:orientation="horizontal"></div>		
+		<div r:controller="personnelinfo"> </div>		
 	</jsp:body>
 </t:content>
