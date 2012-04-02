@@ -13,9 +13,7 @@ class TerminalService {
     @ProxyMethod	
     public void allocate( x ) {
 		assert x.size > 0; 
-		assert x.parentid;
-		assert x.parentcode;
-		assert x.parenttype;
+		
 		int sz = x.remove("size");
 		for( int i=0; i< sz; i++) {
 			x.terminalid = KeyGen.generateAlphanumKey( null, 10 );
@@ -26,12 +24,10 @@ class TerminalService {
 
 	@ProxyMethod
     public def getList( param ) {
-        if( !param.parentid)  {
-			return em.sqlContext.createNamedQuery("terminal:list-all.sql").setParameters(param).setFirstResult( param._start ).setMaxResults( param._limit).resultList;
-		}
-		else {
-			return em.sqlContext.createNamedQuery("terminal:list.sql").setParameters(param).resultList;
-		}	
+        def qry = em.sqlContext.createNamedQuery("terminal:list.sql").setParameters(param);
+		if( param._start ) qry.setFirstResult(param._start);
+		if( param._limit ) qry.setMaxResults(param._limit);
+		return qry.resultList;
     }
 
     @ProxyMethod	
@@ -40,14 +36,13 @@ class TerminalService {
 		def terminal = em.read("terminal", o );
 		if(!terminal) throw new Exception("Terminal id does not exist");
 		
-		//check if client is correct
-		if(terminal.parentcode != o.clientcode) throw new Exception("This Terminal ID is assigned to the wrong client"); 
 		if(terminal.macaddress) {
 			if( terminal.macaddress == o.macaddress) 
 				throw new Exception("This Terminal ID already exists. Please choose the recover option instead"); 
 			else 	
 				throw new Exception("This Terminal ID is already assigned"); 
 		}
+		
 		def test = em.sqlContext.createNamedQuery("terminal:find-macaddress").setParameter("macaddress",o.macaddress).singleResult;
 		if(test) throw new Exception("This machine is already assigned to " + test.parentcode + ". Use terminal recovery instead" );
 		terminal.macaddress = o.macaddress;
@@ -61,7 +56,6 @@ class TerminalService {
 		assert o.macaddress;
 		def terminal = em.sqlContext.createNamedQuery("terminal:find-macaddress").setParameter("macaddress",o.macaddress).singleResult;
 		if(!terminal) throw new Exception("Terminal is not registered");
-		if(terminal.parentcode != o.clientcode) throw new Exception("This terminal is already assigned to the wrong client"); 
 		return terminal;	
 	}
 	

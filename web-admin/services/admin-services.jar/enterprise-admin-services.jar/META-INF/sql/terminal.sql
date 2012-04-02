@@ -1,5 +1,5 @@
 [list]
-select * from terminal where parentid = $P{parentid}
+select * from terminal
 
 [list-all]
 select * from terminal 
@@ -14,7 +14,7 @@ select * from terminal where terminalid = $P{terminalid}
 delete from blocked_terminal where userid = $P{userid} 
 
 [find-clientid]
-select * from terminal where parentcode=$P{clientcode} and terminalid=$P{terminal}
+select * from terminal where terminalid=$P{terminal}
 
 [unregister-terminal]
 update terminal set macaddress=null,dtregistered=null,registeredby=null  where terminalid=$P{terminalid}

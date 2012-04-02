@@ -28,18 +28,19 @@ public class ChangePwdOnLoginPage extends javax.swing.JPanel {
         xButton1.setDefaultCommand(true);
         xButton1.setName("changePwd");
 
+        formPanel1.setCaptionVAlignment(com.rameses.rcp.constant.UIConstants.CENTER);
         formPanel1.setCaptionWidth(120);
         xPasswordField1.setText("xPasswordField1");
         xPasswordField1.setCaption("New Password");
         xPasswordField1.setName("newpwd");
-        xPasswordField1.setPreferredSize(new java.awt.Dimension(200, 19));
+        xPasswordField1.setPreferredSize(new java.awt.Dimension(200, 24));
         xPasswordField1.setRequired(true);
         formPanel1.add(xPasswordField1);
 
         xPasswordField2.setText("xPasswordField1");
         xPasswordField2.setCaption("Confirm");
         xPasswordField2.setName("confirmpwd");
-        xPasswordField2.setPreferredSize(new java.awt.Dimension(200, 19));
+        xPasswordField2.setPreferredSize(new java.awt.Dimension(200, 24));
         xPasswordField2.setRequired(true);
         formPanel1.add(xPasswordField2);
 

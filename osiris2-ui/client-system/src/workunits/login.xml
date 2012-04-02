@@ -1,13 +1,14 @@
 <workunit>
     
     <invokers>
-        <invoker type="loader" caption="Login" index="-1000"/> 
+        <invoker type="loader" caption="Login" index="-1000" action="init"/> 
     </invokers>
     
     <code>
     <![CDATA[
         import com.rameses.rcp.common.*;
         import com.rameses.rcp.annotations.*;
+        import com.rameses.rcp.framework.ClientContext;
         import com.rameses.util.*;
         import com.rameses.osiris2.client.*;
         
@@ -21,11 +22,22 @@
             
             def uid;
             def pwd;
+            def clientcode;
             
             boolean offline = false;
             
+            def path = System.getProperty( "user.dir" ) + "/client.conf";
+            def config;
+            
+            void init()
+            {
+                config = new ConfigProperties(path);
+                clientcode = config.getProperty("app.clientcode");
+            }
+            
             def login()
             {
+                user.clientCode = clientcode;
                 if(!offline) {
                     OsirisContext.env.CLIENTTYPE='desktop';
                     def loginSvc = InvokerProxy.instance.create("LoginService");                
@@ -33,13 +45,23 @@
                     
                     String _pwd = user.encodePwd(pwd, uid);
                     user.init( usr, _pwd );
+                    
+                    if( !config.getProperty("app.clientcode") ) {
+                        config.put("app.clientcode", clientcode);
+                        config.update();
+                    }
                 }
                 else {
                     user.fetchProfile( uid, _pwd ); 
                     OsirisContext.session.offline = true;
                 }
                 return "_close";
-            }            
+            }
+            
+            def cancel()
+            {
+                ClientContext.currentContext.platform.shutdown();
+            }
             
         }
         ]]>

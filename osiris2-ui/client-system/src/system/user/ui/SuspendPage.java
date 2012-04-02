@@ -34,11 +34,12 @@ public class SuspendPage extends javax.swing.JPanel {
 
         setPreferredSize(new java.awt.Dimension(376, 229));
 
+        formPanel1.setCaptionVAlignment(com.rameses.rcp.constant.UIConstants.CENTER);
         formPanel1.setCaptionWidth(90);
         xPasswordField1.setText("xPasswordField1");
         xPasswordField1.setCaption("Password");
         xPasswordField1.setName("pwd");
-        xPasswordField1.setPreferredSize(new java.awt.Dimension(200, 19));
+        xPasswordField1.setPreferredSize(new java.awt.Dimension(200, 24));
         xPasswordField1.setRequired(true);
         formPanel1.add(xPasswordField1);
 

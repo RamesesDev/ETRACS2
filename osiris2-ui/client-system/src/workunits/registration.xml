@@ -15,8 +15,7 @@
         public class RegistrationController {
         
             int option = 0;
-        
-            String clientcode;
+            
             String terminalkey;
             String name;
             
@@ -28,7 +27,6 @@
                 TerminalKey t = new TerminalKey();
                 if(t.open()) {
                     user.terminalId = t.terminalid;
-                    user.clientCode = t.clientcode;
                     return "_close";
                 }
                 return "default";	
@@ -37,7 +35,7 @@
             public def next() {
                 switch(option)  {
                     case 0: return "new";
-                    case 1: return "recover";
+                    case 1: return  recoverTerminal();
                 }    
                 return null;
             }
@@ -46,7 +44,6 @@
                 def t = new TerminalKey( o );
                 t.save();
                 user.terminalId = t.terminalid;
-                user.clientCode = t.clientcode;
             }
 
             public def registerNew() {
@@ -54,7 +51,6 @@
                 def o = [
                     terminalid: terminalkey,
                     macaddress: user.macaddress,
-                    clientcode: clientcode,
                     registeredby:name
                 ];
                 svc.register( o );
@@ -66,7 +62,6 @@
                 def svc = InvokerProxy.instance.create( "TerminalService");
                 def o = [
                     macaddress: user.macaddress,
-                    clientcode:clientcode
                 ];
                 def m = svc.recover( o );
                 o.terminalid = m.terminalid;
@@ -80,7 +75,6 @@
     <pages>
         <page template="system.registration.ui.RegistrationInitPage"/>
         <page name="new" template="system.registration.ui.NewTerminalRegistrationPage"/>
-        <page name="recover" template="system.registration.ui.RecoverTerminalPage"/>
     </pages>
     
 </workunit>

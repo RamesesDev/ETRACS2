@@ -25,28 +25,23 @@ import java.util.Map;
  */
 public class TerminalKey implements Serializable {
     
+    private static final long serialVersionUID = 1L;
+    
     private static String filename = ".terminal";
-    private String clientcode;
     private String terminalid;
     private String macaddress;
     
     public TerminalKey(Map map) {
         this.terminalid = (String)map.get("terminalid");
-        this.clientcode  = (String)map.get("clientcode");
         this.macaddress = (String)map.get("macaddress");
     }
     
     public TerminalKey(String terminalid, String clientcode, String macaddress) {
         this.terminalid = terminalid;
-        this.clientcode = clientcode;
         this.macaddress = macaddress;
     }
     
     public TerminalKey() {}
-    
-    public String getClientcode() {
-        return clientcode;
-    }
     
     public String getTerminalid() {
         return terminalid;
@@ -61,7 +56,7 @@ public class TerminalKey implements Serializable {
     }
   
     public void save() throws Exception {
-        if(terminalid==null || clientcode==null || macaddress==null)
+        if(terminalid==null || macaddress==null)
             throw new Exception("Error saving terminal key. Terminalid, clientcode and macaddress must not be null");
         
         FileOutputStream fos = null;
@@ -70,7 +65,6 @@ public class TerminalKey implements Serializable {
             File f = new File(filename);
             Map map = new HashMap();
             map.put(  "terminalid", terminalid );
-            map.put(  "clientcode", clientcode );
             map.put(  "macaddress", macaddress );
             Object o = CipherUtil.encode( (Serializable) map );
             fos = new FileOutputStream( f );
@@ -100,7 +94,6 @@ public class TerminalKey implements Serializable {
             Object o = ois.readObject();
             Map map = (Map)CipherUtil.decode( (Serializable)o );
             this.terminalid = (String)map.get("terminalid");
-            this.clientcode  = (String)map.get("clientcode");
             this.macaddress = (String)map.get("macaddress");
         } catch(Exception e) {
             throw e;
