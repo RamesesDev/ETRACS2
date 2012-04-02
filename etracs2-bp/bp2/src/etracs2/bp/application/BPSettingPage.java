@@ -30,8 +30,6 @@ public class BPSettingPage extends javax.swing.JPanel {
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         jPanel4 = new javax.swing.JPanel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
-        jPanel5 = new javax.swing.JPanel();
-        xDataTable3 = new com.rameses.rcp.control.XDataTable();
         jPanel1 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
@@ -83,16 +81,6 @@ public class BPSettingPage extends javax.swing.JPanel {
         jPanel4.add(xDataTable2, java.awt.BorderLayout.CENTER);
 
         jTabbedPane1.addTab("Assessment Signatories", jPanel4);
-
-        jPanel5.setLayout(new java.awt.BorderLayout());
-
-        xDataTable3.setDynamic(true);
-        xDataTable3.setHandler("requirementHandler");
-        xDataTable3.setImmediate(true);
-        xDataTable3.setName("requirement");
-        jPanel5.add(xDataTable3, java.awt.BorderLayout.CENTER);
-
-        jTabbedPane1.addTab("Requirements", jPanel5);
 
         jPanel2.setLayout(null);
 
@@ -199,7 +187,7 @@ public class BPSettingPage extends javax.swing.JPanel {
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(jPanel6, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 640, Short.MAX_VALUE)
                     .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 640, Short.MAX_VALUE))
-                .add(9, 9, 9))
+                .add(10, 10, 10))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -232,13 +220,11 @@ public class BPSettingPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
-    private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
     private javax.swing.JTabbedPane jTabbedPane1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XDataTable xDataTable2;
-    private com.rameses.rcp.control.XDataTable xDataTable3;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField10;
     private com.rameses.rcp.control.XNumberField xNumberField2;

@@ -18,7 +18,31 @@ class ETRACSUserService
 	def USER_SCHEMA = 'etracsuser' 
 	def CASHIER_ROLE = 'CASHIER'
 	def COLLECTOR_ROLE = 'COLLECTOR'
-	def LIQUIDATING_OFFICER_ROLE = 'LIQUIDATING_OFFICER' 
+	def LIQUIDATING_OFFICER_ROLE = 'LIQUIDATING_OFFICER'
+	
+	
+	
+	@ProxyMethod
+	public List getUsersByTagid( tagid, param ) {
+		def qry = adminEm.sqlContext.createNamedQuery('etracsuser:getUsersByTagid');
+		
+		if( !param ) param = [:];
+		param.tagid = tagid;
+		
+		if(param._start) qry.setFirstResult(param._start);
+		if(param._limit) qry.setMaxResults(param._limit);
+		
+		qry.setParameters(param);
+		
+		return qry.resultList;
+	}
+	
+	@ProxyMethod
+	public def getUserByTagid( userid, tagid ) {
+		def user = adminEm.sqlContext.createNamedQuery('etracsuser:getUserByTagid').setParameters([objid:userid, tagid:tagid]).singleResult
+		if( ! user ) throw new Exception('User does not exists or is not assigned as ' + tagid + '.' )
+		return user 
+	}
 	
 	
 	@ProxyMethod
@@ -35,7 +59,7 @@ class ETRACSUserService
 	public def getCashierList( searchText, params ) {
 		if( !params ) params = [:];
 		params.searchText = searchText;
-		return getUsersByRole2( CASHIER_ROLE, params );
+		return getUsersByTagid( CASHIER_ROLE, params );
 	}
     
 	@ProxyMethod
@@ -57,9 +81,7 @@ class ETRACSUserService
 	
 	@ProxyMethod
 	public def getUserByRole( userid, tagid ) {
-		def user = adminEm.sqlContext.createNamedQuery('etracsuser:getUserByRole').setParameters([objid:userid, tagid:tagid]).singleResult
-		if( ! user ) throw new Exception('User does not exists or is not assigned as ' + tagid + '.' )
-		return user 
+		return getUserByTagid( userid, tagid );
 	}
 	
 	@ProxyMethod
@@ -85,22 +107,7 @@ class ETRACSUserService
 	
 	@ProxyMethod
 	public List getUsersByRole( tagid ) {
-		return getUsersByRole2( tagid, null );
-	}
-	
-	@ProxyMethod
-	public List getUsersByRole2( tagid, param ) {
-		def qry = adminEm.sqlContext.createNamedQuery('etracsuser:getUsersByRole');
-		
-		if( !param ) param = [:];
-		param.tagid = tagid;
-		
-		if(param._start) qry.setFirstResult(param._start);
-		if(param._limit) qry.setMaxResults(param._limit);
-		
-		qry.setParameters(param);
-		
-		return qry.resultList;
+		return getUsersByTagid( tagid, null );
 	}
 	
 	@ProxyMethod
@@ -119,7 +126,7 @@ class ETRACSUserService
 	public List getLiquidatingOfficers(searchText, params) {
 		if( !params ) params = [:];
 		params.searchText = searchText;
-		return getUsersByRole2( LIQUIDATING_OFFICER_ROLE, params );
+		return getUsersByTagid( LIQUIDATING_OFFICER_ROLE, params );
 	}
 		
 	private def getListByName( namedQuery, values, params ) {
