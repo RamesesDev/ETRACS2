@@ -20,6 +20,9 @@ class ProvinceFAASService
 
 	@Service('SequenceService')
 	def seqSvc
+	
+	@Service('MessengerService')
+	def msgSvc
 
 	def FORPROVAPPROVAL_STATE = 'FORPROVAPPROVAL'
 	def FORAPPROVAL_STATE = 'FORAPPROVAL'
@@ -319,23 +322,13 @@ class ProvinceFAASService
     * Support Methods
     ---------------------------------------------------------------------------------*/
     void sendToOutbox( faas, action, data ) {
-        def msg = [
-            objid           : 'MI' + new UID(),
-            schemaname      : 'message:outbox',
-            schemaversion   : '1.0',
-			refid			: faas.objid, 
-            fromlguindex    : var.lgu_index,
-            fromlguname     : var.lgu_name,
-			tolguindex      : faas.rp.provcityindex + '-' + faas.rp.munidistrictindex,
-            tolguname       : faas.rp.munidistrict,
-            dtsent          : new Date(),
-            sentby          : ( env.USERNAME ? env.USERNAME : 'SYSTEM' ),
-            sentbytitle     : ( env.JOBTITLE ? env.JOBTITLE : 'SYSTEM' ),
-            action          : action,
-            data            : data, 
-            messages        : [],
-        ]
-        em.create('message:outbox', msg )
+		def receiverid = faas.rp.provcityindex + '-' + faas.rp.munidistrictindex
+		def receivername = faas.rp.munidistrict
+		
+		def msg = msgSvc.createMessage( action, data )
+		msg.receiverid = receiverid 
+		msg.receivername = receivername 
+		msgSvc.send( msg )        
     }
     
     void updatePinInfo( faas, newPin, newSectionNo, newParcelNo ) {
