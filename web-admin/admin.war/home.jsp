@@ -48,7 +48,6 @@
 	</jsp:attribute>
 	
 	<jsp:body>
-		has permission? ${ram:checkPermission(PERMISSIONS, 'etracs2-admin:etracstask.manage' )}
 		<ui:panel cols="2">
 			<ui:section>
 				<img src="${pageContext.request.contextPath}/photo/profile/${SESSION_INFO.objid}"/>

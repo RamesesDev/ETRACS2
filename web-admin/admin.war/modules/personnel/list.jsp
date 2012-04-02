@@ -101,6 +101,9 @@
 				<ui:col name="staffno" caption="Staff No"/>
 				<ui:col name="lastname" caption="Last Name"/>
 				<ui:col name="firstname" caption="First Name"/>
+				<ui:col align="center">
+					<img src="${pageContext.request.contextPath}/img/#{item.canlogin? 'checked' : 'unchecked'}.png"/>
+				</ui:col>
 				<ui:col>
 					<a href="#personnel:info?objid=#{item.objid}">View</a>
 				</ui:col>

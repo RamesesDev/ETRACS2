@@ -5,6 +5,7 @@
 	<jsp:attribute name="style">
 		.category td {
 			padding:4px;
+			cursor: default;
 		}
 		.category tr.selected {
 			background-color:orange;
@@ -50,7 +51,7 @@
 				
 				this.propertyChangeListener = {
 					"category" : function(x) {
-						self.reloadList();
+						self.listModel.load();
 					}
 				}
 			}
