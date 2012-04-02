@@ -16,8 +16,6 @@
 					this.listModel = {
 						rows: 10,
 						fetchList: function(o) {
-							o.parentid = null;
-							if( self.orgunit ) o.parentid = self.orgunit.objid;
 							return svc.getList( o );	
 						}
 					}
@@ -27,7 +25,15 @@
 					}
 		
 					this.add = function() {
-						return new PopupOpener( "terminal:create", {saveHandler:reloadList, orgunit: self.orgunit} );
+						MsgBox.prompt(
+							"Enter the no. of terminal keys to generate", 
+							function(text) {
+								var size = parseInt(text);
+								if( isNaN(size) ) return;
+								svc.allocate( {size: size} );	
+								reloadList();
+							}
+						);
 					}
 					
 					this.unassign = function() {
@@ -40,19 +46,7 @@
 							}
 						);
 					}
-					
-					this.orgunitList;
-					this.orgunit;
-					this.onload = function() {
-						var osvc = ProxyService.lookup("OrgunitService");
-						this.orgunitList = osvc.getUserOrgunits({});
-					}
-					
-					this.propertyChangeListener = {
-						"orgunit" : function(x) {
-							reloadList();
-						}
-					}
+
 				}
 			);
 		</script>
@@ -64,15 +58,11 @@
 	
 	<jsp:body>
 		<ui:context name="terminal_list">
-			<ui:form>
-				<ui:combo caption="Org Unit" items="orgunitList" name="orgunit" itemLabel="title" allowNull="true" emptyText="All org units"/>
-			</ui:form>
 			<ui:grid model="listModel" >
 				<ui:col name="terminalid" caption="Terminal ID"/>
 				<ui:col name="macaddress" caption="Mac Address"/>
-				<ui:col name="parentcode" caption="Org Unit Assigned" align="center"/>
 				<ui:col name="dtregistered" caption="Date Registered"/>
-				<ui:col name="dtregistered" caption="Registered By"/>
+				<ui:col name="registeredby" caption="Registered By"/>
 				<ui:col>
 					<a r:context="terminal_list" r:name="unassign" r:visibleWhen="#{!!item.macaddress}">Unassign</a>
 				</ui:col>
