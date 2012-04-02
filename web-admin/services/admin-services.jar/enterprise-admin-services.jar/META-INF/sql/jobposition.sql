@@ -20,10 +20,11 @@ inner join role r on jp.role=r.name
 where jp.objid = $P{jobpositionid} 
 
 [user-job-position-list]
-select jp.objid,jp.code,jp.title,jp.orgunitid,jp.roleclass,jp.role, jp.excluded, r.included  
+select jp.objid,jp.code,jp.title,jp.orgunitid,jp.roleclass,jp.role, jp.excluded, r.included, jp.jobstatus 
 from jobposition jp 
 inner join role r on jp.role=r.name 
-where jp.assigneeid=$P{userid}
+where jp.assigneeid=$P{userid} 
+order by jp.jobstatus desc
 
 [get-tags]
  select jt.jobid, jt.tagid

@@ -1,3 +1,7 @@
+[get-host]
+SELECT * FROM lgu WHERE lgutype = $P{lgutype}
+
+
 [getList]
 SELECT * FROM lgu
 
