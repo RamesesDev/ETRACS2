@@ -61,7 +61,7 @@ public class LoginPage extends javax.swing.JPanel {
         xPasswordField1.setRequired(true);
         formPanel1.add(xPasswordField1);
 
-        xTextField2.setCaption("Org. Unit Code");
+        xTextField2.setCaption("Client Code");
         xTextField2.setName("clientcode");
         xTextField2.setPreferredSize(new java.awt.Dimension(80, 24));
         formPanel1.add(xTextField2);
