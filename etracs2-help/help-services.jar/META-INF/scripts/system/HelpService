@@ -1,0 +1,61 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopScoreDocCollector;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Version;
+
+
+public class HelpService {
+
+	@Service("Var")
+	def VARS;	
+	
+	@ProxyMethod
+	public def search( def keywords ) {
+		def indexDir = VARS[ "help.index"];
+	
+		def indexFile = new File( indexDir )
+	    Directory index = FSDirectory.open(indexFile);
+
+        int resultSize = 10;
+        def searcher = new IndexSearcher( index, true);
+        def collector = TopScoreDocCollector.create(resultSize, true);
+
+        try {
+			def analyzer = new StandardAnalyzer(Version.LUCENE_30);
+            Query q = new QueryParser(Version.LUCENE_30, "content", analyzer).parse(keywords);
+            searcher.search(q, collector);
+            ScoreDoc[] hits = collector.topDocs().scoreDocs;
+			def results = [];
+			for(int i=0;i<hits.length;++i) {
+                int docId = hits[i].doc;
+                Document d = searcher.doc(docId);
+				results.add([
+					title: d.title,
+					path: d.filepath
+				]);
+            }
+			return results;
+        } catch (ex) {
+			ex.printStackTrace();
+        } finally {
+            searcher.close();
+            index.close();
+        }
+	}
+
+
+}

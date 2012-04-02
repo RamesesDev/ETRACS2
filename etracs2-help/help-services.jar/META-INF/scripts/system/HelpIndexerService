@@ -1,0 +1,111 @@
+import com.rameses.annotations.*;
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopScoreDocCollector;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Version;
+
+import com.rameses.io.FileUtil;
+
+
+public class HelpIndexerService {
+
+	@Service("Var")
+	def VARS;
+
+	public void register(def param){
+		def content = param.content;
+		def id = param.id;
+	}
+
+	@ProxyMethod
+	public void index() {
+		def serverDir = VARS['help.path'];
+		def indexDir = VARS['help.index'];
+		def searchDir = indexDir.substring( indexDir.lastIndexOf("/")+1 );
+		
+		def sourceDir = new File( serverDir );
+		def indexFile = new File( indexDir );
+		
+		//delete index file if exists
+		FileUtil.deleteRecursive( indexFile );
+
+        Directory index = null;
+        IndexWriter w = null;
+
+        try {
+			def analyzer = new StandardAnalyzer(Version.LUCENE_30);
+            index = FSDirectory.open(indexFile);
+            w = new IndexWriter(index, analyzer,  IndexWriter.MaxFieldLength.UNLIMITED);
+			scan( sourceDir, w, "", searchDir );
+        } catch( ex ) {
+            ex.printStackTrace();
+        } finally {
+            try {
+                w.close();
+                index.close();
+            } catch(e) { e.printStackTrace(); }
+        }
+	}
+
+	private void scan( sourceDir, indexWriter, parentName, searchDir ) {
+		for ( f in sourceDir.listFiles() ) {
+			if(f.name == searchDir ) continue;
+			if ( f.isDirectory() ) {
+				scan( f, indexWriter, parentName + "/" + f.name, searchDir );
+				continue;
+			}
+			String fullPath = f.getPath();
+			fullPath = fullPath.replace( "\\", "/");
+			String filepath = parentName + "/" + f.name;
+			Document doc = new Document();
+			doc.add( new Field("title", getTitle( f ), Field.Store.YES, Field.Index.ANALYZED) );
+			doc.add( new Field("content", new FileReader(fullPath)) );
+			doc.add( new Field("filepath", filepath, Field.Store.YES, Field.Index.ANALYZED) );
+			indexWriter.addDocument( doc );
+		}
+	}
+
+	private def getTitle( file ) {
+		def title = file.name;
+		def reader = null;
+		try {
+			reader = new BufferedReader(new FileReader(file))
+			def line = null;
+			boolean done;
+			def pattern = /(<\/head[^<]*>)|<title[^<]*>(.*)<\/title[^<]*>/;
+
+			while( !done && (line = reader.readLine() ) != null ) {
+				def matcher = line =~ pattern;
+				while ( !done && matcher.find() ) {
+					if ( matcher.group(1) )
+						done = true;
+					else if ( matcher.group(2) ) {
+						title = matcher.group(2).trim();
+						done = true;
+					}
+				}
+			}
+		}
+		catch(e) {
+			e.printStackTrace();
+		}
+		finally {
+			try { reader.close; }catch(e){}
+		}
+		return title;
+	}
+
+}
