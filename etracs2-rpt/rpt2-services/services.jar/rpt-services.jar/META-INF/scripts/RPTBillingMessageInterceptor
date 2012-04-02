@@ -13,7 +13,10 @@ class RPTBillingMessageInterceptor
     @Service('RPTBillingService')
     def billingSvc 
 	
-	@After(pattern='MessageService.onreceive') 
+	@Service('MessengerService')
+	def msgSvc
+	
+	@After(pattern='MessengerService.onreceive') 
 	public void interceptOnReceive( evt ) {
         def msg = evt.result 
 		println 'Processing message -> ' + msg.action 
@@ -24,34 +27,28 @@ class RPTBillingMessageInterceptor
 	void postGenerateRPTBill( msg ) {
         try {
             billingSvc.postRemoteGeneratedBill( msg )
-            updateSuccess( msg)
-            logSvc.log('RPTBILL-POST-GENERATED', 'RPTBill', msg.data.sessionid )
+			msgSvc.processedSuccessfully(msg) 
+			logSvc.log('RPTBILL-POST-GENERATED', 'RPTBill', msg.attachment.sessionid  )
         }
         catch( e ) {
-			updateError( msg, e )
+			e.printStackTrace()
+			msgSvc.errorProcessing(msg, e.message) 
+			
         }
     }
 	
     void generateRPTBill( msg ) {
         try {
             billingSvc.generateRemoteRequestedBill( msg )
-            updateSuccess( msg  )
-            logSvc.log('RPTBILL-REMOTE', 'RPTBill', msg.data.sessionid )
+            msgSvc.processedSuccessfully(msg) 
+            logSvc.log('RPTBILL-REMOTE', 'RPTBill', msg.attachment.sessionid )
         }
         catch( e ) {
-            updateError( msg, e )
+			e.printStackTrace()
+            msgSvc.errorProcessing(msg, e.message) 
         }
     }
 	
-	void updateError( msg, e ) {
-		msg.status =[date:new Date(), iserror:true, errormsg:e.message]
-		em.update( msg.schemaname, msg )
-	}
-    
-    void updateSuccess( msg ) {
-        msg.status = [date: new Date(), iserror:false, errormsg:'']
-        em.update( msg.schemaname, msg ) 
-    }
 	
 }
 

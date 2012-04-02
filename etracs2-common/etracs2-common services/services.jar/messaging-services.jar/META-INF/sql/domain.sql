@@ -1,5 +1,6 @@
 [getList]
 SELECT * FROM domain ORDER BY domainid 
+
 [getDomainById]
 SELECT * FROM domain WHERE domainid = $P{domainid} 
 

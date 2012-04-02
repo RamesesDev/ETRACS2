@@ -17,7 +17,7 @@ class RemoteOutboxService
 	public def fetchMessage( params ) {
 		println 'Fetching messages for LGU ' + params.lguindexno
 		domainSvc.connected( params.lguindexno, params.lguname, params.lgutype, [:])
-		def msgidlist = em.sqlContext.createNamedQuery('message:getOutboxMessageTo').setParameter('tolguindex', params.lguindexno ).resultList
+		def msgidlist = em.sqlContext.createNamedQuery('messenger:getOutboxMessageByReceiverId').setParameter('receiverid', params.receiverid ).resultList
 		def msglist = []
 		msgidlist.each{ msgid ->
 			msglist.add( em.read(OUTBOX_SCHEMA, msgid) )

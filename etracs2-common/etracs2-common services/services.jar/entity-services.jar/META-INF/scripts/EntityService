@@ -14,7 +14,7 @@ class EntityService
 	@Service('LogService')
 	def logService
 	
-	@Service('MessageService')
+	@Service('MessengerService')
 	def msgSvc 
 	
 	@Service('Var')
@@ -165,7 +165,7 @@ class EntityService
 	
 	
 	@ProxyMethod
-	public def createEntityMapping( data ) {
+	public void createEntityMapping( data ) {
 		def entity  	= data.entity 
 		def domainid 	= data.domainid 
 		def domainname 	= data.domainname 
@@ -176,11 +176,10 @@ class EntityService
 				insertEntityMapping( entity, domainid, domainname, mapping )
 			}
 		}
-		return [date:new Date(), status:'Processed successfully.']
 	}
 	
 	@ProxyMethod
-	public def deleteEntityMapping( data ) {
+	public void deleteEntityMapping( data ) {
 		def parentid  	= data.parentid
 		def domainid 	= data.domainid 
 		def domainname 	= data.domainname 
@@ -194,7 +193,6 @@ class EntityService
 				.setParameters( params )
 				.execute()
 		}
-		return [date:new Date(), status:'Processed successfully.']
 	}
 	
 	void insertEntityMapping( entity, domainid, domainname, mapping ) {
@@ -227,8 +225,9 @@ class EntityService
 		if ( entity ){
 			entity.domainid   = var.lgu_index
 			entity.domainname = var.lgu_name
-			def data = [ parententity:entity ]
-			msgSvc.broadcast( entity.objid, 'entity.create_entity_for_mapping', data )
+			def attachment = [ parententity:entity ]
+			def msg = msgSvc.createMessage('entity.create_entity_for_mapping', attachment )
+			msgSvc.broadcastToDomains( msg )
 		}
 	}
 	

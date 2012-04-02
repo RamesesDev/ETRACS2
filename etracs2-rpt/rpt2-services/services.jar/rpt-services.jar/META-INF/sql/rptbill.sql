@@ -69,17 +69,5 @@ SELECT objid, acctno, accttitle FROM incomeaccount  WHERE acctno = $P{acctno} AN
 [lookupAccountByTitle]
 SELECT objid, acctno, accttitle FROM incomeaccount  WHERE accttitle LIKE $P{accttitle} AND systype = $P{systype} ORDER BY accttitle 
 
-[getResponseData]
-SELECT * FROM sys_responsedata WHERE sessionid = $P{sessionid}
-
-[deleteResponseDataBySessionId]
-DELETE FROM sys_responsedata WHERE sessionid = $P{sessionid} 
-
-[insertResponseData]
-INSERT INTO sys_responsedata 
-	(objid, sessionid, status, data, fromlguindex, fromlguname, tolguindex, tolguname ) 
-VALUES ($P{objid}, $P{sessionid}, $P{status}, $P{data}, $P{fromlguindex}, $P{fromlguname}, $P{tolguindex}, $P{tolguname} )
-
-
 
 

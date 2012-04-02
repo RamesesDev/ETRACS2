@@ -14,7 +14,7 @@ class InboxTask
     @PersistenceContext('main')
     def em 
     
-    @Service('MessageService')
+    @Service('MessengerService')
     def msgSvc
 	
 	@Service('Var')
@@ -50,11 +50,10 @@ class InboxTask
 	}
 	
 	void moveOtherDestinationMessagesToOutbox() {
-		def msglist = em.sqlContext.createNamedQuery('message:getOtherDestinationMessages')
-							.setParameter('tolguindex', var.lgu_index )
+		def msglist = em.sqlContext.createNamedQuery('messenger:getOtherDestinationMessages')
+							.setParameter('receiverid', var.lgu_index )
 							.resultList
 		msglist.each{ id ->
-			println 'id -> ' + id 
 			def msg = em.read( INBOX_SCHEMA, id)
 			em.delete( msg.schemaname, msg )
 			msg.schemaname = OUTBOX_SCHEMA
@@ -68,8 +67,8 @@ class InboxTask
     }
     
     def getInboxMessages() {
-        return em.sqlContext.createNamedQuery('message:getInboxMessageId')
-					.setParameter('tolguindex', var.lgu_index )
+        return em.sqlContext.createNamedQuery('messenger:getInboxMessageId')
+					.setParameter('receiverid', var.lgu_index )
 					.resultList
     }
     		

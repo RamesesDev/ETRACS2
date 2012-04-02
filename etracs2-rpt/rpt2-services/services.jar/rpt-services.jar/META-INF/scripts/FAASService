@@ -44,7 +44,7 @@ class FAASService
     @Service('MiscRPUService')
     def miscRpuSvc
 	
-	@Service('MessageService')
+	@Service('MessengerService')
 	def msgSvc
 
     def INTERIM_STATE = 'INTERIM'
@@ -375,13 +375,13 @@ class FAASService
     }
     
     @ProxyMethod
-    public Map onlineApprove( faasid, approvaldata  ) {
+    public void onlineApprove( faasid, approvaldata  ) {
         def faas = open( faasid )
 		if( faas.docstate == CURRENT_STATE || faas.docstate == CANCELLED_STATE)  {
             //the faas is already approve
             //this happens if the approval was done manually
             //so just return the faas 
-            return [date:new Date(), status:'Faas is already ' + faas.docstate] 
+            return 
         }
         faas.info.tdno          = approvaldata.tdno
         faas.info.dtapproved    = approvaldata.dtapproved 
@@ -396,21 +396,19 @@ class FAASService
         em.update( faas.schemaname, faas )
         em.update(LISTSCHEMA_NAME, faas )
         invokeCommonApproveActions( faas )
-        return [date:new Date(), status:'Processed successfully.']
     }
     
     @ProxyMethod
-    public Map onlineDisapprove( faasid, disapprovaldata ) {
+    public void onlineDisapprove( faasid, disapprovaldata ) {
         def faas = open( faasid  )
         if( faas.docstate == CURRENT_STATE || faas.docstate == CANCELLED_STATE){
             //the faas has already been approved or superseded
             //do not alter the state, just a message 
-            return [date:new Date(), status:'Faas is already ' + faas.docstate]
+            return 
         }  
         faas.message = disapprovaldata.message 
         updateMessage( faas, faas.message )
         updateFaasState( faas, FORAPPROVAL_STATE )
-        return [date:new Date(), status:'Processed successfully.']
     }
     
     @ProxyMethod
@@ -1431,12 +1429,10 @@ class FAASService
         em.sqlContext.createNamedExecutor('faas:updateMessage').setParameters( params ).execute() 
     }
     
-    void sendToOutbox( faas ) {
-		msgSvc.send( 
-			faas.objid, 
-			'faas.receive', 
-			[ faas:faas, attachments:getAttachments( faas.objid) ]
-		)
+    void sendToOutbox( faas ) {	
+		def attachment = [ faas:faas, attachments:getAttachments( faas.objid) ]
+		def msg = msgSvc.createMessage( 'faas.receive', attachment )
+		msgSvc.send( msg ) 
     }
     
     void moveOutboxMessageToProcessed( refid ) {
