@@ -1,3 +1,4 @@
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib tagdir="/WEB-INF/tags/templates" prefix="t" %>
 <%@ taglib tagdir="/WEB-INF/tags/common/server" prefix="s" %>
 <%@ taglib tagdir="/WEB-INF/tags/ui" prefix="ui" %>
@@ -31,12 +32,14 @@
 						refid: this.entity.objid
 					}
 					svc.create(lgu);
+					this.entity.orgunit = lgu.objid;
 				}
 				
 				this.unregisterOrgunit = function() {
 					if( confirm('You are about to unregister this from the orgunit. Proceed?') ) {
 						var svc = ProxyService.lookup( "OrgunitService" );
 						svc.remove({objid: this.entity.objid});
+						this.entity.orgunit = null;
 					}
 				}
 			}
@@ -59,9 +62,11 @@
 				<ui:label caption="Index No." rtexpression="true">#{entity.indexno}</ui:label>
 				<ui:text name="lguname" caption="Name" required="true" size="30"/>
 			</ui:form>
-			<br>
-			<ui:button context="${context}" action="registerOrgunit" caption="Register Orgunt" immediate="true"/> 
-			<ui:button context="${context}" action="unregisterOrgunit" caption="Unregister Orgunit" immediate="true"/> 
+			<c:if test="${param.lgutype == 'Barangay'}">
+				<br>
+				<a r:context="${context}" r:name="registerOrgunit" r:visibleWhen="#{!entity.orgunit}">Register Orgunt</a>
+				<a r:context="${context}" r:name="unregisterOrgunit" r:visibleWhen="#{entity.orgunit}">Unregister Orgunit</a>
+			</c:if>
 		</ui:context>	
 	</jsp:body>
 </t:popup>

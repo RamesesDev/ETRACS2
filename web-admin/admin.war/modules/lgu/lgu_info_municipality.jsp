@@ -28,6 +28,14 @@
 	<ui:grid model="barangayModel" name="selectedBarangay">
 		<ui:col caption="Index No." name="indexno" width="100px"/>
 		<ui:col caption="Name" name="lguname"/>
+		<ui:col caption="Has Org?" width="50">
+			<label r:context="${context}" r:visibleWhen="#{!!item.orgunit}">
+				<img src="${pageContext.request.contextPath}/img/checked.png"/>
+			</label>
+			<label r:context="${context}" r:visibleWhen="#{!item.orgunit}">
+				<img src="${pageContext.request.contextPath}/img/unchecked.png"/>
+			</label>
+		</ui:col>
 		<ui:col width="10px">
 			<a r:context="${context}" r:name="editBarangay" title="Edit">
 				<img src="${pageContext.request.contextPath}/img/edit.gif"/>
@@ -37,6 +45,6 @@
 			<a r:context="${context}" r:name="removeBarangay" title="Remove">
 				<img src="${pageContext.request.contextPath}/img/trash.gif"/>
 			</a>
-		</ui:col>
+			</ui:col>
 	</ui:grid>
 </ui:context>

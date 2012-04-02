@@ -12,10 +12,14 @@ SELECT * FROM lgu WHERE parentid IS NULL
 SELECT * FROM lgu WHERE parentid IS NULL 
 
 [getLgusByType]
-SELECT * FROM lgu WHERE lgutype = $P{lgutype} 
+SELECT l.*, o.objid as orgunit  FROM lgu l 
+LEFT JOIN orgunit o ON o.refid = l.objid 
+WHERE lgutype = $P{lgutype} 
 
 [getLgusByParent]
-SELECT * FROM lgu WHERE parentid = $P{parentid}
+SELECT l.*, o.objid as orgunit  FROM lgu l 
+LEFT JOIN orgunit o ON o.refid = l.objid 
+WHERE l.parentid = $P{parentid} 
 
 
 
@@ -28,18 +32,15 @@ SELECT objid, lguname, pin FROM lgu
 WHERE lgutype = 'MUNICIPALITY' AND lguname LIKE $P{lguname} 
 ORDER BY lguname 
 
-[getMuncipalities]
-SELECT * FROM lgu WHERE lgutype = 'MUNICIPALITY'
 
-[getDistricts]
-SELECT * FROM lgu WHERE lgutype = 'DISTRICT'
+[deleteBarangayByParentId]
+DELETE FROM lgu WHERE lgutype = 'BARANGAY' AND parentid = $P{parentid} 
+
 
 [getProvinceId]
 SELECT objid FROM lgu WHERE lgutype = 'PROVINCE'
 
-[getProvince]
-SELECT objid FROM lgu WHERE lgutype = 'PROVINCE'
 
 
-[deleteBarangayByParentId]
-DELETE FROM lgu WHERE lgutype = 'BARANGAY' AND parentid = $P{parentid} 
+
+
