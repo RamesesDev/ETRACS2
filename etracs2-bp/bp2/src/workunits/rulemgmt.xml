@@ -4,6 +4,7 @@
         <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" permission="bpadmin.newrule" icon="images/doc-new.png"/>
         <invoker type="formActions" action="open" caption="Open" mnemonic="o" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" permission="bpadmin.openrule" icon="images/open.png"/>
         <invoker type="formActions" action="remove" caption="Delete" mnemonic="d" shortcut="ctrl D" visibleWhen="#{selectedItem != null and selectedItem.docstate == 'DRAFT'}" permission="bpadmin.deleterule" icon="images/doc-delete.png"/>
+        <invoker type="formActions" action="viewAnalyzer" caption="Rule Analyzer" mnemonic="a" shortcut="ctrl A" permission="bpadmin.bpruleanalyzer"/>
     </invokers>
     <code>
 <![CDATA[
@@ -59,6 +60,10 @@ class RuleMgmtController
     void search() {
         list = svc.getList( ruleset, searchText, null )
         listHandler.load()
+    }
+    
+    def viewAnalyzer() {
+        return InvokerUtil.lookupOpener('bprule:analyzer',[:]);
     }
     
     def listHandler = [
