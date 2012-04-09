@@ -379,6 +379,12 @@ alter table receiptlist change column amount amount decimal(18,2);
 alter table receiptlist change column cash cash decimal(18,2);
 alter table receiptlist change column otherpayment otherpayment decimal(18,2);
 
+ALTER TABLE receipt ADD COLUMN capturedbyid VARCHAR(50);
+ALTER TABLE receiptlist ADD COLUMN capturedbyid VARCHAR(50);
+ALTER TABLE receiptlist ADD COLUMN capturedbyname VARCHAR(50);
+ALTER TABLE receiptlist ADD COLUMN capturedbytitle VARCHAR(50);
+ALTER TABLE incomeaccount ADD COLUMN groupid VARCHAR(100);
+
 alter table receiptitem change column amount amount decimal(18,2);
 alter table paymentitem change column amount amount decimal(18,2);
 
