@@ -1,0 +1,51 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class RPTReceiptMessageInterceptor  
+{
+	@PersistenceContext('main')
+	def em
+    
+	@Service('LogService')
+    def logSvc
+    
+    @Service('RPTReceiptService') 
+    def receiptSvc
+	
+	@Service('MessengerService')
+	def msgSvc
+	
+	@After(pattern='MessengerService.onreceive') 
+	public void interceptOnReceive( evt ) {
+        def msg = evt.result 
+		if( msg.action == 'rptreceipt_post_remote_collection') postRemoteRPTCollection( msg ) 
+		else if( msg.action == 'rptreceipt_void_remote_collection') postVoidRemoteRPTCollection( msg ) 
+	}
+    
+	void postVoidRemoteRPTCollection( msg ) {
+        try {
+            receiptSvc.postVoidRemoteRPTCollection( msg )
+			msgSvc.processedSuccessfully(msg)
+            logSvc.log('RPTRECEIPT-POST-VOID-REMOTE-COLLECTION', 'RPTReceipt', msg.objid )
+        }
+        catch( e ) {
+			msgSvc.errorProcessing(msg, e.message )
+        }
+    }
+	
+	void postRemoteRPTCollection( msg ) {
+        try {
+            def retval = receiptSvc.postRemoteRPTCollection( msg )
+			msgSvc.processedSuccessfully(msg)
+            logSvc.log('RPTRECEIPT-POST-REMOTE-COLLECTION', 'RPTReceipt', msg.objid )
+        }
+        catch( e ) {
+			msgSvc.errorProcessing(msg, e.message )
+        }
+    }
+	
+	
+}
+
+

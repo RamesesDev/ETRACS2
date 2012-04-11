@@ -167,9 +167,9 @@ ORDER BY collectorname
 SELECT txnno, txndate  FROM remittancelist  WHERE collectorid = $P{collectorid}  ORDER BY txnno DESC 
 
 [getOpenLiquidations]
-SELECT  
-	liquidatingofficername, liquidatingofficertitle, 
-	txnno, txndate, amount 
-FROM liquidationlist  
-WHERE docstate = 'OPEN' 
-ORDER BY liquidatingofficername, txnno  
+SELECT 
+	lqofficername AS liquidatingofficername, lqofficertitle AS liquidatingofficertitle, 
+	liquidationno AS txnno, liquidationdate AS txndate, amount 
+from liquidationrcd 
+where docstate = 'OPEN' 
+ORDER BY lqofficername, liquidationno  

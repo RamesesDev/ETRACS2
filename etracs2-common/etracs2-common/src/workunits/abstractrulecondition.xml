@@ -136,7 +136,7 @@ public class AbstractRuleConditionController
         valueHandler = null
         if( operator && field ) {
             def opener = 'datatype.' + field.type
-            def varlist = buildVarList().unique()
+            def varlist = buildVarList()
             valueHandler = InvokerUtil.lookupOpener( opener ,[usevar:usevar, varlist:varlist, lookupHandler:field.lookuphandler])
         }
     }
@@ -154,7 +154,8 @@ public class AbstractRuleConditionController
         condition.constraints.each { 
             if( it.fieldvar ) varlist.add( it.fieldvar )
         }
-        return varlist
+        
+        return varlist = varlist.unique()
     }
     
     Map buildConstraint() {

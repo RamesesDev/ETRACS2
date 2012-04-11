@@ -39,6 +39,7 @@ public class StructuresPage extends javax.swing.JPanel {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xTextField2 = new com.rameses.rcp.control.XTextField();
+        xNumberField1 = new com.rameses.rcp.control.XNumberField();
         jPanel6 = new javax.swing.JPanel();
         xDataTable2 = new com.rameses.rcp.control.XDataTable();
         xLabel1 = new com.rameses.rcp.control.XLabel();
@@ -102,6 +103,13 @@ public class StructuresPage extends javax.swing.JPanel {
         xTextField2.setRequired(true);
         formPanel1.add(xTextField2);
 
+        xNumberField1.setCaption("Index No.");
+        xNumberField1.setFieldType(Integer.class);
+        xNumberField1.setName("entity.indexno");
+        xNumberField1.setPreferredSize(new java.awt.Dimension(50, 19));
+        xNumberField1.setRequired(true);
+        formPanel1.add(xNumberField1);
+
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder4 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder4.setTitle("Applicable Materials");
         jPanel6.setBorder(xTitledBorder4);
@@ -163,7 +171,7 @@ public class StructuresPage extends javax.swing.JPanel {
                 .add(jPanel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(xLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(49, Short.MAX_VALUE))
+                .addContainerGap(28, Short.MAX_VALUE))
         );
         jPanel2.add(jPanel4, java.awt.BorderLayout.CENTER);
 
@@ -188,6 +196,7 @@ public class StructuresPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XDataTable xDataTable2;
     private com.rameses.rcp.control.XLabel xLabel1;
+    private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
     // End of variables declaration//GEN-END:variables

@@ -18,6 +18,12 @@
             @Service("ProvinceFAASHtmlService")
             def htmlService;
             
+            @Service("ReportParameterService")
+            def svcParams
+
+            @Service("FAASReportService")
+            def svcFaas
+            
             @Binding
             def binding;
             
@@ -26,7 +32,13 @@
             def selectedItem;
             def search = [:];
             
-            def formActions = InvokerUtil.lookupActions("faasinquiry:action")
+            def invokerparam = [
+                getParams :  { return [faasid:selectedItem?.objid] }
+            ] as InvokerParameter
+
+            def getFormActions() {
+                return InvokerUtil.lookupActions('faasinquiry:action', invokerparam )
+            }
                         
             void init() {
             }
@@ -70,6 +82,9 @@
             public def getFaas() {
                 return selectedItem?.item;
             }            
+            
+            
+            
         }
         
         ]]>

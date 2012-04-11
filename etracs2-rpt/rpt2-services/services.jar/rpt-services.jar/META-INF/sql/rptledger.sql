@@ -78,6 +78,18 @@ WHERE rptledgerid = $P{ledgerid}
 ORDER BY fromYear DESC, fromqtr DESC   
 
 
+[getPaymentsWithLguInfo]
+SELECT
+	objid, mode, receiptno, receiptdate, collectorname, period, collectingagency, 
+	basic, basicdisc, basicint, sef, sefdisc, sefint, 
+	basic + basicint - basicdisc AS basicnet,    
+	sef + sefint - sefdisc AS sefnet,  
+	basic + basicint - basicdisc + sef + sefint - sefdisc AS total 
+FROM rptpayment 
+WHERE rptledgerid = $P{ledgerid}  
+ORDER BY fromYear DESC, fromqtr DESC    
+
+
 [updateFaasLedgerId]
 UPDATE faas SET ledgerid = $P{ledgerid} WHERE objid = $P{objid}
 

@@ -277,10 +277,12 @@ public class LandRPUPage extends javax.swing.JPanel {
 
         jLabel3.setText("Classification * :");
 
+        xComboBox6.setCaption("Classification");
         xComboBox6.setExpression(" #{classcode}");
         xComboBox6.setIndex(-100);
         xComboBox6.setItems("classifications");
         xComboBox6.setName("classification");
+        xComboBox6.setRequired(true);
 
         xLabel6.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         xLabel6.setForeground(new java.awt.Color(153, 0, 0));

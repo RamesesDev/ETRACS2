@@ -13,11 +13,14 @@ class FAASMessageInterceptor
     @Service('FAASService')
     def faasSvc 
 	
+	@Service('MessengerService')
+	def msgSvc
+	
 	def SCHEMA_NAME = 'faas'
     def SCHEMA_VERSION = '1.0'
     def LISTSCHEMA_NAME = 'faas:faaslist'
     
-	@After(pattern='MessageService.onreceive') 
+	@After(pattern='MessengerService.onreceive') 
 	public void interceptOnReceive( evt ) {
         def msg = evt.result 
         if( msg.action == 'faas.approve') approveFaas( msg ) 
@@ -27,14 +30,14 @@ class FAASMessageInterceptor
     void approveFaas( msg ) {
         try {
             println 'Processing message -> ' + msg.action 
-            def retval = faasSvc.onlineApprove( msg.data.faasid, msg.data  )
-            updateMessageInfo( msg, retval )
-            logSvc.log('ONLINE-APPROVAL', 'FAAS', msg.data.faasid )
+            faasSvc.onlineApprove( msg.attachment.faasid, msg.attachment  )
+            msgSvc.processedSuccessfully( msg )
+            logSvc.log('ONLINE-APPROVAL', 'FAAS', msg.attachment.faasid )
         }
         catch( e ) {
-            println '-'*30 
+            println '='*50
             e.printStackTrace()
-            msg.message =[date:new Date(), msg:e.message]
+            msgSvc.errorProcessing( msg, e.message )
             throw e 
         }
     }
@@ -42,22 +45,18 @@ class FAASMessageInterceptor
     void disapproveFaas( msg ) {
         try {
             println 'Processing message -> ' + msg.action 
-            def retval = faasSvc.onlineDisapprove( msg.data.faasid, msg.data  )
-            updateMessageInfo( msg, retval )
-            logSvc.logA('ONLINE-APPROVAL', 'FAAS', msg.data.faasid, msg.data.message  )
+            faasSvc.onlineDisapprove( msg.attachment.faasid, msg.attachment  )
+            msgSvc.processedSuccessfully( msg )
+            logSvc.logA('ONLINE-APPROVAL', 'FAAS', msg.attachment.faasid, msg.attachment.message  )
         }
         catch( e ) {
+			println '='*50
             println 'FAASMessageInterceptor: ' + e.message
-            msg.message =[date:new Date(), msg:e.message]
+            msgSvc.errorProcessing( msg, e.message )
             throw e 
         }
     }
-    
-    void updateMessageInfo( msg, retval  ) {
-        msg.message = retval 
-        em.update( msg.schemaname, msg ) 
-    }
-	
+
 }
 
 

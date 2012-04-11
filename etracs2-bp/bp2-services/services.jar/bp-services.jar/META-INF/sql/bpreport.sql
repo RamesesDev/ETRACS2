@@ -48,6 +48,7 @@ FROM bpapplicationlisting a
 WHERE a.iyear = $P{iyear}  
   AND a.docstate LIKE $P{docstate}   
   AND a.barangayid LIKE $P{barangayid} 
+  AND l.classification LIKE $P{classification} 
 GROUP BY a.iyear, l.name   
 
 [getBusinessTaxpayerList]
@@ -58,6 +59,66 @@ WHERE docstate IN ('APPROVED','PERMIT_PENDING', 'ACTIVE')
   
 [getPermitInfo]
 SELECT info FROM bppermit WHERE applicationid = $P{applicationid} 
+
+[getBusinessTopList]
+SELECT DISTINCT amount 
+FROM ( 
+	SELECT bl.objid,SUM(bi.VALUE) AS amount  
+	FROM bpappinfolisting bi  
+		INNER JOIN bpapplicationlisting bl ON bi.applicationid = bl.objid  
+		INNER JOIN lob l ON l.objid = bi.lobid 
+		INNER JOIN lobclassification lc ON lc.objid = l.classificationid 
+	WHERE bl.txntype = $P{txntype} 
+	  AND bl.iyear = $P{year} 
+	  AND bl.docstate IN ('APPROVED', 'PERMIT_PENDING', 'ACTIVE') 
+	  AND bi.varname = $P{varname}     
+	  AND lc.name LIKE $P{classification}  
+	GROUP BY bl.objid   
+) bb  
+ORDER BY bb.amount DESC   
+LIMIT $P{topsize}  
+
+[getBusinessTopListGroupByAmount]
+SELECT 
+ pa.permitno, ba.tradename, ba.businessaddress,
+ ba.taxpayername, ba.taxpayeraddress, pa.amount 
+FROM bpapplicationlisting ba, 
+	( 
+		SELECT t.* 
+		FROM (	 
+			SELECT  
+			 a.objid, p.txnno as permitno,  
+			 SUM(i.VALUE) AS amount 
+			FROM bpappinfolisting i  
+				INNER JOIN bpapplicationlisting a ON i.applicationid = a.objid  
+				INNER JOIN lob l ON l.objid = i.lobid 
+				INNER JOIN lobclassification lc ON lc.objid = l.classificationid 
+				LEFT JOIN bppermit p on p.applicationid = a.objid 
+			WHERE i.varname = $P{varname}  
+			AND lc.name LIKE $P{classification} 
+			GROUP BY a.objid 
+		) t 
+		WHERE t.amount = $P{amount}	
+	) pa 
+WHERE ba.txntype = $P{txntype}  
+  AND ba.iyear = $P{year} 
+  AND ba.docstate IN ('APPROVED', 'PERMIT_PENDING', 'ACTIVE') 
+  AND ba.objid = pa.objid 
+ORDER BY pa.amount DESC  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
  
 

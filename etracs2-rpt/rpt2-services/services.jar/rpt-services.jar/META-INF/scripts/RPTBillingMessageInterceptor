@@ -1,0 +1,55 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class RPTBillingMessageInterceptor 
+{
+	@PersistenceContext('main')
+	def em
+    
+	@Service('LogService')
+    def logSvc
+    
+    @Service('RPTBillingService')
+    def billingSvc 
+	
+	@Service('MessengerService')
+	def msgSvc
+	
+	@After(pattern='MessengerService.onreceive') 
+	public void interceptOnReceive( evt ) {
+        def msg = evt.result 
+		println 'Processing message -> ' + msg.action 
+        if( msg.action == 'rptbill_generate') generateRPTBill( msg ) 
+		else if( msg.action == 'rptbill_post_generated') postGenerateRPTBill( msg ) 
+	}
+    
+	void postGenerateRPTBill( msg ) {
+        try {
+            billingSvc.postRemoteGeneratedBill( msg )
+			msgSvc.processedSuccessfully(msg) 
+			logSvc.log('RPTBILL-POST-GENERATED', 'RPTBill', msg.attachment.sessionid  )
+        }
+        catch( e ) {
+			e.printStackTrace()
+			msgSvc.errorProcessing(msg, e.message) 
+			
+        }
+    }
+	
+    void generateRPTBill( msg ) {
+        try {
+            billingSvc.generateRemoteRequestedBill( msg )
+            msgSvc.processedSuccessfully(msg) 
+            logSvc.log('RPTBILL-REMOTE', 'RPTBill', msg.attachment.sessionid )
+        }
+        catch( e ) {
+			e.printStackTrace()
+            msgSvc.errorProcessing(msg, e.message) 
+        }
+    }
+	
+	
+}
+
+

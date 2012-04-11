@@ -37,5 +37,19 @@ Patch-2.02.002 (CUMMULATIVE)
 - Fix actual use adjustment null pointer error
 - Fix property payer entry
 - Remove JAT Report from transaction menu
-- 
+--------------
+- Allow editing of LandRPU assessed value to match manual assessed value  
+  that resulted in rounding-off problems
+- Correct grid cell-locking problem in Bldg Structures
+- Add indexno to structures to facilitate easier entry in bldg structures
+- Fix bill parameter to updateDetailPeriod 
+- Properly handle billing for currentyear with partial payment
+- Correct rpt partial payment voiding error 
+--------------
+- Deprecate RPTOfficers. Lookup rpt officers from etracs users using roles
+- Fix RPTBilling bug affected by previous years quarterly computation 
+- Set surcharge and interest acct when generating the bill
+- Temporary fix number to word conversion - the bug is on rameses internal library
+- Always display declared owner name when printing receipt 
+- Stretch annotation text field to accommodate long annotations remarks
 

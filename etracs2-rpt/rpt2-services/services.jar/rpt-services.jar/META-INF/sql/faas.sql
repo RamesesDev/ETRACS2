@@ -132,6 +132,10 @@ SELECT objid FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPRO
 [getActiveAnnotations] 
 SELECT * FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPROVED' ORDER BY docno DESC 
 
+[getActiveAnnotationTexts] 
+SELECT memoranda AS annotationtext FROM faasannotation WHERE faasid = $P{faasid} AND docstate = 'APPROVED' ORDER BY docno DESC 
+
+
 [getLandReference] 
 SELECT tdno, taxpayername, pin, cadastrallotno, totalareasqm FROM faaslist WHERE objid = $P{objid} 
 

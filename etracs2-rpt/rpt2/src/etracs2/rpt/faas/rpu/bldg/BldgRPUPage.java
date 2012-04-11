@@ -471,9 +471,11 @@ public class BldgRPUPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder5 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder5.setTitle("Building Classification");
         jPanel4.setBorder(xTitledBorder5);
+        xComboBox4.setCaption("Classification");
         xComboBox4.setExpression("#{classcode}");
         xComboBox4.setItems("classificationList");
         xComboBox4.setName("classification");
+        xComboBox4.setRequired(true);
 
         xDataTable2.setHandler("bldguseListHandler");
         xDataTable2.setImmediate(true);

@@ -144,7 +144,7 @@ public class BPBillingService
 	private def getBusinessByTaxpayer( billing ) {
 		def params = [
 			taxpayerid : billing.info.taxpayerid, 
-			tradename : billing.info.tradename,
+			tradename : ( billing.info.tradename ? billing.info.tradename : '%' ),
 			barangayid : ( billing.info.barangayid ? billing.info.barangayid : '%' ),
 		]
 		return em.sqlContext.createNamedQuery( 'business:getListByTaxpayerid' )
@@ -388,8 +388,12 @@ class CalcSurchargeHandler implements RuleActionHandler
 		def tf = bill.taxfees.find{ it.objid == taxfee.taxfeeid }
 		tf.surcharge = 0.0
 		if( taxfee ) {
+			tf.surchargeacctid = taxfee.surchargeacctid
+			tf.surchargeaccttitle = taxfee.surchargeaccttitle
+			tf.surchargetaxfeeid = taxfee.taxfeeid
 			tf.surcharge = taxfee.surcharge 
 		}
+		
 	}
 }
 
@@ -408,6 +412,9 @@ class CalcInterestHandler implements RuleActionHandler
 		def tf = bill.taxfees.find{ it.objid == taxfee.taxfeeid }
 		tf.interest = 0.0
 		if( taxfee ) {
+			tf.interestacctid = taxfee.interestacctid
+			tf.interestaccttitle = taxfee.interestaccttitle
+			tf.interesttaxfeeid = taxfee.taxfeeid
 			tf.interest = taxfee.interest
 		}
 	}

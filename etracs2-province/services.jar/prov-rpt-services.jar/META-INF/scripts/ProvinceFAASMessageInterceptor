@@ -10,25 +10,27 @@ class ProvinceFAASMessageInterceptor
 	@Service('LogService')
     def logSvc
 	
+	@Service('MessengerService')
+	def msgSvc
+	
 	def SCHEMA_NAME = 'faas'
     def SCHEMA_VERSION = '1.0'
     def LISTSCHEMA_NAME = 'faas:faaslist'
     
-	@After(pattern='MessageService.onreceive') 
+	@After(pattern='MessengerService.onreceive') 
 	public void interceptOnReceive( evt ) {
         def msg = evt.result 
         if( msg.action == 'faas.receive') {
-            def faas = msg.data.faas 
+            def faas = msg.attachment.faas 
             em.create( faas.schemaname, faas )
             em.create( LISTSCHEMA_NAME, faas )
 			
 			// save attachments
-			msg.data.attachments.each { attachment -> 
+			msg.attachment.attachments.each { attachment -> 
 				em.create('faas:faasattachment', attachment )
 			}
 			
-			msg.message =[date:new Date(), status:'Processed successfully.']
-			em.update( msg.schemaname, msg )
+			msgSvc.processedSuccessfully( msg ) 
             logSvc.log('ONLINE-RECEIVED', 'FAAS', faas.objid);
         }
 	}

@@ -1,0 +1,36 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*
+
+
+class RemoteInboxService
+{
+	@PersistenceContext('main')
+	def em
+	
+	def INBOX_SCHEMA = 'message:inbox'
+	
+	@ProxyMethod
+	public def receive( msg ) {
+		println 'Receive messages from -> ' + msg.sendername 
+		msg.schemaname = INBOX_SCHEMA
+		def oldmsg = em.read( INBOX_SCHEMA, [objid:msg.objid] )
+		if( oldmsg ) {
+			//the msg is probably resent, just confirm it
+			return status('ok', 'Resent Accepted.')
+		}
+		try {
+			em.create( INBOX_SCHEMA, msg )
+			return status('ok', 'Successfully received.')
+		}
+		catch( e ) {
+			println 'Error receiving message -> ' + e.message 
+			return status('error', e.message )
+		}
+	}
+	
+	def status( stat, msg ) {
+		return [status:stat, msg:msg]
+	}
+	
+	
+}

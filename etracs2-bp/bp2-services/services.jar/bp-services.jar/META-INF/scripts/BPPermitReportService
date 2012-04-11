@@ -31,41 +31,10 @@ public class BPPermitReportService
 		createBPReportEntity( bp )
 		createBarCode( bp, app )
 		initializeLOBS( bp, app )
+		buildAppInfo( bp, app.appinfos.findAll{ it.printtopermit == 1 } )
 		doOrganizeColLOB( bp )
 		removeRetireLOB( bp )
 		createORDetail( bp, app )
-	}
-	
-	private void createBarCode( def bp, def app ){
-		bp.barcode = app.barcode
-		bp.barcodeurl = var.get( 'barcode_url' ).replace( '$P{data}', app.barcode )
-	}
-	
-	private void initializeLOBS( def bp, def app ){
-		bp.txntype = app.txntype
-		bp.lines = em.serializer.read( bp.lobs )
-		bp.linesize = bp.lines.size
-		
-		bp.lob = bp.lines[0]
-		bp.lobs = null;
-		bp.iyear = yearFormat.format( bp.txndate );
-		bp.validity = dateFormat.parse( bp.iyear + '-12-31' );
-	}
-	
-	private void createORDetail( def bp, def app ){
-		def c = app.credits[0]
-		def p = app.payments[0]
-				
-		def or = [orno:'-', ordate:null, amount:null ]	
-		if( c && p  ) {
-			or = [orno   : c.refno+'', 
-				  ordate : dateFormat.parse( c.refdate ),
-				  amount : p.amount
-			];
-		}
-		
-		bp.orlist = [ or ];
-		bp.ordetails = bp.orlist[0]	
 	}
 	
 	private void createBPApplistInfo( def bp ){
@@ -90,9 +59,66 @@ public class BPPermitReportService
 		}
 	}
 	
-	private void removeRetireLOB( def bp ){
-		def retiredlines = bp.lines.findAll{ it.assessmenttype == 'RETIRE' || it.assessmenttype == 'RETIRELOB' }
-		if( retiredlines ) bp.lines.removeAll( retiredlines )
+	private void createBarCode( def bp, def app ){
+		bp.barcode = app.barcode
+		bp.barcodeurl = var.get( 'barcode_url' ).replace( '$P{data}', app.barcode )
+	}
+	
+	private void initializeLOBS( def bp, def app ){
+		bp.txntype = app.txntype
+		bp.lines = em.serializer.read( bp.lobs )
+		bp.linesize = bp.lines.size
+		
+		bp.lob = bp.lines[0]
+		bp.lobs = null;
+		bp.iyear = yearFormat.format( bp.txndate );
+		bp.validity = dateFormat.parse( bp.iyear + '-12-31' );
+	}
+	
+	private def buildAppInfo( def bp, def infos ){
+		bp.infos = []
+		if( infos ){
+			infos.each{
+				bp.infos << [
+					caption: it.varcaption,
+					category: it.lobname,
+					value: getDisplayText( it ),
+				];
+			}
+			
+			bp.infos.sort{ a, b ->
+				def sA = ( a.category ) ? a.category : "";
+				def bA = ( b.category ) ? b.category : "";
+				return sA <=> bA;
+			}
+		}
+	}
+	
+	def getDisplayText( lob ){
+		def sb = new StringBuffer();
+		if( lob.vartype == 'string_array' ){
+			lob.arrayvalues.each{
+				if( it == lob.value ) sb << it ;
+			}
+		}
+		
+		if( lob.vartype == 'boolean' ){
+			def x = " ";
+			if( lob.value != null ) x = (lob.value)? 'x': ' ';
+			sb << "[${x}] TRUE [${x}] FALSE";
+		}
+		
+		def format = { pattern, val ->
+			if( !val ) return "";
+			def f = new java.text.DecimalFormat( pattern );
+			return f.format( val );
+		}
+		
+		if( lob.vartype == 'integer' ) sb << format('#,##0', lob.value );
+		if( lob.vartype == 'decimal' ) sb << format('#,##0.00', lob.value );
+		if( lob.vartype == 'string'  ) sb << ((lob.value == null) ? "" : lob.value);
+		
+		return sb.toString().trim();
 	}
 	
 	private void doOrganizeColLOB( def bp ){
@@ -110,6 +136,27 @@ public class BPPermitReportService
 			}
 		}
 	}
+	
+	private void removeRetireLOB( def bp ){
+		def retiredlines = bp.lines.findAll{ it.assessmenttype == 'RETIRE' || it.assessmenttype == 'RETIRELOB' }
+		if( retiredlines ) bp.lines.removeAll( retiredlines )
+	}
+	
+	private void createORDetail( def bp, def app ){
+		def c = app.credits[0]
+		def p = app.payments[0]
+				
+		def or = [orno:'-', ordate:null, amount:null ]	
+		if( c && p  ) {
+			or = [orno   : c.refno+'', 
+				  ordate : dateFormat.parse( c.refdate ),
+				  amount : p.amount
+			];
+		}
+		
+		bp.orlist = [ or ];
+		bp.ordetails = bp.orlist[0]	
+	}	
 	
 	private def buildReportParameter( def bp ){
 		def sdf = new java.text.SimpleDateFormat("EEEEE MMMMM dd, yyyy");

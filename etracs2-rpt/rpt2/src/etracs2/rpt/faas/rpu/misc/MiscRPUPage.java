@@ -78,12 +78,14 @@ public class MiscRPUPage extends javax.swing.JPanel {
 
         jLabel3.setText("Actual Use * :");
 
+        xComboBox6.setCaption("Classification");
         xComboBox6.setExpression(" #{classcode}");
         xComboBox6.setIndex(-100);
         xComboBox6.setItems("classifications");
         xComboBox6.setName("classification");
         xComboBox6.setRequired(true);
 
+        xComboBox7.setCaption("Actual Use");
         xComboBox7.setExpression(" #{assesslevelcode}");
         xComboBox7.setIndex(-10);
         xComboBox7.setItems("actualuseList");
