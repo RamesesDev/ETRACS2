@@ -10,10 +10,10 @@ package etracs2.admin;
  *
  * @author  jzamss
  */
-public class HomePage_new extends javax.swing.JPanel {
+public class HomePage2 extends javax.swing.JPanel {
     
     /** Creates new form WelcomePage */
-    public HomePage_new() {
+    public HomePage2() {
         initComponents();
     }
     
