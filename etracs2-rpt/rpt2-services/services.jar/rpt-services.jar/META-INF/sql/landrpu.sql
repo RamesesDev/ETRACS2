@@ -44,7 +44,9 @@ WHERE s.lcuvid = l.objid
 ORDER BY striplevel 
 
 [lookupAdjType]
-SELECT la.objid AS adjtypeid, la.adjustmentcode AS adjtypecode, la.adjustmentname AS adjtypename, la.expression AS expr 
+SELECT la.objid AS adjtypeid, la.adjustmentcode AS adjtypecode, 
+		la.adjustmentname AS adjtypename, la.expression AS expr,
+		$P{classidvalue} AS classid  
 FROM landadjustment la, landrysetting ls 
 WHERE la.landrysettingid = ls.objid   
   AND ls.ry = $P{ry}  

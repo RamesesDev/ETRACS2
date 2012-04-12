@@ -1,6 +1,10 @@
 <workunit>
     <invokers>
+        
         <invoker type="bpassessment:formActions" action="init" caption="Rule Analyzer" permission="bpadmin.bpruleanalyzer" target="window" index="30" icon="images/debug.png"/>
+        <invoker folderid="menu/bp/master" action="init" caption="Rule Analyzer" permission="bpadmin.bpruleanalyzer"/>
+        <invoker type="bprule:analyzer" action="init" caption="Rule Analyzer" permission="bpadmin.bpruleanalyzer" target="window"/>
+
     </invokers>
     <code>
 <![CDATA[
@@ -53,6 +57,7 @@ class RuleAnalyzerController
         entity = svc.buildInfos( entity )
         lobListHandler.load();
         calculateTotalAssessment()
+        lobListHandler.load()
         binding.refresh('selectedInfo')
     }
     
@@ -111,11 +116,11 @@ class RuleAnalyzerController
     
     def acceptInputHandler = { app ->
         app.infos.addAll( inputtedValues)
-        //convertDataTypes( app ) //TODO: Temporary while ui is not yet available
         entity = svc.buildTaxFees( app )
         sortInfos( entity )
         taxfeeListHandler.load()
         calculateTotalAssessment()
+        lobListHandler.load()
         binding.refresh('selectedTaxFee')
         binding.refresh('selectedInfo')
     }
@@ -156,7 +161,9 @@ class RuleAnalyzerController
         ]},
         createItem : { return [objid:'I' + new UID()] },
         validate   : { li -> validateLobItem( li.item ) },
-        onAddItem  : { item -> entity.lobs.add( item ) },
+        onAddItem  : { item -> 
+            entity.lobs.add( item ) 
+        },
         onRemoveItem : { item -> 
             if( MsgBox.confirm('Delete selected line of business?') ) {
                 entity.lobs.remove( item )
@@ -175,9 +182,10 @@ class RuleAnalyzerController
             def dup = entity.lobs.find{ it.objid != item.objid && it.lob.name == item.lob?.name }
             if( dup ) throw new Exception('Duplicate line of business is not allowed.')
             
-            def lobitem = entity.lobs.find{ it.objid == item.objid }
-            if( lobitem ) lobitem.lob = item.lob 
+            //def lobitem = entity.lobs.find{ it.objid == item.objid }
+            //if( lobitem ) lobitem.lob = item.lob 
             errorMsg = null
+            binding.refresh('errorMsg')
         }
         catch( e ) {
             errorMsg = e.message

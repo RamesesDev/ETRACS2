@@ -1,0 +1,76 @@
+import com.rameses.annotations.*
+import com.rameses.eserver.*;
+import com.rameses.common.*;
+
+class EntityMessageInterceptor
+{
+	@PersistenceContext('main')
+	def em
+    
+	@Service('LogService')
+    def logSvc
+    
+	@Service('MessengerService')
+	def msgSvc 
+	
+    @Service('EntityService')
+    def entitySvc
+	
+	@After(pattern='MessengerService.onreceive') 
+	public void interceptOnReceive( evt ) {
+        def msg = evt.result 
+        if( msg.action == 'entity.create_entity_for_mapping') createEntityForMapping( msg ) 
+		else if (msg.action == 'entity.process_mapping' ) createMapping( msg )
+		else if (msg.action == 'entity.delete_mapping' ) deleteMapping( msg )
+	}
+    
+	void deleteMapping( msg ) {
+		try {
+            println 'Processing message -> ' + msg.action 
+            entitySvc.deleteEntityMapping( msg.attachment )
+            msgSvc.processedSuccessfully( msg )
+            logSvc.log('ENTTIY-DELETE-MAPPING', 'EntityMapping', msg.attachment.parentid )
+        }
+        catch( e ) {
+            println '-'*30 
+            e.printStackTrace()
+            msgSvc.errorProcessing( msg, e.message )
+            throw e 
+        }
+	}
+	
+	void createMapping( msg ) {
+		try {
+            println 'Processing message -> ' + msg.action 
+            entitySvc.createEntityMapping( msg.attachment )
+            msgSvc.processedSuccessfully( msg )
+            logSvc.log('ENTTIY-PROCESS-MAPPING', 'EntityMapping', msg.attachment.entity.objid )
+        }
+        catch( e ) {
+            println '-'*30 
+            e.printStackTrace()
+            msgSvc.errorProcessing( msg, e.message )
+            throw e 
+        }
+	}
+	
+	
+    void createEntityForMapping( msg ) {
+        try {
+            println 'Processing message -> ' + msg.action 
+			def parententity = msg.attachment.parententity 
+			entitySvc.createEntityForMapping( parententity )
+			msgSvc.processedSuccessfully( msg )
+            logSvc.log('CREATE-ENTITY-FOR-MAPPING', 'EntityMapping', parententity.objid )
+        }
+        catch( e ) {
+            println '-'*30 
+            e.printStackTrace()
+            msgSvc.errorProcessing( msg, e.message )
+            throw e 
+        }
+    }
+    
+}
+
+

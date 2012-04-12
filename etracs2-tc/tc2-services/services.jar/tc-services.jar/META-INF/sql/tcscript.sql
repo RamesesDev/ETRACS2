@@ -156,4 +156,46 @@ SET beginqty = $P{beginqty},
  beginfrom = $P{beginfrom}, 
  beginto = $P{beginto} 
 WHERE objid = $P{objid} 
+
+
+[getAFCByBRGYUser]
+SELECT  
+ afc.objid, afc.balance AS qtyissued 
+FROM iraf irf   
+INNER JOIN afinventorycredit afc ON afc.irafid = irf.objid 
+WHERE irf.rivrequestedby LIKE '%BRGY%' 
+
+[updateAFC] 
+UPDATE afinventorycredit  
+SET docstate='CLOSED', qtyissued=$P{qtyissued}, balance=0  
+WHERE objid = $P{objid}  
+
+[getAfcontrolByAfcId]
+SELECT 
+ objid, startseries, endseries, balance  
+FROM afcontrol 
+WHERE afinventorycreditid = $P{objid}  
+
+[updateAFCtrl] 
+UPDATE afcontrol  
+SET docstate='CLOSED', currentseries=$P{endseries},  
+beginseries=$P{endseries}, qtyissued=$P{balance}, 
+issuedfrom=$P{startseries}, issuedto=$P{endseries}, balance=0 
+WHERE objid = $P{objid} 
+
+[getCraafByAFCId]
+SELECT 
+ objid, receivedqty, receivedfrom, receivedto 
+FROM craaf 
+WHERE afinventorycreditid = $P{afcid}
+
+[updateCraafToConsolidated]
+UPDATE craaf SET 
+ issuedqty = $P{receivedqty}, issuedfrom = $P{receivedfrom}, issuedto = $P{receivedto}, 
+ endingqty = NULL, endingfrom = NULL, endingto = NULL 
+WHERE objid = $P{objid} 
+
+
+
+
  

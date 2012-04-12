@@ -1,0 +1,40 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*
+
+
+class RemoteOutboxService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service('DomainService')
+	def domainSvc
+	
+	def OUTBOX_SCHEMA = 'message:outbox'
+	def PROCESSEDOUTBOX_SCHEMA = 'message:processedoutbox'
+	
+	@ProxyMethod
+	public def fetchMessage( params ) {
+		println 'Fetching messages for LGU ' + params.lguindexno
+		domainSvc.connected( params.lguindexno, params.lguname, params.lgutype, [:])
+		def msgidlist = em.sqlContext.createNamedQuery('messenger:getOutboxMessageByReceiverId').setParameter('receiverid', params.receiverid ).resultList
+		def msglist = []
+		msgidlist.each{ msgid ->
+			msglist.add( em.read(OUTBOX_SCHEMA, msgid) )
+		}
+		return msglist 
+	}
+	
+	@ProxyMethod
+	public def fetchSuccess( msgid ) {
+		def msg = em.read( OUTBOX_SCHEMA, [objid:msgid] )
+		if( msg ) {
+			msg.schemaname = OUTBOX_SCHEMA
+			em.create(PROCESSEDOUTBOX_SCHEMA, msg )
+			em.delete(OUTBOX_SCHEMA, msg )
+		}
+		return [status:'ok', msg:'']
+	}
+	
+	
+}

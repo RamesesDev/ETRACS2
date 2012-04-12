@@ -1,0 +1,44 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*
+
+
+class DomainService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@ProxyMethod
+	public void connected( domainid, domainname, domaintype, params  ) {
+		if( existsDomain( domainid ) ) {
+			updateLastConnected( domainid )
+		}
+		else {
+			insertDomain( domainid, domainname, domaintype, params )
+		}
+	}
+	
+	@ProxyMethod
+	public def getList() {
+		return em.sqlContext.createNamedQuery('domain:getList').resultList 
+	}
+	
+	boolean existsDomain( domainid ) {
+		def remote = em.sqlContext.createNamedQuery('domain:getDomainById')
+						.setParameter('domainid', domainid)
+						.singleResult
+		return remote != null
+	}
+	
+	
+	void insertDomain( domainid, domainname, domaintype, params ){
+		em.sqlContext.createNamedExecutor('domain:insertDomain')
+				.setParameters([domainid:domainid, domainname:domainname, domaintype:domaintype ])
+				.execute()
+	}
+	
+	void updateLastConnected( domainid ) {
+		em.sqlContext.createNamedExecutor('domain:updateLastConnected')
+			.setParameter('domainid', domainid)
+			.execute()
+	}
+}

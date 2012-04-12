@@ -69,6 +69,20 @@ public class FAASController
     def faas 
     def mode
     
+    @FormTitle
+    public def getTitle() {
+        if( mode == 'create' ) 
+            return 'FAAS (New)'
+        return 'FAAS : ' + faas.info.tdno 
+    }
+    
+    @Close
+    public boolean closeForm() {
+        if( mode == 'create' && !MsgBox.confirm('Discard changes?')) {
+            return false
+        }
+        return true
+    }
         
     def invokerparam = [
         getParams :  { return [faasid:faas?.objid] }

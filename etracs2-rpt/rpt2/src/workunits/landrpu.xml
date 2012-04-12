@@ -36,6 +36,9 @@ public class LandRPUController
     @Service('ExemptionTypesService')
     def exemptSvc
     
+    @Service('Var')
+    def varSvc
+    
     
     def onupdate
     def faas
@@ -110,9 +113,19 @@ public class LandRPUController
         return InvokerUtil.lookupOpener('landassesslevel.lookup', [ry:rpu.ry] )
     }
     
-    def landListHandler = [
-        createItem : { return createLandDetail() },
-        getColumns : { return [
+    boolean allowColumnAVEdit() {
+        def alloweditav = varSvc.faas_datacapture_allow_edit_av
+        if( ! faas || ! faas.info ) return false
+        if( ! alloweditav  || TO_BOOLEAN( alloweditav ) == false ) return false
+        return faas.info.datacapture 
+    }
+    
+    def allowRangeColumnEdit = { item ->
+        return allowColumnAVEdit()
+    } as Map
+    
+    def getLandRpuColumns() {
+        def columns = [
             new Column(name:'subclass', caption:'SubClass*', type:'lookup', handler:lookupSubclass,  expression:'#{subclasscode}', maxWidth:100, editable:true ),
             new Column(name:'specificclassname', caption:'Specific Class', maxWidth:100 ),
             new Column(name:'taxable', caption:'Tax?', type:'boolean', maxWidth:50, editable:true ),
@@ -123,8 +136,21 @@ public class LandRPUController
             new Column(name:'basemarketvalue', caption:'Base Market Value', type:'decimal', maxWidth:100),
             new Column(name:'adjustment', caption:'Adjustment', type:'decimal', maxWidth:100),
             new Column(name:'marketvalue', caption:'Market Value', type:'decimal', maxWidth:100),
-            new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal', maxWidth:100),
-        ]},
+        ]
+        if ( allowColumnAVEdit() ) {
+            columns.add( new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal', maxWidth:100, editableWhen:'#{root.allowRangeColumnEdit[item]}') )
+        }
+        else {
+            columns.add( new Column(name:'assessedvalue', caption:'Assessed Value', type:'decimal', maxWidth:100) )
+        }
+        return columns 
+    }
+    
+    def updateav = false 
+    
+    def landListHandler = [
+        createItem : { return createLandDetail() },
+        getColumns : { return getLandRpuColumns() },
         validate       : { li -> validateLandDetail( li.item ) },
         onRemoveItem   : { item -> removeLandDetail( item ) },
         onAddItem      : { item -> 
@@ -133,9 +159,11 @@ public class LandRPUController
             calculateTotals()
         },
         onColumnUpdate : { item, colName -> 
+            updateav = false
             if( colName == 'subclass' ) updateSubClassInfo( item )
             else if( colName == 'al' ) updateAssessLevelInfo( item )
             else if( colName == 'striplevel') updateStrippingInfo( item )
+            else if( colName == 'assessedvalue' ) updateav = true 
         },
         fetchList      : { return rpu.info.landdetails  },
     ] as SubListModel
@@ -143,9 +171,11 @@ public class LandRPUController
     void validateLandDetail( item ) {
         try {
             required( 'Subclass', item.subclassid )
-            required( 'Assess Level', item.assesslevelid )
+            required( 'Actual Use', item.assesslevelid )
             required( 'Area', item.area )
-            calculateLandDetailAssessment( item )
+            if( ! updateav ) {
+                calculateLandDetailAssessment( item )
+            }
             if( ! newLandItem(item )  ) {
                 calculateTotals()
             }
@@ -351,7 +381,7 @@ public class LandRPUController
     void validatePlantTree( item ) {
         try {
             required('Code', item.planttreeid )
-            required('Assess Level', item.assesslevelid )
+            required('Actual Use', item.assesslevelid )
             if( item.bearing == null ) throw new Exception('Bearing must not be empty.')
             if( item.nonbearing == null ) throw new Exception('Non-Bearing must not be empty.')
             calculatePlantTreeAssessment( item )
@@ -495,6 +525,12 @@ public class LandRPUController
         if( faas.info.datacapture == false && faas.info.txntype == 'TR') return false
         if( faas.info.datacapture == true ) return true
         return true
+    }
+    
+    boolean TO_BOOLEAN( val ) {
+        if ( ! val ) return false 
+        if( val instanceof Boolean) return val
+        return '1/y/yes/t/true'.indexOf( val.trim().toString() ) >= 0 
     }
 }
 

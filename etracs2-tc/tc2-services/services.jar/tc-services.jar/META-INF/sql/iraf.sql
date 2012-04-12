@@ -52,3 +52,41 @@ INNER JOIN afinventory ai on ai.objid = aic.afinventoryid
 WHERE   ai.irafid = $P{irafid} 
 AND     ac.afid = $P{afid} 
 AND   (ac.startseries <= $P{series} AND ac.endseries >= $P{series} ) 
+
+[getAfcontrolByAfcId]
+SELECT 
+ objid, startseries, endseries, balance 
+FROM afcontrol 
+WHERE afinventorycreditid = $P{afcid}  
+
+[updateAFCtrl]
+UPDATE afcontrol 
+SET docstate='CLOSED', currentseries=$P{endseries}, 
+beginseries=$P{endseries}, qtyissued=$P{balance}, 
+issuedfrom=$P{startseries}, issuedto=$P{endseries}, balance=0 
+WHERE objid = $P{objid} 
+
+
+[getAFCByIrafId]
+SELECT objid, balance  
+FROM afinventorycredit  
+WHERE irafid = $P{irafid}  
+
+[updateAFC] 
+UPDATE afinventorycredit  
+SET docstate='CLOSED', qtyissued=$P{qtyissued}, balance=0  
+WHERE objid = $P{objid}  
+
+[getCraafByAFCId]
+SELECT 
+ objid, receivedqty, receivedfrom, receivedto 
+FROM craaf 
+WHERE afinventorycreditid = $P{afcid}
+
+[updateCraafToConsolidated]
+UPDATE craaf SET 
+ issuedqty = $P{receivedqty}, issuedfrom = $P{receivedfrom}, issuedto = $P{receivedto}, 
+ endingqty = NULL, endingfrom = NULL, endingto = NULL 
+WHERE objid = $P{objid} 
+ 
+ 

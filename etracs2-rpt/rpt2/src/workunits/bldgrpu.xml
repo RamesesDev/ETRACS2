@@ -307,6 +307,12 @@ public class BldgRPUController
                 e.printStackTrace();
                 throw e;
             }
+            if( ! li.item.material ) structureListHandler.load()
+        },
+        onColumnUpdate : { item, colName -> 
+            if( colName == 'material' && ! item.material ) {
+                item.material = [materialname:'']
+            }
         },
         fetchList : { return rpu.bldgstructures },
     ] as SubListModel

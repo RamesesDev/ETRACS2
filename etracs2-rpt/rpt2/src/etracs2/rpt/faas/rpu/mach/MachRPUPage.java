@@ -157,10 +157,12 @@ public class MachRPUPage extends javax.swing.JPanel {
         xDataTable1.setIndex(-10);
         xDataTable1.setName("selectedItem");
 
+        xComboBox4.setCaption("Classification");
         xComboBox4.setExpression("#{classcode}");
         xComboBox4.setIndex(-100);
         xComboBox4.setItems("classificationList");
         xComboBox4.setName("classification");
+        xComboBox4.setRequired(true);
 
         jLabel2.setText("Classification * :");
 

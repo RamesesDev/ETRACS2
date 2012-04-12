@@ -20,6 +20,9 @@ class ProvinceFAASService
 
 	@Service('SequenceService')
 	def seqSvc
+	
+	@Service('MessengerService')
+	def msgSvc
 
 	def FORPROVAPPROVAL_STATE = 'FORPROVAPPROVAL'
 	def FORAPPROVAL_STATE = 'FORAPPROVAL'
@@ -31,10 +34,21 @@ class ProvinceFAASService
     def LISTSCHEMA_NAME = 'faas:faaslist'
     def DISAPPROVED_SCHEMANAME = 'faas:disapprovedfaas'
    
+	def LAND_TYPE = 'land' 
+    def BLDG_TYPE = 'bldg'
+    def MACH_TYPE = 'mach'
+    def PLANTTREE_TYPE = 'planttree'
+    def MISC_TYPE = 'misc' 
+	
     @ProxyMethod
     public def open( faasid ){
         def faas = em.read(SCHEMA_NAME, [objid:faasid])
         if( ! faas ) throw new Exception('FAAS record does not exists.')
+		faas.info.datacapture 	= TO_BOOLEAN( faas.info.datacapture )
+		faas.info.annotated 	= ( faas.info.annotated ? TO_BOOLEAN( faas.info.annotated ) : false )
+        faas.info.autonumber 	= TO_BOOLEAN( faas.info.autonumber )
+        faas.rpu.taxable 		= TO_BOOLEAN( faas.rpu.taxable )
+		initOpenRpuInfo( faas.rpu )
         return faas 
     }
     
@@ -251,6 +265,13 @@ class ProvinceFAASService
 	}
 	
 	@ProxyMethod
+	public def getActiveAnnotationTexts( faasid ) {
+		return em.sqlContext.createNamedQuery('faas:getActiveAnnotationTexts')
+						.setParameter( 'faasid', faasid )
+						.resultList 
+	}
+	
+	@ProxyMethod
 	public def getListByAssignedLgu( search, params ) {
 		def docstate        = search.docstate
 		def textSearch      = search.textSearch
@@ -301,23 +322,13 @@ class ProvinceFAASService
     * Support Methods
     ---------------------------------------------------------------------------------*/
     void sendToOutbox( faas, action, data ) {
-        def msg = [
-            objid           : 'MI' + new UID(),
-            schemaname      : 'message:outbox',
-            schemaversion   : '1.0',
-			refid			: faas.objid, 
-            fromlguindex    : var.lgu_index,
-            fromlguname     : var.lgu_name,
-			tolguindex      : faas.rp.provcityindex + '-' + faas.rp.munidistrictindex,
-            tolguname       : faas.rp.munidistrict,
-            dtsent          : new Date(),
-            sentby          : ( env.USERNAME ? env.USERNAME : 'SYSTEM' ),
-            sentbytitle     : ( env.JOBTITLE ? env.JOBTITLE : 'SYSTEM' ),
-            action          : action,
-            data            : data, 
-            messages        : [],
-        ]
-        em.create('message:outbox', msg )
+		def receiverid = faas.rp.provcityindex + '-' + faas.rp.munidistrictindex
+		def receivername = faas.rp.munidistrict
+		
+		def msg = msgSvc.createMessage( action, data )
+		msg.receiverid = receiverid 
+		msg.receivername = receivername 
+		msgSvc.send( msg )        
     }
     
     void updatePinInfo( faas, newPin, newSectionNo, newParcelNo ) {
@@ -439,5 +450,45 @@ class ProvinceFAASService
 						.resultList
 	}
 	
+	boolean TO_BOOLEAN( value ) {
+		if( value instanceof Boolean ) return value 
+		return '1/y/yes/true/t'.indexOf( value.toString().toLowerCase() ) >= 0
+	}
+	
+	public void initOpenRpuInfo( rpu ) {
+        if( rpu.rputype == LAND_TYPE ) {
+            rpu.info.landdetails.each{ it.taxable = TO_BOOLEAN( it.taxable )}
+			rpu.info.planttrees.each {
+				it.bearing = it.bearing * 1.0 
+				it.nonbearing = it.nonbearing * 1.0 
+			}
+			rpu.info.planttotal.bearing  = rpu.info.planttotal.bearing * 1.0 
+			rpu.info.planttotal.nonbearing  = rpu.info.planttotal.nonbearing * 1.0 
+        }
+        else if( rpu.rputype == BLDG_TYPE ) {
+            rpu.info.swornstatement = TO_BOOLEAN( rpu.info.swornstatement  )
+            rpu.info.predominant  = TO_BOOLEAN( rpu.info.predominant  )
+            rpu.info.condominium  = TO_BOOLEAN( rpu.info.condominium  )
+            rpu.info.autocomputebldgdepreciation  = TO_BOOLEAN( rpu.info.autocomputebldgdepreciation  )
+            rpu.info.depreciatecoreanditemseparately  = TO_BOOLEAN( rpu.info.depreciatecoreanditemseparately  )
+        }
+        else if( rpu.rputype == MACH_TYPE ) {
+            //throw new Exception('FAASService.initOpenRpuInfo not yet implemented')
+        }
+        else if( rpu.rputype == PLANTTREE_TYPE ) {
+            rpu.info.planttreedetails.each{
+				it.bearing = it.bearing * 1.0 
+				it.nonbearing = it.nonbearing * 1.0 
+			}
+			rpu.info.totalbearing = rpu.info.totalbearing * 1.0
+			rpu.info.totalnonbearing = rpu.info.totalnonbearing * 1.0
+        }
+        else if( rpu.rputype == MISC_TYPE ) {
+            rpu.info.miscrpuitems;
+        }
+        else {
+            throw new Exception('RPU Type ' + rpu.rputype + ' is not supported.')
+        }
+    }
 	
 }

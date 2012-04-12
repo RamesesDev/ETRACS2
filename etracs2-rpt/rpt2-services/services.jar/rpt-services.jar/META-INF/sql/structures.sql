@@ -1,11 +1,11 @@
 [getList]
-SELECT * FROM structures ORDER BY structurecode
+SELECT * FROM structures ORDER BY indexno
 
 [getListByCode]
-SELECT * FROM structures WHERE structurecode LIKE $P{structurecode} ORDER BY structurecode
+SELECT * FROM structures WHERE structurecode LIKE $P{structurecode} ORDER BY indexno
 
 [getListByStructure]
-SELECT * FROM structures WHERE structuredesc LIKE $P{structuredesc} ORDER BY structurecode
+SELECT * FROM structures WHERE structuredesc LIKE $P{structuredesc} ORDER BY indexno
 
 [getById]
 SELECT * FROM structures WHERE objid = $P{objid}

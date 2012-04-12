@@ -43,6 +43,9 @@ class FAASService
     
     @Service('MiscRPUService')
     def miscRpuSvc
+	
+	@Service('MessengerService')
+	def msgSvc
 
     def INTERIM_STATE = 'INTERIM'
     def FORAPPROVAL_STATE = 'FORAPPROVAL'
@@ -248,9 +251,7 @@ class FAASService
 		if( faas.info.annotated == false ) return 
 		//copy annotations of previous faas 
 		faas.previousfaases.each{ prev ->
-			def activeAnnotationList = em.sqlContext.createNamedQuery('faas:getActiveAnnotations')
-										.setParameter( 'faasid', prev.faasid )
-										.resultList 
+			def activeAnnotationList = getActiveAnnotationList( prev.faasid )
 			activeAnnotationList.each{ newAnnotation ->
 				newAnnotation.objid 	= 'A' + new UID()
 				newAnnotation.faasid 	= faas.objid 
@@ -258,6 +259,20 @@ class FAASService
 				em.create( newAnnotation.schemaname, newAnnotation )
 			}
 		}
+	}
+	
+	@ProxyMethod
+	public def getActiveAnnotationList( faasid ) {
+		return em.sqlContext.createNamedQuery('faas:getActiveAnnotations')
+						.setParameter( 'faasid', faasid )
+						.resultList 
+	}
+	
+	@ProxyMethod
+	public def getActiveAnnotationTexts( faasid ) {
+		return em.sqlContext.createNamedQuery('faas:getActiveAnnotationTexts')
+						.setParameter( 'faasid', faasid )
+						.resultList 
 	}
     
     @ProxyMethod
@@ -313,7 +328,7 @@ class FAASService
         return faas 
     }
     
-    @ProxyMethod
+    @ProxyMethod 
     public Map submitToProvince( faasid ) {
         def faasinfo = getFaasInfo( faasid )
         validateSubmitToProvince( faasinfo )
@@ -363,13 +378,13 @@ class FAASService
     }
     
     @ProxyMethod
-    public Map onlineApprove( faasid, approvaldata  ) {
+    public void onlineApprove( faasid, approvaldata  ) {
         def faas = open( faasid )
 		if( faas.docstate == CURRENT_STATE || faas.docstate == CANCELLED_STATE)  {
             //the faas is already approve
             //this happens if the approval was done manually
             //so just return the faas 
-            return [date:new Date(), status:'Faas is already ' + faas.docstate] 
+            return 
         }
         faas.info.tdno          = approvaldata.tdno
         faas.info.dtapproved    = approvaldata.dtapproved 
@@ -384,21 +399,19 @@ class FAASService
         em.update( faas.schemaname, faas )
         em.update(LISTSCHEMA_NAME, faas )
         invokeCommonApproveActions( faas )
-        return [date:new Date(), status:'Processed successfully.']
     }
     
     @ProxyMethod
-    public Map onlineDisapprove( faasid, disapprovaldata ) {
+    public void onlineDisapprove( faasid, disapprovaldata ) {
         def faas = open( faasid  )
         if( faas.docstate == CURRENT_STATE || faas.docstate == CANCELLED_STATE){
             //the faas has already been approved or superseded
             //do not alter the state, just a message 
-            return [date:new Date(), status:'Faas is already ' + faas.docstate]
+            return 
         }  
         faas.message = disapprovaldata.message 
         updateMessage( faas, faas.message )
         updateFaasState( faas, FORAPPROVAL_STATE )
-        return [date:new Date(), status:'Processed successfully.']
     }
     
     @ProxyMethod
@@ -1419,33 +1432,14 @@ class FAASService
         em.sqlContext.createNamedExecutor('faas:updateMessage').setParameters( params ).execute() 
     }
     
-    void sendToOutbox( faas ) {
-        def msg = [
-            objid           : 'MI' + new UID(),
-            schemaname      : 'message:outbox',
-            schemaversion   : '1.0',
-            refid           : faas.objid, 
-            fromlguindex    : var.lgu_index,
-            fromlguname     : var.lgu_name,
-            tolguindex      : faas.rp.provcityindex,
-            tolguname       : faas.rp.provcity, 
-            dtsent          : new Date(),
-            sentby          : ( env.USERNAME ? env.USERNAME : 'SYSTEM' ),
-            sentbytitle     : ( env.JOBTITLE ? env.JOBTITLE : 'SYSTEM' ),
-            action          : 'faas.receive',
-            data            : [ faas:faas, attachments:getAttachments( faas.objid) ],
-            messages        : [],
-        ]
-        em.create('message:outbox', msg )
+    void sendToOutbox( faas ) {	
+		def attachment = [ faas:faas, attachments:getAttachments( faas.objid) ]
+		def msg = msgSvc.createMessage( 'faas.receive', attachment )
+		msgSvc.send( msg ) 
     }
     
     void moveOutboxMessageToProcessed( refid ) {
-        def msg = em.sqlContext.createNamedQuery('message:getOutboxMessageByRefId').setParameter('refid', refid).singleResult
-        if( msg ) {
-            msg = em.read('message:outbox', msg )
-            em.create('message:processedoutbox', msg )
-            em.delete('message:outbox', msg )
-        }
+		msgSvc.processOutboxMessage( refid )
     }
     
     void updateAttachmentStates( faas, docstate ) {

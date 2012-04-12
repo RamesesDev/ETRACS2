@@ -199,6 +199,7 @@ public class PlantTreeRPUPage extends javax.swing.JPanel {
         xLabel6.setFont(new java.awt.Font("Arial", 1, 11));
         xLabel6.setName("errorMsg");
 
+        xComboBox6.setCaption("Classification");
         xComboBox6.setExpression(" #{classcode}");
         xComboBox6.setIndex(-100);
         xComboBox6.setItems("classifications");

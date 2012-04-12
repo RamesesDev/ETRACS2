@@ -6,8 +6,19 @@
 -->
 <workunit>
     <invokers>
-        <invoker type="collection" caption="Business Tax" afid="0016" appcode="ctc_individual" permission="collection_ctc_individual.create"/>
-        <invoker type="tc:ctc_individual" action="init" caption="CTC-Individual" afid="0016" permission="collection_ctc_individual.create"/>
+        <invoker type="collection" caption="CTC-Individual" afid="0016" appcode="ctc_individual" permission1="collection_ctc_individual.create"/>
+        <invoker type="tc:ctc_individual" action="init" caption="CTC-Individual" afid="0016" permission1="collection_ctc_individual.create"/>
+        
+        <invoker type="initActions" action="back" caption="Back" mnemonic="b"  immediate="true" icon="images/back.png"/>
+        
+        <invoker type="formActions" action="doNew" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' and txnmode != null}" permission="collection_bp.create"  icon="images/doc-new.png"/>
+        <invoker type="formActions" action="_init" caption="Back" mnemonic="b"  immediate="true" visibleWhen="#{mode == 'create'}" icon="images/back.png"/>
+        <invoker type="formActions" action="create" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'create'}" icon="images/save.png"/>
+        <invoker type="formActions" action="update" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode == 'edit'}"  icon="images/save.png"/>
+        <invoker type="formActions" action="doPrint" caption="Print" mnemonic="p" shortcut="ctrl P" visibleWhen="#{mode == 'view'}" permission="collection_bp.print"/>
+        <invoker type="formActions" action="doPrintDetail" caption="Print Detail" mnemonic="d" shortcut="ctrl P" visibleWhen="#{mode == 'view'}" permission="collection_bp.print"/>
+        <invoker type="formActions" action="doVoid" caption="Void" mnemonic="v" visibleWhen="#{mode == 'view'}" permission="collection_bp.void" icon="images/void.png"/>
+                
         <!--
         <invoker type="inquiry:tc:business_tax" action="initInquiry" caption="Inquiry" />
         -->
@@ -16,11 +27,50 @@
     <code lang="groovy">
         <![CDATA[
         
-        public class CTCReceiptController 
+        import com.rameses.rcp.common.*
+        import com.rameses.rcp.annotations.*
+        import com.rameses.osiris2.client.*
+        import com.rameses.osiris2.reports.*
+        import etracs2.tc.groovy.*
+        
+        public class CTCReceiptController extends AbstractCollectionController
         {
-            void init() {
-                
+            @Service("EntityService")
+            def entitySvc;
+        
+            def collectiontitle = 'COMMUNITY TAX CERTIFICATE (INDIVIDUAL)'
+            def taxpayer
+            def taxpayerLookup = InvokerUtil.lookupOpener("entity.lookup", [:])
+            def genderList = ['MALE','FEMALE']
+            
+            def next() {
+                if( !entity.info.payer ) entity.info.payer = [:]
+                return 'new'
             }
+            
+            void setTaxpayer( tp ) {
+                this.taxpayer = tp
+                if( !entity.info.payer ) entity.info.payer = [:]
+                
+                if( !tp ) {
+                    entity.info.payer = [:]
+                }
+                else {
+                    tp = entitySvc.open( tp.objid, tp.entitytype );
+                    if( !tp ) throw new Exception("Taxpayer record cannot be opened.");
+                    
+                    entity.info.payer.putAll( tp.info );
+                    entity.info.payer.objid = tp.objid;
+                    entity.info.payer.entityno = tp.entityno;
+                    entity.info.payer.entityaddress = tp.entityaddress;
+                    entity.info.payer.entitytype = tp.entitytype;
+                }
+            }
+            
+            def getService() {}
+            def getHtmlService() {}
+            def getCollectionTitle() {}
+            def getParameters() {}
         }
         
         
@@ -28,6 +78,7 @@
     </code>
     
     <pages>
-        <page template=""/>
+        <page name="init" template="etracs2.ctc.tc.ui.IndividualInitPage"/>
+        <page name="new" template="etracs2.ctc.tc.ui.IndividualPage"/>
     </pages>
 </workunit>

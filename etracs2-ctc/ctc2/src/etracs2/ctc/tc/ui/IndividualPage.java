@@ -1,18 +1,24 @@
 /*
  * IndividualPage.java
  *
- * Created on April 2, 2012, 1:20 PM
+ * Created on April 20, 2011, 11:00 AM
  */
 
 package etracs2.ctc.tc.ui;
 
+import com.rameses.rcp.ui.annotations.StyleSheet;
+import java.math.BigDecimal;
+
 /**
  *
- * @author  JAYROME VERGARA
+ * @author  jzamora
  */
+@StyleSheet
 public class IndividualPage extends javax.swing.JPanel {
     
-    /** Creates new form IndividualPage */
+    /**
+     * Creates new form IndividualPage
+     */
     public IndividualPage() {
         initComponents();
     }
@@ -24,10 +30,33 @@ public class IndividualPage extends javax.swing.JPanel {
      */
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
+        jPanel3 = new javax.swing.JPanel();
+        xLabel9 = new com.rameses.rcp.control.XLabel();
+        xActionBar1 = new com.rameses.rcp.control.XActionBar();
         jPanel1 = new javax.swing.JPanel();
+        jPanel2 = new javax.swing.JPanel();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
+        jLabel5 = new javax.swing.JLabel();
+        xNumberField1 = new com.rameses.rcp.control.XNumberField();
+        xNumberField2 = new com.rameses.rcp.control.XNumberField();
+        xNumberField3 = new com.rameses.rcp.control.XNumberField();
+        jPanel4 = new javax.swing.JPanel();
+        jPanel5 = new javax.swing.JPanel();
+        formPanel2 = new com.rameses.rcp.util.FormPanel();
+        xLabel4 = new com.rameses.rcp.control.XLabel();
+        xLabel7 = new com.rameses.rcp.control.XLabel();
+        xLabel10 = new com.rameses.rcp.control.XLabel();
+        xLabel8 = new com.rameses.rcp.control.XLabel();
+        xSubFormPanel1 = new com.rameses.rcp.control.XSubFormPanel();
+        jPanel6 = new javax.swing.JPanel();
+        jPanel7 = new javax.swing.JPanel();
+        jPanel8 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
-        xLabel1 = new com.rameses.rcp.control.XLabel();
-        xLabel2 = new com.rameses.rcp.control.XLabel();
+        xTextField4 = new com.rameses.rcp.control.XTextField();
+        xTextField5 = new com.rameses.rcp.control.XTextField();
+        xTextField6 = new com.rameses.rcp.control.XTextField();
+        xTextField7 = new com.rameses.rcp.control.XTextField();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xDateField1 = new com.rameses.rcp.control.XDateField();
@@ -36,262 +65,399 @@ public class IndividualPage extends javax.swing.JPanel {
         xTextField3 = new com.rameses.rcp.control.XTextField();
         xComboBox3 = new com.rameses.rcp.control.XComboBox();
         xComboBox4 = new com.rameses.rcp.control.XComboBox();
-        formPanel4 = new com.rameses.rcp.util.FormPanel();
-        xNumberField9 = new com.rameses.rcp.control.XNumberField();
-        xComboBox5 = new com.rameses.rcp.control.XComboBox();
-        formPanel5 = new com.rameses.rcp.util.FormPanel();
-        xNumberField10 = new com.rameses.rcp.control.XNumberField();
-        xComboBox6 = new com.rameses.rcp.control.XComboBox();
-        jLabel1 = new javax.swing.JLabel();
-        jPanel2 = new javax.swing.JPanel();
-        formPanel2 = new com.rameses.rcp.util.FormPanel();
-        xNumberField1 = new com.rameses.rcp.control.XNumberField();
-        xNumberField2 = new com.rameses.rcp.control.XNumberField();
-        xNumberField3 = new com.rameses.rcp.control.XNumberField();
-        xButton1 = new com.rameses.rcp.control.XButton();
-        jPanel3 = new javax.swing.JPanel();
+        xTextField8 = new com.rameses.rcp.control.XTextField();
+        xTextField9 = new com.rameses.rcp.control.XTextField();
+        jPanel9 = new javax.swing.JPanel();
         formPanel3 = new com.rameses.rcp.util.FormPanel();
         xNumberField4 = new com.rameses.rcp.control.XNumberField();
         xNumberField5 = new com.rameses.rcp.control.XNumberField();
         xNumberField6 = new com.rameses.rcp.control.XNumberField();
+        xButton1 = new com.rameses.rcp.control.XButton();
+        jPanel10 = new javax.swing.JPanel();
+        formPanel4 = new com.rameses.rcp.util.FormPanel();
         xNumberField7 = new com.rameses.rcp.control.XNumberField();
         xNumberField8 = new com.rameses.rcp.control.XNumberField();
+        xNumberField9 = new com.rameses.rcp.control.XNumberField();
+        xNumberField10 = new com.rameses.rcp.control.XNumberField();
+        xNumberField11 = new com.rameses.rcp.control.XNumberField();
 
+        setLayout(new java.awt.BorderLayout());
+
+        setPreferredSize(new java.awt.Dimension(942, 563));
+        jPanel3.setLayout(new java.awt.BorderLayout());
+
+        xLabel9.setBackground(new java.awt.Color(1, 47, 8));
+        xLabel9.setForeground(new java.awt.Color(255, 255, 255));
+        xLabel9.setFont(new java.awt.Font("Arial", 1, 18));
+        xLabel9.setName("collectiontitle");
+        xLabel9.setOpaque(true);
+        jPanel3.add(xLabel9, java.awt.BorderLayout.SOUTH);
+
+        xActionBar1.setName("formActions");
+        jPanel3.add(xActionBar1, java.awt.BorderLayout.CENTER);
+
+        add(jPanel3, java.awt.BorderLayout.NORTH);
+
+        jPanel1.setLayout(new java.awt.BorderLayout());
+
+        jPanel1.setPreferredSize(new java.awt.Dimension(230, 100));
+        jPanel2.setLayout(null);
+
+        jPanel2.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        jLabel3.setFont(new java.awt.Font("Tahoma", 1, 18));
+        jLabel3.setText("Amount Due:");
+        jPanel2.add(jLabel3);
+        jLabel3.setBounds(12, 14, 158, 20);
+
+        jLabel4.setFont(new java.awt.Font("Tahoma", 1, 18));
+        jLabel4.setText("Total Payment:");
+        jPanel2.add(jLabel4);
+        jLabel4.setBounds(12, 92, 206, 20);
+
+        jLabel5.setFont(new java.awt.Font("Tahoma", 1, 18));
+        jLabel5.setForeground(new java.awt.Color(204, 0, 0));
+        jLabel5.setText("Change:");
+        jPanel2.add(jLabel5);
+        jLabel5.setBounds(12, 170, 158, 20);
+
+        xNumberField1.setFieldType(BigDecimal.class);
+        xNumberField1.setFocusable(false);
+        xNumberField1.setFont(new java.awt.Font("Tahoma", 1, 24));
+        xNumberField1.setIndex(100);
+        xNumberField1.setName("entity.info.amount");
+        xNumberField1.setOpaque(false);
+        xNumberField1.setPattern("#,##0.00");
+        xNumberField1.setReadonly(true);
+        jPanel2.add(xNumberField1);
+        xNumberField1.setBounds(12, 38, 206, 48);
+
+        xNumberField2.setEditable(false);
+        xNumberField2.setFieldType(BigDecimal.class);
+        xNumberField2.setFocusable(false);
+        xNumberField2.setFont(new java.awt.Font("Tahoma", 1, 24));
+        xNumberField2.setIndex(100);
+        xNumberField2.setName("entity.info.totalpayment");
+        xNumberField2.setOpaque(false);
+        xNumberField2.setPattern("#,##0.00");
+        xNumberField2.setReadonly(true);
+        jPanel2.add(xNumberField2);
+        xNumberField2.setBounds(12, 116, 206, 48);
+
+        xNumberField3.setEditable(false);
+        xNumberField3.setFieldType(BigDecimal.class);
+        xNumberField3.setFocusable(false);
+        xNumberField3.setFont(new java.awt.Font("Tahoma", 1, 24));
+        xNumberField3.setForeground(new java.awt.Color(204, 0, 0));
+        xNumberField3.setIndex(100);
+        xNumberField3.setName("entity.info.change");
+        xNumberField3.setOpaque(false);
+        xNumberField3.setPattern("#,##0.00");
+        xNumberField3.setReadonly(true);
+        jPanel2.add(xNumberField3);
+        xNumberField3.setBounds(12, 196, 206, 48);
+
+        jPanel1.add(jPanel2, java.awt.BorderLayout.CENTER);
+
+        add(jPanel1, java.awt.BorderLayout.EAST);
+
+        jPanel4.setLayout(new java.awt.BorderLayout());
+
+        jPanel5.setLayout(new java.awt.BorderLayout());
+
+        formPanel2.setCaptionBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        formPanel2.setCaptionFont(new java.awt.Font("Arial", 0, 12));
+        formPanel2.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
+        formPanel2.setPadding(new java.awt.Insets(10, 10, 10, 10));
+        formPanel2.setPreferredSize(new java.awt.Dimension(0, 35));
+        formPanel2.setShowCaption(false);
+        xLabel4.setForeground(new java.awt.Color(204, 0, 0));
+        xLabel4.setCaption("AF No. ");
+        xLabel4.setCaptionWidth(75);
+        xLabel4.setFont(new java.awt.Font("Arial", 1, 14));
+        xLabel4.setName("entity.info.afid");
+        xLabel4.setPreferredSize(new java.awt.Dimension(60, 20));
+        formPanel2.add(xLabel4);
+
+        xLabel7.setForeground(new java.awt.Color(204, 0, 0));
+        xLabel7.setCaption("Serial No.");
+        xLabel7.setCaptionWidth(80);
+        xLabel7.setFont(new java.awt.Font("Arial", 1, 14));
+        xLabel7.setName("entity.info.serialno");
+        xLabel7.setPreferredSize(new java.awt.Dimension(150, 20));
+        formPanel2.add(xLabel7);
+
+        xLabel10.setForeground(new java.awt.Color(204, 0, 0));
+        xLabel10.setCaption("Stub No.");
+        xLabel10.setCaptionWidth(65);
+        xLabel10.setFont(new java.awt.Font("Arial", 1, 14));
+        xLabel10.setName("entity.info.stubno");
+        xLabel10.setPreferredSize(new java.awt.Dimension(100, 20));
+        formPanel2.add(xLabel10);
+
+        xLabel8.setForeground(new java.awt.Color(204, 0, 0));
+        xLabel8.setCaption("Mode");
+        xLabel8.setCaptionWidth(50);
+        xLabel8.setFont(new java.awt.Font("Arial", 1, 14));
+        xLabel8.setName("entity.info.mode");
+        xLabel8.setPreferredSize(new java.awt.Dimension(150, 20));
+        formPanel2.add(xLabel8);
+
+        jPanel5.add(formPanel2, java.awt.BorderLayout.NORTH);
+
+        xSubFormPanel1.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        xSubFormPanel1.setHandler("paymentSummary");
+        xSubFormPanel1.setPreferredSize(new java.awt.Dimension(40, 120));
+        jPanel5.add(xSubFormPanel1, java.awt.BorderLayout.SOUTH);
+
+        jPanel6.setLayout(new java.awt.BorderLayout());
+
+        jPanel6.setPreferredSize(new java.awt.Dimension(772, 487));
+        jPanel7.setPreferredSize(new java.awt.Dimension(706, 360));
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("Taxpayer Information");
-        jPanel1.setBorder(xTitledBorder1);
+        jPanel8.setBorder(xTitledBorder1);
 
-        xLabel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        xLabel1.setText("xLabel1");
-        xLabel1.setCaption("Taxpayer");
-        xLabel1.setFont(new java.awt.Font("Arial", 1, 11));
-        xLabel1.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel1.add(xLabel1);
+        formPanel1.setCaptionWidth(90);
+        xTextField4.setCaption("Last Name");
+        xTextField4.setIndex(-10);
+        xTextField4.setName("entity.info.payer.lastname");
+        xTextField4.setPreferredSize(new java.awt.Dimension(0, 19));
+        xTextField4.setRequired(true);
+        formPanel1.add(xTextField4);
 
-        xLabel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        xLabel2.setText("xLabel2");
-        xLabel2.setCaption("Address");
-        xLabel2.setFont(new java.awt.Font("Arial", 1, 11));
-        xLabel2.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel1.add(xLabel2);
+        xTextField5.setCaption("First Name");
+        xTextField5.setName("entity.info.payer.firstname");
+        xTextField5.setPreferredSize(new java.awt.Dimension(0, 19));
+        xTextField5.setRequired(true);
+        formPanel1.add(xTextField5);
+
+        xTextField6.setCaption("Middle Name");
+        xTextField6.setName("entity.info.payer.middlename");
+        xTextField6.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel1.add(xTextField6);
+
+        xTextField7.setCaption("Address");
+        xTextField7.setName("entity.info.payer.entityaddress");
+        xTextField7.setPreferredSize(new java.awt.Dimension(0, 19));
+        xTextField7.setRequired(true);
+        formPanel1.add(xTextField7);
 
         xComboBox1.setCaption("Profession");
+        xComboBox1.setItems("entitySvc.professionList");
+        xComboBox1.setName("entity.info.payer.profession");
         xComboBox1.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xComboBox1);
 
-        xTextField1.setText("xTextField1");
         xTextField1.setCaption("TIN");
+        xTextField1.setName("entity.info.payer.tin");
         xTextField1.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xTextField1);
 
-        xDateField1.setText("xDateField1");
         xDateField1.setCaption("Birth Date");
+        xDateField1.setName("entity.info.payer.birthdate");
         xDateField1.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xDateField1);
 
-        xTextField2.setText("xTextField2");
         xTextField2.setCaption("Place of Birth");
+        xTextField2.setName("entity.info.payer.birthplace");
         xTextField2.setPreferredSize(new java.awt.Dimension(0, 19));
         formPanel1.add(xTextField2);
 
         xComboBox2.setCaption("Citizenship");
+        xComboBox2.setItems("entitySvc.citizenshipList");
+        xComboBox2.setName("entity.info.payer.citizenship");
         xComboBox2.setPreferredSize(new java.awt.Dimension(165, 19));
         formPanel1.add(xComboBox2);
 
-        xTextField3.setText("xTextField3");
         xTextField3.setCaption("ICR (If Alien)");
+        xTextField3.setName("entity.info.payer.irc");
         xTextField3.setPreferredSize(new java.awt.Dimension(165, 19));
         formPanel1.add(xTextField3);
 
         xComboBox3.setCaption("Gender");
+        xComboBox3.setItems("genderList");
+        xComboBox3.setName("entity.info.payer.gender");
         xComboBox3.setPreferredSize(new java.awt.Dimension(165, 19));
         formPanel1.add(xComboBox3);
 
         xComboBox4.setCaption("Civil Status");
+        xComboBox4.setItems("entitySvc.civilStatusList");
+        xComboBox4.setName("entity.info.payer.civilstatus");
         xComboBox4.setPreferredSize(new java.awt.Dimension(165, 19));
         formPanel1.add(xComboBox4);
 
-        formPanel4.setCaption("Height");
-        formPanel4.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
-        formPanel4.setPadding(new java.awt.Insets(0, 0, 0, 0));
-        xNumberField9.setText("xNumberField9");
-        xNumberField9.setCaption("");
-        xNumberField9.setCellPadding(new java.awt.Insets(0, 0, 0, 2));
-        xNumberField9.setPreferredSize(new java.awt.Dimension(50, 19));
-        xNumberField9.setShowCaption(false);
-        formPanel4.add(xNumberField9);
+        xTextField8.setCaption("Height");
+        xTextField8.setName("entity.info.payer.height");
+        xTextField8.setPreferredSize(new java.awt.Dimension(165, 19));
+        formPanel1.add(xTextField8);
 
-        xComboBox5.setCaption("");
-        xComboBox5.setPreferredSize(new java.awt.Dimension(111, 19));
-        xComboBox5.setShowCaption(false);
-        formPanel4.add(xComboBox5);
+        xTextField9.setCaption("Weight");
+        xTextField9.setName("entity.info.payer.weight");
+        xTextField9.setPreferredSize(new java.awt.Dimension(165, 19));
+        formPanel1.add(xTextField9);
 
-        formPanel1.add(formPanel4);
-
-        formPanel5.setCaption("Weight");
-        formPanel5.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
-        formPanel5.setPadding(new java.awt.Insets(0, 0, 0, 0));
-        xNumberField10.setText("xNumberField9");
-        xNumberField10.setCaption("");
-        xNumberField10.setCellPadding(new java.awt.Insets(0, 0, 0, 2));
-        xNumberField10.setPreferredSize(new java.awt.Dimension(50, 19));
-        xNumberField10.setShowCaption(false);
-        formPanel5.add(xNumberField10);
-
-        xComboBox6.setCaption("");
-        xComboBox6.setPreferredSize(new java.awt.Dimension(111, 19));
-        xComboBox6.setShowCaption(false);
-        formPanel5.add(xComboBox6);
-
-        formPanel1.add(formPanel5);
-
-        org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel1Layout.createSequentialGroup()
+        org.jdesktop.layout.GroupLayout jPanel8Layout = new org.jdesktop.layout.GroupLayout(jPanel8);
+        jPanel8.setLayout(jPanel8Layout);
+        jPanel8Layout.setHorizontalGroup(
+            jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel8Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 350, Short.MAX_VALUE)
                 .addContainerGap())
         );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel1Layout.createSequentialGroup()
-                .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 262, Short.MAX_VALUE)
+        jPanel8Layout.setVerticalGroup(
+            jPanel8Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel8Layout.createSequentialGroup()
+                .add(formPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 316, Short.MAX_VALUE)
                 .addContainerGap())
         );
-
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 12));
-        jLabel1.setText("COMMUNITY TAX CERTIFICATE (INDIVIDUAL)");
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Salary / Business Gross / RPT Income");
-        jPanel2.setBorder(xTitledBorder2);
+        jPanel9.setBorder(xTitledBorder2);
 
-        formPanel2.setCaptionWidth(120);
-        xNumberField1.setText("xNumberField1");
-        xNumberField1.setCaption("Annual Salary");
-        xNumberField1.setFont(new java.awt.Font("Arial", 1, 11));
-        xNumberField1.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel2.add(xNumberField1);
+        formPanel3.setCaptionWidth(120);
+        xNumberField4.setCaption("Annual Salary");
+        xNumberField4.setFieldType(java.math.BigDecimal.class);
+        xNumberField4.setFont(new java.awt.Font("Arial", 1, 11));
+        xNumberField4.setName("entity.annualsalary");
+        xNumberField4.setPattern("#,##0.00");
+        xNumberField4.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel3.add(xNumberField4);
 
-        xNumberField2.setText("xNumberField2");
-        xNumberField2.setCaption("Business Gross");
-        xNumberField2.setFont(new java.awt.Font("Arial", 1, 11));
-        xNumberField2.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel2.add(xNumberField2);
+        xNumberField5.setCaption("Business Gross");
+        xNumberField5.setFieldType(java.math.BigDecimal.class);
+        xNumberField5.setFont(new java.awt.Font("Arial", 1, 11));
+        xNumberField5.setName("entity.businessgross");
+        xNumberField5.setPattern("#,##0.00");
+        xNumberField5.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel3.add(xNumberField5);
 
-        xNumberField3.setText("xNumberField3");
-        xNumberField3.setCaption("Property Income");
-        xNumberField3.setFont(new java.awt.Font("Arial", 1, 11));
-        xNumberField3.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel2.add(xNumberField3);
+        xNumberField6.setCaption("Property Income");
+        xNumberField6.setFieldType(java.math.BigDecimal.class);
+        xNumberField6.setFont(new java.awt.Font("Arial", 1, 11));
+        xNumberField6.setName("entity.propertyincome");
+        xNumberField6.setPattern("#,##0.00");
+        xNumberField6.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel3.add(xNumberField6);
 
         xButton1.setMnemonic('t');
         xButton1.setText("Calculate Tax");
+        xButton1.setImmediate(true);
 
-        org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel2Layout.createSequentialGroup()
+        org.jdesktop.layout.GroupLayout jPanel9Layout = new org.jdesktop.layout.GroupLayout(jPanel9);
+        jPanel9.setLayout(jPanel9Layout);
+        jPanel9Layout.setHorizontalGroup(
+            jPanel9Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel9Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 128, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(formPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE))
+                .add(jPanel9Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE)
+                    .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 128, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
-        jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel2Layout.createSequentialGroup()
-                .add(formPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+        jPanel9Layout.setVerticalGroup(
+            jPanel9Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel9Layout.createSequentialGroup()
+                .add(formPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 27, Short.MAX_VALUE)
                 .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 31, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder3 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder3.setTitle("Community Tax Breakdown");
-        jPanel3.setBorder(xTitledBorder3);
+        jPanel10.setBorder(xTitledBorder3);
 
-        formPanel3.setCaptionWidth(120);
-        xNumberField4.setText("xNumberField3");
-        xNumberField4.setCaption("Basic Tax");
-        xNumberField4.setFont(new java.awt.Font("Arial", 1, 11));
-        xNumberField4.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel3.add(xNumberField4);
-
-        xNumberField5.setText("xNumberField3");
-        xNumberField5.setCaption("Annual Salary Tax");
-        xNumberField5.setFont(new java.awt.Font("Arial", 1, 11));
-        xNumberField5.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel3.add(xNumberField5);
-
-        xNumberField6.setText("xNumberField3");
-        xNumberField6.setCaption("Business Gross Tax");
-        xNumberField6.setFont(new java.awt.Font("Arial", 1, 11));
-        xNumberField6.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel3.add(xNumberField6);
-
-        xNumberField7.setText("xNumberField3");
-        xNumberField7.setCaption("Property Income Tax");
+        formPanel4.setCaptionWidth(120);
+        xNumberField7.setCaption("Basic Tax");
+        xNumberField7.setFieldType(java.math.BigDecimal.class);
         xNumberField7.setFont(new java.awt.Font("Arial", 1, 11));
+        xNumberField7.setName("entity.tax.basic");
+        xNumberField7.setPattern("#,##0.00");
         xNumberField7.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel3.add(xNumberField7);
+        formPanel4.add(xNumberField7);
 
-        xNumberField8.setText("xNumberField3");
-        xNumberField8.setCaption("Interest");
+        xNumberField8.setCaption("Annual Salary Tax");
+        xNumberField8.setFieldType(java.math.BigDecimal.class);
         xNumberField8.setFont(new java.awt.Font("Arial", 1, 11));
+        xNumberField8.setName("entity.tax.salary");
+        xNumberField8.setPattern("#,##0.00");
         xNumberField8.setPreferredSize(new java.awt.Dimension(0, 19));
-        formPanel3.add(xNumberField8);
+        formPanel4.add(xNumberField8);
 
-        org.jdesktop.layout.GroupLayout jPanel3Layout = new org.jdesktop.layout.GroupLayout(jPanel3);
-        jPanel3.setLayout(jPanel3Layout);
-        jPanel3Layout.setHorizontalGroup(
-            jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel3Layout.createSequentialGroup()
+        xNumberField9.setCaption("Business Gross Tax");
+        xNumberField9.setFieldType(java.math.BigDecimal.class);
+        xNumberField9.setFont(new java.awt.Font("Arial", 1, 11));
+        xNumberField9.setName("entity.tax.business");
+        xNumberField9.setPattern("#,##0.00");
+        xNumberField9.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel4.add(xNumberField9);
+
+        xNumberField10.setCaption("Property Income Tax");
+        xNumberField10.setFieldType(java.math.BigDecimal.class);
+        xNumberField10.setFont(new java.awt.Font("Arial", 1, 11));
+        xNumberField10.setName("entity.tax.property");
+        xNumberField10.setPattern("#,##0.00");
+        xNumberField10.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel4.add(xNumberField10);
+
+        xNumberField11.setCaption("Interest");
+        xNumberField11.setFieldType(java.math.BigDecimal.class);
+        xNumberField11.setFont(new java.awt.Font("Arial", 1, 11));
+        xNumberField11.setName("entity.tax.interest");
+        xNumberField11.setPattern("#,##0.00");
+        xNumberField11.setPreferredSize(new java.awt.Dimension(0, 19));
+        formPanel4.add(xNumberField11);
+
+        org.jdesktop.layout.GroupLayout jPanel10Layout = new org.jdesktop.layout.GroupLayout(jPanel10);
+        jPanel10.setLayout(jPanel10Layout);
+        jPanel10Layout.setHorizontalGroup(
+            jPanel10Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel10Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE)
+                .add(formPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE)
                 .addContainerGap())
         );
-        jPanel3Layout.setVerticalGroup(
-            jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel3Layout.createSequentialGroup()
-                .add(formPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        jPanel10Layout.setVerticalGroup(
+            jPanel10Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel10Layout.createSequentialGroup()
+                .add(formPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 146, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
-        org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
+        org.jdesktop.layout.GroupLayout jPanel7Layout = new org.jdesktop.layout.GroupLayout(jPanel7);
+        jPanel7.setLayout(jPanel7Layout);
+        jPanel7Layout.setHorizontalGroup(
+            jPanel7Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel7Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(layout.createSequentialGroup()
-                        .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                            .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .add(43, 43, 43))
-                    .add(jLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 728, Short.MAX_VALUE))
-                .addContainerGap())
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
-                .addContainerGap()
-                .add(jLabel1)
+                .add(jPanel8, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                    .add(layout.createSequentialGroup()
-                        .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                    .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .add(94, 94, 94))
+                .add(jPanel7Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(jPanel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jPanel10, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(17, Short.MAX_VALUE))
         );
+        jPanel7Layout.setVerticalGroup(
+            jPanel7Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel7Layout.createSequentialGroup()
+                .add(jPanel7Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel8, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel7Layout.createSequentialGroup()
+                        .add(jPanel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(jPanel10, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(12, Short.MAX_VALUE))
+        );
+        jPanel6.add(jPanel7, java.awt.BorderLayout.CENTER);
+
+        jPanel5.add(jPanel6, java.awt.BorderLayout.CENTER);
+
+        jPanel4.add(jPanel5, java.awt.BorderLayout.CENTER);
+
+        add(jPanel4, java.awt.BorderLayout.CENTER);
+
     }// </editor-fold>//GEN-END:initComponents
     
     
@@ -300,23 +466,34 @@ public class IndividualPage extends javax.swing.JPanel {
     private com.rameses.rcp.util.FormPanel formPanel2;
     private com.rameses.rcp.util.FormPanel formPanel3;
     private com.rameses.rcp.util.FormPanel formPanel4;
-    private com.rameses.rcp.util.FormPanel formPanel5;
-    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel10;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel5;
+    private javax.swing.JPanel jPanel6;
+    private javax.swing.JPanel jPanel7;
+    private javax.swing.JPanel jPanel8;
+    private javax.swing.JPanel jPanel9;
+    private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XComboBox xComboBox2;
     private com.rameses.rcp.control.XComboBox xComboBox3;
     private com.rameses.rcp.control.XComboBox xComboBox4;
-    private com.rameses.rcp.control.XComboBox xComboBox5;
-    private com.rameses.rcp.control.XComboBox xComboBox6;
     private com.rameses.rcp.control.XDateField xDateField1;
-    private com.rameses.rcp.control.XLabel xLabel1;
-    private com.rameses.rcp.control.XLabel xLabel2;
+    private com.rameses.rcp.control.XLabel xLabel10;
+    private com.rameses.rcp.control.XLabel xLabel4;
+    private com.rameses.rcp.control.XLabel xLabel7;
+    private com.rameses.rcp.control.XLabel xLabel8;
+    private com.rameses.rcp.control.XLabel xLabel9;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     private com.rameses.rcp.control.XNumberField xNumberField10;
+    private com.rameses.rcp.control.XNumberField xNumberField11;
     private com.rameses.rcp.control.XNumberField xNumberField2;
     private com.rameses.rcp.control.XNumberField xNumberField3;
     private com.rameses.rcp.control.XNumberField xNumberField4;
@@ -325,9 +502,16 @@ public class IndividualPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XNumberField xNumberField7;
     private com.rameses.rcp.control.XNumberField xNumberField8;
     private com.rameses.rcp.control.XNumberField xNumberField9;
+    private com.rameses.rcp.control.XSubFormPanel xSubFormPanel1;
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;
+    private com.rameses.rcp.control.XTextField xTextField4;
+    private com.rameses.rcp.control.XTextField xTextField5;
+    private com.rameses.rcp.control.XTextField xTextField6;
+    private com.rameses.rcp.control.XTextField xTextField7;
+    private com.rameses.rcp.control.XTextField xTextField8;
+    private com.rameses.rcp.control.XTextField xTextField9;
     // End of variables declaration//GEN-END:variables
     
 }

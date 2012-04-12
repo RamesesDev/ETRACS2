@@ -28,6 +28,8 @@ class FaasReportService
     	faasdata.putAll( faas.rpu )
 		faasdata.taxeffectivity = faas.info.effectivityqtr + "Q - " + faas.info.effectivityyear
 		faasdata.taxability = ( faasdata.taxable ? "TAXABLE" : "EXEMPT" )
+		faasdata.annotations = faasSvc.getActiveAnnotationTexts( faas.objid )
+		getOwnerContactNo( faasdata )
 		
 		if( faas.rpu.rputype == 'land' ) {
 			faasdata.landappraisals = getLandDetails( faas.rpu )
@@ -63,6 +65,12 @@ class FaasReportService
 		}
 			
 		return faasdata
+	}
+	
+	private void getOwnerContactNo( faasdata ) {
+		def info = em.sqlContext.createNamedQuery('entity:getContactNo').setParameter('objid', faasdata.taxpayerid).singleResult
+		
+		if( info ) faasdata.ownercontactno = info.contactno
 	}
 	
 	private def getLandDetails( rpu ) {
@@ -116,22 +124,21 @@ class FaasReportService
 	
 	private def getLandAdjustments( rpu ) {
 		def data = []
-		def adjpercentage
+		def list = []
 		def percentadj
+		def adjpercentage
 		def item
 		def landdetails = rpu.info.landdetails
 		
 		landdetails.each { itm ->
 			itm.landadjustments?.each {
-				adjpercentage = ''
 				
 				if(itm.basemarketvalue != 0.00) {
 					percentadj = (it.adjustment / itm.basemarketvalue) * 100
-					adjpercentage = numberSvc.format("#,##0", percentadj) + ' %'
+					adjpercentage = numberSvc.format("#,##0", percentadj) + " %"
 				}
 				
 				item = [
-					itemid			: itm.objid,
 					actualuse		: itm.actualusename,
 					basemarketvalue	: itm.basemarketvalue,
 					adjtypename		: it.adjtypename,
@@ -140,19 +147,17 @@ class FaasReportService
 					marketvalue		: itm.marketvalue
 				]
 				
-				data.add( item )
+				list.add( item )
 			}
 			
 			itm.adjustments?.each {
-				adjpercentage = ''
 				
 				if(itm.basemarketvalue != 0.00) {
 					percentadj = (it.adjustment / itm.basemarketvalue) * 100
-					adjpercentage = numberSvc.format("#,##0", percentadj) + ' %'
+					adjpercentage = numberSvc.format("#,##0", percentadj) + " %"
 				}
 				
 				item = [
-					itemid			: itm.objid,
 					actualuse		: itm.actualusename,
 					basemarketvalue	: itm.basemarketvalue,
 					adjtypename		: it.adjtypename,
@@ -161,18 +166,33 @@ class FaasReportService
 					marketvalue		: itm.marketvalue
 				]
 				
-				data.add( item )
+				list.add( item )
 			}
 		}
 		
 		if( rpu.info.planttotal.basemarketvalue != 0.0 )
-			data = data + getPlantTreeLandAdjustments( rpu )
+			list = list + getPlantTreeLandAdjustments( rpu )
 		
-		def group = data.groupBy{ it.itemid }
+		def group = list.groupBy{ it.actualuse + it.adjtypename }
 		group.keySet().each{
-			def list = group[it] 
-			for( int i = 0; i<list.size() -1; i++ ) {
-				list[i].marketvalue = null 
+			def list2 = group[it]
+			def item2 = [
+				actualuse		: list2[0].actualuse,
+				basemarketvalue	: list2.basemarketvalue.sum(),
+				adjtypename		: list2[0].adjtypename,
+				adjpercentage	: list2[0].adjpercentage,
+				adjustment		: list2.adjustment.sum(),
+				marketvalue		: list2.marketvalue.sum()
+			]
+			
+			data.add( item2 )
+		}
+		
+		def group2 = data.groupBy{ it.actualuse }
+		group2.keySet().each{
+			def list3 = group2[it] 
+			for( int i = 0; i<list3.size() -1; i++ ) {
+				list3[i].marketvalue = null 
 			}
 		}
 		
@@ -183,33 +203,49 @@ class FaasReportService
 	
 	private def getPropertyAssessements( rpu ) {
 		def data = []
+		def list = []
 		def assesslevel
 		def item
+		def landdetails = rpu.info.landdetails
 		
-		if( rpu.info.landdetails ) {
-			assesslevel = numberSvc.format("#,##0", rpu.info.landdetails[0].assesslevel) + " %"
+		landdetails?.each{
 			item = [
 				classification	: rpu.classname,
-				actualuse 		: rpu.info.landdetails[0].actualusename,
-				marketvalue		: rpu.info.landtotal.marketvalue,
-				assesslevel		: assesslevel,
-				assessedvalue	: rpu.info.landtotal.assessedvalue
+				actualuse 		: it.actualusename,
+				marketvalue		: it.marketvalue,
+				assesslevel		: it.assesslevel,
+				assessedvalue	: it.assessedvalue
 			]
 			
-			data.add( item )
+			list.add( item )
 		}
 		
 		if( rpu.info.planttrees ) {
-			assesslevel = numberSvc.format("#,##0", rpu.info.planttrees[0].assesslevel) + " %"
 			item = [
 				classification	: rpu.classname,
 				actualuse 		: 'PLANT',
 				marketvalue		: rpu.info.planttotal.marketvalue,
-				assesslevel		: assesslevel,
+				assesslevel		: rpu.info.planttrees[0].assesslevel,
 				assessedvalue	: rpu.info.planttotal.assessedvalue
 			]
 			
-			data.add( item )
+			list.add( item )
+		}
+		
+		def group = list.groupBy{ it.classifiation + it.actualuse }
+		def keysets = group.keySet()
+		keysets.each{
+			def list2 = group[it]
+			assesslevel = numberSvc.format("#,##0", list2[0].assesslevel) + " %"
+			def item2 = [
+				classification	: list2[0].classification,
+				actualuse 		: list2[0].actualuse,
+				marketvalue		: list2.marketvalue.sum(),
+				assesslevel		: assesslevel,
+				assessedvalue	: list2.assessedvalue.sum()
+			]
+			
+			data.add( item2 )
 		}
 		
 		LISTLIMITSIZE2 = buildEmptyRows( data, LISTLIMITSIZE2, false )
@@ -337,7 +373,6 @@ class FaasReportService
 				adjpercentage = numberSvc.format("#,##0", planttreedetails[0].adjustmentrate) + ' %'
 				
 				def item = [
-					itemid			: 'PLANT',
 					actualuse		: 'PLANT',
 					basemarketvalue	: planttreedetails.basemarketvalue.sum(),
 					adjtypename		: 'TOTAL LAND ADJUSTMENT',

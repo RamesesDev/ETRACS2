@@ -14,7 +14,10 @@ class RPTReceiptService
 	
 	@Service('Var')
 	def var 
-
+	
+	@Service('MessengerService')
+	def msgSvc
+	
 	@Env
 	def env
 	
@@ -47,7 +50,7 @@ class RPTReceiptService
         }
 
         receipt._items = items.each(){
-			it.taxpayername = ( it.taxpayername != receipt.info.paidby ) ? it.taxpayername : '';
+			it.taxpayername = it.taxpayername
 			it.basicgross = it.basic 
 			it.basicdp    = it.basicint - it.basicdisc 
 			it.sefgross = it.sef
@@ -57,6 +60,74 @@ class RPTReceiptService
         return receipt 
     }
 	
+	@ProxyMethod 
+	public def createRemoteCollection( receipt, items, receiverid, receivername   ) {
+		if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
+        receipt.mode = 'REMOTE' 
+		receipt.isremotecollection = true 
+		receipt.collectedfor = receivername
+		receipt.collectedforid = receiverid
+        buildReceiptItems( receipt, items )
+        updateReceiptInfos( receipt, items )
+        receiptSvc.create( receipt )
+        
+		def parsedate = dateSvc.parseDate( receipt.info.txndate, null )
+		def rptpaymentlist = []
+		def rptpaymentdetaillist = []
+		
+		//post rptpayment 
+        items.each { item ->
+            def rptpayment = createRPTPayment( receipt, item )
+			em.validate(rptpayment.schemaname, rptpayment )
+            em.create(rptpayment.schemaname, rptpayment )
+			rptpaymentlist.add( rptpayment)
+		    //post paymentdetail
+            item.details.each { detail ->
+                def pmtdetail = createRPTPaymentDetail( receipt, rptpayment, detail, parsedate )
+                em.validate( pmtdetail.schemaname, pmtdetail )
+                em.create( pmtdetail.schemaname, pmtdetail )
+				rptpaymentdetaillist.add( pmtdetail )
+            }
+        }
+
+        receipt._items = items.each(){
+			it.taxpayername = it.taxpayername
+			it.basicgross = it.basic 
+			it.basicdp    = it.basicint - it.basicdisc 
+			it.sefgross = it.sef
+			it.sefdp    = it.sefint - it.sefdisc 
+		}
+		println 'receiverinfo -> ' + receiverid + ' - ' + receivername 
+		sendRemoteCollectionMessage( receipt, rptpaymentlist, rptpaymentdetaillist, receiverid, receivername     )
+		
+        return receipt 
+	}
+	
+	void sendRemoteCollectionMessage( receipt, rptpaymentlist, rptpaymentdetaillist, receiverid, receivername     ) {
+		def data = [paymentlist:rptpaymentlist, paymentdetailist:rptpaymentdetaillist]
+		def msg = msgSvc.createMessage( 'rptreceipt_post_remote_collection', data)
+		msg.receiverid = receiverid
+		msg.receivername  = receivername
+		msgSvc.send( msg )
+	}
+		
+	@ProxyMethod
+	public void postRemoteRPTCollection( msg ) {
+		msg.attachment.paymentlist.each { rptpayment ->
+			rptpayment.mode = 'REMOTE' 
+			em.validate(rptpayment.schemaname, rptpayment )
+			em.create(rptpayment.schemaname, rptpayment )
+			if( rptpayment.partialbasic == 0 )
+				updateLedgerLastYearQtrPaid([ objid:rptpayment.rptledgerid, lastyearpaid:rptpayment.toyear, lastqtrpaid:rptpayment.toqtr, partialbasic:0.0, partialbasicint:0.0, partialsef:0.0, partialsefint:0.0 ] )
+			else 
+				updateLedgerLastYearQtrPaid([ objid:rptpayment.rptledgerid, lastyearpaid:rptpayment.lastyearpaid, lastqtrpaid:rptpayment.lastqtrpaid, partialbasic:rptpayment.partialbasic, partialbasicint:rptpayment.partialbasicint, partialsef:rptpayment.partialsef, partialsefint:rptpayment.partialsefint  ] )
+        }
+		msg.attachment.paymentdetaillist.each{ pmtdetail ->
+			em.validate( pmtdetail.schemaname, pmtdetail )
+			em.create( pmtdetail.schemaname, pmtdetail )
+		}
+	}
+		
 	@ProxyMethod
     public def createManualCollection( receipt, items ) {
 		if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
@@ -134,13 +205,15 @@ class RPTReceiptService
     }
 	
 	void calculateManualReceiptTotals( receipt, items ) {
-        receipt.checknos   =  ''
-        receipt.checkbank  = ''
+        receipt.checknos   = ''
+        receipt.checkbanks = ''
+		receipt.checkdates = ''
         
         def noncashpmts = receipt.payments.findAll{ it.paytype == 'CHECK' } 
         if( noncashpmts ){
             receipt.checknos    = noncashpmts.checkno.join(',')
             receipt.checkbanks  = noncashpmts.bank.join(',')
+			receipt.checkdates	= noncashpmts.checkdate.join(',')
             receipt.checkamount = noncashpmts.amount.sum()
         }
         
@@ -247,7 +320,29 @@ class RPTReceiptService
         //TODO: check if this is the latest receipt for the ledgers
         receiptSvc.voidReceipt( receiptid, reason )
         voidRPTPayments( receiptid )
+		postRemoteVoid( receiptid, reason )
     }
+	
+	@ProxyMethod
+	public void postVoidRemoteRPTCollection( msg ) {
+		def paymentinfos = em.sqlContext.createNamedQuery('rptreceipt:getRPTPaymentInfo')
+								.setParameter('receiptid', msg.attachment.receiptid)
+								.resultList
+        paymentinfos.each { pmt  ->
+			updateLedgerLastYearQtrPaid([ 
+                objid           : pmt.rptledgerid, 
+                lastyearpaid    : ( pmt.fromqtr == 1 ? pmt.fromyear - 1 : pmt.fromyear ),
+                lastqtrpaid     : ( pmt.fromqtr == 1 ? 4 : pmt.fromqtr - 1 ),
+				partialbasic     : 0.0,
+				partialsef      : 0.0,
+				partialbasicint : 0.0,
+				partialsefint   : 0.0,
+            ])
+            em.sqlContext.createNamedExecutor('rptreceipt:deleteRemoteRPTPayment')
+					.setParameter('objid', pmt.objid)
+					.execute()
+        }
+	}
 	
 	@ProxyMethod
 	public def getLguType() {
@@ -276,6 +371,54 @@ class RPTReceiptService
 	public List getClassifications() {
 		return em.sqlContext.createNamedQuery('rptreceipt:getClassifications').resultList
 	}
+	
+	
+	
+	/*===========================================================================================
+    *
+    * REMOTE COLLECTION SUPPORT METHODS
+    *
+    *===========================================================================================*/
+    
+	@ProxyMethod 
+	public List getRemoteDomainList() {
+		return em.sqlContext.createNamedQuery('rptreceipt:getDomainList').resultList 
+	}	
+	
+	/*------------------------------------------------------------------------------------------
+	* Send billing request to all entity mappings defined for the specified payor.
+	*------------------------------------------------------------------------------------------
+	* Since the request is sent asynchronously
+	* it is expected that remote domain might take long time to reply or even not at all.
+	* Once a remote domain replies, the response is posted in the sys_response table.
+	* The sys_response table contains the sessionid and data columns.
+	*
+	* This design suggests that the client must poll the sys_response table using its current 
+	* sessionid to check if a response is available.
+	*
+	* NOTE: A better implementation and design should be considered 
+	*       to avoid polling if necessary.???
+	------------------------------------------------------------------------------------------*/
+	@ProxyMethod
+	public void sendRemoteBillingRequest( payorid, remotedomain, bill ){
+		def mappings = em.sqlContext.createNamedQuery('rptreceipt:getEntityMappings')
+							.setParameters([parentid:payorid, domainid:remotedomain.domainid])
+							.resultList 
+							
+		mappings.each{ mapping ->
+			bill.taxpayerid = mapping.entityid
+			def data = [ 
+				bill : bill, 
+				requestingdomainid 	 : remotedomain.domainid, 
+				requestingdomainname : remotedomain.domainname
+			]
+			def msg = msgSvc.createMessage( 'rptbill_generate', data)
+			msg.receiverid = remotedomain.domainid 
+			msg.receivername  = remotedomain.domainname 
+			msgSvc.send( msg )
+		}
+	}
+	
 	
     /*===========================================================================================
     *
@@ -315,24 +458,44 @@ class RPTReceiptService
     void voidRPTPayments( receiptid ) {
         def paymentinfos = em.sqlContext.createNamedQuery('rptreceipt:getRPTPaymentInfo').setParameter('receiptid', receiptid).resultList
         paymentinfos.each { pmt  ->
-            updateLedgerLastYearQtrPaid([ 
+			updateLedgerLastYearQtrPaid([ 
                 objid           : pmt.rptledgerid, 
                 lastyearpaid    : ( pmt.fromqtr == 1 ? pmt.fromyear - 1 : pmt.fromyear ),
                 lastqtrpaid     : ( pmt.fromqtr == 1 ? 4 : pmt.fromqtr - 1 ),
+				partialbasic     : 0.0,
+				partialsef      : 0.0,
+				partialbasicint : 0.0,
+				partialsefint   : 0.0,
             ])
             //void rptpayment
             em.sqlContext.createNamedExecutor('rptreceipt:voidRPTPayment').setParameter('objid', pmt.objid).execute()
         }
     }
+	
+	void postRemoteVoid( receiptid, reason ) {
+		def rct = em.sqlContext.createNamedQuery('rptreceipt:getExtendedInfo').setParameter('objid', receiptid).singleResult 
+		if( ! rct ) return 
+		
+		rct = em.serializer.read( rct.extended )
+		if( rct.isremotecollection ) {
+			def data = [receiptid:receiptid, reason:reason ]
+			def msg = msgSvc.createMessage( 'rptreceipt_void_remote_collection', data)
+			msg.receiverid = rct.collectedforid
+			msg.receivername  = rct.collectedfor 
+			msgSvc.send( msg )
+		}
+	}
     
     void updateReceiptInfos( receipt, items ) {
-        receipt.checknos   =  ''
-        receipt.checkbank  = ''
+        receipt.checknos   = ''
+        receipt.checkbanks = ''
+		receipt.checkdates = ''
         
         def noncashpmts = receipt.payments.findAll{ it.paytype == 'CHECK' } 
         if( noncashpmts ){
             receipt.checknos    = noncashpmts.checkno.join(',')
             receipt.checkbanks  = noncashpmts.bank.join(',')
+			receipt.checkdates	= noncashpmts.checkdate.join(',')
             receipt.checkamount = noncashpmts.amount.sum()
         }
         
@@ -363,9 +526,9 @@ class RPTReceiptService
     
     
     void updateLedgerLastYearQtrPaid( params ) {
-        em.sqlContext.createNamedExecutor('rptreceipt:updateLedgerLastYearQtrPaid').setParameters( params ).execute()
+		em.sqlContext.createNamedExecutor('rptreceipt:updateLedgerLastYearQtrPaid').setParameters( params ).execute()
     }
-    
+     
     Map createRPTPayment( receipt, item ) {
         def pmt = [:]
         pmt.putAll( item )

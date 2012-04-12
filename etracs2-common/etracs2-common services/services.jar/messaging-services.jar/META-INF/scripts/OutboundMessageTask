@@ -12,6 +12,9 @@ class OutboundMessageTask
     
     @Service('Var')
     def var
+	
+	@Service('MessengerService')
+	def msgSvc 
     
     def OUTBOX_SCHEMA = 'message:outbox'
     def PROCESSEDOUTBOX_SCHEMA = 'message:processedoutbox'
@@ -21,18 +24,20 @@ class OutboundMessageTask
         def msg = getOutboxMessage()
         if( msg )  {
             try {
-                println 'Sending message to remote -> ' + msg.tolguname
+                println 'Sending message to remote -> ' + msg.receivername 
                 def retval = invokerSvc.invokeRemoteService( 'RemoteInboxService', 'receive', [msg] as Object[])
-                msg.message = createMessage( retval.msg )
                 if( retval.status == 'ok' ) {
+					msg.message = 'Successfully processed.'
+					msg.status = [iserror:false, errormsg:'', date:new Date()]
                     moveMessageToProcessedOutbox( msg )
                 }
                 else {
-                    em.update( OUTBOX_SCHEMA, msg )
+					msgSvc.errorProcessing( msg, status.msg )
+                    // em.update( OUTBOX_SCHEMA, msg )
                 }
             }
             catch( e ) {
-                logMessage( msg, e.message )
+				logMessage( msg, e.message )
             }
         }
         else {
@@ -43,7 +48,7 @@ class OutboundMessageTask
     
     def getOutboxMessage() {
         //return the first available msg from the inbox 
-        def msg = em.sqlContext.createNamedQuery('message:getOutboxMessageId').setMaxResults(1).singleResult
+        def msg = em.sqlContext.createNamedQuery('messenger:getOutboxMessageId').setMaxResults(1).singleResult
         if( msg ) {
             return em.read( OUTBOX_SCHEMA, msg )
         }
@@ -54,14 +59,9 @@ class OutboundMessageTask
         em.create( PROCESSEDOUTBOX_SCHEMA, msg )
         em.delete( OUTBOX_SCHEMA, msg )
     }
-    
-    void logMessage( msg, errorMsg ) {
+	
+	void logMessage( msg, errorMsg ) {
         msg.message = createMessage( errorMsg )
         em.update( msg.schemaname, msg )
     }
-    
-    def createMessage( err ) {
-        return [ date:new Date(), msg:err ]
-    }
-    		
 }

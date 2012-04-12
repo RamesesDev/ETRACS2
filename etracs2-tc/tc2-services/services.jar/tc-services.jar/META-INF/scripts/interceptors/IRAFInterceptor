@@ -1,0 +1,30 @@
+import com.rameses.annotations.*;
+
+class IRAFInterceptor
+{
+	@PersistenceContext("main")
+	def em;
+	  
+	@After(pattern="IRAFService.approve")  
+	public void interceptIRAFApproved( evt ) {
+		def iraf = evt.result
+
+		if( iraf.info.rivtype.equals('SALE') ){
+			em.sqlContext.createNamedQuery( 'iraf:getAFCByIrafId' ).setParameter( 'irafid', iraf.objid ).resultList.each{ afc ->
+				
+				def afctrl = em.sqlContext.createNamedQuery( 'iraf:getAfcontrolByAfcId' ).setParameter( 'afcid', afc.objid ).singleResult
+				em.sqlContext.createNamedExecutor( 'iraf:updateAFCtrl' ).setParameters( afctrl ).execute()
+				
+				em.sqlContext.createNamedExecutor( 'iraf:updateAFC' ).setParameters( [objid:afc.objid, qtyissued:afc.balance] ).execute()
+					
+				def crf = em.sqlContext.createNamedQuery( 'iraf:getCraafByAFCId' ).setParameter( 'afcid', afc.objid ).singleResult
+				em.sqlContext.createNamedExecutor( 'iraf:updateCraafToConsolidated' ).setParameters( crf ).execute()
+			}
+			
+			
+		}
+		
+	}
+	
+}
+
