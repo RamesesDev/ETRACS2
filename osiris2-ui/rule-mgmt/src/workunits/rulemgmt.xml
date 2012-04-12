@@ -1,0 +1,94 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menu/mgmt" action="init" caption="Rule Management" permission="system:rulemgmt.view"/>
+        
+        <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" icon="images/doc-new.png"/>
+        <invoker type="formActions" action="open" caption="Open" mnemonic="o" shortcut="ctrl O" visibleWhen="#{selectedItem != null}" icon="images/open.png"/>
+    </invokers>
+    <code>
+        <![CDATA[
+            import com.rameses.rcp.annotations.*
+            import com.rameses.rcp.common.*
+            import com.rameses.osiris2.client.*
+
+            class RuleMgmtController 
+            {
+                @Binding
+                def binding
+
+                @Service('RuleService')
+                def svc; 
+
+                def searchText;
+                def selectedItem;
+                def selectedRuleset;
+                def ruleset;
+                def rule = [:];
+                
+                def mode = "view";
+                
+                def getFormActions() {
+                    return InvokerUtil.lookupActions(ruleset + ":formActions");
+                }
+                
+                public void init() {
+                    search();
+                }
+                
+                def listHandler = [
+                    getColumns   : {
+                        return [
+                            new Column(name:'agendagroup', caption:'Group', maxWidth:120),
+                            new Column(name:'docstate', caption:'State', maxWidth:80 ),
+                            new Column(name:'rulename', caption:'Rule Name'),
+                            new Column(name:'author', caption:'Author', maxWidth:120),
+                            new Column(name:'salience', caption:'Salience', maxWidth:80 ),
+                        ]
+                    },
+                    fetchList : { return svc.getList( ruleset, searchText, it ) },
+                    onOpenItem : {item, colname -> open() }
+                ] as PageListModel
+    
+                def getRulesets() {
+                    return InvokerUtil.lookupOpeners('ruleset', null)
+                }
+                
+                def getHtml() {
+                    if( !selectedItem ) return '';
+                    def entity = svc.open( selectedItem.objid );
+                    return selectedRuleset.handle.getHtmlInfo( entity );
+                }
+                
+                
+                void search() {
+                    listHandler.load()
+                }
+                
+                public void setSelectedRuleset( selectedRuleset ) {
+                    this.selectedRuleset = selectedRuleset;
+                    ruleset = selectedRuleset?.handle.ruleset;
+                    search();
+                }
+                
+                def updateHandler = {
+                    listHandler.refresh();
+                }
+                
+                public def open() {
+                    def r = svc.open( selectedItem.objid )
+                    return InvokerUtil.lookupOpener("xrule_open", [rule:r, ruleType:selectedRuleset.handle,updateHandler:updateHandler])
+                }
+    
+                public def create() {
+                    if( ! selectedRuleset ) return null ;
+                    return InvokerUtil.lookupOpener("xrule_create", [ruleType:selectedRuleset.handle,updateHandler:updateHandler]);
+                }
+                
+            }
+        ]]>
+    </code>
+
+    <pages>
+        <page template="rulemgmt.ui.RuleMgmtMainPage" />
+    </pages>
+</workunit>

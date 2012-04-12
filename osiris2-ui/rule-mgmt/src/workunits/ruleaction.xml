@@ -1,0 +1,97 @@
+<workunit>
+    <invokers>
+        <invoker type="xruleaction.create" action="create" caption="Add action"  target="popup"/>
+        <invoker type="xruleaction.open" action="open" caption="Open action"  target="popup" />
+        <invoker type="mainActions" action="save" caption="OK" mnemonic="o" icon="images/approve.png"/>
+        <invoker type="mainActions" action="cancel" caption="Cancel" mnemonic="c"  immediate="true" icon="images/cancel.png"/>
+    </invokers>
+    
+    <code>
+        <![CDATA[
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.rcp.common.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.util.*;
+
+        class RuleActionController {
+        
+            def rule;
+            def ruleset;
+            def action;
+            
+            def updateHandler; 
+            def openers;
+            def selectedOpener;
+            
+            def oldAction;
+            
+            void create() {
+                this.action = [objid: "RA" + new java.rmi.server.UID()];
+                this.openers = InvokerUtil.lookupOpeners( ruleset+":ruleaction", [rule: this.rule, action: this.action] );
+            }
+            
+            def open() {
+                this.oldAction = this.action;
+                this.action = MapBeanUtils.copy( this.action );
+            
+                this.openers = InvokerUtil.lookupOpeners( ruleset+":ruleaction", [rule: this.rule, action: this.action] );
+                for(item in this.openers) {
+                    if( item.name ==  this.action.opener ) {
+                        this.selectedOpener = item;
+                        break;
+                    }
+                }
+                if( !this.selectedOpener ) {
+                    throw new Exception("Opener for action not found!");
+                }
+                return "action";
+            }
+            
+            def selectAction() {
+                this.action.opener = this.selectedOpener.name;
+                this.action.displaytext = this.selectedOpener.name;
+                return "action";
+            }
+            
+            def save() {
+                if( !updateHandler )
+                    throw new Exception("action update handler is not set!");
+                
+                def handle = this.selectedOpener.handle
+                handle.accept()
+                action.actiontype = handle.getActiontype()
+                
+                if( !this.action.displaytext )
+                    throw new Exception("Please set the displaytext of the action. Do this in accept");
+                    
+                if( this.oldAction ) {
+                    this.oldAction.putAll( this.action );
+                    this.action = this.oldAction;
+                }
+                
+                this.updateHandler( this.action );
+                
+                return "_close";
+            }
+            
+            def cancel() {
+                if( this.oldAction ) {
+                    Map diff = MapVersionControl.instance.diff( this.oldAction, this.action );
+                    if( diff && !MsgBox.confirm('Changes have been made. Discard changes?') ) {
+                        return null;
+                    }
+                }
+                return "_close";
+            }
+
+            
+        }
+        ]]>
+    </code>
+
+    <pages>
+        <page template="rulemgmt.ui.RuleActionInitPage" />
+        <page name="action" template="rulemgmt.ui.RuleActionPage" />
+    </pages>
+    
+</workunit>

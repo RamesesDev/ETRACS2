@@ -1,0 +1,114 @@
+import com.rameses.annotations.*;
+
+public class BPBillingRuleInterceptor
+{
+	@Before(pattern="RuleService\\.buildRuleText.*", eval="#{args[0].ruleset == 'bpbilling'}")
+	public void buildRuleText( evt ) {
+		def rule = evt.args[0];
+		rule.ruletext = doBuildRuleText( rule );
+		println rule.ruletext
+	}
+	
+	/*-------------------------------------------------------------
+	* BuildRuleText Support
+	-------------------------------------------------------------*/
+    String doBuildRuleText( rule ) {
+		def ruleHeader = buildRuleHeader( rule )
+		def conditions = buildRuleConditions( rule )
+		def actions = buildRuleActions( rule )
+		return ruleHeader + conditions + actions + 'end'
+	} 
+	
+	String buildRuleActions( rule ) {
+		String s = 'then\n'
+		rule.actions.each { action ->
+			if( action.actiontype == 'calcSurcharge' ) s += calculateSurcharge( action )
+			if( action.actiontype == 'calcInterest' ) s += calculateInterest( action )
+			if( action.actiontype == 'calcDiscount' ) s += calculateDiscount( action )
+		}
+		return s
+	}
+	
+	String calculateSurcharge( action ) {
+		String s = ''
+		s += '$TAXFEE.setSurchargeacctid("' + action.acctid + '");\n'
+		s += '$TAXFEE.setSurchargeaccttitle("' + action.accttitle + '");\n'
+		s += '$TAXFEE.setSurcharge(' + action.expr + ');\n\n'
+		s += 'actionList.setContext( drools );\n'
+		s += 'actionList.execute("calcSurcharge", $TAXFEE );\n'
+		return s 
+	}
+	
+	String calculateInterest( action ) {
+		String s = ''
+		s += '$TAXFEE.setInterestacctid("' + action.acctid + '");\n'
+		s += '$TAXFEE.setInterestaccttitle("' + action.accttitle + '");\n'
+		s += '$TAXFEE.setInterest(' + action.expr + ');\n\n'
+		s += 'actionList.setContext( drools );\n'
+		s += 'actionList.execute("calcInterest", $TAXFEE );\n'
+		return s 
+	}
+	
+	String calculateDiscount( action ) {
+		String s = ''
+		s += '$TAXFEE.setDiscount(' + action.expr + ');\n'
+		s += 'actionList.setContext( drools );\n'
+		s += 'actionList.execute("calcDiscount", $TAXFEE );\n'
+		return s 
+	}
+	
+	String buildRuleConditions( rule ) {
+		String s = ''
+		rule.conditions.each { cond ->
+			if( cond.factname == 'BPLedgerFact' ) s += buildFactCondition( cond, 'ledgerid == $ledgerid' )
+			if( cond.factname == 'TaxFeeFact' ) s += buildFactCondition( cond, 'taxfeeid == $taxfeeid, ledgerid == $ledgerid' )
+			if( cond.factname == 'CurrentYearFact' ) s += buildFactCondition( cond, null )
+		}
+		return s 
+	}
+	
+	String buildFactCondition( cond, additionalConstraint ) {
+		String s = ''
+		if( cond.factvar ) s += cond.factvar + ':'
+		s += cond.factname + '('
+		s += buildConstraints( cond ) 
+		if( additionalConstraint ) s += ', ' + additionalConstraint
+		s += ')\n'
+		return s 
+	}
+	
+	String buildConstraints( cond ) {
+		String s = ''
+		cond.constraints.each { constraint ->
+			if( s.length() > 0 ) s += ', '
+			if( constraint.fieldvar ) s += constraint.fieldvar + ':' 
+			s += constraint.field.name
+			if( constraint.operator ) s += ' ' + constraint.operator.name 
+			if( constraint.value ) {
+				def v = constraint.value
+				if( v instanceof Collection )
+					s += ' "' + v.objid.join('|') + '"'
+				else
+					s += ' ' + v
+			}
+		}
+        return s 
+	}
+	
+	
+	String buildRuleHeader( rule ) {
+		String s = ''
+		s += 'package ' + rule.packagename + ';\n\n'
+		s += 'import bp.billing.facts.*\n';
+		s += 'import java.util.*\n\n';
+		s += 'global com.rameses.rules.common.RuleAction actionList\n\n'
+		s += 'rule "' + rule.rulename + '"\n'
+		s += 'agenda-group "' + rule.agendagroup + '"\n'
+		s += 'no-loop\n'
+		s += 'salience ' + rule.salience + '\n\n'
+		s += 'when\n'
+		s += '$LEDGER : BPLedgerFact( $ledgerid:ledgerid )\n'
+		s += '$TAXFEE : TaxFeeFact( $taxfeeid:taxfeeid, ledgerid == $ledgerid )\n'
+		return s
+	}	
+}

@@ -1,0 +1,71 @@
+<workunit>
+    <invokers>
+        <invoker type="bpassessment:rulecondition" caption="Line of Business Assessment Type" action="init" index="2" />        
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class BPRuleConditionLobApplicationTypeController extends rulemgmt.RuleConditionHandler
+        {
+            @Binding
+            def binding
+
+            @Service('BPApplicationService')
+            def svc 
+
+            def selectedItem
+            def title =  'Line of Business Assessment Type is any of the following: '
+
+            public String getConditiontype() {
+                return "lobapptype"
+            }
+            
+            public void init() {
+                if( !condition.types ) condition.types = [];
+            }
+
+            public void accept() {
+                if( !condition.types ) 
+                    throw new Exception('At least one Line of Business Type is required.')
+                condition.displaytext = title + ' '  +  condition.types.join(', ');
+            }
+
+            /* -------------------------------------------
+            *  List support
+            ------------------------------------------- */
+            def onselectHandler = { type ->
+                if( ! condition.types.contains( type ) ) {
+                    condition.types.add( type )
+                    binding.refresh('selectedItem')
+                }
+            }
+
+            def add() {
+                def list = svc.getApplicationTypes()
+                list.removeAll( condition.types )
+                def params = [ 
+                    list            : list,
+                    title           : title,
+                    onselectHandler : onselectHandler,
+                ]
+                return InvokerUtil.lookupOpener('list.multiselect', params )
+            }
+
+            void remove() {
+                if( ! selectedItem ) return
+                selectedItem.each{ condition.types.remove( it ) }
+                binding.refresh('selectedItem')
+            }
+
+        }
+
+        ]]>
+    </code>
+    <pages>
+        <page template="bpassessment.rule.condition.LOBAssessmentTypeConditionPage" />
+    </pages>
+</workunit>

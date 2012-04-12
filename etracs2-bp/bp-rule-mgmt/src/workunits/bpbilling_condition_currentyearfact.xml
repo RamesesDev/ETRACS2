@@ -1,0 +1,40 @@
+<workunit>
+    <invokers>
+        <invoker type="bpbilling:rulecondition" caption="Current Year Fact" action="init" index="3"/>
+    </invokers>
+
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+        import rulemgmt.*;
+
+        class BPBillingCurrentYearFact extends FactConditionHandler {
+        
+            @Binding
+            def binding
+            
+            public String getFactname() {
+                return "CurrentYearFact";
+            }
+            
+            public FactField[] getFields() {
+                return [
+                    new FactField( "year", "Year", "integer" ),
+                    new FactField( "qtr", "Qtr", "integer" ),
+                    new FactField( "month", "Month", "integer" ),
+                    new FactField( "day", "Day", "integer" ),
+                ] as FactField[];
+            }
+        }
+
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="rulemgmt.support.FactConditionPage" />
+    </pages>
+    
+</workunit>

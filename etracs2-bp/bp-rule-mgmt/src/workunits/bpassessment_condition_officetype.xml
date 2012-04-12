@@ -1,0 +1,71 @@
+<workunit>
+    <invokers>
+        <invoker type="bpassessment:rulecondition"   caption="Office Type" action="init" index="30" />        
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class BPRuleConditionOfficeTypeController extends rulemgmt.RuleConditionHandler
+        {
+            @Binding
+            def binding
+
+            @Service('BPApplicationService')
+            def svc 
+
+            def selectedItem
+            def title =  'Office Type is any of the following: '
+
+            public String getConditiontype() {
+                return "officetype"
+            }
+            
+            public void init() {
+                if( !condition.officetypes ) condition.officetypes = [];
+            }
+
+            public void accept() {
+                if(! condition.officetypes ) 
+                    throw new Exception('At least one Office Type is required.')
+                condition.displaytext =  title + ' '  + condition.officetypes.join(', ');
+            }
+
+            /* -------------------------------------------
+            **  List support
+            ------------------------------------------- */
+            def onselectHandler = { type ->
+                if( ! condition.officetypes.contains( type ) ) {
+                    condition.officetypes.add( type )
+                    binding.refresh('selectedItem')
+                }
+            }
+
+            def add() {
+                def list = svc.getOfficeTypes()
+                list.removeAll( condition.officetypes )
+                def params = [ 
+                    list            : list,
+                    title           : title,
+                    onselectHandler : onselectHandler,
+                ]
+                return InvokerUtil.lookupOpener('list.multiselect', params )
+            }
+
+            void remove() {
+                if( ! selectedItem ) return
+                selectedItem.each{ condition.officetypes.remove( it ) }
+                binding.refresh('selectedItem')
+            }
+
+        }
+
+        ]]>
+    </code>
+    <pages>
+        <page template="bpassessment.rule.condition.OfficeTypeConditionPage" />
+    </pages>
+</workunit>

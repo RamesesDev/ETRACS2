@@ -1,0 +1,38 @@
+<workunit>
+    <invokers>
+        <invoker type="bpbilling:rulecondition" caption="BP Ledger Fact" action="init" index="1"/>
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+        import rulemgmt.*;
+
+        class BPBillingLedgerFact extends FactConditionHandler {
+        
+            @Binding
+            def binding
+
+            public String getFactname() {
+                return "BPLedgerFact";
+            }
+            
+            public FactField[] getFields() {
+                return [
+                    new FactField( "yearstarted", "Year Started", "integer" ),
+                    new FactField( "lastyearpaid", "Last Year Paid", "integer" ),
+                    new FactField( "lastqtrpaid", "Last Qtr Paid", "integer" ),
+                ] as FactField[];
+            }
+        }
+
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="rulemgmt.support.FactConditionPage" />
+    </pages>
+    
+</workunit>

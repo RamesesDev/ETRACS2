@@ -1,0 +1,110 @@
+<workunit>
+    <invokers>
+        <invoker type="bpassessment:ruleaction" caption="Tax, Fee or Charge"  action="init" index="2" /> 
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+        
+        import rulemgmt.*;
+
+        class BPRuleActionTaxFeeChargeController extends RuleActionHandler
+        {
+            @Binding
+            def binding
+
+            @Service('BPApplicationService')
+            def svc 
+            
+            public String getActiontype() {
+                return "taxfeecharge"
+            }
+
+            def applyTypes = [
+                [name:'PERLINE', caption:'Apply per Line of Business'],
+                [name:'MAX', caption:'Apply once per establishment based on maximum value'],
+                [name:'MIN', caption:'Apply once per establishment based on minimum value'],
+            ]
+            
+            def computationModeHandler = [
+                FORMULA: { InvokerUtil.lookupOpener( 'rule:formula_editor', [ handler:formulaModel ]  )  },
+                RANGE : { InvokerUtil.lookupOpener( 'rule:range_entry', [ handler:rangeModel ]  ) }
+            ]
+            def computationModes = computationModeHandler.keySet();
+            
+            def formulaModel = [
+                getFields : { return [] },
+                getVariables : { 
+                    return rule.conditions.findAll{ it.variable }.collect{ [name:it.variable.name, info: it.variable.description] } 
+                },
+                getParameters : { return [] },
+                getFunctions : { return [ [name:"IIF", info: "IIF Function"] ] },
+                getExpr : { return action.expr },
+                setExpr : { s-> action.expr = s; }
+            ] as FormulaEditorModel;
+            
+            def rangeModel = [
+                getVariables: { 
+                    return rule.conditions.findAll{ it.variable }.collect{ [objid:it.variable.objid, name:it.variable.name, caption: it.variable.name] } 
+                },
+                setVariable: { action.variable = it },
+                getVariable: { action.variable },
+                getItems:    { 
+                    if( action.ranges == null ) action.ranges = [];
+                    return action.ranges 
+                },
+            ] as RangeEntryModel;
+            
+            public void init() {
+                if( !action.computationmode  ) {
+                    action.applytype = applyTypes[0];
+                    action.computationmode = 'FORMULA'; 
+                    action.expr = '';
+                }
+                else {
+                    this.account = [objid: action.acctid, accttitle: action.accttitle ];
+                    MsgBox.alert( action.variable ); 
+                }
+            }
+            
+            def getOpener() {
+                return computationModeHandler[action.computationmode]();
+            }
+
+            public void accept() {
+                if(!action.acctid) 
+                    throw new Exception( "Account is required" );
+                def sb = new StringBuffer();    
+                sb.append( "Compute " + action.accttitle );
+                if(  action.computationmode == 'FORMULA' ) {
+                    sb.append( " using formula " +  action.expr );
+                }
+                else if(  action.computationmode == 'RANGE' ) {
+                    sb.append( " using range of values" );
+                }
+                sb.append( ". " +  applyTypes.find{ it.name ==  action.applytype.name }.caption );
+                action.displaytext = sb.toString();   
+            }
+
+            def account;
+            void setAccount( acct ) {
+                this.account = acct;
+                action.acctid = acct?.objid 
+                action.accttitle = acct?.accttitle
+            }
+
+            def getAccountLookup() {
+                return InvokerUtil.lookupOpener('incomeacct:lookup', null)
+            }
+
+        }
+
+        ]]>
+    </code>
+    <pages>
+        <page template="bpassessment.rule.action.AddTaxFeeActionPage" />
+    </pages>
+</workunit>

@@ -1,0 +1,197 @@
+<workunit>
+    <invokers>
+        <invoker type="rule.copy" action="copy" caption="New Rule" target="popup" />
+        <invoker type="xrule_create" action="create" caption="New Rule" target="popup" />
+        <invoker type="xrule_open" action="open" caption="XRule Information" target="popup" />
+        
+        <invoker type="formActions" action="create" caption="New" mnemonic="n" shortcut="ctrl N" visibleWhen="#{mode == 'view' }" icon="images/doc-new.png"/>
+        <invoker type="formActions" action="cancel" caption="Cancel" mnemonic="c" shortcut="ctrl C" visibleWhen="#{mode == 'edit' }" icon="images/cancel.png"/>
+        <invoker type="formActions" action="edit" caption="Edit" mnemonic="e" shortcut="ctrl E" visibleWhen="#{mode == 'view' and rule.docstate != 'DEPLOYED'}" icon="images/edit.png"/>
+        <invoker type="formActions" action="save" caption="Save" mnemonic="s" shortcut="ctrl S" visibleWhen="#{mode != 'view' }" icon="images/save.png"/>
+        <invoker type="formActions" action="deploy" caption="Deploy" mnemonic="d" shortcut="ctrl D" visibleWhen="#{mode == 'view'  and rule.docstate != 'DEPLOYED'}" icon="images/deploy.png"/>
+        <invoker type="formActions" action="undeploy" caption="Undeploy" mnemonic="u" shortcut="ctrl U" visibleWhen="#{mode == 'view'  and rule.docstate == 'DEPLOYED'}" icon="images/undeploy.png"/>
+        <!--
+        <invoker type="formActions" action="debug" caption="Debug" mnemonic="g" shortcut="ctrl G" icon="images/debug.png"/>
+        -->
+        <invoker type="formActions" action="remove" caption="Delete" mnemonic="d" shortcut="ctrl D" visibleWhen="#{rule.docstate == 'DRAFT'}" icon="images/doc-delete.png"/>
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class RuleController  {
+        
+            @Binding
+            def binding
+
+            @Service('RuleService')
+            def svc 
+
+            def selectedCondition
+            def selectedAction
+            
+            def _agendagroup;
+            def agendaGroups;
+            
+            def mode;            
+            def rule;
+            def ruleType;
+            def updateHandler; 
+
+            public void create() {
+                rule = [
+                    salience   : 50000,
+                    version    : '1.0',
+                    author     : (OsirisContext?.env?.USERNAME) ? OsirisContext.env.USERNAME : 'SYSTEM',
+                    ruleset    : ruleType.ruleset, 
+                    conditions : [],
+                    actions    : [],
+                ]
+                _agendagroup = null
+                mode = 'create' 
+                agendaGroups = svc.getAgendaGroups( ruleType.ruleset );
+                binding?.focus('rule.rulename');
+            }
+            
+            public void open() {
+                mode = 'view'; 
+                agendaGroups = svc.getAgendaGroups( ruleType.ruleset );
+                this._agendagroup = agendaGroups.find{ it.objid == rule.agendagroupid }
+            }
+            
+            public void setAgendagroup( ag )  {
+                this._agendagroup = ag;
+                rule.agendagroupid = ag.objid 
+                rule.agendagroup = ag?.name
+            }
+            
+            public def getAgendagroup() {
+                return this._agendagroup;
+            }
+            
+            public void save() {
+                if( mode == 'create' )
+                    rule = svc.create( rule );
+                else
+                    rule = svc.update( rule );
+                
+                mode = 'view';
+            }
+            
+            public void edit() {
+                mode = 'edit'
+                selectedCondition = null;
+                selectedAction = null;
+                conditionListHandler.load();
+                actionListHandler.load();
+            }
+            
+            public void deploy() {
+                rule = svc.deploy( rule.objid );
+            }
+
+            public void undeploy() {
+                rule = svc.undeploy( rule.objid );
+            }
+            
+            public def remove() {
+                svc.remove( rule.objid );
+                return '_close';
+            }
+            
+            @Close
+            void doClose() {
+                if(updateHandler) updateHandler();
+            }
+            
+            /******************************************************************
+            * CONDITION PART
+            *******************************************************************/
+            def conditionListHandler = [
+                getRows     : { return 50 },
+                getColumns  : { 
+                    return [ new Column(name:'displaytext', caption:'') ]
+                },
+                fetchList   : { return rule.conditions },
+                onOpenItem  : { item, colname ->  openCondition() },
+            ] as SubListModel;
+
+            public def addCondition() {
+                def r = this.rule;
+                return InvokerUtil.lookupOpener( "xrulecondition.create", [
+                    ruleset:ruleType.ruleset, 
+                    rule:this.rule, 
+                    updateHandler: { cond->
+                        r.conditions.add( cond );
+                        conditionListHandler.refresh();
+                    } 
+                ]);
+            }
+            
+            public def openCondition() {
+                def r = this.rule;
+                return InvokerUtil.lookupOpener( "xrulecondition.open", [
+                    ruleset:ruleType.ruleset, 
+                    rule:this.rule,
+                    condition: this.selectedCondition,
+                    updateHandler: { cond->
+                        conditionListHandler.refresh();
+                    } 
+                ]);
+            }
+            
+            public def removeCondition() {
+                this.rule.conditions.remove( this.selectedCondition );
+                conditionListHandler.refresh();
+            }
+            
+            /******************************************************************
+            * ACTION PART
+            *******************************************************************/
+            def actionListHandler = [
+                getRows     : { return 50 },
+                getColumns  : { 
+                    return [ new Column(name:'displaytext', caption:'') ]
+                },
+                fetchList   : { return rule.actions },
+                onOpenItem  : { item, colname ->  openAction() },
+            ] as SubListModel;
+            
+            public def addAction() {
+                def r = this.rule;
+                return InvokerUtil.lookupOpener( "xruleaction.create", [
+                    ruleset:ruleType.ruleset, 
+                    rule:this.rule, 
+                    updateHandler: { axn->
+                        r.actions.add( axn );
+                        actionListHandler.refresh();
+                    } 
+                ]);
+            }
+            
+            public def openAction() {
+                def r = this.rule;
+                return InvokerUtil.lookupOpener( "xruleaction.open", [
+                    ruleset:ruleType.ruleset, 
+                    rule:this.rule,
+                    action: this.selectedAction,
+                    updateHandler: { axn->
+                        actionListHandler.refresh();
+                    } 
+                ]);
+            }
+            
+            public def removeAction() {
+                this.rule.actions.remove( this.selectedAction );
+                actionListHandler.refresh();
+            }
+        }
+        ]]>
+    </code>
+    <pages>
+        <page template="rulemgmt.ui.RulePage" />
+    </pages>
+</workunit>

@@ -102,7 +102,7 @@
 							reloadDistrictList();
 							self.selectedDistrict = item;
 						}
-						return new PopupOpener('lgu:edit_item', {entity: this.selectedDistrict, saveHandler:handler, lgutype:'District', mode:'edit'},{title:'Edit'});
+						return new PopupOpener('lgu:add_item', {entity: this.selectedDistrict, saveHandler:handler, lgutype:'District', mode:'edit'},{title:'Edit'});
 					}
 					
 					this.removeDistrict = function() {
@@ -148,7 +148,7 @@
 							svc.save(item);
 							self.barangayModel.load();
 						};
-						return new PopupOpener('lgu:edit_item', {entity:this.selectedBarangay, saveHandler:handler, lgutype:'Barangay', mode:'edit'},{title:'Edit Barangay'});
+						return new PopupOpener('lgu:add_item', {entity:this.selectedBarangay, saveHandler:handler, lgutype:'Barangay', mode:'edit'},{title:'Edit'});
 					}
 					
 					this.removeBarangay = function() {

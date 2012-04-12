@@ -1,0 +1,72 @@
+<workunit>
+    <invokers>
+        <invoker type="bpassessment:rulecondition"  caption="Business Organization" action="init"  index="10" />        
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class BPRuleConditionBusinessOrgController extends rulemgmt.RuleConditionHandler
+        {
+            @Binding
+            def binding
+
+            @Service('BPApplicationService')
+            def svc 
+
+            def selectedItem
+            def title = 'Business Organization is any of the following:'
+
+            public String getConditiontype() {
+                return "businessorg"
+            }
+            
+            public void init() {
+                if( !condition.organizations ) condition.organizations = [];
+            }
+
+            //must be implemented by a condition handler
+            public void accept() {
+                if( !condition.organizations ) 
+                    throw new Exception('At least one Organization is required.')
+                condition.displaytext = title + ' ' + condition.organizations.join(', ');
+            }
+
+            /* -------------------------------------------
+            **  List support
+            ------------------------------------------- */
+            def onselectHandler = { org ->
+                if( ! condition.organizations.contains( org ) ) {
+                    condition.organizations.add( org )
+                    binding.refresh('selectedItem')
+                }
+            }
+
+            def add() {
+                def list = svc.getOrganizationTypes()
+                list.removeAll( condition.organizations )
+                def params = [ 
+                    list            : list,
+                    title           : title,
+                    onselectHandler : onselectHandler,
+                ]
+                return InvokerUtil.lookupOpener('list.multiselect', params )
+            }
+
+            void remove() {
+                if( ! selectedItem ) return
+                selectedItem.each{ condition.organizations.remove( it ) }
+                binding.refresh('selectedItem')
+            }
+
+        }
+
+        ]]>
+    </code>
+    <pages>
+        <page template="bpassessment.rule.condition.BusinessOrgConditionPage" />
+    </pages>
+</workunit>

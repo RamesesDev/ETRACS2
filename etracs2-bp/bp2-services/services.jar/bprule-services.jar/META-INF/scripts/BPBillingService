@@ -31,7 +31,7 @@ public class BPBillingService
 	
 	@ProxyMethod
 	public def getBilling( billing ) {
-		def businesslist = getBusinessByTaxpayer( billing );
+		def businesslist = getBusinessByTaxpayer( billing.info.taxpayerid, billing.info.barangayid );
 		if( !businesslist ) throw new Exception("There are no businesses registered for this taxpayer.");
 		billing.items = [];
 		billing.grandtotal = 0.0;
@@ -110,7 +110,7 @@ public class BPBillingService
 			}
 		}
 		
-		if( !billing.items ) throw new Exception("Registered business is fully paid.");
+		if( !billing.items ) throw new Exception("Registered businesses are fully paid.");
 		 
 		billing.items.sort{ it.appno };	
 		billing.expirydate = calculateExpirydate( bpsetting )    
@@ -141,11 +141,10 @@ public class BPBillingService
 		return (Integer)(month / 3);
 	}
 	
-	private def getBusinessByTaxpayer( billing ) {
+	private def getBusinessByTaxpayer( taxpayerid, barangayid  ) {
 		def params = [
-			taxpayerid : billing.info.taxpayerid, 
-			tradename : billing.info.tradename,
-			barangayid : ( billing.info.barangayid ? billing.info.barangayid : '%' ),
+			taxpayerid : taxpayerid, 
+			barangayid : ( barangayid ? barangayid : '%' ),
 		]
 		return em.sqlContext.createNamedQuery( 'business:getListByTaxpayerid' )
 					.setParameters( params ).resultList;

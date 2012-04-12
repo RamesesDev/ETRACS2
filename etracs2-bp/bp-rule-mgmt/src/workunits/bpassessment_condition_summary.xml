@@ -1,0 +1,72 @@
+<workunit>
+    <invokers>
+        <invoker type="bpassessment:rulecondition" caption="Tax Fee Account Summary"  action="init" index="95" />        
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class BPRuleConditionSummaryAcctController extends rulemgmt.RuleConditionHandler
+        {
+            @Binding
+            def binding
+
+            @Service('BPApplicationService')
+            def svc 
+
+            def selectedItem
+            def title =  'Summary Account is any of the following: '
+
+            public String getConditiontype() {
+                return "summary"
+            }
+            
+            public void init() {
+                if( !condition.summaries ) condition.summaries = [];
+            }
+
+            //must be implemented by a condition handler
+            public void accept() {
+                if( ! condition.summaries ) 
+                    throw new Exception('At least one Summary Account is required.')
+                condition.displaytext = title + ' '  + condition.summaries.name.join(', ');
+            }
+
+            /* -------------------------------------------
+            **  List support
+            ------------------------------------------- */
+            def onselectHandler = { summary ->
+                if( ! condition.summaries.contains( summary ) ) {
+                    condition.summaries.add( summary )
+                    binding.refresh('selectedItem')
+                }
+            }
+
+            def add() {
+                def list = svc.getAccountSummaryTypes()
+                list.removeAll( condition.summaries )
+                def params = [ 
+                    list            : list,
+                    title           : title,
+                    onselectHandler : onselectHandler,
+                ]
+                return InvokerUtil.lookupOpener('list.multiselectexp', params )
+            }
+
+            void remove() {
+                if( ! selectedItem ) return
+                selectedItem.each{ condition.summaries.remove( it ) }
+                binding.refresh('selectedItem')
+            }
+
+        }
+
+        ]]>
+    </code>
+    <pages>
+        <page template="bpassessment.rule.condition.SummaryConditionPage" />
+    </pages>
+</workunit>

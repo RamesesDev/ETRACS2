@@ -1,0 +1,75 @@
+<workunit>
+    <invokers>
+        <invoker type="bpassessment:rulecondition"  caption="Line of Business Attribute" action="init"  index="61" />        
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class BPRuleConditionBarangayController extends rulemgmt.RuleConditionHandler
+        {
+            @Binding
+            def binding
+
+            @Service('BPApplicationService')
+            def svc 
+
+            @Service('LOBService')
+            def lobSvc
+
+            def selectedItem
+            def title = 'Line of Business Attribute is any of the following: '
+
+            public String getConditiontype() {
+                return "lobattribute"
+            }
+            
+            public void init() {
+                if( !condition.attributes ) condition.attributes = [];
+            }
+
+            //must be implemented by a condition handler
+            public void accept() {
+                if( ! condition.attributes ) 
+                    throw new Exception('At least one Attribute is required.')
+                condition.displaytext = title + condition.attributes.name.join(', ');  
+            }
+
+            /* -------------------------------------------
+            **  List support
+            ------------------------------------------- */
+            def onselectHandler = { attr ->
+                if( ! condition.attributes.contains( attr ) ) {
+                    condition.attributes.add( attr )
+                    binding.refresh('selectedItem')
+                }
+            }
+
+            def add() {
+                def list = lobSvc.getAttributes(null, [_start:0, _limit:50])
+                list.removeAll( condition.attributes )
+                def params = [ 
+                    list            : list,
+                    title           : title,
+                    onselectHandler : onselectHandler,
+                ]
+                return InvokerUtil.lookupOpener('list.multiselectexp', params )
+            }
+
+            void remove() {
+                if( ! selectedItem ) return
+                selectedItem.each{ condition.attributes.remove( it ) }
+                binding.refresh('selectedItem')
+            }
+
+        }
+
+        ]]>
+    </code>
+    <pages>
+        <page template="bpassessment.rule.condition.LobAttributeConditionPage" />
+    </pages>
+</workunit>

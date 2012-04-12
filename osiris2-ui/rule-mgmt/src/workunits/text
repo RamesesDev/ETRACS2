@@ -1,0 +1,41 @@
+
+    def create() {
+        if( ! selectedRuleset ) return null 
+        def opener = selectedRuleset?.properties?.opener + '.create'
+        return InvokerUtil.lookupOpener(opener, [ruleset:ruleset])
+    }
+    
+    def updateHandler = {
+        binding.refresh('html')
+    }
+    
+    def open() {
+        def entity = svc.open( selectedItem.objid )
+        def opener = entity.opener + '.open' 
+        return InvokerUtil.lookupOpener(opener, [entity:entity, updateHandler:updateHandler])
+    }
+    
+    void remove() {
+        if( MsgBox.confirm('Delete rule?') ) {
+            svc.remove( selectedItem.objid )
+            list.remove( selectedItem )
+            listHandler.load()
+        }
+    }
+    
+    
+    
+    
+    /*------------------------------------------------------------------
+    * Opener Handlers
+    ------------------------------------------------------------------*/
+    def addHandler = { rule ->
+        int index = list.indexOf( selectedItem )
+        if( index >= 0 ) {
+            list.insert( index, rule )
+        }
+        else {
+            list.add( rule )
+        }
+        binding.refresh('selectedItem')
+    }

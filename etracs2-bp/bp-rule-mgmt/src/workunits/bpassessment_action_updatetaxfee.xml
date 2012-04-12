@@ -1,0 +1,115 @@
+<workunit>
+    <invokers>
+        <invoker type="bpassessment:ruleaction" caption="Update Amount Due"  action="init" index="2" /> 
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class BPRuleActionUpdateTaxFeeController extends rulemgmt.RuleActionHandler 
+        {
+            @Binding
+            def binding
+
+            @Service('BPApplicationService')
+            def svc 
+
+            def opener 
+            
+            public String getActiontype() {
+                return "updatetaxfee"
+            }
+
+            void init() {
+                if( !action.expr) {
+                    action.conditions = [];
+                }
+                createOpener()
+            }
+
+            void open() {
+                createOpener()
+            }
+
+            //must be implemented by a handler
+            public void accept() {
+                if( opener && opener.handle ) {
+                    action.expr = opener.handle.expr
+                }
+                if( ! action.expr ) throw new Exception('Computation Formula is required.')
+                action.expr = action.expr.replace('\n', '') 
+                action.displaytext = buildDisplayText()
+            }
+
+            def buildDisplayText() {
+                return 'Update amount due using the formula : ' + action.expr 
+            }
+
+
+
+            void createOpener() {
+                def formuladef = buildFormulaDef()
+                opener = InvokerUtil.lookupOpener('formulaeditor', [formuladef:formuladef, expr:action.expr ])
+            }
+
+            def buildFormulaDef() {
+                def variables = buildVariables()
+                def parameters = buildParameters()
+                def functions = defineFunctions()
+                return [
+                    expression : null,
+                    fields     : [],
+                    variables  : variables,
+                    parameters : parameters,
+                    functions  : functions,
+                ]
+            }
+
+            def buildParameters() {
+                def vars = []
+                vars += [
+                    objid   : 'AMOUNTDUE',
+                    name    : 'AMOUNTDUE',
+                    caption : 'Amount Due',
+                    description : 'Amount Due',
+                ]
+                return vars
+            }
+
+            def buildVariables() {
+                def vars = []
+                def inputVars = rule.conditions.findAll{ it.variable }
+                inputVars.each {
+                    vars += [
+                        objid   : it.variable.objid,
+                        name    : it.variable.name,
+                        caption : it.variable.caption,
+                        description : it.variable.description,
+                    ]
+                }
+                return vars
+            }
+
+            def defineFunctions() {
+                return [
+                    defineFunction('IIF', '@IIF( expr, truevalue, falsevalue )', 'Ternary IF Condition', 'Performs immediate IF evaluation'),
+                    defineFunction('FIXED', '@FIXED( numberexpr )', 'Fixed Function', 'Converts number to integer.' ),
+                ]
+            }
+
+            def defineFunction(objid, name, caption, description) {
+                return [objid:objid, name:name, caption:caption, description:description ]
+            }
+
+
+        }
+
+        ]]>
+    </code>
+    <pages>
+        <page template="bpassessment.rule.action.UpdateTaxFeePage" />
+    </pages>
+</workunit>

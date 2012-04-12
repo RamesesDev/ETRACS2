@@ -1,30 +1,21 @@
-[getList]
-SELECT objid, docstate, agendagroup, rulename, description, author, salience, opener  
+[list]
+SELECT objid, docstate, agendagroup, rulename, description, author, salience   
 FROM rule 
 WHERE ruleset = $P{ruleset}
 ORDER BY agendagroup, rulename  
 
-[getListByName]
-SELECT objid, docstate, agendagroup, rulename, description, author, salience, opener  
+[list-byname]
+SELECT objid, docstate, agendagroup, rulename, description, author, salience   
 FROM rule 
 WHERE ruleset = $P{ruleset} 
   AND rulename LIKE $P{name} 
 ORDER BY agendagroup, rulename  
 
-[getRuleGroups]
-SELECT * FROM rulegroup ORDER BY sortorder 
-
-[getTaxFeeRuleGroups]
-SELECT * FROM rulegroup WHERE objid <> 'APPINFO' ORDER BY sortorder 
-
-[checkDuplicateRuleName]
+[check-duplicate]
 SELECT objid FROM rule WHERE objid <> $P{objid} AND rulename = $P{rulename}
 
-
-[getRuleConditions]
-SELECT 
- conditions 
-FROM rule 
+[rule-groups]
+SELECT * FROM rulegroup where ruleset=$P{ruleset} ORDER BY sortorder 
 
 
 

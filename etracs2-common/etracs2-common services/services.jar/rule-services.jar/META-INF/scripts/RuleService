@@ -8,19 +8,16 @@ import com.rameses.annotations.*
 import com.rameses.common.*
 import java.rmi.server.UID
 
-class RuleService
-{
+class RuleService {
+
 	@PersistenceContext('main')
 	def em
 	
+	@Service
+	def ruleSvc;
+	
 	@Service('LogService')
 	def logService
-	
-	@Service('RuleConditionService')
-	def condSvc
-	
-	@Service('RuleActionService')
-	def actionSvc
 	
 	@Resource('RuleMgmt')
 	def ruleMgmt 
@@ -30,20 +27,20 @@ class RuleService
 	def DRAFT_STATE = 'DRAFT'
 	def DEPLOYED_STATE = 'DEPLOYED'
 	def APPROVED_STATE = 'APPROVED' 
-	def RULESET = 'bpassessment' 
+	
 	
 	@ProxyMethod
 	public def getList( ruleset, searchText, params ) {
 		if( ! ruleset ) return []
 		if( ! params ) params = [_start:0, _limit:50]
 		if( ! searchText ) {
-			return em.sqlContext.createNamedQuery('rule:getList')
+			return em.sqlContext.createNamedQuery('rule:list')
 					.setParameter('ruleset', ruleset )
 					.setFirstResult( params._start )
 					.setMaxResults( params._limit )
 					.resultList
 		}
-		return em.sqlContext.createNamedQuery('rule:getListByName')
+		return em.sqlContext.createNamedQuery('rule:list-byname')
 					.setParameters( [ name: searchText+'%', ruleset: ruleset])
 					.setFirstResult( params._start )
 					.setMaxResults( params._limit )
@@ -57,17 +54,17 @@ class RuleService
 	
 	@ProxyMethod
 	public def create( rule ) {
-        if( ! rule.conditions ) throw new Exception('At least one condition is required.')
-        if( ! rule.actions ) throw new Exception('At least one action is required.')
-        
 		rule.objid = 'R' + new UID()
 		rule.schemaname = SCHEMA_NAME
 		rule.schemaversion = SCHEMA_VERSION
-		rule.rulename = fixRuleName( rule )
+		rule.rulename = rule.rulename.replaceAll('\\W', '_');
 		rule.docstate = DRAFT_STATE
-		rule.packagename = 'bp.assessment.rules.' + rule.rulename 
-		buildRuleText( rule )
-		validate( rule )
+		rule.packagename = rule.ruleset + "." + rule.rulename 
+		em.validate(rule.schemaname, rule );
+		
+		def data = em.sqlContext.createNamedQuery('rule:check-duplicate').setParameters( rule ).singleResult 
+		if( data ) throw new Exception('Rule ' + rule.rulename + ' already exists.' )
+
 		em.create( rule.schemaname, rule )
 		logService.log( 'CREATE', 'Rule', rule.objid )
 		return rule 
@@ -75,11 +72,9 @@ class RuleService
 	
 	@ProxyMethod
 	public def update( rule ) {
-		buildRuleText( rule )
-		validate( rule )
+		em.validate(rule.schemaname, rule )
 		em.update( rule.schemaname, rule)
 		logService.log( 'UPDATE', 'Rule', rule.objid )
-		
 		return rule
 	}
 	
@@ -94,237 +89,36 @@ class RuleService
 	@ProxyMethod
 	public def deploy( objid ) {
 		def rule = em.read(SCHEMA_NAME, [objid:objid])
+		ruleSvc.buildRuleText( rule );
+		if( !rule.ruletext ) throw new Exception('Rule text must be implemented.');
+		
 		rule.docstate = DEPLOYED_STATE
 		em.update( rule.schemaname, rule )
-		deployRulePackage( rule )
+		println "($rule.ruleset)   ($rule.packagename)  "
+		ruleMgmt.addRulePackage( rule.ruleset, '', rule.packagename, rule.ruletext );
 		logService.log('DEPLOY', 'Rule', rule.objid)
 		return rule 
 	}
 	
 	@ProxyMethod
 	public def undeploy( objid ) {
-        println 'undeploying...'
 		def rule = em.read(SCHEMA_NAME, [objid:objid])
 		rule.docstate = DRAFT_STATE
 		em.update( rule.schemaname, rule )
-		undeployRulePackage( rule )
+		ruleMgmt.removeRulePackage( rule.ruleset, '', rule.packagename );
 		logService.log('UNDEPLOY', 'Rule', rule.objid)
 		return rule 
 	}
 	
 	@ProxyMethod
-	public List getAgendaGroups() {
-		return em.sqlContext.createNamedQuery('rule:getRuleGroups').resultList 
+	public void buildRuleText( rule ) {
+		//this is hooked by interceptors
+		//do not delete this method
 	}
 	
 	@ProxyMethod
-	public def getHtmlByRuleName( rulename ) {
-		def rule = getList( rulename, null )
-		if( ! rule ) throw new Exception('Rule ' + rulename + ' not found. Please verify that it has not been deleted.')
-		return getHtml( rule[0].objid )
-	}
-	
-	@ProxyMethod
-	public def getHtml( objid ){
-		def rule = open( objid )
-		if( ! rule ) return ''
-		
-		def conditions = buildHtmlConditions( rule )
-		def actions = buildHtmlActions( rule )
-		return """
-			<html>
-				<head></head>
-				<body>
-					<h1>$rule.rulename</h1>
-					$rule.description
-					<hr>
-					<br>
-					<br>
-					<h2>Conditions</h2>
-					$conditions 
-					<br>
-					<h2>Actions</h2>
-					$actions
-				</body>
-			</html>
-		"""
-	}
-	
-	def buildHtmlConditions( rule ) {
-		def conds = ''
-		rule.conditions.each {
-			conds += it.displaytext + '<br>'
-		}
-		return conds 
-	}
-	
-	def buildHtmlActions( rule ) {
-		def actions = ''
-		rule.actions.each {
-			actions += it.displaytext + '<br>'
-			if( it.computationmode == 'RANGE' ) {
-				actions += displayActionRange( it )
-			}
-		}
-		return actions
-	}
-	
-	def displayActionRange( action ) {
-		String s = ''
-        s += '<table border="1" >'
-        s += '<tr>'
-        s += '<th>Greater than or equal</th>'
-        s += '<th>Less than</th>'
-        s += '<th>Formula</th>'
-        s += '</tr>'
-        
-        action.ranges.each {
-            s += '<tr>'
-            s += '<td>' + it.rangefrom + '</td>'
-            s += '<td>' + it.rangeto + '</td>'
-            s += '<td>' + it.expr + '</td>'
-            s += '</tr>'
-        }
-		
-        s += '</table>'
-		return s 
-	}
-	
-	void validate( rule ) {
-		em.validate(rule.schemaname, rule )
-		checkDuplicateRuleName( rule )
-	}
-	
-	def fixRuleName( rule ) {
-		return rule.rulename.replaceAll('\\W', '_')
-	}
-	
-	
-	void checkDuplicateRuleName( rule ) {
-		def data = em.sqlContext.createNamedQuery('rule:checkDuplicateRuleName').setParameters( rule ).singleResult 
-		if( data ) throw new Exception('Rule ' + rule.rulename + ' already exists.' )
-	}
-	
-	void buildRuleText( rule ) {
-		def permutedConditions = generatePermutedConditions( rule) 
-		def permutedRules = generateRulePermutations( permutedConditions, buildActions( rule ) )
-		
-		def ruleImports = buildImportHeader( rule )
-		def ruletext = ''		
-		ruletext += ruleImports
-		
-		permutedRules.each { prule ->
-			def ruleHeader = buildRuleHeader( rule, prule.key )
-			def conditions = prule.conditions.join('\n')
-			def action    = prule.action
-			
-			def rt = ''
-			rt += ruleHeader
-			rt += conditions 
-			rt += '\n\nthen\n'
-			rt += action
-			rt += 'end\n\n'
-			ruletext += rt 
-		}
-		rule.ruletext = ruletext 
-	}
-	
-	def generateRulePermutations( conds, actions ) {
-		int permSize = (conds.size() * actions.size() )as int 
-		
-		def permutations =[]
-		1.upto( permSize ) { permutations += [key:it, conditions:[], action:null] }
-		for(int i=1; i<=permSize; i++) {
-			def permutation = permutations.find{ it.key == i }
-			permutation.conditions += conds[ i%conds.size() ]
-			def action = actions[i%actions.size()]
-			permutation.action = action.ruletext 
-			//add action specific conditions 
-			action.conditions.each { cond ->
-				permutation.conditions += cond
-			}
-		}
-		return permutations
-	}
-	
-	/* return a list of permuted conditions */
-	List generatePermutedConditions( rule ) {
-		List conds = []
-		rule.conditions.each {
-			def cond =  condSvc.buildConditionRuleText( it )
-			conds.add( cond )
-		}
-		rule.actions.conditions.each  { 
-			if( it ) conds.add( [it] )
-		}
-		return generatePermutations( conds ) 
-	}
-	
-	List buildActions( rule ) {
-		List actions = []
-		rule.actions.each { 
-			def actionList = actionSvc.buildActionRuleText( rule, it ) 
-			actionList.each {
-				actions.add( it )
-			}
-		}
-		return actions 
-	}
-	
-	List generatePermutations( list ) {
-		int maxSize = list.max{it.size()}.size()
-		
-		def permutations = []
-		0.upto( maxSize - 1) {
-			permutations += [ key:it, items:[] ]
-		}
-		
-		list.each { item ->
-			for( int i=0; i<maxSize; i++){ 
-				def permutation = permutations.find{ it.key == i }
-				permutation.items.add( item[i % item.size()] )
-			}
-		}
-		return permutations.items
-	}
-	
-	
-	def buildImportHeader( rule ) {
-		def ruletext = ''
-		ruletext += 'package ' + rule.packagename + ';\n'
-		ruletext += 'import bp.assessment.facts.*;\n'
-		ruletext += 'import java.util.*;\n\n'
-		ruletext += 'global com.rameses.rules.common.RuleAction actionList\n\n'
-		return ruletext 
-	}
-	
-	def buildRuleHeader( rule, index ) {
-		def ruletext = ''
-		ruletext += 'rule "' + rule.rulename + index + '"\n'
-		ruletext += 'agenda-group "' + rule.agendagroupid + '"\n'
-		ruletext += 'no-loop\n'
-		ruletext += 'salience ' + rule.salience + '\n\n'
-		ruletext += 'when\n' 
-		ruletext += '$app : ApplicationFact( $appid: appid )\n'
-		ruletext += '$lob : LOBFact( $lobid:lobid, $lobname:name, appid == $appid)	\n'
-		return ruletext 
-	}
-	
-	
-	void deployRulePackage( rule ) {
-		ruleMgmt.removeRulePackage( RULESET, '', rule.packagename, false )
-		ruleMgmt.addRulePackage( RULESET, '', rule.packagename, rule.ruletext, true )
-	}
-	
-	void undeployRulePackage( rule ) {
-		ruleMgmt.removeRulePackage( RULESET, '', rule.packagename, false )
-	}
-	
-	void printList( caption, list ) {
-		list.each {
-			println caption + '----------------------------------' 
-			println it 
-		}
-	}
+	public def getAgendaGroups( ruleset ) {
+		return em.sqlContext.createNamedQuery('rule:rule-groups').setParameter('ruleset', ruleset).resultList;
+	}	
 }
 

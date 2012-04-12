@@ -1,0 +1,92 @@
+<workunit>
+    <invokers>
+        <invoker type="xrulecondition.create" action="create" caption="Add Condition" target="popup" />
+        <invoker type="xrulecondition.open" action="open" caption="Open Condition"   target="popup"/>
+        <invoker type="mainActions" action="save" caption="OK" mnemonic="o" icon="images/approve.png"/>
+        <invoker type="mainActions" action="cancel" caption="Cancel" mnemonic="c"  immediate="true" icon="images/cancel.png"/>
+    </invokers>
+    
+    <code>
+         <![CDATA[
+        import com.rameses.rcp.annotations.*;
+        import com.rameses.rcp.common.*;
+        import com.rameses.osiris2.client.*;
+        import com.rameses.util.*;
+
+        class RuleConditionController {
+        
+            def rule;
+            def ruleset;
+            def condition;
+            
+            def updateHandler; 
+            def openers;
+            def selectedOpener;
+            
+            def oldCondition;
+            
+            void create() {
+                this.condition = [objid: "RC" + new java.rmi.server.UID()];
+                this.openers = InvokerUtil.lookupOpeners( ruleset+":rulecondition", [rule: this.rule, condition: this.condition] );
+            }
+            
+            def open() {
+                this.oldCondition = this.condition;
+                this.condition = MapBeanUtils.copy( this.condition );
+                this.openers = InvokerUtil.lookupOpeners( ruleset+":rulecondition", [rule: this.rule, condition: this.condition] );
+                for(item in this.openers) {
+                    if( item.name ==  this.condition.opener ) {
+                        this.selectedOpener = item;
+                        break;
+                    }
+                }
+                if( !this.selectedOpener ) {
+                    throw new Exception("Opener for condition not found!");
+                }
+                return "condition";
+            }
+            
+            def selectCondition() {
+                this.condition.opener = this.selectedOpener.name;
+                this.condition.displaytext = this.selectedOpener.name;
+                return "condition";
+            }
+            
+            def save() {
+                if( !updateHandler )
+                    throw new Exception("Condition update handler is not set!");
+                    
+                def handle = this.selectedOpener.handle;
+                handle.accept();
+                this.condition.conditiontype = handle.getConditiontype();
+                
+                if( !this.condition.displaytext )
+                    throw new Exception("Please set the displaytext of the condition. Do this in accept");
+                    
+                if( this.oldCondition ) {
+                    this.oldCondition.putAll( this.condition );
+                    this.condition = this.oldCondition;
+                }
+                this.updateHandler( this.condition );
+                return "_close";
+            }
+            
+            def cancel() {
+                if( this.oldCondition ) {
+                    Map diff = MapVersionControl.instance.diff( this.oldCondition, this.condition );
+                    if( diff && !MsgBox.confirm('Changes have been made. Discard changes?') ) {
+                        return null;
+                    }
+                }
+                return "_close";
+            }
+        }
+        ]]>
+    </code>
+
+    <pages>
+        <page template="rulemgmt.ui.RuleConditionInitPage" />
+        <page name="condition" template="rulemgmt.ui.RuleConditionPage" />
+    </pages>
+    
+</workunit>

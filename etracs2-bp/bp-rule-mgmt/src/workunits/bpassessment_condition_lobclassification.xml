@@ -1,0 +1,75 @@
+<workunit>
+    <invokers>
+        <invoker type="bpassessment:rulecondition" caption="Line of Business Classification"  action="init" index="3" />        
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class BPRuleConditionLobClassificationController extends rulemgmt.RuleConditionHandler
+        {
+            @Binding
+            def binding
+
+            @Service('BPApplicationService')
+            def svc 
+
+            @Service('LobClassificationService')
+            def lobSvc
+
+            def selectedItem
+            def title =  'Line of Business Classification is any of the following: '
+
+            public String getConditiontype() {
+                return "lobclassification"
+            }
+            
+            public void init() {
+                if( !condition.lobclassifications) condition.lobclassifications = [];
+            }
+
+            public void accept() {
+                if(!condition.lobclassifications ) 
+                    throw new Exception('At least one Line of Busines Classification is required.')
+                condition.displaytext = title + ' '  + condition.lobclassifications.name.join(', ');
+            }
+
+            /* -------------------------------------------
+            **  List support
+            ------------------------------------------- */
+            def onselectHandler = { lobclass ->
+                if( ! condition.lobclassifications.contains( lobclass ) ) {
+                    condition.lobclassifications.add( lobclass )
+                    binding.refresh('selectedItem')
+                }
+            }
+
+            def add() {
+                def list = lobSvc.getClassifications()
+                list.removeAll( condition.lobclassifications )
+                def params = [ 
+                    list            : list,
+                    title           : title,
+                    onselectHandler : onselectHandler,
+                ]
+                return InvokerUtil.lookupOpener('list.multiselectexp', params )
+            }
+
+            void remove() {
+                if( ! selectedItem ) return
+                selectedItem.each{ condition.lobclassifications.remove( it ) }
+                binding.refresh('selectedItem')
+            }
+
+        }
+
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="bpassessment.rule.condition.LobClassificationConditionPage" />
+    </pages>
+</workunit>

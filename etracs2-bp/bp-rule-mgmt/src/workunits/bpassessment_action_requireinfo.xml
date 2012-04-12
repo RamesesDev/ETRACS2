@@ -1,0 +1,60 @@
+<workunit>
+    <invokers>
+        <invoker type="bpassessment:ruleaction" caption="Require Information"  action="init" index="1" />        
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class BPRuleActionRequireInfoController extends rulemgmt.RuleActionHandler
+        {
+            @Binding
+            def binding
+
+            @Service('BPApplicationService')
+            def svc 
+
+            @Service('VariableService')
+            def varSvc
+            
+            public String getActiontype() {
+                return "requireinfo"
+            }
+
+            public void init() {
+                if( !action.variable ) {
+                    action.applyperlob = true;
+                    action.required= true;
+                    action.requiredbeforeprint = false; 
+                    action.conditions  = [];
+                }
+            }
+
+            public void accept() {
+                if( ! action.variable ) 
+                    throw new Exception('Information is required.')
+                action.displaytext = buildDisplayText()
+            }
+
+            def buildDisplayText() {
+                if( action.applyperlob == true ) 
+                    return 'Ask information : ' + action.variable.name + ' per each Line of Business'
+                return 'Ask information : ' + action.variable.name + ' per Establishment'
+            }
+
+
+            List getVariables() {
+                return varSvc.getList( null, null )
+            }
+
+        }
+
+        ]]>
+    </code>
+    <pages>
+        <page template="bpassessment.rule.action.AddInfoActionPage" />
+    </pages>
+</workunit>

@@ -1,0 +1,428 @@
+import com.rameses.annotations.*;
+
+public class BPAssessmentRuleInterceptor
+{
+	@Before(pattern="RuleService\\.buildRuleText.*", eval="#{args[0].ruleset == 'bpassessment'}")
+	public void buildRuleText( evt ) {
+		println "building ruletext for bpassessment"
+		def rule = evt.args[0];
+		doBuildRuleText( rule );
+	}
+	
+	void doBuildRuleText( rule ) {
+		def permutedConditions = generatePermutedConditions( rule) 
+		def permutedRules = generateRulePermutations( permutedConditions, buildActions( rule ) )
+		
+		def ruleImports = buildImportHeader( rule )
+		def ruletext = ''		
+		ruletext += ruleImports
+		
+		permutedRules.each { prule ->
+			def ruleHeader = buildRuleHeader( rule, prule.key )
+			def conditions = prule.conditions.join('\n')
+			def action    = prule.action
+			
+			def rt = ''
+			rt += ruleHeader
+			rt += conditions 
+			rt += '\n\nthen\n'
+			rt += action
+			rt += 'end\n\n'
+			ruletext += rt 
+		}
+		rule.ruletext = ruletext 
+
+	}
+	
+	def generateRulePermutations( conds, actions ) {
+		int permSize = (conds.size() * actions.size() )as int 
+		
+		def permutations =[]
+		1.upto( permSize ) { permutations += [key:it, conditions:[], action:null] }
+		for(int i=1; i<=permSize; i++) {
+			def permutation = permutations.find{ it.key == i }
+			permutation.conditions += conds[ i%conds.size() ]
+			def action = actions[i%actions.size()]
+			permutation.action = action.ruletext 
+			//add action specific conditions 
+			action.conditions.each { cond ->
+				permutation.conditions += cond
+			}
+		}
+		return permutations
+	}
+	
+	/* return a list of permuted conditions */
+	List generatePermutedConditions( rule ) {
+		List conds = []
+		rule.conditions.each {
+			def cond =  buildConditionRuleText( it )
+			conds.add( cond )
+		}
+		rule.actions.conditions.each  { 
+			if( it ) conds.add( [it] )
+		}
+		return generatePermutations( conds ) 
+	}
+	
+	List buildActions( rule ) {
+		List actions = []
+		rule.actions.each { 
+			def actionList = buildActionRuleText( rule, it ) 
+			actionList.each {
+				actions.add( it )
+			}
+		}
+		return actions 
+	}
+	
+	List generatePermutations( list ) {
+		int maxSize = list.max{it.size()}.size()
+		
+		def permutations = []
+		0.upto( maxSize - 1) {
+			permutations += [ key:it, items:[] ]
+		}
+		
+		list.each { item ->
+			for( int i=0; i<maxSize; i++){ 
+				def permutation = permutations.find{ it.key == i }
+				permutation.items.add( item[i % item.size()] )
+			}
+		}
+		return permutations.items
+	}
+	
+	
+	def buildImportHeader( rule ) {
+		def ruletext = ''
+		ruletext += 'package ' + rule.packagename + ';\n'
+		ruletext += 'import bp.assessment.facts.*;\n'
+		ruletext += 'import java.util.*;\n\n'
+		ruletext += 'global com.rameses.rules.common.RuleAction actionList\n\n'
+		return ruletext 
+	}
+	
+	def buildRuleHeader( rule, index ) {
+		def ruletext = ''
+		ruletext += 'rule "' + rule.rulename + index + '"\n'
+		ruletext += 'agenda-group "' + rule.agendagroupid + '"\n'
+		ruletext += 'no-loop\n'
+		ruletext += 'salience ' + rule.salience + '\n\n'
+		ruletext += 'when\n' 
+		ruletext += '$app : ApplicationFact( $appid: appid )\n'
+		ruletext += '$lob : LOBFact( $lobid:lobid, $lobname:name, appid == $appid)	\n'
+		return ruletext 
+	}
+	
+	//======== CONDITION SUPPORT ==========
+	public List buildConditionRuleText( condition ) {
+		if( condition.conditiontype == 'variable' ) return buildVariableCondition( condition )
+		if( condition.conditiontype == 'taxfee' ) return buildTaxFeeCondition( condition )
+		if( condition.conditiontype == 'officetype') return buildOfficeTypeCondition( condition )
+		if( condition.conditiontype == 'lobclassification') return buildLobClassificationCondition( condition )
+		if( condition.conditiontype == 'lobapptype') return buildLobApplicationTypeCondition( condition )
+		if( condition.conditiontype == 'lob') return buildLobCondition( condition )
+		if( condition.conditiontype == 'lobattribute') return buildLobAttributeCondition( condition )
+		if( condition.conditiontype == 'businessorg') return buildBusinessOrgCondition( condition ) 
+		if( condition.conditiontype == 'barangay') return buildBarangayCondition( condition)
+		if( condition.conditiontype == 'applicationtype') return buildApplicationTypeCondition( condition ) 
+		if( condition.conditiontype == 'summary') return buildSummaryCondition( condition )
+		
+		throw new Exception('RuleText definition for condition type ' + condition.conditiontype + ' is not defined in RuleTextService.' )
+	}
+
+	@ProxyMethod
+	public def buildRangeCondition( action, range ) {
+		if( range.to > 0 )
+			return ['InputVariableFact( varid=="' + action.variable.objid + '", value >= ' + range.from + ', value < ' + range.to + ', appid == $appid, lobid == $lobid )']
+		else 
+			return ['InputVariableFact( varid=="' + action.variable.objid + '", value >= ' + range.from + ', appid == $appid, lobid == $lobid )']
+	}
+	
+	
+	List buildApplicationTypeCondition( condition ) {
+		def types = condition.types.join('|')
+        return ['ApplicationFact( applicationtype matches "' + types + '", appid == $appid )']
+	}
+	
+	List buildBarangayCondition( condition ) {
+        def barangays = condition.barangays.objid.join('|')
+        return ['ApplicationFact( barangayid matches "' + barangays + '", appid == $appid )']
+	}	
+	
+	List buildVariableCondition( condition ) {
+		def var = condition.variable
+		if( condition.perline ) {
+            return [var.name + ':InputVariableFact( varid=="' + var.objid + '",appid == $appid, lobid == $lobid' +  buildValueCondition( condition, var ) + ' )']
+         }
+         return[ var.name + ':InputVariableFact( varid=="' + var.objid + '",appid == $appid, lobid == null' +  buildValueCondition( condition, var ) + ' )']
+	}
+	
+	List buildTaxFeeCondition( condition ) {
+		def acctids = condition.accounts.objid.join('|')
+		def conds = []
+		condition.accounts.each { 
+			conds.add( 'TAXFEEFACT: TaxFeeFact( AMOUNTDUE:assessedvalue, $acctid:acctid matches "' + it.objid + '", appid == $appid, lobid == $lobid )' )
+		}
+        return conds 
+	}
+	
+	List buildOfficeTypeCondition( condition ) {
+        def types = condition.officetypes.join('|')
+        return ['ApplicationFact( officetype matches "' + types + '", appid == $appid )']
+    }
+	
+	List buildLobClassificationCondition( condition ) {
+        def classifications = condition.lobclassifications.objid.join('|')
+        return ['LOBFact( classificationid matches "' + classifications + '", lobid == $lobid, appid == $appid )']
+    }
+	
+	List buildLobApplicationTypeCondition( condition ) {
+        def types = condition.types.join('|')
+        return ['LOBFact( assessmenttype matches "' + types + '", lobid == $lobid, appid == $appid )']
+    }
+	
+	List buildLobCondition( condition ) {
+        def lobs = condition.lobs.objid.join('|')
+        if( condition.includetype == 'INCLUDE' )
+            return ['LOBFact( lobid matches "' + lobs + '", lobid == $lobid, appid == $appid )']
+        else 
+            return ['LOBFact( lobid not matches "' + lobs + '", lobid == $lobid, appid == $appid )']
+    }
+	
+	List buildLobAttributeCondition( condition ) {
+		def attrs = ''
+		condition.attributes.each {
+			if( attrs.length() > 0 ) attrs += ' || '
+			attrs += 'attributes contains "' + it.name + '"'
+		}
+		return ['LOBFact( lobid == $lobid, appid == $appid , ' + attrs + ')']
+	}
+    
+	List buildBusinessOrgCondition( condition ) {
+        def orgs = condition.organizations.join('|')
+        return ['ApplicationFact( organization matches "' + orgs + '", appid == $appid )']
+    }
+	
+	List buildSummaryCondition( condition ) {
+		def summaries = []
+		condition.summaries.each { summary -> 
+			summaries.add( summary.name + ':InputVariableFact( varid=="' + summary.objid + '",appid == $appid )' )
+		}
+		return summaries 
+	}
+	
+    
+	String buildValueCondition( condition, var) {
+        if( var.datatype == 'decimal' || var.datatype == 'integer' ) return ', value >= 0'
+        if( var.datatype == 'string_array' ) return ', value == "' + condition.value + '"'
+        return ''
+    }
+	
+	//============= ACTION SUPPORT ==============
+	public List buildActionRuleText( rule, action ) {
+		if( ! action.actiontype ) throw new Exception('Action Opener must be specified.')
+		
+		if( action.actiontype == 'requireinfo' ) return buildRequireInfoAction( rule, action  )
+		if( action.actiontype == 'updatetaxfee' ) return buildUpdateTaxFeeAction( rule, action ) 
+		if( action.actiontype == 'taxfeecharge' ) return buildAddTaxFeeAction( rule, action )
+		
+		throw new Exception('RuleText definition for action type ' + action.actiontype + ' is not defined in RuleTextService.' )
+	}
+	
+
+	/*--------------------------------------------------------
+	* buildRequireInfoAction Support 
+	-------------------------------------------------------- */
+	List buildRequireInfoAction( rule, action ) {
+		def s = ''
+		s += 'Map m = new HashMap();\n'
+		
+		if( action.applyperlob == true ) {
+			s += 'm.put("lobid", $lobid );\n'
+			s += 'm.put("lobname", $lobname );\n'
+		}
+		else {
+			s += 'm.put("lobid", null);\n'
+			s += 'm.put("lobname", null);\n'
+		}
+        s += 'm.put("rulename", "' + rule.rulename + '");\n'
+        s += 'm.put("varid", "' + action.variable.objid + '" );\n'
+        s += 'm.put("requiredperlob", ' + action.applyperlob + ' );\n'
+        s += 'm.put("required", ' + action.required + ' );\n'
+        s += 'm.put("requiredbeforeprint", ' + action.requiredbeforeprint + ' );\n'
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("addInfo", m );\n'
+        return [[ruletext:s, conditions:[]]]
+	}
+	
+	/*--------------------------------------------------------
+	* buildAddTaxFeeAction Support 
+	-------------------------------------------------------- */
+	List buildAddTaxFeeAction( rule, action ) {
+		if( action.computationmode == 'FORMULA' ) 
+            return buildFormulaRuleText( rule, action )
+        return buildRangeRuleText(rule, action )
+	}
+	
+    List buildFormulaRuleText(rule, action ) {
+		def ruletext = buildAddTaxFeeCommonText( rule, action, action.expr )
+        return [[ruletext:ruletext, conditions:[]]]
+    }
+    
+    List buildRangeRuleText(rule, action) {
+		List actions = []
+		action.ranges.each { range -> 
+			def ruletext = buildAddTaxFeeCommonText( rule, action, range.expr  )
+			def cond = buildRangeAdditionalCondition( rule, action, range )
+			actions.add(
+				ruletext   : ruletext ,
+				conditions : [ cond ],
+			)
+		}
+        return actions 
+    }
+	
+	def buildRangeAdditionalCondition( rule, action, range ) {
+		//
+		//get condition.variable to determine perline or per establishment option 
+		def varconditions = rule.conditions.findAll{ it.variable }
+		def varcond = varconditions.find{ it.variable.objid == action.variable.objid }
+		def lobid = '$lobid'
+		if( varcond && varcond.perline == false ) {
+			lobid = 'null' 
+		}
+		if( range.to > 0 )
+			return 'InputVariableFact( varid=="' + action.variable.objid + '", value >= ' + range.from + ', value < ' + range.to + ', appid == $appid, lobid == ' +  lobid +' )\n'
+		else 	
+			return 'InputVariableFact( varid=="' + action.variable.objid + '", value >= ' + range.from + ', appid == $appid, lobid == ' + lobid +' )\n'
+	}
+	
+	def buildAddTaxFeeCommonText( rule, action, expr ) {
+		def s = ''
+        s += 'Map m = new HashMap();\n'
+        s += 'm.put("rulename", "' + rule.rulename + '");\n'
+        s += 'm.put("appid", $appid);\n'
+        
+		if( action.applytype.name == 'PERLINE' ) {
+            s += 'm.put("lobid", $lobid);\n'
+            s += 'm.put("lobname", $lobname);\n'
+        }
+        else {
+            s += 'm.put("lobid", null);\n'
+            s += 'm.put("lobname", null);\n'
+        }
+        s += 'm.put("expr", "' + expr + '");\n'
+        s += 'm.put("acctid", "' + action.acctid + '");\n'
+        s += 'm.put("accttitle", "' + action.accttitle + '");\n'
+        s += 'm.put("applytype", "' + action.applytype.name + '" );\n' 
+		
+		def taxfeeAccounts = getTaxFeeAccountConditions( rule )
+		
+		if( taxfeeAccounts ) {
+			s += 'm.put("taxfeefact", TAXFEEFACT );\n'
+			s += 'm.put("varname", "AMOUNTDUE");\n'
+			s += 'm.put("varvalue", AMOUNTDUE);\n' 
+		}
+
+        def inputVars = buildVariables( rule, action )
+        if( inputVars ) {
+            s += 'List varlist = new ArrayList();\n'
+            
+            inputVars.each { var ->
+                s += 'varlist.add( ' + var.name + ');\n'
+            }
+            
+            s += 'm.put("inputvars", varlist );\n'
+        }
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("addTaxFee", m );\n'
+		return s 
+	}
+	
+	def getTaxFeeAccountConditions( rule ) {
+		return rule.conditions.findAll{ it.conditiontype == 'taxfee' }
+	}
+	
+	def buildVariables( rule, action ) {
+        def vars = []
+        def inputVars = rule.conditions.findAll{ it.variable }
+        inputVars.each {
+            vars += [
+                objid   : it.variable.objid,
+                name    : it.variable.name,
+                caption : it.variable.caption,
+                description : it.variable.description,
+            ]
+        }
+		inputVars = rule.conditions.findAll{ it.conditiontype == 'summary' }
+        inputVars.each { opener ->
+            opener.summaries.each {
+                vars += [
+                    objid   : it.objid,
+                    name    : it.name,
+                    caption : it.name,
+                    description : it.name,
+                ]
+            }
+        }
+        return vars
+    }
+
+	
+	
+	/*--------------------------------------------------------
+	* buildUpdateTaxFeeAction Support 
+	-------------------------------------------------------- */
+	List buildUpdateTaxFeeAction( rule, action ) {
+		def updateType = determineUpdateType( rule )
+        def s = ''
+        s += 'Map m = new HashMap();\n'
+        s += 'm.put("rulename", "' + rule.rulename + '");\n'
+        s += 'm.put("taxfeefact", TAXFEEFACT );\n'
+        s += 'm.put("expr", "' + action.expr + '");\n'
+        s += 'm.put("varname", "AMOUNTDUE");\n'
+        s += 'm.put("varvalue", AMOUNTDUE);\n'
+		
+		
+		def inputVars = buildVariables( rule, action )
+        if( inputVars ) {
+            s += 'List varlist = new ArrayList();\n'
+            
+            inputVars.each { var ->
+                s += 'varlist.add( ' + var.name + ');\n'
+            }
+            
+            s += 'm.put("inputvars", varlist );\n'
+        }
+		
+		
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("' + updateType + '", m );\n'
+		def conds = getUpdateTypeCondition( updateType )
+        return [[ruletext:s, conditions:conds]]
+	}
+	
+    
+    def determineUpdateType( rule ){
+        def taxfeeCond = rule.conditions.find{ it.conditiontype == 'taxfee' }
+        if(taxfeeCond ) {
+            if( taxfeeCond.option.name == 'NOT_HIGHEST' ) return 'updateNotHighestTaxFee'
+            if( taxfeeCond.option.name == 'NOT_LOWEST' ) return 'updateNotLowestTaxFee'
+            if( taxfeeCond.option.name == 'HIGHEST' ) return 'updateHighestTaxFee'
+            if( taxfeeCond.option.name == 'LOWEST' ) return 'updateLowestTaxFee'
+        }
+        return 'updateAnyTaxFee' 
+    }
+	
+	def getUpdateTypeCondition( updateType ) {
+		def conds = []
+		if( updateType == 'updateNotHighestTaxFee' ) conds.add('not NotHighestComputed( acctid == $acctid, appid == $appid )\n' )
+		else if( updateType == 'updateNotLowestTaxFee' ) conds.add('not NotLowestComputed( acctid == $acctid, appid == $appid )\n' )
+		else if( updateType == 'updateHighestTaxFee' ) conds.add('not HighestComputed( acctid == $acctid, appid == $appid )\n' )
+		else if( updateType == 'updateLowestTaxFee' ) conds.add('not LowestComputed( acctid == $acctid, appid == $appid )\n' )
+		return conds 
+	}
+	
+}

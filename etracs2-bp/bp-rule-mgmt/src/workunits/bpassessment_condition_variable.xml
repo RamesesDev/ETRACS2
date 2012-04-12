@@ -1,0 +1,96 @@
+<workunit>
+    <invokers>
+        <invoker type="bpassessment:rulecondition"  caption="Use Application Data" action="init" index="80" />        
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class BPRuleConditionVariableController extends rulemgmt.RuleConditionHandler
+        {
+            @Binding
+            def binding
+
+            @Service('BPApplicationService')
+            def svc 
+
+            @Service('VariableService')
+            def varSvc
+
+            def variableOpener
+            def variable 
+            def variableList 
+            
+            public String getConditiontype() {
+                return "variable"
+            }
+
+            public void init() {
+                if( !condition.variable ) {
+                    condition.variable = null;
+                    condition.value = null;
+                    condition.perline= true;
+                }
+                else {
+                    //setVariable( varSvc.open( condition.variable.objid ) )  
+                    variable = variables.find{ it.objid == condition.variable.objid  }
+                }
+            }
+
+            def selectHandler = { value ->
+                condition.value = value
+            }
+
+            void setVariable( variable ) {
+                this.variable = variable 
+                condition.variable = variable
+                variableOpener = null
+                if( variable?.datatype == 'string_array' ) {
+                    variableOpener = InvokerUtil.lookupOpener('variablevalue', [variable:variable, selectedValue:condition.value, selectHandler:selectHandler])
+                }
+            }
+
+
+            public void accept() {
+                if( ! condition.variable ) 
+                    throw new Exception('Property is required.')
+                if( condition.variable.vartype == 'string_array' && condition.value == null ) 
+                    throw new Exception('Value is required.')
+                condition.displaytext = buildDisplayText()
+            }
+
+            def buildDisplayText() {
+                def txt = 'Use Application Data provided '
+                if( condition.perline == true ) {
+                    txt += 'per line of business '
+                }
+                txt += ': ' + condition.variable.name
+                if( condition.variable.datatype == 'string_array' ) {
+                    txt += ' = ' + condition.value
+                }
+                return txt 
+            }
+
+            def getVariables() {
+                if( !variableList  ) {
+                    variableList = varSvc.getList( null, null )
+                    variableList.each {
+                        if( it.datatype == 'string_array' ) {
+                            it.arrayvalues = GroovyObjectDeserializer.instance.deserialize( it.arrayvalues )
+                        }
+                    }
+                }
+                return variableList 
+            }
+
+        }
+
+        ]]>
+    </code>
+    <pages>
+        <page template="bpassessment.rule.condition.VariableConditionPage" />
+    </pages>
+</workunit>

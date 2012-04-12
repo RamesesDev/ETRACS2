@@ -1,0 +1,74 @@
+<workunit>
+    <invokers>
+        <invoker type="bpassessment:rulecondition"  caption="Barangay" action="init"  index="40" />        
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class BPRuleConditionBarangayController extends rulemgmt.RuleConditionHandler
+        {
+            @Binding
+            def binding
+
+            @Service('BPApplicationService')
+            def svc 
+
+            @Service('LguService')
+            def lguSvc
+
+            def selectedItem
+            def title =  'Barangay is any of the following: '
+
+            public String getConditiontype() {
+                return "barangay"
+            }
+            
+            public void init() {
+                if(!condition.barangays) condition.barangays = [];
+            }
+
+            public void accept() {
+                if( !condition.barangays ) 
+                    throw new Exception('At least one Barangay is required.')
+                condition.displaytext = title + ' '  + condition.barangays.name.join(', ');
+            }
+
+            /* -------------------------------------------
+            **  List support
+            ------------------------------------------- */
+            def onselectHandler = { brgy ->
+                if( ! condition.barangays.contains( brgy ) ) {
+                    condition.barangays.add( brgy )
+                    binding.refresh('selectedItem')
+                }
+            }
+
+            def add() {
+                def list = lguSvc.getBarangays()
+                list.removeAll( condition.barangays )
+                def params = [ 
+                    list            : list,
+                    title           : title,
+                    onselectHandler : onselectHandler,
+                ]
+                return InvokerUtil.lookupOpener('list.multiselectexp', params )
+            }
+
+            void remove() {
+                if( ! selectedItem ) return
+                selectedItem.each{ condition.barangays.remove( it ) }
+                binding.refresh('selectedItem')
+            }
+
+        }
+
+        ]]>
+    </code>
+    <pages>
+        <page template="bpassessment.rule.condition.BarangayConditionPage" />
+    </pages>
+</workunit>

@@ -1,0 +1,72 @@
+<workunit>
+    <invokers>
+        <invoker type="rule:formula_editor" />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class FormulaEditorController {
+            
+            @Binding
+            def binding;
+        
+            def handler;
+            def selectedItem;
+            
+            def selectedDefinitionType = "Fields";
+            def selectedDefinition;
+
+            def handlerMap = [
+                Fields: {  handler.getFields() },
+                Parameters: { handler.getParameters()},
+                Variables:  {handler.getVariables()},
+                Functions: {handler.getFunctions()}
+            ];
+            
+            def definitionTypes = handlerMap.keySet();
+            
+            public def getExpr() {
+                return handler.getExpr();
+            }
+            
+            public void setExpr( s ) {
+                handler.setExpr( s );
+            }
+            
+            def definitionListHandler = [
+                getRows : { return 50; },
+                getColumns : { return [ new Column(name:'name')]; },
+                fetchList : { 
+                    return handlerMap[selectedDefinitionType](); 
+                },
+                onOpenItem : { item, colname -> 
+                    expr = ((!expr) ? '' : expr)  + item.name;
+                    binding.refresh('expr') 
+                },                
+            ] as SubListModel;
+            
+            def getHtmlInfo() {
+                if( selectedDefinitionType == 'Functions' )
+                    return '<html>${selectedDefinition.info}</html>'
+                    
+                def sb = new StringBuffer();
+                sb << "<b>${selectedDefinition.name}</b>"
+                sb << " (<i>${selectedDefinition.datatype}</i>)"
+                sb << "<br>${selectedDefinition.info}"
+                return "<html>" + sb.toString() + "</html>"
+            }
+            
+        }
+        
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="rulemgmt.support.FormulaEditorPage" />
+    </pages>
+</workunit>

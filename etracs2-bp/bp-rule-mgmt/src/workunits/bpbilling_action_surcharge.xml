@@ -1,0 +1,70 @@
+<workunit>
+    <invokers>
+        <invoker type="bpbilling:ruleaction" caption="Surcharge Computation"  action="init" index="1" />        
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+        import rulemgmt.*
+
+        class BPBillingRuleActionSurchargeController extends RuleActionHandler
+        {
+            @Binding
+            def binding
+            
+            def account;
+            
+            public String getActiontype() {
+                return "calcSurcharge"
+            }
+            
+            def getAccountLookup() {
+                return InvokerUtil.lookupOpener('incomeacct:lookup', null)
+            }
+            
+            void setAccount( acct ) {
+                this.account = acct;
+                action.acctid = acct?.objid 
+                action.accttitle = acct?.accttitle
+            }
+            
+            
+            def opener;
+            
+            public void init() {
+                opener = InvokerUtil.lookupOpener( 'rule:formula_editor', [ handler:formulaModel ]);
+                if( action.acctid ) {
+                    account = [accttitle: action.accttitle]
+                }
+            }
+
+            public void accept() {
+                action.displaytext = buildDisplayText()
+            }
+
+            def buildDisplayText() {
+                return "Calculate Surcharge using formula: ${action.expr}".toString();
+            }
+            
+            def formulaModel = [
+                getFields : { return [] },
+                getVariables : { 
+                    return RuleUtil.getConstraintVars( rule );
+                },
+                getParameters : { return [] },
+                getFunctions : { return [ [name:"IIF", info: "IIF Function"] ] },
+                getExpr : { return action.expr },
+                setExpr : { s-> action.expr = s; }
+            ] as FormulaEditorModel;
+            
+        }
+
+        ]]>
+    </code>
+    <pages>
+        <page template="bpbilling.rule.action.CalculateSurchargePage" />
+    </pages>
+</workunit>

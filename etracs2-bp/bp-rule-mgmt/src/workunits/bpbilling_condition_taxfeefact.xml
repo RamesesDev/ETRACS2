@@ -1,0 +1,47 @@
+<workunit>
+    <invokers>
+        <invoker type="bpbilling:rulecondition" caption="Tax Fee Fact" action="init" index="2"/>
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+        import rulemgmt.*;
+
+        class BPBillingTaxFeeFactController extends FactConditionHandler {
+        
+            @Binding
+            def binding
+
+            public String getFactname() {
+                return "TaxFeeFact";
+            }
+            
+            public FactField[] getFields() {
+                return [
+                    new FactField( "lobid", "Line of Business", "lob" ),
+                    new FactField( "year", "Year", "integer" ),
+                    new FactField( "qtr", "Qtr", "integer" ),
+                    new FactField( "monthsfromjan", "Months from January", "integer" ),
+                    new FactField( "monthsfromqtr", "Months from Qtr", "integer" ),
+                    new FactField( "daysfromjan", "Days from January", "integer" ),
+                    new FactField( "daysfromqtr", "Days from Qtr", "integer" ),
+                    new FactField( "acctid", "Account", "account" ),
+                    new FactField( "amount", "Amt Due", "decimal" ),
+                    new FactField( "surcharge", "Surcharge", "decimal" ),
+                    new FactField( "applysurcharge", "Apply Surcharge", "boolean" ),
+                    new FactField( "applydiscount", "Apply Discount", "boolean" ),
+                ] as FactField[];
+            }
+        }
+
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="rulemgmt.support.FactConditionPage" />
+    </pages>
+    
+</workunit>

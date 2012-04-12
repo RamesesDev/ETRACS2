@@ -24,6 +24,9 @@ public class BPRuleService
 	@Service('DateService')
 	def dateSvc
 	
+	@Service('RuleService')
+	def ruleMgmtSvc;
+	
 	def BPASSESSMENT_RULESET = 'bpassessment'
 	def FACTS_PACKAGE = 'bp.assessment.facts.'
 	
@@ -55,7 +58,7 @@ public class BPRuleService
 	}
 	
 	def getTaxFeeAgendaGroups() {
-		return em.sqlContext.createNamedQuery('rule:getTaxFeeRuleGroups').resultList 
+		return ruleMgmtSvc.getAgendaGroups( 'bpassessment' );
 	}
 	
 	void buildActionCommands( app, facts, actionList ) {

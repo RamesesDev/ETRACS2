@@ -1,0 +1,40 @@
+"rule.*|selectedCondition|selectedAction|agendagroup" [mode == 'view'] {
+    readonly:true;
+}
+
+"rule.*|selectedCondition|selectedAction|agendagroup" [mode != 'view'] {
+    readonly:false;
+}
+
+"addCondition|removeCondition|openCondition|addAction|removeAction|openAction" [mode == 'view'] {
+    enabled:false;
+}
+
+"addCondition|removeCondition|openCondition|addAction|removeAction|openAction" [mode != 'view'] {
+    enabled:true;
+}
+
+"removeCondition|openCondition" [mode != 'view' && selectedCondition == null] {
+    enabled:false;
+}
+
+"removeCondition|openCondition" [mode != 'view' && selectedCondition != null] {
+    enabled:true;
+}
+
+"removeAction|openAction" [mode != 'view' && selectedAction == null] {
+    enabled:false;
+}
+
+"removeAction|openAction" [mode != 'view' && selectedAction != null] {
+    enabled:true;
+}
+
+"rule.rulename" [mode == 'create'] {
+    enabled:true;
+}
+
+"rule.rulename" [mode != 'create'] {
+    enabled:false;
+}
+

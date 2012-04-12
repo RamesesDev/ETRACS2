@@ -1,0 +1,75 @@
+<workunit>
+    <invokers>
+        <invoker type="bpassessment:rulecondition" caption="Application Type" action="init" index="1"/>
+    </invokers>
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+
+        class BPRuleConditionApplicationTypeController extends rulemgmt.RuleConditionHandler {
+        
+            @Binding
+            def binding
+
+            @Service('BPApplicationService')
+            def svc 
+
+            def selectedItem
+            def title =  'Application Type is any of the following: '
+            
+            
+            public String getConditiontype() {
+                return "applicationtype"
+            }
+            void init() {
+                if(!condition.types) condition.types = [];
+            }
+
+            //must be implemented by a condition handler
+            public void accept() {
+                if( !condition.types ) 
+                    throw new Exception('At least one Application Type is required.')
+                condition.displaytext = title + ' ' + condition.types.join(', ');
+            }
+
+
+            /* -------------------------------------------
+            **  List support
+            ------------------------------------------- */
+            def onselectHandler = { type ->
+                if( ! condition.types.contains( type ) ) {
+                    condition.types.add( type )
+                    binding.refresh('selectedItem')
+                }
+            }
+
+            def add() {
+                def list = svc.getApplicationTypes()
+                list.removeAll( condition.types )
+                def params = [ 
+                    list            : list,
+                    title           : title,
+                    onselectHandler : onselectHandler,
+                ]
+                return InvokerUtil.lookupOpener('list.multiselect', params )
+            }
+
+            void remove() {
+                if( ! selectedItem ) return
+                selectedItem.each{ condition.types.remove( it ) }
+                binding.refresh('selectedItem')
+            }
+
+        }
+
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="bpassessment.rule.condition.ApplicationTypeConditionPage" />
+    </pages>
+    
+</workunit>
