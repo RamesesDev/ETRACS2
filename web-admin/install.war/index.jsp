@@ -1,218 +1,175 @@
-<!DOCTYPE html>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ page import="java.io.*,java.util.*" %>
+
+<%
+  File f  = new File( System.getProperty("jboss.server.home.dir") + "/apps/install.war//installed" );
+  if( f.exists() ) {
+	   response.sendRedirect( "/admin" );
+  }
+%>
+
 <html>
-    <head>
-        <title>Rameses Server Web Installer</title>
+
+	<head>
 		<link href="style.css" rel="stylesheet"/>
-		<script type="text/javascript" src="jquery-1.6.js"></script>
-    </head>
-    <body>
-		<div class="f-left">
-			<img src="img/etracs.png" height="70px" width="230px"/>
-		</div>
-        <form method="post" action="install.jsp" onsubmit="return validate(this);" class="f-left content" style="display:none">
-			<h2>ETRACS version 2.0 Server Web Installer (version 1.0)</h2>
-			
-            <span class="title">
-                App. Name: *
-            </span>
-            <input type="text" name="appname" caption="App Name"/>
-			<span class="error"></span>
-            <br/>
-			<span class="title">
-                LGU Formal Name: *
-            </span>
-            <input type="text" name="lguname" caption="LGU Formal Name"/>
-			<span class="error"></span>
-            <br/>
-			<span class="title">
-                Server IP Address: *
-            </span>
-            <input type="text" name="server_ip" caption="Server IP Address"/>
-			<span class="error"></span>
-            <br/>
-			<span class="title">
-                Server Port: *
-            </span>
-            <input type="text" name="server_port" caption="Server Port" value="8080"/>
-			<span class="error"></span>
-			<input type="hidden" name="server_address" />
-            <br/>
-			
-            <h3>Database Settings</h3>
-			
-            <span class="title">
-                DB Host IP Address: *
-            </span>
-            <input type="text" name="dbhost" caption="Database Host" value="localhost"/>
-			<span class="error"></span>
-            <br/>
-            <span class="title">
-                Username: *
-            </span>
-            <input type="text" name="dbuser" caption="Database Username"/>
-			<span class="error"></span>
-            <br/>
-            <span class="title">
-                Password:
-            </span>
-            <input type="password" name="dbpwd"/>
-			<span class="error"></span>
-			<br/>
-			<span class="title">
-                Confirm Password:
-            </span>
-            <input type="password" name="c_dbpwd"/>
-			<span class="error"></span>
-			<br/>
-			
-			<h3>Root Admin Account</h3>
-
-            <span class="title">
-                Username: *
-            </span>
-            <input type="text" name="adminuser" caption="Admin Username"/>
-			<span class="error"></span>
-            <br/>
-            <span class="title">
-                Password: *
-            </span>
-            <input type="password" name="adminpwd" caption="Admin Password"/>
-			<span class="error"></span>
-			<br/>
-			<span class="title">
-                Confirm Password: *
-            </span>
-            <input type="password" name="c_adminpwd" caption="Admin Confirm Password"/>
-			<span class="error"></span>
-			<br/>
-			
-			<button type="submit">Install</button>
-        </form>
-		
-		
-		<div id="overlay" style="display:none"></div>
-		<div id="feedbak" style="display:none">
-			<div id="content" class="clearfix">
-				<img src="img/ajax.gif" class="f-left"/>
-				<div>
-					<h3 id="status"></h3>
-					<hr/>
-					<span id="msg"></span>
-					<div class="btn">
-						<button onclick="closeFeedbak()">Retry</button>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		
+		<link href="${pageContext.servletContext.contextPath}/js/lib/css/jquery-ui/jquery.css" type="text/css" rel="stylesheet" />
+		<script src="${pageContext.servletContext.contextPath}/js/lib/jquery-all.js"></script>
+		<link href="${pageContext.servletContext.contextPath}/js/lib/css/rameses-lib.css" type="text/css" rel="stylesheet" />
+		<script src="${pageContext.servletContext.contextPath}/js/lib/rameses-ext-lib.js"></script>
+		<script src="${pageContext.servletContext.contextPath}/js/lib/rameses-ui.js"></script>
+		<style>
+			.err-label {color:red;}
+			.caption {
+				width: 150px;
+			}
+			.input-column{ 
+				width:250px;
+				vertical-align:top;
+			}
+			#selected-step {
+				background-color: orange;
+				color: white;				
+			}
+			.step {
+				padding: 4px; 
+				font-family: arial;
+			}
+			.step-gap {
+				padding: 4px;
+			}
+		</style>
 		<script>
-			String.prototype.trim = function() {
-				return this.replace(/^\s+|\s+$/g, '');
-			};
-			
-			$('span.error').hide();
-			$('input[name="appname"]').blur(function(){
-				this.value = this.value.trim().replace(/\s+/g, '_').toLowerCase();
-			});
-			$('form').fadeIn();
-			$('form input:text:first').focus();
-			
-			function validate( form ) {
-				if( !form.dbhost.value.trim() ) form.dbhost.value = 'localhost';
-				
-				var hasError = false;
-				for(var i=0; i < form.elements.length; ++i) {
-					var e = form.elements[i];
-					if( !e.name ) continue;
-					if( !e.getAttribute('caption') ) continue;
+			$put( "installer",
+				new function() {
+					this.info = {
+						server_ip: '<%=System.getProperty("jboss.bind.address")%>',
+						server_port: "8080",
+						dbhost: "localhost",
+						adminuser: "admin",
+					}
+					this.errors = {}
+					this.db = {}
+					this.step = "start";
+					var self = this;
 					
-					var val = e.value.trim();
-					e.value = val;
-					if( !val ) {
-						$(e).next().html( $(e).attr('caption') + ' is required' ).fadeIn();
-						if(!hasError) $(e).focus();
-						hasError = true;
+					this.drivers = [
+						{caption: "MySQL", id:"mysql"},
+						{caption: "SQL Server",  id:"mssql"},
+					]
+					this.verifyServerInfo = function() {
+						this.errors = {}
+						var hasErrs = false;
+						if(!this.info.appname) {this.errors.appname = true; hasErrs = true;}
+						if(!this.info.lguname) {this.errors.lguname = true; hasErrs = true;}
+						if(!this.info.server_ip) {this.errors.server_ip = true; hasErrs = true;}
+						if(!this.info.server_port) {this.errors.server_port = true; hasErrs = true;}
+						if(! hasErrs ){
+							this.step = "step1";
+							return "step1";
+						}	
 					}
-					else {
-						$(e).next().fadeOut();
+					
+					this.verifyDbInfo = function() {
+						this.errors = {}
+						var hasErrs = false;
+						if(!this.info.dbhost) {this.errors.dbhost = true; hasErrs = true;}
+						if(!this.info.dbuser) {this.errors.dbuser = true; hasErrs = true;}
+						if(!this.info.dbpwd) {this.errors.dbpwd = true; hasErrs = true;}
+						if(!this.info.c_dbpwd) {this.errors.c_dbpwd = true; hasErrs = true;}
+						if(! hasErrs ){
+							if( this.info.dbpwd != this.info.c_dbpwd ) {
+								alert("Password must match the confirmed password");
+								return;
+							}
+							this.step = "step2";
+							return "step2";
+						}	
 					}
-				};
-
-				if( form.dbpwd.value != form.c_dbpwd.value ) {
-					$(form.c_dbpwd).next().html('Confirm Password does not match the Password.').fadeIn();
-					hasError = true;
-				}
-				else if( !hasError ) {
-					$(form.c_dbpwd).next().fadeOut();
-				}
-				
-				if( form.adminpwd.value != form.c_adminpwd.value ) {
-					$(form.c_adminpwd).next().html('Confirm Password does not match the Password.').fadeIn();
-					hasError = true;
-				}
-				else if( !hasError ) {
-					$(form.c_adminpwd).next().fadeOut();
-				}
-				
-				if( hasError ) return false;
-				
-				form.server_address.value = form.server_ip.value;
-				if( form.server_port.value )
-					form.server_address.value += ":" + form.server_port.value;
-				
-				if( confirm('You are about to install the server. Please verify all the entries are correct. Proceed?') ) {
-					start( form );
-				}
-				
-				return false;
-			}
-			
-			function start( form ) {
-				$('#overlay').css('opacity',0.4).show();
-				$('#feedbak').css('opacity',0).show().animate({opacity: 0.9});
-				$('#feedbak .btn').hide();
-				$('#feedbak #status').html('Please wait...');
-				$('#feedbak #msg').html('Building server configuration...');
-				
-				$.ajax({
-					url: 'install.jsp',
-					type: 'post',
-					data: $(form).serialize(),
-					complete: function(req) {
-						var text = req.responseText.trim();
-						if( text == 'DONE' ) {
+					
+					var startProcessing = function() {
+						self.message = 'Building server configuration...';
+						$invoke( "install.jsp", self.info, function(hreq) {
+							var msg = hreq.responseText;
+							if( msg ) msg = msg.trim();
+							if( msg != 'DONE' ) {
+								alert( msg );
+								self._controller.navigate('step2');
+								return;
+							}
+							self.message = 'Deploying server configuration...';
+							self._controller.refresh();
 							waitForDeployment();
-							$('#feedbak #msg').html('Deploying ETRACS version 2.0 server...');
+						});
+					}
+					
+					var waitForDeployment = function() {
+						var oncomplete = function(req) {
+							if( req.status != 200 ) {
+								setTimeout( waitForDeployment, 1500 );
+							}
+							else {
+								location.href = 'completed.jsp';
+							}
 						}
-						else {
-							$('#feedbak #status').html('Error');
-							$('#feedbak #msg').html(text);
-							$('#feedbak .btn').fadeIn();
+						$invoke( "/admin", null, oncomplete, "get" );
+					}
+					
+					this.verifyAdminInfo = function() {
+						this.errors = {}
+						var hasErrs = false;
+						if(!this.info.adminpwd) {this.errors.adminpwd = true; hasErrs = true;}
+						if(!this.info.c_adminpwd) {this.errors.c_adminpwd = true; hasErrs = true;}
+						if(! hasErrs ){
+							if( this.info.adminpwd != this.info.c_adminpwd ) {
+								alert("Password must match the confirmed password");
+								return;
+							}
+							
+							if( confirm("You are about to start the installation process. Continue?")) {
+								startProcessing();
+								this.step = "processing";
+								return "processing";
+							}
+							
 						}
 					}
-				});
-			}
-			
-			function closeFeedbak() {
-				$('#overlay').fadeOut();
-				$('#feedbak').fadeOut();
-			}			
-			
-			function waitForDeployment() {
-				$.ajax({
-					url: '/admin',
-					type: 'get',
-					complete: function(req) {
-						if( req.status != 200 ) {
-							setTimeout( waitForDeployment, 1500 );
-						}
-						else {
-							location.href = 'success.jsp';
-						}
-					}
-				});
-			}
+					
+				},
+				{
+					"default" : "installer_start.jsp",
+					"step1" : "installer_step1.jsp",
+					"step2" : "installer_step2.jsp",
+					"processing" : "installer_processing.jsp",
+				}
+			);	
 		</script>
-    </body>
+	</head>
+
+	<body>
+		<table width="100%" cellpadding="0" cellspacing="0">
+			<tr>
+				<td colspan="2"></td>
+			</tr>
+			<tr>
+				<td valign="top" width="250px">
+					<img src="img/etracs.png" height="70px" width="230px"/>
+					<br>
+					
+					<label r:context="installer">
+						<div class="step-gap"><label class="step" id="#{step == 'start' ? 'selected-step' : 'unselected-step'}">Server Info</label></div>
+						<div class="step-gap"><label class="step" id="#{step == 'step1' ? 'selected-step' : 'unselected-step'}">Database Info</label></div>
+						<div class="step-gap"><label class="step" id="#{step == 'step2' ? 'selected-step' : 'unselected-step'}">Admin Info</label></div>
+						<div class="step-gap"><label class="step" id="#{step == 'processing' ? 'selected-step' : 'unselected-step'}">Processing</label></div>
+					</label>
+				</td>
+				
+				<td valign="top">
+					<h1>Welcome to ETRACS version 2.0 Installation</h1>
+					<div r:controller="installer"></div>
+				</td>
+			</tr>
+		</table>
+	
+	</body>
+	
 </html>
