@@ -1,0 +1,44 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import java.rmi.server.UID
+
+class CTCCollectionInterceptor 
+{
+
+	@Service("EntityService")
+	def entitySvc;
+	
+	
+	@After(pattern="ReceiptService.create.*") 
+	public void afterCreate( evt ) {
+		def receipt = evt.args[0]
+		def payer = receipt.info.payer
+		if( !payer ) return
+		
+		if( payer.objid )
+			entitySvc.update( buildEntity(payer) )
+		else
+			entitySvc.create( buildEntity(payer) )
+	}
+	
+	@After(pattern="ReceiptService.update.*") 
+	public void afterUpdate( evt ) {
+		def receipt = evt.args[0]
+		def payer = receipt.info.payer
+		if( !payer ) return
+		
+		entitySvc.update( buildEntity(payer) );
+	}
+	
+	private def buildEntity( payer ) {
+		def entity = [info:[:]]
+		entity.objid = payer.objid
+		entity.entitytype = payer.entitytype
+		entity.entityaddress = payer.entityaddress
+		entity.entityno = payer.entityno
+		entity.info.putAll( payer )
+		
+		return entity;
+	}
+	
+}
