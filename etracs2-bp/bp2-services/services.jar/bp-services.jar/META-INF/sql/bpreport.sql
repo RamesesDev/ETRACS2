@@ -38,10 +38,10 @@ ORDER BY a.txnno
 SELECT  
 	a.iyear, 
 	l.name AS lobname, 
-	SUM(CASE WHEN a.txntype = 'NEW' THEN 1 ELSE 0 END)  AS newcount, 
-	SUM(CASE WHEN a.txntype = 'RENEW' THEN 1 ELSE 0 END)  AS renewcount, 
-	SUM(CASE WHEN a.txntype = 'ADDLOB' THEN 1 ELSE 0 END)  AS addlobcount, 
-	SUM(CASE WHEN a.txntype = 'RETIRE' THEN 1 ELSE 0 END)  AS retirecount 
+	SUM(CASE WHEN a.txntype = 'NEW' THEN $P{qtr} ELSE 0 END)  AS newcount, 
+	SUM(CASE WHEN a.txntype = 'RENEW' THEN $P{qtr} ELSE 0 END)  AS renewcount, 
+	SUM(CASE WHEN a.txntype = 'ADDLOB' THEN $P{qtr} ELSE 0 END)  AS addlobcount, 
+	SUM(CASE WHEN a.txntype = 'RETIRE' THEN $P{qtr} ELSE 0 END)  AS retirecount 
 FROM bpapplicationlisting a 
 	INNER JOIN bploblisting bl ON bl.applicationid = a.objid  
 	INNER JOIN lob l ON l.objid = bl.lobid  
@@ -106,19 +106,79 @@ WHERE ba.txntype = $P{txntype}
   AND ba.objid = pa.objid 
 ORDER BY pa.amount DESC  
 
+[getAnnually] 
+SELECT
+	lc.name AS classification, 
+	SUM(CASE WHEN a.iyear = $P{yearto} AND al.varname = $P{varname} THEN al.value ELSE 0.0 END ) AS amountto, 
+	SUM(CASE WHEN a.iyear = $P{yearfrom} AND al.varname = $P{varname} THEN al.value ELSE 0.0 END ) AS amountfrom	 
+FROM lobclassification lc 
+	INNER JOIN lob l ON lc.objid = l.classificationid  
+	INNER JOIN bpappinfolisting al ON l.objid = al.lobid  
+	INNER JOIN bpapplication a ON al.applicationid = a.objid  
+WHERE  a.iyear IN ( $P{yearto}, $P{yearfrom} ) 
+ AND a.docstate IN ('APPROVED', 'PERMIT_PENDING', 'ACTIVE', 'EXPIRED')   
+GROUP BY lc.name 
 
-
-
-
-
-
-
-
-
-
-
-
-
-  
+[getQuarterly] 
+SELECT 
+	lc.name AS classification, 
+	SUM(CASE WHEN a.iyear = $P{yearto} AND al.varname = $P{varname} THEN al.value ELSE 0.0 END ) AS   amountto, 
+	SUM(CASE WHEN a.iyear = $P{yearto} AND QUARTER(a.txndate) = $P{qtr} AND al.varname = $P{varname} THEN al.value ELSE 0.0 END ) AS amttoq1, 
+	SUM(CASE WHEN a.iyear = $P{yearto} AND QUARTER(a.txndate) = 2 AND al.varname = $P{varname} THEN al.value ELSE 0.0 END ) AS amttoq2, 
+	SUM(CASE WHEN a.iyear = $P{yearto} AND QUARTER(a.txndate) = 3 AND al.varname = $P{varname} THEN al.value ELSE 0.0 END ) AS amttoq3, 
+	SUM(CASE WHEN a.iyear = $P{yearto} AND QUARTER(a.txndate) = 4 AND al.varname = $P{varname} THEN al.value ELSE 0.0 END ) AS amttoq4, 
+	 
+	SUM(CASE WHEN a.iyear = $P{yearfrom} AND al.varname = $P{varname} THEN al.value ELSE 0.0 END ) AS  amountfrom, 
+	SUM(CASE WHEN a.iyear = $P{yearfrom} AND QUARTER(a.txndate) = $P{qtr} AND al.varname = $P{varname} THEN al.value ELSE 0.0 END ) AS amtfrmq1, 
+	SUM(CASE WHEN a.iyear = $P{yearfrom} AND QUARTER(a.txndate) = 2 AND al.varname = $P{varname} THEN al.value ELSE 0.0 END ) AS amtfrmq2, 
+	SUM(CASE WHEN a.iyear = $P{yearfrom} AND QUARTER(a.txndate) = 3 AND al.varname = $P{varname} THEN al.value ELSE 0.0 END ) AS amtfrmq3, 
+	SUM(CASE WHEN a.iyear = $P{yearfrom} AND QUARTER(a.txndate) = 4 AND al.varname = $P{varname} THEN al.value ELSE 0.0 END ) AS amtfrmq4   
+FROM lobclassification lc  
+	INNER JOIN lob l ON lc.objid = l.classificationid  
+	INNER JOIN bpappinfolisting al ON l.objid = al.lobid  
+	INNER JOIN bpapplication a ON al.applicationid = a.objid  
+WHERE  a.iyear IN ( $P{yearto}, $P{yearfrom} ) 
+ AND a.docstate IN ('APPROVED', 'PERMIT_PENDING', 'ACTIVE', 'EXPIRED')  
+GROUP BY lc.name 
  
-
+[getAssessmentAnnually]
+SELECT 
+	lc.name AS classification,
+	SUM(CASE WHEN ia.systype = 'BUSINESS_TAX' AND a.iyear = $P{yearto} THEN tf.amountdue ELSE 0.0 END )AS businesstaxto, 
+	SUM(CASE WHEN ia.systype = 'BUSINESS_TAX' AND a.iyear = $P{yearfrom} THEN tf.amountdue ELSE 0.0 END )AS businesstaxfrom, 
+	SUM(CASE WHEN ia.systype = 'REG_FEE' AND a.iyear = $P{yearto} THEN tf.amountdue ELSE 0.0 END) AS regfeeto, 
+	SUM(CASE WHEN ia.systype = 'REG_FEE' AND a.iyear = $P{yearfrom} THEN tf.amountdue ELSE 0.0 END) AS regfeefrom, 
+	SUM(CASE WHEN a.iyear = $P{yearto} AND ia.systype IS NULL OR ia.systype NOT IN( 'BUSINESS_TAX', 'REG_FEE') THEN tf.amountdue ELSE 0.0 END) AS otherfeeto, 
+	SUM(CASE WHEN a.iyear = $P{yearfrom} AND ia.systype IS NULL OR ia.systype NOT IN( 'BUSINESS_TAX', 'REG_FEE') THEN tf.amountdue ELSE 0.0 END) AS otherfeefrom,
+	SUM(CASE WHEN a.iyear = $P{yearto} THEN tf.amountdue ELSE 0.0 END) AS amountto, 
+	SUM(CASE WHEN a.iyear = $P{yearfrom} THEN tf.amountdue ELSE 0.0 END) AS amountfrom  
+FROM bptaxfeelisting tf 
+	INNER JOIN bpapplication a ON a.objid = tf.applicationid  
+	INNER JOIN incomeaccount ia ON ia.objid = tf.acctid  
+	INNER JOIN lob l ON l.objid = tf.lobid  
+	INNER JOIN lobclassification lc ON lc.objid = l.classificationid 
+WHERE a.iyear IN ( $P{yearto}, $P{yearfrom} )  
+ AND a.docstate IN ('APPROVED', 'PERMIT_PENDING', 'ACTIVE', 'EXPIRED')    
+GROUP BY classification 
+ORDER BY classification 
+ 
+[getAssessmentQuarterly]
+SELECT 
+	lc.name AS classification,
+	SUM(CASE WHEN ia.systype = 'BUSINESS_TAX' AND a.iyear = $P{yearto} AND QUARTER(a.txndate) = $P{qtr} THEN tf.amountdue ELSE 0.0 END )AS businesstaxto, 
+	SUM(CASE WHEN ia.systype = 'BUSINESS_TAX' AND a.iyear = $P{yearfrom} AND QUARTER(a.txndate) = $P{qtr} THEN tf.amountdue ELSE 0.0 END )AS businesstaxfrom, 
+	SUM(CASE WHEN ia.systype = 'REG_FEE' AND a.iyear = $P{yearto} AND QUARTER(a.txndate) = $P{qtr} THEN tf.amountdue ELSE 0.0 END) AS regfeeto, 
+	SUM(CASE WHEN ia.systype = 'REG_FEE' AND a.iyear = $P{yearfrom} AND QUARTER(a.txndate) = $P{qtr} THEN tf.amountdue ELSE 0.0 END) AS regfeefrom, 
+	SUM(CASE WHEN a.iyear = $P{yearto} AND QUARTER(a.txndate) = $P{qtr} AND ia.systype IS NULL OR ia.systype NOT IN( 'BUSINESS_TAX', 'REG_FEE') THEN tf.amountdue ELSE 0.0 END) AS otherfeeto, 
+	SUM(CASE WHEN a.iyear = $P{yearfrom} AND QUARTER(a.txndate) = $P{qtr} AND ia.systype IS NULL OR ia.systype NOT IN( 'BUSINESS_TAX', 'REG_FEE') THEN tf.amountdue ELSE 0.0 END) AS otherfeefrom,
+	SUM(CASE WHEN a.iyear = $P{yearto} AND QUARTER(a.txndate) = $P{qtr} THEN tf.amountdue ELSE 0.0 END) AS amountto, 
+	SUM(CASE WHEN a.iyear = $P{yearfrom} AND QUARTER(a.txndate) = $P{qtr} THEN tf.amountdue ELSE 0.0 END) AS amountfrom  
+FROM bptaxfeelisting tf 
+	INNER JOIN bpapplication a ON a.objid = tf.applicationid  
+	INNER JOIN incomeaccount ia ON ia.objid = tf.acctid  
+	INNER JOIN lob l ON l.objid = tf.lobid  
+	INNER JOIN lobclassification lc ON lc.objid = l.classificationid 
+WHERE a.iyear IN ( $P{yearto}, $P{yearfrom} )  
+ AND a.docstate IN ('APPROVED', 'PERMIT_PENDING', 'ACTIVE', 'EXPIRED')    
+GROUP BY classification 
+ORDER BY classification

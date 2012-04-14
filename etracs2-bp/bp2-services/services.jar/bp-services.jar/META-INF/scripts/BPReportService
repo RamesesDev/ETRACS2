@@ -141,10 +141,70 @@ public class BPReportService
 		return reportdata
 	}
 	
+	@ProxyMethod
+	public def getComparativeList( param ){
+		def reportdata = [:]
+		reportdata.type = param.type
+		reportdata.title = "Comparative Report on $param.varname Investment by Classification".toString()
+		param.sql_stmt = param.type.equals('ANNUALLY') ? 'getAnnually' : 'getQuarterly'
+		reportdata.items = getComparativeResult( param )
+		if( !reportdata.items ) throw new Exception( 'No Records found' )
+		
+		return reportdata
+	} 
+	
+	@ProxyMethod
+	public def getComparativeAssessmentList( def param ){
+		def reportdata = [:]
+		reportdata.type = param.type
+		reportdata.title = "Comparative Report on Assessment by Classification".toString()
+		param.sql_stmt = param.type.equals('ANNUALLY') ? 'getAssessmentAnnually' : 'getAssessmentQuarterly'
+		reportdata.items = getComparativeResult( param )
+		if( !reportdata.items ) throw new Exception( 'No Records found' )
+		
+		return reportdata
+	} 
+	
+	private def getComparativeResult( def param ){
+		def result = em.sqlContext.createNamedQuery( 'bpreport:' + param.sql_stmt ).setParameters( param ).resultList
+		
+		return getAmtPercentage( result )  
+	}
+	
+	private def getAmtPercentage( def data ){
+		return data.each{
+			if( it.amountto == 0.0 && it.amountfrom == 0.0 ){
+				it.increaserate = 0 as double
+				it.percenttage = it.increaserate + '%'
+			}
+			else if( it.amountto == 0.0 ){
+				it.increaserate = -100 as double
+				it.percenttage = it.increaserate + '%'
+			}				
+			else{
+				it.increaserate = (( it.amountto - it.amountfrom ) / it.amountto * 100) as double
+				it.percenttage =  numSvc.format('0.00', it.increaserate) + '%'
+			}
+			
+		}
+	
+	}
+	
+	@ProxyMethod
+	public def buildQtr( def param ){
+		if( param.value == 1 )
+            return '1st QTR'
+        else if( param.value == 2 ) 
+            return '2nd QTR'
+        else if( param.value == 3 ) 
+            return '3nd QTR'
+        else return '4th QTR'
+	}
+	
 	private def buildTitle( def param ){
-		def	titleprefix = ( param.txntype == 'NEW' ? "NEW $param.classification" : "RENEWED $param.classification" )
+		def	titleprefix = ( param.txntype.equals('NEW') ? "NEW $param.classification" : "RENEWED $param.classification" )
 		if( !param.classification )
-			titleprefix = ( param.txntype == 'NEW' ? 'NEW BUSINESSES' : 'BUSINESS RENEWALS' )
+			titleprefix = ( param.txntype.equals('NEW')  ? 'NEW BUSINESSES' : 'BUSINESS RENEWALS' )
 		
 		return "TOP $param.topsize " + titleprefix
 	}
