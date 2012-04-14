@@ -1,0 +1,38 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : june 20, 2011
+*/
+
+import com.rameses.annotations.*;
+import com.rameses.common.*
+import java.rmi.server.UID
+
+public class RuleTextBuilderService
+{	
+    @ProxyMethod	
+	public String buildFactCondition( cond, additionalConstraint ) {
+		String s = ''
+		if( cond.factvar ) s += cond.factvar + ':'
+		s += cond.factname + '('
+		s += buildConstraints( cond ) 
+		if( additionalConstraint ) s += ', ' + additionalConstraint
+		s += ')\n'
+		return s 
+	}
+	
+    @ProxyMethod
+	public String buildConstraints( cond ) {
+		String s = ''
+		cond.constraints.each { constraint ->
+			if( s.length() > 0 ) s += ', '
+			if( constraint.fieldvar ) s += constraint.fieldvar + ':' 
+			s += constraint.field.name
+			if( constraint.operator ) s += ' ' + constraint.operator.name 
+			if( constraint.operator && constraint.operator.name != 'matches' && constraint.value ) s += ' ' + constraint.value 
+			else if( constraint.operator && constraint.operator.name == 'matches' && constraint.value ) s += ' "' + constraint.value.objid.join('|') + '"'
+		}
+        return s 
+	}
+
+}

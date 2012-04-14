@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="value_handler:account_lookup" caption="TaxFee Account Criteria" target="popup"/>
+        <invoker type="value_handler:account_lookup" caption="Select Account" target="popup"/>
     </invokers>
     <code>
 <![CDATA[
@@ -9,48 +9,39 @@
         import com.rameses.rcp.common.*
         import com.rameses.osiris2.client.*
 
-        class BPBillingRuleLookupTaxFeeController
-        {
+        class BPBillingRuleLookupTaxFeeController {
+        
             @Binding
             def binding
 
             def searchText
             def selectedItem
-            def accounts = []
+            def selectedItems = [];
             def handler
 
-            def ok() {
-                if( handler ) handler( accounts )
+            def select() {
+                if( handler ) handler( selectedItems )
                 return '_close' 
             }
 
             def remove() {
                 if( selectedItem ) {
-                    accounts.remove( selectedItem )
+                    selectedItems.remove( selectedItem )
                 }
             }
 
             def selectAcctHandler = { acct ->
-                if( ! contains( acct ) ) {
-                    accounts.add([
-                        objid: acct.objid,
-                        name : acct.accttitle
-                    ])
+                if( ! selectedItems.find{ it.objid == acct.objid } ) {
+                    selectedItems.add([ objid: acct.objid, name : acct.accttitle ]);
                 }
                 searchText = null
                 binding.refresh( 'searchText' )
                 binding.refresh('selectedItem')
             }
 
-            def lookupAccount() {
+            def lookup() {
                 return InvokerUtil.lookupOpener('incomeacct:lookup', [searchText:searchText, onselect:selectAcctHandler])
             }
-
-            boolean contains( acct ) {
-                def v = accounts.find{ it.objid == acct.objid }
-                return v != null
-            }
-
 
         }
 
@@ -58,6 +49,6 @@
         ]]>
     </code>
     <pages>
-        <page template="bpbilling.rule.condition.TaxFeeCriteriaPage"/>
+        <page template="rulemgmt.support.MultiValueLookupPage"/>
     </pages>
 </workunit>

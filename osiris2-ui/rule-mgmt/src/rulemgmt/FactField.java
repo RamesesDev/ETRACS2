@@ -41,7 +41,7 @@ public class FactField {
         if( this.operatorHandler == null ) {
             if( datatype.equals("integer")) this.operatorHandler = "number";
             else if( datatype.equals("decimal")) this.operatorHandler = "number";
-            else if( datatype.equals("date")) this.operatorHandler = "date";
+            else if( datatype.equals("date")) this.operatorHandler = "number";
             else if( datatype.equals("boolean")) this.operatorHandler = "boolean";
             else this.operatorHandler = "string";
         }

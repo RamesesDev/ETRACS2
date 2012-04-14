@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="bpbilling:ruleaction" caption="Surcharge Computation"  action="init" index="1" />        
+        <invoker type="bpbilling:ruleaction" caption="Interest Computation"  action="init" index="2" />        
     </invokers>
     <code>
         <![CDATA[
@@ -10,7 +10,7 @@
         import com.rameses.osiris2.client.*
         import rulemgmt.*
 
-        class BPBillingRuleActionSurchargeController extends RuleActionHandler
+        class BPBillingRuleActionInterestController extends RuleActionHandler
         {
             @Binding
             def binding
@@ -18,7 +18,7 @@
             def account;
             
             public String getActiontype() {
-                return "calcSurcharge"
+                return "calcInterest"
             }
             
             def getAccountLookup() {
@@ -42,7 +42,7 @@
             }
 
             public void accept() {
-                action.displaytext = "Calculate Surcharge using formula: ${action.expr} for account ${account.accttitle}".toString();
+                action.displaytext = "Calculate Interest using formula: ${action.expr} for account ${account.accttitle}".toString();
             }
 
             def formulaModel = [

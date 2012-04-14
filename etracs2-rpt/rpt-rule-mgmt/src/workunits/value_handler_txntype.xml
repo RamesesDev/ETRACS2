@@ -1,0 +1,38 @@
+<workunit>
+    <invokers>
+        <invoker type="value_handler:txntype" />
+    </invokers>
+    
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+        import rulemgmt.*;
+
+        public class TxnTypeValueHandler extends ValueHandler {
+        
+            @Binding
+            def binding
+
+            def lookup() {
+                def h = { o->
+                    value = o;
+                    binding.refresh();
+                }
+                return InvokerUtil.lookupOpener( "value_handler:txntype_lookup", [handler: h ] );
+            }
+            
+            public String getDisplaytext() {
+                return value ? value*.name.join(', ') : '';
+            }
+        }
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="rulemgmt.support.LookupValuePage"/> 
+    </pages>
+    
+</workunit>

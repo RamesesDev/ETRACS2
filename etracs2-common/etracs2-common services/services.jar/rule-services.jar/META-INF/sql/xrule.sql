@@ -1,4 +1,4 @@
-[list]
+[getList]
 SELECT objid, docstate, agendagroup, rulename, description, author, salience  
 FROM rule 
 WHERE ruleset = $P{ruleset}

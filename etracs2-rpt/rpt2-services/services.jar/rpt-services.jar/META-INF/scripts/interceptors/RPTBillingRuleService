@@ -1,0 +1,160 @@
+/*
+* @author    : jzamora
+* @copyright : Rameses Systems Inc
+* @date      : july 5, 2011
+*/
+
+import com.rameses.annotations.*;
+import com.rameses.common.*
+import java.rmi.server.UID
+
+public class RPTBillingRuleService
+{
+    @Service('RuleTextBuilderService')
+    def ruleBuilderSvc 
+    
+    def RULESET = 'rptbilling'
+    def FACTS_PACKAGE = 'etracs2.rpt.billing.facts'
+	
+	@Before(pattern="RuleService\\.buildRuleText.*", eval="#{args[0].ruleset == 'rptbilling'}")
+	public void buildRuleText( evt ) {
+		println '-- firing rule test ---'
+		def rule = evt.args[0];
+		rule.ruletext = doBuildRuleText( rule );
+	}
+
+    @ProxyMethod
+    public String doBuildRuleText( rule ) {
+		def ruleHeader = buildRuleHeader( rule )
+		def conditions = buildRuleConditions( rule )
+		def actions = buildRuleActions( rule )
+		return ruleHeader + conditions + actions + 'end'
+	}
+	
+	/*-------------------------------------------------------------
+	* BuildRuleText Support
+	-------------------------------------------------------------*/
+	String buildRuleActions( rule ) {
+		String s = 'then\n'
+		rule.actions.each { action ->
+			if( action.actiontype == 'calcBasic' ) s += calcBasic( rule, action, 'calcBasic', 'current' )
+            else if( action.actiontype == 'calcBasicPrev' ) s += calcBasic( rule, action, 'calcBasic', 'previous' )
+            else if( action.actiontype == 'calcBasicPrior' ) s += calcBasic( rule, action, 'calcBasic', 'prior' )
+			else if( action.actiontype == 'calcBasicInt' ) s += calcBasicInterest( rule, action, 'calcBasicInt', 'current' )
+            else if( action.actiontype == 'calcBasicPrevInt' ) s += calcBasicInterest( rule, action, 'calcBasicInt', 'previous' )
+            else if( action.actiontype == 'calcBasicPriorInt' ) s += calcBasicInterest( rule, action, 'calcBasicInt', 'prior' )
+			else if( action.actiontype == 'calcBasicDisc' ) s += calcBasicDiscount( rule, action )
+            else if( action.actiontype == 'calcSef' ) s += calcSef( rule, action, 'calcSef', 'current' )
+            else if( action.actiontype == 'calcSefPrev' ) s += calcSef( rule, action, 'calcSef', 'previous' )
+            else if( action.actiontype == 'calcSefPrior' ) s += calcSef( rule, action, 'calcSef', 'prior' )
+			else if( action.actiontype == 'calcSefInt' ) s += calcSefInterest( rule, action, 'calcSefInt', 'current' )
+            else if( action.actiontype == 'calcSefPrevInt' ) s += calcSefInterest( rule, action, 'calcSefInt', 'previous' )
+            else if( action.actiontype == 'calcSefPriorInt' ) s += calcSefInterest( rule, action, 'calcSefInt', 'prior' )
+			else if( action.actiontype == 'calcSefDisc' ) s += calcSefDiscount( rule, action )
+            else throw new Exception('Action ' + action + ' is not yet supported.')
+		}
+		return s
+	}
+    
+    String buildVarListParams( rule ) {
+        String s = ''
+        rule.varlist.each {
+            s += '$LEDGER.getVarlist().put("' + it + '", ' + it + ');\n'
+        }
+        return s 
+    }
+	
+	String calcBasic( rule, action, actioncmd, revtype ) {
+        String s = ''
+        s += '$LEDGER.setBasicacctid("' + action.acctid + '");\n'
+        s += '$LEDGER.setExpr("' + action.expr + '");\n'
+        s += '$LEDGER.setRevtype("' + revtype + '");\n'
+        s += '$LEDGER.setVarlist( new HashMap() );\n'
+        s += buildVarListParams( rule )
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("' + actioncmd +'", $LEDGER);\n'
+		return s 
+	}
+    
+    String calcSef( rule, action, actioncmd, revtype   ) {
+        String s = ''
+        s += '$LEDGER.setSefacctid("' + action.acctid + '");\n'
+        s += '$LEDGER.setExpr("' + action.expr + '");\n'
+        s += '$LEDGER.setRevtype("' + revtype + '");\n'
+        s += '$LEDGER.setVarlist( new HashMap() );\n'
+        s += buildVarListParams( rule )
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("' + actioncmd + '", $LEDGER);\n'
+		return s 
+	}
+    
+    String calcBasicInterest( rule, action, actioncmd, revtype   ) {
+        String s = ''
+        s += '$LEDGER.setBasicintacctid("' + action.acctid + '");\n'
+        s += '$LEDGER.setExpr("' + action.expr + '");\n'
+        s += '$LEDGER.setRevtype("' + revtype + '");\n'
+        s += '$LEDGER.setVarlist( new HashMap() );\n'
+        s += buildVarListParams( rule )
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("' + actioncmd + '", $LEDGER);\n'
+		return s 
+	}
+    
+    String calcSefInterest( rule, action, actioncmd, revtype  ) {
+        String s = ''
+        s += '$LEDGER.setSefintacctid("' + action.acctid + '");\n'
+        s += '$LEDGER.setExpr("' + action.expr + '");\n'
+        s += '$LEDGER.setRevtype("' + revtype + '");\n'
+        s += '$LEDGER.setVarlist( new HashMap() );\n'
+        s += buildVarListParams( rule )
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("' + actioncmd + '", $LEDGER);\n'
+		return s 
+	}    
+    
+    String calcBasicDiscount( rule, action ) {
+        String s = ''
+        s += '$LEDGER.setExpr("' + action.expr + '");\n'
+        s += '$LEDGER.setVarlist( new HashMap() );\n'
+        s += buildVarListParams( rule )
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("calcBasicDisc", $LEDGER);\n'
+		return s 
+	}
+    
+    String calcSefDiscount( rule, action ) {
+        String s = ''
+        s += '$LEDGER.setExpr("' + action.expr + '");\n'
+        s += '$LEDGER.setVarlist( new HashMap() );\n'
+        s += buildVarListParams( rule )
+        s += 'actionList.setContext( drools );\n'
+        s += 'actionList.execute("calcSefDisc", $LEDGER);\n'
+		return s 
+	}
+  
+  
+	String buildRuleConditions( rule ) {
+		String s = ''
+		rule.conditions.each { cond ->
+			if( cond.factname == 'RPTLedgerFact' ) s += ruleBuilderSvc.buildFactCondition( cond, 'ledgerid == $ledgerid' )
+			else if( cond.factname == 'CurrentYearFact' ) s += ruleBuilderSvc.buildFactCondition( cond, null )
+		}
+		return s 
+	}
+	
+	
+	String buildRuleHeader( rule ) {
+		String s = ''
+		s += 'package ' + rule.packagename + ';\n\n'
+		s += 'import ' + FACTS_PACKAGE +'.*\n';
+		s += 'import java.util.*\n\n';
+		s += 'global com.rameses.rules.common.RuleAction actionList\n\n'
+		s += 'rule "' + rule.rulename + '"\n'
+		s += 'agenda-group "' + rule.agendagroup + '"\n'
+		s += 'no-loop\n'
+		s += 'salience ' + rule.salience + '\n\n'
+		s += 'when\n'
+		s += '$LEDGER : RPTLedgerFact( $ledgerid:ledgerid )\n'
+		return s
+	}	
+}

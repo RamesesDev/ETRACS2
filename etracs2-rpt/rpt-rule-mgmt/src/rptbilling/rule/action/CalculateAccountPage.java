@@ -4,16 +4,16 @@
  * Created on June 6, 2011, 2:21 PM
  */
 
-package bpbilling.rule.action;
+package rptbilling.rule.action;
 
 /**
  *
  * @author  jzamora
  */
-public class CalculateSurchargePage extends javax.swing.JPanel {
+public class CalculateAccountPage extends javax.swing.JPanel {
     
     /** Creates new form AddTaxFeePage */
-    public CalculateSurchargePage() {
+    public CalculateAccountPage() {
         initComponents();
     }
     

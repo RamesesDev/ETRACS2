@@ -1,0 +1,63 @@
+<workunit>
+    <invokers>
+        <invoker type="rptbilling:rulecondition" caption="RPT Ledger Fact" action="init" index="1"/>
+    </invokers>
+
+    <code>
+        <![CDATA[
+
+        import com.rameses.rcp.annotations.*
+        import com.rameses.rcp.common.*
+        import com.rameses.osiris2.client.*
+        import rulemgmt.*;
+
+        class RPTBillingLedgerFact extends FactConditionHandler {
+        
+            @Binding
+            def binding
+            
+            public String getFactname() {
+                return "RPTLedgerFact";
+            }
+            
+            public FactField[] getFields() {
+                return [
+                    new FactField( 'ledgerid', 'Ledger ID', 'string'),
+		    new FactField( 'year', 'Year', 'integer'),
+		    new FactField( 'qtr', 'Qtr', 'integer'),
+                    new FactField( 'assessedvalue', 'Assessed Value', 'decimal'),
+                    new FactField( 'numberofmonthsfromjan', 'Number of Months From Jan', 'integer'),
+                    new FactField( 'numberofmonthsfromqtr', 'Number of Months From Qtr', 'integer'),
+
+                    new FactField( 'classid', 'Classification', 'string', null, 'classification' ),
+                    new FactField( 'actualuseid', 'Actual Use', 'string', null, 'classification'),
+                    new FactField( 'rputype', 'Property Type', 'string', null, 'rputype'),
+                    new FactField( 'txntype', 'Transaction Type', 'string', null, 'txntype'),
+                    
+                    new FactField( 'basic', 'Basic', 'decimal'),
+                    new FactField( 'basicint', 'Basic Interest', 'decimal'),
+                    new FactField( 'basicdisc', 'Basic Discount', 'decimal'),
+                    new FactField( 'sef', 'SEF', 'decimal'),
+                    new FactField( 'sefint', 'SEF Interest', 'decimal'),
+                    new FactField( 'sefdisc', 'SEF Discount', 'decimal'),
+                    new FactField( 'firstitem', 'First Item', 'boolean'),
+                    new FactField( 'firstqtrpaidontime', 'First Qtr Paid-OnTime', 'boolean'),
+                    new FactField( 'qtrlypaymentavailed', 'Qtrly Payment Availed', 'boolean'),
+                    new FactField( 'backtax', 'Back Tax', 'boolean'),
+                    new FactField( 'fullpayment', 'Full Payment', 'boolean'),
+                    new FactField( 'advancepayment', 'Advance Payment', 'boolean'),
+                    new FactField( 'lastyearpaid', 'Last Year Paid', 'integer'),
+                    new FactField( 'lastqtrpaid', 'Last Qtr Paid', 'integer')
+                    
+                ] as FactField[];
+            }
+        }
+
+        ]]>
+    </code>
+    
+    <pages>
+        <page template="rulemgmt.support.FactConditionPage" />
+    </pages>
+    
+</workunit>

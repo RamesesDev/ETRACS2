@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker type="bpbilling:ruleaction" caption="Surcharge Computation"  action="init" index="1" />        
+        <invoker type="bpbilling:ruleaction" caption="Discount Computation"  action="init" index="3" />        
     </invokers>
     <code>
         <![CDATA[
@@ -10,39 +10,23 @@
         import com.rameses.osiris2.client.*
         import rulemgmt.*
 
-        class BPBillingRuleActionSurchargeController extends RuleActionHandler
+        class BPBillingRuleActionDiscountController extends RuleActionHandler
         {
             @Binding
             def binding
             
-            def account;
-            
             public String getActiontype() {
-                return "calcSurcharge"
+                return "calcDiscount"
             }
-            
-            def getAccountLookup() {
-                return InvokerUtil.lookupOpener('incomeacct:lookup', null)
-            }
-            
-            void setAccount( acct ) {
-                this.account = acct;
-                action.acctid = acct?.objid 
-                action.accttitle = acct?.accttitle
-            }
-            
             
             def opener;
             
             public void init() {
                 opener = InvokerUtil.lookupOpener( 'rule:formula_editor', [ handler:formulaModel ]);
-                if( action.acctid ) {
-                    account = [accttitle: action.accttitle]
-                }
             }
 
             public void accept() {
-                action.displaytext = "Calculate Surcharge using formula: ${action.expr} for account ${account.accttitle}".toString();
+                action.displaytext = "Calculate Discount using formula: ${action.expr}".toString();
             }
 
             def formulaModel = [
@@ -61,6 +45,6 @@
         ]]>
     </code>
     <pages>
-        <page template="bpbilling.rule.action.CalculatePenaltyPage" />
+        <page template="bpbilling.rule.action.CalculateDiscountPage" />
     </pages>
 </workunit>

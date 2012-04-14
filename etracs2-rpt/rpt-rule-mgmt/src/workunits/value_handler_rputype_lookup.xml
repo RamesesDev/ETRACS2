@@ -1,22 +1,22 @@
 <workunit>
     <invokers>
-        <invoker type="value_handler:lob_lookup" caption="Select Line of Business" target="popup"/>
+        <invoker type="value_handler:rputype_lookup" caption="Select Account" target="popup"/>
     </invokers>
     <code>
-        <![CDATA[
+<![CDATA[
 
         import com.rameses.rcp.annotations.*
         import com.rameses.rcp.common.*
         import com.rameses.osiris2.client.*
 
-        class BPBillingRuleLookupLOBTaxFeeController
-        {
+        class ClassificationLookupController {
+        
             @Binding
             def binding
 
             def searchText
             def selectedItem
-            def selectedItems = []
+            def selectedItems = [];
             def handler
 
             def select() {
@@ -30,17 +30,19 @@
                 }
             }
 
-            def selectHandler = { lob ->
-                if( ! selectedItems.find{ it.objid == lob.objid } ) {
-                    selectedItems.add( [ objid: lob.objid,name : lob.name ] );
+            def selectAcctHandler = { x ->
+                x.each { o->
+                    if( ! selectedItems.find{ it.objid == o.objid } ) {
+                        selectedItems.add([ objid: o.objid, name : o.name ]);
+                    }
                 }
-                searchText = null;
+                searchText = null
                 binding.refresh( 'searchText' )
                 binding.refresh('selectedItem')
             }
 
             def lookup() {
-                return InvokerUtil.lookupOpener('lob.lookup', [searchText:searchText, onselect:selectHandler])
+                return InvokerUtil.lookupOpener('rptbilling_lookup.rputype', [searchText:searchText, finishHandler:selectAcctHandler])
             }
 
         }

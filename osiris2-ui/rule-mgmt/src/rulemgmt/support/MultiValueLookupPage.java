@@ -4,16 +4,16 @@
  * Created on June 21, 2011, 12:22 PM
  */
 
-package bpbilling.rule.condition;
+package rulemgmt.support;
 
 /**
  *
  * @author  jzamora
  */
-public class TaxFeeCriteriaPage extends javax.swing.JPanel {
+public class MultiValueLookupPage extends javax.swing.JPanel {
     
     /** Creates new form TaxFeeCriteriaPage */
-    public TaxFeeCriteriaPage() {
+    public MultiValueLookupPage() {
         initComponents();
     }
     
@@ -31,20 +31,20 @@ public class TaxFeeCriteriaPage extends javax.swing.JPanel {
         xButton1 = new com.rameses.rcp.control.XButton();
         xButton2 = new com.rameses.rcp.control.XButton();
 
-        jLabel1.setText("Lookup Account ");
+        jLabel1.setText("Search");
 
-        xActionTextField1.setActionName("lookupAccount");
+        xActionTextField1.setActionName("lookup");
         xActionTextField1.setName("searchText");
 
         xList1.setDynamic(true);
         xList1.setExpression("#{name}");
-        xList1.setItems("accounts");
+        xList1.setItems("selectedItems");
         xList1.setName("selectedItem");
         jScrollPane1.setViewportView(xList1);
 
         xButton1.setMnemonic('o');
         xButton1.setText("OK");
-        xButton1.setName("ok");
+        xButton1.setName("select");
 
         xButton2.setMnemonic('r');
         xButton2.setText("Remove");
