@@ -1,7 +1,7 @@
 <workunit>
     <invokers>
-        <invoker folderid="/menu/bp/reports" action="init" caption="Business Comparative Assessment Listing" target="window" index="4" permission="businesscompartiveassessmentlisting" />
-        <invoker type="bpreport"         action="init" opener="businesscompartiveassessmentlisting" caption="Business Comparative Assessment Listing" target="window" index="4" permission="businesscompartiveassessmentlisting" />
+        <invoker folderid="/menu/bp/reports" action="init" caption="Business Comparative Assessment Listing" target="window" index="4" permission="bpreport.comparativeassessmentlisting" />
+        <invoker type="bpreport"         action="init" opener="businesscompartiveassessmentlisting" caption="Business Comparative Assessment Listing" target="window" index="4" permission="bpreport.comparativeassessmentlisting" />
         <invoker type="bpreport.topbusinesslisting"    action="init" caption="Top Business Listing" target="window" />
         
         <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
@@ -47,7 +47,7 @@ class BusinessComparativeAssessmentListingController
     void generateReport() {
         def entity  = [ 
             yearfrom: yearfrom, yearto:yearto, 
-            type:type, qtr: qtr.value
+            type:type, qtr: qtr?.value
         ]
         reportdata = svc.getComparativeAssessmentList( entity )
         report.viewReport()

@@ -144,6 +144,7 @@ public class BPReportService
 	@ProxyMethod
 	public def getComparativeList( param ){
 		def reportdata = [:]
+		checkComparativeYearRange( param )
 		reportdata.type = param.type
 		reportdata.title = "Comparative Report on $param.varname Investment by Classification".toString()
 		param.sql_stmt = param.type.equals('ANNUALLY') ? 'getAnnually' : 'getQuarterly'
@@ -156,6 +157,7 @@ public class BPReportService
 	@ProxyMethod
 	public def getComparativeAssessmentList( def param ){
 		def reportdata = [:]
+		checkComparativeYearRange( param )
 		reportdata.type = param.type
 		reportdata.title = "Comparative Report on Assessment by Classification".toString()
 		param.sql_stmt = param.type.equals('ANNUALLY') ? 'getAssessmentAnnually' : 'getAssessmentQuarterly'
@@ -164,6 +166,13 @@ public class BPReportService
 		
 		return reportdata
 	} 
+	
+	private void checkComparativeYearRange( def param ){
+		if( param.yearfrom >= param.yearto ) 
+			throw new Exception( 'Year From field should be earlier than the Year To field.' )
+		else if( (param.yearto - param.yearfrom) > 1 ) 
+			throw new Exception( 'Year comparative range should not be greater than one.' )
+	}
 	
 	private def getComparativeResult( def param ){
 		def result = em.sqlContext.createNamedQuery( 'bpreport:' + param.sql_stmt ).setParameters( param ).resultList
@@ -191,12 +200,13 @@ public class BPReportService
 	}
 	
 	@ProxyMethod
-	public def buildQtr( def param ){
-		if( param.value == 1 )
+	public def buildQtr( def qtr ){
+		if( !qtr ) return
+		else if( qtr.value == 1 )
             return '1st QTR'
-        else if( param.value == 2 ) 
+        else if( qtr.value == 2 ) 
             return '2nd QTR'
-        else if( param.value == 3 ) 
+        else if( qtr.value == 3 ) 
             return '3nd QTR'
         else return '4th QTR'
 	}
