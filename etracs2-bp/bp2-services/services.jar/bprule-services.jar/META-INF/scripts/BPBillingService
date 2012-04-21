@@ -111,23 +111,21 @@ public class BPBillingService
 		}
 		
 		if( !billing.items ) throw new Exception("Registered businesses are fully paid.");
-		
+		 
 		billing.items.sort{ it.appno };	
-		def lastqtrpaid = billing.items[0].taxfees[0].qtr
-		billing.expirydate = calculateExpirydate( bpsetting, lastqtrpaid )    
+		billing.expirydate = calculateExpirydate( bpsetting )    
 		
 		billing.info.billdate = dtService.serverDate
 		return billing;
 	}
 	
-	private def calculateExpirydate( def bpsetting, def lastqtrpaid ){
-		def sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
-		def duedate = getDueDate( bpsetting, lastqtrpaid )
-		duedate = sdf.parse( dtService.serverYear+"-"+duedate.month+"-"+duedate.day );
-		def serverdate = sdf.parse( dtService.serverDate.toString() )
-		
-		return ( serverdate.time <= duedate.time ) ? duedate : dtService.getMonthEndDate( dtService.serverDate )
-	}
+	private def calculateExpirydate( def bpsetting ){
+		def currentdate = dtService.parseCurrentDate()
+		def duedate = getDueDate( bpsetting, currentdate.qtr  )
+		duedate = dtService.parse( 'yyyy-MM-dd', currentdate.year+"-"+duedate.month+"-"+duedate.day );
+		def nextday = duedate + 1 
+		return ( currentdate.date.time <= nextday.time  ) ? duedate : dtService.getMonthEndDate( currentdate.date )
+	} 
 	
 	def getDueDate( def bpsetting, def qtr ){
 		def collection = bpsetting.collection;
