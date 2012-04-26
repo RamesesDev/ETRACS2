@@ -84,7 +84,7 @@ class AFControlService
 	}
 	
 	@ProxyMethod
-	public def adjustQuantity( afcontrol, newqty, qtyadjustment ) {
+	public def adjustQuantity( afcontrol, newqty, qtyadjustment, adjneg ) {
 		afcontrol = em.read( afcontrol.schemaname, afcontrol )
 		if( ! afcontrol ) 
 			throw new Exception('Cannot open AF Control with Stub No. ' + afcontrol.stubno + '.' )
@@ -92,7 +92,10 @@ class AFControlService
 			throw new Exception('AF Control Stub No. ' + afcontrol.stubno + ' has already been closed.' )
 		if( afcontrol.qtyreceived == newqty )
 			throw new Exception('New quantity must not be equal to quantity received.')
+		if( qtyadjustment >= afcontrol.qtyreceived )
+			throw new Exception( 'Quantity adjusted is not valid. \nNew Quantity should not be less than or equal to zero.' )
 		
+		qtyadjustment = ( adjneg  ? -qtyadjustment : qtyadjustment )
 		afcontrol.qtyreceived = newqty 
 		afcontrol.beginqty  += qtyadjustment 
 		afcontrol.balance += qtyadjustment

@@ -26,7 +26,9 @@ public class AdjustQtyPage extends javax.swing.JPanel {
     private void initComponents() {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
-        xNumberField2 = new com.rameses.rcp.control.XNumberField();
+        formPanel2 = new com.rameses.rcp.util.FormPanel();
+        xNumberField4 = new com.rameses.rcp.control.XNumberField();
+        xCheckBox1 = new com.rameses.rcp.control.XCheckBox();
         xNumberField3 = new com.rameses.rcp.control.XNumberField();
         xButton1 = new com.rameses.rcp.control.XButton();
         xButton2 = new com.rameses.rcp.control.XButton();
@@ -46,17 +48,37 @@ public class AdjustQtyPage extends javax.swing.JPanel {
         xNumberField1.setPreferredSize(new java.awt.Dimension(80, 19));
         formPanel1.add(xNumberField1);
 
-        xNumberField2.setCaption("Qty. Adjustment");
-        xNumberField2.setCaptionWidth(110);
-        xNumberField2.setFieldType(Integer.class);
-        xNumberField2.setFont(new java.awt.Font("Arial", 1, 11));
-        xNumberField2.setName("qtyadjustment");
-        xNumberField2.setPreferredSize(new java.awt.Dimension(80, 19));
-        xNumberField2.setRequired(true);
-        formPanel1.add(xNumberField2);
+        formPanel2.setLayout(null);
+
+        formPanel2.setOrientation(com.rameses.rcp.constant.UIConstants.HORIZONTAL);
+        formPanel2.setPadding(new java.awt.Insets(5, 0, 5, 5));
+        formPanel2.setShowCaption(false);
+        xNumberField4.setCaption("Qty. Adjustment");
+        xNumberField4.setCaptionWidth(110);
+        xNumberField4.setDepends(new String[] {"adjneg"});
+        xNumberField4.setFieldType(Integer.class);
+        xNumberField4.setFont(new java.awt.Font("Arial", 1, 11));
+        xNumberField4.setName("qtyadjustment");
+        xNumberField4.setPreferredSize(new java.awt.Dimension(80, 19));
+        xNumberField4.setRequired(true);
+        formPanel2.add(xNumberField4);
+        xNumberField4.setBounds(117, 5, 80, 20);
+
+        xCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        xCheckBox1.setText("Adjust Negative?");
+        xCheckBox1.setCaption("");
+        xCheckBox1.setCaptionWidth(110);
+        xCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        xCheckBox1.setName("adjneg");
+        xCheckBox1.setShowCaption(false);
+        formPanel2.add(xCheckBox1);
+        xCheckBox1.setBounds(210, 10, 99, 15);
+
+        formPanel1.add(formPanel2);
 
         xNumberField3.setCaption("New Quantity");
         xNumberField3.setCaptionWidth(110);
+        xNumberField3.setDepends(new String[] {"qtyadjustment"});
         xNumberField3.setEnabled(false);
         xNumberField3.setFieldType(Integer.class);
         xNumberField3.setFont(new java.awt.Font("Arial", 1, 11));
@@ -83,8 +105,8 @@ public class AdjustQtyPage extends javax.swing.JPanel {
                         .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                    .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 299, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(21, Short.MAX_VALUE))
+                    .add(formPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 315, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(81, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -95,18 +117,20 @@ public class AdjustQtyPage extends javax.swing.JPanel {
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(xButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(23, Short.MAX_VALUE))
+                .addContainerGap(64, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.rameses.rcp.util.FormPanel formPanel1;
+    private com.rameses.rcp.util.FormPanel formPanel2;
     private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XButton xButton2;
+    private com.rameses.rcp.control.XCheckBox xCheckBox1;
     private com.rameses.rcp.control.XNumberField xNumberField1;
-    private com.rameses.rcp.control.XNumberField xNumberField2;
     private com.rameses.rcp.control.XNumberField xNumberField3;
+    private com.rameses.rcp.control.XNumberField xNumberField4;
     // End of variables declaration//GEN-END:variables
     
 }

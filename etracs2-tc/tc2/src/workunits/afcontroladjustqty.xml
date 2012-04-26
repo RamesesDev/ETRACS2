@@ -25,6 +25,7 @@ public class AFControlAdjustQtyController  {
     def qtyadjustment 
     def newqty 
     def mode
+    def adjneg
     
     void init() {
         qtyreceived = afcontrol.qtyreceived
@@ -35,20 +36,25 @@ public class AFControlAdjustQtyController  {
     
     def adjustQty() {
         if( MsgBox.confirm('Adjust quantity?')) {
-            afcontrol = svc.adjustQuantity( afcontrol, newqty, qtyadjustment )
+            afcontrol = svc.adjustQuantity( afcontrol, newqty, qtyadjustment, adjneg )
             if( onupdate ) onupdate( afcontrol )
             mode = 'view' 
             return '_close'
         }
         return null
     }
-     
+    
+    void setAdjneg( adjneg ){
+        this.adjneg = adjneg
+        setQtyadjustment( qtyadjustment )
+    }
+    
     void setQtyadjustment( qtyadjustment ) {
         if( ! qtyadjustment ) 
             qtyadjustment = 0
         
         this.qtyadjustment = qtyadjustment
-        newqty = qtyreceived + qtyadjustment 
+        newqty = qtyreceived + (adjneg ? -qtyadjustment : qtyadjustment)  
         binding.refresh( 'newqty' ) 
     }
     
