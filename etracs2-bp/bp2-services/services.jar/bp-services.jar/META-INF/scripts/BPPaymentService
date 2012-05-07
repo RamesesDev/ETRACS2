@@ -17,7 +17,10 @@ class BPPaymentService{
 			iday : month?.month ? ( day ? day : '%' ) : '%'
 		]
 		
-		def result = getBPPReportLists( param )
+		def result = em.sqlContext.createNamedQuery( "bppayment:getBPPReportLists" )
+						.setParameters( param )
+						.resultList					
+						
 		if( !result ) 
 			throw new Exception('Records found.')
 		
@@ -89,10 +92,4 @@ class BPPaymentService{
 		return 'For the Year ' + year 
 	}
 	 
-	private def getBPPReportLists( def param ){
-	
-		return em.sqlContext.createNamedQuery( "bppayment:getBPPReportLists" ).setParameters( param ).resultList					
-	}
-	
-
 }

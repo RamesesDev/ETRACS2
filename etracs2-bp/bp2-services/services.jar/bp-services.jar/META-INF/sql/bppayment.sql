@@ -28,5 +28,6 @@ WHERE bpp.iyear = $P{iyear}
  AND bpp.iday LIKE $P{iday} 
  AND voided = 0 
 GROUP BY b.tradename, b.businessaddress, b.taxpayername, e.entityaddress  
+ORDER BY b.tradename, b.taxpayername 
 
 
