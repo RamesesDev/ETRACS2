@@ -4,6 +4,11 @@ SELECT objid AS barangayid, lguname AS barangayname FROM lgu WHERE lgutype = 'BA
 [getClassificationList]
 SELECT objid AS classificationid, name AS classification FROM lobclassification ORDER BY name 
  
+[getListByYear]
+SELECT 
+ * 
+FROM bppermit 
+WHERE iyear = $P{iyear} 
 
 [getTaxpayerMasterList]
 SELECT  

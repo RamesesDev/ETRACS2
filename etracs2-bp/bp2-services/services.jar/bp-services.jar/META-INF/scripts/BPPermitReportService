@@ -12,7 +12,7 @@ public class BPPermitReportService
 	def dateFormat = new java.text.SimpleDateFormat('yyyy-MM-dd');
 	
 	@ProxyMethod
-	public def getPermitReportInfo( def applicationid ){
+	public def getPermitReportInfo( def applicationid ){ 
 		def bp = em.sqlContext.createNamedQuery('bpmgmt:findPermitByApplicationId')
 					.setParameters([applicationid: applicationid]).singleResult;
 				   
@@ -20,10 +20,27 @@ public class BPPermitReportService
 		buidReportInfo( bp, app )		
 		
 		return [
-			reportName: 'bp/businesspermit',
+			reportName: 'bp/businesspermit', 
 			info: bp,
 			params: buildReportParameter( bp )
 		]
+	}
+	
+	@ProxyMethod
+	public def getPermitList( def param ){
+		def bp = em.sqlContext.createNamedQuery( 'bpreport:getListByYear' ).setParameters( param ).resultList.each{ prmt ->
+			def app = em.read('bpapplication:bpapplication', [objid:prmt.applicationid])
+			createORDetail( prmt, app )
+			prmt.orno = prmt.orlist[0].orno
+			def lobs = ''
+			prmt.lobs = em.serializer.read( prmt.lobs )
+			prmt.lobs.each{ lobs += ( !lobs ? it.name : "|$it.name" ) }
+			prmt.lobs = "($lobs)".toString()
+		}
+		
+		if( !bp ) throw new Exception( 'No Records found.' )
+		println 'x'
+		return bp
 	}
 	
 	private void buidReportInfo( def bp, def app ){

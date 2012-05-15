@@ -1,8 +1,8 @@
 <workunit>
     <invokers>
-        <invoker folderid="/menu/bp/reports" action="init" caption="Business Comparative Assessment Listing" target="window" index="4" permission="bpreport.comparativeassessmentlisting" />
-        <invoker type="bpreport"         action="init" opener="businesscompartiveassessmentlisting" caption="Business Comparative Assessment Listing" target="window" index="4" permission="bpreport.comparativeassessmentlisting" />
-        <invoker type="bpreport.businesscompartiveassessmentlisting"    action="init" caption="Business Comparative Assessment Listing" target="window" />
+        <invoker folderid="/menu/bp/reports" action="init" caption="Business Permit Listing" target="window" index="4" permission="bpreport.bppermitlisting" />
+        <invoker type="bpreport"         action="init" opener="bppermitlisting" caption="Business Permit Listing" target="window" index="4" permission="bpreport.bppermitlisting" />
+        <invoker type="bpreport.bppermitlisting"    action="init" caption="Top Business Listing" target="window" />
         
         <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
         <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
@@ -18,7 +18,7 @@ import com.rameses.rcp.annotations.*;
 import com.rameses.osiris2.client.*;
 import com.rameses.osiris2.reports.*;
 
-class BusinessComparativeAssessmentListingController
+class BusinessComparativeListingController
 {
     @Binding
     def binding
@@ -26,30 +26,22 @@ class BusinessComparativeAssessmentListingController
     @Service("ReportParameterService")
     def svcParams;
     
-    @Service('BPReportService') 
+    @Service('BPPermitReportService') 
     def svc 
     
     @Service('DateService')
     def dateSvc
     
-    def yearfrom
-    def yearto
-    def type
-    def qtr
+    def entity = [:]
     def reportdata
     
     void init() {
         def parsedate = dateSvc.parseCurrentDate()
-        yearfrom = parsedate.year - 1
-        yearto = parsedate.year
+        entity.iyear = parsedate.year
     }
     
     void generateReport() {
-        def entity  = [ 
-            yearfrom: yearfrom, yearto:yearto, 
-            type:type, qtr: qtr?.value
-        ]
-        reportdata = svc.getComparativeAssessmentList( entity )
+        reportdata = svc.getPermitList( entity )
         report.viewReport()
     }
     
@@ -59,14 +51,11 @@ class BusinessComparativeAssessmentListingController
     }
     
     def report = [
-        getReportName : { return 'bp/comparativeassessmentreport' },
+        getReportName : { return 'bp/bppermitlisting' },
         getReportData : { return reportdata },
         getParameters : { 
             def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )
-            params.TITLE = reportdata.title
-            params.YEARFROM = yearfrom
-            params.YEARTO = yearto
-            params.QTR = svc.buildQtr( qtr )
+            params.YEAR
             
             return params
         }
@@ -80,31 +69,12 @@ class BusinessComparativeAssessmentListingController
         generateReport()
         return 'preview' 
     }
-    
-    def getTypelist() {
-        return ['ANNUALLY','QUARTERLY']
-    }
-    
-    def getQtrlist(){
-        return [
-            [value:1, caption:'I'],
-            [value:2, caption:'II'],
-            [value:3, caption:'III'],
-            [value:4, caption:'IV']
-        ]
-    }
-    
-    void setType( type ){
-        this.type = type
-        qtr = null
-    }
-        
 }
 ]]>        
         
     </code>
     <pages>
-        <page template="etracs2.bp.report.BPBusinessCompartiveAssessmentListingPage" />
+        <page template="etracs2.bp.report.BPBusinessPermitListingPage" />
         <page name="preview" template="etracs2.common.PreviewPage" />
     </pages>
 </workunit>
