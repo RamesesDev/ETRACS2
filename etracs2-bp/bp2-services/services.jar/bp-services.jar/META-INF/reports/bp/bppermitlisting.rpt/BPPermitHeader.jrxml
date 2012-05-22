@@ -42,6 +42,8 @@
 	<parameter name="YEARTO" isForPrompting="false" class="java.lang.Integer"/>
 	<parameter name="MAYORNAME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="MAYORTITLE" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="YEAR" isForPrompting="false" class="java.lang.Integer"/>
+	<parameter name="BARANGAY" isForPrompting="false" class="java.lang.String"/>
 
 	<field name="txndate" class="java.util.Date"/>
 	<field name="txnno" class="java.lang.String"/>
@@ -177,7 +179,7 @@
 					<textElement textAlignment="Center" verticalAlignment="Middle" rotation="None" lineSpacing="Single">
 						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" size="9" isBold="true" isItalic="false" isUnderline="false" isPdfEmbedded ="false" pdfEncoding ="Cp1252" isStrikeThrough="false" />
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["As of " + ( new SimpleDateFormat("dd MMMMM yyyy").format($P{PRINTDATE}) )]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["As of Year " + $P{YEAR} ]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -192,6 +194,21 @@
 					</textElement>
 				<text><![CDATA[BUSINESS PERMIT LISTING]]></text>
 				</staticText>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="524"
+						y="88"
+						width="196"
+						height="18"
+						key="textField">
+							<printWhenExpression><![CDATA[new Boolean( $P{BARANGAY} != null )]]></printWhenExpression>
+						</reportElement>
+					<box></box>
+					<textElement textAlignment="Right" verticalAlignment="Middle">
+						<font fontName="Tahoma" pdfFontName="Helvetica-Bold" isBold="true"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Barangay: " + $P{BARANGAY}]]></textFieldExpression>
+				</textField>
 			</band>
 		</title>
 		<pageHeader>

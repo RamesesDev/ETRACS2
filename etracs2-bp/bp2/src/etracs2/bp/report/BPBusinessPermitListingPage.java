@@ -26,19 +26,28 @@ public class BPBusinessPermitListingPage extends javax.swing.JPanel {
     private void initComponents() {
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xNumberField1 = new com.rameses.rcp.control.XNumberField();
+        xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xActionBar1 = new com.rameses.rcp.control.XActionBar();
 
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder1 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder1.setTitle("Initial Information");
         formPanel1.setBorder(xTitledBorder1);
         xNumberField1.setCaption("Year");
-        xNumberField1.setCaptionWidth(100);
         xNumberField1.setCellPadding(new java.awt.Insets(10, 10, 0, 0));
         xNumberField1.setFieldType(Integer.class);
         xNumberField1.setName("entity.iyear");
         xNumberField1.setPreferredSize(new java.awt.Dimension(100, 22));
         xNumberField1.setRequired(true);
         formPanel1.add(xNumberField1);
+
+        xComboBox1.setCaption("Barangay");
+        xComboBox1.setCellPadding(new java.awt.Insets(10, 10, 0, 0));
+        xComboBox1.setEmptyText("ALL BARANGAYS");
+        xComboBox1.setExpression("#{barangayname}");
+        xComboBox1.setItems("barangaylist");
+        xComboBox1.setName("barangay");
+        xComboBox1.setPreferredSize(new java.awt.Dimension(220, 22));
+        formPanel1.add(xComboBox1);
 
         xActionBar1.setBorder(new com.rameses.rcp.control.border.XUnderlineBorder());
         xActionBar1.setName("formActions");
@@ -68,6 +77,7 @@ public class BPBusinessPermitListingPage extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.rameses.rcp.util.FormPanel formPanel1;
     private com.rameses.rcp.control.XActionBar xActionBar1;
+    private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XNumberField xNumberField1;
     // End of variables declaration//GEN-END:variables
     

@@ -2,7 +2,7 @@
     <invokers>
         <invoker folderid="/menu/bp/reports" action="init" caption="Business Permit Listing" target="window" index="4" permission="bpreport.bppermitlisting" />
         <invoker type="bpreport"         action="init" opener="bppermitlisting" caption="Business Permit Listing" target="window" index="4" permission="bpreport.bppermitlisting" />
-        <invoker type="bpreport.bppermitlisting"    action="init" caption="Top Business Listing" target="window" />
+        <invoker type="bpreport.bppermitlisting"    action="init" caption="Business Permit Listing" target="window" />
         
         <invoker type="formActions"     action="_close" caption="Back" mnemonic="b" shortcut="ctrl + B" icon="images/back.png"/>
         <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
@@ -29,10 +29,14 @@ class BusinessComparativeListingController
     @Service('BPPermitReportService') 
     def svc 
     
+    @Service('BPReportService') 
+    def svcReport
+    
     @Service('DateService')
     def dateSvc
     
     def entity = [:]
+    def barangay
     def reportdata
     
     void init() {
@@ -41,6 +45,7 @@ class BusinessComparativeListingController
     }
     
     void generateReport() {
+        entity.barangay = barangay
         reportdata = svc.getPermitList( entity )
         report.viewReport()
     }
@@ -55,7 +60,8 @@ class BusinessComparativeListingController
         getReportData : { return reportdata },
         getParameters : { 
             def params = svcParams.getStandardParameter( OsirisContext.env.USERNAME )
-            params.YEAR
+            params.YEAR = entity.iyear
+            params.BARANGAY = entity?.barangay?.barangayname 
             
             return params
         }
@@ -68,6 +74,10 @@ class BusinessComparativeListingController
     def preview() {
         generateReport()
         return 'preview' 
+    }
+    
+    List getBarangaylist() {
+        return svcReport.getBarangayList()
     }
 }
 ]]>        

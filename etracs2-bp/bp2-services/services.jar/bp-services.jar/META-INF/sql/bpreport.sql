@@ -5,10 +5,23 @@ SELECT objid AS barangayid, lguname AS barangayname FROM lgu WHERE lgutype = 'BA
 SELECT objid AS classificationid, name AS classification FROM lobclassification ORDER BY name 
  
 [getListByYear]
-SELECT 
+SELECT  
+ p.*  
+FROM bppermit p  
+INNER JOIN bpapplication a on a.objid = p.applicationid  
+INNER JOIN bpapplicationlisting l on l.objid = p.applicationid  
+WHERE p.iyear = $P{iyear}  
+ AND l.barangayname LIKE $P{barangay} 
+ AND p.docstate = 'ACTIVE'  
+
+[getAppByIdActivePermit]
+SELECT  
  * 
-FROM bppermit 
-WHERE iyear = $P{iyear} 
+FROM bpapplication 
+WHERE objid = $P{applicationid}
+ AND docstate = 'ACTIVE'  
+
+ 
 
 [getTaxpayerMasterList]
 SELECT  
