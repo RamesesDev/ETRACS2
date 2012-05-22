@@ -1,0 +1,165 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+import com.rameses.common.*;
+
+/*
+* This service manages the dispatching of messages to receivers. 
+*/
+class MessengerService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Env
+	def env
+	
+	@Service('Var')
+	def var
+	
+	@Service('DomainService')
+	def domainSvc
+	
+	def INBOX_SCHEMA_NAME = 'message:inbox' 
+	def OUTBOX_SCHEMA_NAME = 'message:outbox' 
+	def SCHEMA_VERSION = '1.0'
+	
+	def OPEN_STATE = 'OPEN'
+	def PROCESSED_STATE = 'PROCESSED'
+	
+	
+	
+	/*-------------------------------------------------------------------------------- 
+	* This method serves as a message dispatcher. Interceptors hook and listen
+	* to this method and process the message they are concerned about.
+	-------------------------------------------------------------------------------- */
+	@ProxyMethod
+	public def onreceive( msg ) {
+		//dispatch msg and let interceptors/handlers process it
+		return msg 
+	}
+	
+	@ProxyMethod 
+	public void send( msg  ) {
+		em.validate( OUTBOX_SCHEMA_NAME, msg )
+		em.create(OUTBOX_SCHEMA_NAME, msg ) 
+    }
+	
+	@ProxyMethod
+	public void broadcast( msg, receivers ) {
+		receivers.each { receiverinfo ->
+			msg.objid = 'MI' + new UID()
+			msg.putAll( receiverinfo ) 
+			send( msg ) 
+		}
+	}
+	
+	@ProxyMethod
+	public void broadcastToDomains( msg ) {
+		def domainlist = domainSvc.getList()
+		domainlist.each{ domain -> 
+			msg.objid = 'MI' + new UID()
+			msg.receiverid = domain.domainid 
+			msg.receivername = domain.domainname 
+			send( msg ) 
+		}
+	}
+	
+	@ProxyMethod 
+	public def creatReply( msgid ) {
+		def msg = getMessageInfo( msgid )
+		return createReplyFromMessage( msg )
+	}	
+	
+	@ProxyMethod 
+	public def createReplyFromMessage( msg ) {
+		msg.objid       = 'MI' + new UID()
+		def senderid   	= msg.senderid 
+		def sendername 	= msg.sendername 
+		
+		msg.senderid 	= msg.receiverid 
+		msg.sendername 	= msg.receivername 
+		msg.receiverid	= senderid 
+		msg.receivername = sendername
+		return msg 
+	}
+	
+	@ProxyMethod
+	public void updateMessageState( msgid, docstate) {
+		em.sqlContext.createNamedQuery('messenger:updateMessageState')
+				.setParameters([objid:msgid, docstate:docstate])
+				.execute()
+	}
+	
+	@ProxyMethod 
+	public def getSender( msgid ) {
+		return em.sqlContext.createNamedQuery('messenger:getSender').setParameter('objid', msgid).singleResult
+	}
+	
+	@ProxyMethod 
+	public def getReceiver( msgid ) {
+		return em.sqlContext.createNamedQuery('messenger:getReceiver').setParameter('objid', msgid).singleResult
+	}
+	
+	@ProxyMethod 
+	public def createMessage( action, attachment) {
+		def sender = getDefaultSender()
+		def receiver = getDefaultReceiver()
+		
+		return [
+            objid           : 'MI' + new UID(),
+            schemaname      : OUTBOX_SCHEMA_NAME,
+            schemaversion   : SCHEMA_VERSION,
+			docstate		: OPEN_STATE,
+			action			: action, 
+            senderid		: sender.id,
+			sendername		: sender.name,
+			receiverid		: receiver.id,
+			receivername    : receiver.name, 
+            message			: null,
+            attachment		: attachment, 
+            status			: [iserror:false, errormsg:''],
+        ]
+	}
+	
+	@ProxyMethod
+	public def getDefaultSender() {
+		return [
+			id	 : var.lgu_index,
+			name : var.lgu_name,
+		]	
+	}
+	
+	@ProxyMethod
+	public def getDefaultReceiver() {
+		return [
+			id   : var.remote_lgu_index,
+			name : var.remote_lgu_name,
+		]	
+	}
+	
+	@ProxyMethod
+	public void  processedSuccessfully( msg   ) {
+		msg.message = 'Successfully processed.'
+		msg.status = [iserror:false, errormsg:'', date:new Date()]
+        em.update( msg.schemaname, msg ) 
+    }
+	
+	@ProxyMethod
+	public void  errorProcessing( msg, errormsg    ) {
+        msg.message = errormsg 
+		msg.status = [iserror:true, errormsg:errormsg, date:new Date()]
+        em.update( msg.schemaname, msg ) 
+    }
+	
+	
+	def getMessageInfo( msgid ) {
+		def msg = em.sqlContext.createNamedQuery('messenger:getMessageInfo')
+						.setParameter('objid', msgid )
+						.singleResult 
+						
+		if( ! msg) throw new Exception('Message [$msgid] does not exists.')
+		return msg 
+	}
+	
+}

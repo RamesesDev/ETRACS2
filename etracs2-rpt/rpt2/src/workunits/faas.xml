@@ -45,9 +45,11 @@
         <invoker type="formActions" action="disapproveByProvince" caption="Disapprove"      shortcut="ctrl D"                 visibleWhen="#{showDisapproveByProvinceAction == true}"  icon="images/disapprove.png" permission="faas.disapprove" />
         <invoker type="formActions" action="approveByProvince" caption="Approve"            shortcut="ctrl A"   mnemonic="a"  visibleWhen="#{showApprovedByProvinceAction == true}"   icon="images/approve.png" permission="faas.approvebyprovince" />
         
-        <invoker type="formActions" action="showAttachments"    caption="Attachments"   visibleWhen="#{mode != 'create'}"  mnemonic="m" />
+        <invoker type="formActions" action="showAttachments"    caption="Attachments"   visibleWhen="#{mode != 'create'}"  mnemonic="a" />
+        <invoker type="formActions" action="showMap"    caption="View Map"   visibleWhen="#{mode != 'create'}"  mnemonic="m" />
         <invoker type="formActions" action="viewPrevious"       caption="View Previous" visibleWhen="#{showViewPrevious == true}" icon="images/doc-view.png" />
-                
+             
+        <invoker type="mapActions" action="backToMain" caption="Back" mnemonic="b" icon="images/back.png" />
         
     </invokers>
     <code lang="groovy">
@@ -64,6 +66,9 @@ public class FAASController
     
     @Service('FAASService')
     def svc
+    
+    @Service('Var')
+    def var
     
     
     def faas 
@@ -543,6 +548,56 @@ public class FAASController
         return true
     }
     
+    
+    
+    /*----------------------------------------------------------------------------------------------------
+    *
+    * VIEW MAP SUPPORT
+    *
+    ----------------------------------------------------------------------------------------------------*/
+    def TEST_PIN = '101308016'
+    def mappin
+    def showneighbors = false
+    def showsection = false
+    def showbarangay = false
+    def showroads = false
+    def showrivers = false 
+    def zoom = 100
+    
+    void setZoom( zoom ) {
+        if( ! zoom || zoom < 0 ) throw new Exception('Zoom must be greater than zero.')
+        this.zoom = zoom
+    }
+    
+    void setMappin( pin ) {
+        mappin = pin 
+        binding.refresh( 'maphtml' )
+    }
+    
+    def showMap() {
+        return 'map'
+    }
+    
+    def getMapHtml() {
+        def html = '<html><body></body></html>' 
+        def map_service = var.map_service 
+        if( map_service ) {
+            map_service = (  map_service.endsWith('/') ? map_service : map_service + '/'   )
+            html = ''
+            html += '<html>'
+            html += '<body>'
+            html += '<img src="' + map_service + (mappin ? mappin : TEST_PIN)  +  '" ></img>'
+            html += '</body>'
+            html += '</html>'
+        }
+        println 'html -> ' + html
+        return html
+    }
+    
+    def backToMain() {
+        return '_default' 
+    }
+    
 }
 
 ]]>
@@ -554,6 +609,7 @@ public class FAASController
         <page name="ndinit" template="etracs2.rpt.faas.FAASNDInitPage"/>
         <page name="grinit" template="etracs2.rpt.faas.FAASGRInitPage"/>
         <page name="txninit" template="etracs2.rpt.faas.FAASTxnInitPage"/>
+        <page name="map" template="etracs2.rpt.faas.MapPage"/>
     </pages>
 </workunit>
 

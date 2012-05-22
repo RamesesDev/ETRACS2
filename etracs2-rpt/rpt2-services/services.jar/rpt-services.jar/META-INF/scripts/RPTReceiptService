@@ -15,7 +15,7 @@ class RPTReceiptService
 	@Service('Var')
 	def var 
 	
-	@Service('MessageService')
+	@Service('MessengerService')
 	def msgSvc
 	
 	@Env
@@ -61,12 +61,12 @@ class RPTReceiptService
     }
 	
 	@ProxyMethod 
-	public def createRemoteCollection( receipt, items, tolguindex, tolguname   ) {
+	public def createRemoteCollection( receipt, items, receiverid, receivername   ) {
 		if( items.size() > 5 ) throw new Exception('Only 5 ledgers for payment is allowed.')
         receipt.mode = 'REMOTE' 
 		receipt.isremotecollection = true 
-		receipt.collectedfor = tolguname
-		receipt.collectedforid = tolguindex
+		receipt.collectedfor = receivername
+		receipt.collectedforid = receiverid
         buildReceiptItems( receipt, items )
         updateReceiptInfos( receipt, items )
         receiptSvc.create( receipt )
@@ -97,23 +97,23 @@ class RPTReceiptService
 			it.sefgross = it.sef
 			it.sefdp    = it.sefint - it.sefdisc 
 		}
-		
-		sendRemoteCollectionMessage( receipt, rptpaymentlist, rptpaymentdetaillist, tolguindex, tolguname     )
+		println 'receiverinfo -> ' + receiverid + ' - ' + receivername 
+		sendRemoteCollectionMessage( receipt, rptpaymentlist, rptpaymentdetaillist, receiverid, receivername     )
 		
         return receipt 
 	}
 	
-	void sendRemoteCollectionMessage( receipt, rptpaymentlist, rptpaymentdetaillist, tolguindex, tolguname     ) {
+	void sendRemoteCollectionMessage( receipt, rptpaymentlist, rptpaymentdetaillist, receiverid, receivername     ) {
 		def data = [paymentlist:rptpaymentlist, paymentdetailist:rptpaymentdetaillist]
-		def msg = msgSvc.createMessage( receipt.objid, 'rptreceipt_post_remote_collection', data)
-		msg.tolguindex = tolguindex
-		msg.tolguname  = tolguname
-		msgSvc.sendCustomMessage( msg )
+		def msg = msgSvc.createMessage( 'rptreceipt_post_remote_collection', data)
+		msg.receiverid = receiverid
+		msg.receivername  = receivername
+		msgSvc.send( msg )
 	}
 		
 	@ProxyMethod
 	public void postRemoteRPTCollection( msg ) {
-		msg.data.paymentlist.each { rptpayment ->
+		msg.attachment.paymentlist.each { rptpayment ->
 			rptpayment.mode = 'REMOTE' 
 			em.validate(rptpayment.schemaname, rptpayment )
 			em.create(rptpayment.schemaname, rptpayment )
@@ -122,7 +122,7 @@ class RPTReceiptService
 			else 
 				updateLedgerLastYearQtrPaid([ objid:rptpayment.rptledgerid, lastyearpaid:rptpayment.lastyearpaid, lastqtrpaid:rptpayment.lastqtrpaid, partialbasic:rptpayment.partialbasic, partialbasicint:rptpayment.partialbasicint, partialsef:rptpayment.partialsef, partialsefint:rptpayment.partialsefint  ] )
         }
-		msg.data.paymentdetaillist.each{ pmtdetail ->
+		msg.attachment.paymentdetaillist.each{ pmtdetail ->
 			em.validate( pmtdetail.schemaname, pmtdetail )
 			em.create( pmtdetail.schemaname, pmtdetail )
 		}
@@ -326,7 +326,7 @@ class RPTReceiptService
 	@ProxyMethod
 	public void postVoidRemoteRPTCollection( msg ) {
 		def paymentinfos = em.sqlContext.createNamedQuery('rptreceipt:getRPTPaymentInfo')
-								.setParameter('receiptid', msg.data.receiptid)
+								.setParameter('receiptid', msg.attachment.receiptid)
 								.resultList
         paymentinfos.each { pmt  ->
 			updateLedgerLastYearQtrPaid([ 
@@ -412,10 +412,10 @@ class RPTReceiptService
 				requestingdomainid 	 : remotedomain.domainid, 
 				requestingdomainname : remotedomain.domainname
 			]
-			def msg = msgSvc.createMessage( bill.sessionid, 'rptbill_generate', data)
-			msg.tolguindex = remotedomain.domainid 
-			msg.tolguname  = remotedomain.domainname 
-			msgSvc.sendCustomMessage( msg )
+			def msg = msgSvc.createMessage( 'rptbill_generate', data)
+			msg.receiverid = remotedomain.domainid 
+			msg.receivername  = remotedomain.domainname 
+			msgSvc.send( msg )
 		}
 	}
 	
@@ -479,10 +479,10 @@ class RPTReceiptService
 		rct = em.serializer.read( rct.extended )
 		if( rct.isremotecollection ) {
 			def data = [receiptid:receiptid, reason:reason ]
-			def msg = msgSvc.createMessage( receiptid, 'rptreceipt_void_remote_collection', data)
-			msg.tolguindex = rct.collectedforid
-			msg.tolguname  = rct.collectedfor 
-			msgSvc.sendCustomMessage( msg )
+			def msg = msgSvc.createMessage( 'rptreceipt_void_remote_collection', data)
+			msg.receiverid = rct.collectedforid
+			msg.receivername  = rct.collectedfor 
+			msgSvc.send( msg )
 		}
 	}
     

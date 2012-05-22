@@ -13,7 +13,10 @@ class RPTReceiptMessageInterceptor
     @Service('RPTReceiptService') 
     def receiptSvc
 	
-	@After(pattern='MessageService.onreceive') 
+	@Service('MessengerService')
+	def msgSvc
+	
+	@After(pattern='MessengerService.onreceive') 
 	public void interceptOnReceive( evt ) {
         def msg = evt.result 
 		if( msg.action == 'rptreceipt_post_remote_collection') postRemoteRPTCollection( msg ) 
@@ -22,35 +25,26 @@ class RPTReceiptMessageInterceptor
     
 	void postVoidRemoteRPTCollection( msg ) {
         try {
-            def retval = receiptSvc.postVoidRemoteRPTCollection( msg )
-			updateSuccess( msg  )
+            receiptSvc.postVoidRemoteRPTCollection( msg )
+			msgSvc.processedSuccessfully(msg)
             logSvc.log('RPTRECEIPT-POST-VOID-REMOTE-COLLECTION', 'RPTReceipt', msg.objid )
         }
         catch( e ) {
-			updateError( msg, e )
+			msgSvc.errorProcessing(msg, e.message )
         }
     }
 	
 	void postRemoteRPTCollection( msg ) {
         try {
             def retval = receiptSvc.postRemoteRPTCollection( msg )
-			updateSuccess( msg  )
+			msgSvc.processedSuccessfully(msg)
             logSvc.log('RPTRECEIPT-POST-REMOTE-COLLECTION', 'RPTReceipt', msg.objid )
         }
         catch( e ) {
-			updateError( msg, e )
+			msgSvc.errorProcessing(msg, e.message )
         }
     }
 	
-	void updateError( msg, e ) {
-		msg.status =[date:new Date(), iserror:true, errormsg:e.message]
-		em.update( msg.schemaname, msg )
-	}
-    
-    void updateSuccess( msg ) {
-        msg.status = [date: new Date(), iserror:false, errormsg:'']
-        em.update( msg.schemaname, msg ) 
-    }
 	
 }
 

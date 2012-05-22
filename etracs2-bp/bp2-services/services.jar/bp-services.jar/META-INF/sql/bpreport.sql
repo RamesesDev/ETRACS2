@@ -81,7 +81,7 @@ SELECT info FROM bppermit WHERE applicationid = $P{applicationid}
 [getBusinessTopList]
 SELECT DISTINCT amount 
 FROM ( 
-	SELECT bl.objid,SUM(bi.VALUE) AS amount  
+	SELECT SUM(bi.VALUE) AS amount  
 	FROM bpappinfolisting bi  
 		INNER JOIN bpapplicationlisting bl ON bi.applicationid = bl.objid  
 		INNER JOIN lob l ON l.objid = bi.lobid 

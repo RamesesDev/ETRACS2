@@ -11,7 +11,7 @@ class EntityMappingService
 	@Service('LogService')
 	def logService
 	
-	@Service('MessageService')
+	@Service('MessengerService')
 	def msgSvc
 	
 	@Service('Var')
@@ -54,22 +54,30 @@ class EntityMappingService
 	
 	void sendDeleteMappingMessage( entity, deleteditems ) {
 		if( deleteditems ) {
-			def data = [
-				parentid:entity.objid, domainid:var.lgu_index, domainname:var.lgu_name, deleteditems:deleteditems 
+			def attachment = [
+				parentid	: entity.objid, 
+				domainid	: var.lgu_index, 
+				domainname	: var.lgu_name, 
+				deleteditems: deleteditems,
 			]
-			msgSvc.send( entity.objid, 'entity.delete_mapping', data )
+			def msg = msgSvc.createMessage( 'entity.delete_mapping', attachment)
+			msg.receiverid    = entity.domainid 
+			msg.receivername  = entity.domainname 
+			msgSvc.send( msg )
 		}
 	}
 	
 	void sendCreateMappingMessage( entity ) {
 		if( entity.mappings ) {
-			def data = [
-				entity:entity, domainid:var.lgu_index, domainname:var.lgu_name 
+			def attachment = [
+				entity 		: entity, 
+				domainid	: var.lgu_index, 
+				domainname  : var.lgu_name,
 			]
-			def msg = msgSvc.createMessage( entity.objid, 'entity.process_mapping', data)
-			msg.tolguindex = entity.domainid 
-			msg.tolguname  = entity.domainname 
-			msgSvc.sendCustomMessage( msg )
+			def msg = msgSvc.createMessage( 'entity.process_mapping', attachment)
+			msg.receiverid    = entity.domainid 
+			msg.receivername  = entity.domainname 
+			msgSvc.send( msg )
 		}
 	}
 	

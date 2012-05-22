@@ -15,6 +15,10 @@ public class BPReportService
 	@Service('BPBillingService') 
 	def billingSvc 
 	
+	@Service('Var')
+	def var 
+	
+	
 	
 	@ProxyMethod
 	public List getTaxpayerMasterList( year ) {
@@ -102,6 +106,12 @@ public class BPReportService
 	
 	@ProxyMethod
 	public def generateTopBusinessList( entity ){
+		def VAR_CAPITAL = 'CAPITAL' 
+		def VAR_GROSS = 'GROSS' 
+		
+		if( var.varname_capital ) VAR_CAPITAL = var.varname_capital
+		if( var.varname_gross ) VAR_GROSS = var.varname_gross 
+		
 		entity.classification = entity.classification?.classification
 		def param = [ classification:entity.classification, txntype:entity.txntype, topsize:entity.topsize]
 		def reportdata = [:]
@@ -112,14 +122,14 @@ public class BPReportService
 			.setParameters([
 				  txntype:entity.txntype, topsize:entity.topsize, year:entity.year,
 				  classification:( entity.classification ? entity.classification : '%' ),
-				  varname:( entity.txntype == 'NEW' ? 'CAPITAL' : 'GROSS')
+				  varname:( entity.txntype == 'NEW' ? VAR_CAPITAL : VAR_GROSS)
 			]).resultList.each{ 
 			
 			reportdata.items += em.sqlContext.createNamedQuery('bpreport:getBusinessTopListGroupByAmount')
 				.setParameters([
 					txntype:entity.txntype, amount:it.amount, year:entity.year,
 					classification:( entity.classification ? entity.classification : '%' ),
-					varname:( entity.txntype == 'NEW' ? 'CAPITAL' : 'GROSS')
+					varname:( entity.txntype == 'NEW' ? VAR_CAPITAL : VAR_GROSS)
 				]).resultList	
 		} 
 		

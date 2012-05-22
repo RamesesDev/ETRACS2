@@ -10,10 +10,13 @@ class EntityMessageInterceptor
 	@Service('LogService')
     def logSvc
     
+	@Service('MessengerService')
+	def msgSvc 
+	
     @Service('EntityService')
     def entitySvc
 	
-	@After(pattern='MessageService.onreceive') 
+	@After(pattern='MessengerService.onreceive') 
 	public void interceptOnReceive( evt ) {
         def msg = evt.result 
         if( msg.action == 'entity.create_entity_for_mapping') createEntityForMapping( msg ) 
@@ -24,14 +27,14 @@ class EntityMessageInterceptor
 	void deleteMapping( msg ) {
 		try {
             println 'Processing message -> ' + msg.action 
-            def retval = entitySvc.deleteEntityMapping( msg.data )
-            updateMessageInfo( msg, retval )
-            logSvc.log('ENTTIY-DELETE-MAPPING', 'EntityMapping', msg.data.parentid )
+            entitySvc.deleteEntityMapping( msg.attachment )
+            msgSvc.processedSuccessfully( msg )
+            logSvc.log('ENTTIY-DELETE-MAPPING', 'EntityMapping', msg.attachment.parentid )
         }
         catch( e ) {
             println '-'*30 
             e.printStackTrace()
-            msg.message =[date:new Date(), msg:e.message]
+            msgSvc.errorProcessing( msg, e.message )
             throw e 
         }
 	}
@@ -39,14 +42,14 @@ class EntityMessageInterceptor
 	void createMapping( msg ) {
 		try {
             println 'Processing message -> ' + msg.action 
-            def retval = entitySvc.createEntityMapping( msg.data )
-            updateMessageInfo( msg, retval )
-            logSvc.log('ENTTIY-PROCESS-MAPPING', 'EntityMapping', msg.data.entity.objid )
+            entitySvc.createEntityMapping( msg.attachment )
+            msgSvc.processedSuccessfully( msg )
+            logSvc.log('ENTTIY-PROCESS-MAPPING', 'EntityMapping', msg.attachment.entity.objid )
         }
         catch( e ) {
             println '-'*30 
             e.printStackTrace()
-            msg.message =[date:new Date(), msg:e.message]
+            msgSvc.errorProcessing( msg, e.message )
             throw e 
         }
 	}
@@ -55,22 +58,17 @@ class EntityMessageInterceptor
     void createEntityForMapping( msg ) {
         try {
             println 'Processing message -> ' + msg.action 
-			def parententity = msg.data.parententity 
+			def parententity = msg.attachment.parententity 
 			entitySvc.createEntityForMapping( parententity )
+			msgSvc.processedSuccessfully( msg )
             logSvc.log('CREATE-ENTITY-FOR-MAPPING', 'EntityMapping', parententity.objid )
         }
         catch( e ) {
             println '-'*30 
             e.printStackTrace()
-            msg.message =[date:new Date(), msg:e.message]
+            msgSvc.errorProcessing( msg, e.message )
             throw e 
         }
-    }
-	
-	
-	void updateMessageInfo( msg, retval  ) {
-        msg.message = retval 
-        em.update( msg.schemaname, msg ) 
     }
     
 }
