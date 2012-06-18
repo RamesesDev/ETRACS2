@@ -56,6 +56,10 @@ WHERE objid = $P{objid}
 [getCraafByCreditId]
 SELECT * FROM craaf WHERE afinventorycreditid = $P{afinventorycreditid} 
 
+[updateCraafToTransferById]
+UPDATE craaf 
+SET collectorid = $P{collectorid}, collectorname = $P{collectorname}, collectortitle = $P{collectortitle} 
+WHERE objid = $P{objid} 
   
 [updateTransferredCreditState]  
 UPDATE afinventorycredit SET docstate = 'TRANSFERRED' WHERE objid = $P{objid}

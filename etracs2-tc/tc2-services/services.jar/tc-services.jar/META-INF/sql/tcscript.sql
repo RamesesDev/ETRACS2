@@ -1,11 +1,80 @@
+[getIRAFbyRivNoSale]
+SELECT i.objid FROM iraf i 
+INNER JOIN riv r on r.txnno = i.rivno 
+WHERE i.rivno = $P{rivno} 
+ AND r.rivtype = 'SALE' 
+ 
+[getIRAFbyRivNoCollector]
+SELECT i.objid FROM iraf i 
+INNER JOIN riv r on r.txnno = i.rivno 
+WHERE i.rivno = $P{rivno} 
+ AND r.rivtype = 'COLLECTOR' 
 
+[getAFCByIrafId]
+SELECT *   
+FROM afinventorycredit  
+WHERE irafid = $P{irafid}  
+
+[getAfcontrolByAfcId]
+SELECT 
+ * 
+FROM afcontrol 
+WHERE afinventorycreditid = $P{afcid} 
+
+[updateAFCByIdToCollector]
+UPDATE afinventorycredit 
+SET docstate = 'OPEN', iraftype = 'COLLECTOR', 
+ qtyissued = 0, balance = 50 
+WHERE objid = $P{objid} 
+
+[updateAFCByIdToSale]
+UPDATE afinventorycredit 
+SET docstate = 'CLOSED', iraftype = 'SALE', 
+ qtyissued = 50, balance = 0 
+WHERE objid = $P{objid} 
+
+[updateRivSaleToCollector] 
+UPDATE riv  
+SET rivtype = 'COLLECTOR'    
+WHERE txnno = $P{rivno}  
+
+[updateRivCollectorToSale]
+UPDATE riv  
+SET rivtype = 'SALE'    
+WHERE txnno = $P{rivno}
+
+[updateAFCtrlSaleToCollector]
+UPDATE afcontrol   
+SET docstate='APPROVED', currentseries=$P{startseries},   
+beginseries=$P{startseries}, qtyissued=0,  
+issuedfrom=NULL, issuedto=NULL, balance=50  
+WHERE objid = $P{objid}  
+
+[updateAFCtrlCollectorToSale]
+UPDATE afcontrol   
+SET docstate='CLOSED', currentseries=$P{endseries},   
+beginseries=$P{endseries}, qtyissued=50,  
+issuedfrom=$P{startseries}, issuedto=$P{endseries}, balance=0   
+WHERE objid = $P{objid} 
+
+[updateCraafSaleToCollector]
+UPDATE craaf SET  
+ issuedqty=0, issuedfrom=NULL, issuedto=NULL,  
+ endingqty=50, endingfrom=$P{startseries}, endingto=$P{endseries}  
+WHERE afinventorycreditid=$P{afinventorycreditid} 
+
+[updateCraafCollectorToSale]
+UPDATE craaf SET  
+ issuedqty=50, issuedfrom=$P{startseries}, issuedto=$P{endseries},  
+ endingqty=0, endingfrom=NULL, endingto=NULL 
+WHERE afinventorycreditid=$P{afinventorycreditid} 
 
 [getCraafDuplicateByBFromBto]
-SELECT    
- afinventorycreditid AS aficreditid, 
- craafmonth, craafyear, 
- beginfrom, beginto 
-FROM craaf  
+SELECT     
+ afinventorycreditid AS aficreditid,  
+ craafmonth, craafyear,  
+ beginfrom, beginto  
+FROM craaf   
 GROUP BY  craafmonth, craafyear, beginfrom, beginto 
 HAVING COUNT(beginfrom) > 1  
  AND COUNT(beginto) > 1 
@@ -172,20 +241,18 @@ WHERE objid = $P{objid}
 
 [getAfcontrolByAfcId]
 SELECT 
- objid, startseries, endseries, balance  
+ *   
 FROM afcontrol 
 WHERE afinventorycreditid = $P{objid}  
 
 [updateAFCtrl] 
-UPDATE afcontrol  
-SET docstate='CLOSED', currentseries=$P{endseries},  
+UPDATE afcontrol SET docstate='CLOSED', currentseries=$P{endseries},  
 beginseries=$P{endseries}, qtyissued=$P{balance}, 
-issuedfrom=$P{startseries}, issuedto=$P{endseries}, balance=0 
-WHERE objid = $P{objid} 
+issuedfrom=$P{startseries}, issuedto=$P{endseries}, balance=0
 
 [getCraafByAFCId]
 SELECT 
- objid, receivedqty, receivedfrom, receivedto 
+ * 
 FROM craaf 
 WHERE afinventorycreditid = $P{afcid}
 

@@ -121,6 +121,16 @@ class AFControlService
 		return afcontrol 
 	}
 	
+	void updateCraaf( craafcredit, afcontrol ){
+		def craaf = [
+				collectorid: afcontrol.collectorid,
+				collectorname: afcontrol.collectorname,
+				collectortitle: afcontrol.collectortitle,
+				objid: craafcredit.objid
+		]
+				
+		em.sqlContext.createNamedExecutor( 'afcontrol:updateCraafToTransferById' ).setParameters( craaf ).execute()
+	}
 	
 	void updateTransferCraafCreditInfo( afcontrol, oldafcontrol ) {
 		def craafcredit = em.sqlContext.createNamedQuery('afcontrol:getCraafByCreditId').setParameter('afinventorycreditid', oldafcontrol.afinventorycreditid).singleResult
@@ -150,6 +160,7 @@ class AFControlService
 		
 		//update afcontrol.afinventorycreditid reference
 		afcontrol.afinventorycreditid = newcredit.objid 
+		updateCraaf( craafcredit, afcontrol )
 		em.update(afcontrol.schemaname, afcontrol )
 	}
 	
