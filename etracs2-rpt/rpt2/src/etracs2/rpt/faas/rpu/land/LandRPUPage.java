@@ -275,7 +275,7 @@ public class LandRPUPage extends javax.swing.JPanel {
         xDataTable3.setName("selectedLand");
         xDataTable3.setShowRowHeader(true);
 
-        jLabel3.setText("Classification * :");
+        jLabel3.setText("<html>Classification <font color=\"red\">*</font>:</html>");
 
         xComboBox6.setCaption("Classification");
         xComboBox6.setExpression(" #{classcode}");
@@ -298,7 +298,7 @@ public class LandRPUPage extends javax.swing.JPanel {
                 .add(jLabel3)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(xComboBox6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 128, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(678, Short.MAX_VALUE))
+                .addContainerGap(681, Short.MAX_VALUE))
             .add(jPanel11, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .add(jPanel9Layout.createSequentialGroup()
                 .addContainerGap()

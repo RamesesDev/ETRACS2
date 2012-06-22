@@ -6,10 +6,12 @@
 
 package etracs2.rpt.faas.rpu.land;
 
+import com.rameses.rcp.ui.annotations.StyleSheet;
 /**
  *
  * @author  jzamora
  */
+@StyleSheet("etracs2/rpt/faas/rpu/land/LandAdjustmentPage.style")
 public class LandAdjustmentPage extends javax.swing.JPanel {
     
     /** Creates new form LandAdjustmentPage */
