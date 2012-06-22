@@ -9,7 +9,7 @@ package etracs2.rpt.faas.rpu.mach;
 import com.rameses.rcp.ui.annotations.StyleSheet;
 
 
-@StyleSheet("etracs2.rpt.faas.rpu.mach.MachRPUPage.style")
+@StyleSheet("etracs2/rpt/faas/rpu/mach/MachRPUPage.style")
 public class MachRPUPage extends javax.swing.JPanel {
     
     /** Creates new form LandRPUPage */
@@ -92,7 +92,7 @@ public class MachRPUPage extends javax.swing.JPanel {
 
         xComboBox2.setCaption("Exempt Reason");
         xComboBox2.setCaptionWidth(90);
-        xComboBox2.setDepends(new String[] {"rpu.info.taxable"});
+        xComboBox2.setDepends(new String[] {"rpu.taxable"});
         xComboBox2.setExpression("#{exemptcode}");
         xComboBox2.setItems("exemptionList");
         xComboBox2.setName("exemption");
@@ -164,7 +164,7 @@ public class MachRPUPage extends javax.swing.JPanel {
         xComboBox4.setName("classification");
         xComboBox4.setRequired(true);
 
-        jLabel2.setText("Classification * :");
+        jLabel2.setText("<html>Classification <font color=\"red\">*</font>:</html>");
 
         xButton1.setMnemonic('d');
         xButton1.setText("Define Machine List");
@@ -179,7 +179,7 @@ public class MachRPUPage extends javax.swing.JPanel {
                 .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
                     .add(org.jdesktop.layout.GroupLayout.LEADING, xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 756, Short.MAX_VALUE)
                     .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel3Layout.createSequentialGroup()
-                        .add(jLabel2)
+                        .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 75, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(xComboBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 139, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                     .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
@@ -190,8 +190,8 @@ public class MachRPUPage extends javax.swing.JPanel {
             .add(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel2)
-                    .add(xComboBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(xComboBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel2))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(xDataTable1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 188, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)

@@ -12,7 +12,7 @@ import com.rameses.rcp.ui.annotations.StyleSheet;
  *
  * @author  rameses
  */
-@StyleSheet("etracs2/rpt/faas/rpu/mach.MachUsePage.style")
+@StyleSheet("etracs2/rpt/faas/rpu/mach/MachUsePage.style")
 public class MachUsePage extends javax.swing.JPanel {
     
     /** Creates new form BldgUsePage */

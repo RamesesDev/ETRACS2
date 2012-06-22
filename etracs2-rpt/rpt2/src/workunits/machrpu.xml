@@ -67,11 +67,9 @@ public class MachRPUController
         recalc()
     }
     
-    def viewMachines() {
-        if( selectedItem.actualuseid == null ) {
-            return null 
-        }
-        return InvokerUtil.lookupOpener('machuse.open', [onupdate:onupdateMachUse, faas:faas, rpu:rpu, machuse:selectedItem] )
+    def viewMachines() { 
+        if( !selectedItem || selectedItem.actualuseid == null ) return null 
+        return InvokerUtil.lookupOpener('machuse.open', [allowEdit:allowEdit, onupdate:onupdateMachUse, faas:faas, rpu:rpu, machuse:selectedItem] )
     }
     
     /*---------------------------------------------------------------
