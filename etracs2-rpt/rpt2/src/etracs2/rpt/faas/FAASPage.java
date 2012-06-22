@@ -214,12 +214,12 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel5.add(jLabel3);
         jLabel3.setBounds(0, 38, 74, 19);
 
-        jLabel4.setText("Issue Date * :");
+        jLabel4.setText("<html>Issue Date <font color=\"red\">*</font>:</html>");
         jLabel4.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel5.add(jLabel4);
         jLabel4.setBounds(0, 57, 74, 19);
 
-        jLabel5.setText("Effectivity * :");
+        jLabel5.setText("<html> Effectivity <font color=\"red\">*</font>:</html>");
         jLabel5.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel5.add(jLabel5);
         jLabel5.setBounds(0, 76, 74, 19);
@@ -320,7 +320,7 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel6.add(jLabel9);
         jLabel9.setBounds(0, 0, 100, 19);
 
-        jLabel10.setText("Previous MV :");
+        jLabel10.setText("<html>Previous MV <font color=\"red\"> *</font>:</html>");
         jLabel10.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel6.add(jLabel10);
         jLabel10.setBounds(0, 38, 100, 19);
@@ -330,17 +330,17 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel6.add(jLabel11);
         jLabel11.setBounds(0, 57, 100, 19);
 
-        jLabel12.setText("Appraised By * :");
+        jLabel12.setText("<html>Appraised By <font color=\"red\">*</font>:</html>");
         jLabel12.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel6.add(jLabel12);
         jLabel12.setBounds(0, 76, 100, 19);
 
-        jLabel13.setText("Recommended By :");
+        jLabel13.setText("<html>Recommended By <font color=\"red\">*</font>:</html>");
         jLabel13.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel6.add(jLabel13);
         jLabel13.setBounds(0, 95, 100, 19);
 
-        jLabel14.setText("Approved By * :");
+        jLabel14.setText("<html>Approved By <font color=\"red\">*</font>:<html>");
         jLabel14.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel6.add(jLabel14);
         jLabel14.setBounds(0, 114, 100, 19);
@@ -349,10 +349,10 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel6.add(xTextField3);
         xTextField3.setBounds(100, 0, 378, 19);
 
-        jLabel15.setText("  Prev. AV :");
+        jLabel15.setText("<html>  Prev. AV <font color=\"red\">*</font>: </html>");
         jLabel15.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel6.add(jLabel15);
-        jLabel15.setBounds(230, 38, 68, 19);
+        jLabel15.setBounds(238, 38, 60, 19);
 
         jLabel16.setText("Previous PIN :");
         jLabel16.setPreferredSize(new java.awt.Dimension(34, 19));
@@ -363,15 +363,19 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel6.add(xTextField5);
         xTextField5.setBounds(100, 19, 378, 19);
 
+        xNumberField2.setCaption("Previous MV");
         xNumberField2.setFieldType(BigDecimal.class);
         xNumberField2.setName("faas.info.prevmv");
         xNumberField2.setPattern("#,##0.00");
+        xNumberField2.setRequired(true);
         jPanel6.add(xNumberField2);
         xNumberField2.setBounds(100, 38, 130, 19);
 
+        xNumberField3.setCaption("Prev. AV");
         xNumberField3.setFieldType(BigDecimal.class);
         xNumberField3.setName("faas.info.prevav");
         xNumberField3.setPattern("#,##0.00");
+        xNumberField3.setRequired(true);
         jPanel6.add(xNumberField3);
         xNumberField3.setBounds(298, 38, 180, 19);
 
@@ -379,51 +383,60 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel6.add(xTextField4);
         xTextField4.setBounds(100, 57, 378, 19);
 
-        jLabel17.setText("  Date :");
+        jLabel17.setText("<html>  Date <font color=\"red\">*</font>: </html>");
         jLabel17.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel6.add(jLabel17);
-        jLabel17.setBounds(338, 76, 46, 19);
+        jLabel17.setBounds(344, 76, 40, 19);
 
         xDateField3.setCaption("Date Appraised");
         xDateField3.setName("faas.info.dtappraised");
+        xDateField3.setRequired(true);
         jPanel6.add(xDateField3);
         xDateField3.setBounds(384, 76, 94, 19);
 
-        jLabel18.setText("  Date :");
+        jLabel18.setText("<html>  Date <font color=\"red\">*</font>: </html>");
         jLabel18.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel6.add(jLabel18);
-        jLabel18.setBounds(338, 95, 46, 19);
+        jLabel18.setBounds(344, 95, 40, 19);
 
         xDateField4.setCaption("Date Recommended");
         xDateField4.setName("faas.info.dtrecommended");
+        xDateField4.setRequired(true);
         jPanel6.add(xDateField4);
         xDateField4.setBounds(384, 95, 94, 19);
 
-        jLabel19.setText("  Date :");
+        jLabel19.setText("<html>  Date <font color=\"red\">*</font>: </html>");
         jLabel19.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel6.add(jLabel19);
-        jLabel19.setBounds(338, 114, 46, 19);
+        jLabel19.setBounds(344, 114, 40, 19);
 
         xDateField5.setCaption("Date Approved");
         xDateField5.setName("faas.info.dtapproved");
+        xDateField5.setRequired(true);
         jPanel6.add(xDateField5);
         xDateField5.setBounds(384, 114, 94, 19);
 
+        xLookupField1.setCaption("Appraised By");
         xLookupField1.setExpression("#{name}");
         xLookupField1.setHandler("lookupAppraiser");
         xLookupField1.setName("appraiser");
+        xLookupField1.setRequired(true);
         jPanel6.add(xLookupField1);
         xLookupField1.setBounds(100, 76, 238, 19);
 
+        xLookupField2.setCaption("Recommended By");
         xLookupField2.setExpression("#{name}");
         xLookupField2.setHandler("lookupRecommender");
         xLookupField2.setName("recommender");
+        xLookupField2.setRequired(true);
         jPanel6.add(xLookupField2);
         xLookupField2.setBounds(100, 95, 238, 19);
 
+        xLookupField3.setCaption("Approved By");
         xLookupField3.setExpression("#{name}");
         xLookupField3.setHandler("lookupApprover");
         xLookupField3.setName("approver");
+        xLookupField3.setRequired(true);
         jPanel6.add(xLookupField3);
         xLookupField3.setBounds(100, 114, 238, 19);
 
@@ -438,7 +451,7 @@ public class FAASPage extends javax.swing.JPanel {
         com.rameses.rcp.control.border.XTitledBorder xTitledBorder2 = new com.rameses.rcp.control.border.XTitledBorder();
         xTitledBorder2.setTitle("Ownership Information");
         jPanel7.setBorder(xTitledBorder2);
-        jLabel22.setText("Owner * :");
+        jLabel22.setText("<html>Owner <font color=\"red\">*</font>:</html>");
         jLabel22.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel22);
         jLabel22.setBounds(10, 24, 96, 18);
@@ -454,7 +467,7 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel7.add(xLabel3);
         xLabel3.setBounds(528, 24, 266, 19);
 
-        jLabel24.setText("Declared Owner* :");
+        jLabel24.setText("<html>Declared Owner <font color=\"red\">*</font>:</html>");
         jLabel24.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel24);
         jLabel24.setBounds(10, 43, 96, 18);
@@ -465,7 +478,7 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel7.add(xTextField7);
         xTextField7.setBounds(104, 43, 360, 19);
 
-        jLabel25.setText("Address :");
+        jLabel25.setText("<html> Address <font color=\"red\">*</font>:</html>");
         jLabel25.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel25);
         jLabel25.setBounds(468, 24, 60, 18);
@@ -475,7 +488,7 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel7.add(jLabel26);
         jLabel26.setBounds(468, 62, 60, 18);
 
-        jLabel27.setText("Address * :");
+        jLabel27.setText("<html>Address <font color=\"red\">*</font>:</html>");
         jLabel27.setPreferredSize(new java.awt.Dimension(40, 19));
         jPanel7.add(jLabel27);
         jLabel27.setBounds(468, 43, 60, 18);
@@ -517,12 +530,12 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel10.add(jLabel32);
         jLabel32.setBounds(2, 42, 70, 19);
 
-        jLabel33.setText("Cadastral * :");
+        jLabel33.setText("<html>Cadastral <font color=\"red\">*</font>:</html>");
         jLabel33.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel10.add(jLabel33);
         jLabel33.setBounds(2, 22, 70, 19);
 
-        jLabel34.setText("PIN No. * :");
+        jLabel34.setText("<html>PIN No. <font color=\"red\">*</font>:</html>");
         jLabel34.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel10.add(jLabel34);
         jLabel34.setBounds(2, 4, 70, 19);
@@ -607,12 +620,12 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel8.add(xTextField16);
         xTextField16.setBounds(78, 90, 458, 19);
 
-        jLabel39.setText("North * :");
+        jLabel39.setText("<html>North <font color=\"red\">*</font>:</html>");
         jLabel39.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel8.add(jLabel39);
         jLabel39.setBounds(8, 90, 70, 19);
 
-        jLabel40.setText("East * :");
+        jLabel40.setText("<html>East <font color=\"red\">*</font>:</html>");
         jLabel40.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel8.add(jLabel40);
         jLabel40.setBounds(8, 108, 70, 19);
@@ -629,12 +642,12 @@ public class FAASPage extends javax.swing.JPanel {
         jPanel8.add(xTextField19);
         xTextField19.setBounds(78, 126, 458, 19);
 
-        jLabel41.setText("South * :");
+        jLabel41.setText("<html>South <font color=\"red\">*</font>:</html>");
         jLabel41.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel8.add(jLabel41);
         jLabel41.setBounds(8, 126, 70, 19);
 
-        jLabel42.setText("West *  :");
+        jLabel42.setText("<html>West <font color=\"red\">*</font>:</html>");
         jLabel42.setPreferredSize(new java.awt.Dimension(34, 19));
         jPanel8.add(jLabel42);
         jLabel42.setBounds(8, 144, 70, 19);

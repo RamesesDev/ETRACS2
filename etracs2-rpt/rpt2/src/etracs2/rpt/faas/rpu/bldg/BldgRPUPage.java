@@ -174,6 +174,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xTitledBorder4.setTitle("Structure Information");
         xDataTable1.setBorder(xTitledBorder4);
         xDataTable1.setHandler("structureListHandler");
+        xDataTable1.setImmediate(true);
         xDataTable1.setName("selectedStructure");
         xDataTable1.setShowRowHeader(true);
 
@@ -482,7 +483,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
         xDataTable2.setName("selectedBldgUse");
         xDataTable2.setShowRowHeader(true);
 
-        jLabel2.setText("Classification * :");
+        jLabel2.setText("<html>Classification <font color=\"red\">*</font>:</html>");
 
         xLabel6.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         xLabel6.setForeground(new java.awt.Color(153, 0, 0));
@@ -507,7 +508,7 @@ public class BldgRPUPage extends javax.swing.JPanel {
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(xButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                     .add(jPanel5Layout.createSequentialGroup()
-                        .add(jLabel2)
+                        .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 75, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(xComboBox4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 159, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())

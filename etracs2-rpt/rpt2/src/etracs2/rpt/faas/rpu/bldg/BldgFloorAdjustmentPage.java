@@ -6,11 +6,13 @@
 
 package etracs2.rpt.faas.rpu.bldg;
 
+import com.rameses.rcp.ui.annotations.StyleSheet;
+
 /**
  *
  * @author  rameses
  */
-
+@StyleSheet("etracs2/rpt/faas/rpu/bldg/BldgFloorAdjustmentPage.style")
 public class BldgFloorAdjustmentPage extends javax.swing.JPanel {
     
     /** Creates new form BldgUsePage */

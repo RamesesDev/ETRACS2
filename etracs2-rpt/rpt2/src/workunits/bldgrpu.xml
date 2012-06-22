@@ -48,6 +48,7 @@ public class BldgRPUController
     def useswornamount
     
     void init() {
+    
         rpu.issuedate       = faas.info.issuedate 
         classificationList  = classSvc.lookup( null, null) 
         exemptionList       = exemptSvc.lookup(null, null) 
@@ -251,7 +252,7 @@ public class BldgRPUController
     
     def defineFloorInfo() {
         index = rpu.info.bldguses.indexOf( selectedBldgUse )
-        return InvokerUtil.lookupOpener('bldgrpufloor.open',[rpu:rpu, bldguse:selectedBldgUse, onupdate:floorUpdateHandler])
+        return InvokerUtil.lookupOpener('bldgrpufloor.open',[allowEdit:allowEdit, rpu:rpu, bldguse:selectedBldgUse, onupdate:floorUpdateHandler])
     }
     
     void recalc() {
@@ -282,16 +283,22 @@ public class BldgRPUController
     def getLookupMaterial(){
         return InvokerUtil.lookupOpener('structurematerial.lookup',[item:selectedStructure])
     }
-
+    
     def structureListHandler = [
         getColumns   : { return [
             new Column(name:'structurename', caption:'Structure' ),
             new Column(name:'material', caption:'Material', editable:true, type:'lookup', handler:lookupMaterial, expression:'#{materialname}' ),
         ]},
         validate : { li -> 
+        
             li.item.materialid = li.item.material?.materialid
             li.item.materialcode = li.item.material?.materialcode
             li.item.materialname = li.item.material?.materialname
+            
+            rpu.bldgstructures.each{
+                if( !it.material && it.structureid == li.item.structureid )
+                    it.material = li.item.material
+            }
             
             if( li.item.material.materialcode == '-' ) {
                 li.item.material = null
@@ -306,10 +313,24 @@ public class BldgRPUController
                 item.material = [materialname:'']
             }
         },
+        onRemoveItem : { item -> removeBldgStructure( item ) },
         fetchList : { return rpu.bldgstructures },
     ] as SubListModel
     
-    
+    def removeBldgStructure( item ) {
+        if( !item.material ) return 
+        if( MsgBox.confirm('Delete selected item?') ) {
+            rpu.bldgstructures.each{
+                if( it.structureid == item.structureid ){
+                    it.material = [:]
+                    it.materialid = null
+                    it.materialcode = null
+                    it.materialname = null
+                }
+                
+            }
+        }
+    }
     
     /*---------------------------------------------------------------
     *
