@@ -18,13 +18,23 @@ class IssuedReceiptController
     @Service('ETRACSUserService')
     def userService
     
+    @Binding
+    def binding
+    
     def searchText
     def selectedItem
     def collector 
     def formActions
+    def total
     
     void init() {
         collector = userService.getCollector( OsirisContext.env.USERID )
+        def searchParam = [ 
+            collectorid:collector.objid, 
+            docstate : 'OPEN',
+            searchText:searchText 
+        ]
+        total = svc.getList( searchParam, [:] ).amount.sum()
     }
     
     void setSelectedItem( item ) {
@@ -57,12 +67,15 @@ class IssuedReceiptController
                 docstate : 'OPEN',
                 searchText:searchText 
             ]
-            return svc.getList( searchParam, it ) 
+            def list = svc.getList( searchParam, it ) 
+            total = list.amount.sum()
+            return list
         },
     ] as PageListModel
     
     void search() {
         listHandler.load()
+        binding.refresh('total')
     }
     
 }

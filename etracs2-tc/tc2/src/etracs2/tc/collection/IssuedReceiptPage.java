@@ -6,6 +6,8 @@
 
 package etracs2.tc.collection;
 
+
+import java.math.BigDecimal;
 /**
  *
  * @author  jzamora
@@ -29,6 +31,8 @@ public class IssuedReceiptPage extends javax.swing.JPanel {
         jPanel4 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
         xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
+        xLabel1 = new com.rameses.rcp.control.XLabel();
+        xNumberField1 = new com.rameses.rcp.control.XNumberField();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
 
         setLayout(new java.awt.BorderLayout());
@@ -45,16 +49,41 @@ public class IssuedReceiptPage extends javax.swing.JPanel {
         jPanel3.setBorder(xTitledBorder1);
         jPanel4.setLayout(new java.awt.BorderLayout());
 
-        jPanel2.setLayout(new java.awt.BorderLayout());
-
         jPanel2.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 5, 5, 1));
         xActionTextField1.setActionName("search");
         xActionTextField1.setHint("Search");
         xActionTextField1.setIndex(-10);
         xActionTextField1.setName("searchText");
         xActionTextField1.setPreferredSize(new java.awt.Dimension(250, 19));
-        jPanel2.add(xActionTextField1, java.awt.BorderLayout.WEST);
 
+        xLabel1.setText("Total:");
+
+        xNumberField1.setFieldType(BigDecimal.class);
+        xNumberField1.setFont(new java.awt.Font("Tahoma", 1, 14));
+        xNumberField1.setForeground(new java.awt.Color(204, 0, 0));
+        xNumberField1.setName("total");
+        xNumberField1.setPattern("#,##0.00");
+        xNumberField1.setReadonly(true);
+
+        org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel2Layout.createSequentialGroup()
+                .add(xActionTextField1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 225, Short.MAX_VALUE)
+                .add(xLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(xNumberField1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 123, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                .add(xActionTextField1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(xNumberField1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(xLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+        );
         jPanel4.add(jPanel2, java.awt.BorderLayout.NORTH);
 
         xDataTable1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 5, 5));
@@ -76,6 +105,8 @@ public class IssuedReceiptPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XActionBar xActionBar1;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
+    private com.rameses.rcp.control.XLabel xLabel1;
+    private com.rameses.rcp.control.XNumberField xNumberField1;
     // End of variables declaration//GEN-END:variables
     
 }
