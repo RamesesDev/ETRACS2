@@ -21,9 +21,11 @@ class BPReleasePermitController
     @Binding
     def binding;
     
+    @Caller
+    def caller
+    
     @Service('BusinessMgmtService')
     def svc;
-    
     
     @Service('Var')
     def svcVar
@@ -40,7 +42,7 @@ class BPReleasePermitController
     }
     
     def lobHandler = [
-        getRows: {return 5;},
+        getRows: {return 5;}, 
         getColumns: {
             return [ 
                 new Column(name:'name', caption:'Name'),
@@ -52,6 +54,7 @@ class BPReleasePermitController
     
     public void release(){
         if( MsgBox.confirm('Release permit?') ) permit = svc.releasePermit( permit );
+        caller.search()
     }
     
     def previewApplication(){
