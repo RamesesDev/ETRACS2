@@ -40,6 +40,7 @@ class IncomeAcctService
 		validate( incomeacct ) ;
 		resetNgasAccount( incomeacct );
 		resetSreAccount( incomeacct );
+	
 		em.create( incomeacct.schemaname, incomeacct);
 		return incomeacct;
 	}
@@ -135,12 +136,18 @@ class IncomeAcctService
 	}
 	
 	private void resetNgasAccount( incomeacct ) {
+		if( !incomeacct.ngasid )
+			incomeacct.ngastitle = null
+			
 		if( ! incomeacct.ngastitle ) {
 			incomeacct.ngasacctid = null;
 		}
 	}
 	
 	private void resetSreAccount( incomeacct ) {
+		if( !incomeacct.sreid )
+			incomeacct.sretitle = null
+			
 		if( ! incomeacct.sretitle ) {
 			incomeacct.sreacctid = null;
 		}
