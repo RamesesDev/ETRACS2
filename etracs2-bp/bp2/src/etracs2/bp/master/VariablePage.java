@@ -152,6 +152,7 @@ public class VariablePage extends javax.swing.JPanel {
 
         xCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         xCheckBox1.setText("Print this to Permit?");
+        xCheckBox1.setCheckValue(1);
         xCheckBox1.setDepends(new String[] {"selectedItem"});
         xCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
         xCheckBox1.setName("entity.printtopermit");
