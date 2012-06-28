@@ -4,14 +4,54 @@ import java.rmi.server.UID
 
 class TCScript {
 	
-	@PersistenceContext('main')
+	@PersistenceContext('main')  
 	def em
 	
 	@Service( 'ConsolidatedReportService' )   
 	def craafSvc  
 	
 	def cal = Calendar.getInstance()
+	
+	//method to convert RIV Sale to Collertor RIV
+	@ProxyMethod
+	public def convertRIVSaleToCollector( def rivno ){
+		def iraf = em.sqlContext.createNamedQuery( 'tcscript:getIRAFbyRivNoSale' ).setParameter( 'rivno', rivno ).singleResult
+		if( !iraf ) throw new Exception( 'No Records found' )
+		em.sqlContext.createNamedQuery( 'tcscript:getAFCByIrafId' ).setParameter( 'irafid', iraf.objid ).resultList.each{ afc ->
+			def afctrl = em.sqlContext.createNamedQuery( 'tcscript:getAfcontrolByAfcId' ).setParameter( 'afcid', afc.objid ).singleResult
+			em.sqlContext.createNamedExecutor( 'tcscript:updateAFCtrlSaleToCollector' ).setParameters( afctrl ).execute()
+			em.sqlContext.createNamedExecutor( 'tcscript:updateAFCByIdToCollector' ).setParameter( 'objid', afc.objid ).execute()
+			em.sqlContext.createNamedExecutor( 'tcscript:updateCraafSaleToCollector' ).setParameters( afctrl ).execute()
 		
+		}
+		
+		em.sqlContext.createNamedExecutor( 'tcscript:updateRivSaleToCollector' ).setParameter( 'rivno', rivno ).execute()
+		
+		return 'run successfully'
+	}
+	
+	//method to convert Collertor RIV to RIV Sale
+	@ProxyMethod
+	public def convertRIVCollectorToSale( def rivno ){
+		def iraf = em.sqlContext.createNamedQuery( 'tcscript:getIRAFbyRivNoCollector' ).setParameter( 'rivno', rivno ).singleResult
+		
+		if( !iraf ) throw new Exception( 'No Records found' )
+		em.sqlContext.createNamedQuery( 'tcscript:getAFCByIrafId' ).setParameter( 'irafid', iraf.objid ).resultList.each{ afc ->
+			def afctrl = em.sqlContext.createNamedQuery( 'tcscript:getAfcontrolByAfcId' ).setParameter( 'afcid', afc.objid ).singleResult
+			em.sqlContext.createNamedExecutor( 'tcscript:updateAFCtrlCollectorToSale' ).setParameters( afctrl ).execute()
+			em.sqlContext.createNamedExecutor( 'tcscript:updateAFCByIdToSale' ).setParameter( 'objid', afc.objid ).execute()
+			em.sqlContext.createNamedExecutor( 'tcscript:updateCraafCollectorToSale' ).setParameters( afctrl ).execute()
+		
+		}
+		
+		em.sqlContext.createNamedExecutor( 'tcscript:updateRivCollectorToSale' ).setParameter( 'rivno', rivno).execute()
+		
+		return 'run successfully'
+
+	}
+	
+	
+	
 	@ProxyMethod
 	public def doRemoveDuplicateCraaf(){ 
 		
