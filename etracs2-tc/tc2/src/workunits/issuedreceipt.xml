@@ -25,7 +25,7 @@ class IssuedReceiptController
     def selectedItem
     def collector 
     def formActions
-    def total
+    def total 
     
     void init() {
         collector = userService.getCollector( OsirisContext.env.USERID )
@@ -34,7 +34,7 @@ class IssuedReceiptController
             docstate : 'OPEN',
             searchText:searchText 
         ]
-        total = svc.getList( searchParam, [:] ).amount.sum()
+        total = svc.getList( searchParam, [ _start:0, _limit:0 ] ).findAll{ it.voided == 0 }.amount.sum() 
     }
     
     void setSelectedItem( item ) {
@@ -67,9 +67,10 @@ class IssuedReceiptController
                 docstate : 'OPEN',
                 searchText:searchText 
             ]
-            def list = svc.getList( searchParam, it ) 
-            total = list.amount.sum()
-            return list
+            def params = ( !searchText ? [_start:0, _limit:0] : it )
+            def list = svc.getList( searchParam, params ) 
+            total = list.findAll{ it.voided == 0}.amount.sum()
+            return list 
         },
     ] as PageListModel
     
