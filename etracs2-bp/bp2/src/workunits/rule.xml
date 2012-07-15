@@ -28,7 +28,10 @@ class RuleController
     def binding
     
     @Service('RuleService')
-    def svc 
+    def svc    
+    
+    @Caller
+    def caller
     
     def mode
     def rule = [conditions:[], actions:[]]
@@ -80,24 +83,28 @@ class RuleController
         else 
             rule = svc.update( rule )
         mode = 'view'
+        caller.search()
         invokeUpdateHandler()
     }
     
     void deploy() {
         if( MsgBox.confirm('Deploy rule?') ) {
             rule = svc.deploy( rule.objid )
+            caller.search()
         }
     }
     
     void undeploy() {
         if( MsgBox.confirm('Undeploy rule?') ) {
             rule = svc.undeploy( rule.objid )
+            caller.search()
         }
     }
     
     def remove() {
         if( MsgBox.confirm('Delete rule?') ) {
             svc.remove( rule.objid )
+            caller.search()
             return '_close' 
         }
     }
