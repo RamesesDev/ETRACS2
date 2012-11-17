@@ -140,11 +140,11 @@ class BPLedgerService {
 									 reftype		: payment.reftype,
 									 refno			: payment.refno,
 									 refdate		: payment.refdate,
-									 amount			: numberSvc.round(c.taxamount),
+									 amount			: numberSvc.round( (c.taxamount) ? c.taxamount : c.amount ),
 									 surcharge		: numberSvc.round(c.surcharge),
 									 interest		: numberSvc.round(c.interest),
 									 discount		: numberSvc.round(c.discount),
-									totalamount: numberSvc.round(c.totalamount)];
+									totalamount: numberSvc.round( (c.totalamount) ? c.totalamount : c.amount ) ];
 
 			def brc = application.receivables.find{ it.objid == c.bpreceivableid };
 			 
@@ -154,11 +154,11 @@ class BPLedgerService {
 			if( !brc.interest ) brc.interest = 0.0
 			if( !brc.discount ) brc.discount = 0.0
 			
-			brc.amtpaid += numberSvc.round(c.taxamount)
+			brc.amtpaid += numberSvc.round( (c.taxamount) ? c.taxamount : c.amount )
 			brc.surcharge += numberSvc.round(c.surcharge)
 			brc.interest += numberSvc.round(c.interest)
 			brc.discount += numberSvc.round(c.discount)
-			paymentamount += numberSvc.round(c.totalamount)
+			paymentamount += numberSvc.round( (c.totalamount) ? c.totalamount : c.amount )
 			
 		}
 
