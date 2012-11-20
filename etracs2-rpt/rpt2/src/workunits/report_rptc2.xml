@@ -1,6 +1,6 @@
 <workunit>
     <invokers>
-        <invoker folderid="/menu/rpt/reports/landtax" action="init" caption="Real Property Tax Collection" target="window" index="3" permission="landtax.rptc"/>
+        <invoker folderid="/menu/rpt/reports/landtax" action="init" caption="Real Property Tax Collection 2" target="window" index="3" permission="landtax.rptc"/>
         
         <invoker type="formActions"     action="_close" caption="Close" mnemonic="c" shortcut="ctrl + W" icon="images/cancel.png"/>
         <invoker type="formActions"     action="print" caption="Print" mnemonic="p" shortcut="ctrl + P" icon="images/doc-view.png"/>
@@ -16,7 +16,7 @@ import com.rameses.rcp.annotations.*;
 import com.rameses.osiris2.client.*;
 import com.rameses.osiris2.reports.*;
 
-class RPTReportController
+class RPTCReport2Controller
 {
     @Binding
     def binding
@@ -72,7 +72,7 @@ class RPTReportController
             if( provrate + munirate + brgyrate != 100.00 ) throw new Exception( 'Total Province, Municipality and Barangay Rates must be equal to 100.' )
         }
     
-        reportdata = svc.generateRPTCReport( lgutype, year, month, provrate, munirate, brgyrate, cityrate, citybrgyrate )
+        reportdata = svc.generateRPTCReport2( lgutype, year, month, provrate, munirate, brgyrate, cityrate, citybrgyrate )
         report.viewReport()
     }
     
@@ -82,7 +82,7 @@ class RPTReportController
     }
     
     def report = [
-        getReportName : { return 'rptcollection' },
+        getReportName : { return 'rptcollection2' },
         getReportData : { return reportdata },
         getParameters : { 
             return svcParams.getStandardParameter( OsirisContext.env.USERNAME )

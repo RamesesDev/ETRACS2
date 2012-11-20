@@ -85,6 +85,30 @@ class RemittanceReportService {
 	}
 	
 	@ProxyMethod
+	public def generateReportByCashTicket( rem ) {
+		def summaries = em.sqlContext.createNamedQuery('remittance:getCashTicketSummary')
+											.setParameter('remittanceid', rem.objid)
+											.resultList
+		def ctamount	= summaries.amount.sum()
+		def data = [
+			collectorName 		: rem.info.collectorname,
+			collectorTitle		: rem.info.collectortitle,
+			docno 				: rem.info.txnno,
+			dateposted			: dtsvc.parse( "yyyy-MM-dd", rem.info.txndate ),
+			totalDenomination	: rem.info.totalcash,
+			totalchecks			: rem.info.totalotherpayment,
+			amount				: ctamount,
+			amountInWords 		: numbSvc.convertDouble( ctamount ), 
+			liquidatingOfficerName	: rem.info.liquidatingofficername,
+			liquidatingOfficerTitle	: rem.info.liquidatingofficertitle,
+			collectiontype			: getCollectionType( rem.objid ), 
+			cashticketsummaries 	: summaries,
+			ctamount 				: ctamount, 
+		]
+		return data 
+	}
+	
+	@ProxyMethod
 	public def generateSummaryByIncomeAcctReport( rem, fund ) {
 		rem.info.txndate = dtsvc.parse( "yyyy-MM-dd", rem.info.txndate );
 		rem.acctsummaries = getIncomeAccuntSummaryByFund( rem, fund );

@@ -4,7 +4,7 @@ SELECT
 	postedbyname, amount  
 FROM postcapture  
 WHERE collectorname LIKE $P{collectorname}  
-ORDER BY dtposted DESC  
+ORDER BY dtposted DESC , collectorname
 
 [getCapturedReceiptsSummaries]
 SELECT 

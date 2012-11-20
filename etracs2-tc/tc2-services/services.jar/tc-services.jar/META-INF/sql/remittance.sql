@@ -265,6 +265,22 @@ WHERE rl.objid = ri.receiptid
 ORDER BY rl.afid, rl.serialno, ri.accttitle
 
 
+[getCashTicketSummary]
+SELECT  
+	u.name AS particulars,  
+	SUM(ri.amount) AS amount  
+FROM receiptlist rl, receiptitem ri, etracsuser u, af af 
+WHERE rl.objid = ri.receiptid  
+  AND rl.capturedbyid = u.objid  
+  AND rl.afid = af.objid  
+  AND rl.remittanceid = $P{remittanceid}  
+  AND rl.mode = 'CAPTURE'  
+  AND ri.fundid LIKE 'GENERAL'   
+  AND rl.voided = 0 
+  AND af.aftype = 'nonserial'  
+GROUP BY u.name  
+ORDER BY u.name  
+
  
 
 [updateAfControlForRemittance]
