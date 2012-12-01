@@ -77,9 +77,9 @@ class RuleService
 	public def update( rule ) {
 		buildRuleText( rule )
 		validate( rule )
-		em.update( rule.schemaname, rule, { diff -> 
-			logService.logB('UPDATE', 'Rule', rule.objid, null, diff) 
-		} as UpdateChangeHandler)
+		em.update( rule.schemaname, rule)
+		logService.log( 'UPDATE', 'Rule', rule.objid )
+		
 		return rule
 	}
 	
