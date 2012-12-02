@@ -35,6 +35,21 @@ public class BPPermitReportService
 		bp.barcodeurl = var.get('barcode_url').replace('$P{data}', app.barcode);
 		
 		bp.lines = em.serializer.read( bp.lobs );
+		bp.lines2 = []
+		def nextrow = (bp.lines.size / 2) as int
+		bp.linesize = bp.lines.size
+		
+		if( bp.lines.size() >= 8 ){
+			for( int i=0; i < bp.lines.size(); i++ ){
+			   if( i < (bp.lines.size / 2)){
+				   bp.lines2[i] = [:]
+				   bp.lines2[i].name_1 = bp.lines[i].name
+				   bp.lines2[i].name_2 = bp.lines[nextrow].name
+				   nextrow++
+			   }
+			}
+		}
+		 
 		bp.lob = bp.lines[0]
 		bp.lobs = null;
 		
@@ -63,4 +78,6 @@ public class BPPermitReportService
 			    info: bp,
 				params: params];
 	}
+	
+	
 }
