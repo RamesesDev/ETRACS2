@@ -98,36 +98,32 @@ ORDER BY a.pathbytitle
 
 [getStatementOfRevenueExpandedSRE]  
 SELECT  
-	a.pathbytitle AS pathtitle,  
-	a.acctcode AS acctcode,  
-	a.accttitle AS accttitle, 
-	p.acctcode as parentcode, 
-	p.accttitle as parenttitle, 
-	SUM(r.amount) AS amount 
+	CASE WHEN a.pathbytitle IS NULL THEN p.pathbytitle ELSE a.pathbytitle END AS pathtitle,   
+	CASE WHEN a.acctcode IS NULL THEN p.acctcode ELSE a.acctcode END AS acctcode,   
+	CASE WHEN a.accttitle IS NULL THEN p.accttitle ELSE a.accttitle END AS accttitle, 	 
+	SUM(r.amount) AS amount  
 FROM revenue r 
 	INNER JOIN incomeaccount ia ON r.acctid = ia.objid 
-	LEFT JOIN account a ON a.objid = ia.sresubacctid  
-	LEFT JOIN account p on p.objid = a.parentid 
+	LEFT JOIN account a ON a.objid = ia.sresubacctid      
+	LEFT JOIN account p ON p.objid = ia.sreid 
 WHERE r.liquidationtimestamp LIKE $P{txntimestamp}  
-  AND ia.fundid LIKE $P{fundid} 
+  AND ia.fundid LIKE $P{fundid}      
   AND r.voided = 0 
 GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
 ORDER BY a.pathbytitle 
 
 [getStatementOfRevenueExpandedNGAS]  
 SELECT  
-	a.pathbytitle AS pathtitle,   
-	a.acctcode AS acctcode,   
-	a.accttitle AS accttitle, 
-	p.acctcode as parentcode, 
-	p.accttitle as parenttitle,
-	SUM(r.amount) AS amount 
+	CASE WHEN a.pathbytitle IS NULL THEN p.pathbytitle ELSE a.pathbytitle END AS pathtitle,   
+	CASE WHEN a.acctcode IS NULL THEN p.acctcode ELSE a.acctcode END AS acctcode,   
+	CASE WHEN a.accttitle IS NULL THEN p.accttitle ELSE a.accttitle END AS accttitle, 	 
+	SUM(r.amount) AS amount  
 FROM revenue r 
 	INNER JOIN incomeaccount ia ON r.acctid = ia.objid 
 	LEFT JOIN account a ON a.objid = ia.ngassubacctid      
-	LEFT JOIN account p on p.objid = a.parentid 
+	LEFT JOIN account p ON p.objid = ia.ngasid 
 WHERE r.liquidationtimestamp LIKE $P{txntimestamp}  
-  AND ia.fundid LIKE $P{fundid} 
+  AND ia.fundid LIKE $P{fundid}      
   AND r.voided = 0 
 GROUP BY a.pathbytitle, a.acctcode, a.accttitle, p.acctcode, p.accttitle 
 ORDER BY a.pathbytitle 
