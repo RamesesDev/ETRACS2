@@ -55,6 +55,8 @@ class IRAFService
 	private def getListByQueryName( def list, def name, def param ){
 		em.sqlContext.createNamedQuery( name )
 		  .setParameters( param )
+		  .setFirstResult( param._start )
+		  .setMaxResults( param._limit )
 		  .resultList.each{
 			it.info = em.serializer.read( it.info );
 			it.requesteditems = em.serializer.read( it.requesteditems );

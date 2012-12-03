@@ -1,0 +1,59 @@
+<workunit>
+    <invokers>
+        <invoker type="remittance.report" action="view" caption="Abstract of Real Property Tax Collection" index="20"/>
+        
+        <invoker type="formActions" action="close"  immediate="true" caption="Back" mnemonic="c" icon="images/back.png"/>
+        <invoker type="formActions" action="viewReport" caption="View" visibleWhen="#{mode == 'init'}" mnemonic="v" icon="images/doc-view.png"/>
+    </invokers>
+    <code>
+<![CDATA[
+
+import com.rameses.rcp.common.*;
+import com.rameses.rcp.annotations.*;
+import com.rameses.osiris2.client.*;
+import com.rameses.osiris2.reports.*;
+import java.rmi.server.UID;
+
+class RemittanceReportAbstractRPTCController {
+
+    @Service("RemittanceReportService")
+    def svc;
+
+    @Service("ReportParameterService")
+    def paramSvc;
+
+    def entity;
+
+    def mode;
+    def reportdata
+
+    def report = [
+        getReportName : { return 'remittance/AbstractOfRPTCollection' },
+        getReportData : { return reportdata.items }, 
+        getParameters : { 
+            def params = paramSvc.getStandardParameter( OsirisContext.env.USERNAME )
+            params.putAll( reportdata.header )
+            return params;
+        }
+    ] as ServerReportModel;
+
+    def close() {
+        mode = 'init';
+        return '_close';
+    }
+
+    void view() {
+        reportdata = svc.generateAbstractOfRPTCollection( entity )
+        report.viewReport();
+        mode = 'init';
+    }
+
+}
+
+]]>        
+        
+    </code>
+    <pages>
+        <page template="etracs2.tc.PreviewPage" />
+    </pages>
+</workunit>

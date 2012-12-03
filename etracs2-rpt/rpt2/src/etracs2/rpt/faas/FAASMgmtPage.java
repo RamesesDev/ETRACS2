@@ -33,8 +33,10 @@ public class FAASMgmtPage extends javax.swing.JPanel {
         xActionTextField1 = new com.rameses.rcp.control.XActionTextField();
         jPanel5 = new javax.swing.JPanel();
         xActionBar2 = new com.rameses.rcp.control.XActionBar();
+        jPanel4 = new javax.swing.JPanel();
         formPanel1 = new com.rameses.rcp.util.FormPanel();
         xComboBox1 = new com.rameses.rcp.control.XComboBox();
+        xButton1 = new com.rameses.rcp.control.XButton();
         xDataTable1 = new com.rameses.rcp.control.XDataTable();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -67,18 +69,30 @@ public class FAASMgmtPage extends javax.swing.JPanel {
         xActionBar2.setPadding(new java.awt.Insets(0, 5, 0, 0));
         jPanel5.add(xActionBar2, java.awt.BorderLayout.CENTER);
 
+        jPanel4.setLayout(new java.awt.BorderLayout());
+
         formPanel1.setCaptionPadding(new java.awt.Insets(0, 5, 0, 5));
         formPanel1.setCellpadding(new java.awt.Insets(0, 5, 0, 0));
         formPanel1.setPadding(new java.awt.Insets(0, 0, 0, 0));
-        xComboBox1.setCaption("State ");
+        formPanel1.setPreferredSize(new java.awt.Dimension(350, 22));
+        xComboBox1.setCaption("Filter");
         xComboBox1.setCaptionWidth(50);
+        xComboBox1.setDynamic(true);
+        xComboBox1.setExpression("#{name}");
         xComboBox1.setImmediate(true);
-        xComboBox1.setItems("statelist");
-        xComboBox1.setName("docstate");
-        xComboBox1.setPreferredSize(new java.awt.Dimension(200, 22));
+        xComboBox1.setItems("filterlist");
+        xComboBox1.setName("filter");
+        xComboBox1.setPreferredSize(new java.awt.Dimension(0, 22));
         formPanel1.add(xComboBox1);
 
-        jPanel5.add(formPanel1, java.awt.BorderLayout.WEST);
+        jPanel4.add(formPanel1, java.awt.BorderLayout.WEST);
+
+        xButton1.setText("...");
+        xButton1.setName("createFilter");
+        xButton1.setPreferredSize(new java.awt.Dimension(35, 23));
+        jPanel4.add(xButton1, java.awt.BorderLayout.EAST);
+
+        jPanel5.add(jPanel4, java.awt.BorderLayout.WEST);
 
         jPanel3.add(jPanel5, java.awt.BorderLayout.CENTER);
 
@@ -113,11 +127,13 @@ public class FAASMgmtPage extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSplitPane jSplitPane1;
     private com.rameses.rcp.control.XActionBar xActionBar2;
     private com.rameses.rcp.control.XActionTextField xActionTextField1;
+    private com.rameses.rcp.control.XButton xButton1;
     private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XDataTable xDataTable1;
     private com.rameses.rcp.control.XEditorPane xEditorPane1;

@@ -1,12 +1,12 @@
 [getList]
-SELECT o.* FROM iraf o ORDER BY o.txnno 
+SELECT o.* FROM iraf o WHERE docstate = 'DRAFT' ORDER BY o.txnno 
 
 [getListByRivno] 
-SELECT o.* FROM iraf o WHERE o.rivno = $P{rivno} 
+SELECT o.* FROM iraf o WHERE o.rivno LIKE $P{rivno} 
 
 [getIrafByTxnno] 
 SELECT o.* FROM iraf o 
-WHERE o.txnno = $P{txnno} 
+WHERE o.txnno LIKE $P{txnno} 
 
 [getDraftIrafByRivId] 
 SELECT o.* FROM iraf o 
@@ -14,7 +14,7 @@ WHERE o.rivid = $P{rivid}
 AND o.docstate = 'DRAFT' 
 
 [getListByRequestedBy] 
-SELECT o.* FROM iraf o WHERE o.rivrequestedby = $P{requestedby} 
+SELECT o.* FROM iraf o WHERE o.rivrequestedby LIKE $P{requestedby} 
 
 [getNextOpenAFInventory] 
 SELECT o.* FROM afinventory o 

@@ -40,6 +40,7 @@ class ReceiptService
 	@ProxyMethod
 	public def create( receipt ) {
 		updateReceiptInfo( receipt )
+		checkDuplicateSerialNo( receipt.objid, receipt.info.afid, receipt.info.serialno )
 		validate( receipt )
 		em.create( receipt.schemaname, receipt )
 		buildDateBreakdownInfo( receipt )
@@ -262,9 +263,11 @@ class ReceiptService
 	}
 	
 	void validate( receipt ) {
-		checkDuplicateSerialNo( receipt.objid, receipt.info.afid, receipt.info.serialno )
-		if( receipt.info.amount < 0.0 ) {
+		if( receipt.info.amount <= 0.0 ) {
 			throw new Exception('Amount Due must be greater than zero.')
+		}
+		if( receipt.info.amount != receipt.items.amount.sum() ) {
+			throw new Exception('Receipt Amount must be equal to item amount totals.')
 		}
 		if( receipt.info.totalpayment < receipt.info.amount ) {
 			throw new Exception('Total Payment must be greater than or equal to amount due.')
@@ -272,10 +275,13 @@ class ReceiptService
 		if( receipt.info.otherpayment > receipt.info.amount ) {
 			throw new Exception('Non-Cash Payment must be less than or equal to amount due.')
 		}
+		if( receipt.info.otherpayment <= 0.0 && receipt.info.cash <= 0.0 ) {
+			throw new Exception('At least a Cash or Non-Cash Payment must be specified.')
+		}
 		if( receipt.info.change < 0.0 ) {
 			throw new Exception('Change must not be negative.\nNormally this happens if check payment is more than receipt amount.')
 		}
-    
+		
         def txndate = dateService.parse('yyyy-MM-dd', receipt.info.txndate )
         if( receipt.info.mode != 'ONLINE' && txndate > dateService.serverDate ) {
             throw new Exception('Txn Date must be before or equal to current date.')

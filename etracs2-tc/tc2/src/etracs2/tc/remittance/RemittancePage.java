@@ -109,25 +109,31 @@ public class RemittancePage extends javax.swing.JPanel {
 
         formPanel2.setCaptionFont(new java.awt.Font("Arial", 0, 12));
         formPanel2.setCaptionVAlignment(com.rameses.rcp.constant.UIConstants.CENTER);
+        xNumberField9.setEditable(false);
         xNumberField9.setCaption("Total Cash");
         xNumberField9.setCaptionWidth(120);
-        xNumberField9.setFont(new java.awt.Font("Arial", 0, 12));
+        xNumberField9.setEnabled(false);
+        xNumberField9.setFont(new java.awt.Font("Arial", 1, 14));
         xNumberField9.setName("entity.info.totalcash");
         xNumberField9.setPreferredSize(new java.awt.Dimension(140, 25));
         xNumberField9.setReadonly(true);
         formPanel2.add(xNumberField9);
 
+        xNumberField10.setEditable(false);
         xNumberField10.setCaption("Non-Cash Payments");
         xNumberField10.setCaptionWidth(120);
-        xNumberField10.setFont(new java.awt.Font("Arial", 0, 12));
+        xNumberField10.setEnabled(false);
+        xNumberField10.setFont(new java.awt.Font("Arial", 1, 14));
         xNumberField10.setName("entity.info.totalotherpayment");
         xNumberField10.setPreferredSize(new java.awt.Dimension(140, 25));
         xNumberField10.setReadonly(true);
         formPanel2.add(xNumberField10);
 
+        xNumberField11.setEditable(false);
         xNumberField11.setCaption("Remittance Amount");
         xNumberField11.setCaptionWidth(120);
-        xNumberField11.setFont(new java.awt.Font("Arial", 0, 12));
+        xNumberField11.setEnabled(false);
+        xNumberField11.setFont(new java.awt.Font("Arial", 1, 14));
         xNumberField11.setName("entity.info.amount");
         xNumberField11.setPreferredSize(new java.awt.Dimension(140, 25));
         xNumberField11.setReadonly(true);

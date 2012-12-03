@@ -82,7 +82,7 @@ INNER JOIN liquidationlist ll on ll.objid = rml.liquidationid
 INNER JOIN af af ON rl.afid = af.objid 
 WHERE ll.objid = $P{liquidationid} 
   AND rl.voided = 0   
-GROUP BY rl.afid, CASE WHEN af.aftype = 'nonserial' THEN ri.fundname ELSE ia.groupid END  
+GROUP BY rl.afid, CASE WHEN af.aftype = 'nonserial' THEN ri.fundname ELSE CASE WHEN ia.groupid IS NULL THEN ri.fundname ELSE ia.groupid END  END  
 ORDER BY rl.afid, ri.fundname, ia.groupid 
 
 

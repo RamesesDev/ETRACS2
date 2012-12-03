@@ -141,6 +141,115 @@ class RemittanceReportService {
 		return rem;
 	}
 	
+	
+	@ProxyMethod
+	public def generateSummaryOfCollection( entity, chart ) {
+		def remittanceid = entity.objid 
+		def acctlist = em.sqlContext.createNamedQuery('remittance:getDistinctAccount' + chart)
+							.setParameter('remittanceid', remittanceid )
+							.resultList 
+		
+		def colindex = 0
+		def columnsql = ''
+		def hasUnmapped = acctlist.find{ it.objid == null }
+		if(  hasUnmapped ) {
+			columnsql = " SUM( CASE WHEN a.objid IS NULL AND rl.voided = 0 THEN ri.amount ELSE NULL END ) AS col${colindex}, \n"
+			colindex++
+		}
+		acctlist.each { acct ->
+			if( acct.objid ) {
+				columnsql += " SUM( CASE WHEN a.objid = '$acct.objid' AND rl.voided = 0 THEN ri.amount ELSE NULL END ) AS col${colindex}, \n"
+				colindex++
+			}
+		}
+		columnsql += " SUM( CASE WHEN rl.voided = 0 THEN ri.amount ELSE NULL END ) AS col${colindex}, \n"
+			
+		def qry = em.sqlContext.createNamedQuery('remittance:getSummaryOfCollection' + chart )
+		
+		def items = qry.setVars([columnsql:columnsql])
+						.setParameter( 'remittanceid', remittanceid )
+						.resultList
+		
+		def header = [:]
+		colindex = 0
+		if( hasUnmapped ) {
+			header[ 'COL' + colindex ] = 'UNMAPPED'
+			colindex++
+		}
+		acctlist.collect{ acct ->
+			if( acct.objid ) {
+				header[ 'COL' + colindex ] = acct.accttitle 
+				colindex++
+			}
+		}
+		
+		header[ 'COL' + colindex ] = 'TOTAL'
+		//
+		//additional params
+		header.REPORTTITLE = 'SUMMARY OF CASH COLLECTIONS AND DEPOSITS BY ' + chart 
+		header.REMITTANCENO = entity.info.txnno
+		header.REMITTANCEDATE = entity.info.txndate
+		header.REMITTANCEAMOUNT = entity.info.amount
+		header.COLLECTORNAME = entity.info.collectorname
+		header.COLLECTORTITLE = entity.info.collectortitle
+		header.LIQUIDATINGOFFICER = entity.info.liquidatingofficername
+		header.LIQUIDATINGOFFICERTITLE = entity.info.liquidatingofficertitle
+		header.DATEPOSTED = dtsvc.parse('yyyy-MM-dd', entity.info.txndate )
+		header.AMTINWORDS = numbSvc.convertDouble( entity.info.amount )
+		
+		return [ header:header, items:items]
+	}
+	
+	
+	@ProxyMethod
+	public def generateAbstractOfRPTCollection( rem ) {
+		def items = []
+		
+		items.addAll(
+			em.sqlContext.createNamedQuery('remittance:getAbstractCollectionBASIC')
+					.setParameter( 'objid', rem.objid ).resultList 
+		)
+		items.addAll(
+			em.sqlContext.createNamedQuery('remittance:getAbstractCollectionManualBASIC')
+					.setParameter( 'objid', rem.objid ).resultList 
+		)
+
+		items.addAll(
+			em.sqlContext.createNamedQuery('remittance:getAbstractCollectionSEF')
+					.setParameter( 'objid', rem.objid ).resultList 
+		)
+		items.addAll(
+			em.sqlContext.createNamedQuery('remittance:getAbstractCollectionManualSEF')
+					.setParameter( 'objid', rem.objid ).resultList 
+		)
+
+		if( ! items ) throw new Exception('No records found.')
+		
+		def amount  = items.currentyear.sum() + items.previousyear.sum() + 
+					  items.penaltycurrent.sum() + items.penaltyprevious.sum() - items.discount.sum() 
+		
+		//
+		//additional params
+		def header = [:]
+		header.TITLE = 'ABSTRACT OF REAL PROPERTY TAX COLLECTION'
+		header.PERIOD = ''
+		header.REMITTANCENO = rem.info.txnno
+		header.REMITTANCEDATE = rem.info.txndate
+		header.REMITTANCEAMOUNT = amount
+		header.COLLECTORNAME = rem.info.collectorname
+		header.COLLECTORTITLE = rem.info.collectortitle
+		header.LIQUIDATINGOFFICER = rem.info.liquidatingofficername
+		header.LIQUIDATINGOFFICERTITLE = rem.info.liquidatingofficertitle
+		header.DATEPOSTED = dtsvc.parse('yyyy-MM-dd', rem.info.txndate )
+		header.AMTINWORDS = numbSvc.convertDouble( amount )
+		
+		return [
+			header  : header,
+			items  	: items 
+		]
+	}
+	
+	
 	private def getSerialReceiptDetailsByFund( rem, fund ) {
 		def query = {
 			if( fund?.objid ) return em.sqlContext.createNamedQuery( "remittance:getSerialReceiptDetailsByFund" ).setParameter( "fundid", fund.objid );

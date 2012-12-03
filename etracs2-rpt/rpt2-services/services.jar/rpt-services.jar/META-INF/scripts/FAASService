@@ -62,8 +62,66 @@ class FAASService
     def MISC_TYPE = 'misc' 
     
 	@ProxyMethod
+	public List getFilterList() {
+		def list = em.sqlContext.createNamedQuery('faas:getFaasFilters').resultList 
+		list.each{
+			it.info = em.serializer.read( it.info )
+		}
+		return list 
+	}
+	
+	
+	@ProxyMethod
 	public def getList( search, params ) {
 		return getList2( search, null, params ) 
+	}
+	
+	@ProxyMethod
+	public def getListByFilter( search, filter, params ) {
+		if( ! filter ) {
+			return getList( null, null) 
+		}
+		
+		def qry = em.sqlContext.createNamedQuery('faas:findByFilter')
+		
+		def whereclause = ''
+		if( filter.info.docstate ) {
+			whereclause += ' docstate = $P{docstate} '
+		}
+		if( filter.info.barangay ) {
+			if( whereclause.length() > 0 ) whereclause += ' AND ' 
+			whereclause += ' barangayid = $P{barangayid} '
+		}
+		if( filter.info.classification ) {
+			if( whereclause.length() > 0 ) whereclause += ' AND ' 
+			whereclause += ' classid = $P{classid} '
+		}
+		if( filter.info.rputype ) {
+			if( whereclause.length() > 0 ) whereclause += ' AND ' 
+			whereclause += ' rputype = $P{rputype} '
+		}
+		if( filter.info.owner ) {
+			if( whereclause.length() > 0 ) whereclause += ' AND ' 
+			whereclause += ' taxpayerid = $P{taxpayerid} '
+		}
+		
+		if( whereclause.length() > 0 ) {
+			whereclause = ' WHERE ' + whereclause
+		}
+		
+		def filtervalue = [
+			docstate 	: ( filter.info.docstate ? filter.info.docstate 		: null ),
+			barangayid 	: ( filter.info.barangay ? filter.info.barangay.objid : null ),
+			classid 	: ( filter.info.classification ? filter.info.classification.objid : null ),
+			rputype 	: ( filter.info.rputype ? filter.info.rputype : null ),
+			taxpayerid 	: ( filter.info.owner  ? filter.info.owner.objid : null ),
+		]
+		
+		return qry.setVars([whereclause:whereclause])
+					.setParameters( filtervalue )
+					.setFirstResult( params._start )
+					.setMaxResults( params._limit )
+					.resultList 
 	}
 	
 	@ProxyMethod
@@ -603,7 +661,26 @@ class FAASService
         em.update(faas.schemaname, faas )
         em.update(LISTSCHEMA_NAME, faas )
     }
+	
+	@ProxyMethod
+	public List getClassificationList() {
+		return em.sqlContext.createNamedQuery('faas:getClassificationList').resultList 
+	}
     
+	@ProxyMethod
+	public def createFilter( filter ) {
+		filter.objid = 'F' + new UID()
+		def data = [:]
+		data.putAll( filter )
+		data.info = em.serializer.write( data.info )
+		em.sqlContext.createNamedExecutor('faas:createFilter').setParameters( data ).execute()
+		return filter 
+	}
+	
+	@ProxyMethod
+	public void removeFilter( filter ) {
+		em.sqlContext.createNamedExecutor('faas:removeFilter').setParameter('objid', filter.objid).execute()
+	}
     
     /*-----------------------------------------------------------------------
     ** Attachment Support 
