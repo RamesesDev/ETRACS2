@@ -72,6 +72,7 @@ CREATE TABLE bppayment (
 	voided INT
 );
 
+
 /* ------------------------------------------------------------------
 *
 * MULTI-CASHIER SUPPORT 
