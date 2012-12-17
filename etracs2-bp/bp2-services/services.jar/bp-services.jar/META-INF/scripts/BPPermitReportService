@@ -30,10 +30,12 @@ public class BPPermitReportService
 		bp.validity = dateFormat.parse( bp.iyear + '-12-31' );
 		
 		def c = app.credits[0]
+		def p = app.payments[0]
+		
 		def or = [orno: c.refno+'', 
 				   ordate: dateFormat.parse( c.refdate ),
-				   amount: 0.0];
-		app.credits.findAll{ it.refno == or.orno }.each{ or.amount += it.amount + it.surcharge + it.interest - it.discount };
+				   amount: p.amount];
+		//app.credits.findAll{ it.refno == or.orno }.each{ or.amount += it.amount + it.surcharge + it.interest - it.discount };
 		bp.orlist = [ or ];
 		
 		def sdf = new java.text.SimpleDateFormat("EEEEE MMMMM dd, yyyy");
@@ -43,7 +45,7 @@ public class BPPermitReportService
 			MAYORNAME: var.mayor_name,
 			MAYORTITLE: var.mayor_title
 		];
-		
+
 		return [reportName: 'bp/businesspermit',
 			    info: bp,
 				params: params];

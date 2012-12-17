@@ -1,0 +1,23 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID
+
+class BPRenewalService
+{
+	@PersistenceContext('main')
+	def em
+	
+	@Service("DateService")
+	def dtSvc;
+	
+	@ProxyMethod
+	public void updateExpiredApplication( task ){
+		def param = [:]
+		println 'xx'
+		param.currentYr = dtSvc.getServerYear()
+		em.sqlContext.createNamedExecutor("bprenwal:updatebusiness").setParameters( param ).execute()
+		em.sqlContext.createNamedExecutor("bprenwal:updatebpapplication").setParameters( param ).execute()
+		em.sqlContext.createNamedExecutor("bprenwal:updatebpapplicationlisting").setParameters( param ).execute()
+	}
+	
+}
