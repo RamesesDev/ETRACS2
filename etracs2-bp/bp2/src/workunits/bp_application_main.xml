@@ -60,22 +60,24 @@ class BPApplication
     def allowedDelete( def lob ){
         if( mode != 'VIEW' ){
             if( lob.assessmenttype.matches('NEW|ADDLOB') ) return true;
-            if( lob.assessmenttype == 'RENEW' && application.txnmode == 'CAPTURE' ) return true;
-            if( application.txntype == 'RETIRE_LINE' ) return true;
+            if( lob.assessmenttype == 'RENEW' && application.txnmode == 'CAPTURE' && !application.txntype.equals('RETIRE') ) return true;
+            //if( application.txntype == 'RETIRE_LINE' ) return true;
         }
         return false;
     }
     
     def getTypes = {
-        if( lob?.assessmenttype == 'ADDLOB' ) return ['ADDLOB'];
-        return ['RENEW', 'RETIRELOB'];
+        if( lob?.asssesmenttype == 'RETIRE' ) return ['RETIRE'] 
+        if( lob?.assessmenttype == 'ADDLOB' ) return ['ADDLOB']; 
+        return ['RENEW', 'NEW']
     }
     
     def isTypeEditable = {
-        if( mode == 'VIEW' ) return false;
-        if( application.txntype.matches('NEW|ADDLOB|RETIRE|RETIRELOB') ) return false;
-        if( application.txnmode == 'CAPTURE' ) return false;
-        if( lob?.assessmenttype == 'ADDLOB' ) return false;
+        if( mode == 'VIEW' ) return false
+        if( application.txntype.matches('NEW|ADDLOB') ) return false
+        if( application.txnmode.equals('ONLINE') && application.txntype.equals('RENEW') ) return false
+        //if( application.txnmode.equals('CAPTURE') ) return false
+        if( lob?.assessmenttype.equals('ADDLOB') ) return false
         return true;
     }
     
@@ -91,7 +93,9 @@ class BPApplication
         },
         
         onRemoveItem : {
-            if( allowedDelete( it ) ) { application.lobs.remove( it );}
+            if( allowedDelete( it ) ) { 
+                application.lobs.remove( it );
+            }
         },
         
         fetchList : { return application.lobs; },
@@ -104,6 +108,7 @@ class BPApplication
             def l = [lobid:selected.objid, name:selected.name, assessmenttype:'NEW', classificationid:selected.classificationid];
             if( application.txntype.matches('ADDLOB|RENEW') ) l.assessmenttype = 'ADDLOB';
             if( application.txnmode == 'CAPTURE' && application.txntype == 'RENEW' ) l.assessmenttype = 'RENEW';
+            if( application.txnmode == 'ONLINE' ) l.assessmenttype = 'NEW'
             application.lobs << l;
             lobHandler.load();
             binding.refresh();
