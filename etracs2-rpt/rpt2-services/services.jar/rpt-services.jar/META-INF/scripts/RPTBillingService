@@ -119,6 +119,8 @@ public class RPTBillingService
 		
 		def revtypegroup = details.groupBy{ it.revtype }
 		
+		zeroItemValues( bill )
+		
 		//summarize current 
 		def current = revtypegroup.current 
 		if( current ) {
@@ -150,6 +152,23 @@ public class RPTBillingService
 		
 		bill.items.clear()
 		return bill 
+	}
+	
+	void zeroItemValues( bill ) {
+		bill.item.basic 		= 0.0
+		bill.item.basicdisc 	= 0.0
+		bill.item.basicint		= 0.0
+		bill.item.basicprev 	= 0.0
+		bill.item.basicprevint 	= 0.0
+		bill.item.basicprior 	= 0.0
+		bill.item.basicpriorint = 0.0
+		bill.item.sef 			= 0.0
+		bill.item.sefdisc 		= 0.0
+		bill.item.sefint		= 0.0
+		bill.item.sefprev 		= 0.0
+		bill.item.sefprevint 	= 0.0
+		bill.item.sefprior 		= 0.0
+		bill.item.sefpriorint 	= 0.0
 	}
 	
 	void executeBillingRules( bill ) {

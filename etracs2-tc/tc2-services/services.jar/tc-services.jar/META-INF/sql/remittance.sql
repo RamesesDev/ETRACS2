@@ -57,11 +57,35 @@ WHERE remittanceid = $P{remittanceid}
 ORDER BY afid, stubno
 
 [getNonSerialRemittedFormsByRemittance]
-SELECT * FROM remittedform 
-WHERE remittanceid = $P{remittanceid} 
-	AND aftype = 'nonserial' 
-ORDER BY afid, stubno
+SELECT 
+	CASE WHEN rf.receivedqty >= 0 THEN rf.receivedqty * af.denomination ELSE 0.0 END AS receivedamt, 
+	CASE WHEN rf.beginqty >= 0 THEN rf.beginqty * af.denomination ELSE 0.0 END AS beginamt, 
+	CASE WHEN rf.issuedqty >= 0 THEN rf.issuedqty * af.denomination ELSE 0.0 END AS issuedamt, 
+	CASE WHEN rf.endingqty >= 0 THEN rf.endingqty * af.denomination ELSE 0.0 END AS endingamt, 
+	rf.* 
+FROM remittedform rf 
+	INNER JOIN af af ON rf.afid = af.objid 
+WHERE rf.remittanceid = $P{remittanceid} 
+	AND rf.aftype = 'nonserial' 
+ORDER BY rf.afid, rf.stubno
 
+[getNonSerialRemittedFormsSummary]
+SELECT 
+	rf.afid, 
+	SUM( CASE WHEN rf.beginqty IS NULL THEN 0 ELSE rf.beginqty END ) AS beginqty,  
+	SUM( CASE WHEN rf.beginqty >= 0 THEN rf.beginqty * af.denomination ELSE 0.0 END ) AS beginamt,  
+	SUM( CASE WHEN rf.receivedqty IS NULL THEN 0 ELSE rf.receivedqty END ) AS receivedqty,  
+	SUM( CASE WHEN rf.receivedqty >= 0 THEN rf.receivedqty * af.denomination ELSE 0.0 END ) AS receivedamt,  
+	SUM( CASE WHEN rf.issuedqty IS NULL THEN 0 ELSE rf.issuedqty END ) AS issuedqty,  
+	SUM( CASE WHEN rf.issuedqty >= 0 THEN rf.issuedqty * af.denomination ELSE 0.0 END ) AS issuedamt, 
+	SUM( CASE WHEN rf.endingqty IS NULL THEN 0 ELSE rf.endingqty END ) AS endingqty,   
+	SUM( CASE WHEN rf.endingqty >= 0 THEN rf.endingqty * af.denomination ELSE 0.0 END ) AS endingamt  
+FROM remittedform rf  
+	INNER JOIN af af ON rf.afid = af.objid  
+WHERE rf.remittanceid = $P{remittanceid}  
+  AND rf.aftype = 'nonserial' 
+GROUP BY rf.afid 
+ORDER BY rf.afid 
 
 [getUnremittedReceipts]
 SELECT * FROM receiptlist 

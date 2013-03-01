@@ -174,7 +174,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xNumberField16.setCaptionWidth(120);
         xNumberField16.setCellPadding(new java.awt.Insets(0, 0, 0, 10));
         xNumberField16.setFieldType(Integer.class);
-        xNumberField16.setName("item.fromyear");
+        xNumberField16.setName("fromyear");
         xNumberField16.setPreferredSize(new java.awt.Dimension(100, 22));
         xNumberField16.setRequired(true);
         formPanel4.add(xNumberField16);
@@ -183,7 +183,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xComboBox1.setCaption("From Qtr");
         xComboBox1.setCaptionWidth(80);
         xComboBox1.setItems("quarters");
-        xComboBox1.setName("item.fromqtr");
+        xComboBox1.setName("fromqtr");
         xComboBox1.setPreferredSize(new java.awt.Dimension(100, 22));
         xComboBox1.setRequired(true);
         formPanel4.add(xComboBox1);
@@ -198,7 +198,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xNumberField19.setCaptionWidth(120);
         xNumberField19.setCellPadding(new java.awt.Insets(0, 0, 0, 10));
         xNumberField19.setFieldType(Integer.class);
-        xNumberField19.setName("item.toyear");
+        xNumberField19.setName("toyear");
         xNumberField19.setPreferredSize(new java.awt.Dimension(100, 22));
         xNumberField19.setRequired(true);
         formPanel5.add(xNumberField19);
@@ -207,7 +207,7 @@ public class RPTManualCollectionDetailPage extends javax.swing.JPanel {
         xComboBox2.setCaption("To Qtr");
         xComboBox2.setCaptionWidth(80);
         xComboBox2.setItems("quarters");
-        xComboBox2.setName("item.toqtr");
+        xComboBox2.setName("toqtr");
         xComboBox2.setPreferredSize(new java.awt.Dimension(100, 22));
         xComboBox2.setRequired(true);
         formPanel5.add(xComboBox2);

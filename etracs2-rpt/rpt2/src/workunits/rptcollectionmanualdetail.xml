@@ -41,6 +41,11 @@ public class RPTManualCollectionDetailPage {
     def basicprior      = 0.0
     def basicpriorint   = 0.0
     
+    def fromyear 
+    def fromqtr = 1
+    def toyear
+    def toqtr  = 4 
+    
     def parsedate
     
     void initAdd() {
@@ -64,6 +69,11 @@ public class RPTManualCollectionDetailPage {
     
     def ok() {
         validateInfo()
+        
+        if( item.amount <= 0 ) throw new Exception('Amount must be greater than zero.')
+        if( item.basicdisc > item.basic ) throw new Exception('Basic Discount must not exceed Basic Amount.')
+        if( item.sefdisc > item.sef ) throw new Exception('SEF Discount must not exceed SEF Amount.')
+        
         calculateTotals()
         buildPeriod()
         if( onadd ) onadd( item )
@@ -81,6 +91,64 @@ public class RPTManualCollectionDetailPage {
         if(  item.fromqtr == 1 && item.toqtr == 4 ) 
             item.period = 'Full ' + item.fromyear + '-' + item.toyear 
         item.period = item.fromqtr + 'Q,' + item.fromyear + '-' + item.toqtr + 'Q,' + item.toyear 
+    }
+    
+    void setFromyear( fromyear ) {
+        this.fromyear = fromyear 
+        item.fromyear = fromyear 
+        resetValues()
+    }
+    
+    void setFromqtr( fromqtr ) {
+        this.fromqtr = fromqtr
+        item.fromqtr = fromqtr
+        resetValues()
+    }
+    
+    void setToyear( toyear ) {
+        this.toyear = toyear
+        item.toyear = toyear 
+        resetValues()
+    }
+    
+    void setToqtr( toqtr ){
+        this.toqtr = toqtr
+        item.toqtr = toqtr 
+        resetValues() 
+    }
+    
+    void resetValues(){
+        basic      = 0.0
+        basicdisc  = 0.0
+        basicint   = 0.0
+        basicprev  = 0.0
+        basicprevint = 0.0
+        basicprior   = 0.0
+        basicpriorint = 0.0 
+        
+        item.basic      = 0.0
+        item.basicdisc  = 0.0
+        item.basicint   = 0.0
+        item.basicprev  = 0.0
+        item.basicprevint = 0.0
+        item.basicprior   = 0.0
+        item.basicpriorint = 0.0 
+        item.basicgross    = 0.0
+        item.basicdp       = 0.0
+        item.basicnet      = 0.0
+        
+        item.sef      = 0.0
+        item.sefdisc  = 0.0
+        item.sefint   = 0.0
+        item.sefprev  = 0.0
+        item.sefprevint = 0.0
+        item.sefprior   = 0.0
+        item.sefpriorint = 0.0 
+        item.sefgross    = 0.0
+        item.sefdp       = 0.0
+        item.sefnet      = 0.0
+        calculateTotals()
+        binding.refresh()
     }
     
     
@@ -148,7 +216,6 @@ public class RPTManualCollectionDetailPage {
         basicprior       = item.basicprior
         basicpriorint    = item.basicpriorint
     }
-    
     
     
     void setBasic( basic ) {

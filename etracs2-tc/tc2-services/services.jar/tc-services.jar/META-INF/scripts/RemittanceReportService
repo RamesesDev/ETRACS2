@@ -30,6 +30,7 @@ class RemittanceReportService {
 			collectiontype			: getCollectionType( rem.objid ), 
 			remittedforms			: getSerialRemittedFormsByRemittance( rem.objid ),
 			nonserialremittances 	: getNonSerialRemittedFormsByRemittance( rem.objid ),
+			nonserialsummary	 	: getNonSerialRemittedFormsSummary( rem.objid ),
 			otherpayments		: getOtherPayments( rem ),
 			denominations		: rem.info.denominations
 		]
@@ -54,6 +55,10 @@ class RemittanceReportService {
 		return em.sqlContext.createNamedQuery( "remittance:getNonSerialRemittedFormsByRemittance" ).setParameters( [remittanceid:remid] ).resultList;
 	}
 	
+	private def getNonSerialRemittedFormsSummary( remid ) {
+		return em.sqlContext.createNamedQuery( "remittance:getNonSerialRemittedFormsSummary" )
+						.setParameters( [remittanceid:remid] ).resultList
+	}
 	
 	
 	@ProxyMethod

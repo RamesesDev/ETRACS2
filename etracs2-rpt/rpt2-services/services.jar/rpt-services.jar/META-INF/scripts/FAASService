@@ -892,8 +892,10 @@ class FAASService
 	
     Map updateFaasState( faas, state ) {
         faas.docstate = state
-        em.sqlContext.createNamedExecutor('faas:updateState').setParameters( faas ).execute()
-        em.sqlContext.createNamedExecutor('faas:updateListState').setParameters( faas ).execute()
+		em.update( faas.schemaname , faas )
+		em.update( LISTSCHEMA_NAME, faas ) 
+        // em.sqlContext.createNamedExecutor('faas:updateState').setParameters( faas ).execute()
+        // em.sqlContext.createNamedExecutor('faas:updateListState').setParameters( faas ).execute()
         updatePinState( faas.rpu.fullpin, faas.info.claimno, faas.docstate )
         return faas 
     }
